@@ -5,26 +5,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { Tag } from "./entity/Tag"
 
 describe("relations > custom-referenced-column-name", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("many-to-one", () => {
         it("should load related entity when relation use custom referenced column name", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     await connection.manager.save(category1)
@@ -67,7 +66,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should load related entity when relation defined with empty join column", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     await connection.manager.save(category1)
@@ -119,7 +118,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should load related entity when relation defined without reference column name", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     await connection.manager.save(category1)
@@ -157,7 +156,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should load related entity when relation defined without column name", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     await connection.manager.save(category1)
@@ -207,7 +206,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should load related entity when relation defined without reference column name and relation does not have relation column in entity", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     await connection.manager.save(category1)
@@ -265,7 +264,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should persist relation when relation sets via join column", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     await connection.manager.save(category1)
@@ -310,7 +309,7 @@ describe("relations > custom-referenced-column-name", () => {
     describe("one-to-one", () => {
         it("should load related entity when relation use custom referenced column name", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag1 = new Tag()
                     tag1.name = "tag #1"
                     await connection.manager.save(tag1)
@@ -351,7 +350,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should load related entity when relation defined without column name", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag1 = new Tag()
                     tag1.name = "tag #1"
                     await connection.manager.save(tag1)
@@ -401,7 +400,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should load related entity when relation defined without reference column name", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag1 = new Tag()
                     tag1.name = "tag #1"
                     await connection.manager.save(tag1)
@@ -439,7 +438,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should load related entity when relation defined without column name", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag1 = new Tag()
                     tag1.name = "tag #1"
                     await connection.manager.save(tag1)
@@ -485,7 +484,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should load related entity when relation defined without reference column name and relation does not have relation column in entity", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag1 = new Tag()
                     tag1.name = "tag #1"
                     await connection.manager.save(tag1)
@@ -541,7 +540,7 @@ describe("relations > custom-referenced-column-name", () => {
 
         it("should persist relation when relation sets via join column", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag1 = new Tag()
                     tag1.name = "tag #1"
                     await connection.manager.save(tag1)

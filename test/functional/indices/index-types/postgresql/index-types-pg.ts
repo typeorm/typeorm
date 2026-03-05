@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import {
     createTestingConnections,
     reloadTestingDatabases,
@@ -10,21 +10,20 @@ import { User4 } from "../entity/User4"
 import { User5 } from "../entity/User5"
 
 describe("github issues > Add support of 'hash' indexes for postgres", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "./../entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "./../entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should support 'hash' index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 expect(
                     connection
                         .getMetadata(User)
@@ -35,7 +34,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'btree' index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 expect(
                     connection
                         .getMetadata(User)
@@ -46,7 +45,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'gist' index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 expect(
                     connection
                         .getMetadata(User)
@@ -57,7 +56,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'spgist' index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 expect(
                     connection
                         .getMetadata(User)
@@ -68,7 +67,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'gin' index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 expect(
                     connection
                         .getMetadata(User)
@@ -79,7 +78,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'brin' index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 expect(
                     connection
                         .getMetadata(User)
@@ -90,14 +89,14 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("User should have six indices", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 expect(connection.getMetadata(User).indices.length).equal(6)
             }),
         ))
 
     it("User4 should have 'btree' index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const idxs = connection.getMetadata(User4).indices
 
                 expect(idxs.length).equals(1)
@@ -113,7 +112,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("User5 view indexes should be defined and correct", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const idxs = connection.getMetadata(User5).indices
 
                 expect(idxs.length).equals(2)

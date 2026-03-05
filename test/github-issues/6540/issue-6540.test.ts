@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,21 +8,20 @@ import { Order } from "./entity/order.entity.ts"
 import { OrderProduct } from "./entity/order-product.entity.ts"
 
 describe("github issues > #6540 Enum not resolved if it is from an external file", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["mysql", "mariadb"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [Order, OrderProduct],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["mysql", "mariadb"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [Order, OrderProduct],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -33,7 +32,7 @@ describe("github issues > #6540 Enum not resolved if it is from an external file
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()

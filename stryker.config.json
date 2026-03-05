@@ -2,16 +2,18 @@
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "packageManager": "pnpm",
   "buildCommand": "pnpm run compile",
-  "concurrency": 6,
+  "concurrency": 4,
   "coverageAnalysis": "perTest",
   "dashboard": {
     "reportType": "mutationScore"
   },
   "dryRunTimeoutMinutes": 10,
+  "ignoreStatic": true,
   "inPlace": true,
   "plugins": ["@stryker-mutator/mocha-runner"],
   "reporters": ["html", "dashboard", "progress", "json"],
   "testRunner": "mocha",
   "testRunner_comment": "Take a look at https://stryker-mutator.io/docs/stryker-js/mocha-runner for information about the mocha plugin.",
+  "timeoutFactor": 0.1,
   "_comment": "This config was generated using 'stryker init'. Please take a look at: https://stryker-mutator.io/docs/stryker-js/configuration/ for more information."
 }

@@ -29,7 +29,6 @@
  *         profile: "user.profile"
  *     }
  * };
- *
  * @deprecated
  */
 export interface JoinOptions {

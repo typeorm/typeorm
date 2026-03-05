@@ -4,20 +4,21 @@ import {
     createTestingConnections,
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { LessThan, DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
+import { LessThan } from "../../../../src"
 import { expect } from "chai"
 
 describe("repository > aggregate methods", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
             dropSchema: true,
         })
 
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 for (let i = 0; i < 100; i++) {
                     const post = new Post()
                     post.id = i
@@ -28,12 +29,12 @@ describe("repository > aggregate methods", () => {
         )
     })
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     describe("sum", () => {
         it("should return the aggregate sum", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sum = await connection
                         .getRepository(Post)
                         .sum("counter")
@@ -43,7 +44,7 @@ describe("repository > aggregate methods", () => {
 
         it("should return null when 0 rows match the query", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sum = await connection
                         .getRepository(Post)
                         .sum("counter", { id: LessThan(0) })
@@ -55,7 +56,7 @@ describe("repository > aggregate methods", () => {
     describe("average", () => {
         it("should return the aggregate average", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const average = await connection
                         .getRepository(Post)
                         .average("counter")
@@ -67,7 +68,7 @@ describe("repository > aggregate methods", () => {
 
         it("should return null when 0 rows match the query", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const average = await connection
                         .getRepository(Post)
                         .average("counter", {
@@ -81,7 +82,7 @@ describe("repository > aggregate methods", () => {
     describe("minimum", () => {
         it("should return the aggregate minimum", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const minimum = await connection
                         .getRepository(Post)
                         .minimum("counter")
@@ -91,7 +92,7 @@ describe("repository > aggregate methods", () => {
 
         it("should return null when 0 rows match the query", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const minimum = await connection
                         .getRepository(Post)
                         .minimum("counter", {
@@ -105,7 +106,7 @@ describe("repository > aggregate methods", () => {
     describe("maximum", () => {
         it("should return the aggregate maximum", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const maximum = await connection
                         .getRepository(Post)
                         .maximum("counter")
@@ -115,7 +116,7 @@ describe("repository > aggregate methods", () => {
 
         it("should return null when 0 rows match the query", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const maximum = await connection
                         .getRepository(Post)
                         .maximum("counter", {

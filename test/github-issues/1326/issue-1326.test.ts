@@ -6,24 +6,23 @@ import {
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 import { SpecificUser } from "./entity/SpecificUser"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
 describe("github issue > #1326 Wrong behavior w/ the same table names in different databases", () => {
-    let connections: DataSource[] = []
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[] = []
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not confuse equivalent table names in different databases", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 for (let i = 1; i <= 10; i++) {
                     const user = new User()
                     user.name = "user #" + i

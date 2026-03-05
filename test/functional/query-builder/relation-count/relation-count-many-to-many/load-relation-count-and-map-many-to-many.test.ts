@@ -5,25 +5,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Image } from "./entity/Image"
 
 describe("query builder > load-relation-count-and-map > many-to-many", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load relation count on owner side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -81,7 +80,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
 
     it("should load relation count on owner side with limitation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -139,7 +138,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
 
     it("should load relation count on owner side with additional conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.isRemoved = true
                 image1.name = "image #1"
@@ -277,7 +276,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
 
     it("should load relation count on both sides of relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -346,7 +345,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
 
     it("should load relation count on inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -407,7 +406,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
 
     it("should load relation count on inverse side with limitation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -467,7 +466,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
 
     it("should load relation count on inverse side with additional conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)

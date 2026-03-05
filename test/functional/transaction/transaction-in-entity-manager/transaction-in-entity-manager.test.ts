@@ -4,31 +4,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("transaction > transaction with entity manager", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: [
-                    "mysql",
-                    "sqlite",
-                    "better-sqlite3",
-                    "postgres",
-                ], // todo: for some reasons mariadb tests are not passing here
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "better-sqlite3", "postgres"], // todo: for some reasons mariadb tests are not passing here
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should execute all operations in a single transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
@@ -67,7 +61,7 @@ describe("transaction > transaction with entity manager", () => {
 
     it("should not save anything if any of operation in transaction fail", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 

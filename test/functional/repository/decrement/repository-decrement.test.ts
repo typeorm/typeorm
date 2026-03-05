@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { UpdateResult } from "../../../../src"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,19 +12,18 @@ import { UserWithEmbededEntity } from "./entity/UserWithEmbededEntity"
 
 describe("repository > decrement method", () => {
     describe("basic", () => {
-        let connections: DataSource[]
-        before(
-            async () =>
-                (connections = await createTestingConnections({
-                    entities: [Post],
-                })),
-        )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Post],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should decrement value", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -68,7 +67,7 @@ describe("repository > decrement method", () => {
 
         it("should accept string as input and decrement value", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -112,7 +111,7 @@ describe("repository > decrement method", () => {
 
         it("should return UpdateResult", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -131,7 +130,7 @@ describe("repository > decrement method", () => {
 
         it("should throw an error if column property path was not found", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -153,7 +152,7 @@ describe("repository > decrement method", () => {
 
         it("should throw an error if input value is not number", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -175,20 +174,19 @@ describe("repository > decrement method", () => {
     })
 
     describe("bigint", () => {
-        let connections: DataSource[]
-        before(
-            async () =>
-                (connections = await createTestingConnections({
-                    entities: [PostBigInt],
-                    enabledDrivers: ["mysql", "mariadb", "postgres"],
-                })),
-        )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [PostBigInt],
+                enabledDrivers: ["mysql", "mariadb", "postgres"],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should decrement value", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // save few dummy posts
                     const postBigInt1 = new PostBigInt()
                     postBigInt1.id = 1
@@ -238,19 +236,18 @@ describe("repository > decrement method", () => {
     })
 
     describe("embeded entities", () => {
-        let connections: DataSource[]
-        before(
-            async () =>
-                (connections = await createTestingConnections({
-                    entities: [UserWithEmbededEntity],
-                })),
-        )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [UserWithEmbededEntity],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should decrement value", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userWithEmbededEntity = new UserWithEmbededEntity()
                     userWithEmbededEntity.id = 1
                     await connection.manager.save([userWithEmbededEntity])

@@ -1,5 +1,5 @@
-import { TableUniqueOptions } from "../options/TableUniqueOptions"
-import { UniqueMetadata } from "../../metadata/UniqueMetadata"
+import type { TableUniqueOptions } from "../options/TableUniqueOptions"
+import type { UniqueMetadata } from "../../metadata/UniqueMetadata"
 
 /**
  * Database's table unique constraint stored in this class.
@@ -66,6 +66,7 @@ export class TableUnique {
 
     /**
      * Creates unique from the unique metadata object.
+     * @param uniqueMetadata
      */
     static create(uniqueMetadata: UniqueMetadata): TableUnique {
         return new TableUnique(<TableUniqueOptions>{

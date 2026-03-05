@@ -6,24 +6,23 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import { expect } from "chai"
 
 describe("entity-schema > columns > virtual column", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [<any>Activity],
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [<any>Activity],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should query virtual columns", () => {
         return Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Activity)
                 await repo.save({ id: 0, k1: 1 })
                 const result = (await repo.findOne({ where: { id: 0 } }))!

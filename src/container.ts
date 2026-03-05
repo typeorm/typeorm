@@ -1,6 +1,5 @@
 /**
  * Container options.
- *
  * @deprecated
  */
 export interface UseContainerOptions {
@@ -30,7 +29,6 @@ export interface ContainerInterface {
 /**
  * Container to be used by this library for inversion control. If container was not implicitly set then by default
  * container simply creates a new instance of the given class.
- *
  * @deprecated
  */
 const defaultContainer: ContainerInterface =
@@ -56,7 +54,8 @@ let userContainerOptions: UseContainerOptions | undefined
 
 /**
  * Sets container to be used by this library.
- *
+ * @param iocContainer
+ * @param options
  * @deprecated
  */
 export function useContainer(
@@ -69,7 +68,7 @@ export function useContainer(
 
 /**
  * Gets the IOC container used by this library.
- *
+ * @param someClass
  * @deprecated
  */
 export function getFromContainer<T>(someClass: ContainedType<T>): T {

@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
 import { Not, IsNull } from "../../../../src"
@@ -15,19 +15,18 @@ import { Photo } from "./entity/Photo"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > soft-delete", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should perform soft deletion and recovery correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
@@ -69,7 +68,7 @@ describe("query builder > soft-delete", () => {
 
     it("should soft-delete and restore properties inside embeds as well", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // save few photos
                 await connection.manager.save(Photo, {
                     url: "1.jpg",
@@ -151,7 +150,7 @@ describe("query builder > soft-delete", () => {
 
     it("should perform soft delete with limit correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.name = "Alex Messer"
                 const user2 = new User()
@@ -195,7 +194,7 @@ describe("query builder > soft-delete", () => {
 
     it("should perform restory with limit correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.name = "Alex Messer"
                 const user2 = new User()
@@ -240,7 +239,7 @@ describe("query builder > soft-delete", () => {
 
     it("should throw error when delete date column is missing", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new UserWithoutDeleteDate()
                 user.name = "Alex Messer"
 
@@ -276,7 +275,7 @@ describe("query builder > soft-delete", () => {
 
     it("should find with soft deleted relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const photoRepository = connection.getRepository(Photo)
                 const userRepository = connection.getRepository(User)
 

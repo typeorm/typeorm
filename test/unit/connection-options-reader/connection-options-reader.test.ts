@@ -2,7 +2,7 @@ import { expect } from "chai"
 import fs from "fs/promises"
 
 import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptionsReader"
-import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
+import type { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 
 describe("ConnectionOptionsReader", () => {
@@ -35,19 +35,6 @@ describe("ConnectionOptionsReader", () => {
         expect(options.entities).to.be.an.instanceOf(Array)
         const entities: EntititesList = options.entities as EntititesList
         expect(entities.length).to.equal(1)
-    })
-
-    it("properly loads sqlite in-memory/path config", async () => {
-        const connectionOptionsReader = new ConnectionOptionsReader({
-            root: __dirname,
-            configName: "configs/sqlite-memory",
-        })
-        const inmemoryOptions: DataSourceOptions =
-            await connectionOptionsReader.get("memory")
-        expect(inmemoryOptions.database).to.equal(":memory:")
-        const fileOptions: DataSourceOptions =
-            await connectionOptionsReader.get("file")
-        expect(fileOptions.database).to.have.string("/test")
     })
 
     it("properly loads config with specified file path", async () => {

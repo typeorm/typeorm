@@ -1,10 +1,11 @@
-import { And, DataSource, IsNull, LessThan, MoreThan, Not } from "../../../src"
+import type { DataSource } from "../../../src"
+import { And, IsNull, LessThan, MoreThan, Not } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { User } from "./entities/User"
+import { User } from "./entity/User"
 import { expect } from "chai"
 
 describe("github issues > #9316 specify how should interpret null and undefined values in conditions ", () => {

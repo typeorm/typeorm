@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource, EntityMetadata } from "../../../../src"
+import type { DataSource, EntityMetadata } from "../../../../src"
 import { IndexMetadata } from "../../../../src/metadata/IndexMetadata"
 import {
     closeTestingConnections,
@@ -11,19 +11,18 @@ import {
 import { Person } from "./entity/Person"
 
 describe("database schema > indices > reading index from entity and updating database", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create a non unique index with 2 columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("person")
                 await queryRunner.release()
@@ -41,7 +40,7 @@ describe("database schema > indices > reading index from entity and updating dat
 
     it("should update the index to be unique", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const entityMetadata = connection.entityMetadatas.find(
                     (x) => x.name === "Person",
                 )
@@ -78,7 +77,7 @@ describe("database schema > indices > reading index from entity and updating dat
 
     it("should update the index swapping the 2 columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const entityMetadata = connection.entityMetadatas.find(
                     (x) => x.name === "Person",
                 )

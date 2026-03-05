@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,19 +11,18 @@ import { prepareData } from "./find-options-test-utils"
 import { expect } from "chai"
 
 describe("find options > relations", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                __dirname,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("basic relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts1 = await connection
@@ -152,7 +151,7 @@ describe("find options > relations", () => {
 
     it("complex relation #1", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -275,7 +274,7 @@ describe("find options > relations", () => {
 
     it("complex relation #2", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -407,7 +406,7 @@ describe("find options > relations", () => {
 
     it("relation in embed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection

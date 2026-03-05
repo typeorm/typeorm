@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, QueryRunner } from "../../../src"
+import type { DataSource, QueryRunner } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -8,7 +8,7 @@ import {
 import { User } from "./entity/User"
 
 describe("github issues > #8273 Adding @Generated('uuid') doesn't update column default in PostgreSQL", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     const getColumnDefault = async (
         queryRunner: QueryRunner,
         columnName: string,
@@ -20,20 +20,19 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
         const res = await queryRunner.query(query)
         return res.length ? res[0]["column_default"] : null
     }
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-                entities: [User],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [User],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should add DEFAULT value when @Generated('increment') is added", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName("increment")!
@@ -62,7 +61,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
 
     it("should remove DEFAULT value when @Generated('increment') is removed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName(
@@ -96,7 +95,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
 
     it("should add DEFAULT value when @Generated('uuid') is added", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName("uuid")!
@@ -120,7 +119,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
 
     it("should remove DEFAULT value when @Generated('uuid') is removed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName("uuidWithGenerated")!

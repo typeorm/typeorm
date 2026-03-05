@@ -7,22 +7,21 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational with many > load many", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load relation entity of a given entity object", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.url = "image #1"
                 await connection.manager.save(image1)
@@ -76,7 +75,7 @@ describe("query builder > relational with many > load many", () => {
 
     it("should load relation entity of a given entity id map", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.url = "image #1"
                 await connection.manager.save(image1)
@@ -130,7 +129,7 @@ describe("query builder > relational with many > load many", () => {
 
     it("should load relation entity of a given entity id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.url = "image #1"
                 await connection.manager.save(image1)

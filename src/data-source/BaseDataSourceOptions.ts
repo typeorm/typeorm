@@ -1,11 +1,11 @@
-import { EntitySchema } from "../entity-schema/EntitySchema"
-import { LoggerOptions } from "../logger/LoggerOptions"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { DatabaseType } from "../driver/types/DatabaseType"
-import { Logger } from "../logger/Logger"
-import { DataSource } from "../data-source/DataSource"
-import { QueryResultCache } from "../cache/QueryResultCache"
-import { MixedList } from "../common/MixedList"
+import type { EntitySchema } from "../entity-schema/EntitySchema"
+import type { LoggerOptions } from "../logger/LoggerOptions"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { DatabaseType } from "../driver/types/DatabaseType"
+import type { Logger } from "../logger/Logger"
+import type { DataSource } from "../data-source/DataSource"
+import type { QueryResultCache } from "../cache/QueryResultCache"
+import type { MixedList } from "../common/MixedList"
 
 /**
  * BaseDataSourceOptions is set of DataSourceOptions shared by all database types.
@@ -19,7 +19,6 @@ export interface BaseDataSourceOptions {
     /**
      * Connection name. If connection name is not given then it will be called "default".
      * Different connections must have different names.
-     *
      * @deprecated
      */
     readonly name?: string
@@ -153,7 +152,6 @@ export interface BaseDataSourceOptions {
 
     /**
      * Holds reference to the baseDirectory where configuration file are expected.
-     *
      * @internal
      */
     baseDirectory?: string
@@ -179,7 +177,7 @@ export interface BaseDataSourceOptions {
               /**
                * Factory function for custom cache providers that implement QueryResultCache.
                */
-              readonly provider?: (connection: DataSource) => QueryResultCache
+              readonly provider?: (dataSource: DataSource) => QueryResultCache
 
               /**
                * Configurable table name for "database" type cache.

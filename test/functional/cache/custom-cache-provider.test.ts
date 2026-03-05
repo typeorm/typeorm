@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import { scheduler } from "timers/promises"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,24 +12,23 @@ import { User } from "./entity/User"
 import { MockQueryResultCache } from "./provider/MockQueryResultCache"
 
 describe("custom cache provider", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                cache: {
-                    provider(connection) {
-                        return new MockQueryResultCache(connection)
-                    },
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            cache: {
+                provider(connection) {
+                    return new MockQueryResultCache(connection)
                 },
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+            },
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be used instead of built-ins", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "spanner") {
                     return
                 }
@@ -47,7 +46,7 @@ describe("custom cache provider", () => {
 
     it("should cache results properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "spanner") {
                     return
                 }
@@ -115,7 +114,7 @@ describe("custom cache provider", () => {
 
     it("should cache results with pagination enabled properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "spanner") {
                     return
                 }
@@ -196,7 +195,7 @@ describe("custom cache provider", () => {
 
     it("should cache results with custom id and duration supplied", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "spanner") {
                     return
                 }
@@ -280,7 +279,7 @@ describe("custom cache provider", () => {
 
     it("should cache results with pagination enabled properly and custom id and loaded relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "spanner") {
                     return
                 }
@@ -334,7 +333,7 @@ describe("custom cache provider", () => {
 
     it("should cache results with `true` provided", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "spanner") {
                     return
                 }

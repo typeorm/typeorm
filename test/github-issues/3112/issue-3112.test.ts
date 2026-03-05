@@ -4,28 +4,27 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { User } from "./entity/User"
 describe("github issues > #3112 default:null should inserts nulls to database", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [User],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert null when no value specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const UserRepository = connection.manager.getRepository(User)
 
                 const user1 = new User()

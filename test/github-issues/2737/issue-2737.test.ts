@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -8,29 +8,28 @@ import {
 } from "../../utils/test-utils"
 
 describe("github issues > #2737 MySQLDriver findChangedColumns (fields: width, precision)", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                dropSchema: false,
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql", "mariadb", "aurora-mysql"],
-                schemaCreate: false,
-                cache: false,
-                driverSpecific: {
-                    bigNumberStrings: false,
-                },
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            dropSchema: false,
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "mariadb", "aurora-mysql"],
+            schemaCreate: false,
+            cache: false,
+            driverSpecific: {
+                bigNumberStrings: false,
+            },
+        })
+    })
 
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not create migrations for an existing unique index when bigNumberStrings is false", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const entityMetadata = connection.entityMetadatas.find(
                     (x) => x.name === "TestEntity",
                 )

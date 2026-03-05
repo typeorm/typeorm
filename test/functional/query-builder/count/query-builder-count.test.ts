@@ -3,27 +3,26 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Test } from "./entity/Test"
 import { AmbigiousPrimaryKey } from "./entity/AmbigiousPrimaryKey"
 
 describe("query builder > count", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Test, AmbigiousPrimaryKey],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Test, AmbigiousPrimaryKey],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("Count query should of empty table should be 0", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Test)
 
                 const count = await repo.count()
@@ -33,7 +32,7 @@ describe("query builder > count", () => {
 
     it("Count query should count database values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Test)
 
                 await repo.save({
@@ -54,7 +53,7 @@ describe("query builder > count", () => {
 
     it("Count query should handle ambiguous values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(AmbigiousPrimaryKey)
 
                 await repo.save({ a: "A", b: "AAA" })
@@ -71,7 +70,7 @@ describe("query builder > count", () => {
 
     it("counting joined query should count database values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Test)
 
                 await repo.save({
@@ -97,7 +96,7 @@ describe("query builder > count", () => {
 
     it("counting joined queries should handle ambiguous values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(AmbigiousPrimaryKey)
 
                 await repo.save({ a: "A", b: "AAA" })

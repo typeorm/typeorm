@@ -1,8 +1,8 @@
-import { Subject } from "../Subject"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { Subject } from "../Subject"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { Brackets } from "../../query-builder/Brackets"
 
@@ -22,6 +22,7 @@ export class MaterializedPathSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     * @param subject
      */
     async insert(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
@@ -61,6 +62,7 @@ export class MaterializedPathSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     * @param subject
      */
     async update(subject: Subject): Promise<void> {
         let newParent = subject.metadata.treeParentRelation!.getEntityValue(
@@ -172,6 +174,7 @@ export class MaterializedPathSubjectExecutor {
                     }
                 }),
             )
+            .withDeleted()
             .getRawOne()
             .then((result) => (result ? result["path"] : ""))
     }

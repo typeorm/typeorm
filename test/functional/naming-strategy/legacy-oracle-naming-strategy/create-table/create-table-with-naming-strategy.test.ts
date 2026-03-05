@@ -5,25 +5,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source"
+import type { DataSource } from "../../../../../src/data-source"
 import { LegacyOracleNamingStrategy } from "../../../../../src/naming-strategy/LegacyOracleNamingStrategy"
 
 describe("LegacyOracleNamingStrategy > create table using this naming strategy", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["oracle"],
-                namingStrategy: new LegacyOracleNamingStrategy("hash"),
-            })),
-    )
-    // without reloadTestingDatabases(connections) -> tables should be created later
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["oracle"],
+            namingStrategy: new LegacyOracleNamingStrategy("hash"),
+        })
+    })
+    // without reloadTestingDatabases(dataSources) -> tables should be created later
+    after(() => closeTestingConnections(dataSources))
 
     it("should create the table", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await expect(reloadTestingDatabases([connection])).to.be
                     .fulfilled
             }),

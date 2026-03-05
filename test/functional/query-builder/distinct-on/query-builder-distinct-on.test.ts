@@ -5,23 +5,22 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
 import { User } from "./entity/User"
 import { Post } from "./entity/Post"
 
 describe("query builder > distinct on", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const users = [
@@ -111,7 +110,7 @@ describe("query builder > distinct on", () => {
 
     it("should perform distinct on category authors", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const result = await connection.manager
@@ -128,7 +127,7 @@ describe("query builder > distinct on", () => {
 
     it("should perform distinct on post authors and moderators combination", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const result = await connection.manager
@@ -151,7 +150,7 @@ describe("query builder > distinct on", () => {
 
     it("should perform distinct on post and category authors", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const result = await connection.manager

@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
-import { DataSource } from "../../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { Counters } from "./entity/Counters"
@@ -13,20 +13,19 @@ import { User } from "./entity/User"
 import { Subcounters } from "./entity/Subcounters"
 
 describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("owner side", () => {
         it("should load ids when loadRelationIdAndMap used on embedded table and each table have primary key", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user1 = new User()
                     user1.id = 1
                     user1.name = "Alice"
@@ -199,7 +198,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
     describe("inverse side", () => {
         it("should load ids when loadRelationIdAndMap used on embedded table and each table have primary key", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.title = "About BMW"

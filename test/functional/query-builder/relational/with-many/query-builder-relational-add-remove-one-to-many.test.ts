@@ -7,22 +7,21 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational query builder > add operation > one to many relation", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should add entity relation of a given entity by entity objects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)
@@ -102,7 +101,7 @@ describe("query builder > relational query builder > add operation > one to many
 
     it("should add entity relation of a given entity by entity id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)
@@ -182,7 +181,7 @@ describe("query builder > relational query builder > add operation > one to many
 
     it("should add entity relation of a given entity by entity id map", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)
@@ -262,7 +261,7 @@ describe("query builder > relational query builder > add operation > one to many
 
     it("should add multiple entities into relation of a multiple entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)
@@ -345,7 +344,7 @@ describe("query builder > relational query builder > add operation > one to many
 
     it("should handle addAndRemove method as well", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)

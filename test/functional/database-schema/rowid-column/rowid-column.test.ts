@@ -3,24 +3,23 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 
 describe("database-schema > rowid-column", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["cockroachdb"],
-                dropSchema: true,
-                schemaCreate: true,
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["cockroachdb"],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should create `rowid` generated column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("person")
                 await queryRunner.release()

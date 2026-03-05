@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import {
@@ -14,13 +14,12 @@ describe("persistence > remove-topological-order", function () {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({ __dirname })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({ __dirname })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -28,7 +27,7 @@ describe("persistence > remove-topological-order", function () {
 
     it("should remove depend properties in a proper order", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some data
                 const category1 = new Category()
                 category1.name = "cat#1"

@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Order } from "./entity/Order"
 import { OrderCustomer } from "./entity/OrderCustomer"
@@ -13,23 +13,22 @@ import { Broker } from "./entity/Broker"
 import { BrokerRepository } from "./repository/BrokerRepository"
 
 describe("github issues > #3246 Saving an entity with a 1:1 cascading insert does not return id if entity has nullable many:one relationship", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Order, OrderCustomer, Broker],
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Order, OrderCustomer, Broker],
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert and return the order with id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const company = new Broker()
                 company.name = "Acme Inc."
 

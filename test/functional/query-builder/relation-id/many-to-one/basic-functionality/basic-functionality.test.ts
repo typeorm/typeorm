@@ -5,26 +5,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
-import { DataSource } from "../../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { Image } from "./entity/Image"
 import { PostCategory } from "./entity/PostCategory"
 
 describe("query builder > relation-id > many-to-one > basic-functionality", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load ids when loadRelationIdAndMap used", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -91,7 +90,7 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
 
     it("should load ids when loadRelationIdAndMap used and target entity has multiple primary keys", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category = new Category()
                 category.name = "cars"
                 await connection.manager.save(category)
@@ -126,7 +125,7 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
 
     it("should load ids when loadRelationIdAndMap used on nested relation and target entity has multiple primary keys", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category = new Category()
                 category.name = "cars"
                 await connection.manager.save(category)

@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -12,20 +12,19 @@ import { Subcounters } from "./entity/Subcounters"
 import { User } from "./entity/User"
 
 describe("embedded > embedded-many-to-many-case2", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("owner side", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.title = "About cars"
@@ -251,7 +250,7 @@ describe("embedded > embedded-many-to-many-case2", () => {
     describe("inverse side", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user1 = new User()
                     user1.id = 1
                     user1.name = "Alice"

@@ -27,9 +27,9 @@ strategic decisions that align with the needs and goals of TypeORM's ecosystem.
 
 To drive TypeORM forward, we'll introduce three core domains:
 
--   **Development**: Led by core developers with expertise across various database engines and adapters, this team will focus on TypeORM's architecture and ongoing technical maintenance and advancements.
--   **Operations**: Handling day-to-day needs, from documentation to sponsorship accounting, this team will keep the project running smoothly.
--   **Community**: Dedicated to engaging, moderating, and supporting our growing community, this team will foster collaboration through platforms like Discord.
+- **Development**: Led by core developers with expertise across various database engines and adapters, this team will focus on TypeORM's architecture and ongoing technical maintenance and advancements.
+- **Operations**: Handling day-to-day needs, from documentation to sponsorship accounting, this team will keep the project running smoothly.
+- **Community**: Dedicated to engaging, moderating, and supporting our growing community, this team will foster collaboration through platforms like Discord.
 
 ## Scaling Sponsorships and Full-Time Development
 

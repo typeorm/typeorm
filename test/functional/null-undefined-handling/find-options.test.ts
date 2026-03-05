@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource, TypeORMError } from "../../../src"
+import type { DataSource } from "../../../src"
+import { TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,18 +12,18 @@ import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("find options > null and undefined handling", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     describe("with default behavior", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         async function prepareData(connection: DataSource) {
             const category1 = new Category()
@@ -54,7 +55,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should skip null properties by default", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
 
                     // Test with QueryBuilder
@@ -91,7 +92,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should skip undefined properties by default", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
 
                     // Test with QueryBuilder
@@ -126,7 +127,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should skip null relation properties by default", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
 
                     // Test with QueryBuilder
@@ -160,7 +161,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should skip undefined relation properties by default", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
 
                     // Test with QueryBuilder
@@ -193,7 +194,7 @@ describe("find options > null and undefined handling", () => {
 
     describe("with invalidWhereValuesBehavior.null set to 'sql-null'", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -205,8 +206,8 @@ describe("find options > null and undefined handling", () => {
             })
         })
 
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         async function prepareData(connection: DataSource) {
             const category1 = new Category()
@@ -228,7 +229,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should transform JS null to SQL NULL when invalidWhereValuesBehavior.null is 'sql-null'", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
 
                     // Test QueryBuilder with null text
@@ -269,7 +270,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should transform JS null to SQL NULL for relations when invalidWhereValuesBehavior.null is 'sql-null'", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
 
                     // Test QueryBuilder with null relation
@@ -324,7 +325,7 @@ describe("find options > null and undefined handling", () => {
 
     describe("with invalidWhereValuesBehavior.undefined set to 'throw'", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -336,11 +337,11 @@ describe("find options > null and undefined handling", () => {
             })
         })
 
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should throw an error when undefined is encountered and invalidWhereValuesBehavior.undefined is 'throw'", async () => {
-            for (const connection of connections) {
+            for (const connection of dataSources) {
                 try {
                     await connection
                         .createQueryBuilder(Post, "post")
@@ -388,7 +389,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should throw an error when undefined is encountered in relations and invalidWhereValuesBehavior.undefined is 'throw'", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     try {
                         await connection
                             .createQueryBuilder(Post, "post")
@@ -438,7 +439,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should not throw when a property is not provided", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // Create test data
                     const category = new Category()
                     category.name = "Category #1"
@@ -487,7 +488,7 @@ describe("find options > null and undefined handling", () => {
 
     describe("with both invalidWhereValuesBehavior options enabled", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -500,8 +501,8 @@ describe("find options > null and undefined handling", () => {
             })
         })
 
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         async function prepareData(connection: DataSource) {
             const category1 = new Category()
@@ -523,7 +524,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should handle both null and undefined correctly", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
 
                     // Test null handling for text
@@ -610,7 +611,7 @@ describe("find options > null and undefined handling", () => {
 
     describe("with invalidWhereValuesBehavior.null set to 'throw'", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -622,11 +623,11 @@ describe("find options > null and undefined handling", () => {
             })
         })
 
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should throw an error when null is encountered and invalidWhereValuesBehavior.null is 'throw'", async () => {
-            for (const connection of connections) {
+            for (const connection of dataSources) {
                 try {
                     await connection
                         .createQueryBuilder(Post, "post")
@@ -676,7 +677,7 @@ describe("find options > null and undefined handling", () => {
 
         it("should throw an error when null is encountered in relations and invalidWhereValuesBehavior.null is 'throw'", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     try {
                         await connection
                             .createQueryBuilder(Post, "post")

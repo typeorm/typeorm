@@ -5,25 +5,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
-import { DataSource } from "../../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Image } from "./entity/Image"
 
 describe("query builder > relation-id > one-to-many > basic-functionality", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load id when loadRelationIdAndMap used with OneToMany relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -80,7 +79,7 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
 
     it("should load id when loadRelationIdAndMap used with additional condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -152,7 +151,7 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
 
     it("should load id when loadRelationIdAndMap used on nested relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.name = "Image #1"
                 await connection.manager.save(image1)

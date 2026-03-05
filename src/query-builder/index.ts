@@ -6,6 +6,9 @@ import { SelectQueryBuilder } from "./SelectQueryBuilder"
 import { SoftDeleteQueryBuilder } from "./SoftDeleteQueryBuilder"
 import { UpdateQueryBuilder } from "./UpdateQueryBuilder"
 
+/**
+ *
+ */
 export function registerQueryBuilders() {
     QueryBuilder.registerQueryBuilderClass(
         "DeleteQueryBuilder",

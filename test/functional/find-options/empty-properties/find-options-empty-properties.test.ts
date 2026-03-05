@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,13 +9,12 @@ import {
 import { Post } from "./entity/Post"
 
 describe("find options > where", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({ __dirname })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({ __dirname })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const post1 = new Post()
@@ -31,7 +30,7 @@ describe("find options > where", () => {
 
     it("should skip undefined properties", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const posts = await connection
@@ -55,7 +54,7 @@ describe("find options > where", () => {
 
     it("should skip null properties", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const posts1 = await connection

@@ -1,7 +1,7 @@
-import { ColumnType } from "../driver/types/ColumnTypes"
-import { ValueTransformer } from "../decorator/options/ValueTransformer"
-import { SpatialColumnOptions } from "../decorator/options/SpatialColumnOptions"
-import { EntitySchemaColumnForeignKeyOptions } from "./EntitySchemaColumnForeignKeyOptions"
+import type { ColumnType } from "../driver/types/ColumnTypes"
+import type { ValueTransformer } from "../decorator/options/ValueTransformer"
+import type { SpatialColumnOptions } from "../decorator/options/SpatialColumnOptions"
+import type { EntitySchemaColumnForeignKeyOptions } from "./EntitySchemaColumnForeignKeyOptions"
 
 export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     /**
@@ -66,12 +66,6 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     length?: string | number
 
     /**
-     * Column type's display width. Used only on some column types in MySQL.
-     * For example, INT(4) specifies an INT with a display width of four digits.
-     */
-    width?: number
-
-    /**
      * Indicates if column's value can be set to NULL.
      */
     nullable?: boolean
@@ -80,10 +74,8 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * Indicates if column value is not updated by "save" operation.
      * It means you'll be able to write this value only when you first time insert the object.
      * Default value is "false".
-     *
      * @deprecated Please use the `update` option instead.  Careful, it takes
      * the opposite value to readonly.
-     *
      */
     readonly?: boolean
 
@@ -156,12 +148,6 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     scale?: number
 
     /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-     */
-    zerofill?: boolean
-
-    /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
      */
     unsigned?: boolean
@@ -229,7 +215,7 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
-     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     * @see https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
     query?: (alias: string) => string
 }

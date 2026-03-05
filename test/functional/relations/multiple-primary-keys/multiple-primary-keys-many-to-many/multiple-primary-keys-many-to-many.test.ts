@@ -5,26 +5,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { Tag } from "./entity/Tag"
 
 describe("relations > multiple-primary-keys > many-to-many", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("owning side", () => {
         it("should load related entity when JoinTable used without options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -98,7 +97,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when JoinTable used with options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -186,7 +185,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when JoinTable references with non-primary columns", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -294,7 +293,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinTable used without options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -370,7 +369,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinTable used with options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -462,7 +461,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinTable references with non-primary columns", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -573,7 +572,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
     describe("inverse side", () => {
         it("should load related entity when JoinTable used without options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.title = "About BMW"
                     await connection.manager.save(post1)
@@ -629,7 +628,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when JoinTable used with options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.title = "About BMW"
                     await connection.manager.save(post1)
@@ -699,7 +698,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when JoinTable references with non-primary columns", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.title = "About BMW"
                     await connection.manager.save(post1)
@@ -779,7 +778,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinTable used without options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
@@ -860,7 +859,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinTable used with options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
@@ -945,7 +944,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinTable references with non-primary columns", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"

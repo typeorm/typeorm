@@ -4,26 +4,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("transaction > transaction with full isolation support", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql", "mssql", "postgres", "sap"], // todo: for some reasons mariadb tests are not passing here
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "mssql", "postgres", "sap"], // todo: for some reasons mariadb tests are not passing here
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should execute all operations in a single transaction with READ UNCOMMITTED isolation level", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // SAP does not support READ UNCOMMITTED isolation level
                 if (connection.driver.options.type === "sap") return
 
@@ -68,7 +67,7 @@ describe("transaction > transaction with full isolation support", () => {
 
     it("should execute all operations in a single transaction with READ COMMITTED isolation level", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
@@ -110,7 +109,7 @@ describe("transaction > transaction with full isolation support", () => {
 
     it("should execute all operations in a single transaction with REPEATABLE READ isolation level", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
@@ -152,7 +151,7 @@ describe("transaction > transaction with full isolation support", () => {
 
     it("should execute all operations in a single transaction with SERIALIZABLE isolation level", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 

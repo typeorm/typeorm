@@ -1,10 +1,10 @@
-import { EntityMetadata } from "./EntityMetadata"
-import { IndexMetadataArgs } from "../metadata-args/IndexMetadataArgs"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { ColumnMetadata } from "./ColumnMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { IndexMetadataArgs } from "../metadata-args/IndexMetadataArgs"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
 import { TypeORMError } from "../error"
-import { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
+import type { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
 
 /**
  * Index metadata contains all information about table's index.
@@ -198,6 +198,7 @@ export class IndexMetadata {
     /**
      * Builds some depend index properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
         if (this.synchronize === false) {

@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
-import { DataSource } from "../../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Student } from "./entity/Student"
 import { Teacher } from "./entity/Teacher"
 import { Accountant } from "./entity/Accountant"
@@ -15,20 +15,19 @@ import { Specialization } from "./entity/Specialization"
 import { Department } from "./entity/Department"
 
 describe("table-inheritance > single-table > relations > many-to-many", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("owner side", () => {
         it("should work correctly with ManyToMany relations", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // -------------------------------------------------------------------------
                     // Create
                     // -------------------------------------------------------------------------
@@ -279,7 +278,7 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
     describe("inverse side", () => {
         it("should work correctly with ManyToMany relations", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // -------------------------------------------------------------------------
                     // Create
                     // -------------------------------------------------------------------------

@@ -1,14 +1,14 @@
-import { JoinOptions } from "./JoinOptions"
-import { FindOptionsWhere } from "./FindOptionsWhere"
-import {
+import type { JoinOptions } from "./JoinOptions"
+import type { FindOptionsWhere } from "./FindOptionsWhere"
+import type {
     FindOptionsSelect,
     FindOptionsSelectByString,
 } from "./FindOptionsSelect"
-import {
+import type {
     FindOptionsRelationByString,
     FindOptionsRelations,
 } from "./FindOptionsRelations"
-import { FindOptionsOrder } from "./FindOptionsOrder"
+import type { FindOptionsOrder } from "./FindOptionsOrder"
 
 /**
  * Defines a special criteria to find specific entity.
@@ -47,7 +47,6 @@ export interface FindOneOptions<Entity = any> {
 
     /**
      * Specifies what relations should be loaded.
-     *
      * @deprecated
      */
     join?: JoinOptions

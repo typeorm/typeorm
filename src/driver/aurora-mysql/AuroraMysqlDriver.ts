@@ -1,28 +1,28 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source"
 import { TypeORMError } from "../../error"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { View } from "../../schema-builder/view/View"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
+import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { UpsertType } from "../types/UpsertType"
-import { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
-import { AuroraMysqlConnectionOptions } from "./AuroraMysqlConnectionOptions"
+import type { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
+import type { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
+import type { AuroraMysqlDataSourceOptions } from "./AuroraMysqlDataSourceOptions"
 import { AuroraMysqlQueryRunner } from "./AuroraMysqlQueryRunner"
 
 /**
@@ -60,7 +60,7 @@ export class AuroraMysqlDriver implements Driver {
     /**
      * Connection options.
      */
-    options: AuroraMysqlConnectionOptions
+    options: AuroraMysqlDataSourceOptions
 
     /**
      * Database name used to perform all write queries.
@@ -89,7 +89,6 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://www.tutorialspoint.com/mysql/mysql-data-types.htm
      * @see https://dev.mysql.com/doc/refman/8.0/en/data-types.html
      */
@@ -276,13 +275,6 @@ export class AuroraMysqlDriver implements Driver {
         time: { precision: 0 },
         datetime: { precision: 0 },
         timestamp: { precision: 0 },
-        bit: { width: 1 },
-        int: { width: 11 },
-        integer: { width: 11 },
-        tinyint: { width: 4 },
-        smallint: { width: 6 },
-        mediumint: { width: 9 },
-        bigint: { width: 20 },
     }
 
     /**
@@ -301,7 +293,7 @@ export class AuroraMysqlDriver implements Driver {
 
     constructor(connection: DataSource) {
         this.connection = connection
-        this.options = connection.options as AuroraMysqlConnectionOptions
+        this.options = connection.options as AuroraMysqlDataSourceOptions
 
         // load mysql package
         this.loadDependencies()
@@ -369,6 +361,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new AuroraMysqlQueryRunner(
@@ -389,6 +382,9 @@ export class AuroraMysqlDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
+     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
@@ -435,6 +431,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return "`" + columnName + "`"
@@ -443,6 +440,9 @@ export class AuroraMysqlDriver implements Driver {
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -460,6 +460,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -513,6 +514,8 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -565,6 +568,8 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -633,6 +638,11 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type: ColumnType
@@ -686,6 +696,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -731,6 +742,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.indices.some(
@@ -743,6 +755,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -767,6 +780,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -774,8 +788,6 @@ export class AuroraMysqlDriver implements Driver {
         // used 'getColumnLength()' method, because MySQL requires column length for `varchar`, `nvarchar` and `varbinary` data types
         if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`
-        } else if (column.width) {
-            type += `(${column.width})`
         } else if (
             column.precision !== null &&
             column.precision !== undefined &&
@@ -855,6 +867,9 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
+     * @param entityIndex
      */
     createGeneratedMap(
         metadata: EntityMetadata,
@@ -890,6 +905,8 @@ export class AuroraMysqlDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -900,29 +917,6 @@ export class AuroraMysqlDriver implements Driver {
                 (c) => c.name === columnMetadata.databaseName,
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
-
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
-            // console.log("width:", tableColumn.width, columnMetadata.width);
-            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("zerofill:", tableColumn.zerofill, columnMetadata.zerofill);
-            // console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
-            // console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
-            // console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
-            // console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
-            // console.log("default:", tableColumn.default, columnMetadata.default);
-            // console.log("enum:", tableColumn.enum, columnMetadata.enum);
-            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
-            // console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
-            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
-            // console.log("==========================================");
 
             let columnMetadataLength = columnMetadata.length
             if (
@@ -937,10 +931,8 @@ export class AuroraMysqlDriver implements Driver {
                 tableColumn.name !== columnMetadata.databaseName ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadataLength ||
-                tableColumn.width !== columnMetadata.width ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                tableColumn.zerofill !== columnMetadata.zerofill ||
                 tableColumn.unsigned !== columnMetadata.unsigned ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
@@ -990,6 +982,8 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return "?"
@@ -1015,9 +1009,11 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     * @param options
+     * @param credentials
      */
     protected createConnectionOptions(
-        options: AuroraMysqlConnectionOptions,
+        options: AuroraMysqlDataSourceOptions,
         credentials: AuroraMysqlConnectionCredentialsOptions,
     ): Promise<any> {
         credentials = Object.assign(
@@ -1051,6 +1047,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     * @param connectionOptions
      */
     protected async createPool(connectionOptions: any): Promise<any> {
         return {}
@@ -1058,6 +1055,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Attaches all required base handlers to a database connection, such as the unhandled error handler.
+     * @param connection
      */
     private prepareDbConnection(connection: any): any {
         const { logger } = this.connection
@@ -1078,6 +1076,8 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
+     * @param columnMetadataValue
+     * @param databaseValue
      */
     protected compareDefaultValues(
         columnMetadataValue: string | undefined,
@@ -1098,6 +1098,7 @@ export class AuroraMysqlDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment

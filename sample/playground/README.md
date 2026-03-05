@@ -9,10 +9,10 @@ Steps to run this project:
 
 This is an ESM (ECMAScript Modules) example using TypeORM with SQLite. It demonstrates:
 
--   ESM module usage
--   Modern async/await patterns
--   Proper database connection handling with cleanup
--   TypeScript decorators and entity definitions
+- ESM module usage
+- Modern async/await patterns
+- Proper database connection handling with cleanup
+- TypeScript decorators and entity definitions
 
 The example uses `sql.js` as the database driver, which creates an in-memory SQLite database.
 
@@ -33,10 +33,10 @@ npm run typeorm
 
 When you run `npm start`, the application will:
 
--   Initialize an in-memory SQLite database
--   Create the User table with columns for id, firstName, lastName, email, and isActive
--   Insert a sample user (John Doe)
--   Retrieve and display the user data
+- Initialize an in-memory SQLite database
+- Create the User table with columns for id, firstName, lastName, email, and isActive
+- Insert a sample user (John Doe)
+- Retrieve and display the user data
 
 ## Project Structure
 

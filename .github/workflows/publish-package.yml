@@ -1,28 +1,147 @@
 name: Publish Package to npmjs
+
+# Single workflow file: Trusted Publishing only supports one workflow file per package.
+
 on:
   release:
     types:
       - published
+  schedule:
+    - cron: "0 2 * * *" # Nightly at 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      publish_type:
+        description: "Type of publish"
+        required: true
+        type: choice
+        options:
+          - release
+          - master-nightly
+          - v0.3-nightly
+
+concurrency:
+  group: publish-package
+  cancel-in-progress: false
 
 jobs:
-  publish:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Determine publish matrix
+        id: set-matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUBLISH_TYPE: ${{ inputs.publish_type }}
+        run: |
+          if [ "$EVENT_NAME" == "release" ]; then
+            echo 'matrix=["release"]' >> $GITHUB_OUTPUT
+          elif [ "$EVENT_NAME" == "schedule" ]; then
+            echo 'matrix=["master-nightly", "v0.3-nightly"]' >> $GITHUB_OUTPUT
+          else
+            echo "matrix=[\"$PUBLISH_TYPE\"]" >> $GITHUB_OUTPUT
+          fi
+
+  publish:
+    needs: setup
+    runs-on: ubuntu-latest
+    environment: npm
     permissions:
       contents: read
       id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        type: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
         with:
-          node-version: 20
-          registry-url: "https://registry.npmjs.org"
+          ref: ${{ matrix.type == 'v0.3-nightly' && 'v0.3' || matrix.type == 'master-nightly' && 'master' || '' }}
+          fetch-depth: ${{ matrix.type == 'release' && 1 || 0 }}
+
+      - name: Check for new commits
+        id: commit_check
+        if: matrix.type != 'release'
+        env:
+          MATRIX_TYPE: ${{ matrix.type }}
+        run: |
+          COMMITS=$(git rev-list --count --since="24 hours" HEAD)
+          echo "Commits in last 24h: $COMMITS"
+          echo "dist_tag=${MATRIX_TYPE%-nightly}" >> $GITHUB_OUTPUT
+          if [ "$COMMITS" -eq 0 ]; then
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
+
+      # registry-url is deliberately omitted: with Trusted Publishing, the npm
+      # CLI handles OIDC auth automatically. Setting registry-url would create
+      # an .npmrc with an empty auth token placeholder that blocks the OIDC flow.
+      - uses: actions/setup-node@v6
+        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
+        with:
+          node-version: 22
           cache: "pnpm"
 
-      - run: pnpm install
-      - run: pnpm run package
-      - run: |
+      - name: Update npm
+        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
+        run: pnpm install
+
+      - name: Build package
+        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
+        run: pnpm run package
+
+      # The gulp package task copies the root package.json into build/package.
+      # Dev-only fields like "prepare" (husky), "scripts", and "devEngines"
+      # cause publish to fail since their dependencies aren't installed there.
+      - name: Clean built package.json
+        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
+        run: |
+          node -e "
+            const pkg = require('./build/package/package.json');
+            delete pkg.scripts;
+            delete pkg.devDependencies;
+            delete pkg.devEngines;
+            delete pkg.private;
+            require('fs').writeFileSync('./build/package/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Set nightly version
+        if: matrix.type != 'release' && steps.commit_check.outputs.should_publish == 'true'
+        run: |
           cd build/package
-          pnpm publish --provenance --access public
+          node -e "
+            const pkg = require('./package.json');
+            const base = pkg.version.replace(/-.*/, '');
+            const [major, minor, patch] = base.split('.').map(Number);
+            const hasPrerelease = pkg.version.includes('-');
+            pkg.version = major + '.' + minor + '.' + (hasPrerelease ? patch : patch + 1) + '-nightly.' + new Date().toISOString().slice(0,10).replace(/-/g, '');
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log('Publishing nightly version: ' + pkg.version);
+          "
+
+      - name: Publish (release)
+        if: matrix.type == 'release'
+        run: |
+          cd build/package
+          pnpm publish --provenance --access public --no-git-checks
+
+      - name: Publish (nightly)
+        if: matrix.type != 'release' && steps.commit_check.outputs.should_publish == 'true'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DIST_TAG: ${{ steps.commit_check.outputs.dist_tag }}
+        run: |
+          cd build/package
+          pnpm publish --provenance --access public --no-git-checks --tag "$DIST_TAG"
+
+      - name: Skip publish (no new commits)
+        if: matrix.type != 'release' && steps.commit_check.outputs.should_publish == 'false'
+        run: echo "No new commits in last 24 hours – skipping ${{ matrix.type }} publish."

@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,20 +11,19 @@ import {
 import { User } from "./entity/User"
 
 describe("query builder > insert/update/delete returning", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mssql", "postgres", "spanner"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mssql", "postgres", "spanner"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create and perform an INSERT statement, including RETURNING or OUTPUT clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Tim Merrison"
 
@@ -63,7 +62,7 @@ describe("query builder > insert/update/delete returning", () => {
 
     it("should create and perform an UPDATE statement, including RETURNING or OUTPUT clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Tim Merrison"
 
@@ -105,7 +104,7 @@ describe("query builder > insert/update/delete returning", () => {
 
     it("should create and perform a DELETE statement, including RETURNING or OUTPUT clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Tim Merrison"
 

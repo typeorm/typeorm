@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
 import { Item } from "../entity/item.entity"
 import { Config } from "../entity/config.entity"
 

@@ -4,26 +4,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 import { MoreThan } from "../../../../src"
 
 describe("query builder > insert > merge into", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["oracle", "mssql", "sap"], // since on merge into statement is only supported in oracle, mssql and sap hana
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["oracle", "mssql", "sap"], // since on merge into statement is only supported in oracle, mssql and sap hana
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should perform insertion correctly using orIgnore", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
@@ -68,7 +67,7 @@ describe("query builder > insert > merge into", () => {
 
     it("should perform insertion correctly using orUpdate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
@@ -142,7 +141,7 @@ describe("query builder > insert > merge into", () => {
 
     it("should perform insertion using overwrite condition and skipping update on no change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
@@ -187,7 +186,7 @@ describe("query builder > insert > merge into", () => {
 
     it("should throw error if using indexPredicate and an unsupported driver", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (
                     !connection.driver.supportedUpsertTypes.includes(
                         "on-duplicate-key-update",

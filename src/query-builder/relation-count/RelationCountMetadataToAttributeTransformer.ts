@@ -1,5 +1,5 @@
-import { QueryExpressionMap } from "../QueryExpressionMap"
-import { RelationCountMetadata } from "../../metadata/RelationCountMetadata"
+import type { QueryExpressionMap } from "../QueryExpressionMap"
+import type { RelationCountMetadata } from "../../metadata/RelationCountMetadata"
 import { RelationCountAttribute } from "./RelationCountAttribute"
 
 export class RelationCountMetadataToAttributeTransformer {

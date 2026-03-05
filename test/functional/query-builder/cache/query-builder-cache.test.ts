@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import { scheduler } from "timers/promises"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,26 +10,25 @@ import {
 import { User } from "./entity/User"
 
 describe("query builder > cache", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                cache: true,
-                // cache: {
-                //     type: "redis",
-                //     options: {
-                //         host: "localhost",
-                //     }
-                // }
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            cache: true,
+            // cache: {
+            //     type: "redis",
+            //     options: {
+            //         host: "localhost",
+            //     }
+            // }
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should cache results properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
@@ -94,7 +93,7 @@ describe("query builder > cache", () => {
 
     it("should cache results with pagination enabled properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
@@ -171,7 +170,7 @@ describe("query builder > cache", () => {
 
     it("should cache results with custom id and duration supplied", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
@@ -251,7 +250,7 @@ describe("query builder > cache", () => {
 
     it("should cache results with `true` provided", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"

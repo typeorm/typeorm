@@ -1,4 +1,4 @@
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -9,21 +9,14 @@ import { expect } from "chai"
 
 describe("github issues > #8485 second migration is generated for a combination of PrimaryColumn and JoinColumn", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User, UserProfile],
-                enabledDrivers: [
-                    "mariadb",
-                    "mysql",
-                    "oracle",
-                    "postgres",
-                    "sap",
-                ],
-                dropSchema: true,
-                schemaCreate: false,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User, UserProfile],
+            enabledDrivers: ["mariadb", "mysql", "oracle", "postgres", "sap"],
+            dropSchema: true,
+            schemaCreate: false,
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should not create second migration", () =>
