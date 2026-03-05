@@ -18,7 +18,9 @@ describe("persistence > one-to-one", function () {
     before(() => {
         return createTestingConnections({
             entities: [User, AccessToken],
-        }).then((all) => (dataSources = all))
+        }).then((all) => {
+            dataSources = all
+        })
     })
     after(() => closeTestingConnections(dataSources))
     beforeEach(() => reloadTestingDatabases(dataSources))
