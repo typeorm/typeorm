@@ -10,12 +10,11 @@ import { Post } from "./model/Post"
 
 describe("entity schemas > target option", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [PostEntity],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [PostEntity],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

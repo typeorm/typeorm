@@ -9,15 +9,14 @@ import { Role, User } from "./entity/UserEntity"
 
 describe("github issues > #5275 Enums with spaces are not converted properly.", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

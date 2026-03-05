@@ -16,10 +16,9 @@ import { PostEmbedded } from "./entity/PostEmbedded"
 
 describe("persistence > entity updation", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({ __dirname })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({ __dirname })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

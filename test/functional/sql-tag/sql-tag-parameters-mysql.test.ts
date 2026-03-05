@@ -10,13 +10,12 @@ import type { DataSource } from "../../../src"
 
 describe("sql tag parameters (mysql)", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [MysqlExample],
-                enabledDrivers: ["mysql", "mariadb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [MysqlExample],
+            enabledDrivers: ["mysql", "mariadb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

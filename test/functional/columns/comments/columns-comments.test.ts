@@ -10,14 +10,13 @@ import { Test } from "./entity/Test"
 
 describe("columns > comments", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Test],
-                // Only supported on cockroachdb, mysql, postgres, and sap
-                enabledDrivers: ["cockroachdb", "mysql", "postgres", "sap"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Test],
+            // Only supported on cockroachdb, mysql, postgres, and sap
+            enabledDrivers: ["cockroachdb", "mysql", "postgres", "sap"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

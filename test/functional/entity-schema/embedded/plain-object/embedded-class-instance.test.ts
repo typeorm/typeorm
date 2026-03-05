@@ -9,12 +9,11 @@ import { expect } from "chai"
 
 describe("entity-schema > embedded - plain-object", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [UserEntitySchema],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [UserEntitySchema],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 

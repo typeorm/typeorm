@@ -10,15 +10,14 @@ import { expect } from "chai"
 
 describe("github issues > #8370 Add support for Postgres GENERATED ALWAYS AS IDENTITY", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User],
-                schemaCreate: false,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            schemaCreate: false,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should produce proper SQL for creating a column with `BY DEFAULT` identity column", () =>

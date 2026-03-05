@@ -7,15 +7,14 @@ import { Test } from "./entity/Test"
 
 describe("github issues > #2333 datetime column showing changed on every schema:sync run", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["mysql", "mariadb"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [Test],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["mysql", "mariadb"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [Test],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>

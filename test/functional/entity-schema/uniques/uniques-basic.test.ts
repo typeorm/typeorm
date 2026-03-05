@@ -11,12 +11,11 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("entity-schema > uniques", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [<any>PersonSchema],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [<any>PersonSchema],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

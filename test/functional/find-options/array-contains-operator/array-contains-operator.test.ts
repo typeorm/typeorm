@@ -10,13 +10,12 @@ import { Post, PostStatus } from "./entity/Post"
 
 describe("find options > find operators > ArrayContains", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-                enabledDrivers: ["postgres", "cockroachdb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            enabledDrivers: ["postgres", "cockroachdb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -10,14 +10,13 @@ import { User } from "./entity/user"
 
 describe("github issues > #3685 Brackets syntax failed when use where with object literal", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                dropSchema: true,
-                schemaCreate: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => dataSources && closeTestingConnections(dataSources))
 
