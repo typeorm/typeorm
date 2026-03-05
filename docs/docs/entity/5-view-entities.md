@@ -11,6 +11,7 @@ You can create a view entity by defining a new class and mark it with `@ViewEnti
 - `database` - database name in selected DB server.
 - `schema` - schema name.
 - `expression` - view definition. **Required parameter**.
+- `materialized` - Indicates if the view is materialized. Supported by `PostgreSQL` and `CockroachDB`.
 - `dependsOn` - List of other views on which the current views depends. If your view uses another view in its definition, you can add it here so that [migrations](../migrations/01-why.md) are generated in the correct order.
 
 `expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
@@ -149,7 +150,7 @@ List of available options in `ViewColumnOptions`:
 
 ## Materialized View Indices
 
-There's support for creation of indices for materialized views if using `PostgreSQL`.
+There's support for creation of indices for materialized views if using `PostgreSQL` or `CockroachDB`.
 
 ```typescript
 @ViewEntity({
