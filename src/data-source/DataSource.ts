@@ -3,7 +3,6 @@ import { registerQueryBuilders } from "../query-builder"
 import type { Repository } from "../repository/Repository"
 import type { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
 import type { EntityTarget } from "../common/EntityTarget"
-import type { ObjectType } from "../common/ObjectType"
 import type { EntityManager } from "../entity-manager/EntityManager"
 import { DefaultNamingStrategy } from "../naming-strategy/DefaultNamingStrategy"
 import {
@@ -466,15 +465,6 @@ export class DataSource {
             )
 
         return this.manager.getRepository(target) as any
-    }
-
-    /**
-     * Gets custom entity repository marked with `@EntityRepository` decorator.
-     * @param customRepository
-     * @deprecated use Repository.extend function to create a custom repository
-     */
-    getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        return this.manager.getCustomRepository(customRepository)
     }
 
     /**

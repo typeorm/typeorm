@@ -7,7 +7,6 @@ import {
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
-import { PostRepository } from "./repository/PostRepository"
 
 describe("transaction > single query runner", () => {
     let dataSources: DataSource[]
@@ -38,11 +37,6 @@ describe("transaction > single query runner", () => {
                         transactionalEntityManager
                             .getRepository(Post)
                             .manager.should.be.equal(transactionalEntityManager)
-
-                        transactionalEntityManager
-                            .getCustomRepository(PostRepository)
-                            .getManager()
-                            .should.be.equal(transactionalEntityManager)
                     },
                 )
             }),

@@ -112,3 +112,33 @@ Glob patterns are now handled by `tinyglobby` instead of `glob`. While `tinyglob
 `DataSource` replaced `Connection` in v0.3 to provide a better meaning to the abstract concept represented by this class. For backwards compatibility, `Connection` was kept as an alias to `DataSource`, now this alias was removed. Similarly, `ConnectionOptions` is now `DataSourceOptions`.
 
 In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
+
+### `AbstractRepository`, `@EntityRepository`, and `getCustomRepository`
+
+The `AbstractRepository` class, `@EntityRepository` decorator, and `getCustomRepository()` method have been removed. These were deprecated in v0.3 in favor of `Repository.extend()`.
+
+Before:
+
+```typescript
+@EntityRepository(User)
+class UserRepository extends AbstractRepository<User> {
+    findByName(name: string) {
+        return this.repository.findOneBy({ name })
+    }
+}
+
+// Usage
+const userRepo = dataSource.getCustomRepository(UserRepository)
+```
+
+After:
+
+```typescript
+const UserRepository = dataSource.getRepository(User).extend({
+    findByName(name: string) {
+        return this.findOneBy({ name })
+    },
+})
+```
+
+The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
