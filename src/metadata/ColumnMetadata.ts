@@ -10,6 +10,7 @@ import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
 import type { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
 
 /**
@@ -802,7 +803,7 @@ export class ColumnMetadata {
                         relatedEntity &&
                         ObjectUtils.isObject(relatedEntity) &&
                         !InstanceChecker.isFindOperator(relatedEntity) &&
-                        !Buffer.isBuffer(relatedEntity)
+                        !isUint8Array(relatedEntity)
                     ) {
                         value =
                             this.referencedColumn.getEntityValue(relatedEntity)
@@ -814,7 +815,7 @@ export class ColumnMetadata {
                         !InstanceChecker.isFindOperator(
                             embeddedObject[this.propertyName],
                         ) &&
-                        !Buffer.isBuffer(embeddedObject[this.propertyName]) &&
+                        !isUint8Array(embeddedObject[this.propertyName]) &&
                         !(embeddedObject[this.propertyName] instanceof Date)
                     ) {
                         value = this.referencedColumn.getEntityValue(
@@ -843,7 +844,7 @@ export class ColumnMetadata {
                     ObjectUtils.isObject(relatedEntity) &&
                     !InstanceChecker.isFindOperator(relatedEntity) &&
                     !(typeof relatedEntity === "function") &&
-                    !Buffer.isBuffer(relatedEntity)
+                    !isUint8Array(relatedEntity)
                 ) {
                     value = this.referencedColumn.getEntityValue(relatedEntity)
                 } else if (
@@ -853,7 +854,7 @@ export class ColumnMetadata {
                         entity[this.propertyName],
                     ) &&
                     !(typeof entity[this.propertyName] === "function") &&
-                    !Buffer.isBuffer(entity[this.propertyName]) &&
+                    !isUint8Array(entity[this.propertyName]) &&
                     !(entity[this.propertyName] instanceof Date)
                 ) {
                     value = this.referencedColumn.getEntityValue(
@@ -941,6 +942,9 @@ export class ColumnMetadata {
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)
+        if (isUint8Array(columnValue) && isUint8Array(valueToCompareWith)) {
+            return areUint8ArraysEqual(columnValue, valueToCompareWith)
+        }
         if (typeof columnValue?.equals === "function") {
             return columnValue.equals(valueToCompareWith)
         }
