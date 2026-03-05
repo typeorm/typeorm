@@ -10,17 +10,16 @@ import { Post, PostSchema } from "./entity/Post"
 
 describe("github issues > #4156 QueryExpressionMap doesn't clone all values correctly", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [
-                    new EntitySchema<Author>(AuthorSchema),
-                    new EntitySchema<Post>(PostSchema),
-                ],
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [
+                new EntitySchema<Author>(AuthorSchema),
+                new EntitySchema<Post>(PostSchema),
+            ],
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

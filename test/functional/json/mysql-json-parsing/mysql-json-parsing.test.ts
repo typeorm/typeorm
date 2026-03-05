@@ -10,13 +10,12 @@ import { JsonEntity } from "./entity/JsonEntity"
 
 describe("mysql json parsing", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [JsonEntity],
-                enabledDrivers: ["mysql", "mariadb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [JsonEntity],
+            enabledDrivers: ["mysql", "mariadb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

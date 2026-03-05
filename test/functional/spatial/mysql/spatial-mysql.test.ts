@@ -106,18 +106,17 @@ describe("spatial > mysql", () => {
     describe("when legacySpatialSupport: false", () => {
         let dataSources: DataSource[]
 
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [__dirname + "/entity/*{.js,.ts}"],
-                    enabledDrivers: ["mysql"],
-                    dropSchema: true,
-                    schemaCreate: true,
-                    driverSpecific: {
-                        legacySpatialSupport: false,
-                    },
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["mysql"],
+                dropSchema: true,
+                schemaCreate: true,
+                driverSpecific: {
+                    legacySpatialSupport: false,
+                },
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should use ST_GeomFromText", () =>

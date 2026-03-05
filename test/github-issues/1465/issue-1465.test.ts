@@ -11,13 +11,12 @@ import { AccountActivationToken } from "./entity/AccountActivationToken"
 
 describe("github issues > #1465 save child and parent entity", () => {
     let dataSources: DataSource[] = []
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql", "mariadb", "better-sqlite3", "sqljs"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "mariadb", "better-sqlite3", "sqljs"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

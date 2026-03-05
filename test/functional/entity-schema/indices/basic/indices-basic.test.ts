@@ -12,12 +12,11 @@ import { PersonSchema } from "./entity/Person"
 
 describe("entity-schema > indices > basic", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [<any>PersonSchema],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [<any>PersonSchema],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

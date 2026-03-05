@@ -14,14 +14,13 @@ const customTypeormMetadataTableName = "custom_typeorm_metadata_table_name"
 describe("github issues > #7266 rename table typeorm_metadata name.", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Foo, FooView],
-                enabledDrivers: ["postgres", "mysql", "mariadb"],
-                metadataTableName: customTypeormMetadataTableName,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Foo, FooView],
+            enabledDrivers: ["postgres", "mysql", "mariadb"],
+            metadataTableName: customTypeormMetadataTableName,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

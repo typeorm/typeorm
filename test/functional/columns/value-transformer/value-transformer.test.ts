@@ -16,12 +16,11 @@ import { expect } from "chai"
 
 describe("columns > value-transformer functionality", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, PhoneBook, User, Category, View],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, PhoneBook, User, Category, View],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

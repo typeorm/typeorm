@@ -9,15 +9,14 @@ import { User } from "./entity/User"
 
 describe("github issues > #8158 Typeorm creates migration that creates already existing unique constraint", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                migrations: [],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [UserMeta, User],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [UserMeta, User],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>

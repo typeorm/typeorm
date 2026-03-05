@@ -11,15 +11,14 @@ import { User } from "./entity/User"
 describe("github issues > #10493 Broken migrations for indices on TIMESTAMP WITH TIMEZONE Oracle Database columns", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User],
-                enabledDrivers: ["oracle"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            enabledDrivers: ["oracle"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

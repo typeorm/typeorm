@@ -10,14 +10,13 @@ import { AmbigiousPrimaryKey } from "./entity/AmbigiousPrimaryKey"
 
 describe("query builder > count", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Test, AmbigiousPrimaryKey],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Test, AmbigiousPrimaryKey],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

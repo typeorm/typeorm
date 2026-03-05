@@ -27,12 +27,11 @@ import { Comment } from "./entity/Comment"
 
 describe("repository > find options > operators", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [PersonAR, Post],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [PersonAR, Post],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -897,13 +896,12 @@ describe("repository > find options > operators", () => {
 
     describe("raw with jsonb columns", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [Comment],
-                    enabledDrivers: ["postgres", "cockroachdb"],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Comment],
+                enabledDrivers: ["postgres", "cockroachdb"],
+            })
+        })
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 

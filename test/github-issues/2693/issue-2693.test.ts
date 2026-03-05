@@ -10,15 +10,14 @@ import { QueryFailedError } from "../../../src/error/QueryFailedError"
 
 describe("github issues > #2875 Option to run migrations in 1-transaction-per-migration mode", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-                schemaCreate: false,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            schemaCreate: false,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -11,13 +11,12 @@ import { expect } from "chai"
 
 describe("entity-schema > columns > virtual column", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [<any>Activity],
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [<any>Activity],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
