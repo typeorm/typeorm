@@ -239,7 +239,7 @@ export class DriverUtils {
             secondSlash !== -1 ? preBase.substr(0, secondSlash) : preBase
         let afterBase =
             secondSlash !== -1 ? preBase.substr(secondSlash + 1) : undefined
-        let afterQuestionMark = ""
+        let afterQuestionMark: string
         let host = undefined
         let port = undefined
         let hostReplicaSet = undefined
