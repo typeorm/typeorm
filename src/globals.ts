@@ -6,12 +6,10 @@ import { ConnectionManager } from "./connection/ConnectionManager"
 import { getFromContainer } from "./container"
 import type { DataSource } from "./data-source/DataSource"
 import type { EntityManager } from "./entity-manager/EntityManager"
-import type { MongoEntityManager } from "./entity-manager/MongoEntityManager"
 import type { SqljsEntityManager } from "./entity-manager/SqljsEntityManager"
 import type { EntityTarget } from "./common/EntityTarget"
 import type { Repository } from "./repository/Repository"
 import type { TreeRepository } from "./repository/TreeRepository"
-import type { MongoRepository } from "./repository/MongoRepository"
 import type { SelectQueryBuilder } from "./query-builder/SelectQueryBuilder"
 import { ObjectUtils } from "./util/ObjectUtils"
 import type { ObjectLiteral } from "./common/ObjectLiteral"
@@ -141,19 +139,6 @@ export function getManager(connectionName: string = "default"): EntityManager {
 }
 
 /**
- * Gets MongoDB entity manager from the connection.
- * If connection name wasn't specified, then "default" connection will be retrieved.
- * @param connectionName
- * @deprecated
- */
-export function getMongoManager(
-    connectionName: string = "default",
-): MongoEntityManager {
-    return getConnectionManager().get(connectionName)
-        .manager as MongoEntityManager
-}
-
-/**
  * Gets Sqljs entity manager from connection name.
  * "default" connection is used, when no name is specified.
  * Only works when Sqljs driver is used.
@@ -195,21 +180,6 @@ export function getTreeRepository<Entity extends ObjectLiteral>(
     return getConnectionManager()
         .get(connectionName)
         .getTreeRepository<Entity>(entityClass)
-}
-
-/**
- * Gets mongodb repository for the given entity class or name.
- * @param entityClass
- * @param connectionName
- * @deprecated
- */
-export function getMongoRepository<Entity extends ObjectLiteral>(
-    entityClass: EntityTarget<Entity>,
-    connectionName: string = "default",
-): MongoRepository<Entity> {
-    return getConnectionManager()
-        .get(connectionName)
-        .getMongoRepository<Entity>(entityClass)
 }
 
 /**
