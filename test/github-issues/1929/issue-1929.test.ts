@@ -78,7 +78,6 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
                 await productRepository.save(product)
                 product = new Product("test2", "label2", 20)
                 await productRepository.save(product)
-                product = new Product("test3", "label3", 30)
                 await productRepository.findOne({
                     where: { name: "test2" },
                     select: { name: true, label: true },
