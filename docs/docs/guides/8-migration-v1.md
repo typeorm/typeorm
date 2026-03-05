@@ -143,6 +143,22 @@ const UserRepository = dataSource.getRepository(User).extend({
 
 The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
 
+### `getMongoRepository` and `getMongoManager` globals
+
+The deprecated global functions `getMongoRepository()` and `getMongoManager()` have been removed. Use the corresponding instance methods on `DataSource` or `EntityManager` instead:
+
+```typescript
+// Before
+import { getMongoManager, getMongoRepository } from "typeorm"
+
+const manager = getMongoManager()
+const repository = getMongoRepository(User)
+
+// After
+const manager = dataSource.mongoManager
+const repository = dataSource.getMongoRepository(User)
+```
+
 ### Deprecated lock modes
 
 The `pessimistic_partial_write` and `pessimistic_write_or_fail` lock modes have been removed. Use `pessimistic_write` with the `onLocked` option instead:
