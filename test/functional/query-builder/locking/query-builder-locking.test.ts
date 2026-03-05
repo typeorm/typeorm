@@ -191,100 +191,6 @@ describe("query builder > locking", () => {
             }),
         ))
 
-    it("should throw error if pessimistic_partial_write lock used without transaction", () =>
-        Promise.all(
-            dataSources.map(async (connection) => {
-                if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "sap" ||
-                    (connection.driver.options.type === "mysql" &&
-                        DriverUtils.isReleaseVersionOrGreater(
-                            connection.driver,
-                            "8.0",
-                        ))
-                ) {
-                    await connection
-                        .createQueryBuilder(PostWithVersion, "post")
-                        .setLock("pessimistic_partial_write")
-                        .where("post.id = :id", { id: 1 })
-                        .getOne()
-                        .should.be.rejectedWith(
-                            PessimisticLockTransactionRequiredError,
-                        )
-                }
-            }),
-        ))
-
-    it("should not throw error if pessimistic_partial_write lock used with transaction", () =>
-        Promise.all(
-            dataSources.map(async (connection) => {
-                if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "sap" ||
-                    (connection.driver.options.type === "mysql" &&
-                        DriverUtils.isReleaseVersionOrGreater(
-                            connection.driver,
-                            "8.0",
-                        ))
-                ) {
-                    await connection.manager.transaction((entityManager) =>
-                        entityManager
-                            .createQueryBuilder(PostWithVersion, "post")
-                            .setLock("pessimistic_partial_write")
-                            .where("post.id = :id", { id: 1 })
-                            .getOne(),
-                    ).should.not.be.rejected
-                }
-            }),
-        ))
-
-    it("should throw error if pessimistic_write_or_fail lock used without transaction", () =>
-        Promise.all(
-            dataSources.map(async (connection) => {
-                if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "sap" ||
-                    (connection.driver.options.type === "mysql" &&
-                        DriverUtils.isReleaseVersionOrGreater(
-                            connection.driver,
-                            "8.0",
-                        ))
-                ) {
-                    await connection
-                        .createQueryBuilder(PostWithVersion, "post")
-                        .setLock("pessimistic_write_or_fail")
-                        .where("post.id = :id", { id: 1 })
-                        .getOne()
-                        .should.be.rejectedWith(
-                            PessimisticLockTransactionRequiredError,
-                        )
-                }
-            }),
-        ))
-
-    it("should not throw error if pessimistic_write_or_fail lock used with transaction", () =>
-        Promise.all(
-            dataSources.map(async (connection) => {
-                if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "sap" ||
-                    (connection.driver.options.type === "mysql" &&
-                        DriverUtils.isReleaseVersionOrGreater(
-                            connection.driver,
-                            "8.0",
-                        ))
-                ) {
-                    await connection.manager.transaction((entityManager) =>
-                        entityManager
-                            .createQueryBuilder(PostWithVersion, "post")
-                            .setLock("pessimistic_write_or_fail")
-                            .where("post.id = :id", { id: 1 })
-                            .getOne(),
-                    ).should.not.be.rejected
-                }
-            }),
-        ))
-
     it("should attach pessimistic read lock statement on query if locking enabled", () => {
         for (const connection of dataSources) {
             if (
@@ -446,72 +352,6 @@ describe("query builder > locking", () => {
                 .getSql()
 
             expect(sql).to.contain("FOR KEY SHARE")
-        }
-    })
-
-    it("should not attach pessimistic_partial_write lock statement on query if locking is not used", () => {
-        for (const connection of dataSources) {
-            if (
-                DriverUtils.isMySQLFamily(connection.driver) ||
-                DriverUtils.isPostgresFamily(connection.driver)
-            ) {
-                const sql = connection
-                    .createQueryBuilder(PostWithVersion, "post")
-                    .where("post.id = :id", { id: 1 })
-                    .getSql()
-
-                expect(sql).not.to.contain("FOR UPDATE SKIP LOCKED")
-            }
-        }
-    })
-
-    it("should attach pessimistic_partial_write lock statement on query if locking enabled", () => {
-        for (const connection of dataSources) {
-            if (
-                DriverUtils.isMySQLFamily(connection.driver) ||
-                DriverUtils.isPostgresFamily(connection.driver)
-            ) {
-                const sql = connection
-                    .createQueryBuilder(PostWithVersion, "post")
-                    .setLock("pessimistic_partial_write")
-                    .where("post.id = :id", { id: 1 })
-                    .getSql()
-
-                expect(sql).to.contain("FOR UPDATE SKIP LOCKED")
-            }
-        }
-    })
-
-    it("should not attach pessimistic_write_or_fail lock statement on query if locking is not used", () => {
-        for (const connection of dataSources) {
-            if (
-                DriverUtils.isMySQLFamily(connection.driver) ||
-                DriverUtils.isPostgresFamily(connection.driver)
-            ) {
-                const sql = connection
-                    .createQueryBuilder(PostWithVersion, "post")
-                    .where("post.id = :id", { id: 1 })
-                    .getSql()
-
-                expect(sql).not.to.contain("FOR UPDATE NOWAIT")
-            }
-        }
-    })
-
-    it("should attach pessimistic_write_or_fail lock statement on query if locking enabled", () => {
-        for (const connection of dataSources) {
-            if (
-                DriverUtils.isMySQLFamily(connection.driver) ||
-                DriverUtils.isPostgresFamily(connection.driver)
-            ) {
-                const sql = connection
-                    .createQueryBuilder(PostWithVersion, "post")
-                    .setLock("pessimistic_write_or_fail")
-                    .where("post.id = :id", { id: 1 })
-                    .getSql()
-
-                expect(sql).to.contain("FOR UPDATE NOWAIT")
-            }
         }
     })
 
@@ -886,20 +726,6 @@ describe("query builder > locking", () => {
                         entityManager
                             .createQueryBuilder(Post, "post")
                             .leftJoin("post.author", "user")
-                            .setLock("pessimistic_partial_write", undefined, [
-                                "post",
-                            ])
-                            .getOne(),
-                        entityManager
-                            .createQueryBuilder(Post, "post")
-                            .leftJoin("post.author", "user")
-                            .setLock("pessimistic_write_or_fail", undefined, [
-                                "post",
-                            ])
-                            .getOne(),
-                        entityManager
-                            .createQueryBuilder(Post, "post")
-                            .leftJoin("post.author", "user")
                             .setLock("for_no_key_update", undefined, ["post"])
                             .getOne(),
                     ])
@@ -924,40 +750,6 @@ describe("query builder > locking", () => {
                 ).should.not.be.rejected
             }),
         ))
-
-    it("pessimistic_partial_write and skip_locked works", () =>
-        dataSources.map((connection) => {
-            if (
-                DriverUtils.isMySQLFamily(connection.driver) ||
-                DriverUtils.isPostgresFamily(connection.driver)
-            ) {
-                const sql = connection
-                    .createQueryBuilder(PostWithVersion, "post")
-                    .setLock("pessimistic_partial_write")
-                    .setOnLocked("skip_locked")
-                    .where("post.id = :id", { id: 1 })
-                    .getSql()
-
-                expect(sql.endsWith("FOR UPDATE SKIP LOCKED")).to.be.true
-            }
-        }))
-
-    it("pessimistic_write_or_fail and skip_locked ignores skip_locked", () =>
-        dataSources.map((connection) => {
-            if (
-                DriverUtils.isMySQLFamily(connection.driver) ||
-                DriverUtils.isPostgresFamily(connection.driver)
-            ) {
-                const sql = connection
-                    .createQueryBuilder(PostWithVersion, "post")
-                    .setLock("pessimistic_write_or_fail")
-                    .setOnLocked("skip_locked")
-                    .where("post.id = :id", { id: 1 })
-                    .getSql()
-
-                expect(sql.endsWith("FOR UPDATE NOWAIT")).to.be.true
-            }
-        }))
 
     it('skip_locked with "pessimistic_read"', () => {
         for (const connection of dataSources) {
