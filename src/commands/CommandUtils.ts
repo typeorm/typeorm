@@ -19,6 +19,7 @@ export class CommandUtils {
         } catch (err) {
             throw new Error(
                 `Unable to open file: "${dataSourceFilePath}". ${err.message}`,
+                { cause: err },
             )
         }
 
