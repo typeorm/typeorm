@@ -219,6 +219,7 @@ export function Column(
                 getMetadataArgsStorage().uniques.push({
                     target: object.constructor,
                     columns: [propertyName],
+                    nullsNotDistinct: !!options.nullsNotDistinct,
                 })
 
             getMetadataArgsStorage().columns.push({

@@ -112,6 +112,7 @@ export class EntitySchemaTransformer {
                         regularColumn.primaryKeyConstraintName,
                     length: regularColumn.length,
                     nullable: regularColumn.nullable,
+                    nullsNotDistinct: regularColumn.nullsNotDistinct,
                     readonly: regularColumn.readonly,
                     update: regularColumn.update,
                     select: regularColumn.select,
@@ -156,6 +157,7 @@ export class EntitySchemaTransformer {
                 metadataArgsStorage.uniques.push({
                     target: options.target || options.name,
                     columns: [columnName],
+                    nullsNotDistinct: regularColumn.nullsNotDistinct,
                 })
 
             if (regularColumn.foreignKey) {
@@ -302,6 +304,8 @@ export class EntitySchemaTransformer {
                     name: index.name,
                     unique: index.unique === true ? true : false,
                     spatial: index.spatial === true ? true : false,
+                    nullsNotDistinct:
+                        index.nullsNotDistinct === true ? true : false,
                     fulltext: index.fulltext === true ? true : false,
                     nullFiltered: index.nullFiltered === true ? true : false,
                     parser: index.parser,
@@ -338,6 +342,7 @@ export class EntitySchemaTransformer {
                     name: unique.name,
                     columns: unique.columns,
                     deferrable: unique.deferrable,
+                    nullsNotDistinct: unique.nullsNotDistinct,
                 }
                 metadataArgsStorage.uniques.push(uniqueArgs)
             })
