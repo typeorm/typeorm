@@ -897,15 +897,13 @@ QueryBuilder supports both optimistic and pessimistic locking.
 
 Support of lock modes, and SQL statements they translate to, are listed in the table below (blank cell denotes unsupported). When specified lock mode is not supported, a `LockNotSupportedOnGivenDriverError` error will be thrown.
 
-|                       | pessimistic_read                             | pessimistic_write         | dirty_read      | pessimistic_partial_write\* | pessimistic_write_or_fail\* | for_no_key_update   | for_key_share   |
-| --------------------- | -------------------------------------------- | ------------------------- | --------------- | --------------------------- | --------------------------- | ------------------- | --------------- |
-| MySQL, MariaDB        | `FOR SHARE` (MySQL 8+), `LOCK IN SHARE MODE` | `FOR UPDATE`              | (nothing)       | `FOR UPDATE SKIP LOCKED`    | `FOR UPDATE NOWAIT`         |                     |                 |
-| Oracle                | `FOR UPDATE`                                 | `FOR UPDATE`              | (nothing)       |                             |                             |                     |                 |
-| Postgres, CockroachDB | `FOR SHARE`                                  | `FOR UPDATE`              | (nothing)       | `FOR UPDATE SKIP LOCKED`    | `FOR UPDATE NOWAIT`         | `FOR NO KEY UPDATE` | `FOR KEY SHARE` |
-| SAP HANA              | `FOR SHARE LOCK`                             | `FOR UPDATE`              | (nothing)       | `FOR UPDATE IGNORE LOCKED`  | `FOR UPDATE NOWAIT`         |                     |                 |
-| SQL Server            | `WITH (HOLDLOCK, ROWLOCK)`                   | `WITH (UPDLOCK, ROWLOCK)` | `WITH (NOLOCK)` |                             |                             |                     |                 |
-
-> **Deprecation notice:** `pessimistic_partial_write` and `pessimistic_write_or_fail` are deprecated in favor of [onLocked](#setonlocked) (`skip_locked` and `nowait` respectively).
+|                       | pessimistic_read                             | pessimistic_write         | dirty_read      | for_no_key_update   | for_key_share   |
+| --------------------- | -------------------------------------------- | ------------------------- | --------------- | ------------------- | --------------- |
+| MySQL, MariaDB        | `FOR SHARE` (MySQL 8+), `LOCK IN SHARE MODE` | `FOR UPDATE`              | (nothing)       |                     |                 |
+| Oracle                | `FOR UPDATE`                                 | `FOR UPDATE`              | (nothing)       |                     |                 |
+| Postgres, CockroachDB | `FOR SHARE`                                  | `FOR UPDATE`              | (nothing)       | `FOR NO KEY UPDATE` | `FOR KEY SHARE` |
+| SAP HANA              | `FOR SHARE LOCK`                             | `FOR UPDATE`              | (nothing)       |                     |                 |
+| SQL Server            | `WITH (HOLDLOCK, ROWLOCK)`                   | `WITH (UPDLOCK, ROWLOCK)` | `WITH (NOLOCK)` |                     |                 |
 
 To use pessimistic read locking use the following method:
 
