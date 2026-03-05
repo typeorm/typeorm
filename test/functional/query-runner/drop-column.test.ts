@@ -4,7 +4,8 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource, Table } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table } from "../../../src"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop column", () => {

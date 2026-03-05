@@ -2,7 +2,7 @@ import "reflect-metadata"
 
 import { assert } from "chai"
 
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

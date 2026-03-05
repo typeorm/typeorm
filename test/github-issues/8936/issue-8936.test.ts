@@ -1,11 +1,6 @@
 import "../../utils/test-setup"
-import {
-    DataSource,
-    QueryFailedError,
-    QueryRunner,
-    Repository,
-    TableIndex,
-} from "../../../src"
+import type { DataSource, QueryRunner, Repository } from "../../../src"
+import { QueryFailedError, TableIndex } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,

@@ -4,7 +4,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { SqljsDriver } from "./SqljsDriver"
+import type { SqljsDriver } from "./SqljsDriver"
 
 /**
  * Runs queries on a single sqlite database connection.

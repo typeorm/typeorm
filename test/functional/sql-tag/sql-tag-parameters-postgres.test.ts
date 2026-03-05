@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { PostgresExample } from "./entity/PostgresExample"
 
 describe("sql tag parameters (postgres)", () => {

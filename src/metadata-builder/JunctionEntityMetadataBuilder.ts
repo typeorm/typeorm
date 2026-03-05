@@ -1,10 +1,10 @@
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source/DataSource"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
 import { IndexMetadata } from "../metadata/IndexMetadata"
-import { JoinTableMetadataArgs } from "../metadata-args/JoinTableMetadataArgs"
-import { RelationMetadata } from "../metadata/RelationMetadata"
+import type { JoinTableMetadataArgs } from "../metadata-args/JoinTableMetadataArgs"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
 
@@ -112,16 +112,12 @@ export class JunctionEntityMetadataBuilder {
                                 referencedColumn.type === "uuid")
                                 ? "36"
                                 : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
-                        width: referencedColumn.width,
                         type: referencedColumn.type,
                         precision: referencedColumn.precision,
                         scale: referencedColumn.scale,
                         charset: referencedColumn.charset,
                         collation: referencedColumn.collation,
-                        zerofill: referencedColumn.zerofill,
-                        unsigned: referencedColumn.zerofill
-                            ? true
-                            : referencedColumn.unsigned,
+                        unsigned: referencedColumn.unsigned,
                         enum: referencedColumn.enum,
                         enumName: referencedColumn.enumName,
                         foreignKeyConstraintName:
@@ -181,16 +177,12 @@ export class JunctionEntityMetadataBuilder {
                                     inverseReferencedColumn.type === "uuid")
                                     ? "36"
                                     : inverseReferencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
-                            width: inverseReferencedColumn.width, // fix https://github.com/typeorm/typeorm/issues/6442
                             type: inverseReferencedColumn.type,
                             precision: inverseReferencedColumn.precision,
                             scale: inverseReferencedColumn.scale,
                             charset: inverseReferencedColumn.charset,
                             collation: inverseReferencedColumn.collation,
-                            zerofill: inverseReferencedColumn.zerofill,
-                            unsigned: inverseReferencedColumn.zerofill
-                                ? true
-                                : inverseReferencedColumn.unsigned,
+                            unsigned: inverseReferencedColumn.unsigned,
                             enum: inverseReferencedColumn.enum,
                             enumName: inverseReferencedColumn.enumName,
                             foreignKeyConstraintName:

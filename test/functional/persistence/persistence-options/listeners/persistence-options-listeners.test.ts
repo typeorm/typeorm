@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { PostWithDeleteDateColumn } from "./entity/PostWithDeleteDateColumn"
 
 describe("persistence > persistence options > listeners", () => {

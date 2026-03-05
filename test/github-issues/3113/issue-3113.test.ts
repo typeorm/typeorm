@@ -1,4 +1,5 @@
-import { And, DataSource, IsNull, LessThan, MoreThan, Not } from "../../../src"
+import type { DataSource } from "../../../src"
+import { And, IsNull, LessThan, MoreThan, Not } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

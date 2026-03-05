@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
 
 export const TEST_TABLE_NAME = `This is the "Table Name"`
 

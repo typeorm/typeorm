@@ -4,8 +4,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
-import { EntityMetadata } from "../../../../../src/metadata/EntityMetadata"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
+import type { EntityMetadata } from "../../../../../src/metadata/EntityMetadata"
 import { IndexMetadata } from "../../../../../src/metadata/IndexMetadata"
 import { expect } from "chai"
 import { PersonSchema } from "./entity/Person"

@@ -1,14 +1,13 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 import { LetterBox } from "./entity/LetterBox"
 
-// Another related path: test/functional/spatial
-describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText function is not supported", () => {
+describe("spatial > mysql", () => {
     describe("when legacySpatialSupport: true", () => {
         let dataSources: DataSource[]
 

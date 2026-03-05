@@ -1,9 +1,9 @@
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { UniqueMetadata } from "../metadata/UniqueMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
-import { RelationMetadata } from "../metadata/RelationMetadata"
-import { JoinColumnMetadataArgs } from "../metadata-args/JoinColumnMetadataArgs"
-import { DataSource } from "../data-source/DataSource"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
+import type { JoinColumnMetadataArgs } from "../metadata-args/JoinColumnMetadataArgs"
+import type { DataSource } from "../data-source/DataSource"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
 import { OrmUtils } from "../util/OrmUtils"
@@ -230,12 +230,10 @@ export class RelationJoinColumnBuilder {
                                     referencedColumn.type === "uuid")
                                     ? "36"
                                     : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
-                            width: referencedColumn.width,
                             charset: referencedColumn.charset,
                             collation: referencedColumn.collation,
                             precision: referencedColumn.precision,
                             scale: referencedColumn.scale,
-                            zerofill: referencedColumn.zerofill,
                             unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
                             enum: referencedColumn.enum,

@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Table } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import appRootPath from "app-root-path"
 import sinon from "sinon"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     createTestingConnections,
     reloadTestingDatabases,

@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Policy } from "./entity/Policy"
 import { Group } from "./entity/Group"
 import { PolicyGroup } from "./entity/PolicyGroup"

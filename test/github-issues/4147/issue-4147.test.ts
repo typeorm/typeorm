@@ -3,9 +3,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { EntitySchema } from "../../../src"
-import { Post, PostSchema } from "./entity/Post"
+import type { Post } from "./entity/Post"
+import { PostSchema } from "./entity/Post"
 
 describe('github issues > #4147 `SQLITE_ERROR: near "-": syntax error` when use sqlite, simple-enum', () => {
     let dataSources: DataSource[]

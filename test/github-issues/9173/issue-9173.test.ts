@@ -4,7 +4,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, Table } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table } from "../../../src"
 import { View } from "../../../src/schema-builder/view/View"
 import { expect } from "chai"
 

@@ -1,11 +1,11 @@
-import { DefaultAuthentication } from "./authentication/DefaultAuthentication"
-import { AzureActiveDirectoryAccessTokenAuthentication } from "./authentication/AzureActiveDirectoryAccessTokenAuthentication"
-import { AzureActiveDirectoryDefaultAuthentication } from "./authentication/AzureActiveDirectoryDefaultAuthentication"
-import { AzureActiveDirectoryMsiAppServiceAuthentication } from "./authentication/AzureActiveDirectoryMsiAppServiceAuthentication"
-import { AzureActiveDirectoryMsiVmAuthentication } from "./authentication/AzureActiveDirectoryMsiVmAuthentication"
-import { AzureActiveDirectoryPasswordAuthentication } from "./authentication/AzureActiveDirectoryPasswordAuthentication"
-import { AzureActiveDirectoryServicePrincipalSecret } from "./authentication/AzureActiveDirectoryServicePrincipalSecret"
-import { NtlmAuthentication } from "./authentication/NtlmAuthentication"
+import type { DefaultAuthentication } from "./authentication/DefaultAuthentication"
+import type { AzureActiveDirectoryAccessTokenAuthentication } from "./authentication/AzureActiveDirectoryAccessTokenAuthentication"
+import type { AzureActiveDirectoryDefaultAuthentication } from "./authentication/AzureActiveDirectoryDefaultAuthentication"
+import type { AzureActiveDirectoryMsiAppServiceAuthentication } from "./authentication/AzureActiveDirectoryMsiAppServiceAuthentication"
+import type { AzureActiveDirectoryMsiVmAuthentication } from "./authentication/AzureActiveDirectoryMsiVmAuthentication"
+import type { AzureActiveDirectoryPasswordAuthentication } from "./authentication/AzureActiveDirectoryPasswordAuthentication"
+import type { AzureActiveDirectoryServicePrincipalSecret } from "./authentication/AzureActiveDirectoryServicePrincipalSecret"
+import type { NtlmAuthentication } from "./authentication/NtlmAuthentication"
 
 export type SqlServerConnectionCredentialsAuthenticationOptions =
     | DefaultAuthentication
