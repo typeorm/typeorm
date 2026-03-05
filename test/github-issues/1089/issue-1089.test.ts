@@ -8,14 +8,13 @@ import { Group } from "./entity/Group"
 
 describe("github issues > #1089 UUID in ClosureEntity", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: false,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: false,
+            dropSchema: true,
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should correctly work with primary UUID column", () =>

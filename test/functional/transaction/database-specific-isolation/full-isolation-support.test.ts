@@ -11,13 +11,12 @@ import { expect } from "chai"
 
 describe("transaction > transaction with full isolation support", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql", "mssql", "postgres", "sap"], // todo: for some reasons mariadb tests are not passing here
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "mssql", "postgres", "sap"], // todo: for some reasons mariadb tests are not passing here
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

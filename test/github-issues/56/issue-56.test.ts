@@ -13,12 +13,11 @@ describe.skip("github issues > #56 relationships only work when both primary key
     // skipped because of CI error. todo: needs investigation
 
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

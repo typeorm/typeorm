@@ -9,12 +9,11 @@ import {
 
 describe("tree tables > closure-table", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Category],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

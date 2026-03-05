@@ -10,15 +10,14 @@ import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("database schema > column types > mysql > uuid", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [UuidEntity],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mysql", "mariadb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [UuidEntity],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mysql", "mariadb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

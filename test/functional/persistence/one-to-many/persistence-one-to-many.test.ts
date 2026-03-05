@@ -18,7 +18,9 @@ describe("persistence > one-to-many", function () {
     before(() => {
         return createTestingConnections({
             entities: [Post, Category],
-        }).then((all) => (dataSources = all))
+        }).then((all) => {
+            dataSources = all
+        })
     })
     after(() => closeTestingConnections(dataSources))
     beforeEach(() => reloadTestingDatabases(dataSources))

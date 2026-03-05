@@ -10,12 +10,11 @@ import { Name } from "./entity/Name"
 
 describe("entity-schema > embedded - class-instance", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [UserEntitySchema],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [UserEntitySchema],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 

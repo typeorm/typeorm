@@ -9,15 +9,14 @@ import { expect } from "chai"
 
 describe("github issues > #9063 Support postgres column with varchar datatype and uuid_generate_v4() default", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

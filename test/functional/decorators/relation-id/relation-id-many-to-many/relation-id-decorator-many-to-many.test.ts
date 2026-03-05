@@ -12,12 +12,11 @@ import { Image } from "./entity/Image"
 
 describe("decorators > relation-id-decorator > many-to-many", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

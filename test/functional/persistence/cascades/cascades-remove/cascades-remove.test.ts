@@ -11,13 +11,12 @@ import { User } from "./entity/User"
 // todo: fix later
 describe.skip("persistence > cascades > remove", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -9,10 +9,9 @@ import { Post } from "./entity/Post"
 
 describe("query builder > enabling transaction", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({ __dirname })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({ __dirname })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

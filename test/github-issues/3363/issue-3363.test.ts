@@ -11,13 +11,12 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #3363 Isolation Level in transaction() from Connection", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -10,15 +10,14 @@ import { expect } from "chai"
 
 describe("github issues > #8398 Separate update event into the update, soft remove and restore events", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

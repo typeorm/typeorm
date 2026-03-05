@@ -11,15 +11,14 @@ import { ViewC } from "./entity/ViewC"
 
 describe("github issues > #7586 Oddly indexed views are not dropped in migration", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-                entities: [TestEntity, ViewA, ViewB, ViewC],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [TestEntity, ViewA, ViewB, ViewC],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should generate drop queries for all views", () =>

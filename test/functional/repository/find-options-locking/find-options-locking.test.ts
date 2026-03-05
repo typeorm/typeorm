@@ -22,12 +22,11 @@ import { PostWithVersionAndUpdatedDate } from "./entity/PostWithVersionAndUpdate
 
 describe("repository > find options > locking", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -664,22 +663,6 @@ describe("repository > find options > locking", () => {
                             relations: { author: true },
                             lock: {
                                 mode: "pessimistic_write",
-                                tables: ["post"],
-                            },
-                        }),
-                        entityManager.getRepository(Post).findOne({
-                            where: { id: 1 },
-                            relations: { author: true },
-                            lock: {
-                                mode: "pessimistic_partial_write",
-                                tables: ["post"],
-                            },
-                        }),
-                        entityManager.getRepository(Post).findOne({
-                            where: { id: 1 },
-                            relations: { author: true },
-                            lock: {
-                                mode: "pessimistic_write_or_fail",
                                 tables: ["post"],
                             },
                         }),

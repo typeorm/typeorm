@@ -8,13 +8,12 @@ import { expect } from "chai"
 
 describe("github issues > #6699 MaxListenersExceededWarning occurs on Postgres", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [],
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [],
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

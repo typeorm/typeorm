@@ -8,15 +8,14 @@ import { Category, Post } from "./entity"
 
 describe("migrations > generate command", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                migrations: [],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [Post, Category],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [Post, Category],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("can recognize model changes", () =>

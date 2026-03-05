@@ -16,10 +16,9 @@ describe("persistence > many-to-many", function () {
     // -------------------------------------------------------------------------
 
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({ __dirname })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({ __dirname })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

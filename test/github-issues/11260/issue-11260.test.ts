@@ -15,13 +15,12 @@ import { User } from "./entity/User"
 
 describe("github issues > #10626 Regression in transactionDepth handling", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["better-sqlite3", "postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["better-sqlite3", "postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

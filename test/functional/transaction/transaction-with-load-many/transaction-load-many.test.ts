@@ -13,13 +13,12 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("transaction > transaction with load many", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "mariadb", "mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres", "mariadb", "mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

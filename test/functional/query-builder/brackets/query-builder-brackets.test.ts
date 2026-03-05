@@ -13,13 +13,12 @@ import { Brackets } from "../../../../src/query-builder/Brackets"
 
 describe("query builder > brackets", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["better-sqlite3", "postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["better-sqlite3", "postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

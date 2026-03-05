@@ -11,19 +11,18 @@ import { User } from "./entity/User"
 
 describe("query builder > cache", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                cache: true,
-                // cache: {
-                //     type: "redis",
-                //     options: {
-                //         host: "localhost",
-                //     }
-                // }
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            cache: true,
+            // cache: {
+            //     type: "redis",
+            //     options: {
+            //         host: "localhost",
+            //     }
+            // }
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

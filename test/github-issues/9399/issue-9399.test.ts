@@ -8,15 +8,14 @@ import { expect } from "chai"
 
 describe("github issues > #9399 mssql: Column is dropped and recreated in every migration", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mssql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mssql"],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("No migration should be created", () =>

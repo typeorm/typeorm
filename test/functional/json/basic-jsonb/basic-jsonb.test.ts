@@ -10,13 +10,12 @@ import { Record } from "./entity/Record"
 
 describe("jsonb type", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Record],
-                enabledDrivers: ["postgres"], // because only postgres supports jsonb type
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Record],
+            enabledDrivers: ["postgres"], // because only postgres supports jsonb type
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

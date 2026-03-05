@@ -16,12 +16,11 @@ import { Human } from "./entity/Human"
 
 describe("table-inheritance > single-table > basic-functionality", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -508,14 +507,13 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
     describe("table-inheritance > single-table > basic-functionality with custom database schema", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [Human, Male],
-                    enabledDrivers: ["postgres", "cockroachdb", "mssql"],
-                    schema: "my_schema",
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Human, Male],
+                enabledDrivers: ["postgres", "cockroachdb", "mssql"],
+                schema: "my_schema",
+            })
+        })
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 

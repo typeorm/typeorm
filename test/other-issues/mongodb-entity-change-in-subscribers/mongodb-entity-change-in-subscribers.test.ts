@@ -10,14 +10,13 @@ import { expect } from "chai"
 
 describe("other issues > mongodb entity change in subscribers should affect persistence", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+            enabledDrivers: ["mongodb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

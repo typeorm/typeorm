@@ -12,13 +12,12 @@ import { User } from "./entity/User"
 describe("repository > returning", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "mysql", "mssql", "spanner"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres", "mysql", "mssql", "spanner"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

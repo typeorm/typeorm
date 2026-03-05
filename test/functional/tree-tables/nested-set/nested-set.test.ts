@@ -11,12 +11,11 @@ import { expect } from "chai"
 
 describe("tree tables > nested-set", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Category],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

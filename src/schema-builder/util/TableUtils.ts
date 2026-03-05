@@ -10,12 +10,10 @@ export class TableUtils {
         return {
             name: columnMetadata.databaseName,
             length: driver.getColumnLength(columnMetadata),
-            width: columnMetadata.width,
             charset: columnMetadata.charset,
             collation: columnMetadata.collation,
             precision: columnMetadata.precision,
             scale: columnMetadata.scale,
-            zerofill: columnMetadata.zerofill,
             unsigned: columnMetadata.unsigned,
             asExpression: columnMetadata.asExpression,
             generatedType: columnMetadata.generatedType,
