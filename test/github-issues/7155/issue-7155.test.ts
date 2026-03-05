@@ -30,7 +30,9 @@ import {
 
 describe("github issues > #7155", () => {
     let dataSources: DataSource[]
-    before(async () => (dataSources = await generateConnections()))
+    before(async () => {
+        dataSources = await generateConnections()
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

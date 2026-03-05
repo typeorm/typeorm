@@ -80,9 +80,9 @@ describe("one-to-one", function () {
             newPost.text = "Hello post"
             newPost.title = "this is post title"
             newPost.details = details
-            return postRepository
-                .save(newPost)
-                .then((post) => (savedPost = post as Post))
+            return postRepository.save(newPost).then((post) => {
+                savedPost = post as Post
+            })
         })
 
         it("should return the same post instance after its created", function () {
@@ -258,9 +258,9 @@ describe("one-to-one", function () {
             newPost.title = "this is post title"
             newPost.category = category
 
-            return postRepository
-                .save(newPost)
-                .then((post) => (savedPost = post as Post))
+            return postRepository.save(newPost).then((post) => {
+                savedPost = post as Post
+            })
         })
 
         it("should return the same post instance after its created", function () {

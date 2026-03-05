@@ -88,6 +88,7 @@ export default defineConfig([
             "no-loss-of-precision": "warn",
             "no-prototype-builtins": "warn",
             "no-regex-spaces": "warn",
+            "no-return-assign": ["error", "always"],
         },
     },
     jsdoc({
