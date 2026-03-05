@@ -30,8 +30,6 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
     - `pingCheck` (boolean) — Whether to validate connections before use (default: false).
     - `poolCapacity` (number) — Maximum number of connections to be kept available (default: no limit).
 
-Removed legacy aliases: `hanaClientDriver`, `pool.max`, `pool.requestTimeout`, `pool.idleTimeout`, `pool.min`, `pool.maxWaitingRequests`, and `pool.checkInterval`.
-
 See the official documentation of SAP HANA Client for more details as well as the `extra` properties: [Node.js Connection Properties](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/4fe9978ebac44f35b9369ef5a4a26f4c.html).
 
 ## Column Types

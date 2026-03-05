@@ -191,14 +191,6 @@ export class QueryExpressionMap {
         | "pessimistic_read"
         | "pessimistic_write"
         | "dirty_read"
-        /*
-            "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
-            will be removed in a future version.
-
-            Use onLocked instead.
-         */
-        | "pessimistic_partial_write"
-        | "pessimistic_write_or_fail"
         | "for_no_key_update"
         | "for_key_share"
 

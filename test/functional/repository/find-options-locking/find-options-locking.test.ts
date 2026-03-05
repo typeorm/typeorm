@@ -670,22 +670,6 @@ describe("repository > find options > locking", () => {
                             where: { id: 1 },
                             relations: { author: true },
                             lock: {
-                                mode: "pessimistic_partial_write",
-                                tables: ["post"],
-                            },
-                        }),
-                        entityManager.getRepository(Post).findOne({
-                            where: { id: 1 },
-                            relations: { author: true },
-                            lock: {
-                                mode: "pessimistic_write_or_fail",
-                                tables: ["post"],
-                            },
-                        }),
-                        entityManager.getRepository(Post).findOne({
-                            where: { id: 1 },
-                            relations: { author: true },
-                            lock: {
                                 mode: "for_no_key_update",
                                 tables: ["post"],
                             },
