@@ -3600,7 +3600,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
 
-            rawResults = await new SelectQueryBuilder(
+            const paginationQueryBuilder = new SelectQueryBuilder(
                 this.connection,
                 queryRunner,
             )
@@ -3624,8 +3624,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.expressionMap.cacheDuration,
                 )
                 .setParameters(this.getParameters())
-                .setNativeParameters(this.expressionMap.nativeParameters)
-                .getRawMany()
+            paginationQueryBuilder.expressionMap.nativeParameters = {
+                ...this.expressionMap.nativeParameters,
+            }
+            rawResults = await paginationQueryBuilder.getRawMany()
 
             if (rawResults.length > 0) {
                 let condition: string

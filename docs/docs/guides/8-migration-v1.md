@@ -278,6 +278,65 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
 
+### `InsertQueryBuilder.onConflict()`
+
+The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:
+
+```typescript
+// Before
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .onConflict(`("id") DO NOTHING`)
+    .execute()
+
+// After
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .orIgnore()
+    .execute()
+
+// Before
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .onConflict(`("id") DO UPDATE SET "title" = :title`)
+    .setParameter("title", post.title)
+    .execute()
+
+// After
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .orUpdate(["title"], ["id"])
+    .execute()
+```
+
+### Deprecated `orUpdate()` overload
+
+The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, conflict_target? }` has been removed. Use the array-based signature instead:
+
+```typescript
+// Before
+.orUpdate({ conflict_target: ["date"], overwrite: ["title"] })
+
+// After
+.orUpdate(["title"], ["date"])
+```
+
+### `QueryBuilder.setNativeParameters()`
+
+The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
+
 ## Migrations
 
 ### `getAllMigrations`
