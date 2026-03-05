@@ -11,7 +11,6 @@ import type { SqljsEntityManager } from "./entity-manager/SqljsEntityManager"
 import type { EntityTarget } from "./common/EntityTarget"
 import type { Repository } from "./repository/Repository"
 import type { TreeRepository } from "./repository/TreeRepository"
-import type { ObjectType } from "./common/ObjectType"
 import type { MongoRepository } from "./repository/MongoRepository"
 import type { SelectQueryBuilder } from "./query-builder/SelectQueryBuilder"
 import { ObjectUtils } from "./util/ObjectUtils"
@@ -196,21 +195,6 @@ export function getTreeRepository<Entity extends ObjectLiteral>(
     return getConnectionManager()
         .get(connectionName)
         .getTreeRepository<Entity>(entityClass)
-}
-
-/**
- * Gets tree repository for the given entity class.
- * @param customRepository
- * @param connectionName
- * @deprecated
- */
-export function getCustomRepository<T>(
-    customRepository: ObjectType<T>,
-    connectionName: string = "default",
-): T {
-    return getConnectionManager()
-        .get(connectionName)
-        .getCustomRepository(customRepository)
 }
 
 /**

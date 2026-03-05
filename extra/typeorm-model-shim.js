@@ -292,11 +292,6 @@ exports.Exclusion = Exclusion;
 }
 exports.Generated = Generated;
 
-/* export */ function EntityRepository() {
-    return noop
-}
-exports.EntityRepository = EntityRepository;
-
 /* export */ function VirtualColumn() {
     return noop
 }
