@@ -83,6 +83,7 @@ export default defineConfig([
 
             // exceptions for eslint/recommended
             "no-async-promise-executor": "warn",
+            "no-useless-assignment": "warn",
             "no-control-regex": "warn",
             "no-empty": "warn",
             "no-loss-of-precision": "warn",
