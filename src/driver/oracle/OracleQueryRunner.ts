@@ -1079,7 +1079,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} table.`,
             )
 
-        let newColumn: TableColumn | undefined = undefined
+        let newColumn: TableColumn
         if (InstanceChecker.isTableColumn(newTableColumnOrName)) {
             newColumn = newTableColumnOrName
         } else {
