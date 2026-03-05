@@ -11,15 +11,14 @@ import { Foo } from "./entity/foo.entity"
 describe("github issues > #5132: Default of -1 (minus 1) generates useless migrations`", () => {
     describe("-1 (minus 1) in default value", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [Foo],
-                    enabledDrivers: ["postgres", "cockroachdb"],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [Foo],
+                enabledDrivers: ["postgres", "cockroachdb"],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("can recognize model changes", () =>

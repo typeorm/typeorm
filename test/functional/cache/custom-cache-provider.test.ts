@@ -13,17 +13,16 @@ import { MockQueryResultCache } from "./provider/MockQueryResultCache"
 
 describe("custom cache provider", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                cache: {
-                    provider(connection) {
-                        return new MockQueryResultCache(connection)
-                    },
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            cache: {
+                provider(connection) {
+                    return new MockQueryResultCache(connection)
                 },
-            })),
-    )
+            },
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

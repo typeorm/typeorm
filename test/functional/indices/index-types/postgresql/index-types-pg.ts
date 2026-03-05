@@ -11,14 +11,13 @@ import { User5 } from "../entity/User5"
 
 describe("github issues > Add support of 'hash' indexes for postgres", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "./../entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "./../entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -11,13 +11,12 @@ import { TestCreate } from "./entity/TestCreate"
 describe("entity-metadata > create", () => {
     describe("without entitySkipConstructor", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["better-sqlite3"],
-                    entities: [TestCreate],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["better-sqlite3"],
+                entities: [TestCreate],
+            })
+        })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
@@ -56,16 +55,15 @@ describe("entity-metadata > create", () => {
 
     describe("with entitySkipConstructor", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["better-sqlite3"],
-                    entities: [TestCreate],
-                    driverSpecific: {
-                        entitySkipConstructor: true,
-                    },
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["better-sqlite3"],
+                entities: [TestCreate],
+                driverSpecific: {
+                    entitySkipConstructor: true,
+                },
+            })
+        })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))

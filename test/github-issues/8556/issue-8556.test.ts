@@ -12,15 +12,14 @@ import type { TreeRepository } from "../../../src"
 
 describe("github issues > #8556 TreeRepository.findDescendants/Tree should return empty if tree parent entity does not exist", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                dropSchema: true,
-                schemaCreate: true,
-                name: generateRandomText(10), // Use a different name to avoid a random failure in build pipeline
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            dropSchema: true,
+            schemaCreate: true,
+            name: generateRandomText(10), // Use a different name to avoid a random failure in build pipeline
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

@@ -10,13 +10,12 @@ import { ArrayContainedBy } from "../../../../src/find-options/operator/ArrayCon
 
 describe("find options > find operators > ArrayContainedBy", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-                enabledDrivers: ["postgres", "cockroachdb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            enabledDrivers: ["postgres", "cockroachdb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

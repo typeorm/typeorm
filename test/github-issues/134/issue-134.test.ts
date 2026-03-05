@@ -10,19 +10,18 @@ import { expect } from "chai"
 
 describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH:mm", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: [
-                    "mysql",
-                    "mariadb",
-                    "better-sqlite3",
-                    "mssql",
-                    "postgres",
-                ], // Oracle does not support TIME data type.
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: [
+                "mysql",
+                "mariadb",
+                "better-sqlite3",
+                "mssql",
+                "postgres",
+            ], // Oracle does not support TIME data type.
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

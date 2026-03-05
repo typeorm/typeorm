@@ -12,17 +12,16 @@ import type { ConnectionPool } from "@sap/hana-client"
 
 describe("driver > sap > connection pool", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["sap"],
-                driverSpecific: {
-                    pool: {
-                        maxConnectedOrPooled: 3,
-                    },
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["sap"],
+            driverSpecific: {
+                pool: {
+                    maxConnectedOrPooled: 3,
                 },
-            })),
-    )
+            },
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

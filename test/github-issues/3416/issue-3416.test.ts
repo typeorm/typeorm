@@ -11,12 +11,11 @@ import { EntityPropertyNotFoundError } from "../../../src/error/EntityPropertyNo
 
 describe("github issues > #3416 Unknown fields are stripped from WHERE clause", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

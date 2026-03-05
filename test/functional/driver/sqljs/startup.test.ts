@@ -14,19 +14,18 @@ describe("sqljs driver > startup", () => {
     let dataSources: DataSource[]
     const pathToSqlite = path.resolve(__dirname, "startup.sqlite")
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["sqljs"],
-                driverSpecific: {
-                    autoSave: true,
-                    location: pathToSqlite,
-                },
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["sqljs"],
+            driverSpecific: {
+                autoSave: true,
+                location: pathToSqlite,
+            },
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
