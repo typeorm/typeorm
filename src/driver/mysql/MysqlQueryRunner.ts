@@ -1055,7 +1055,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        let newColumn: TableColumn | undefined = undefined
+        let newColumn: TableColumn
         if (InstanceChecker.isTableColumn(newTableColumnOrName)) {
             newColumn = newTableColumnOrName
         } else {
@@ -3434,7 +3434,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         skipPrimary: boolean,
         skipName: boolean = false,
     ) {
-        let c = ""
+        let c: string
         if (skipName) {
             c = this.connection.driver.createFullType(column)
         } else {

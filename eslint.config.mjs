@@ -90,6 +90,7 @@ export default defineConfig([
             "no-prototype-builtins": "warn",
             "no-regex-spaces": "warn",
             "no-return-assign": ["error", "always"],
+            "preserve-caught-error": "warn",
         },
     },
     jsdoc({
