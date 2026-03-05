@@ -137,8 +137,3 @@ export interface WhereExpressionBuilder {
      */
     orWhereInIds(ids: any | any[]): this
 }
-
-/**
- * @deprecated Use `WhereExpressionBuilder` instead
- */
-export interface WhereExpression extends WhereExpressionBuilder {}

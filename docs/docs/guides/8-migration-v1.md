@@ -194,3 +194,7 @@ The same applies to find options:
 // After
 { lock: { mode: "pessimistic_write", onLocked: "nowait" } }
 ```
+
+### `WhereExpression` type alias
+
+The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
