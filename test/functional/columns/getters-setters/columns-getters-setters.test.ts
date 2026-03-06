@@ -20,8 +20,8 @@ describe("columns > getters and setters", () => {
 
     it("should not update columns marked with readonly property", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // create and save a post first
                 const post = new Post()

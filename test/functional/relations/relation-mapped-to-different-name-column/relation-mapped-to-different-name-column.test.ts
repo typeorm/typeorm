@@ -22,20 +22,20 @@ describe.skip("relations > relation mapped to relation with different name (#56)
 
     it("should work perfectly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // first create and save details
                 const details = new PostDetails()
                 details.keyword = "post-1"
-                await connection.manager.save(details)
+                await dataSource.manager.save(details)
 
                 // then create and save a post with details
                 const post1 = new Post()
                 post1.title = "Hello Post #1"
                 post1.details = details
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 // now check
-                const posts = await connection.manager.find(Post, {
+                const posts = await dataSource.manager.find(Post, {
                     join: {
                         alias: "post",
                         innerJoinAndSelect: {

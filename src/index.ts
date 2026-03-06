@@ -140,7 +140,6 @@ export type * from "./subscriber/event/QueryEvent"
 
 export { ConnectionOptionsReader } from "./connection/ConnectionOptionsReader"
 export { DataSource } from "./data-source/DataSource"
-export { ConnectionManager } from "./connection/ConnectionManager"
 export type { DataSourceOptions } from "./data-source/DataSourceOptions"
 export type { Driver } from "./driver/Driver"
 export { QueryBuilder } from "./query-builder/QueryBuilder"

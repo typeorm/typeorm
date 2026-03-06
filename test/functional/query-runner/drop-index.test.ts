@@ -23,12 +23,12 @@ describe("query runner > drop index", () => {
 
     it("should correctly drop index and revert drop", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("student")
                 // CockroachDB also stores indices for relation columns
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     table!.indices.length.should.be.equal(3)
                 } else {
                     table!.indices.length.should.be.equal(1)
@@ -38,7 +38,7 @@ describe("query runner > drop index", () => {
 
                 table = await queryRunner.getTable("student")
                 // CockroachDB also stores indices for relation columns
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     table!.indices.length.should.be.equal(2)
                 } else {
                     table!.indices.length.should.be.equal(0)
@@ -48,7 +48,7 @@ describe("query runner > drop index", () => {
 
                 table = await queryRunner.getTable("student")
                 // CockroachDB also stores indices for relation columns
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     table!.indices.length.should.be.equal(3)
                 } else {
                     table!.indices.length.should.be.equal(1)
@@ -60,8 +60,8 @@ describe("query runner > drop index", () => {
 
     it("should drop all indices without skipping any when iterating over array", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.connect()
 
                 try {
@@ -73,7 +73,7 @@ describe("query runner > drop index", () => {
                                 new TableColumn({
                                     name: "id",
                                     type: DriverUtils.isSQLiteFamily(
-                                        connection.driver,
+                                        dataSource.driver,
                                     )
                                         ? "integer"
                                         : "int",

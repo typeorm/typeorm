@@ -28,10 +28,10 @@ describe("persistence > many-to-many", function () {
 
     it("add exist element to exist object with empty many-to-many relation and save it and it should contain a new category", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
-                const userRepository = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
+                const userRepository = dataSource.getRepository(User)
 
                 // save a new category
                 const newCategory = categoryRepository.create()
@@ -75,10 +75,10 @@ describe("persistence > many-to-many", function () {
 
     it("remove one element from many-to-many relation should remove from the database as well", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
-                const userRepository = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
+                const userRepository = dataSource.getRepository(User)
 
                 // save a new category
                 const category1 = new Category()
@@ -152,10 +152,10 @@ describe("persistence > many-to-many", function () {
 
     it("remove all elements from many-to-many relation should remove from the database as well", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
-                const userRepository = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
+                const userRepository = dataSource.getRepository(User)
 
                 // save a new category
                 const category1 = new Category()
@@ -228,10 +228,10 @@ describe("persistence > many-to-many", function () {
 
     it("remove all elements (set to null) from many-to-many relation should remove from the database as well", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
-                const userRepository = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
+                const userRepository = dataSource.getRepository(User)
 
                 // save a new category
                 const category1 = new Category()
@@ -304,28 +304,28 @@ describe("persistence > many-to-many", function () {
 
     it("remove all elements from many-to-many relation if parent entity is removed", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // save a new category
                 const category1 = new Category()
                 category1.name = "Animals"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 // save a new category
                 const category2 = new Category()
                 category2.name = "Animals"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 // save a new post
                 const newPost = new Post()
                 newPost.title = "All about animals"
-                await connection.manager.save(newPost)
+                await dataSource.manager.save(newPost)
 
                 // now categories to the post inside user and save a user
                 newPost.categories = [category1, category2]
-                await connection.manager.save(newPost)
+                await dataSource.manager.save(newPost)
 
                 // this should not give an error:
-                await connection.manager.remove(newPost)
+                await dataSource.manager.remove(newPost)
             }),
         ))
 })

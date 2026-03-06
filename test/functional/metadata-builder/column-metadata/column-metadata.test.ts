@@ -22,7 +22,7 @@ describe("metadata-builder > ColumnMetadata", () => {
 
     it("getValue", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Post #1"
@@ -35,7 +35,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                 post.counters.subcounters.version = 1
                 post.counters.subcounters.watches = 10
 
-                const titleColumnMetadata = connection
+                const titleColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "title")
                 expect(titleColumnMetadata).not.to.be.undefined
@@ -43,7 +43,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                     "Post #1",
                 )
 
-                const codeColumnMetadata = connection
+                const codeColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "code")
                 expect(codeColumnMetadata).not.to.be.undefined
@@ -51,7 +51,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                     123,
                 )
 
-                const watchesColumnMetadata = connection
+                const watchesColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "watches")
                 expect(watchesColumnMetadata).not.to.be.undefined
@@ -63,7 +63,7 @@ describe("metadata-builder > ColumnMetadata", () => {
 
     it("getValueMap", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Post #1"
@@ -76,7 +76,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                 post.counters.subcounters.version = 1
                 post.counters.subcounters.watches = 10
 
-                const titleColumnMetadata = connection
+                const titleColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "title")
                 expect(titleColumnMetadata).not.to.be.undefined
@@ -86,7 +86,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                 expect(titleColumnMetadata!.getEntityValueMap({ id: 1 })).to.be
                     .undefined
 
-                const codeColumnMetadata = connection
+                const codeColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "code")
                 expect(codeColumnMetadata).not.to.be.undefined
@@ -132,7 +132,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                     }),
                 ).to.be.undefined
 
-                const watchesColumnMetadata = connection
+                const watchesColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "watches")
                 expect(watchesColumnMetadata).not.to.be.undefined

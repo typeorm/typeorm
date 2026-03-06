@@ -21,15 +21,15 @@ describe("query runner > create primary key", () => {
 
     it("should correctly create primary key and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner does not allow altering primary key
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 )
                     return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "category",

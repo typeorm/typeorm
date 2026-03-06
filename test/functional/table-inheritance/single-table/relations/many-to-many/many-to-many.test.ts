@@ -27,33 +27,33 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
     describe("owner side", () => {
         it("should work correctly with ManyToMany relations", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // -------------------------------------------------------------------------
                     // Create
                     // -------------------------------------------------------------------------
 
                     const faculty1 = new Faculty()
                     faculty1.name = "Economics"
-                    await connection.getRepository(Faculty).save(faculty1)
+                    await dataSource.getRepository(Faculty).save(faculty1)
 
                     const faculty2 = new Faculty()
                     faculty2.name = "Programming"
-                    await connection.getRepository(Faculty).save(faculty2)
+                    await dataSource.getRepository(Faculty).save(faculty2)
 
                     const student = new Student()
                     student.name = "Alice"
                     student.faculties = [faculty1, faculty2]
-                    await connection.getRepository(Student).save(student)
+                    await dataSource.getRepository(Student).save(student)
 
                     const specialization1 = new Specialization()
                     specialization1.name = "Geography"
-                    await connection
+                    await dataSource
                         .getRepository(Specialization)
                         .save(specialization1)
 
                     const specialization2 = new Specialization()
                     specialization2.name = "Economist"
-                    await connection
+                    await dataSource
                         .getRepository(Specialization)
                         .save(specialization2)
 
@@ -61,27 +61,27 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                     teacher.name = "Mr. Garrison"
                     teacher.specializations = [specialization1, specialization2]
                     teacher.salary = 2000
-                    await connection.getRepository(Teacher).save(teacher)
+                    await dataSource.getRepository(Teacher).save(teacher)
 
                     const department1 = new Department()
                     department1.name = "Bookkeeping"
-                    await connection.getRepository(Department).save(department1)
+                    await dataSource.getRepository(Department).save(department1)
 
                     const department2 = new Department()
                     department2.name = "HR"
-                    await connection.getRepository(Department).save(department2)
+                    await dataSource.getRepository(Department).save(department2)
 
                     const accountant = new Accountant()
                     accountant.name = "Mr. Burns"
                     accountant.departments = [department1, department2]
                     accountant.salary = 3000
-                    await connection.getRepository(Accountant).save(accountant)
+                    await dataSource.getRepository(Accountant).save(accountant)
 
                     // -------------------------------------------------------------------------
                     // Select
                     // -------------------------------------------------------------------------
 
-                    const loadedStudent = await connection.manager
+                    const loadedStudent = await dataSource.manager
                         .createQueryBuilder(Student, "student")
                         .leftJoinAndSelect("student.faculties", "faculty")
                         .where("student.name = :name", { name: "Alice" })
@@ -102,7 +102,7 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                         .map((f) => f.name)
                         .should.deep.include("Programming")
 
-                    const loadedTeacher = await connection.manager
+                    const loadedTeacher = await dataSource.manager
                         .createQueryBuilder(Teacher, "teacher")
                         .leftJoinAndSelect(
                             "teacher.specializations",
@@ -128,7 +128,7 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                         .should.deep.include("Economist")
                     loadedTeacher!.salary.should.equal(2000)
 
-                    const loadedAccountant = await connection.manager
+                    const loadedAccountant = await dataSource.manager
                         .createQueryBuilder(Accountant, "accountant")
                         .leftJoinAndSelect(
                             "accountant.departments",
@@ -154,7 +154,7 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                         .should.deep.include("HR")
                     loadedAccountant!.salary.should.equal(3000)
 
-                    const loadedEmployees = await connection.manager
+                    const loadedEmployees = await dataSource.manager
                         .createQueryBuilder(Employee, "employee")
                         .leftJoinAndSelect(
                             "employee.specializations",
@@ -205,7 +205,7 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                         .should.deep.include("HR")
                     loadedEmployees[1].salary.should.equal(3000)
 
-                    const loadedPersons = await connection.manager
+                    const loadedPersons = await dataSource.manager
                         .createQueryBuilder(Person, "person")
                         .leftJoinAndSelect("person.faculties", "faculty")
                         .leftJoinAndSelect(
@@ -278,55 +278,55 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
     describe("inverse side", () => {
         it("should work correctly with ManyToMany relations", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // -------------------------------------------------------------------------
                     // Create
                     // -------------------------------------------------------------------------
 
                     const student1 = new Student()
                     student1.name = "Alice"
-                    await connection.getRepository(Student).save(student1)
+                    await dataSource.getRepository(Student).save(student1)
 
                     const student2 = new Student()
                     student2.name = "Bob"
-                    await connection.getRepository(Student).save(student2)
+                    await dataSource.getRepository(Student).save(student2)
 
                     const faculty = new Faculty()
                     faculty.name = "Economics"
                     faculty.students = [student1, student2]
-                    await connection.getRepository(Faculty).save(faculty)
+                    await dataSource.getRepository(Faculty).save(faculty)
 
                     const teacher1 = new Teacher()
                     teacher1.name = "Mr. Garrison"
                     teacher1.salary = 2000
-                    await connection.getRepository(Teacher).save(teacher1)
+                    await dataSource.getRepository(Teacher).save(teacher1)
 
                     const teacher2 = new Teacher()
                     teacher2.name = "Mr. Adler"
                     teacher2.salary = 1000
-                    await connection.getRepository(Teacher).save(teacher2)
+                    await dataSource.getRepository(Teacher).save(teacher2)
 
                     const specialization = new Specialization()
                     specialization.name = "Geography"
                     specialization.teachers = [teacher1, teacher2]
-                    await connection
+                    await dataSource
                         .getRepository(Specialization)
                         .save(specialization)
 
                     const accountant1 = new Accountant()
                     accountant1.name = "Mr. Burns"
                     accountant1.salary = 3000
-                    await connection.getRepository(Accountant).save(accountant1)
+                    await dataSource.getRepository(Accountant).save(accountant1)
 
                     const accountant2 = new Accountant()
                     accountant2.name = "Mr. Trump"
                     accountant2.salary = 4000
-                    await connection.getRepository(Accountant).save(accountant2)
+                    await dataSource.getRepository(Accountant).save(accountant2)
 
                     const department = new Department()
                     department.name = "Bookkeeping"
                     department.accountants = [accountant1, accountant2]
-                    await connection.getRepository(Department).save(department)
+                    await dataSource.getRepository(Department).save(department)
                 }),
             ))
     })

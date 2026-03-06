@@ -21,8 +21,8 @@ describe("mongodb > indices", () => {
 
     it("should insert entity with indices correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save a post
                 const post = new Post()

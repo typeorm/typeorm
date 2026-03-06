@@ -22,14 +22,14 @@ describe("transaction > transaction with full isolation support", () => {
 
     it("should execute all operations in a single transaction with READ UNCOMMITTED isolation level", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // SAP does not support READ UNCOMMITTED isolation level
-                if (connection.driver.options.type === "sap") return
+                if (dataSource.driver.options.type === "sap") return
 
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
-                await connection.manager.transaction(
+                await dataSource.manager.transaction(
                     "READ UNCOMMITTED",
                     async (entityManager) => {
                         const post = new Post()
@@ -45,7 +45,7 @@ describe("transaction > transaction with full isolation support", () => {
                     },
                 )
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).not.to.be.null
@@ -54,7 +54,7 @@ describe("transaction > transaction with full isolation support", () => {
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).not.to.be.null
@@ -67,11 +67,11 @@ describe("transaction > transaction with full isolation support", () => {
 
     it("should execute all operations in a single transaction with READ COMMITTED isolation level", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
-                await connection.manager.transaction(
+                await dataSource.manager.transaction(
                     "READ COMMITTED",
                     async (entityManager) => {
                         const post = new Post()
@@ -87,7 +87,7 @@ describe("transaction > transaction with full isolation support", () => {
                     },
                 )
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).not.to.be.null
@@ -96,7 +96,7 @@ describe("transaction > transaction with full isolation support", () => {
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).not.to.be.null
@@ -109,11 +109,11 @@ describe("transaction > transaction with full isolation support", () => {
 
     it("should execute all operations in a single transaction with REPEATABLE READ isolation level", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
-                await connection.manager.transaction(
+                await dataSource.manager.transaction(
                     "REPEATABLE READ",
                     async (entityManager) => {
                         const post = new Post()
@@ -129,7 +129,7 @@ describe("transaction > transaction with full isolation support", () => {
                     },
                 )
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).not.to.be.null
@@ -138,7 +138,7 @@ describe("transaction > transaction with full isolation support", () => {
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).not.to.be.null
@@ -151,11 +151,11 @@ describe("transaction > transaction with full isolation support", () => {
 
     it("should execute all operations in a single transaction with SERIALIZABLE isolation level", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
-                await connection.manager.transaction(
+                await dataSource.manager.transaction(
                     "SERIALIZABLE",
                     async (entityManager) => {
                         const post = new Post()
@@ -171,7 +171,7 @@ describe("transaction > transaction with full isolation support", () => {
                     },
                 )
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).not.to.be.null
@@ -180,7 +180,7 @@ describe("transaction > transaction with full isolation support", () => {
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).not.to.be.null

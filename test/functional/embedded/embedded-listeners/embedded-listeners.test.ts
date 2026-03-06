@@ -20,13 +20,13 @@ describe("other issues > entity listeners must work in embeddeds as well", () =>
 
     it("getters and setters should work correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.title = "Super title"
                 post.text = "About this post"
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: post.id })
                     .getOne()

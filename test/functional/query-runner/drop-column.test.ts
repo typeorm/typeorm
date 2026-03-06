@@ -22,8 +22,8 @@ describe("query runner > drop column", () => {
     describe("when columns are instances of TableColumn", () => {
         it("should correctly drop column and revert drop", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
 
                     let table = await queryRunner.getTable("post")
                     const idColumn = table!.findColumnByName("id")!
@@ -34,7 +34,7 @@ describe("query runner > drop column", () => {
                     versionColumn!.should.be.exist
 
                     // better-sqlite3 seems not able to create a check constraint on a non-existing column
-                    if (connection.name === "better-sqlite3") {
+                    if (dataSource.name === "better-sqlite3") {
                         await queryRunner.dropCheckConstraints(
                             table!,
                             table!.checks,
@@ -46,8 +46,8 @@ describe("query runner > drop column", () => {
                     // calls 'dropColumn' method for each removed column.
                     // CockroachDB and Spanner does not support changing pk.
                     if (
-                        connection.driver.options.type === "cockroachdb" ||
-                        connection.driver.options.type === "spanner"
+                        dataSource.driver.options.type === "cockroachdb" ||
+                        dataSource.driver.options.type === "spanner"
                     ) {
                         await queryRunner.dropColumns(table!, [
                             nameColumn,
@@ -66,8 +66,8 @@ describe("query runner > drop column", () => {
                     expect(table!.findColumnByName("version")).to.be.undefined
                     if (
                         !(
-                            connection.driver.options.type === "cockroachdb" ||
-                            connection.driver.options.type === "spanner"
+                            dataSource.driver.options.type === "cockroachdb" ||
+                            dataSource.driver.options.type === "spanner"
                         )
                     )
                         expect(table!.findColumnByName("id")).to.be.undefined
@@ -87,8 +87,8 @@ describe("query runner > drop column", () => {
     describe("when columns are strings", () => {
         it("should correctly drop column and revert drop", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
 
                     let table = await queryRunner.getTable("post")
                     const idColumn = table!.findColumnByName("id")!
@@ -99,7 +99,7 @@ describe("query runner > drop column", () => {
                     versionColumn!.should.be.exist
 
                     // better-sqlite3 seems not able to create a check constraint on a non-existing column
-                    if (connection.name === "better-sqlite3") {
+                    if (dataSource.name === "better-sqlite3") {
                         await queryRunner.dropCheckConstraints(
                             table!,
                             table!.checks,
@@ -111,8 +111,8 @@ describe("query runner > drop column", () => {
                     // calls 'dropColumn' method for each removed column.
                     // CockroachDB does not support changing pk.
                     if (
-                        connection.driver.options.type === "cockroachdb" ||
-                        connection.driver.options.type === "spanner"
+                        dataSource.driver.options.type === "cockroachdb" ||
+                        dataSource.driver.options.type === "spanner"
                     ) {
                         await queryRunner.dropColumns(table!, [
                             "name",
@@ -131,8 +131,8 @@ describe("query runner > drop column", () => {
                     expect(table!.findColumnByName("version")).to.be.undefined
                     if (
                         !(
-                            connection.driver.options.type === "cockroachdb" ||
-                            connection.driver.options.type === "spanner"
+                            dataSource.driver.options.type === "cockroachdb" ||
+                            dataSource.driver.options.type === "spanner"
                         )
                     )
                         expect(table!.findColumnByName("id")).to.be.undefined
@@ -152,22 +152,22 @@ describe("query runner > drop column", () => {
     describe("array modification during iteration", () => {
         it("should drop all columns without skipping any when iterating over array", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // Skip drivers that don't support dropping multiple columns
                     if (
-                        connection.driver.options.type === "mongodb" ||
-                        connection.driver.options.type === "better-sqlite3" ||
-                        connection.driver.options.type === "capacitor" ||
-                        connection.driver.options.type === "cordova" ||
-                        connection.driver.options.type === "react-native" ||
-                        connection.driver.options.type === "nativescript" ||
-                        connection.driver.options.type === "expo" ||
-                        connection.driver.options.type === "sqljs"
+                        dataSource.driver.options.type === "mongodb" ||
+                        dataSource.driver.options.type === "better-sqlite3" ||
+                        dataSource.driver.options.type === "capacitor" ||
+                        dataSource.driver.options.type === "cordova" ||
+                        dataSource.driver.options.type === "react-native" ||
+                        dataSource.driver.options.type === "nativescript" ||
+                        dataSource.driver.options.type === "expo" ||
+                        dataSource.driver.options.type === "sqljs"
                     ) {
                         return
                     }
 
-                    const queryRunner = connection.createQueryRunner()
+                    const queryRunner = dataSource.createQueryRunner()
 
                     // Create test table with multiple columns
                     const table = new Table({
@@ -176,16 +176,16 @@ describe("query runner > drop column", () => {
                             {
                                 name: "id",
                                 type: DriverUtils.isSQLiteFamily(
-                                    connection.driver,
+                                    dataSource.driver,
                                 )
                                     ? "integer"
                                     : "int",
                                 isPrimary: true,
                                 isGenerated:
-                                    connection.driver.options.type !==
+                                    dataSource.driver.options.type !==
                                     "spanner",
                                 generationStrategy:
-                                    connection.driver.options.type !== "spanner"
+                                    dataSource.driver.options.type !== "spanner"
                                         ? "increment"
                                         : undefined,
                             },

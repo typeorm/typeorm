@@ -22,8 +22,8 @@ describe("columns > comments", () => {
 
     it("should persist comments of different types to the database", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const table = (await connection
+            dataSources.map(async (dataSource) => {
+                const table = (await dataSource
                     .createQueryRunner()
                     .getTable("test"))!
 

@@ -22,9 +22,9 @@ describe("database schema > column types > spanner", () => {
 
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -90,9 +90,9 @@ describe("database schema > column types > spanner", () => {
 
     it("all types should work correctly - persist and hydrate when options are specified on columns", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(PostWithOptions)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(PostWithOptions)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post_with_options")
                 await queryRunner.release()
 
@@ -121,10 +121,10 @@ describe("database schema > column types > spanner", () => {
 
     it("all types should work correctly - persist and hydrate when types are not specified on columns", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const postRepository =
-                    connection.getRepository(PostWithoutTypes)
-                const queryRunner = connection.createQueryRunner()
+                    dataSource.getRepository(PostWithoutTypes)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post_without_types")
                 await queryRunner.release()
 

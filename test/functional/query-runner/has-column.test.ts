@@ -18,8 +18,8 @@ describe("query runner > has column", () => {
 
     it("should correctly check if column exist", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 const hasIdColumn = await queryRunner.hasColumn("post", "id")
                 const hasNameColumn = await queryRunner.hasColumn(
