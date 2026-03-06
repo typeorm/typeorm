@@ -3464,11 +3464,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             if (this.findOptions.loadEagerRelations !== false) {
-                FindOptionsUtils.joinEagerRelations(
-                    this,
-                    this.expressionMap.mainAlias!.name,
-                    this.expressionMap.mainAlias!.metadata,
-                )
+                if (this.expressionMap.relationLoadStrategy === "join") {
+                    FindOptionsUtils.joinEagerRelations(
+                        this,
+                        this.expressionMap.mainAlias!.name,
+                        this.expressionMap.mainAlias!.metadata,
+                    )
+                } else if (
+                    this.expressionMap.relationLoadStrategy === "query"
+                ) {
+                    this.concatRelationMetadata(
+                        ...this.expressionMap.mainAlias!.metadata
+                            .eagerRelations,
+                    )
+                }
             }
 
             if (this.findOptions.transaction === true) {
@@ -3493,8 +3502,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
-    public concatRelationMetadata(relationMetadata: RelationMetadata) {
-        this.relationMetadatas.push(relationMetadata)
+    public concatRelationMetadata(...relationMetadata: RelationMetadata[]) {
+        const newRelationMetadata = relationMetadata.filter(
+            (metadata) =>
+                !this.relationMetadatas.some(
+                    (existentMetadata) =>
+                        existentMetadata.propertyPath === metadata.propertyPath,
+                ),
+        )
+        this.relationMetadatas.push(...newRelationMetadata)
     }
 
     /**
@@ -3765,6 +3781,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             withDeleted: this.findOptions.withDeleted,
                             relationLoadStrategy:
                                 this.findOptions.relationLoadStrategy,
+                            loadEagerRelations:
+                                this.findOptions.loadEagerRelations,
                         })
                     if (entities.length > 0) {
                         const relatedEntityGroups: any[] =
@@ -4195,8 +4213,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )
 
                 if (
-                    relationValue === true ||
-                    typeof relationValue === "object"
+                    (relationValue === true ||
+                        typeof relationValue === "object") &&
+                    this.expressionMap.relationLoadStrategy === "join"
                 ) {
                     relation.inverseEntityMetadata.eagerRelations.forEach(
                         (eagerRelation) => {
