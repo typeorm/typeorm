@@ -62,8 +62,8 @@ jobs:
 
             <table><tr><td><strong>Commit</strong></td><td><code>${{ github.event.pull_request.head.sha }}</code></td></tr>
             <tr><td><strong>Status</strong></td><td>✅ Deploy successful!</td></tr>
-            <tr><td><strong>Preview URL</strong></td><td>${{ steps.deploy.outputs.deployment-url }}</td></tr>
-            <tr><td><strong>Branch Preview</strong></td><td>${{ steps.deploy.outputs.pages-deployment-alias-url }}</td></tr></table>
+            <tr><td><strong>Preview URL</strong></td><td><a href="${{ steps.deploy.outputs.deployment-url }}">${{ steps.deploy.outputs.deployment-url }}</a></td></tr>
+            <tr><td><strong>Branch Preview</strong></td><td><a href="${{ steps.deploy.outputs.pages-deployment-alias-url }}">${{ steps.deploy.outputs.pages-deployment-alias-url }}</a></td></tr></table>
 
             [View logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
