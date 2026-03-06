@@ -1,15 +1,17 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
-import { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
+import type { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
+import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
+
+const TEST_SECRET = process.env.TYPEORM_TEST_SECRET ?? ""
 
 const BASE_OPTIONS: PostgresDataSourceOptions = {
     type: "postgres",
     host: "localhost",
     port: 5432,
     username: "test",
-    password: "test",
+    password: TEST_SECRET,
     database: "test",
     entities: [],
 }
@@ -18,7 +20,7 @@ const MASTER = {
     host: "legacy-master",
     port: 5432,
     username: "test",
-    password: "test",
+    password: TEST_SECRET,
     database: "legacy_db",
 }
 
@@ -26,7 +28,7 @@ const PRIMARY = {
     host: "alias-primary",
     port: 5432,
     username: "test",
-    password: "test",
+    password: TEST_SECRET,
     database: "alias_db",
 }
 
@@ -34,7 +36,7 @@ const SLAVE = {
     host: "legacy-slave",
     port: 5432,
     username: "test",
-    password: "test",
+    password: TEST_SECRET,
     database: "legacy_replica_db",
 }
 
@@ -42,7 +44,7 @@ const REPLICA = {
     host: "alias-replica",
     port: 5432,
     username: "test",
-    password: "test",
+    password: TEST_SECRET,
     database: "alias_replica_db",
 }
 
