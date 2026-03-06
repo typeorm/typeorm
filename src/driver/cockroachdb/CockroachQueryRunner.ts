@@ -2840,23 +2840,25 @@ export class CockroachQueryRunner
             const dropViewQueries: ObjectLiteral[] = await this.query(
                 selectViewDropsQuery,
             )
-            await Promise.all(
-                dropViewQueries.map((q) => this.query(q["query"])),
-            )
+            for (const q of dropViewQueries) {
+                await this.query(q["query"])
+            }
 
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || table_schema || '"."' || table_name || '" CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
+            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(table_schema) || '.' || quote_ident(table_name) || ' CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
             const dropQueries: ObjectLiteral[] = await this.query(
                 selectDropsQuery,
             )
-            await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+            for (const q of dropQueries) {
+                await this.query(q["query"])
+            }
 
             const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE "' || sequence_schema || '"."' || sequence_name || '";' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`
             const sequenceDropQueries: ObjectLiteral[] = await this.query(
                 selectSequenceDropsQuery,
             )
-            await Promise.all(
-                sequenceDropQueries.map((q) => this.query(q["query"])),
-            )
+            for (const q of sequenceDropQueries) {
+                await this.query(q["query"])
+            }
 
             // drop enum types. Supported starting from v20.2.19.
             if (VersionUtils.isGreaterOrEqual(version, "20.2.19")) {
@@ -3041,19 +3043,11 @@ export class CockroachQueryRunner
             `WHERE "n"."nspname" IN (${tableSchemas}) ` +
             `GROUP BY "t"."typname"`
 
-        const [
-            dbColumns,
-            dbConstraints,
-            dbIndices,
-            dbForeignKeys,
-            dbEnums,
-        ]: ObjectLiteral[][] = await Promise.all([
-            this.query(columnsSql),
-            this.query(constraintsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql),
-            this.query(enumsSql),
-        ])
+        const dbColumns: ObjectLiteral[] = await this.query(columnsSql)
+        const dbConstraints: ObjectLiteral[] = await this.query(constraintsSql)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
+        const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
+        const dbEnums: ObjectLiteral[] = await this.query(enumsSql)
 
         // create tables for loaded tables
         return Promise.all(
@@ -3824,7 +3818,9 @@ export class CockroachQueryRunner
             `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
             `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`
         const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery)
-        await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+        for (const q of dropQueries) {
+            await this.query(q["query"])
+        }
     }
 
     /**
