@@ -17,6 +17,7 @@ import type { UpsertOptions } from "./UpsertOptions"
 import type { UpdateOptions } from "./UpdateOptions"
 import type { EntityTarget } from "../common/EntityTarget"
 import type { PickKeysByType } from "../common/PickKeysByType"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -646,7 +647,7 @@ export class BaseEntity {
     static query<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
     ): Promise<any> {
         return this.getRepository<T>().query(query, parameters)
     }

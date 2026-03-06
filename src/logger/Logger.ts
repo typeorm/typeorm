@@ -1,3 +1,4 @@
+import { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
@@ -7,7 +8,11 @@ export interface Logger {
     /**
      * Logs query and parameters used in it.
      */
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner): any
+    logQuery(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+        queryRunner?: QueryRunner,
+    ): any
 
     /**
      * Logs query that is failed.
@@ -15,7 +20,7 @@ export interface Logger {
     logQueryError(
         error: string | Error,
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         queryRunner?: QueryRunner,
     ): any
 
@@ -25,7 +30,7 @@ export interface Logger {
     logQuerySlow(
         time: number,
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         queryRunner?: QueryRunner,
     ): any
 
@@ -70,7 +75,7 @@ export type LogMessage = {
     prefix?: string
     message: string | number
     format?: LogMessageFormat
-    parameters?: any[]
+    parameters?: any[] | ObjectLiteral
     additionalInfo?: Record<string, any>
 }
 

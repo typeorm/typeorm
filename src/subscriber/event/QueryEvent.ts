@@ -1,6 +1,7 @@
 import type { EntityManager } from "../../entity-manager/EntityManager"
 import type { DataSource } from "../../data-source/DataSource"
 import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 
 /**
  * BeforeQueryEvent is an object that broadcaster sends to the entity subscriber before query is ran against the database.
@@ -31,7 +32,7 @@ export interface QueryEvent<Entity> {
     /**
      * Parameters used in the query.
      */
-    parameters?: any[]
+    parameters?: any[] | ObjectLiteral
 }
 
 export interface BeforeQueryEvent<Entity> extends QueryEvent<Entity> {}
