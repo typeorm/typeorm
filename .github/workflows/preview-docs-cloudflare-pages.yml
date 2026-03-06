@@ -13,6 +13,9 @@ concurrency:
 jobs:
   preview:
     runs-on: ubuntu-latest
+    environment:
+      name: Preview
+      url: ${{ steps.deploy.outputs.deployment-url }}
     permissions:
       contents: read
       deployments: write
@@ -52,12 +55,9 @@ jobs:
         with:
           header: docs-preview
           message: |
-            ### 📄 Docs Preview
-
-            <table><tr><td><strong>Commit</strong></td><td><code>${{ github.event.pull_request.head.sha }}</code></td></tr>
-            <tr><td><strong>Status</strong></td><td>✅ Deploy successful!</td></tr>
-            <tr><td><strong>Preview URL</strong></td><td><a href="${{ steps.deploy.outputs.deployment-url }}">${{ steps.deploy.outputs.deployment-url }}</a></td></tr>
-            <tr><td><strong>Branch Preview</strong></td><td><a href="${{ steps.deploy.outputs.pages-deployment-alias-url }}">${{ steps.deploy.outputs.pages-deployment-alias-url }}</a></td></tr></table>
+            | Project | Deployment | Actions |
+            |---------|------------|---------|
+            | **typeorm-docs** | ✅ Ready | <a href="${{ steps.deploy.outputs.deployment-url }}">Preview</a> |
 
       - name: Comment deployment failure
         if: failure()
@@ -65,9 +65,6 @@ jobs:
         with:
           header: docs-preview
           message: |
-            ### 📄 Docs Preview
-
-            <table><tr><td><strong>Commit</strong></td><td><code>${{ github.event.pull_request.head.sha }}</code></td></tr>
-            <tr><td><strong>Status</strong></td><td>❌ Deploy failed!</td></tr></table>
-
-            [View logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            | Project | Deployment | Actions |
+            |---------|------------|---------|
+            | **typeorm-docs** | ❌ Failed | <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">Logs</a> |
