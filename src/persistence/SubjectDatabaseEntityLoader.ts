@@ -4,7 +4,6 @@ import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
 import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
 import { OrmUtils } from "../util/OrmUtils"
-import { PlatformTools } from "../platform/PlatformTools"
 
 /**
  * Loads database entities for all operate subjects which do not have database entity set.
@@ -114,42 +113,10 @@ export class SubjectDatabaseEntityLoader {
                 ) {
                     const mongoManager = this.queryRunner
                         .manager as MongoEntityManager
-                    const metadata = this.queryRunner.connection.getMetadata(
+                    entities = await mongoManager.findByIds(
                         subjectGroup.target,
+                        allIds,
                     )
-                    const objectIdInstance =
-                        PlatformTools.load("mongodb").ObjectId
-                    const cursor =
-                        mongoManager.createEntityCursor<ObjectLiteral>(
-                            subjectGroup.target,
-                            {
-                                _id: {
-                                    $in: allIds.map((id) => {
-                                        if (typeof id === "string") {
-                                            return new objectIdInstance(id)
-                                        }
-                                        if (typeof id === "object") {
-                                            if (
-                                                id instanceof objectIdInstance
-                                            ) {
-                                                return id
-                                            }
-                                            const propertyName =
-                                                metadata.objectIdColumn!
-                                                    .propertyName
-                                            if (
-                                                id[propertyName] instanceof
-                                                objectIdInstance
-                                            ) {
-                                                return id[propertyName]
-                                            }
-                                        }
-                                        return id
-                                    }),
-                                },
-                            },
-                        )
-                    entities = await cursor.toArray()
                 } else {
                     entities = await this.queryRunner.manager
                         .getRepository<ObjectLiteral>(subjectGroup.target)

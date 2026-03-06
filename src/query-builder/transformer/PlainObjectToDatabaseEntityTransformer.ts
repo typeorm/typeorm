@@ -3,7 +3,6 @@ import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import type { EntityManager } from "../../entity-manager/EntityManager"
 import type { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
 import type { RelationMetadata } from "../../metadata/RelationMetadata"
-import { PlatformTools } from "../../platform/PlatformTools"
 
 /**
  */
@@ -138,42 +137,10 @@ export class PlainObjectToDatabaseEntityTransformer {
                 if (isMongoDb) {
                     const mongoManager = this
                         .manager as unknown as MongoEntityManager
-                    const targetMetadata = this.manager.connection.getMetadata(
+                    entities = await mongoManager.findByIds(
                         targetWithIds.target,
+                        targetWithIds.ids,
                     )
-                    const objectIdInstance =
-                        PlatformTools.load("mongodb").ObjectId
-                    const cursor =
-                        mongoManager.createEntityCursor<ObjectLiteral>(
-                            targetWithIds.target,
-                            {
-                                _id: {
-                                    $in: targetWithIds.ids.map((id: any) => {
-                                        if (typeof id === "string") {
-                                            return new objectIdInstance(id)
-                                        }
-                                        if (typeof id === "object") {
-                                            if (
-                                                id instanceof objectIdInstance
-                                            ) {
-                                                return id
-                                            }
-                                            const propertyName =
-                                                targetMetadata.objectIdColumn!
-                                                    .propertyName
-                                            if (
-                                                id[propertyName] instanceof
-                                                objectIdInstance
-                                            ) {
-                                                return id[propertyName]
-                                            }
-                                        }
-                                        return id
-                                    }),
-                                },
-                            },
-                        )
-                    entities = await cursor.toArray()
                 } else {
                     entities = await this.manager
                         .getRepository<ObjectLiteral>(

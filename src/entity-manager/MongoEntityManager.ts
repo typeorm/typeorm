@@ -959,6 +959,40 @@ export class MongoEntityManager extends EntityManager {
     // -------------------------------------------------------------------------
 
     /**
+     * Finds entities by an array of ids, resolving ObjectId types as needed.
+     * @param entityClassOrName
+     * @param ids
+     */
+    async findByIds<Entity extends ObjectLiteral>(
+        entityClassOrName: EntityTarget<Entity>,
+        ids: any[],
+    ): Promise<Entity[]> {
+        const metadata = this.connection.getMetadata(entityClassOrName)
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        const cursor = this.createEntityCursor<Entity>(entityClassOrName, {
+            _id: {
+                $in: ids.map((id) => {
+                    if (typeof id === "string") {
+                        return new objectIdInstance(id)
+                    }
+                    if (typeof id === "object") {
+                        if (id instanceof objectIdInstance) {
+                            return id
+                        }
+                        const propertyName =
+                            metadata.objectIdColumn!.propertyName
+                        if (id[propertyName] instanceof objectIdInstance) {
+                            return id[propertyName]
+                        }
+                    }
+                    return id
+                }),
+            },
+        } as Filter<Entity>)
+        return cursor.toArray()
+    }
+
+    /**
      * Converts FindManyOptions to mongodb query.
      * @param optionsOrConditions
      */
