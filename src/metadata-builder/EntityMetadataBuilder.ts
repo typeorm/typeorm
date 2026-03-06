@@ -678,11 +678,13 @@ export class EntityMetadataBuilder {
                 })
 
                 // if single table inheritance used, we need to mark all inherit table columns as nullable
+                // (CTI children have their own tables, so their columns keep declared nullability)
                 const columnInSingleTableInheritedChild =
                     allEntityMetadatas.find(
                         (otherEntityMetadata) =>
                             otherEntityMetadata.tableType === "entity-child" &&
-                            otherEntityMetadata.target === args.target,
+                            otherEntityMetadata.target === args.target &&
+                            !otherEntityMetadata.isCtiChild,
                     )
                 if (columnInSingleTableInheritedChild) column.isNullable = true
                 return column
