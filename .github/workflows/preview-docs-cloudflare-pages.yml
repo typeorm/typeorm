@@ -15,9 +15,6 @@ jobs:
     # Skip fork PRs — secrets are not available and the deploy step would fail
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    environment:
-      name: docs-preview-${{ github.event.pull_request.number }}
-      url: ${{ steps.deploy.outputs.deployment-url }}
     permissions:
       contents: read
       deployments: write
