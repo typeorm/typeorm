@@ -9,6 +9,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import { Game } from "./entity/Game"
+import { Genre } from "./entity/Genre"
 
 describe("persistence > many-to-many", function () {
     // -------------------------------------------------------------------------
@@ -326,6 +328,41 @@ describe("persistence > many-to-many", function () {
 
                 // this should not give an error:
                 await connection.manager.remove(newPost)
+            }),
+        ))
+    it("should persist many-to-many without throwing duplicate key error when entity has multiple primary keys", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const gameRepository = connection.getRepository(Game)
+
+                const genre1 = new Genre()
+                genre1.id = 1
+                genre1.name = "Action"
+
+                const genre2 = new Genre()
+                genre2.id = 2
+                genre2.name = "Adventure"
+
+                const game = new Game()
+                game.id = 1
+                game.name = "Game 1"
+                game.genres = [genre1, genre2]
+
+                await gameRepository.save(game)
+
+                const genre3 = new Genre()
+                genre3.id = 1
+                genre3.name = "Action" // Same entity as genre1
+
+                const game2 = new Game()
+                game2.id = 2
+                game2.name = "Game 2"
+                game2.genres = [genre3]
+
+                // typeorm will fetch existing genre1 from the database and link it
+                // to game2 instead of trying to insert new genre
+                // will not throw duplicate key error
+                await expect(gameRepository.save(game2)).not.to.be.rejected
             }),
         ))
 })
