@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   preview:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     name: Preview Docs
     permissions:
@@ -49,7 +50,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy docs/build --project-name=typeorm --branch=${{ github.head_ref }}
+          command: pages deploy docs/build --project-name=typeorm --branch=pr-${{ github.event.pull_request.number }}
 
       - name: Comment preview URL
         if: success()
