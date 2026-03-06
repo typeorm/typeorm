@@ -19,7 +19,6 @@ jobs:
     permissions:
       contents: read
       deployments: write
-      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -43,17 +42,8 @@ jobs:
         run: pnpm run build
 
       - name: Deploy preview to Cloudflare Pages
-        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy docs/build --project-name=typeorm --branch=${{ github.head_ref }}
-
-      - name: Comment PR with preview URL
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: docs-preview
-          message: |
-            ## Docs Preview
-            Preview deployed to: ${{ steps.deploy.outputs.deployment-url }}
