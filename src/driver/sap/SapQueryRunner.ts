@@ -1231,7 +1231,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 upQueries,
                 downQueries,
                 Query, // from "../Query"
-                escapePath: (t) => this.escapePath(t as any),
+                escapePath: (t) => this.escapePath(t),
 
                 // your widening/safety rule
                 isSafeAlter,
@@ -1244,8 +1244,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const len = col.length
                         ? parseInt(String(col.length), 10)
                         : undefined
-                    const prec = (col as any).precision
-                    const scale = (col as any).scale
+                    const prec = col.precision
+                    const scale = col.scale
 
                     const withLen = (base: string) =>
                         len ? `${base}(${len})` : base
@@ -1269,10 +1269,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                             t.startsWith("n")
                                 ? "NVARCHAR"
                                 : t === "char" || t === "nchar"
-                                ? t === "nchar"
-                                    ? "NCHAR"
-                                    : "CHAR"
-                                : "NVARCHAR",
+                                  ? t === "nchar"
+                                      ? "NCHAR"
+                                      : "CHAR"
+                                  : "NVARCHAR",
                         )
                     if (t === "alphanum") return withLen("ALPHANUM")
                     if (t === "shorttext") return withLen("SHORTTEXT")
@@ -1316,8 +1316,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                             t === "blob"
                                 ? "BLOB"
                                 : t === "binary"
-                                ? "BINARY"
-                                : "VARBINARY",
+                                  ? "BINARY"
+                                  : "VARBINARY",
                         )
 
                     // Fallback: return upper-cased raw type

@@ -13,12 +13,25 @@ export type MysqlChangeLenFastPathArgs = {
     newColumn: TableColumn // TypeORM TableColumn
     upQueries: Query[] // Array<Query>
     downQueries: Query[] // Array<Query>
-    Query: new (query: string, parameters?: any[]) => any
-    escapePath: (table: any) => string
-    buildCreateColumnSql: (col: any, skipIdentity?: boolean) => string
-    TableColumnCtor: new (opts?: any) => any // pass your ORM's TableColumn class
+    Query: new (query: string, parameters?: unknown[]) => Query
+    escapePath: (table: string | Table) => string
+    buildCreateColumnSql: (col: TableColumn, skipIdentity?: boolean) => string
+    TableColumnCtor: new (opts?: Partial<TableColumn>) => TableColumn // pass your ORM's TableColumn class
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.table
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.buildCreateColumnSql
+ * @param root0.TableColumnCtor
+ */
 export function handleMysqlLengthOnlyFastPathChangeColumn({
     table,
     oldColumn,
@@ -39,7 +52,7 @@ export function handleMysqlLengthOnlyFastPathChangeColumn({
         newColumn.length != null
             ? parseInt(String(newColumn.length), 10)
             : undefined
-    const col: string = String(oldColumn.name)
+    const col = oldColumn.name
 
     // If shrinking, proactively truncate values that exceed the new length
     if (oldLen && newLen && newLen < oldLen) {
@@ -100,6 +113,22 @@ export type MysqlSafeAlterArgs = {
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.buildCreateColumnSql
+ * @param root0.executeQueries
+ * @param root0.replaceCachedTable
+ * @param root0.isSafeAlter
+ */
 export async function handleSafeAlterMysql({
     table,
     clonedTable,
@@ -115,8 +144,7 @@ export async function handleSafeAlterMysql({
     isSafeAlter,
 }: MysqlSafeAlterArgs): Promise<boolean> {
     // Skip generated/computed columns (MySQL can't freely MODIFY these)
-    if ((oldColumn as any).asExpression || (newColumn as any).asExpression)
-        return false
+    if (oldColumn.asExpression || newColumn.asExpression) return false
 
     // Only proceed when caller says this change is safely widening
     if (!isSafeAlter(oldColumn, newColumn)) return false

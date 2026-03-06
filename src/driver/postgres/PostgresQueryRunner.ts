@@ -1582,7 +1582,7 @@ export class PostgresQueryRunner
                     upQueries,
                     downQueries,
                     Query, // from "../Query"
-                    escapePath: (t) => this.escapePath(t as any),
+                    escapePath: (t) => this.escapePath(t),
                     executeQueries: (up, down) => this.executeQueries(up, down),
                     replaceCachedTable: (t, ct) =>
                         this.replaceCachedTable(t, ct),
@@ -1596,8 +1596,8 @@ export class PostgresQueryRunner
                         const len = col.length
                             ? parseInt(String(col.length), 10)
                             : undefined
-                        const prec = (col as any).precision
-                        const scale = (col as any).scale
+                        const prec = col.precision
+                        const scale = col.scale
 
                         const withLen = (base: string) =>
                             len ? `${base}(${len})` : base
@@ -1676,7 +1676,7 @@ export class PostgresQueryRunner
                     newColumn,
                     upQueries,
                     downQueries,
-                    driver: this.driver as any,
+                    driver: this.driver,
                     escapePath: (t) => this.escapePath(t),
                     Query, // pass the Query class/ctor you already use
                 })

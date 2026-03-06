@@ -16,6 +16,16 @@ interface ColumnLengthChangeParams {
     escapePath: (table: Table | string) => string
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.table
+ * @param root0.driver
+ * @param root0.upQueries
+ * @param root0.escapePath
+ */
 export function handleColumnLengthChange({
     oldColumn,
     newColumn,
@@ -71,7 +81,7 @@ export function handleColumnLengthChange({
         t === "binary"
 
     if (isCharOrBin) {
-        const fullTypeSql = (driver.createFullType as any)(newColumn)
+        const fullTypeSql = driver.createFullType(newColumn)
         const collationSql = newColumn.collation
             ? ` COLLATE ${newColumn.collation}`
             : ""
@@ -117,6 +127,23 @@ export type SqlServerSafeAlterArgs = {
     quoteIdent?: (ident: string) => string
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.executeQueries
+ * @param root0.replaceCachedTable
+ * @param root0.isSafeAlter
+ * @param root0.buildAlterColumnDefinition
+ * @param root0.quoteIdent
+ */
 export async function handleSafeAlterSqlServer({
     table,
     clonedTable,
@@ -133,13 +160,8 @@ export async function handleSafeAlterSqlServer({
     quoteIdent = (i) => `[${i.replace(/]/g, "]]")}]`,
 }: SqlServerSafeAlterArgs): Promise<boolean> {
     // Skip computed/identity columns (cannot freely ALTER type)
-    if ((oldColumn as any).asExpression || (newColumn as any).asExpression)
-        return false
-    if (
-        (oldColumn as any).generatedIdentity ||
-        (newColumn as any).generatedIdentity
-    )
-        return false
+    if (oldColumn.asExpression || newColumn.asExpression) return false
+    if (oldColumn.generatedIdentity || newColumn.generatedIdentity) return false
 
     // Only proceed when caller says this change is safely widening
     if (!isSafeAlter(oldColumn, newColumn)) return false

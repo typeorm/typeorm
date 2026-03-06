@@ -14,21 +14,21 @@ export type MysqlLengthOnlyFastPathArgs = {
     newColumn: TableColumn // TypeORM TableColumn
     upQueries: Query[] // Array<Query>
     downQueries: Query[] // Array<Query>
-    Query: new (query: string, parameters?: any[]) => any
+    Query: new (query: string, parameters?: unknown[]) => Query
     // Methods from the runner/driver
-    escapePath: (table: any) => string
+    escapePath: (table: string | Table) => string
     isColumnChanged: (
-        oldCol: any,
-        newCol: any,
+        oldCol: TableColumn,
+        newCol: TableColumn,
         compareDefault?: boolean,
     ) => boolean
     buildCreateColumnSql: (
-        col: any,
+        col: TableColumn,
         skipIdentity: boolean,
         skipPrimary: boolean,
     ) => string
-    executeQueries: (upQ: any[], downQ: any[]) => Promise<void>
-    replaceCachedTable: (table: any, cloned: any) => void
+    executeQueries: (upQ: Query[], downQ: Query[]) => Promise<void>
+    replaceCachedTable: (table: Table, cloned: Table) => void
 }
 
 /**
@@ -38,6 +38,19 @@ export type MysqlLengthOnlyFastPathArgs = {
  * - Skips BIT columns (string funcs not safe) and generated columns.
  * - Pre-truncates on shrink to avoid errors, then issues MODIFY with a full column definition
  *   to preserve attributes (collation, nullability, default, etc.).
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.isColumnChanged
+ * @param root0.buildCreateColumnSql
+ * @param root0.executeQueries
+ * @param root0.replaceCachedTable
  */
 export async function handleMysqlLengthOnlyFastPath({
     table,
@@ -56,7 +69,7 @@ export async function handleMysqlLengthOnlyFastPath({
     // Only use this path when no other column attributes changed.
     const newColumnExceptLength = newColumn?.clone
         ? newColumn.clone()
-        : ({ ...newColumn } as any)
+        : { ...newColumn }
     newColumnExceptLength.length = oldColumn.length
 
     if (isColumnChanged(oldColumn, newColumnExceptLength, true)) {
@@ -152,6 +165,22 @@ export type MysqlSafeAlterArgs = {
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.buildCreateColumnSql
+ * @param root0.executeQueries
+ * @param root0.replaceCachedTable
+ * @param root0.isSafeAlter
+ */
 export async function handleSafeAlter({
     table,
     clonedTable,

@@ -1297,7 +1297,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     upQueries,
                     downQueries,
                     Query, // from "../Query"
-                    escapePath: (t) => this.escapePath(t as any),
+                    escapePath: (t) => this.escapePath(t),
 
                     // IMPORTANT: match your runner's signature. Many MySQL runners expose:
                     //   buildCreateColumnSql(column: TableColumn, skipIdentity?: boolean)

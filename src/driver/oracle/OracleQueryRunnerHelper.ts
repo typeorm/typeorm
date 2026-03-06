@@ -7,23 +7,37 @@ import { TableColumn } from "../../schema-builder/table/TableColumn"
 // operations with safe ALTER COLUMN … TYPE statements when only the length of a varchar (or similar)
 
 export type OracleLengthOnlyFastPathArgs = {
-    table: Table // TypeORM Table
-    clonedTable: Table // TypeORM Table
-    oldColumn: TableColumn // TypeORM TableColumn
-    newColumn: TableColumn // TypeORM TableColumn
-    upQueries: Query[] // Array<Query>
-    downQueries: Query[] // Array<Query>
-    driver: { createFullType: (col: any) => string } & {
+    table: Table
+    clonedTable: Table
+    oldColumn: TableColumn
+    newColumn: TableColumn
+    upQueries: Query[]
+    downQueries: Query[]
+
+    driver: {
+        createFullType: (col: TableColumn) => string
         escape?: (name: string) => string
     }
-    escapePath: (table: any) => string
-    Query: new (query: string, parameters?: any[]) => any
+
+    escapePath: (table: string | Table) => string
+
+    Query: new (query: string, parameters?: unknown[]) => Query
 }
 
 /**
  * Apply Oracle length-only alter logic, pushing appropriate up/down queries.
  *
  * Does not alter nullability in the DDL to avoid ORA-01442 when combined with other statements.
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.driver
+ * @param root0.escapePath
+ * @param root0.Query
  */
 export function handleOracleLengthOnlyFastPath({
     table,
@@ -74,7 +88,9 @@ export function handleOracleLengthOnlyFastPath({
     )
 
     // Keep in-memory cloned metadata in sync to avoid later re-diffs.
-    const clonedCol = clonedTable?.columns?.find?.((c: any) => c.name === col)
+    const clonedCol = clonedTable?.columns?.find?.(
+        (c: TableColumn) => c.name === col,
+    )
     if (clonedCol) clonedCol.length = newColumn.length
 
     return true
@@ -103,6 +119,22 @@ export type OracleSafeAlterArgs = {
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.buildCreateColumnSql
+ * @param root0.executeQueries
+ * @param root0.replaceCachedTable
+ * @param root0.isSafeAlter
+ */
 export async function handleSafeAlterOracle({
     table,
     clonedTable,
@@ -118,13 +150,8 @@ export async function handleSafeAlterOracle({
     isSafeAlter,
 }: OracleSafeAlterArgs): Promise<boolean> {
     // Skip generated/computed/identity columns (Oracle won't freely MODIFY these)
-    if ((oldColumn as any).asExpression || (newColumn as any).asExpression)
-        return false
-    if (
-        (oldColumn as any).generatedIdentity ||
-        (newColumn as any).generatedIdentity
-    )
-        return false
+    if (oldColumn.asExpression || newColumn.asExpression) return false
+    if (oldColumn.generatedIdentity || newColumn.generatedIdentity) return false
 
     // Only proceed when caller says this change is safely widening
     if (!isSafeAlter(oldColumn, newColumn)) return false
@@ -133,7 +160,7 @@ export async function handleSafeAlterOracle({
     const colName = String(oldColumn.name)
     const q = (i: string) => `"${i.replace(/"/g, '""')}"`
     // Oracle TIMESTAMP precision must be between 0 and 9. Clamp to avoid ORA-30088.
-    const clampTs = (col: any) => {
+    const clampTs = (col: TableColumn) => {
         const t = String(col.type ?? "").toLowerCase()
         if (t === "timestamp" || t.startsWith("timestamp")) {
             const p = col.precision

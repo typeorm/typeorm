@@ -14,11 +14,12 @@ export type CrdbLengthOnlyFastPathArgs = {
     newColumn: TableColumn // TypeORM TableColumn
     upQueries: Query[] // Array<Query>
     downQueries: Query[] // Array<Query>
-    driver: { createFullType: (col: any) => string } & {
+    driver: {
+        createFullType: (col: TableColumn) => string
         escape?: (name: string) => string
     }
-    escapePath: (table: any) => string
-    Query: new (query: string, parameters?: any[]) => any
+    escapePath: (table: string | Table) => string
+    Query: new (query: string, parameters?: unknown[]) => Query
 }
 
 /**
@@ -26,6 +27,16 @@ export type CrdbLengthOnlyFastPathArgs = {
  *
  * It updates the clonedTable column length to keep in-memory state in sync and
  * returns true when it handled the alteration so the caller can short-circuit.
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.driver
+ * @param root0.escapePath
+ * @param root0.Query
  */
 export function handleCockroachLengthOnlyFastPath({
     table,
@@ -43,11 +54,11 @@ export function handleCockroachLengthOnlyFastPath({
             ? Number.parseInt(String(v), 10)
             : undefined
 
-    const oldLen = parseLen(oldColumn.length as any)
-    const newLen = parseLen(newColumn.length as any)
+    const oldLen = parseLen(oldColumn.length)
+    const newLen = parseLen(newColumn.length)
 
     // Length change never implies a rename; guard identifier
-    const colName: string = (newColumn?.name ?? oldColumn?.name) as string
+    const colName = newColumn?.name ?? oldColumn?.name
     const qCol = `"${colName}"`
 
     const isStringType =
@@ -118,7 +129,7 @@ export function handleCockroachLengthOnlyFastPath({
 
     // Update cloned metadata and STOP falling through
     const clonedCol = clonedTable?.columns?.find?.(
-        (c: any) => c.name === colName,
+        (c: TableColumn) => c.name === colName,
     )
     if (clonedCol) clonedCol.length = newColumn.length
 
@@ -146,6 +157,22 @@ export type CockroachSafeAlterArgs = {
     buildColumnType: (column: TableColumn) => string
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.executeQueries
+ * @param root0.replaceCachedTable
+ * @param root0.isSafeAlter
+ * @param root0.buildColumnType
+ */
 export async function handleSafeAlterCockroach({
     table,
     clonedTable,
@@ -161,13 +188,8 @@ export async function handleSafeAlterCockroach({
     buildColumnType,
 }: CockroachSafeAlterArgs): Promise<boolean> {
     // Skip generated/computed columns or identity columns
-    if ((oldColumn as any).asExpression || (newColumn as any).asExpression)
-        return false
-    if (
-        (oldColumn as any).generatedIdentity ||
-        (newColumn as any).generatedIdentity
-    )
-        return false
+    if (oldColumn.asExpression || newColumn.asExpression) return false
+    if (oldColumn.generatedIdentity || newColumn.generatedIdentity) return false
 
     if (!isSafeAlter(oldColumn, newColumn)) return false
 

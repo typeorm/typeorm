@@ -7,17 +7,21 @@ import { TableColumn } from "../../schema-builder/table/TableColumn"
 // operations with safe ALTER COLUMN … TYPE statements when only the length of a varchar (or similar)
 
 export type PgLengthOnlyFastPathArgs = {
-    table: Table // TypeORM Table
-    clonedTable: Table // TypeORM Table
-    oldColumn: TableColumn // TypeORM TableColumn
-    newColumn: TableColumn // TypeORM TableColumn
-    upQueries: Query[] // Array<Query>
-    downQueries: Query[] // Array<Query>
-    driver: { createFullType: (col: any) => string } & {
+    table: Table
+    clonedTable: Table
+    oldColumn: TableColumn
+    newColumn: TableColumn
+    upQueries: Query[]
+    downQueries: Query[]
+
+    driver: {
+        createFullType: (col: TableColumn) => string
         escape?: (name: string) => string
     }
-    escapePath: (table: any) => string
-    Query: new (query: string, parameters?: any[]) => any
+
+    escapePath: (table: string | Table) => string
+
+    Query: new (query: string, parameters?: unknown[]) => Query
 }
 
 /**
@@ -25,6 +29,16 @@ export type PgLengthOnlyFastPathArgs = {
  *
  * It updates the clonedTable column length to keep in-memory state in sync and
  * returns true when it handled the alteration so the caller can short-circuit.
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.driver
+ * @param root0.escapePath
+ * @param root0.Query
  */
 export function handlePostgresLengthOnlyFastPath({
     table,
@@ -117,7 +131,7 @@ export function handlePostgresLengthOnlyFastPath({
 
     // Update cloned metadata and stop fallthrough
     const clonedCol = clonedTable?.columns?.find?.(
-        (c: any) => c.name === colName,
+        (c: tableColumn) => c.name === colName,
     )
     if (clonedCol) clonedCol.length = newColumn.length
 
@@ -145,6 +159,22 @@ export type PostgresSafeAlterArgs = {
     buildColumnType: (column: TableColumn) => string
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.executeQueries
+ * @param root0.replaceCachedTable
+ * @param root0.isSafeAlter
+ * @param root0.buildColumnType
+ */
 export async function handleSafeAlterPostgres({
     table,
     clonedTable,
@@ -160,13 +190,8 @@ export async function handleSafeAlterPostgres({
     buildColumnType,
 }: PostgresSafeAlterArgs): Promise<boolean> {
     // Skip generated/computed/identity/serial-like columns (cannot freely change type without extra steps)
-    if ((oldColumn as any).asExpression || (newColumn as any).asExpression)
-        return false
-    if (
-        (oldColumn as any).generatedIdentity ||
-        (newColumn as any).generatedIdentity
-    )
-        return false
+    if (oldColumn.asExpression || newColumn.asExpression) return false
+    if (oldColumn.generatedIdentity || newColumn.generatedIdentity) return false
 
     // Only proceed when caller says this change is safely widening
     if (!isSafeAlter(oldColumn, newColumn)) return false
@@ -195,8 +220,8 @@ export async function handleSafeAlterPostgres({
     if (cloned) {
         cloned.type = newColumn.type
         cloned.length = newColumn.length ?? ""
-        ;(cloned as any).precision = (newColumn as any).precision
-        ;(cloned as any).scale = (newColumn as any).scale
+        cloned.precision = newColumn.precision
+        cloned.scale = newColumn.scale
     }
     replaceCachedTable(table, clonedTable)
 

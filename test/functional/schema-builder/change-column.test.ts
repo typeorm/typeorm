@@ -59,19 +59,24 @@ describe("schema builder > change column", () => {
 
                 // Helper: record SQL emitted by synchronize()
                 const recorded: string[] = []
-                const origCreateQR = (connection as any).createQueryRunner.bind(
-                    connection,
-                )
+                const origCreateQR =
+                    connection.createQueryRunner.bind(connection)
                 const installRecorder = () => {
-                    ;(connection as any).createQueryRunner = (
-                        ...args: any[]
+                    ;(
+                        connection as DataSource & {
+                            createQueryRunner: DataSource["createQueryRunner"]
+                        }
+                    ).createQueryRunner = (
+                        ...args: Parameters<DataSource["createQueryRunner"]>
                     ) => {
                         const qr = origCreateQR(...args)
                         const origQuery = qr.query.bind(qr)
-                        qr.query = async (sql: any, params?: any[]) => {
-                            if (typeof sql === "string") recorded.push(sql)
+
+                        qr.query = async (sql: string, params?: unknown[]) => {
+                            recorded.push(sql)
                             return origQuery(sql, params)
                         }
+
                         return qr
                     }
                 }
@@ -92,7 +97,7 @@ describe("schema builder > change column", () => {
                     nameColumn.build(connection)
 
                     installRecorder()
-                    let err: any
+                    let err
                     try {
                         await connection.synchronize()
                     } catch (e) {
@@ -165,7 +170,7 @@ describe("schema builder > change column", () => {
         Promise.all(
             connections.map(async (base) => {
                 // Create a fresh, isolated connection for THIS iteration, with ONLY Post registered.
-                const driverType = (base as any).driver?.options?.type
+                const driverType = base.driver?.options?.type
                 const conns = await createTestingConnections({
                     entities: [Post], // <-- exclude PostVersion here
                     schemaCreate: true,
@@ -233,23 +238,23 @@ describe("schema builder > change column", () => {
                 const postMeta = connection.getMetadata(Post)
                 const versionCol =
                     postMeta.findColumnWithPropertyName("version")!
-                const originalType: any = versionCol.type
-                const originalPrecision = (versionCol as any).precision
+                const originalType = versionCol.type
+                const originalPrecision = versionCol.precision
 
                 try {
                     // Step 1: set FLOAT
                     versionCol.type = floatBy[driver]
-                    if (driver === "mssql") (versionCol as any).precision = 24
+                    if (driver === "mssql") versionCol.precision = 24
                     versionCol.build(connection)
                     await connection.synchronize()
 
                     // Step 2: change to DOUBLE (or higher-precision float)
                     versionCol.type = doubleBy[driver]
-                    if (driver === "mssql") (versionCol as any).precision = 53
+                    if (driver === "mssql") versionCol.precision = 53
                     versionCol.build(connection)
 
                     installRecorder()
-                    let err: any
+                    let err
                     try {
                         await connection.synchronize()
                     } catch (e) {
@@ -330,7 +335,7 @@ describe("schema builder > change column", () => {
 
                 const postMeta = connection.getMetadata(Post)
                 const nameCol = postMeta.findColumnWithPropertyName("name")!
-                const originalType: any = nameCol.type
+                const originalType = nameCol.type
                 const originalLength = nameCol.length
                 const originalDefault = nameCol.default // ← save this
 
@@ -377,8 +382,8 @@ describe("schema builder > change column", () => {
 
                     if (driver === "oracle") {
                         // DATE must not have a bogus length or a string default
-                        nameCol.length = undefined as any
-                        nameCol.default = undefined as any
+                        nameCol.length = ""
+                        nameCol.default = undefined
                     } else if (
                         driver === "mysql" ||
                         driver === "mariadb" ||
@@ -386,10 +391,10 @@ describe("schema builder > change column", () => {
                     ) {
                         // arbitrary string default like 'My post' is invalid for temporal columns,
                         // so drop it for this test
-                        nameCol.default = undefined as any
+                        nameCol.default = undefined
                         nameCol.length = ""
                     } else {
-                        nameCol.length = undefined as any
+                        nameCol.length = ""
                     }
 
                     nameCol.build(connection)
@@ -400,14 +405,14 @@ describe("schema builder > change column", () => {
 
                     if (driver === "oracle") {
                         ;(nameCol as any).precision = 6
-                        nameCol.length = undefined as any
+                        nameCol.length = ""
                         // keep default undefined for this test
                     }
 
                     nameCol.build(connection)
 
                     installRecorder()
-                    let err: any
+                    let err
                     try {
                         await connection.synchronize()
                     } catch (e) {
@@ -465,12 +470,7 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when increasing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (
-                    connection.driver.options.type == "better-sqlite3" ||
-                    connection.driver.options.type == "sqljs" ||
-                    connection.driver.options.type == "sqlite"
-                )
-                    return
+                if (DriverUtils.isSQLiteFamily(connection.driver)) return
                 const queryRunner = connection.createQueryRunner()
                 const repo = connection.getRepository("post")
 
@@ -518,7 +518,7 @@ describe("schema builder > change column", () => {
                     nameColumnMetadata.build(connection)
 
                     installRecorder()
-                    let widenErr: any
+                    let widenErr
                     try {
                         await connection.synchronize()
                     } catch (e) {
@@ -614,8 +614,9 @@ describe("schema builder > change column", () => {
                                     /\bbigint\b|^int8$|^bigserial$/.test(t) ||
                                     // TypeORM sometimes sets type as a function/constructor; stringify may be '[Function:Number]'.
                                     // If metadata has width info suggestive of bigint, treat as bigint (rare in this test schema).
-                                    (typeof (c as any).width === "number" &&
-                                        (c as any).width >= 20)
+                                    (typeof (c as { width?: number }).width ===
+                                        "number" &&
+                                        (c as { width?: number }).width! >= 20)
 
                                 if (isBigInt) {
                                     // still keep it in JS safe integer range
@@ -661,7 +662,7 @@ describe("schema builder > change column", () => {
                         }
                     }
 
-                    let insertErr: any, row: any
+                    let insertErr, row
                     try {
                         row = await repo.save(payload)
                         insertedRowId = (row as any)?.id
@@ -697,12 +698,7 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when reducing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (
-                    connection.driver.options.type == "better-sqlite3" ||
-                    connection.driver.options.type == "sqljs" ||
-                    connection.driver.options.type == "sqlite"
-                )
-                    return
+                if (DriverUtils.isSQLiteFamily(connection.driver)) return
                 const queryRunner = connection.createQueryRunner()
                 const repo = connection.getRepository("post")
 
@@ -757,7 +753,7 @@ describe("schema builder > change column", () => {
                     }
 
                     installRecorder()
-                    let widenErr: any
+                    let widenErr
                     try {
                         await connection.synchronize()
                     } catch (e) {
@@ -853,7 +849,7 @@ describe("schema builder > change column", () => {
                                     // TypeORM sometimes sets type as a function/constructor; stringify may be '[Function:Number]'.
                                     // If metadata has width info suggestive of bigint, treat as bigint (rare in this test schema).
                                     (typeof (c as any).width === "number" &&
-                                        (c as any).width >= 20)
+                                        (c as any).width! >= 20)
 
                                 if (isBigInt) {
                                     // still keep it in JS safe integer range
@@ -899,7 +895,7 @@ describe("schema builder > change column", () => {
                         }
                     }
 
-                    let insertErr: any, row: any
+                    let insertErr, row
                     try {
                         row = await repo.save(payload)
                         insertedRowId = (row as any)?.id

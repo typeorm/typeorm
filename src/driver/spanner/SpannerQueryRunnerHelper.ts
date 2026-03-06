@@ -13,12 +13,20 @@ export interface SpannerFastPathArgs {
     newColumn: TableColumn
     upQueries: Query[]
     downQueries: Query[]
-    Query: new (query: string, parameters?: any[]) => any
+
+    Query: new (query: string, parameters?: unknown[]) => Query
+
     escapePath: (table: Table) => string
-    driver: any
-    executeQueries: (u: any[], d: any[]) => Promise<void>
+
+    driver: { escape: (name: string) => string }
+
+    executeQueries: (u: Query[], d: Query[]) => Promise<void>
 }
 
+/**
+ *
+ * @param args
+ */
 export async function handleSpannerLengthOnlyFastPath(
     args: SpannerFastPathArgs,
 ): Promise<boolean> {
@@ -34,10 +42,10 @@ export async function handleSpannerLengthOnlyFastPath(
     } = args
 
     const oldLen = oldColumn.length
-        ? parseInt(oldColumn.length as any, 10)
+        ? parseInt(String(oldColumn.length), 10)
         : undefined
     const newLen = newColumn.length
-        ? parseInt(newColumn.length as any, 10)
+        ? parseInt(String(newColumn.length), 10)
         : undefined
     const col = oldColumn.name
 
@@ -97,6 +105,23 @@ export type SpannerSafeAlterArgs = {
     quoteIdent?: (ident: string) => string
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.executeQueries
+ * @param root0.replaceCachedTable
+ * @param root0.isSafeAlter
+ * @param root0.buildColumnType
+ * @param root0.quoteIdent
+ */
 export async function handleSafeAlterSpanner({
     table,
     clonedTable,
@@ -113,13 +138,8 @@ export async function handleSafeAlterSpanner({
     quoteIdent = (i) => `\`${i.replace(/`/g, "``")}\``,
 }: SpannerSafeAlterArgs): Promise<boolean> {
     // Skip generated/computed/identity columns (cannot freely change)
-    if ((oldColumn as any).asExpression || (newColumn as any).asExpression)
-        return false
-    if (
-        (oldColumn as any).generatedIdentity ||
-        (newColumn as any).generatedIdentity
-    )
-        return false
+    if (oldColumn.asExpression || newColumn.asExpression) return false
+    if (oldColumn.generatedIdentity || newColumn.generatedIdentity) return false
 
     // Only proceed when caller says this change is safely widening
     if (!isSafeAlter(oldColumn, newColumn)) return false

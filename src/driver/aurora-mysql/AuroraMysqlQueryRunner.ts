@@ -1002,7 +1002,7 @@ export class AuroraMysqlQueryRunner
                     upQueries,
                     downQueries,
                     Query: Query,
-                    escapePath: (t) => this.escapePath(t as any),
+                    escapePath: (t) => this.escapePath(t),
                     buildCreateColumnSql: (col) =>
                         this.buildCreateColumnSql(col, true, true),
                     executeQueries: (up, down) => this.executeQueries(up, down),

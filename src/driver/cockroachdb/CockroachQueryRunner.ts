@@ -1629,7 +1629,7 @@ export class CockroachQueryRunner
                     upQueries,
                     downQueries,
                     Query, // from "../Query"
-                    escapePath: (t) => this.escapePath(t as any),
+                    escapePath: (t) => this.escapePath(t),
                     executeQueries: (up, down) => this.executeQueries(up, down),
                     replaceCachedTable: (t, ct) =>
                         this.replaceCachedTable(t, ct),
@@ -1643,8 +1643,8 @@ export class CockroachQueryRunner
                         const len = col.length
                             ? parseInt(String(col.length), 10)
                             : undefined
-                        const prec = (col as any).precision
-                        const scale = (col as any).scale
+                        const prec = col.precision
+                        const scale = col.scale
 
                         const withLen = (base: string) =>
                             len ? `${base}(${len})` : base
@@ -1722,7 +1722,7 @@ export class CockroachQueryRunner
                     newColumn,
                     upQueries,
                     downQueries,
-                    driver: this.driver as any,
+                    driver: this.driver,
                     escapePath: this.escapePath.bind(this),
                     Query,
                 })

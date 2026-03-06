@@ -7,22 +7,24 @@ import { TableColumn } from "../../schema-builder/table/TableColumn"
 // operations with safe ALTER COLUMN … TYPE statements when only the length of a varchar (or similar)
 
 export type HanaLengthOnlyFastPathArgs = {
-    table: Table // TypeORM Table
-    clonedTable: Table // TypeORM Table
-    oldColumn: TableColumn // TypeORM TableColumn
-    newColumn: TableColumn // TypeORM TableColumn
-    upQueries: Query[] // Array<Query>
-    downQueries: Query[] // Array<Query>
-    Query: new (query: string, parameters?: any[]) => any
-    // Methods from the runner/driver
-    escapePath: (table: any) => string
+    table: Table
+    clonedTable: Table
+    oldColumn: TableColumn
+    newColumn: TableColumn
+    upQueries: Query[]
+    downQueries: Query[]
+
+    Query: new (query: string, parameters?: unknown[]) => Query
+
+    escapePath: (table: string | Table) => string
+
     buildCreateColumnSql: (
-        col: any,
+        col: TableColumn,
         hasDefault: boolean,
         notNull: boolean,
     ) => string
-    // Constructor for TableColumn used by the builder (kept generic to avoid type coupling)
-    TableColumnCtor: new () => any
+
+    TableColumnCtor: new () => TableColumn
 }
 
 /**
@@ -32,6 +34,17 @@ export type HanaLengthOnlyFastPathArgs = {
  * - Skips columns that are arrays, primary keys, renamed, or involved in constraints/indexes.
  * - Shorten: copy through a temp column to avoid in-place shrink limitations.
  * - Widen: safe in-place ALTER; provides best-effort DOWN using temp copy.
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.buildCreateColumnSql
+ * @param root0.TableColumnCtor
  */
 export function handleHanaLengthOnlyFastPath({
     table,
@@ -48,23 +61,22 @@ export function handleHanaLengthOnlyFastPath({
     // Check for dependent indexes, foreign keys, checks, or uniques
     const colName: string = String(oldColumn.name)
     const hasIndex = Boolean(
-        clonedTable?.indices?.some?.((index: any) =>
+        clonedTable?.indices?.some?.((index: { columnNames?: string[] }) =>
             index.columnNames?.includes?.(colName),
         ),
     )
     const hasForeignKey = Boolean(
-        clonedTable?.foreignKeys?.some?.((fk: any) =>
+        clonedTable?.foreignKeys?.some?.((fk: { columnNames?: string[] }) =>
             fk.columnNames?.includes?.(colName),
         ),
     )
     const hasCheck = Boolean(
-        clonedTable?.checks?.some?.(
-            (check: any) =>
-                check.columnNames && check.columnNames.includes?.(colName),
+        clonedTable?.checks?.some?.((check: { columnNames?: string[] }) =>
+            check.columnNames?.includes?.(colName),
         ),
     )
     const hasUnique = Boolean(
-        clonedTable?.uniques?.some?.((unique: any) =>
+        clonedTable?.uniques?.some?.((unique: { columnNames?: string[] }) =>
             unique.columnNames?.includes?.(colName),
         ),
     )
@@ -345,6 +357,20 @@ export type SapSafeAlterArgs = {
     buildColumnType: (column: TableColumn) => string
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.table
+ * @param root0.clonedTable
+ * @param root0.oldColumn
+ * @param root0.newColumn
+ * @param root0.upQueries
+ * @param root0.downQueries
+ * @param root0.Query
+ * @param root0.escapePath
+ * @param root0.isSafeAlter
+ * @param root0.buildColumnType
+ */
 export async function handleSafeAlterSap({
     table,
     clonedTable,
@@ -358,13 +384,8 @@ export async function handleSafeAlterSap({
     buildColumnType,
 }: SapSafeAlterArgs): Promise<boolean> {
     // Skip generated/computed/identity
-    if ((oldColumn as any).asExpression || (newColumn as any).asExpression)
-        return false
-    if (
-        (oldColumn as any).generatedIdentity ||
-        (newColumn as any).generatedIdentity
-    )
-        return false
+    if (oldColumn.asExpression || newColumn.asExpression) return false
+    if (oldColumn.generatedIdentity || newColumn.generatedIdentity) return false
 
     // Only proceed when caller says this change is safely widening
     if (!isSafeAlter(oldColumn, newColumn)) return false

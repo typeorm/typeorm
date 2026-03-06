@@ -894,7 +894,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     upQueries,
                     downQueries,
                     Query, // from "../Query"
-                    escapePath: (t) => this.escapePath(t as any),
+                    escapePath: (t) => this.escapePath(t),
                     executeQueries: (up, down) => this.executeQueries(up, down),
                     replaceCachedTable: (t, ct) =>
                         this.replaceCachedTable(t, ct),
