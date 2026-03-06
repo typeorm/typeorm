@@ -839,6 +839,10 @@ export class EntityManager {
 
             return qb.execute()
         } else {
+            OrmUtils.validateWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
@@ -914,6 +918,10 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            OrmUtils.validateWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
@@ -974,6 +982,10 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            OrmUtils.validateWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
@@ -1020,6 +1032,10 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            OrmUtils.validateWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)

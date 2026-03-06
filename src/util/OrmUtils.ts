@@ -4,6 +4,8 @@ import type {
     PrimitiveCriteria,
     SinglePrimitiveCriteria,
 } from "../common/PrimitiveCriteria"
+import { InstanceChecker } from "./InstanceChecker"
+import { TypeORMError } from "../error"
 
 export class OrmUtils {
     // -------------------------------------------------------------------------
@@ -631,6 +633,51 @@ export class OrmUtils {
         if (Array.isArray(target) && Array.isArray(source)) {
             for (let key = 0; key < source.length; key++) {
                 OrmUtils.mergeArrayKey(target, key, source[key], memo)
+            }
+        }
+    }
+
+    /**
+     * Recursively validates an object where clause, throwing for null/undefined
+     * based on the provided invalidWhereValuesBehavior config.
+     */
+    static validateWhereCriteria(
+        criteria: ObjectLiteral,
+        options?: {
+            null?: "ignore" | "sql-null" | "throw"
+            undefined?: "ignore" | "throw"
+        },
+        path?: string,
+    ): void {
+        if (!options) return
+
+        for (const [key, value] of Object.entries(criteria)) {
+            const propertyPath = path ? `${path}.${key}` : key
+
+            if (value === undefined) {
+                const behavior = options.undefined || "ignore"
+                if (behavior === "throw") {
+                    throw new TypeORMError(
+                        `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
+                            `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                    )
+                }
+            } else if (value === null) {
+                const behavior = options.null || "ignore"
+                if (behavior === "throw") {
+                    throw new TypeORMError(
+                        `Null value encountered in property '${propertyPath}' of a where condition. ` +
+                            `To match with SQL NULL, the IsNull() operator must be used. ` +
+                            `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                    )
+                }
+            } else if (
+                typeof value === "object" &&
+                !Array.isArray(value) &&
+                !(value instanceof Date) &&
+                !InstanceChecker.isFindOperator(value)
+            ) {
+                OrmUtils.validateWhereCriteria(value, options, propertyPath)
             }
         }
     }
