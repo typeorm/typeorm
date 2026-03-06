@@ -3,27 +3,26 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
-import { Post } from "./entity/Post"
-import { Category } from "./entity/Category"
-import { PostCategory } from "./entity/PostCategory"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
+import { Post } from "./entity/explicit-join-entity/Post"
+import { Category } from "./entity/explicit-join-entity/Category"
+import { PostCategory } from "./entity/explicit-join-entity/PostCategory"
 import { expect } from "chai"
 
-describe("github issues > #58 relations with multiple primary keys", () => {
+describe("relations > multiple-primary-keys > many-to-many > explicit join entity", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/explicit-join-entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should persist successfully and return persisted entity", () =>
+    it("should persist and load join entity with extra columns", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                // create objects to save
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "category #1"
 
@@ -45,11 +44,10 @@ describe("github issues > #58 relations with multiple primary keys", () => {
                 postCategory2.category = category2
                 postCategory2.post = post
 
-                await connection.manager.save(postCategory1)
-                await connection.manager.save(postCategory2)
+                await dataSource.manager.save(postCategory1)
+                await dataSource.manager.save(postCategory2)
 
-                // check that all persisted objects exist
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .innerJoinAndSelect("post.categories", "postCategory")
                     .innerJoinAndSelect("postCategory.category", "category")
