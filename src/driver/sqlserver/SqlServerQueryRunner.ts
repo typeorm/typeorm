@@ -513,13 +513,13 @@ export class SqlServerQueryRunner
     /**
      * Creates a new database.
      * @param database
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createDatabase(
         database: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
-        const up = ifNotExist
+        const up = ifNotExists
             ? `IF DB_ID('${database}') IS NULL CREATE DATABASE "${database}"`
             : `CREATE DATABASE "${database}"`
         const down = `DROP DATABASE "${database}"`
@@ -529,10 +529,10 @@ export class SqlServerQueryRunner
     /**
      * Drops database.
      * @param database
-     * @param ifExist
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        const up = ifExist
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
+        const up = ifExists
             ? `IF DB_ID('${database}') IS NOT NULL DROP DATABASE "${database}"`
             : `DROP DATABASE "${database}"`
         const down = `CREATE DATABASE "${database}"`
@@ -543,17 +543,17 @@ export class SqlServerQueryRunner
      * Creates table schema.
      * If database name also specified (e.g. 'dbName.schemaName') schema will be created in specified database.
      * @param schemaPath
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
         if (schemaPath.indexOf(".") === -1) {
-            const upQuery = ifNotExist
+            const upQuery = ifNotExists
                 ? `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${schemaPath}"') END`
                 : `CREATE SCHEMA "${schemaPath}"`
             upQueries.push(new Query(upQuery))
@@ -565,7 +565,7 @@ export class SqlServerQueryRunner
             upQueries.push(new Query(`USE "${dbName}"`))
             downQueries.push(new Query(`USE "${currentDB}"`))
 
-            const upQuery = ifNotExist
+            const upQuery = ifNotExists
                 ? `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${schema}"') END`
                 : `CREATE SCHEMA "${schema}"`
             upQueries.push(new Query(upQuery))
@@ -582,14 +582,14 @@ export class SqlServerQueryRunner
      * Drops table schema.
      * If database name also specified (e.g. 'dbName.schemaName') schema will be dropped in specified database.
      * @param schemaPath
-     * @param ifExist
+     * @param ifExists
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    async dropSchema(schemaPath: string, ifExists?: boolean): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
         if (schemaPath.indexOf(".") === -1) {
-            const upQuery = ifExist
+            const upQuery = ifExists
                 ? `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC ('DROP SCHEMA "${schemaPath}"') END`
                 : `DROP SCHEMA "${schemaPath}"`
             upQueries.push(new Query(upQuery))
@@ -601,7 +601,7 @@ export class SqlServerQueryRunner
             upQueries.push(new Query(`USE "${dbName}"`))
             downQueries.push(new Query(`USE "${currentDB}"`))
 
-            const upQuery = ifExist
+            const upQuery = ifExists
                 ? `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC ('DROP SCHEMA "${schema}"') END`
                 : `DROP SCHEMA "${schema}"`
             upQueries.push(new Query(upQuery))
@@ -617,17 +617,17 @@ export class SqlServerQueryRunner
     /**
      * Creates a new table.
      * @param table
-     * @param ifNotExist
+     * @param ifNotExists
      * @param createForeignKeys
      * @param createIndices
      */
     async createTable(
         table: Table,
-        ifNotExist: boolean = false,
+        ifNotExists: boolean = false,
         createForeignKeys: boolean = true,
         createIndices: boolean = true,
     ): Promise<void> {
-        if (ifNotExist) {
+        if (ifNotExists) {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
@@ -697,17 +697,17 @@ export class SqlServerQueryRunner
     /**
      * Drops the table.
      * @param tableOrName
-     * @param ifExist
+     * @param ifExists
      * @param dropForeignKeys
      * @param dropIndices
      */
     async dropTable(
         tableOrName: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys: boolean = true,
         dropIndices: boolean = true,
     ): Promise<void> {
-        if (ifExist) {
+        if (ifExists) {
             const isTableExist = await this.hasTable(tableOrName)
             if (!isTableExist) return Promise.resolve()
         }
@@ -799,15 +799,19 @@ export class SqlServerQueryRunner
     /**
      * Drops the view.
      * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
-        const view = await this.getCachedView(viewName)
+        const view = ifExists
+            ? await this.getCachedView(viewName).catch(() => undefined)
+            : await this.getCachedView(viewName)
+        if (!view) return
 
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(await this.deleteViewDefinitionSql(view))
-        upQueries.push(this.dropViewSql(view))
+        upQueries.push(this.dropViewSql(view, ifExists))
         downQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.createViewSql(view))
         await this.executeQueries(upQueries, downQueries)
@@ -1947,10 +1951,12 @@ export class SqlServerQueryRunner
      * Drops column in the table.
      * @param tableOrName
      * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1958,10 +1964,12 @@ export class SqlServerQueryRunner
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
@@ -2161,13 +2169,15 @@ export class SqlServerQueryRunner
      * Drops the columns in the table.
      * @param tableOrName
      * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const column of [...columns]) {
-            await this.dropColumn(tableOrName, column)
+            await this.dropColumn(tableOrName, column, ifExists)
         }
     }
 
@@ -2288,14 +2298,18 @@ export class SqlServerQueryRunner
      * Drops a primary key.
      * @param tableOrName
      * @param constraintName
+     * @param ifExists
      */
     async dropPrimaryKey(
         tableOrName: Table | string,
         constraintName?: string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
+        if (ifExists && table.primaryColumns.length === 0) return
+
         const up = this.dropPrimaryKeySql(table)
         const down = this.createPrimaryKeySql(
             table,
@@ -2354,10 +2368,12 @@ export class SqlServerQueryRunner
      * Drops unique constraint.
      * @param tableOrName
      * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2365,10 +2381,12 @@ export class SqlServerQueryRunner
         const uniqueConstraint = InstanceChecker.isTableUnique(uniqueOrName)
             ? uniqueOrName
             : table.uniques.find((u) => u.name === uniqueOrName)
-        if (!uniqueConstraint)
+        if (!uniqueConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropUniqueConstraintSql(table, uniqueConstraint)
         const down = this.createUniqueConstraintSql(table, uniqueConstraint)
@@ -2380,13 +2398,15 @@ export class SqlServerQueryRunner
      * Drops unique constraints.
      * @param tableOrName
      * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = uniqueConstraints.map((uniqueConstraint) =>
-            this.dropUniqueConstraint(tableOrName, uniqueConstraint),
+            this.dropUniqueConstraint(tableOrName, uniqueConstraint, ifExists),
         )
         await Promise.all(promises)
     }
@@ -2437,10 +2457,12 @@ export class SqlServerQueryRunner
      * Drops check constraint.
      * @param tableOrName
      * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2448,10 +2470,12 @@ export class SqlServerQueryRunner
         const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName
             : table.checks.find((c) => c.name === checkOrName)
-        if (!checkConstraint)
+        if (!checkConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied check constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropCheckConstraintSql(table, checkConstraint)
         const down = this.createCheckConstraintSql(table, checkConstraint)
@@ -2463,13 +2487,15 @@ export class SqlServerQueryRunner
      * Drops check constraints.
      * @param tableOrName
      * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = checkConstraints.map((checkConstraint) =>
-            this.dropCheckConstraint(tableOrName, checkConstraint),
+            this.dropCheckConstraint(tableOrName, checkConstraint, ifExists),
         )
         await Promise.all(promises)
     }
@@ -2506,10 +2532,12 @@ export class SqlServerQueryRunner
      * Drops exclusion constraint.
      * @param tableOrName
      * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
@@ -2520,10 +2548,12 @@ export class SqlServerQueryRunner
      * Drops exclusion constraints.
      * @param tableOrName
      * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
@@ -2592,10 +2622,12 @@ export class SqlServerQueryRunner
      * Drops a foreign key from the table.
      * @param tableOrName
      * @param foreignKeyOrName
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2603,10 +2635,12 @@ export class SqlServerQueryRunner
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
 
         if (!foreignKey.name) {
             foreignKey.name = this.connection.namingStrategy.foreignKeyName(
@@ -2627,13 +2661,15 @@ export class SqlServerQueryRunner
      * Drops a foreign keys from the table.
      * @param tableOrName
      * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = foreignKeys.map((foreignKey) =>
-            this.dropForeignKey(tableOrName, foreignKey),
+            this.dropForeignKey(tableOrName, foreignKey, ifExists),
         )
         await Promise.all(promises)
     }
@@ -2679,10 +2715,12 @@ export class SqlServerQueryRunner
      * Drops an index.
      * @param tableOrName
      * @param indexOrName
+     * @param ifExists
      */
     async dropIndex(
         tableOrName: Table | string,
         indexOrName: TableIndex | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2690,10 +2728,12 @@ export class SqlServerQueryRunner
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index was not found in table ${table.name}`,
             )
+        }
 
         // old index may be passed without name. In this case we generate index name manually.
         if (!index.name) index.name = this.generateIndexName(table, index)
@@ -2708,13 +2748,15 @@ export class SqlServerQueryRunner
      * Drops an indices from the table.
      * @param tableOrName
      * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = indices.map((index) =>
-            this.dropIndex(tableOrName, index),
+            this.dropIndex(tableOrName, index, ifExists),
         )
         await Promise.all(promises)
     }
@@ -3778,13 +3820,13 @@ export class SqlServerQueryRunner
     /**
      * Builds drop table sql.
      * @param tableOrName
-     * @param ifExist
+     * @param ifExists
      */
     protected dropTableSql(
         tableOrName: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
     ): Query {
-        const query = ifExist
+        const query = ifExists
             ? `DROP TABLE IF EXISTS ${this.escapePath(tableOrName)}`
             : `DROP TABLE ${this.escapePath(tableOrName)}`
         return new Query(query)
@@ -3834,9 +3876,16 @@ export class SqlServerQueryRunner
     /**
      * Builds drop view sql.
      * @param viewOrPath
+     * @param ifExists
      */
-    protected dropViewSql(viewOrPath: View | string): Query {
-        return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
+    protected dropViewSql(
+        viewOrPath: View | string,
+        ifExists?: boolean,
+    ): Query {
+        const query = ifExists
+            ? `DROP VIEW IF EXISTS ${this.escapePath(viewOrPath)}`
+            : `DROP VIEW ${this.escapePath(viewOrPath)}`
+        return new Query(query)
     }
 
     /**
