@@ -259,6 +259,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             typeof entityOrTableNameUpdateSet === "function" ||
             typeof entityOrTableNameUpdateSet === "string"
         ) {
+            this.expressionMap.removeAlias(this.expressionMap.mainAlias)
             const mainAlias = this.createFromAlias(entityOrTableNameUpdateSet)
             this.expressionMap.setMainAlias(mainAlias)
         }
@@ -545,6 +546,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Creates a SelectQueryBuilder configured as a subquery
+     * linked to this builder via parentQueryBuilder.
+     */
+    protected createSubQueryBuilder(): SelectQueryBuilder<any> {
+        const qb = this.connection.createQueryBuilder()
+        qb.expressionMap.subQuery = true
+        qb.parentQueryBuilder = this
+        return qb
+    }
+
+    /**
      * Clones query builder as it is.
      * Note: it uses new query runner, if you want query builder that uses exactly same query runner,
      * you can create query builder using its constructor, for example new SelectQueryBuilder(queryBuilder)
@@ -735,6 +747,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
+            // When alias prefixing is disabled (e.g. UpdateQueryBuilder), only
+            // build replacements for the main alias.
+            if (
+                !this.expressionMap.aliasNamePrefixingEnabled &&
+                alias !== this.expressionMap.mainAlias
+            )
+                continue
             const replaceAliasNamePrefix =
                 this.expressionMap.aliasNamePrefixingEnabled && alias.name
                     ? `${alias.name}.`

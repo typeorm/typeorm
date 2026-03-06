@@ -7,11 +7,14 @@ import {
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
+import { UserNameMap } from "./entity/UserNameMap"
+import { NameRef } from "./entity/NameRef"
 import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
 import { Photo } from "./entity/Photo"
 import { UpdateValuesMissingError } from "../../../../src/error/UpdateValuesMissingError"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { FromOnUpdateNotSupportedError } from "../../../../src/error/FromOnUpdateNotSupportedError"
 
 describe("query builder > update", () => {
     let dataSources: DataSource[]
@@ -310,6 +313,176 @@ describe("query builder > update", () => {
                     error = err
                 }
                 expect(error).to.be.an.instanceof(EntityPropertyNotFoundError)
+            }),
+        ))
+
+    it("should perform update with from correctly", async () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const oldNames = ["Ezekiel Riley", "Neo Ward", "Charis Orozco"]
+                const newNames = ["Jimmy Hanson", "Georgiana Cordova"]
+
+                for (const name of oldNames) {
+                    const user = new User()
+                    user.name = name
+
+                    await connection.manager.save(user)
+                }
+
+                for (let i = 0; i < newNames.length; i++) {
+                    const userNameMap = new UserNameMap()
+                    userNameMap.newName = newNames[i]
+                    userNameMap.oldName = oldNames[i]
+
+                    await connection.manager.save(userNameMap)
+                }
+
+                try {
+                    await connection
+                        .createQueryBuilder()
+                        .update(User)
+                        .set({ name: () => 'um."newName"' })
+                        .from(UserNameMap, "um")
+                        .where('name = um."oldName"')
+                        .execute()
+
+                    const res = await connection.getRepository(User).find({
+                        order: {
+                            id: "ASC",
+                        },
+                    })
+
+                    expect(res.map((user) => user.name)).to.be.deep.equal([
+                        "Jimmy Hanson",
+                        "Georgiana Cordova",
+                        "Charis Orozco",
+                    ])
+                } catch (error) {
+                    if (
+                        !(
+                            DriverUtils.isPostgresFamily(connection.driver) ||
+                            DriverUtils.isSQLiteFamily(connection.driver) ||
+                            connection.driver.options.type === "mssql"
+                        )
+                    ) {
+                        expect(error).instanceOf(FromOnUpdateNotSupportedError)
+                    } else {
+                        throw error
+                    }
+                }
+            }),
+        ))
+
+    it("should use main entity column mapping when FROM entity has same property with different column name", async () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const alice = new User()
+                alice.name = "Alice"
+                await connection.manager.save(alice)
+
+                const bob = new User()
+                bob.name = "Bob"
+                await connection.manager.save(bob)
+
+                const ref = new NameRef()
+                ref.name = "Alice"
+                await connection.manager.save(ref)
+
+                try {
+                    // NameRef.name maps to DB column "ref_name", while User.name maps
+                    // to DB column "name".  Without the fix, replacePropertyNamesForTheWholeQuery
+                    // would overwrite the User mapping with NameRef's mapping so the WHERE
+                    // clause would become `"ref_name" = 'Alice'` (a column on the name_ref
+                    // table), causing an implicit cross-join that would update every user row.
+                    await connection
+                        .createQueryBuilder()
+                        .update(User)
+                        .set({ likesCount: 5 })
+                        .from(NameRef, "nr")
+                        .where("name = :name", { name: "Alice" })
+                        .execute()
+
+                    const users = await connection.getRepository(User).find({
+                        order: { id: "ASC" },
+                    })
+
+                    expect(users[0].likesCount).to.equal(5) // Alice — updated
+                    expect(users[1].likesCount).to.equal(0) // Bob   — must NOT be updated
+                } catch (error) {
+                    if (
+                        !(
+                            DriverUtils.isPostgresFamily(connection.driver) ||
+                            DriverUtils.isSQLiteFamily(connection.driver) ||
+                            connection.driver.options.type === "mssql"
+                        )
+                    ) {
+                        expect(error).instanceOf(FromOnUpdateNotSupportedError)
+                    } else {
+                        throw error
+                    }
+                }
+            }),
+        ))
+
+    it("should perform update with from subquery correctly", async () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const oldNames = ["Ezekiel Riley", "Neo Ward", "Charis Orozco"]
+                const newNames = ["Jimmy Hanson", "Georgiana Cordova"]
+
+                for (const name of oldNames) {
+                    const user = new User()
+                    user.name = name
+
+                    await connection.manager.save(user)
+                }
+
+                for (let i = 0; i < newNames.length; i++) {
+                    const userNameMap = new UserNameMap()
+                    userNameMap.newName = newNames[i]
+                    userNameMap.oldName = oldNames[i]
+
+                    await connection.manager.save(userNameMap)
+                }
+
+                try {
+                    await connection
+                        .createQueryBuilder()
+                        .update(User)
+                        .set({ name: () => 'um."newName"' })
+                        .from((qb) => {
+                            return qb
+                                .select(['um0."newName"', 'um0."oldName"'])
+                                .from(UserNameMap, "um0")
+                                .where(`um0."newName" <> 'Georgiana Cordova'`)
+                        }, "um")
+                        .where('name = um."oldName"')
+                        .execute()
+
+                    const res = await connection.getRepository(User).find({
+                        order: {
+                            id: "ASC",
+                        },
+                    })
+
+                    expect(res.map((user) => user.name)).to.be.deep.equal([
+                        "Jimmy Hanson",
+                        "Neo Ward",
+                        "Charis Orozco",
+                    ])
+                } catch (error) {
+                    if (
+                        !(
+                            DriverUtils.isPostgresFamily(connection.driver) ||
+                            DriverUtils.isSQLiteFamily(connection.driver) ||
+                            connection.driver.options.type === "mssql"
+                        )
+                    ) {
+                        expect(error).instanceOf(FromOnUpdateNotSupportedError)
+                    } else {
+                        throw error
+                    }
+                }
             }),
         ))
 })
