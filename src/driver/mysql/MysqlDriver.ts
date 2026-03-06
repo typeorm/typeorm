@@ -22,7 +22,14 @@ import type { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
-import type { ReplicationMode } from "../types/ReplicationMode"
+import {
+    getReplicationPrimary,
+    getReplicationReplicas,
+} from "../types/ReplicationConfig"
+import {
+    normalizeReplicationMode,
+    type ReplicationMode,
+} from "../types/ReplicationMode"
 import type { UpsertType } from "../types/UpsertType"
 import type { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 import type { MysqlDataSourceOptions } from "./MysqlDataSourceOptions"
@@ -330,7 +337,7 @@ export class MysqlDriver implements Driver {
 
         this.database = DriverUtils.buildDriverOptions(
             this.options.replication
-                ? this.options.replication.master
+                ? getReplicationPrimary(this.options.replication)
                 : this.options,
         ).database
 
@@ -355,21 +362,32 @@ export class MysqlDriver implements Driver {
      */
     async connect(): Promise<void> {
         if (this.options.replication) {
-            this.poolCluster = this.mysql.createPoolCluster(
+            const replicationPrimary = getReplicationPrimary(
                 this.options.replication,
             )
-            this.options.replication.slaves.forEach((slave, index) => {
+            const replicationReplicas = getReplicationReplicas(
+                this.options.replication,
+            )
+
+            const {
+                master: _master,
+                slaves: _slaves,
+                primary: _primary,
+                replicas: _replicas,
+                defaultMode: _defaultMode,
+                ...poolClusterOptions
+            } = this.options.replication
+
+            this.poolCluster = this.mysql.createPoolCluster(poolClusterOptions)
+            replicationReplicas.forEach((replica, index) => {
                 this.poolCluster.add(
                     "SLAVE" + index,
-                    this.createConnectionOptions(this.options, slave),
+                    this.createConnectionOptions(this.options, replica),
                 )
             })
             this.poolCluster.add(
                 "MASTER",
-                this.createConnectionOptions(
-                    this.options,
-                    this.options.replication.master,
-                ),
+                this.createConnectionOptions(this.options, replicationPrimary),
             )
         } else {
             this.pool = await this.createPool(
@@ -453,7 +471,7 @@ export class MysqlDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new MysqlQueryRunner(this, mode)
+        return new MysqlQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

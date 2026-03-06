@@ -14,7 +14,7 @@ import type { TableCheck } from "../schema-builder/table/TableCheck"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import type { TableExclusion } from "../schema-builder/table/TableExclusion"
 import type { QueryResult } from "./QueryResult"
-import type { ReplicationMode } from "../driver/types/ReplicationMode"
+import type { LegacyReplicationMode } from "../driver/types/ReplicationMode"
 
 /**
  * Runs queries on a single database connection.
@@ -183,7 +183,7 @@ export interface QueryRunner extends AsyncDisposable {
     /**
      * Returns replication mode (ex: `master` or `slave`).
      */
-    getReplicationMode(): ReplicationMode
+    getReplicationMode(): LegacyReplicationMode
 
     /**
      * Checks if a database with the given name exist.
