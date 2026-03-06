@@ -287,3 +287,7 @@ The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, confli
 ### `QueryBuilder.setNativeParameters()`
 
 The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
+
+### `QueryExpressionMap.nativeParameters`
+
+The internal `nativeParameters` property on `QueryExpressionMap` has been removed, along with the corresponding `nativeParameters` parameter on `Driver.escapeQueryWithParameters()`. If you were accessing these internals directly, use standard query parameters via `setParameters()` instead.
