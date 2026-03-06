@@ -439,23 +439,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Adds native parameters from the given object.
-     * @param parameters
-     * @deprecated Use `setParameters` instead
-     */
-    setNativeParameters(parameters: ObjectLiteral): this {
-        // set parent query builder parameters as well in sub-query mode
-        if (this.parentQueryBuilder) {
-            this.parentQueryBuilder.setNativeParameters(parameters)
-        }
-
-        Object.keys(parameters).forEach((key) => {
-            this.expressionMap.nativeParameters[key] = parameters[key]
-        })
-        return this
-    }
-
-    /**
      * Gets all parameters.
      */
     getParameters(): ObjectLiteral {
