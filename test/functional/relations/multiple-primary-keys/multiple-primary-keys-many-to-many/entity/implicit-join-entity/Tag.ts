@@ -1,9 +1,9 @@
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { ManyToMany } from "../../../../../../src/decorator/relations/ManyToMany"
-import { JoinTable } from "../../../../../../src/decorator/relations/JoinTable"
-import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "../../../../../../../src/decorator/entity/Entity"
+import { ManyToMany } from "../../../../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "../../../../../../../src/decorator/relations/JoinTable"
+import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
 import { Category } from "./Category"
-import { Column } from "../../../../../../src/decorator/columns/Column"
+import { Column } from "../../../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Tag {
