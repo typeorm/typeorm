@@ -29,8 +29,8 @@ describe("query runner > create unique constraint", () => {
 
     it("should correctly create unique constraint and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "category",

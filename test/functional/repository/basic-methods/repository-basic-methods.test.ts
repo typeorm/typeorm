@@ -51,22 +51,22 @@ describe("repository > basic methods", () => {
 
     describe("target", function () {
         it("should return instance of the object it manages", () =>
-            dataSources.forEach((connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.forEach((dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 postRepository.target.should.be.equal(Post)
-                const userRepository = connection.getRepository<User>("User")
+                const userRepository = dataSource.getRepository<User>("User")
                 userRepository.target.should.be.equal("User")
                 // todo: it's not clear what we shall return string or entity schema
-                // const questionRepository = connection.getRepository<Question>("Question");
+                // const questionRepository = dataSource.getRepository<Question>("Question");
                 // questionRepository.target.should.be.instanceOf(Function);
             }))
     })
 
     describe("hasId", function () {
         it("should return true if entity has an id", () =>
-            dataSources.forEach((connection) => {
-                const postRepository = connection.getRepository(Post)
-                const userRepository = connection.getRepository("User")
+            dataSources.forEach((dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const userRepository = dataSource.getRepository("User")
 
                 const postWithId = new Post()
                 postWithId.id = 1
@@ -94,9 +94,9 @@ describe("repository > basic methods", () => {
             }))
 
         it("should return false if entity does not have an id", () =>
-            dataSources.forEach((connection) => {
-                const postRepository = connection.getRepository(Post)
-                const userRepository = connection.getRepository("User")
+            dataSources.forEach((dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const userRepository = dataSource.getRepository("User")
 
                 postRepository.hasId(null as any).should.be.equal(false)
                 postRepository.hasId(undefined as any).should.be.equal(false)
@@ -144,16 +144,16 @@ describe("repository > basic methods", () => {
 
     describe("createQueryBuilder", function () {
         it("should create a new query builder with the given alias", () =>
-            dataSources.forEach((connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.forEach((dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const postQb = postRepository.createQueryBuilder("post")
                 postQb.should.be.instanceOf(QueryBuilder)
                 postQb.alias.should.be.equal("post")
-                const userRepository = connection.getRepository("User")
+                const userRepository = dataSource.getRepository("User")
                 const userQb = userRepository.createQueryBuilder("user")
                 userQb.should.be.instanceOf(QueryBuilder)
                 userQb.alias.should.be.equal("user")
-                const questionRepository = connection.getRepository("Question")
+                const questionRepository = dataSource.getRepository("Question")
                 const questionQb =
                     questionRepository.createQueryBuilder("question")
                 questionQb.should.be.instanceOf(QueryBuilder)
@@ -163,34 +163,34 @@ describe("repository > basic methods", () => {
 
     describe("create", function () {
         it("should create a new instance of the object we are working with", () =>
-            dataSources.forEach((connection) => {
-                const repository = connection.getRepository(Post)
+            dataSources.forEach((dataSource) => {
+                const repository = dataSource.getRepository(Post)
                 repository.create().should.be.instanceOf(Post)
             }))
 
         it("should create a new empty object if entity schema is used", () =>
-            dataSources.forEach((connection) => {
-                const repository = connection.getRepository(
+            dataSources.forEach((dataSource) => {
+                const repository = dataSource.getRepository(
                     "User",
                 ) as Repository<User>
                 repository.create().should.be.eql({})
             }))
 
         it("should create a new empty object if entity schema with a target is used", () =>
-            dataSources.forEach((connection) => {
+            dataSources.forEach((dataSource) => {
                 const repository =
-                    connection.getRepository<Question>("Question")
+                    dataSource.getRepository<Question>("Question")
                 repository.create().should.not.be.undefined
                 repository.create().should.not.be.null
                 repository.create().type.should.be.equal("question") // make sure this is our Question function
             }))
 
         it("should create an entity and copy to it all properties of the given plain object if its given", () =>
-            dataSources.forEach((connection) => {
-                const postRepository = connection.getRepository(Post)
-                const userRepository = connection.getRepository<User>("User")
+            dataSources.forEach((dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const userRepository = dataSource.getRepository<User>("User")
                 const questionRepository =
-                    connection.getRepository<Question>("Question")
+                    dataSource.getRepository<Question>("Question")
 
                 const plainPost = { id: 2, title: "Hello post" }
                 const post = postRepository.create(plainPost)
@@ -217,8 +217,8 @@ describe("repository > basic methods", () => {
 
     describe("createMany", function () {
         it("should create entities and copy to them all properties of the given plain object if its given", () =>
-            dataSources.forEach((connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.forEach((dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const plainPosts = [
                     { id: 2, title: "Hello post" },
                     { id: 3, title: "Bye post" },
@@ -237,10 +237,10 @@ describe("repository > basic methods", () => {
     describe("preload", function () {
         it("should preload entity from the given object with only id", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const blogRepository = connection.getRepository(Blog)
+                dataSources.map(async (dataSource) => {
+                    const blogRepository = dataSource.getRepository(Blog)
                     const categoryRepository =
-                        connection.getRepository(Category)
+                        dataSource.getRepository(Category)
 
                     // save the category
                     const category = new Category()
@@ -269,10 +269,10 @@ describe("repository > basic methods", () => {
 
         it("should preload entity and all relations given in the object", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const blogRepository = connection.getRepository(Blog)
+                dataSources.map(async (dataSource) => {
+                    const blogRepository = dataSource.getRepository(Blog)
                     const categoryRepository =
-                        connection.getRepository(Category)
+                        dataSource.getRepository(Category)
 
                     // save the category
                     const category = new Category()
@@ -305,8 +305,8 @@ describe("repository > basic methods", () => {
     describe("merge", function () {
         it("should merge multiple entities", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const blogRepository = connection.getRepository(Blog)
+                dataSources.map(async (dataSource) => {
+                    const blogRepository = dataSource.getRepository(Blog)
 
                     const originalEntity = new Blog()
 
@@ -346,8 +346,8 @@ describe("repository > basic methods", () => {
 
         it("should merge both entities and plain objects", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const blogRepository = connection.getRepository(Blog)
+                dataSources.map(async (dataSource) => {
+                    const blogRepository = dataSource.getRepository(Blog)
 
                     const originalEntity = new Blog()
 
@@ -389,10 +389,10 @@ describe("repository > basic methods", () => {
             Promise.all(
                 dataSources
                     .filter((c) => c.name === "better-sqlite3")
-                    .map(async (connection) => {
+                    .map(async (dataSource) => {
                         if (
-                            !connection ||
-                            (connection.options as any).skip === true
+                            !dataSource ||
+                            (dataSource.options as any).skip === true
                         ) {
                             return
                         }
@@ -403,7 +403,7 @@ describe("repository > basic methods", () => {
                         post.title = "Post title"
                         post.id = 1
 
-                        const postRepository = connection.getRepository(Post)
+                        const postRepository = dataSource.getRepository(Post)
 
                         await postRepository.save(post)
 
@@ -434,16 +434,16 @@ describe("repository > basic methods", () => {
     describe("upsert", function () {
         it("should first create then update an entity", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    if (!connection.driver.supportedUpsertTypes.length) return
-                    const externalIdObjects = connection.getRepository(
+                dataSources.map(async (dataSource) => {
+                    if (!dataSource.driver.supportedUpsertTypes.length) return
+                    const externalIdObjects = dataSource.getRepository(
                         ExternalIdPrimaryKeyEntity,
                     )
-                    const postRepository = connection.getRepository(Post)
+                    const postRepository = dataSource.getRepository(Post)
                     const categoryRepository =
-                        connection.getRepository(Category)
+                        dataSource.getRepository(Category)
                     const relationAsPrimaryKeyRepository =
-                        connection.getRepository(RelationAsPrimaryKey)
+                        dataSource.getRepository(RelationAsPrimaryKey)
                     const externalId = "external-1"
 
                     const category = await categoryRepository.save({
@@ -535,10 +535,10 @@ describe("repository > basic methods", () => {
             ))
         it("should bulk upsert", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    if (!connection.driver.supportedUpsertTypes.length) return
+                dataSources.map(async (dataSource) => {
+                    if (!dataSource.driver.supportedUpsertTypes.length) return
 
-                    const externalIdObjects = connection.getRepository(
+                    const externalIdObjects = dataSource.getRepository(
                         ExternalIdPrimaryKeyEntity,
                     )
 
@@ -583,10 +583,10 @@ describe("repository > basic methods", () => {
             ))
         it("should not overwrite unspecified properties", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    if (!connection.driver.supportedUpsertTypes.length) return
+                dataSources.map(async (dataSource) => {
+                    if (!dataSource.driver.supportedUpsertTypes.length) return
 
-                    const postObjects = connection.getRepository(Post)
+                    const postObjects = dataSource.getRepository(Post)
                     const externalId = "external-no-overwrite-unrelated"
 
                     // update properties of embedded
@@ -608,10 +608,10 @@ describe("repository > basic methods", () => {
             ))
         it("should skip update when nothing has changed", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    if (!(connection.driver.options.type === "postgres")) return
+                dataSources.map(async (dataSource) => {
+                    if (!(dataSource.driver.options.type === "postgres")) return
 
-                    const postObjects = connection.getRepository(Post)
+                    const postObjects = dataSource.getRepository(Post)
                     const externalId1 = "external-skip-update-nothing-changed1"
                     const externalId2 = "external-skip-update-nothing-changed2"
 
@@ -682,14 +682,14 @@ describe("repository > basic methods", () => {
             ))
         it("should upsert with embedded columns", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    if (!connection.driver.supportedUpsertTypes.length) return
+                dataSources.map(async (dataSource) => {
+                    if (!dataSource.driver.supportedUpsertTypes.length) return
 
-                    const externalIdObjects = connection.getRepository(
+                    const externalIdObjects = dataSource.getRepository(
                         ExternalIdPrimaryKeyEntity,
                     )
                     const embeddedConstraintObjects =
-                        connection.getRepository(EmbeddedUQEntity)
+                        dataSource.getRepository(EmbeddedUQEntity)
                     const externalId = "external-embedded"
 
                     // update properties of embedded
@@ -740,14 +740,14 @@ describe("repository > basic methods", () => {
             ))
         it("should upsert on one-to-one relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    if (!connection.driver.supportedUpsertTypes.length) return
+                dataSources.map(async (dataSource) => {
+                    if (!dataSource.driver.supportedUpsertTypes.length) return
 
-                    const oneToOneRepository = connection.getRepository(
+                    const oneToOneRepository = dataSource.getRepository(
                         OneToOneRelationEntity,
                     )
                     const categoryRepository =
-                        connection.getRepository(Category)
+                        dataSource.getRepository(Category)
 
                     const category = await categoryRepository.save({
                         name: "Category",
@@ -778,11 +778,11 @@ describe("repository > basic methods", () => {
             ))
         it("should bulk upsert with embedded columns", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    if (!connection.driver.supportedUpsertTypes.length) return
+                dataSources.map(async (dataSource) => {
+                    if (!dataSource.driver.supportedUpsertTypes.length) return
 
                     const embeddedConstraintObjects =
-                        connection.getRepository(EmbeddedUQEntity)
+                        dataSource.getRepository(EmbeddedUQEntity)
 
                     await embeddedConstraintObjects.upsert(
                         [
@@ -831,10 +831,10 @@ describe("repository > basic methods", () => {
             ))
         it("should throw if using an unsupported driver", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    if (connection.driver.supportedUpsertTypes.length) return
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.supportedUpsertTypes.length) return
 
-                    const postRepository = connection.getRepository(Post)
+                    const postRepository = dataSource.getRepository(Post)
                     const externalId = "external-2"
                     await postRepository
                         .upsert({ externalId, title: "Post title initial" }, [
@@ -845,17 +845,17 @@ describe("repository > basic methods", () => {
             ))
         it("should throw if using indexPredicate with an unsupported driver", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // does not throw for cockroachdb, just returns a result
-                    if (connection.driver.options.type === "cockroachdb") return
+                    if (dataSource.driver.options.type === "cockroachdb") return
                     if (
-                        !connection.driver.supportedUpsertTypes.includes(
+                        !dataSource.driver.supportedUpsertTypes.includes(
                             "on-conflict-do-update",
                         )
                     )
                         return
 
-                    const postRepository = connection.getRepository(Post)
+                    const postRepository = dataSource.getRepository(Post)
                     const externalId = "external-2"
                     await postRepository
                         .upsert(
@@ -873,10 +873,10 @@ describe("repository > basic methods", () => {
     describe("preload also should also implement merge functionality", function () {
         it("if we preload entity from the plain object and merge preloaded object with plain object we'll have an object from the db with the replaced properties by a plain object's properties", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const blogRepository = connection.getRepository(Blog)
+                dataSources.map(async (dataSource) => {
+                    const blogRepository = dataSource.getRepository(Blog)
                     const categoryRepository =
-                        connection.getRepository(Category)
+                        dataSource.getRepository(Category)
 
                     // save first category
                     const firstCategory = new Category()
@@ -922,8 +922,8 @@ describe("repository > basic methods", () => {
     describe("query", function () {
         it("should execute the query natively and it should return the result", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repository = connection.getRepository(Blog)
+                dataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Blog)
 
                     for (let i = 0; i < 5; i++) {
                         // todo: should pass with 50 items. find the problem
@@ -936,14 +936,14 @@ describe("repository > basic methods", () => {
 
                     // such simple query should work on all platforms, isn't it? If no - make requests specifically to platforms
                     const query =
-                        `SELECT MAX(${connection.driver.escape(
+                        `SELECT MAX(${dataSource.driver.escape(
                             "blog",
-                        )}.${connection.driver.escape(
+                        )}.${dataSource.driver.escape(
                             "counter",
-                        )}) as ${connection.driver.escape("max")} ` +
-                        ` FROM ${connection.driver.escape(
+                        )}) as ${dataSource.driver.escape("max")} ` +
+                        ` FROM ${dataSource.driver.escape(
                             "blog",
-                        )} ${connection.driver.escape("blog")}`
+                        )} ${dataSource.driver.escape("blog")}`
                     const result = await repository.query(query)
                     result[0].should.not.be.undefined
                     result[0].max.should.not.be.undefined
@@ -953,8 +953,8 @@ describe("repository > basic methods", () => {
 
     /*describe.skip("transaction", function() {
 
-        it("executed queries must success", () => Promise.all(dataSources.map(async connection => {
-            const repository = connection.getRepository(Blog);
+        it("executed queries must success", () => Promise.all(dataSources.map(async dataSource => {
+            const repository = dataSource.getRepository(Blog);
             let blogs = await repository.find();
             blogs.should.be.eql([]);
 
@@ -986,8 +986,8 @@ describe("repository > basic methods", () => {
             blogs.length.should.be.equal(101);
         })));
 
-        it("executed queries must rollback in the case if error in transaction", () => Promise.all(dataSources.map(async connection => {
-            const repository = connection.getRepository(Blog);
+        it("executed queries must rollback in the case if error in transaction", () => Promise.all(dataSources.map(async dataSource => {
+            const repository = dataSource.getRepository(Blog);
             let blogs = await repository.find();
             blogs.should.be.eql([]);
 

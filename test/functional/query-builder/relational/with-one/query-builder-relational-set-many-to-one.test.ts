@@ -21,38 +21,38 @@ describe("query builder > relational query builder > set operation > many to one
 
     it("should set entity relation of a given entity by entity objects", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "category #1"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "category #2"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.name = "category #3"
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(post1)
                     .set(category1)
 
-                let loadedPost1 = await connection.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -65,7 +65,7 @@ describe("query builder > relational query builder > set operation > many to one
                     name: "category #1",
                 })
 
-                let loadedPost2 = await connection.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 2,
                     },
@@ -75,7 +75,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost2!.category).to.be.null
 
-                let loadedPost3 = await connection.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 3,
                     },
@@ -85,13 +85,13 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost3!.category).to.be.null
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(post1)
                     .set(null)
 
-                loadedPost1 = await connection.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -101,7 +101,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost1!.category).to.be.null
 
-                loadedPost2 = await connection.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 2,
                     },
@@ -111,7 +111,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost2!.category).to.be.null
 
-                loadedPost3 = await connection.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 3,
                     },
@@ -125,38 +125,38 @@ describe("query builder > relational query builder > set operation > many to one
 
     it("should set entity relation of a given entity by entity id", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "category #1"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "category #2"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.name = "category #3"
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(2)
                     .set(2)
 
-                let loadedPost1 = await connection.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -166,7 +166,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost1!.category).to.be.null
 
-                let loadedPost2 = await connection.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 2,
                     },
@@ -179,7 +179,7 @@ describe("query builder > relational query builder > set operation > many to one
                     name: "category #2",
                 })
 
-                let loadedPost3 = await connection.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 3,
                     },
@@ -189,13 +189,13 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost3!.category).to.be.null
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(2)
                     .set(null)
 
-                loadedPost1 = await connection.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -205,7 +205,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost1!.category).to.be.null
 
-                loadedPost2 = await connection.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 2,
                     },
@@ -215,7 +215,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost2!.category).to.be.null
 
-                loadedPost3 = await connection.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 3,
                     },
@@ -229,38 +229,38 @@ describe("query builder > relational query builder > set operation > many to one
 
     it("should set entity relation of a given entity by entity id map", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "category #1"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "category #2"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.name = "category #3"
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of({ id: 3 })
                     .set({ id: 3 })
 
-                let loadedPost1 = await connection.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -270,7 +270,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost1!.category).to.be.null
 
-                let loadedPost2 = await connection.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 2,
                     },
@@ -280,7 +280,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost2!.category).to.be.null
 
-                let loadedPost3 = await connection.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 3,
                     },
@@ -293,13 +293,13 @@ describe("query builder > relational query builder > set operation > many to one
                     name: "category #3",
                 })
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of({ id: 3 })
                     .set(null)
 
-                loadedPost1 = await connection.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -309,7 +309,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost1!.category).to.be.null
 
-                loadedPost2 = await connection.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 2,
                     },
@@ -319,7 +319,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost2!.category).to.be.null
 
-                loadedPost3 = await connection.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 3,
                     },
@@ -333,38 +333,38 @@ describe("query builder > relational query builder > set operation > many to one
 
     it("should set entity relation of a multiple entities", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "category #1"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "category #2"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.name = "category #3"
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of([{ id: 1 }, { id: 3 }])
                     .set({ id: 3 })
 
-                let loadedPost1 = await connection.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -377,7 +377,7 @@ describe("query builder > relational query builder > set operation > many to one
                     name: "category #3",
                 })
 
-                let loadedPost2 = await connection.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 2,
                     },
@@ -387,7 +387,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost2!.category).to.be.null
 
-                let loadedPost3 = await connection.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 3,
                     },
@@ -400,13 +400,13 @@ describe("query builder > relational query builder > set operation > many to one
                     name: "category #3",
                 })
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of([{ id: 1 }, { id: 3 }])
                     .set(null)
 
-                loadedPost1 = await connection.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -416,7 +416,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost1!.category).to.be.null
 
-                loadedPost2 = await connection.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 2,
                     },
@@ -426,7 +426,7 @@ describe("query builder > relational query builder > set operation > many to one
                 })
                 expect(loadedPost2!.category).to.be.null
 
-                loadedPost3 = await connection.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 3,
                     },

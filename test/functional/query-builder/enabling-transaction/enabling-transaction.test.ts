@@ -17,11 +17,11 @@ describe("query builder > enabling transaction", () => {
 
     it("should execute query in a transaction", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.title = "about transactions in query builder"
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)

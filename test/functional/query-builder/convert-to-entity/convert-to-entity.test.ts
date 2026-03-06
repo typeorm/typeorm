@@ -20,8 +20,8 @@ describe("query builder > convert raw results to entity", () => {
 
     it("should return null value in entity property when record column is null", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const post = new Post()
                 post.id = 1
 
@@ -36,8 +36,8 @@ describe("query builder > convert raw results to entity", () => {
 
     it("should return true in entity property when record column is true", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const post = new Post()
                 post.id = 1
                 post.isNew = true
@@ -53,8 +53,8 @@ describe("query builder > convert raw results to entity", () => {
 
     it("should return false in entity property when record column is false", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const post = new Post()
                 post.id = 1
                 post.isNew = false

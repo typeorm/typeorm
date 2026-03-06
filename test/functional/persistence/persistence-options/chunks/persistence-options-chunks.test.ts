@@ -28,7 +28,7 @@ describe("persistence > persistence options > chunks", () => {
 
     it("should save objects in chunks", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const posts: Post[] = []
                 for (let i = 0; i < 25000; i++) {
                     // CI falls on Node 4 with 100000 rows
@@ -37,7 +37,7 @@ describe("persistence > persistence options > chunks", () => {
                     post.description = "Hello" + i
                     posts.push(post)
                 }
-                await connection.manager.save(posts, { chunk: 5000 }) // CI falls on Node 4 with 10000 chunks
+                await dataSource.manager.save(posts, { chunk: 5000 }) // CI falls on Node 4 with 10000 chunks
             }),
         ))
 })

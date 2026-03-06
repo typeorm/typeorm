@@ -31,19 +31,19 @@ describe("sqljs driver > startup", () => {
 
     it("should startup even if the file doesn't exist", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                // if we come this far, test was successful as a connection was established
-                expect(connection).to.not.be.null
+            dataSources.map(async (dataSource) => {
+                // if we come this far, test was successful as a dataSource was established
+                expect(dataSource).to.not.be.null
             }),
         ))
 
     it("should write a new file after first write operation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.title = "The title"
 
-                const repository = connection.getRepository(Post)
+                const repository = dataSource.getRepository(Post)
                 await repository.save(post)
 
                 expect(PlatformTools.fileExist(pathToSqlite)).to.be.true

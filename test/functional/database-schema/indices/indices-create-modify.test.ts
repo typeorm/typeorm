@@ -22,8 +22,8 @@ describe("database schema > indices > reading index from entity and updating dat
 
     it("should create a non unique index with 2 columns", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("person")
                 await queryRunner.release()
 
@@ -40,8 +40,8 @@ describe("database schema > indices > reading index from entity and updating dat
 
     it("should update the index to be unique", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const entityMetadata = connection.entityMetadatas.find(
+            dataSources.map(async (dataSource) => {
+                const entityMetadata = dataSource.entityMetadatas.find(
                     (x) => x.name === "Person",
                 )
                 const indexMetadata = entityMetadata!.indices.find(
@@ -49,14 +49,14 @@ describe("database schema > indices > reading index from entity and updating dat
                 )
                 indexMetadata!.isUnique = true
 
-                await connection.synchronize(false)
+                await dataSource.synchronize(false)
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("person")
                 await queryRunner.release()
 
                 // CockroachDB stores unique indices as UNIQUE constraints
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     expect(table!.uniques.length).to.be.equal(1)
                     expect(table!.uniques[0].name).to.be.equal("IDX_TEST")
                     expect(table!.uniques[0].columnNames.length).to.be.equal(2)
@@ -77,8 +77,8 @@ describe("database schema > indices > reading index from entity and updating dat
 
     it("should update the index swapping the 2 columns", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const entityMetadata = connection.entityMetadatas.find(
+            dataSources.map(async (dataSource) => {
+                const entityMetadata = dataSource.entityMetadatas.find(
                     (x) => x.name === "Person",
                 )
                 entityMetadata!.indices = [
@@ -94,12 +94,12 @@ describe("database schema > indices > reading index from entity and updating dat
                     }),
                 ]
                 entityMetadata!.indices.forEach((index) =>
-                    index.build(connection.namingStrategy),
+                    index.build(dataSource.namingStrategy),
                 )
 
-                await connection.synchronize(false)
+                await dataSource.synchronize(false)
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("person")
                 await queryRunner.release()
 

@@ -20,8 +20,8 @@ describe("indices > conditional index", () => {
 
     it("should correctly create conditional indices with WHERE condition", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
 
                 table!.indices.length.should.be.equal(2)
@@ -34,8 +34,8 @@ describe("indices > conditional index", () => {
 
     it("should correctly drop conditional indices and revert drop", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 table!.indices.length.should.be.equal(2)
                 expect(table!.indices[0].where).to.be.not.empty
