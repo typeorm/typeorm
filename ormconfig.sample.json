@@ -97,9 +97,7 @@
     "name": "mongodb",
     "type": "mongodb",
     "database": "test",
-    "logging": false,
-    "useNewUrlParser": true,
-    "useUnifiedTopology": true
+    "logging": false
   },
   {
     "skip": true,

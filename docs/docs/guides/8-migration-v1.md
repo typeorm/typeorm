@@ -91,6 +91,37 @@ new DataSource({
 })
 ```
 
+## MongoDB
+
+### Deprecated connection options removed
+
+The following MongoDB connection options have been removed:
+
+| Removed option       | Action                                           |
+| -------------------- | ------------------------------------------------ |
+| `appname`            | Use `appName` (camelCase) instead                |
+| `fsync`              | Use `writeConcern: { journal: true }` instead    |
+| `j`                  | Use `writeConcern: { journal: true }` instead    |
+| `useNewUrlParser`    | Remove — no-op since MongoDB Driver v4.0         |
+| `useUnifiedTopology` | Remove — no-op since MongoDB Driver v4.0         |
+| `wtimeout`           | Use `writeConcern: { wtimeoutMS: 2500 }` instead |
+
+### `getMongoRepository` and `getMongoManager` globals
+
+The deprecated global functions `getMongoRepository()` and `getMongoManager()` have been removed. Use the corresponding instance methods on `DataSource` or `EntityManager` instead:
+
+```typescript
+// Before
+import { getMongoManager, getMongoRepository } from "typeorm"
+
+const manager = getMongoManager()
+const repository = getMongoRepository(User)
+
+// After
+const manager = dataSource.mongoManager
+const repository = dataSource.getMongoRepository(User)
+```
+
 ## Expo
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
@@ -172,22 +203,6 @@ const UserRepository = dataSource.getRepository(User).extend({
 ```
 
 The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
-
-### `getMongoRepository` and `getMongoManager` globals
-
-The deprecated global functions `getMongoRepository()` and `getMongoManager()` have been removed. Use the corresponding instance methods on `DataSource` or `EntityManager` instead:
-
-```typescript
-// Before
-import { getMongoManager, getMongoRepository } from "typeorm"
-
-const manager = getMongoManager()
-const repository = getMongoRepository(User)
-
-// After
-const manager = dataSource.mongoManager
-const repository = dataSource.getMongoRepository(User)
-```
 
 ### Deprecated lock modes
 
