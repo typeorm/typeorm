@@ -106,7 +106,7 @@ export class SubjectDatabaseEntityLoader {
                 }
 
                 // load database entities for all given ids
-                let entities: any[] = []
+                let entities: any[]
                 if (
                     this.queryRunner.connection.driver.options.type ===
                     "mongodb"

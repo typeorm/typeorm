@@ -11,15 +11,14 @@ import { Foo } from "./entity/foo.entity"
 describe("github issues > #7110: Typeorm Migrations ignore existing default value on column`", () => {
     describe("double type conversion in default value", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [Foo],
-                    enabledDrivers: ["postgres", "cockroachdb"],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [Foo],
+                enabledDrivers: ["postgres", "cockroachdb"],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("can recognize model changes", () =>

@@ -11,13 +11,12 @@ import { RecordData } from "./entity/RecordData"
 
 describe("github issues > #204 jsonb array is not persisted correctly", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Record],
-                enabledDrivers: ["postgres"], // because only postgres supports jsonb type
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Record],
+            enabledDrivers: ["postgres"], // because only postgres supports jsonb type
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

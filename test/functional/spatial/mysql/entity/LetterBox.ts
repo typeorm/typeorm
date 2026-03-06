@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn } from "../../../../src"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity, PrimaryGeneratedColumn } from "../../../../../src"
+import { Column } from "../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class LetterBox {

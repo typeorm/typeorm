@@ -10,10 +10,9 @@ import { expect } from "chai"
 
 describe("query builder > entity updation", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({ __dirname })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({ __dirname })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

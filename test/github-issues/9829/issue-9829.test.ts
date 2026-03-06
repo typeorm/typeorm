@@ -8,15 +8,14 @@ import { ExampleEntity } from "./entity/ExampleEntity"
 
 describe("github issues > #9829 Incorrect default value with concat value of function", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [ExampleEntity],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [ExampleEntity],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
     it("should get default concat value", () =>
         Promise.all(

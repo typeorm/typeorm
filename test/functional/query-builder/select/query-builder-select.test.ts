@@ -16,13 +16,12 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > select", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Category, Post, Tag, HeroImage, ExternalPost],
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category, Post, Tag, HeroImage, ExternalPost],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

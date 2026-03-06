@@ -8,15 +8,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #7521 Only first \0 is removed in comments, only first \\ is escaped etc.", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["postgres", "cockroachdb", "mysql"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [Post],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres", "cockroachdb", "mysql"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [Post],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>

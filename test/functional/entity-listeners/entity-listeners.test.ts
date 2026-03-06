@@ -7,14 +7,13 @@ import { Post } from "./entity/Post"
 
 describe("entity-listeners", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                dropSchema: true,
-                schemaCreate: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("beforeUpdate", () =>

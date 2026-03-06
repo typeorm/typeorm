@@ -11,18 +11,17 @@ describe("sqljs driver > autosave", () => {
         saves++
     }
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post],
-                schemaCreate: true,
-                enabledDrivers: ["sqljs"],
-                driverSpecific: {
-                    autoSaveCallback: callback,
-                    autoSave: true,
-                },
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            schemaCreate: true,
+            enabledDrivers: ["sqljs"],
+            driverSpecific: {
+                autoSaveCallback: callback,
+                autoSave: true,
+            },
+        })
+    })
 
     it("should call autoSaveCallback on insert, update and delete", () =>
         Promise.all(
@@ -85,18 +84,17 @@ describe("sqljs driver > autosave off", () => {
         saves++
     }
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post],
-                schemaCreate: true,
-                enabledDrivers: ["sqljs"],
-                driverSpecific: {
-                    autoSaveCallback: callback,
-                    autoSave: false,
-                },
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            schemaCreate: true,
+            enabledDrivers: ["sqljs"],
+            driverSpecific: {
+                autoSaveCallback: callback,
+                autoSave: false,
+            },
+        })
+    })
 
     it("should not call autoSaveCallback when autoSave is disabled", () =>
         Promise.all(

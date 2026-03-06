@@ -20,7 +20,7 @@ import { Broadcaster } from "../../subscriber/Broadcaster"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
-import type { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
+import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
@@ -802,7 +802,7 @@ export class AuroraMysqlQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        let newColumn: TableColumn | undefined = undefined
+        let newColumn: TableColumn
         if (InstanceChecker.isTableColumn(newTableColumnOrName)) {
             newColumn = newTableColumnOrName
         } else {
@@ -1562,7 +1562,9 @@ export class AuroraMysqlQueryRunner
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
         const columnNamesString = columnNames
             .map((columnName) => `\`${columnName}\``)
@@ -2249,33 +2251,8 @@ export class AuroraMysqlQueryRunner
                     tableColumn.name = dbColumn["COLUMN_NAME"]
                     tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
 
-                    // Unsigned columns are handled differently when it comes to width.
-                    // Hence, we need to set the unsigned attribute before we check the width.
-                    tableColumn.zerofill =
-                        dbColumn["COLUMN_TYPE"].includes("zerofill")
                     tableColumn.unsigned =
-                        tableColumn.zerofill ||
                         dbColumn["COLUMN_TYPE"].includes("unsigned")
-
-                    if (
-                        this.driver.unsignedColumnTypes.includes(
-                            tableColumn.type as UnsignedColumnType,
-                        )
-                    ) {
-                        const width = dbColumn["COLUMN_TYPE"].substring(
-                            dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
-                            dbColumn["COLUMN_TYPE"].indexOf(")"),
-                        )
-                        tableColumn.width =
-                            width &&
-                            !this.isDefaultColumnWidth(
-                                table,
-                                tableColumn,
-                                parseInt(width),
-                            )
-                                ? parseInt(width)
-                                : undefined
-                    }
 
                     if (
                         dbColumn["COLUMN_DEFAULT"] === null ||
@@ -2321,8 +2298,6 @@ export class AuroraMysqlQueryRunner
                             )
                         },
                     )
-                    tableColumn.zerofill =
-                        dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1
                     tableColumn.isGenerated =
                         dbColumn["EXTRA"].indexOf("auto_increment") !== -1
                     if (tableColumn.isGenerated)
@@ -2855,7 +2830,7 @@ export class AuroraMysqlQueryRunner
         skipPrimary: boolean,
         skipName: boolean = false,
     ) {
-        let c = ""
+        let c: string
         if (skipName) {
             c = this.connection.driver.createFullType(column)
         } else {
@@ -2863,17 +2838,16 @@ export class AuroraMysqlQueryRunner
                 column,
             )}`
         }
+
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${
                 column.generatedType ? column.generatedType : "VIRTUAL"
             }`
 
-        // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to that column.
-        if (column.zerofill) {
-            c += " ZEROFILL"
-        } else if (column.unsigned) {
+        if (column.unsigned) {
             c += " UNSIGNED"
         }
+
         if (column.enum)
             c += ` (${column.enum
                 .map((value) => "'" + value + "'")
@@ -2893,53 +2867,6 @@ export class AuroraMysqlQueryRunner
         if (column.onUpdate) c += ` ON UPDATE ${column.onUpdate}`
 
         return c
-    }
-
-    /**
-     * Checks if column display width is by default.
-     * @param table
-     * @param column
-     * @param width
-     */
-    protected isDefaultColumnWidth(
-        table: Table,
-        column: TableColumn,
-        width: number,
-    ): boolean {
-        // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
-            const columnMetadata = metadata.findColumnWithDatabaseName(
-                column.name,
-            )
-            if (columnMetadata && columnMetadata.width) return false
-        }
-
-        const defaultWidthForType =
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].width
-
-        if (defaultWidthForType) {
-            // In MariaDB & MySQL 5.7, the default widths of certain numeric types are 1 less than
-            // the usual defaults when the column is unsigned.
-            // This also applies to Aurora MySQL.
-            const typesWithReducedUnsignedDefault = [
-                "int",
-                "tinyint",
-                "smallint",
-                "mediumint",
-            ]
-            const needsAdjustment =
-                typesWithReducedUnsignedDefault.indexOf(column.type) !== -1
-            if (column.unsigned && needsAdjustment) {
-                return defaultWidthForType - 1 === width
-            } else {
-                return defaultWidthForType === width
-            }
-        }
-
-        return false
     }
 
     /**

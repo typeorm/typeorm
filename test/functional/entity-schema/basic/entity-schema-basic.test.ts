@@ -11,12 +11,11 @@ import { CategoryEntity } from "./entity/CategoryEntity"
 
 describe("entity schemas > basic functionality", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [PostEntity, CategoryEntity],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [PostEntity, CategoryEntity],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

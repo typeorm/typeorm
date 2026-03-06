@@ -90,7 +90,7 @@ export interface MysqlDataSourceOptions
 
     /**
      * Use spatial functions like GeomFromText and AsText which are removed in MySQL 8.
-     * (Default: true)
+     * (Default: false)
      */
     readonly legacySpatialSupport?: boolean
 

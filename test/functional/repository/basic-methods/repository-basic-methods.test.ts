@@ -30,23 +30,22 @@ describe("repository > basic methods", () => {
     const QuestionEntity = new EntitySchema<any>(questionSchema as any)
 
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [
-                    Post,
-                    Blog,
-                    Category,
-                    UserEntity,
-                    QuestionEntity,
-                    ExternalIdPrimaryKeyEntity,
-                    EmbeddedUQEntity,
-                    RelationAsPrimaryKey,
-                    TwoUniqueColumnsEntity,
-                    OneToOneRelationEntity,
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [
+                Post,
+                Blog,
+                Category,
+                UserEntity,
+                QuestionEntity,
+                ExternalIdPrimaryKeyEntity,
+                EmbeddedUQEntity,
+                RelationAsPrimaryKey,
+                TwoUniqueColumnsEntity,
+                OneToOneRelationEntity,
+            ],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

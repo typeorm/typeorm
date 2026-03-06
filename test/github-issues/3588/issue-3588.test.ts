@@ -9,15 +9,14 @@ import { expect } from "chai"
 
 describe("github issues > #3588 Migration:generate issue with onUpdate using mysql 8.0", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(async () => await reloadTestingDatabases(dataSources))
     after(async () => await closeTestingConnections(dataSources))
 

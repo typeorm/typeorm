@@ -10,15 +10,14 @@ import { expect } from "chai"
 
 describe("github issues > #6066 Column comment string is not escaped during synchronization", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Session],
-                enabledDrivers: ["mysql", "mariadb"],
-                schemaCreate: false,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Session],
+            enabledDrivers: ["mysql", "mariadb"],
+            schemaCreate: false,
+            dropSchema: true,
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should synchronize", () =>

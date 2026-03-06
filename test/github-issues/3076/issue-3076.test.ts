@@ -8,16 +8,15 @@ import { SomeEntity, CreationMechanism } from "./entity/SomeEntity"
 
 describe("github issues > #3076 Postgres enum in schema with default is recreated in every new generated migration", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                migrations: [],
-                enabledDrivers: ["postgres"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [SomeEntity],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            enabledDrivers: ["postgres"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [SomeEntity],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>

@@ -53,6 +53,10 @@ const config: Config = {
               ]
             : [],
 
+    stylesheets: [
+        "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Sofia+Sans:wght@700&display=swap",
+    ],
+
     presets: [
         [
             "@docusaurus/preset-classic",
@@ -74,7 +78,6 @@ const config: Config = {
             } satisfies Preset.Options,
         ],
     ],
-    themes: ["docusaurus-theme-search-typesense"],
     themeConfig: {
         // Replace with your project's social card
         image: "img/typeorm-social-card.jpg",
@@ -82,14 +85,6 @@ const config: Config = {
             defaultMode: "light",
             disableSwitch: false,
             respectPrefersColorScheme: true,
-        },
-        announcementBar: {
-            id: "future_of_typeorm",
-            content:
-                '📣 <b>Announcement: The Future of TypeORM</b> &mdash; We\'re excited to share our vision for a revitalized TypeORM! <a rel="noopener noreferrer" href="/docs/future-of-typeorm">Read the full announcement</a>',
-            backgroundColor: "#180028",
-            textColor: "#FFFFFF",
-            isCloseable: true,
         },
         navbar: {
             title: "TypeORM",
@@ -106,6 +101,11 @@ const config: Config = {
                     sidebarId: "tutorialSidebar",
                     position: "left",
                     label: "Docs",
+                },
+                {
+                    to: "/maintainers",
+                    label: "Maintainers",
+                    position: "left",
                 },
                 {
                     type: "dropdown",
@@ -152,6 +152,10 @@ const config: Config = {
                             label: "Stack Overflow",
                             href: "https://stackoverflow.com/questions/tagged/typeorm",
                         },
+                        {
+                            label: "Maintainers",
+                            to: "/maintainers",
+                        },
                     ],
                 },
                 {
@@ -180,38 +184,6 @@ const config: Config = {
                 "json",
                 "sql",
             ],
-        },
-        typesense: {
-            // Replace this with the name of your index/collection.
-            // It should match the "index_name" entry in the scraper's "config.json" file.
-            typesenseCollectionName: "typeorm-docs",
-
-            typesenseServerConfig: {
-                nodes: [
-                    {
-                        host: "a46qefxi7yzt3hlbp-1.a1.typesense.net",
-                        port: 443,
-                        protocol: "https",
-                    },
-                    {
-                        host: "a46qefxi7yzt3hlbp-2.a1.typesense.net",
-                        port: 443,
-                        protocol: "https",
-                    },
-                    {
-                        host: "a46qefxi7yzt3hlbp-3.a1.typesense.net",
-                        port: 443,
-                        protocol: "https",
-                    },
-                ],
-                apiKey: "92eYxk4qbUKgDwS4dHFn1eMWd9qUYfd7", // SEARCH_ONLY_KEY
-            },
-
-            // Optional: Typesense search parameters: https://typesense.org/docs/0.24.0/api/search.html#search-parameters
-            typesenseSearchParameters: {},
-
-            // Optional
-            contextualSearch: true,
         },
     } satisfies Preset.ThemeConfig,
     plugins: [
@@ -248,6 +220,7 @@ const config: Config = {
                     "TypeORM is an ORM that can run in NodeJS, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms and can be used with TypeScript and JavaScript.",
             } satisfies LLMsTXTPluginOptions,
         ],
+        "docusaurus-lunr-search",
     ],
 }
 
