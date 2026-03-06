@@ -18,6 +18,9 @@ publish_output = true
 comments_location_policy = "summary"
 persistent_comment = true
 
+[pr_code_suggestions]
+publish_output_no_suggestions = false
+
 [config]
 publish_output_progress = false
 
