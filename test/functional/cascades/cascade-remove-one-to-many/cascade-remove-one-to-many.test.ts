@@ -3,13 +3,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 import { Category } from "./entity/Category"
 
-describe("github issues > #70 cascade deleting works incorrect", () => {
+describe("cascades > cascade remove one-to-many", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -19,7 +19,7 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should persist successfully and return persisted entity", () =>
+    it("should remove related entities via onDelete CASCADE when parent is removed", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 // Spanner support only NO ACTION clause
