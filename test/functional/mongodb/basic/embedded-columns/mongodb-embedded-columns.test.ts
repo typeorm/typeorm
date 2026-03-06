@@ -25,8 +25,8 @@ describe("mongodb > embedded columns", () => {
 
     it("should insert / update / remove entity with embedded correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save few posts
                 const post = new Post()
@@ -102,8 +102,8 @@ describe("mongodb > embedded columns", () => {
 
     it("should store results in correct camelCase format", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const post = new Post()
@@ -133,8 +133,8 @@ describe("mongodb > embedded columns", () => {
 
     it("should transform results to correct boolean value", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const post = new Post()
@@ -165,8 +165,8 @@ describe("mongodb > embedded columns", () => {
 
     it("should transform entity with nested embedded columns correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const post = new Post()

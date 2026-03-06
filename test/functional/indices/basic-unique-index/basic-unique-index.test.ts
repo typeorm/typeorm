@@ -20,11 +20,11 @@ describe("indices > basic unique index test", () => {
     describe("unique index", function () {
         it("should work without errors", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const customer = new Customer()
                     customer.nameEnglish = "Umed"
                     customer.nameHebrew = "Uma"
-                    await connection.manager.save(customer)
+                    await dataSource.manager.save(customer)
                 }),
             ))
     })

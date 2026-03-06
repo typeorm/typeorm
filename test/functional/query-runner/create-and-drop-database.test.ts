@@ -20,8 +20,8 @@ describe("query runner > create and drop database", () => {
 
     it("should correctly create and drop database and revert it", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 await queryRunner.createDatabase("myTestDatabase", true)
                 let hasDatabase =

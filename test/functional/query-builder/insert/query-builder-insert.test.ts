@@ -23,18 +23,18 @@ describe("query builder > insert", () => {
 
     it("should perform insertion correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(User)
                     .values(user)
                     .execute()
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(User)
@@ -43,14 +43,14 @@ describe("query builder > insert", () => {
                     })
                     .execute()
 
-                await connection
+                await dataSource
                     .getRepository(User)
                     .createQueryBuilder("user")
                     .insert()
                     .values({ name: "Muhammad Mirzoev" })
                     .execute()
 
-                const users = await connection.getRepository(User).find({
+                const users = await dataSource.getRepository(User).find({
                     order: {
                         id: "ASC",
                     },
@@ -65,14 +65,14 @@ describe("query builder > insert", () => {
 
     it("should perform bulk insertion correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // it is skipped for SAP because it does not support bulk insertion
-                if (connection.driver.options.type === "sap") {
+                if (dataSource.driver.options.type === "sap") {
                     return
                 }
 
                 // Oracle does not support automatic ID generation for bulk inserts, so we manually assign IDs to avoid issues.
-                const isOracle = connection.driver.options.type === "oracle"
+                const isOracle = dataSource.driver.options.type === "oracle"
                 const values: Partial<User>[] = [
                     { name: "Umed Khudoiberdiev", memberId: 1 },
                     {
@@ -84,14 +84,14 @@ describe("query builder > insert", () => {
                     isOracle ? { id: index + 1, ...user } : user,
                 )
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(User)
                     .values(values)
                     .execute()
 
-                const users = await connection.getRepository(User).find({
+                const users = await dataSource.getRepository(User).find({
                     order: {
                         id: "ASC",
                     },
@@ -106,20 +106,20 @@ describe("query builder > insert", () => {
 
     it("should be able to use sql functions", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection
+            dataSources.map(async (dataSource) => {
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(User)
                     .values({
                         name: () =>
-                            connection.driver.options.type === "mssql"
+                            dataSource.driver.options.type === "mssql"
                                 ? "SUBSTRING('Dima Zotov', 1, 4)"
                                 : "SUBSTR('Dima Zotov', 1, 4)",
                     })
                     .execute()
 
-                const loadedUser1 = await connection
+                const loadedUser1 = await dataSource
                     .getRepository(User)
                     .findOneBy({ name: "Dima" })
                 expect(loadedUser1).to.exist
@@ -129,18 +129,18 @@ describe("query builder > insert", () => {
 
     it("should be able to insert entities with different properties set even inside embeds", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // this test is skipped for sqlite based drivers because it does not support DEFAULT values in insertions,
                 // also it is skipped for SAP because it does not support bulk insertion
                 if (
-                    DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "sap"
                 ) {
                     return
                 }
 
                 // Oracle does not support automatic ID generation for bulk inserts, so we manually assign IDs to avoid issues.
-                const isOracle = connection.driver.options.type === "oracle"
+                const isOracle = dataSource.driver.options.type === "oracle"
                 const values: Partial<Photo>[] = [
                     {
                         url: "1.jpg",
@@ -157,14 +157,14 @@ describe("query builder > insert", () => {
                     isOracle ? { id: index + 1, ...photo } : photo,
                 )
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Photo)
                     .values(values)
                     .execute()
 
-                const loadedPhoto1 = await connection
+                const loadedPhoto1 = await dataSource
                     .getRepository(Photo)
                     .findOneBy({ url: "1.jpg" })
                 expect(loadedPhoto1).to.exist
@@ -178,7 +178,7 @@ describe("query builder > insert", () => {
                     },
                 })
 
-                const loadedPhoto2 = await connection
+                const loadedPhoto2 = await dataSource
                     .getRepository(Photo)
                     .findOneBy({ url: "2.jpg" })
                 expect(loadedPhoto2).to.exist

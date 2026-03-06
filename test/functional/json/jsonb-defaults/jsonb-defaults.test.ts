@@ -20,12 +20,12 @@ describe("json > defaults", () => {
 
     it("should insert default values properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.title = "Post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
-                const loadedPost1 = await connection.manager.findBy(Post, {
+                const loadedPost1 = await dataSource.manager.findBy(Post, {
                     title: "Post #1",
                 })
                 loadedPost1.should.be.eql([
@@ -46,9 +46,9 @@ describe("json > defaults", () => {
                     { name: "JavaScript" },
                     { name: "ECMAScript" },
                 ]
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedPost2 = await connection.manager.findBy(Post, {
+                const loadedPost2 = await dataSource.manager.findBy(Post, {
                     title: "Post #2",
                 })
                 loadedPost2.should.be.eql([

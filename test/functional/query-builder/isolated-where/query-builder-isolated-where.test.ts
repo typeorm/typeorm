@@ -22,8 +22,8 @@ describe("query builder > isolated-where", () => {
 
     it("should correctly apply brackets when where statement isolation is enabled", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const sql = connection.manager
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
                     .createQueryBuilder(User, "user")
                     .where("user.id = :userId", { userId: "user-id" })
                     .andWhere(

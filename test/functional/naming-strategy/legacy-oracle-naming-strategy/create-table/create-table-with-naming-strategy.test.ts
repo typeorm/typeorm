@@ -22,8 +22,8 @@ describe("LegacyOracleNamingStrategy > create table using this naming strategy",
 
     it("should create the table", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await expect(reloadTestingDatabases([connection])).to.be
+            dataSources.map(async (dataSource) => {
+                await expect(reloadTestingDatabases([dataSource])).to.be
                     .fulfilled
             }),
         ))

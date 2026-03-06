@@ -23,8 +23,8 @@ describe("mongodb > array columns", () => {
 
     it("should insert / update array columns correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save a post
                 const post = new Post()
@@ -154,7 +154,7 @@ describe("mongodb > array columns", () => {
 
     it("should retrieve arrays from the column metadata", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.title = "Post"
                 post.names = ["umed", "dima", "bakhrom"]
@@ -167,7 +167,7 @@ describe("mongodb > array columns", () => {
                 ]
                 post.other1 = []
 
-                const column = connection
+                const column = dataSource
                     .getMetadata(Post)
                     .columns.find((c) => c.propertyPath === "counters.text")!
 

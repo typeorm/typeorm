@@ -22,52 +22,52 @@ describe("relations > eager relations > basic", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    async function prepareData(connection: DataSource) {
+    async function prepareData(dataSource: DataSource) {
         const profile = new Profile()
         profile.about = "I cut trees!"
-        await connection.manager.save(profile)
+        await dataSource.manager.save(profile)
 
         const user = new User()
         user.firstName = "Timber"
         user.lastName = "Saw"
         user.profile = profile
-        await connection.manager.save(user)
+        await dataSource.manager.save(user)
 
         const primaryCategory1 = new Category()
         primaryCategory1.name = "primary category #1"
-        await connection.manager.save(primaryCategory1)
+        await dataSource.manager.save(primaryCategory1)
 
         const primaryCategory2 = new Category()
         primaryCategory2.name = "primary category #2"
-        await connection.manager.save(primaryCategory2)
+        await dataSource.manager.save(primaryCategory2)
 
         const secondaryCategory1 = new Category()
         secondaryCategory1.name = "secondary category #1"
-        await connection.manager.save(secondaryCategory1)
+        await dataSource.manager.save(secondaryCategory1)
 
         const secondaryCategory2 = new Category()
         secondaryCategory2.name = "secondary category #2"
-        await connection.manager.save(secondaryCategory2)
+        await dataSource.manager.save(secondaryCategory2)
 
         const post = new Post()
         post.title = "about eager relations"
         post.categories1 = [primaryCategory1, primaryCategory2]
         post.categories2 = [secondaryCategory1, secondaryCategory2]
         post.author = user
-        await connection.manager.save(post)
+        await dataSource.manager.save(post)
 
         const editor = new Editor()
         editor.post = post
         editor.user = user
-        await connection.manager.save(editor)
+        await dataSource.manager.save(editor)
     }
 
     it("should load all eager relations when object is loaded", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
-                const loadedPost = await connection.manager.findOne(Post, {
+                const loadedPost = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -132,10 +132,10 @@ describe("relations > eager relations > basic", () => {
 
     it("should not load eager relations when query builder is used", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
                     .getOne()
@@ -149,22 +149,22 @@ describe("relations > eager relations > basic", () => {
 
     it("should preserve manually requested nested relations with DeleteDateColumn", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
                 // Prepare test data - reusing existing entities
                 const nestedProfile = new Profile()
                 nestedProfile.about = "I am nested!"
-                await connection.manager.save(nestedProfile)
+                await dataSource.manager.save(nestedProfile)
 
-                const user = (await connection.manager.findOne(User, {
+                const user = (await dataSource.manager.findOne(User, {
                     where: { id: 1 },
                 }))!
                 user.nestedProfile = nestedProfile
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
                 // Retrieve user with manually specified nested relation
-                const retrievedEditor = await connection.manager.findOne(
+                const retrievedEditor = await dataSource.manager.findOne(
                     Editor,
                     {
                         where: { userId: 1 },
@@ -200,21 +200,21 @@ describe("relations > eager relations > basic", () => {
 
     it("should not join eager relations twice when explicitly specified with DeleteDateColumn entity (issue #11823)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
                 const nestedProfile = new Profile()
                 nestedProfile.about = "I am nested!"
-                await connection.manager.save(nestedProfile)
+                await dataSource.manager.save(nestedProfile)
 
-                const user = (await connection.manager.findOne(User, {
+                const user = (await dataSource.manager.findOne(User, {
                     where: { id: 1 },
                 }))!
                 user.nestedProfile = nestedProfile
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
                 // Build the query to inspect the generated SQL
-                const sql = connection.manager
+                const sql = dataSource.manager
                     .getRepository(Editor)
                     .metadata.connection.createQueryBuilder(Editor, "Editor")
                     .setFindOptions({
