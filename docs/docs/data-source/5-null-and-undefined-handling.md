@@ -258,3 +258,68 @@ await dataSource
     .where({ text: null })
     .execute()
 ```
+
+## How null and undefined behave in QueryBuilder `.where()`
+
+Since QueryBuilder is a low-level API, null and undefined values are **not** validated or transformed. Understanding their behavior is important to avoid unexpected results.
+
+### `null` in QueryBuilder `.where()`
+
+When `null` is passed as a value in an object-style `.where()`, it generates a SQL equality check against `NULL`:
+
+```typescript
+await dataSource
+    .createQueryBuilder(Post, "post")
+    .where({ text: null })
+    .getMany()
+// Generates: WHERE post.text = NULL
+```
+
+In SQL, `column = NULL` is **always false** — nothing equals NULL. This query will **return zero results**, which is almost certainly not what you intended. To match NULL values, use the `IsNull()` operator:
+
+```typescript
+import { IsNull } from "typeorm"
+
+await dataSource
+    .createQueryBuilder(Post, "post")
+    .where({ text: IsNull() })
+    .getMany()
+// Generates: WHERE post.text IS NULL
+```
+
+Or use a string condition:
+
+```typescript
+await dataSource
+    .createQueryBuilder(Post, "post")
+    .where("post.text IS NULL")
+    .getMany()
+```
+
+### `undefined` in QueryBuilder `.where()`
+
+When `undefined` is passed as a value, the same behavior applies — it generates `WHERE column = NULL`, which is always false:
+
+```typescript
+await dataSource
+    .createQueryBuilder(Post, "post")
+    .where({ text: undefined })
+    .getMany()
+// Generates: WHERE post.text = NULL
+// Returns: zero results
+```
+
+### Summary table
+
+| Value                                 | High-level API (find/repository/manager) | QueryBuilder `.where()`           |
+| ------------------------------------- | ---------------------------------------- | --------------------------------- |
+| `null` with `"ignore"` (default)      | Property skipped — no filter             | `WHERE col = NULL` — zero results |
+| `null` with `"sql-null"`              | `WHERE col IS NULL`                      | `WHERE col = NULL` — zero results |
+| `null` with `"throw"`                 | Throws error                             | `WHERE col = NULL` — zero results |
+| `undefined` with `"ignore"` (default) | Property skipped — no filter             | `WHERE col = NULL` — zero results |
+| `undefined` with `"throw"`            | Throws error                             | `WHERE col = NULL` — zero results |
+| `IsNull()`                            | `WHERE col IS NULL`                      | `WHERE col IS NULL`               |
+
+:::tip
+Always use `IsNull()` when you want to match SQL NULL values, regardless of which API you use. It works correctly in both high-level and QueryBuilder contexts.
+:::
