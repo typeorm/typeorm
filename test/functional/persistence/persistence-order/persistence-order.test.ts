@@ -15,7 +15,7 @@ describe("persistence > order of persistence execution operations", () => {
     describe("should throw exception when non-resolvable circular relations found", function () {
         it("should throw CircularRelationsError", async () => {
             const dataSource = new DataSource({
-                // dummy dataSource options, dataSource won't be established anyway
+                // dummy connection options, connection won't be established anyway
                 type: "mysql",
                 host: "localhost",
                 username: "test",

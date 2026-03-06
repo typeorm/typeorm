@@ -32,7 +32,7 @@ describe("sqljs driver > startup", () => {
     it("should startup even if the file doesn't exist", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // if we come this far, test was successful as a dataSource was established
+                // if we come this far, test was successful as a connection was established
                 expect(dataSource).to.not.be.null
             }),
         ))

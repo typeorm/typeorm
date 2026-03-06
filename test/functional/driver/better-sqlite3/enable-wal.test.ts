@@ -24,7 +24,7 @@ describe("sqlite driver > enable wal", () => {
     it("should set the journal mode as expected", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // if we come this far, test was successful as a dataSource was established
+                // if we come this far, test was successful as a connection was established
                 const result = await dataSource.query("PRAGMA journal_mode")
 
                 expect(result).to.eql([{ journal_mode: "wal" }])

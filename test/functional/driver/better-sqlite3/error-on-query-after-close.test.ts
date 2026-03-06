@@ -7,7 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 
-describe("sqlite driver > throws an error when queried after closing dataSource", () => {
+describe("sqlite driver > throws an error when queried after closing connection", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -24,7 +24,7 @@ describe("sqlite driver > throws an error when queried after closing dataSource"
                 await dataSource.destroy()
                 await expect(
                     dataSource.query("select * from sqlite_master;"),
-                ).to.rejectedWith("The database dataSource is not open")
+                ).to.rejectedWith("The database connection is not open")
             }),
         ))
 })
