@@ -106,7 +106,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
             } else {
                 // browser
                 // fileNameOrLocalStorageOrData should be a local storage / indexedDB key
-                let localStorageContent = null
+                let localStorageContent
                 if (this.options.useLocalForage) {
                     if (window.localforage) {
                         localStorageContent = await window.localforage.getItem(

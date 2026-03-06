@@ -2515,8 +2515,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     relation.junctionEntityMetadata!.tablePath
 
                 const junctionAlias = joinAttr.junctionAlias
-                let junctionCondition = "",
-                    destinationCondition = ""
+                let junctionCondition: string, destinationCondition: string
 
                 if (relation.isOwning) {
                     junctionCondition = relation.joinColumns
@@ -3542,7 +3541,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             new RelationCountMetadataToAttributeTransformer(this.expressionMap)
         relationCountMetadataTransformer.transform()
 
-        let rawResults: any[] = [],
+        let rawResults: any[],
             entities: any[] = []
 
         // for pagination enabled (e.g. skip and take) its much more complicated - its a special process
@@ -3629,7 +3628,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 .getRawMany()
 
             if (rawResults.length > 0) {
-                let condition = ""
+                let condition: string
                 const parameters: ObjectLiteral = {}
                 if (metadata.hasMultiplePrimaryKeys) {
                     condition = rawResults
