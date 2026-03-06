@@ -1,8 +1,7 @@
-name: Preview Docs on Cloudflare Pages
+name: Docs
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
     paths:
       - "docs/**"
       - ".github/workflows/preview-docs-cloudflare-pages.yml"
@@ -13,24 +12,19 @@ concurrency:
 
 jobs:
   preview:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    name: Preview Docs
     permissions:
       contents: read
       deployments: write
       pull-requests: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           sparse-checkout: docs
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: pnpm
@@ -40,11 +34,11 @@ jobs:
         working-directory: ./docs
         run: pnpm install --frozen-lockfile
 
-      - name: Build docs
+      - name: Build
         working-directory: ./docs
         run: pnpm run build
 
-      - name: Deploy preview to Cloudflare Pages
+      - name: Deploy preview
         id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
@@ -64,8 +58,6 @@ jobs:
             <tr><td><strong>Status</strong></td><td>✅ Deploy successful!</td></tr>
             <tr><td><strong>Preview URL</strong></td><td><a href="${{ steps.deploy.outputs.deployment-url }}">${{ steps.deploy.outputs.deployment-url }}</a></td></tr>
             <tr><td><strong>Branch Preview</strong></td><td><a href="${{ steps.deploy.outputs.pages-deployment-alias-url }}">${{ steps.deploy.outputs.pages-deployment-alias-url }}</a></td></tr></table>
-
-            [View logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: Comment deployment failure
         if: failure()
