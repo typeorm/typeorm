@@ -54,6 +54,7 @@ describe("relations > eager relations > basic", () => {
         post.categories1 = [primaryCategory1, primaryCategory2]
         post.categories2 = [secondaryCategory1, secondaryCategory2]
         post.author = user
+        post.requiredAuthor = user
         await connection.manager.save(post)
 
         const editor = new Editor()
@@ -101,6 +102,16 @@ describe("relations > eager relations > basic", () => {
                         },
                     ],
                     author: {
+                        id: 1,
+                        firstName: "Timber",
+                        lastName: "Saw",
+                        deletedAt: null,
+                        profile: {
+                            id: 1,
+                            about: "I cut trees!",
+                        },
+                    },
+                    requiredAuthor: {
                         id: 1,
                         firstName: "Timber",
                         lastName: "Saw",
@@ -233,6 +244,33 @@ describe("relations > eager relations > basic", () => {
                 const userJoinCount = (sql.match(/LEFT JOIN .user./gi) || [])
                     .length
                 expect(userJoinCount).to.equal(1)
+            }),
+        ))
+
+    it("should use INNER JOIN for nullable=false eager relations", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                await prepareData(connection)
+
+                const query = connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({ where: { id: 1 } })
+                    .getQuery()
+
+                // nullable=false relation (requiredAuthor) should use INNER JOIN
+                expect(query).to.contain("INNER JOIN")
+
+                // nullable=true relation (author) should still use LEFT JOIN
+                expect(query).to.contain("LEFT JOIN")
+
+                // also verify the data loads correctly
+                const loadedPost = await connection.manager.findOne(Post, {
+                    where: { id: 1 },
+                })
+
+                expect(loadedPost!.requiredAuthor).to.not.be.undefined
+                expect(loadedPost!.requiredAuthor).to.not.be.null
+                expect(loadedPost!.requiredAuthor.firstName).to.equal("Timber")
             }),
         ))
 })
