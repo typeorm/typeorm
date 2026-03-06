@@ -22,13 +22,13 @@ describe("multi-schema-and-database > custom-junction-database", () => {
 
     it("should correctly create tables when custom table schema used", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
-                if (connection.driver.options.type === "mssql") {
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                if (dataSource.driver.options.type === "mssql") {
                     const postTable = await queryRunner.getTable("yoman..post")
                     const categoryTable =
                         await queryRunner.getTable("yoman..category")
-                    const junctionMetadata = connection.getManyToManyMetadata(
+                    const junctionMetadata = dataSource.getManyToManyMetadata(
                         Post,
                         "categories",
                     )!
@@ -48,7 +48,7 @@ describe("multi-schema-and-database > custom-junction-database", () => {
                     const postTable = await queryRunner.getTable("yoman.post")
                     const categoryTable =
                         await queryRunner.getTable("yoman.category")
-                    const junctionMetadata = connection.getManyToManyMetadata(
+                    const junctionMetadata = dataSource.getManyToManyMetadata(
                         Post,
                         "categories",
                     )!

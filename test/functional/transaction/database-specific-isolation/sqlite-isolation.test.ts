@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
-describe("transaction > transaction with sqlite connection partial isolation support", () => {
+describe("transaction > transaction with sqlite dataSource partial isolation support", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -22,11 +22,11 @@ describe("transaction > transaction with sqlite connection partial isolation sup
 
     it("should execute all operations in a single transaction with READ UNCOMMITTED isolation level", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
-                await connection.manager.transaction(
+                await dataSource.manager.transaction(
                     "READ UNCOMMITTED",
                     async (entityManager) => {
                         const post = new Post()
@@ -42,7 +42,7 @@ describe("transaction > transaction with sqlite connection partial isolation sup
                     },
                 )
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).not.to.be.null
@@ -51,7 +51,7 @@ describe("transaction > transaction with sqlite connection partial isolation sup
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).not.to.be.null
@@ -64,11 +64,11 @@ describe("transaction > transaction with sqlite connection partial isolation sup
 
     it("should execute all operations in a single transaction with SERIALIZABLE isolation level", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
-                await connection.manager.transaction(
+                await dataSource.manager.transaction(
                     "SERIALIZABLE",
                     async (entityManager) => {
                         const post = new Post()
@@ -84,7 +84,7 @@ describe("transaction > transaction with sqlite connection partial isolation sup
                     },
                 )
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).not.to.be.null
@@ -93,7 +93,7 @@ describe("transaction > transaction with sqlite connection partial isolation sup
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).not.to.be.null

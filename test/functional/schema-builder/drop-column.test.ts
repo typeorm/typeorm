@@ -19,8 +19,8 @@ describe("schema builder > drop column", () => {
 
     it("should correctly drop column", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const studentMetadata = connection.getMetadata("student")
+            dataSources.map(async (dataSource) => {
+                const studentMetadata = dataSource.getMetadata("student")
                 const removedColumns = studentMetadata.columns.filter(
                     (column) =>
                         ["name", "faculty"].indexOf(column.propertyName) !== -1,
@@ -56,9 +56,9 @@ describe("schema builder > drop column", () => {
                     1,
                 )
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const studentTable = await queryRunner.getTable("student")
                 await queryRunner.release()
 
@@ -67,7 +67,7 @@ describe("schema builder > drop column", () => {
                     .undefined
 
                 // CockroachDB creates indices for foreign keys
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     studentTable!.indices.length.should.be.equal(1)
                 } else {
                     studentTable!.indices.length.should.be.equal(0)

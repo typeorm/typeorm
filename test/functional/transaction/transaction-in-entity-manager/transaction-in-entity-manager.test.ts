@@ -22,11 +22,11 @@ describe("transaction > transaction with entity manager", () => {
 
     it("should execute all operations in a single transaction", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
-                await connection.manager.transaction(async (entityManager) => {
+                await dataSource.manager.transaction(async (entityManager) => {
                     const post = new Post()
                     post.title = "Post #1"
                     await entityManager.save(post)
@@ -39,7 +39,7 @@ describe("transaction > transaction with entity manager", () => {
                     categoryId = category.id
                 })
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).not.to.be.null
@@ -48,7 +48,7 @@ describe("transaction > transaction with entity manager", () => {
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).not.to.be.null
@@ -61,12 +61,12 @@ describe("transaction > transaction with entity manager", () => {
 
     it("should not save anything if any of operation in transaction fail", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
                 try {
-                    await connection.manager.transaction(
+                    await dataSource.manager.transaction(
                         async (entityManager) => {
                             const post = new Post()
                             post.title = "Post #1"
@@ -108,12 +108,12 @@ describe("transaction > transaction with entity manager", () => {
                     /* skip error */
                 }
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).to.be.null
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).to.be.null

@@ -21,9 +21,9 @@ describe("tree tables > nested-set", () => {
 
     it("attach should work properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -70,9 +70,9 @@ describe("tree tables > nested-set", () => {
 
     it("categories should be attached via children and saved properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -112,9 +112,9 @@ describe("tree tables > nested-set", () => {
 
     it("categories should be attached via children and saved properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -154,9 +154,9 @@ describe("tree tables > nested-set", () => {
 
     it("categories should be attached via children and saved properly and everything must be saved in cascades", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -204,9 +204,9 @@ describe("tree tables > nested-set", () => {
 
     it("findTrees() tests > findTrees should load all category roots and attached children", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -268,9 +268,9 @@ describe("tree tables > nested-set", () => {
 
     it("findTrees() tests > findTrees should filter by depth if optionally provided", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -411,9 +411,9 @@ describe("tree tables > nested-set", () => {
 
     it("findTrees() tests > findTrees should present a meaningful error message when used with multiple roots + nested sets", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -431,9 +431,9 @@ describe("tree tables > nested-set", () => {
 
     it("findDescendantsTree() tests > findDescendantsTree should load all category descendents and nested children", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -495,9 +495,9 @@ describe("tree tables > nested-set", () => {
 
     it("findDescendantsTree() tests > findDescendantsTree should filter by depth if optionally provided", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"

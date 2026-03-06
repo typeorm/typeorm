@@ -23,8 +23,8 @@ describe("sqlite driver > busy-timeout", () => {
 
     it("should set the busy_timeout as expected", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const result = await connection.query("PRAGMA busy_timeout")
+            dataSources.map(async (dataSource) => {
+                const result = await dataSource.query("PRAGMA busy_timeout")
                 expect(result).to.eql([{ timeout: 2000 }])
             }),
         ))

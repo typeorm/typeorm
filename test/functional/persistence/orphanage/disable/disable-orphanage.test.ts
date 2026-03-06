@@ -41,9 +41,9 @@ describe("persistence > orphanage > disable", () => {
             }
 
             await Promise.all(
-                dataSources.map(async (connection) => {
-                    userRepo = connection.getRepository(User)
-                    settingRepo = connection.getRepository(Setting)
+                dataSources.map(async (dataSource) => {
+                    userRepo = dataSource.getRepository(User)
+                    settingRepo = dataSource.getRepository(Setting)
                 }),
             )
 

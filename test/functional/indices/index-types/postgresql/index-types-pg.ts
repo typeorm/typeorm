@@ -23,9 +23,9 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'hash' index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 expect(
-                    connection
+                    dataSource
                         .getMetadata(User)
                         .indices.find((idx) => idx.type === "hash"),
                 ).instanceOf(Object)
@@ -34,9 +34,9 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'btree' index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 expect(
-                    connection
+                    dataSource
                         .getMetadata(User)
                         .indices.find((idx) => idx.type === "btree"),
                 ).instanceOf(Object)
@@ -45,9 +45,9 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'gist' index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 expect(
-                    connection
+                    dataSource
                         .getMetadata(User)
                         .indices.find((idx) => idx.type === "gist"),
                 ).instanceOf(Object)
@@ -56,9 +56,9 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'spgist' index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 expect(
-                    connection
+                    dataSource
                         .getMetadata(User)
                         .indices.find((idx) => idx.type === "spgist"),
                 ).instanceOf(Object)
@@ -67,9 +67,9 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'gin' index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 expect(
-                    connection
+                    dataSource
                         .getMetadata(User)
                         .indices.find((idx) => idx.type === "gin"),
                 ).instanceOf(Object)
@@ -78,9 +78,9 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("should support 'brin' index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 expect(
-                    connection
+                    dataSource
                         .getMetadata(User)
                         .indices.find((idx) => idx.type === ("brin" as any)),
                 ).instanceOf(Object)
@@ -89,15 +89,15 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("User should have six indices", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                expect(connection.getMetadata(User).indices.length).equal(6)
+            dataSources.map(async (dataSource) => {
+                expect(dataSource.getMetadata(User).indices.length).equal(6)
             }),
         ))
 
     it("User4 should have 'btree' index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const idxs = connection.getMetadata(User4).indices
+            dataSources.map(async (dataSource) => {
+                const idxs = dataSource.getMetadata(User4).indices
 
                 expect(idxs.length).equals(1)
 
@@ -112,8 +112,8 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
     it("User5 view indexes should be defined and correct", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const idxs = connection.getMetadata(User5).indices
+            dataSources.map(async (dataSource) => {
+                const idxs = dataSource.getMetadata(User5).indices
 
                 expect(idxs.length).equals(2)
 

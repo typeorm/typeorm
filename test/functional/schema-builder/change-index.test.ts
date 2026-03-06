@@ -25,8 +25,8 @@ describe("schema builder > change index", () => {
 
     it("should correctly add new index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const teacherMetadata = connection.getMetadata(Teacher)
+            dataSources.map(async (dataSource) => {
+                const teacherMetadata = dataSource.getMetadata(Teacher)
                 const nameColumn =
                     teacherMetadata.findColumnWithPropertyName("name")!
                 const indexMetadata = new IndexMetadata({
@@ -37,12 +37,12 @@ describe("schema builder > change index", () => {
                         synchronize: true,
                     },
                 })
-                indexMetadata.build(connection.namingStrategy)
+                indexMetadata.build(dataSource.namingStrategy)
                 teacherMetadata.indices.push(indexMetadata)
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const teacherTable = await queryRunner.getTable("teacher")
                 await queryRunner.release()
 
@@ -58,13 +58,13 @@ describe("schema builder > change index", () => {
 
     it("should correctly change index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const studentMetadata = connection.getMetadata(Student)
+            dataSources.map(async (dataSource) => {
+                const studentMetadata = dataSource.getMetadata(Student)
                 studentMetadata.indices[0].name = "changed_index"
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const studentTable = await queryRunner.getTable("student")
                 await queryRunner.release()
 
@@ -77,17 +77,17 @@ describe("schema builder > change index", () => {
 
     it("should correctly drop removed index", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const studentMetadata = connection.getMetadata(Student)
+            dataSources.map(async (dataSource) => {
+                const studentMetadata = dataSource.getMetadata(Student)
                 studentMetadata.indices.splice(0, 1)
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const studentTable = await queryRunner.getTable("student")
                 await queryRunner.release()
                 // CockroachDB also stores indices for relation columns
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     studentTable!.indices.length.should.be.equal(2)
                 } else {
                     studentTable!.indices.length.should.be.equal(0)
@@ -97,10 +97,10 @@ describe("schema builder > change index", () => {
 
     it("should ignore index synchronization when `synchronize` set to false", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // You can not disable synchronization for unique index in CockroachDB, because unique indices are stored as UNIQUE constraints
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 let teacherTable = await queryRunner.getTable("teacher")
                 teacherTable!.indices.length.should.be.equal(0)
 
@@ -113,7 +113,7 @@ describe("schema builder > change index", () => {
 
                 teacherTable = await queryRunner.getTable("teacher")
                 // CockroachDB stores unique indices as UNIQUE constraints
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     teacherTable!.indices.length.should.be.equal(0)
                     teacherTable!.uniques.length.should.be.equal(1)
                     teacherTable!.findColumnByName("name")!.isUnique.should.be
@@ -123,11 +123,11 @@ describe("schema builder > change index", () => {
                     teacherTable!.indices[0].isUnique!.should.be.true
                 }
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
                 teacherTable = await queryRunner.getTable("teacher")
                 // CockroachDB stores unique indices as UNIQUE constraints
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     teacherTable!.indices.length.should.be.equal(0)
                     teacherTable!.uniques.length.should.be.equal(0)
                     teacherTable!.findColumnByName("name")!.isUnique.should.be
