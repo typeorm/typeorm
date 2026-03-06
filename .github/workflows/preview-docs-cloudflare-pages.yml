@@ -55,4 +55,11 @@ jobs:
         with:
           header: docs-preview
           message: |
-            **Docs preview:** ${{ steps.deploy.outputs.deployment-url }}
+            ## Docs Preview &nbsp;<a href="https://pages.dev"><img alt="Cloudflare Pages" src="https://user-images.githubusercontent.com/23264/106598434-9e719e00-654f-11eb-9e59-6167043cfa01.png" width="16"></a>
+
+            | | |
+            |---|---|
+            | **Latest commit:** | `${{ github.event.pull_request.head.sha }}` |
+            | **Status:** | ✅ Deploy successful! |
+            | **Preview URL:** | ${{ steps.deploy.outputs.deployment-url }} |
+            | **Branch Preview URL:** | ${{ steps.deploy.outputs.pages-deployment-alias-url }} |
