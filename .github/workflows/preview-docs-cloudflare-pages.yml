@@ -1,0 +1,59 @@
+name: Preview Docs on Cloudflare Pages
+
+on:
+  pull_request:
+    branches-ignore:
+      - master
+    paths:
+      - "docs/**"
+      - ".github/workflows/preview-docs-cloudflare-pages.yml"
+
+concurrency:
+  group: preview-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    name: Preview Docs
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./docs
+        run: pnpm install --frozen-lockfile
+
+      - name: Build docs
+        working-directory: ./docs
+        run: pnpm run build
+
+      - name: Deploy preview to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy docs/build --project-name=typeorm --branch=${{ github.head_ref }}
+
+      - name: Comment PR with preview URL
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: docs-preview
+          message: |
+            ## Docs Preview
+            Preview deployed to: ${{ steps.deploy.outputs.deployment-url }}
