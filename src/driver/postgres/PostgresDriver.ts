@@ -27,8 +27,8 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import {
+    createReplicationPools,
     getReplicationPrimary,
-    getReplicationReplicas,
 } from "../types/ReplicationConfig"
 import {
     normalizeReplicationMode,
@@ -371,22 +371,13 @@ export class PostgresDriver implements Driver {
      */
     async connect(): Promise<void> {
         if (this.options.replication) {
-            const replicationPrimary = getReplicationPrimary(
-                this.options.replication,
-            )
-            const replicationReplicas = getReplicationReplicas(
-                this.options.replication,
-            )
-
-            this.slaves = await Promise.all(
-                replicationReplicas.map((replica) => {
-                    return this.createPool(this.options, replica)
-                }),
-            )
-            this.master = await this.createPool(
+            const pools = await createReplicationPools(
                 this.options,
-                replicationPrimary,
+                this.options.replication,
+                (options, credentials) => this.createPool(options, credentials),
             )
+            this.slaves = pools.slaves
+            this.master = pools.master
         } else {
             this.master = await this.createPool(this.options, this.options)
         }

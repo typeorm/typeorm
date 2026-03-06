@@ -109,3 +109,32 @@ export function getReplicationReplicas<TCredentials extends object>(
         `Replication options must define at least one "slave" or "replica".`,
     )
 }
+
+/**
+ * Resolves replication endpoints and initializes pools for all replicas + primary.
+ * @param options
+ * @param replication
+ * @param createPool
+ */
+export async function createReplicationPools<
+    TCredentials extends object,
+    TOptions,
+    TPool,
+>(
+    options: TOptions,
+    replication: ReplicationConfig<TCredentials>,
+    createPool: (
+        options: TOptions,
+        credentials: TCredentials,
+    ) => Promise<TPool>,
+): Promise<{ master: TPool; slaves: TPool[] }> {
+    const primary = getReplicationPrimary(replication)
+    const replicas = getReplicationReplicas(replication)
+
+    const slaves = await Promise.all(
+        replicas.map((replica) => createPool(options, replica)),
+    )
+    const master = await createPool(options, primary)
+
+    return { master, slaves }
+}

@@ -20,6 +20,36 @@ const expectCurrentApplicationName = async (
     expect(result[0].application_name).to.equal(name)
 }
 
+type RequestedReplicationMode = "master" | "slave" | "primary" | "replica"
+
+const assertQueryRunnerRoutes = async (
+    createQueryRunner: (mode?: RequestedReplicationMode) => QueryRunner,
+    routes: {
+        mode?: RequestedReplicationMode
+        expectedMode: "master" | "slave"
+        expectedApplicationName: string
+    }[],
+) => {
+    for (const route of routes) {
+        const queryRunner = route.mode
+            ? createQueryRunner(route.mode)
+            : createQueryRunner()
+
+        expect(queryRunner.getReplicationMode()).to.equal(route.expectedMode)
+        await expectCurrentApplicationName(
+            queryRunner,
+            route.expectedApplicationName,
+        )
+        await queryRunner.release()
+    }
+}
+
+const createQueryRunnerFactory =
+    (dataSource: DataSource) => (mode?: RequestedReplicationMode) =>
+        mode
+            ? dataSource.createQueryRunner(mode)
+            : dataSource.createQueryRunner()
+
 describe("Connection replication", () => {
     const ormConfigConnectionOptionsArray = getTypeOrmConfig()
     const postgresOptions = ormConfigConnectionOptionsArray.find(
@@ -82,25 +112,31 @@ describe("Connection replication", () => {
         })
 
         it("query runners can have their replication mode overridden", async () => {
-            let queryRunner = dataSource.createQueryRunner("master")
-            queryRunner.getReplicationMode().should.equal("master")
-            await expectCurrentApplicationName(queryRunner, "master")
-            await queryRunner.release()
-
-            queryRunner = dataSource.createQueryRunner("slave")
-            queryRunner.getReplicationMode().should.equal("slave")
-            await expectCurrentApplicationName(queryRunner, "slave")
-            await queryRunner.release()
-
-            queryRunner = dataSource.createQueryRunner("primary")
-            queryRunner.getReplicationMode().should.equal("master")
-            await expectCurrentApplicationName(queryRunner, "master")
-            await queryRunner.release()
-
-            queryRunner = dataSource.createQueryRunner("replica")
-            queryRunner.getReplicationMode().should.equal("slave")
-            await expectCurrentApplicationName(queryRunner, "slave")
-            await queryRunner.release()
+            await assertQueryRunnerRoutes(
+                createQueryRunnerFactory(dataSource),
+                [
+                    {
+                        mode: "master",
+                        expectedMode: "master",
+                        expectedApplicationName: "master",
+                    },
+                    {
+                        mode: "slave",
+                        expectedMode: "slave",
+                        expectedApplicationName: "slave",
+                    },
+                    {
+                        mode: "primary",
+                        expectedMode: "master",
+                        expectedApplicationName: "master",
+                    },
+                    {
+                        mode: "replica",
+                        expectedMode: "slave",
+                        expectedApplicationName: "slave",
+                    },
+                ],
+            )
         })
 
         it("driver query runners should normalize alias replication mode", async () => {
@@ -178,25 +214,31 @@ describe("Connection replication", () => {
         afterEach(() => closeTestingConnections([dataSource]))
 
         it("legacy endpoints should take precedence when both endpoint styles are provided", async () => {
-            let queryRunner = dataSource.createQueryRunner("master")
-            queryRunner.getReplicationMode().should.equal("master")
-            await expectCurrentApplicationName(queryRunner, "master")
-            await queryRunner.release()
-
-            queryRunner = dataSource.createQueryRunner("slave")
-            queryRunner.getReplicationMode().should.equal("slave")
-            await expectCurrentApplicationName(queryRunner, "slave")
-            await queryRunner.release()
-
-            queryRunner = dataSource.createQueryRunner("primary")
-            queryRunner.getReplicationMode().should.equal("master")
-            await expectCurrentApplicationName(queryRunner, "master")
-            await queryRunner.release()
-
-            queryRunner = dataSource.createQueryRunner("replica")
-            queryRunner.getReplicationMode().should.equal("slave")
-            await expectCurrentApplicationName(queryRunner, "slave")
-            await queryRunner.release()
+            await assertQueryRunnerRoutes(
+                createQueryRunnerFactory(dataSource),
+                [
+                    {
+                        mode: "master",
+                        expectedMode: "master",
+                        expectedApplicationName: "master",
+                    },
+                    {
+                        mode: "slave",
+                        expectedMode: "slave",
+                        expectedApplicationName: "slave",
+                    },
+                    {
+                        mode: "primary",
+                        expectedMode: "master",
+                        expectedApplicationName: "master",
+                    },
+                    {
+                        mode: "replica",
+                        expectedMode: "slave",
+                        expectedApplicationName: "slave",
+                    },
+                ],
+            )
         })
     })
 
@@ -250,15 +292,21 @@ describe("Connection replication", () => {
         })
 
         it("query runners can have their replication mode overridden", async () => {
-            let queryRunner = dataSource.createQueryRunner("primary")
-            queryRunner.getReplicationMode().should.equal("master")
-            await expectCurrentApplicationName(queryRunner, "master")
-            await queryRunner.release()
-
-            queryRunner = dataSource.createQueryRunner("replica")
-            queryRunner.getReplicationMode().should.equal("slave")
-            await expectCurrentApplicationName(queryRunner, "slave")
-            await queryRunner.release()
+            await assertQueryRunnerRoutes(
+                createQueryRunnerFactory(dataSource),
+                [
+                    {
+                        mode: "primary",
+                        expectedMode: "master",
+                        expectedApplicationName: "master",
+                    },
+                    {
+                        mode: "replica",
+                        expectedMode: "slave",
+                        expectedApplicationName: "slave",
+                    },
+                ],
+            )
         })
 
         it("read queries should go to the master by default", async () => {
