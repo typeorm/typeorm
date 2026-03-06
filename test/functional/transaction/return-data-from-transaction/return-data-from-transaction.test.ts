@@ -22,9 +22,9 @@ describe("transaction > return data from transaction", () => {
 
     it("should allow to return typed data from transaction", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const { postId, categoryId } =
-                    await connection.manager.transaction<{
+                    await dataSource.manager.transaction<{
                         postId: number
                         categoryId: number
                     }>(async (entityManager) => {
@@ -42,7 +42,7 @@ describe("transaction > return data from transaction", () => {
                         }
                     })
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).not.to.be.null
@@ -51,7 +51,7 @@ describe("transaction > return data from transaction", () => {
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).not.to.be.null
@@ -64,9 +64,9 @@ describe("transaction > return data from transaction", () => {
 
     it("should allow to return typed data from transaction using type inference", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const { postId, categoryId } =
-                    await connection.manager.transaction(
+                    await dataSource.manager.transaction(
                         async (entityManager) => {
                             const post = new Post()
                             post.title = "Post #1"
@@ -83,7 +83,7 @@ describe("transaction > return data from transaction", () => {
                         },
                     )
 
-                const post = await connection.manager.findOne(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).not.to.be.null
@@ -92,7 +92,7 @@ describe("transaction > return data from transaction", () => {
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
+                const category = await dataSource.manager.findOne(Category, {
                     where: { name: "Category #1" },
                 })
                 expect(category).not.to.be.null

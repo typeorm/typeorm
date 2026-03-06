@@ -113,6 +113,36 @@ Glob patterns are now handled by `tinyglobby` instead of `glob`. While `tinyglob
 
 In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
 
+### Global convenience functions
+
+The following deprecated global functions have been removed:
+
+- `createConnection` / `createConnections`
+- `getConnection`
+- `getConnectionManager`
+- `getConnectionOptions`
+- `getManager`
+- `getSqljsManager`
+- `getRepository`
+- `getTreeRepository`
+- `createQueryBuilder`
+
+Use the equivalent methods on your `DataSource` instance instead. For example:
+
+```typescript
+// Before
+const repo = getRepository(User)
+const qb = createQueryBuilder("user")
+
+// After
+const repo = dataSource.getRepository(User)
+const qb = dataSource.createQueryBuilder("user")
+```
+
+### `ConnectionManager`
+
+The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
+
 ### `AbstractRepository`, `@EntityRepository`, and `getCustomRepository`
 
 The `AbstractRepository` class, `@EntityRepository` decorator, and `getCustomRepository()` method have been removed. These were deprecated in v0.3 in favor of `Repository.extend()`.

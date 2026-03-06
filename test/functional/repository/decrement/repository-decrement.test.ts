@@ -23,7 +23,7 @@ describe("repository > decrement method", () => {
 
         it("should decrement value", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -33,15 +33,15 @@ describe("repository > decrement method", () => {
                     post2.id = 2
                     post2.title = "post #2"
                     post2.counter = 5
-                    await connection.manager.save([post1, post2])
+                    await dataSource.manager.save([post1, post2])
 
                     // decrement counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(Post)
                         .decrement({ id: 1 }, "counter", 1)
 
                     // decrement counter of post 2
-                    await connection.manager.decrement(
+                    await dataSource.manager.decrement(
                         Post,
                         { id: 2 },
                         "counter",
@@ -49,14 +49,14 @@ describe("repository > decrement method", () => {
                     )
 
                     // load and check counter
-                    const loadedPost1 = await connection.manager.findOne(Post, {
+                    const loadedPost1 = await dataSource.manager.findOne(Post, {
                         where: {
                             id: 1,
                         },
                     })
                     loadedPost1!.counter.should.be.equal(1)
 
-                    const loadedPost2 = await connection.manager.findOne(Post, {
+                    const loadedPost2 = await dataSource.manager.findOne(Post, {
                         where: {
                             id: 2,
                         },
@@ -67,7 +67,7 @@ describe("repository > decrement method", () => {
 
         it("should accept string as input and decrement value", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -77,15 +77,15 @@ describe("repository > decrement method", () => {
                     post2.id = 2
                     post2.title = "post #2"
                     post2.counter = 35
-                    await connection.manager.save([post1, post2])
+                    await dataSource.manager.save([post1, post2])
 
                     // decrement counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(Post)
                         .decrement({ id: 1 }, "counter", "22")
 
                     // decrement counter of post 2
-                    await connection.manager.decrement(
+                    await dataSource.manager.decrement(
                         Post,
                         { id: 2 },
                         "counter",
@@ -93,14 +93,14 @@ describe("repository > decrement method", () => {
                     )
 
                     // load and check counter
-                    const loadedPost1 = await connection.manager.findOne(Post, {
+                    const loadedPost1 = await dataSource.manager.findOne(Post, {
                         where: {
                             id: 1,
                         },
                     })
                     loadedPost1!.counter.should.be.equal(1)
 
-                    const loadedPost2 = await connection.manager.findOne(Post, {
+                    const loadedPost2 = await dataSource.manager.findOne(Post, {
                         where: {
                             id: 2,
                         },
@@ -111,16 +111,16 @@ describe("repository > decrement method", () => {
 
         it("should return UpdateResult", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
                     post1.title = "post #1"
                     post1.counter = 50
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     // increment counter of post 1
-                    const result = await connection
+                    const result = await dataSource
                         .getRepository(Post)
                         .decrement({ id: 1 }, "counter", 22)
 
@@ -130,7 +130,7 @@ describe("repository > decrement method", () => {
 
         it("should throw an error if column property path was not found", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -140,10 +140,10 @@ describe("repository > decrement method", () => {
                     post2.id = 2
                     post2.title = "post #2"
                     post2.counter = 1
-                    await connection.manager.save([post1, post2])
+                    await dataSource.manager.save([post1, post2])
 
                     // decrement counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(Post)
                         .decrement({ id: 1 }, "unknownProperty", 1).should.be
                         .rejected
@@ -152,7 +152,7 @@ describe("repository > decrement method", () => {
 
         it("should throw an error if input value is not number", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -162,10 +162,10 @@ describe("repository > decrement method", () => {
                     post2.id = 2
                     post2.title = "post #2"
                     post2.counter = 1
-                    await connection.manager.save([post1, post2])
+                    await dataSource.manager.save([post1, post2])
 
                     // decrement counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(Post)
                         .decrement({ id: 1 }, "counter", "12abc").should.be
                         .rejected
@@ -186,7 +186,7 @@ describe("repository > decrement method", () => {
 
         it("should decrement value", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const postBigInt1 = new PostBigInt()
                     postBigInt1.id = 1
@@ -196,15 +196,15 @@ describe("repository > decrement method", () => {
                     postBigInt2.id = 2
                     postBigInt2.title = "post #2"
                     postBigInt2.counter = "9000000000000000002"
-                    await connection.manager.save([postBigInt1, postBigInt2])
+                    await dataSource.manager.save([postBigInt1, postBigInt2])
 
                     // decrement counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(PostBigInt)
                         .decrement({ id: 1 }, "counter", "9000000000000000000")
 
                     // decrement counter of post 2
-                    await connection.manager.decrement(
+                    await dataSource.manager.decrement(
                         PostBigInt,
                         { id: 2 },
                         "counter",
@@ -212,7 +212,7 @@ describe("repository > decrement method", () => {
                     )
 
                     // load and check counter
-                    const loadedPost1 = await connection.manager.findOne(
+                    const loadedPost1 = await dataSource.manager.findOne(
                         PostBigInt,
                         {
                             where: {
@@ -222,7 +222,7 @@ describe("repository > decrement method", () => {
                     )
                     loadedPost1!.counter.should.be.equal("1")
 
-                    const loadedPost2 = await connection.manager.findOne(
+                    const loadedPost2 = await dataSource.manager.findOne(
                         PostBigInt,
                         {
                             where: {
@@ -247,16 +247,16 @@ describe("repository > decrement method", () => {
 
         it("should decrement value", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userWithEmbededEntity = new UserWithEmbededEntity()
                     userWithEmbededEntity.id = 1
-                    await connection.manager.save([userWithEmbededEntity])
+                    await dataSource.manager.save([userWithEmbededEntity])
 
-                    await connection
+                    await dataSource
                         .getRepository(UserWithEmbededEntity)
                         .decrement({ id: 1 }, "friend.sent", 15)
 
-                    const loadedUser = await connection.manager.findOne(
+                    const loadedUser = await dataSource.manager.findOne(
                         UserWithEmbededEntity,
                         {
                             where: {

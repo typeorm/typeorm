@@ -38,6 +38,7 @@ export class PlatformTools {
         } catch (err) {
             throw new TypeError(
                 `Failed to read package.json for "${name}": ${err.message}`,
+                { cause: err },
             )
         }
     }

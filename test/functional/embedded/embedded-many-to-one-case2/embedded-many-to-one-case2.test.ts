@@ -24,7 +24,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
     describe("owner side", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToOne relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.title = "About cars"
@@ -36,7 +36,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                     post1.counters.subcounters = new Subcounters()
                     post1.counters.subcounters.version = 1
                     post1.counters.subcounters.watches = 5
-                    await connection.getRepository(Post).save(post1)
+                    await dataSource.getRepository(Post).save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
@@ -49,7 +49,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                     post2.counters.subcounters = new Subcounters()
                     post2.counters.subcounters.version = 1
                     post2.counters.subcounters.watches = 10
-                    await connection.getRepository(Post).save(post2)
+                    await dataSource.getRepository(Post).save(post2)
 
                     const post3 = new Post()
                     post3.id = 3
@@ -62,21 +62,21 @@ describe("embedded > embedded-many-to-one-case2", () => {
                     post3.counters.subcounters = new Subcounters()
                     post3.counters.subcounters.version = 1
                     post3.counters.subcounters.watches = 30
-                    await connection.getRepository(Post).save(post3)
+                    await dataSource.getRepository(Post).save(post3)
 
                     const user1 = new User()
                     user1.id = 1
                     user1.name = "Alice"
                     user1.likedPost = post1
-                    await connection.getRepository(User).save(user1)
+                    await dataSource.getRepository(User).save(user1)
 
                     const user2 = new User()
                     user2.id = 2
                     user2.name = "Bob"
                     user2.likedPost = post2
-                    await connection.getRepository(User).save(user2)
+                    await dataSource.getRepository(User).save(user2)
 
-                    let loadedUsers = await connection.manager
+                    let loadedUsers = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPost", "likedPost")
                         .orderBy("user.id")
@@ -123,7 +123,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                         }),
                     )
 
-                    let loadedUser = await connection.manager
+                    let loadedUser = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPost", "likedPost")
                         .where("user.id = :id", { id: 1 })
@@ -152,9 +152,9 @@ describe("embedded > embedded-many-to-one-case2", () => {
 
                     loadedUser!.name = "Anna"
                     loadedUser!.likedPost = post3
-                    await connection.getRepository(User).save(loadedUser!)
+                    await dataSource.getRepository(User).save(loadedUser!)
 
-                    loadedUser = await connection.manager
+                    loadedUser = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPost", "likedPost")
                         .where("user.id = :id", { id: 1 })
@@ -181,9 +181,9 @@ describe("embedded > embedded-many-to-one-case2", () => {
                         }),
                     )
 
-                    await connection.getRepository(User).remove(loadedUser!)
+                    await dataSource.getRepository(User).remove(loadedUser!)
 
-                    loadedUsers = (await connection
+                    loadedUsers = (await dataSource
                         .getRepository(User)
                         .find({ order: { name: "ASC" } }))!
                     expect(loadedUsers.length).to.be.equal(1)
@@ -195,21 +195,21 @@ describe("embedded > embedded-many-to-one-case2", () => {
     describe("inverse side", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToOne relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user1 = new User()
                     user1.id = 1
                     user1.name = "Alice"
-                    await connection.getRepository(User).save(user1)
+                    await dataSource.getRepository(User).save(user1)
 
                     const user2 = new User()
                     user2.id = 2
                     user2.name = "Bob"
-                    await connection.getRepository(User).save(user2)
+                    await dataSource.getRepository(User).save(user2)
 
                     const user3 = new User()
                     user3.id = 3
                     user3.name = "Clara"
-                    await connection.getRepository(User).save(user3)
+                    await dataSource.getRepository(User).save(user3)
 
                     const post1 = new Post()
                     post1.id = 1
@@ -223,7 +223,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                     post1.counters.subcounters = new Subcounters()
                     post1.counters.subcounters.version = 1
                     post1.counters.subcounters.watches = 5
-                    await connection.getRepository(Post).save(post1)
+                    await dataSource.getRepository(Post).save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
@@ -237,9 +237,9 @@ describe("embedded > embedded-many-to-one-case2", () => {
                     post2.counters.subcounters = new Subcounters()
                     post2.counters.subcounters.version = 1
                     post2.counters.subcounters.watches = 10
-                    await connection.getRepository(Post).save(post2)
+                    await dataSource.getRepository(Post).save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.counters.likedUsers",
@@ -286,7 +286,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                         }),
                     )
 
-                    let loadedPost = await connection.manager
+                    let loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.counters.likedUsers",
@@ -320,9 +320,9 @@ describe("embedded > embedded-many-to-one-case2", () => {
                     loadedPost!.counters.favorites += 1
                     loadedPost!.counters.subcounters.watches += 1
                     loadedPost!.counters.likedUsers = [user1]
-                    await connection.getRepository(Post).save(loadedPost!)
+                    await dataSource.getRepository(Post).save(loadedPost!)
 
-                    loadedPost = await connection.manager
+                    loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.counters.likedUsers",
@@ -350,7 +350,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                         }),
                     )
 
-                    const loadedUser = await connection.manager
+                    const loadedUser = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPost", "likedPost")
                         .where("user.id = :id", { id: 2 })

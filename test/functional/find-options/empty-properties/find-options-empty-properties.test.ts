@@ -16,24 +16,24 @@ describe("find options > where", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    async function prepareData(connection: DataSource) {
+    async function prepareData(dataSource: DataSource) {
         const post1 = new Post()
         post1.title = "Post #1"
         post1.text = "About post #1"
-        await connection.manager.save(post1)
+        await dataSource.manager.save(post1)
 
         const post2 = new Post()
         post2.title = "Post #2"
         post2.text = "About post #2"
-        await connection.manager.save(post2)
+        await dataSource.manager.save(post2)
     }
 
     it("should skip undefined properties", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -54,10 +54,10 @@ describe("find options > where", () => {
 
     it("should skip null properties", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
-                const posts1 = await connection
+                const posts1 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         // @ts-expect-error - null should be marked as unsafe by default
@@ -75,7 +75,7 @@ describe("find options > where", () => {
                     { id: 1, title: "Post #1", text: "About post #1" },
                 ])
 
-                const posts2 = await connection
+                const posts2 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         // @ts-expect-error - null should be marked as unsafe by default

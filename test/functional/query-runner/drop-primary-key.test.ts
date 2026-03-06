@@ -20,15 +20,15 @@ describe("query runner > drop primary key", () => {
 
     it("should correctly drop primary key and revert drop", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB does not allow dropping primary key
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 )
                     return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 table!.findColumnByName("id")!.isPrimary.should.be.true

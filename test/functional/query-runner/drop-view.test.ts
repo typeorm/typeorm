@@ -22,8 +22,8 @@ describe("query runner > drop view", () => {
 
     it("should correctly drop VIEW and revert dropping", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let postView = await queryRunner.getView("post_view")
                 await queryRunner.dropView(postView!)
@@ -42,8 +42,8 @@ describe("query runner > drop view", () => {
 
     it("should correctly drop MATERIALIZED VIEW and revert dropping", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let postMatView = await queryRunner.getView(
                     "post_materialized_view",

@@ -21,8 +21,8 @@ describe("query builder > exists", () => {
 
     it("Exists query of empty table should be false", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Test)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Test)
 
                 const exists = await repo.exists()
                 expect(exists).to.be.equal(false)
@@ -31,8 +31,8 @@ describe("query builder > exists", () => {
 
     it("Exists query of non empty table should be true", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Test)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Test)
 
                 await repo.save({ id: "ok" })
                 await repo.save({ id: "nok" })

@@ -21,8 +21,8 @@ describe("query builder > parameters > sqlite", () => {
 
     it("should replace basic parameters when executing", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save({ id: "bar" })
 
@@ -38,8 +38,8 @@ describe("query builder > parameters > sqlite", () => {
 
     it("should prevent invalid characters from being used as identifiers", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const b = connection.createQueryBuilder()
+            dataSources.map(async (dataSource) => {
+                const b = dataSource.createQueryBuilder()
 
                 expect(() => b.setParameter(":foo", "bar")).to.throw()
                 expect(() => b.setParameter("@foo", "bar")).to.throw()
@@ -50,8 +50,8 @@ describe("query builder > parameters > sqlite", () => {
 
     it("should allow periods in parameters", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save({ id: "bar" })
 

@@ -20,8 +20,8 @@ describe("entity-schema > indices > mysql", () => {
 
     it("should correctly create SPATIAL and FULLTEXT indices", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("person")
                 await queryRunner.release()
 

@@ -24,10 +24,10 @@ describe("transaction > transaction with load many", () => {
 
     it("should loadMany in same transaction with same query runner", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let acquireCount = 0
 
-                const driver = connection.driver
+                const driver = dataSource.driver
 
                 if (DriverUtils.isMySQLFamily(driver)) {
                     const pool = (driver as MysqlDriver).pool
@@ -37,7 +37,7 @@ describe("transaction > transaction with load many", () => {
                     pool.on("acquire", () => acquireCount++)
                 }
 
-                await connection.manager.transaction(async (entityManager) => {
+                await dataSource.manager.transaction(async (entityManager) => {
                     await entityManager
                         .createQueryBuilder()
                         .relation(Post, "categories")

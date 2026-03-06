@@ -22,7 +22,7 @@ describe("query builder > distinct on", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    async function prepareData(connection: DataSource) {
+    async function prepareData(dataSource: DataSource) {
         const users = [
             {
                 name: "Dion",
@@ -37,7 +37,7 @@ describe("query builder > distinct on", () => {
                 name: "Pablo",
             },
         ]
-        await connection
+        await dataSource
             .createQueryBuilder()
             .insert()
             .into(User)
@@ -66,7 +66,7 @@ describe("query builder > distinct on", () => {
                 author: "Dion",
             },
         ]
-        await connection
+        await dataSource
             .createQueryBuilder()
             .insert()
             .into(Category)
@@ -100,7 +100,7 @@ describe("query builder > distinct on", () => {
                 moderator: "Sarah",
             },
         ]
-        await connection
+        await dataSource
             .createQueryBuilder()
             .insert()
             .into(Post)
@@ -110,10 +110,10 @@ describe("query builder > distinct on", () => {
 
     it("should perform distinct on category authors", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
-                const result = await connection.manager
+                const result = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .distinctOn(["category.author"])
                     .getMany()
@@ -127,10 +127,10 @@ describe("query builder > distinct on", () => {
 
     it("should perform distinct on post authors and moderators combination", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
-                const result = await connection.manager
+                const result = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .distinctOn(["post.author", "post.moderator"])
                     .getMany()
@@ -150,10 +150,10 @@ describe("query builder > distinct on", () => {
 
     it("should perform distinct on post and category authors", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
-                const result = await connection.manager
+                const result = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect(
                         Category,
