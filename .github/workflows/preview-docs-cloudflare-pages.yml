@@ -2,8 +2,6 @@ name: Preview Docs on Cloudflare Pages
 
 on:
   pull_request:
-    branches-ignore:
-      - master
     paths:
       - "docs/**"
       - ".github/workflows/preview-docs-cloudflare-pages.yml"
