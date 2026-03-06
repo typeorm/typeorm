@@ -59,9 +59,11 @@ jobs:
         with:
           header: docs-preview
           message: |
-            | Project | Deployment | Actions | Updated (UTC) |
-            |---------|------------|---------|---------------|
-            | **typeorm-docs** | ✅ Ready | <a href="${{ steps.deploy.outputs.deployment-url }}">Preview</a> | ${{ steps.timestamp.outputs.time }} |
+            ### <img alt="Cloudflare Pages" src="https://user-images.githubusercontent.com/23264/106598434-9e719e00-654f-11eb-9e59-6167043cfa01.png" width="16"> Documentation Preview
+
+            | Deployment | Actions | Updated (UTC) |
+            |------------|---------|---------------|
+            | ✅ Ready | <a href="${{ steps.deploy.outputs.deployment-url }}">Preview</a> | ${{ steps.timestamp.outputs.time }} |
 
       - name: Comment deployment failure
         if: failure()
@@ -69,6 +71,8 @@ jobs:
         with:
           header: docs-preview
           message: |
-            | Project | Deployment | Actions | Updated (UTC) |
-            |---------|------------|---------|---------------|
-            | **typeorm-docs** | ❌ Failed | <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">Logs</a> | ${{ steps.timestamp.outputs.time }} |
+            ### <img alt="Cloudflare Pages" src="https://user-images.githubusercontent.com/23264/106598434-9e719e00-654f-11eb-9e59-6167043cfa01.png" width="16"> Documentation Preview
+
+            | Deployment | Actions | Updated (UTC) |
+            |------------|---------|---------------|
+            | ❌ Failed | <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">Logs</a> | ${{ steps.timestamp.outputs.time }} |
