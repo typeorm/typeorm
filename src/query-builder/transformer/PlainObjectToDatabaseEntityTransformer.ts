@@ -1,7 +1,9 @@
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import type { EntityManager } from "../../entity-manager/EntityManager"
+import type { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
 import type { RelationMetadata } from "../../metadata/RelationMetadata"
+import { PlatformTools } from "../../platform/PlatformTools"
 
 /**
  */
@@ -128,17 +130,60 @@ export class PlainObjectToDatabaseEntityTransformer {
         }
         fillLoadMap(plainObject, metadata)
         // load all entities and store them in the load map
+        const isMongoDb =
+            this.manager.connection.driver.options.type === "mongodb"
         await Promise.all(
-            loadMap.groupByTargetIds().map((targetWithIds) => {
-                // todo: fix type hinting
-                return this.manager
-                    .findByIds<ObjectLiteral>(
-                        targetWithIds.target as any,
-                        targetWithIds.ids,
+            loadMap.groupByTargetIds().map(async (targetWithIds) => {
+                let entities: ObjectLiteral[]
+                if (isMongoDb) {
+                    const mongoManager = this
+                        .manager as unknown as MongoEntityManager
+                    const targetMetadata = this.manager.connection.getMetadata(
+                        targetWithIds.target,
                     )
-                    .then((entities) =>
-                        loadMap.fillEntities(targetWithIds.target, entities),
-                    )
+                    const objectIdInstance =
+                        PlatformTools.load("mongodb").ObjectId
+                    const cursor =
+                        mongoManager.createEntityCursor<ObjectLiteral>(
+                            targetWithIds.target,
+                            {
+                                _id: {
+                                    $in: targetWithIds.ids.map((id: any) => {
+                                        if (typeof id === "string") {
+                                            return new objectIdInstance(id)
+                                        }
+                                        if (typeof id === "object") {
+                                            if (
+                                                id instanceof objectIdInstance
+                                            ) {
+                                                return id
+                                            }
+                                            const propertyName =
+                                                targetMetadata.objectIdColumn!
+                                                    .propertyName
+                                            if (
+                                                id[propertyName] instanceof
+                                                objectIdInstance
+                                            ) {
+                                                return id[propertyName]
+                                            }
+                                        }
+                                        return id
+                                    }),
+                                },
+                            },
+                        )
+                    entities = await cursor.toArray()
+                } else {
+                    entities = await this.manager
+                        .getRepository<ObjectLiteral>(
+                            targetWithIds.target as any,
+                        )
+                        .createQueryBuilder()
+                        .whereInIds(targetWithIds.ids)
+                        .getMany()
+                }
+                loadMap.fillEntities(targetWithIds.target, entities)
             }),
         )
 

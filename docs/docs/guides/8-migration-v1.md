@@ -228,3 +228,17 @@ The same applies to find options:
 ### `WhereExpression` type alias
 
 The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
+
+### `findByIds`
+
+The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, `BaseEntity`, `MongoEntityManager`, and `MongoRepository`. Use `findBy` with the `In` operator instead:
+
+```typescript
+// Before
+const users = await repository.findByIds([1, 2, 3])
+
+// After
+import { In } from "typeorm"
+
+const users = await repository.findBy({ id: In([1, 2, 3]) })
+```
