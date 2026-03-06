@@ -41,6 +41,10 @@ jobs:
         working-directory: ./docs
         run: pnpm run build
 
+      - name: Get timestamp
+        id: timestamp
+        run: echo "time=$(date -u +'%b %-d, %Y %-I:%M%p')" >> "$GITHUB_OUTPUT"
+
       - name: Deploy preview
         id: deploy
         uses: cloudflare/wrangler-action@v3
@@ -55,9 +59,9 @@ jobs:
         with:
           header: docs-preview
           message: |
-            | Project | Deployment | Actions |
-            |---------|------------|---------|
-            | **typeorm-docs** | ✅ Ready | <a href="${{ steps.deploy.outputs.deployment-url }}">Preview</a> |
+            | Project | Deployment | Actions | Updated (UTC) |
+            |---------|------------|---------|---------------|
+            | **typeorm-docs** | ✅ Ready | <a href="${{ steps.deploy.outputs.deployment-url }}">Preview</a> | ${{ steps.timestamp.outputs.time }} |
 
       - name: Comment deployment failure
         if: failure()
@@ -65,6 +69,6 @@ jobs:
         with:
           header: docs-preview
           message: |
-            | Project | Deployment | Actions |
-            |---------|------------|---------|
-            | **typeorm-docs** | ❌ Failed | <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">Logs</a> |
+            | Project | Deployment | Actions | Updated (UTC) |
+            |---------|------------|---------|---------------|
+            | **typeorm-docs** | ❌ Failed | <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">Logs</a> | ${{ steps.timestamp.outputs.time }} |
