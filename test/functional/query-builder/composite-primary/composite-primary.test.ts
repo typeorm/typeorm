@@ -22,18 +22,18 @@ describe("query builder > composite primary", () => {
 
     it("should find entity by another entity with a composite key", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const foo = new Foo()
                 foo.id1 = 1
                 foo.id2 = 2
-                await connection.manager.save(foo)
+                await dataSource.manager.save(foo)
 
                 const bar = new Bar()
                 bar.id = 1
                 bar.foo = foo
-                await connection.manager.save(bar)
+                await dataSource.manager.save(bar)
 
-                const loadedBar = await connection.manager
+                const loadedBar = await dataSource.manager
                     .getRepository(Bar)
                     .findOne({
                         where: {

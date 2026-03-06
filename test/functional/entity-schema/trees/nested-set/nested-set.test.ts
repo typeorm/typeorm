@@ -21,9 +21,9 @@ describe("entity-schema > tree tables > nested-set", () => {
 
     it("attach should work properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = await categoryRepository.save({ name: "a1" })
 

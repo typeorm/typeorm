@@ -21,11 +21,11 @@ describe("query runner > drop check constraint", () => {
 
     it("should correctly drop check constraint and revert drop", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Mysql does not support check constraints.
-                if (DriverUtils.isMySQLFamily(connection.driver)) return
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 table!.checks.length.should.be.equal(1)

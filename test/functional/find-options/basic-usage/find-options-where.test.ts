@@ -25,10 +25,10 @@ describe("find options > where", () => {
 
     it("where id", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -50,10 +50,10 @@ describe("find options > where", () => {
 
     it("where title", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -74,10 +74,10 @@ describe("find options > where", () => {
 
     it("where two criteria", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -99,10 +99,10 @@ describe("find options > where", () => {
 
     it("where two criteria without match", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -117,10 +117,10 @@ describe("find options > where", () => {
 
     it("where relation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts1 = await connection
+                const posts1 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -151,7 +151,7 @@ describe("find options > where", () => {
                     },
                 ])
 
-                const posts2 = await connection
+                const posts2 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -174,10 +174,10 @@ describe("find options > where", () => {
 
     it("where column and relation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -201,10 +201,10 @@ describe("find options > where", () => {
 
     it("where nested relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -245,10 +245,10 @@ describe("find options > where", () => {
 
     it("where complex nested relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -277,10 +277,10 @@ describe("find options > where", () => {
 
     it("where or + optional relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: [
@@ -331,10 +331,10 @@ describe("find options > where", () => {
 
     it("where column in embed", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -372,10 +372,10 @@ describe("find options > where", () => {
 
     it("where relation in embed", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -409,10 +409,10 @@ describe("find options > where", () => {
 
     it("where complex with or + and", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: [
@@ -470,10 +470,10 @@ describe("find options > where", () => {
 
     it("where with or + and find operator", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -522,10 +522,10 @@ describe("find options > where", () => {
 
     it("where relations with operators", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts1 = await connection
+                const posts1 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -542,7 +542,7 @@ describe("find options > where", () => {
                     },
                 ])
 
-                const posts2 = await connection
+                const posts2 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -562,7 +562,7 @@ describe("find options > where", () => {
                     },
                 ])
 
-                const posts3 = await connection
+                const posts3 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -596,7 +596,7 @@ describe("find options > where", () => {
                     },
                 ])
 
-                const authors = await connection
+                const authors = await dataSource
                     .createQueryBuilder(Author, "author")
                     .setFindOptions({
                         where: {
@@ -608,7 +608,7 @@ describe("find options > where", () => {
                     { id: 1, firstName: "Timber", lastName: "Saw", age: 25 },
                 ])
 
-                const tags1 = await connection
+                const tags1 = await dataSource
                     .createQueryBuilder(Tag, "tag")
                     .setFindOptions({
                         where: {
@@ -624,7 +624,7 @@ describe("find options > where", () => {
                     { id: 2, name: "category #2" },
                 ])
 
-                const tags2 = await connection
+                const tags2 = await dataSource
                     .createQueryBuilder(Tag, "tag")
                     .setFindOptions({
                         where: {
@@ -638,8 +638,8 @@ describe("find options > where", () => {
 
     it("should not apply inner join if all conditions return undefined", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
                 const post4 = new Post()
                 post4.id = 4
@@ -647,9 +647,9 @@ describe("find options > where", () => {
                 post4.text = "About post #4"
                 post4.counters = new Counters()
                 post4.counters.likes = 1
-                await connection.manager.save(post4)
+                await dataSource.manager.save(post4)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -694,8 +694,8 @@ describe("find options > where", () => {
 
     it("should apply inner join if true is applied", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
                 const post4 = new Post()
                 post4.id = 4
@@ -703,9 +703,9 @@ describe("find options > where", () => {
                 post4.text = "About post #4"
                 post4.counters = new Counters()
                 post4.counters.likes = 1
-                await connection.manager.save(post4)
+                await dataSource.manager.save(post4)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {

@@ -41,10 +41,10 @@ describe("find options > find operators > ArrayOverlap", () => {
 
     it("should find entries in regular arrays", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const loadedPost1 = await connection.manager.find(Post, {
+                const loadedPost1 = await dataSource.manager.find(Post, {
                     where: {
                         authors: ArrayOverlap(["dmitry", "umed"]),
                     },
@@ -61,7 +61,7 @@ describe("find options > find operators > ArrayOverlap", () => {
                     },
                 ])
 
-                const loadedPost2 = await connection.manager.find(Post, {
+                const loadedPost2 = await dataSource.manager.find(Post, {
                     where: {
                         authors: ArrayOverlap(["olimjon", "umed"]),
                     },
@@ -88,10 +88,10 @@ describe("find options > find operators > ArrayOverlap", () => {
 
     it("should find entries in enum arrays", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const loadedPost1 = await connection.manager.find(Post, {
+                const loadedPost1 = await dataSource.manager.find(Post, {
                     where: {
                         statuses: ArrayOverlap([
                             PostStatus.draft,
@@ -111,7 +111,7 @@ describe("find options > find operators > ArrayOverlap", () => {
                     },
                 ])
 
-                const loadedPost2 = await connection.manager.find(Post, {
+                const loadedPost2 = await dataSource.manager.find(Post, {
                     where: {
                         statuses: ArrayOverlap([
                             PostStatus.published,

@@ -19,8 +19,8 @@ describe("schema builder > create table", () => {
 
     it("should correctly create tables with all dependencies", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let postTable = await queryRunner.getTable("post")
                 let teacherTable = await queryRunner.getTable("teacher")
                 let studentTable = await queryRunner.getTable("student")
@@ -30,7 +30,7 @@ describe("schema builder > create table", () => {
                 expect(studentTable).to.be.undefined
                 expect(facultyTable).to.be.undefined
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
                 postTable = await queryRunner.getTable("post")
                 const idColumn = postTable!.findColumnByName("id")
@@ -39,9 +39,9 @@ describe("schema builder > create table", () => {
                 postTable!.should.exist
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     postTable!.indices.length.should.be.equal(2)
                 } else {
@@ -51,7 +51,7 @@ describe("schema builder > create table", () => {
 
                 idColumn!.isPrimary.should.be.true
                 versionColumn!.isUnique.should.be.true
-                if (connection.driver.options.type !== "spanner") {
+                if (dataSource.driver.options.type !== "spanner") {
                     nameColumn!.default!.should.be.exist
                 }
 
@@ -62,7 +62,7 @@ describe("schema builder > create table", () => {
                 studentTable!.should.exist
                 studentTable!.foreignKeys.length.should.be.equal(2)
                 // CockroachDB also stores indices for relation columns
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     studentTable!.indices.length.should.be.equal(3)
                 } else {
                     studentTable!.indices.length.should.be.equal(1)

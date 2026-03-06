@@ -20,14 +20,14 @@ describe("persistence > null and default behaviour", () => {
 
     it("should insert value if it is set", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create category
                 const post = new Post()
                 post.id = 1
                 post.title = "Category saved!"
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager.findOneBy(Post, {
+                const loadedPost = await dataSource.manager.findOneBy(Post, {
                     id: 1,
                 })
                 expect(loadedPost).to.exist
@@ -40,13 +40,13 @@ describe("persistence > null and default behaviour", () => {
 
     it("should insert default when post.title is undefined", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create category
                 const post = new Post()
                 post.id = 1
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager.findOneBy(Post, {
+                const loadedPost = await dataSource.manager.findOneBy(Post, {
                     id: 1,
                 })
                 expect(loadedPost).to.exist
@@ -59,14 +59,14 @@ describe("persistence > null and default behaviour", () => {
 
     it("should insert NULL when post.title is null", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create category
                 const post = new Post()
                 post.id = 1
                 post.title = null
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager.findOneBy(Post, {
+                const loadedPost = await dataSource.manager.findOneBy(Post, {
                     id: 1,
                 })
                 expect(loadedPost).to.exist
@@ -79,17 +79,17 @@ describe("persistence > null and default behaviour", () => {
 
     it("should update nothing when post.title is undefined", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create category
                 const post = new Post()
                 post.id = 1
                 post.title = "Category saved!"
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 post.title = undefined
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager.findOneBy(Post, {
+                const loadedPost = await dataSource.manager.findOneBy(Post, {
                     id: 1,
                 })
                 expect(loadedPost).to.exist
@@ -102,16 +102,16 @@ describe("persistence > null and default behaviour", () => {
 
     it("should update to null when post.title is null", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Category saved!"
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 post.title = null
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager.findOneBy(Post, {
+                const loadedPost = await dataSource.manager.findOneBy(Post, {
                     id: 1,
                 })
                 expect(loadedPost).to.exist

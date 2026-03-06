@@ -30,9 +30,9 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a relation without inverse side", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const savedCategory1 = new Category()
                 savedCategory1.name = "kids"
@@ -76,9 +76,9 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a relation with inverse side", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const savedCategory1 = new Category()
                 savedCategory1.name = "kids"
@@ -135,9 +135,9 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-one relation with inverse side loaded from entity schema", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const userRepository = connection.getRepository("User")
-                const profileRepository = connection.getRepository("Profile")
+            dataSources.map(async (dataSource) => {
+                const userRepository = dataSource.getRepository("User")
+                const profileRepository = dataSource.getRepository("Profile")
 
                 const profile: any = profileRepository.create()
                 profile.country = "Japan"
@@ -165,7 +165,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a many-to-one relation without inverse side", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 30; i++) {
@@ -174,7 +174,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakePost.text = "post #" + i
                     fakePosts.push(fakePost)
                 }
-                await connection.manager.save(fakePosts)
+                await dataSource.manager.save(fakePosts)
 
                 const fakeCategories: Category[] = []
                 for (let i = 0; i < 8; i++) {
@@ -182,7 +182,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakeCategory.name = "category #" + i
                     fakeCategories.push(fakeCategory)
                 }
-                await connection.manager.save(fakeCategories)
+                await dataSource.manager.save(fakeCategories)
 
                 const category = new Category()
                 category.name = "category of great post"
@@ -192,10 +192,10 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 post.text = "post with great category and great text"
                 post.category = Promise.resolve(category)
 
-                await connection.manager.save(category)
-                await connection.manager.save(post)
+                await dataSource.manager.save(category)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager.findOne(Post, {
+                const loadedPost = await dataSource.manager.findOne(Post, {
                     where: { title: "post with great category" },
                 })
                 const loadedCategory = await loadedPost!.category
@@ -206,7 +206,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a many-to-one relation with inverse side", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -215,7 +215,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakePost.text = "post #" + i
                     fakePosts.push(fakePost)
                 }
-                await connection.manager.save(fakePosts)
+                await dataSource.manager.save(fakePosts)
 
                 const fakeCategories: Category[] = []
                 for (let i = 0; i < 30; i++) {
@@ -223,7 +223,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakeCategory.name = "category #" + i
                     fakeCategories.push(fakeCategory)
                 }
-                await connection.manager.save(fakeCategories)
+                await dataSource.manager.save(fakeCategories)
 
                 const category = new Category()
                 category.name = "category of great post"
@@ -233,10 +233,10 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 post.text = "post with great category and great text"
                 post.twoSideCategory = Promise.resolve(category)
 
-                await connection.manager.save(category)
-                await connection.manager.save(post)
+                await dataSource.manager.save(category)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager.findOne(Post, {
+                const loadedPost = await dataSource.manager.findOne(Post, {
                     where: { title: "post with great category" },
                 })
                 const loadedCategory = await loadedPost!.twoSideCategory
@@ -247,7 +247,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-many relation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -256,7 +256,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakePost.text = "post #" + i
                     fakePosts.push(fakePost)
                 }
-                await connection.manager.save(fakePosts)
+                await dataSource.manager.save(fakePosts)
 
                 const fakeCategories: Category[] = []
                 for (let i = 0; i < 30; i++) {
@@ -264,19 +264,19 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakeCategory.name = "category #" + i
                     fakeCategories.push(fakeCategory)
                 }
-                await connection.manager.save(fakeCategories)
+                await dataSource.manager.save(fakeCategories)
 
                 const category = new Category()
                 category.name = "category of great post"
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 const post = new Post()
                 post.title = "post with great category"
                 post.text = "post with great category and great text"
                 post.twoSideCategory = Promise.resolve(category)
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedCategory = await connection.manager.findOne(
+                const loadedCategory = await dataSource.manager.findOne(
                     Category,
                     { where: { name: "category of great post" } },
                 )
@@ -288,7 +288,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-one relation owner side", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -297,7 +297,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakePost.text = "post #" + i
                     fakePosts.push(fakePost)
                 }
-                await connection.manager.save(fakePosts)
+                await dataSource.manager.save(fakePosts)
 
                 const fakeCategories: Category[] = []
                 for (let i = 0; i < 30; i++) {
@@ -305,19 +305,19 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakeCategory.name = "category #" + i
                     fakeCategories.push(fakeCategory)
                 }
-                await connection.manager.save(fakeCategories)
+                await dataSource.manager.save(fakeCategories)
 
                 const category = new Category()
                 category.name = "category of great post"
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 const post = new Post()
                 post.title = "post with great category"
                 post.text = "post with great category and great text"
                 post.oneCategory = Promise.resolve(category)
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager.findOne(Post, {
+                const loadedPost = await dataSource.manager.findOne(Post, {
                     where: { title: "post with great category" },
                 })
                 const loadedCategory = await loadedPost!.oneCategory
@@ -328,7 +328,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-one relation inverse side", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -337,7 +337,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakePost.text = "post #" + i
                     fakePosts.push(fakePost)
                 }
-                await connection.manager.save(fakePosts)
+                await dataSource.manager.save(fakePosts)
 
                 const fakeCategories: Category[] = []
                 for (let i = 0; i < 30; i++) {
@@ -345,19 +345,19 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     fakeCategory.name = "category #" + i
                     fakeCategories.push(fakeCategory)
                 }
-                await connection.manager.save(fakeCategories)
+                await dataSource.manager.save(fakeCategories)
 
                 const category = new Category()
                 category.name = "category of great post"
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 const post = new Post()
                 post.title = "post with great category"
                 post.text = "post with great category and great text"
                 post.oneCategory = Promise.resolve(category)
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedCategory = await connection.manager.findOne(
+                const loadedCategory = await dataSource.manager.findOne(
                     Category,
                     { where: { name: "category of great post" } },
                 )
@@ -369,13 +369,13 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
     it("should successfully load relations within a transaction", () =>
         Promise.all(
             dataSources
-                .filter((connection) =>
+                .filter((dataSource) =>
                     new Set(["mysql", "better-sqlite3", "postgres"]).has(
-                        connection.options.type,
+                        dataSource.options.type,
                     ),
                 )
-                .map(async (connection) => {
-                    await connection.manager.transaction(async (manager) => {
+                .map(async (dataSource) => {
+                    await dataSource.manager.transaction(async (manager) => {
                         const category = new Category()
                         category.name = "category of great post"
                         await manager.save(category)
@@ -400,13 +400,13 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
     it("should successfully load relations outside a transaction with entity generated within a transaction", () =>
         Promise.all(
             dataSources
-                .filter((connection) =>
+                .filter((dataSource) =>
                     new Set(["mysql", "better-sqlite3", "postgres"]).has(
-                        connection.options.type,
+                        dataSource.options.type,
                     ),
                 )
-                .map(async (connection) => {
-                    const loadedCategory = await connection.manager.transaction(
+                .map(async (dataSource) => {
+                    const loadedCategory = await dataSource.manager.transaction(
                         async (manager) => {
                             const category = new Category()
                             category.name = "category of great post"

@@ -23,8 +23,8 @@ describe.skip("persistence > cascades > remove", () => {
 
     it("should soft-remove everything by cascades properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.manager.save(new Photo("Photo #1"))
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.save(new Photo("Photo #1"))
 
                 const user = new User()
                 user.id = 1
@@ -38,9 +38,9 @@ describe.skip("persistence > cascades > remove", () => {
                     new Photo("many-to-many #2"),
                     new Photo("many-to-many #3"),
                 ]
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
-                const loadedUser = await connection.manager
+                const loadedUser = await dataSource.manager
                     .createQueryBuilder(User, "user")
                     .leftJoinAndSelect("user.manyPhotos", "manyPhotos")
                     .leftJoinAndSelect(
@@ -67,9 +67,9 @@ describe.skip("persistence > cascades > remove", () => {
                 manyToManyPhotoNames.should.deep.include("many-to-many #2")
                 manyToManyPhotoNames.should.deep.include("many-to-many #3")
 
-                await connection.manager.softRemove(user)
+                await dataSource.manager.softRemove(user)
 
-                const allPhotos = await connection.manager.findBy(Photo, {
+                const allPhotos = await dataSource.manager.findBy(Photo, {
                     deletedAt: IsNull(),
                 })
                 allPhotos.length.should.be.equal(1)

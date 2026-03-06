@@ -41,9 +41,9 @@ describe("persistence > orphanage > delete", () => {
             }
 
             await Promise.all(
-                dataSources.map(async (connection) => {
-                    categoryRepository = connection.getRepository(Category)
-                    postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    categoryRepository = dataSource.getRepository(Category)
+                    postRepository = dataSource.getRepository(Post)
                 }),
             )
 

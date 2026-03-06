@@ -21,8 +21,8 @@ describe("query runner > drop exclusion constraint", () => {
 
     it("should correctly drop exclusion constraint and revert drop", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 table!.exclusions.length.should.be.equal(1)
