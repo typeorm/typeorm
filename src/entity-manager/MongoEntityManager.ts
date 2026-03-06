@@ -180,6 +180,67 @@ export class MongoEntityManager extends EntityManager {
     }
 
     /**
+     * Finds entities by ids.
+     * Optionally find options can be applied.
+     * @param entityClassOrName
+     * @param ids
+     * @param optionsOrConditions
+     */
+    async findByIds<Entity>(
+        entityClassOrName: EntityTarget<Entity>,
+        ids: any[],
+        optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>,
+    ): Promise<Entity[]> {
+        const metadata = this.connection.getMetadata(entityClassOrName)
+        const query =
+            this.convertFindManyOptionsOrConditionsToMongodbQuery(
+                optionsOrConditions,
+            ) || {}
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        query["_id"] = {
+            $in: ids.map((id) => {
+                if (typeof id === "string") {
+                    return new objectIdInstance(id)
+                }
+
+                if (typeof id === "object") {
+                    if (id instanceof objectIdInstance) {
+                        return id
+                    }
+
+                    const propertyName = metadata.objectIdColumn!.propertyName
+
+                    if (id[propertyName] instanceof objectIdInstance) {
+                        return id[propertyName]
+                    }
+                }
+            }),
+        }
+
+        const cursor = this.createEntityCursor<Entity>(
+            entityClassOrName,
+            query as Filter<Entity>,
+        )
+        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            if (optionsOrConditions.select)
+                cursor.project(
+                    this.convertFindOptionsSelectToProjectCriteria(
+                        optionsOrConditions.select,
+                    ),
+                )
+            if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
+            if (optionsOrConditions.take) cursor.limit(optionsOrConditions.take)
+            if (optionsOrConditions.order)
+                cursor.sort(
+                    this.convertFindOptionsOrderToOrderCriteria(
+                        optionsOrConditions.order,
+                    ),
+                )
+        }
+        return cursor.toArray()
+    }
+
+    /**
      * Finds first entity that matches given conditions and/or find options.
      * @param entityClassOrName
      * @param options
@@ -957,40 +1018,6 @@ export class MongoEntityManager extends EntityManager {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Finds entities by an array of ids, resolving ObjectId types as needed.
-     * @param entityClassOrName
-     * @param ids
-     */
-    async findByIds<Entity extends ObjectLiteral>(
-        entityClassOrName: EntityTarget<Entity>,
-        ids: any[],
-    ): Promise<Entity[]> {
-        const metadata = this.connection.getMetadata(entityClassOrName)
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
-        const cursor = this.createEntityCursor<Entity>(entityClassOrName, {
-            _id: {
-                $in: ids.map((id) => {
-                    if (typeof id === "string") {
-                        return new objectIdInstance(id)
-                    }
-                    if (typeof id === "object") {
-                        if (id instanceof objectIdInstance) {
-                            return id
-                        }
-                        const propertyName =
-                            metadata.objectIdColumn!.propertyName
-                        if (id[propertyName] instanceof objectIdInstance) {
-                            return id[propertyName]
-                        }
-                    }
-                    return id
-                }),
-            },
-        } as Filter<Entity>)
-        return cursor.toArray()
-    }
 
     /**
      * Converts FindManyOptions to mongodb query.

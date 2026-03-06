@@ -191,6 +191,22 @@ describe("mongodb > basic repository actions", () => {
                     "Everything about second post",
                 )
 
+                // assert findByIds method
+                const loadedPost3 = await postRepository.findByIds([
+                    post1.id,
+                    post2.id,
+                ])
+                expect(loadedPost3[0]!.id).to.be.eql(post1.id)
+                expect(loadedPost3[0]!.title).to.be.equal("First Post")
+                expect(loadedPost3[0]!.text).to.be.equal(
+                    "Everything about first post",
+                )
+                expect(loadedPost3[1].id).to.be.eql(post2.id)
+                expect(loadedPost3[1].title).to.be.equal("Second Post")
+                expect(loadedPost3[1].text).to.be.equal(
+                    "Everything about second post",
+                )
+
                 // assert find method
                 const loadedPosts1 = await postRepository.find({
                     skip: 10,

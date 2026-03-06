@@ -2,7 +2,7 @@ import type { Subject } from "./Subject"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
-import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
+import type { MongoRepository } from "../repository/MongoRepository"
 import { OrmUtils } from "../util/OrmUtils"
 
 /**
@@ -111,12 +111,11 @@ export class SubjectDatabaseEntityLoader {
                     this.queryRunner.connection.driver.options.type ===
                     "mongodb"
                 ) {
-                    const mongoManager = this.queryRunner
-                        .manager as MongoEntityManager
-                    entities = await mongoManager.findByIds(
-                        subjectGroup.target,
-                        allIds,
-                    )
+                    const mongoRepo =
+                        this.queryRunner.manager.getRepository<ObjectLiteral>(
+                            subjectGroup.target,
+                        ) as MongoRepository<ObjectLiteral>
+                    entities = await mongoRepo.findByIds(allIds, findOptions)
                 } else {
                     entities = await this.queryRunner.manager
                         .getRepository<ObjectLiteral>(subjectGroup.target)

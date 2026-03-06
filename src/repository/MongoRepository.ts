@@ -133,6 +133,16 @@ export class MongoRepository<
     }
 
     /**
+     * Finds entities by ids.
+     * Optionally find options can be applied.
+     * @param ids
+     * @param options
+     */
+    findByIds(ids: any[], options?: any): Promise<Entity[]> {
+        return this.manager.findByIds(this.metadata.target, ids, options)
+    }
+
+    /**
      * Finds first entity that matches given find options.
      * @param options
      */

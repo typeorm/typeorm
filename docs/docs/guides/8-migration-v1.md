@@ -231,7 +231,7 @@ The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressi
 
 ### `findByIds`
 
-The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, `BaseEntity`, `MongoEntityManager`, and `MongoRepository`. Use `findBy` with the `In` operator instead:
+The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, and `BaseEntity`. Use `findBy` with the `In` operator instead:
 
 ```typescript
 // Before
