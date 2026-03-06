@@ -1,9 +1,9 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity } from "../../../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../../../src/decorator/columns/Column"
 import { Post } from "./Post"
-import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
+import { ManyToOne } from "../../../../../../../src/decorator/relations/ManyToOne"
 import { Category } from "./Category"
-import { PrimaryColumn } from "../../../../src"
+import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
 
 @Entity()
 export class PostCategory {
