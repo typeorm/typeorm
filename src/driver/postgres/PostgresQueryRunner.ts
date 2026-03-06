@@ -3316,9 +3316,9 @@ export class PostgresQueryRunner
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`
             const dropViewQueries: ObjectLiteral[] =
                 await this.query(selectViewDropsQuery)
-            await Promise.all(
-                dropViewQueries.map((q) => this.query(q["query"])),
-            )
+            for (const q of dropViewQueries) {
+                await this.query(q["query"])
+            }
 
             // drop materialized views
             // Note: materialized views introduced in Postgres 9.3
@@ -3329,9 +3329,9 @@ export class PostgresQueryRunner
                 const dropMatViewQueries: ObjectLiteral[] = await this.query(
                     selectMatViewDropsQuery,
                 )
-                await Promise.all(
-                    dropMatViewQueries.map((q) => this.query(q["query"])),
-                )
+                for (const q of dropMatViewQueries) {
+                    await this.query(q["query"])
+                }
             }
 
             // ignore spatial_ref_sys; it's a special table supporting PostGIS
@@ -3342,9 +3342,9 @@ export class PostgresQueryRunner
             const dropTableQueries: ObjectLiteral[] = await this.query(
                 selectTableDropsQuery,
             )
-            await Promise.all(
-                dropTableQueries.map((q) => this.query(q["query"])),
-            )
+            for (const q of dropTableQueries) {
+                await this.query(q["query"])
+            }
 
             // drop enum types
             await this.dropEnumTypes(schemaNamesString)
@@ -3613,17 +3613,10 @@ export class PostgresQueryRunner
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`
 
-        const [
-            dbColumns,
-            dbConstraints,
-            dbIndices,
-            dbForeignKeys,
-        ]: ObjectLiteral[][] = await Promise.all([
-            this.query(columnsSql),
-            this.query(constraintsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql),
-        ])
+        const dbColumns: ObjectLiteral[] = await this.query(columnsSql)
+        const dbConstraints: ObjectLiteral[] = await this.query(constraintsSql)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
+        const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
 
         // create tables for loaded tables
         return Promise.all(
@@ -4485,7 +4478,9 @@ export class PostgresQueryRunner
             `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
             `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`
         const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery)
-        await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+        for (const q of dropQueries) {
+            await this.query(q["query"])
+        }
     }
 
     /**
