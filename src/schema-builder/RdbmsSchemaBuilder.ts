@@ -231,6 +231,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.updatePrimaryKeys()
         await this.updateExistColumns()
         await this.createNewIndices()
+        await this.recreateModifiedChecks()
         await this.createNewChecks()
         await this.createNewExclusions()
         await this.createCompositeUniqueConstraints()
@@ -1067,6 +1068,116 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             await postgresQueryRunner.createViewIndices(view, newIndices)
         }
+    }
+
+    /**
+     * Recreates modified CHECK constraints.
+     */
+    protected async recreateModifiedChecks(): Promise<void> {
+        // Mysql does not support check constraints
+        if (
+            DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+            this.dataSource.driver.options.type === "aurora-mysql"
+        )
+            return
+
+        for (const metadata of this.entityToSyncMetadatas) {
+            const table = this.queryRunner.loadedTables.find(
+                (table) =>
+                    this.getTablePath(table) === this.getTablePath(metadata),
+            )
+            if (!table) continue
+
+            const modifiedChecks: Array<{
+                oldCheck: TableCheck
+                newCheck: TableCheck
+            }> = []
+
+            for (const checkMetadata of metadata.checks) {
+                const existingCheck = table.checks.find(
+                    (tableCheck) => tableCheck.name === checkMetadata.name,
+                )
+
+                if (
+                    existingCheck &&
+                    existingCheck.expression &&
+                    checkMetadata.expression &&
+                    this.normalizeCheckExpression(existingCheck.expression) !==
+                        this.normalizeCheckExpression(checkMetadata.expression)
+                ) {
+                    modifiedChecks.push({
+                        oldCheck: existingCheck,
+                        newCheck: TableCheck.create(checkMetadata),
+                    })
+                }
+            }
+
+            if (modifiedChecks.length === 0) continue
+
+            const checksToModify = modifiedChecks.map((m) => m.oldCheck)
+            this.dataSource.logger.logSchemaBuild(
+                `updating check constraints: ${checksToModify
+                    .map((check) => `"${check.name}"`)
+                    .join(", ")} in table "${table.name}"`,
+            )
+            await this.queryRunner.dropCheckConstraints(table, checksToModify)
+
+            checksToModify.forEach((check) => {
+                table.removeCheckConstraint(check)
+            })
+
+            const newChecks = modifiedChecks.map((m) => m.newCheck)
+            await this.queryRunner.createCheckConstraints(table, newChecks)
+
+            newChecks.forEach((check) => {
+                table.addCheckConstraint(check)
+            })
+        }
+    }
+
+    /**
+     * Normalizes CHECK constraint expressions for comparison.
+     * @param expression
+     */
+    protected normalizeCheckExpression(expression: string): string {
+        // Remove extra whitespace, newlines, and tabs
+        let normalized = expression.replace(/\s+/g, " ").trim().toLowerCase()
+
+        // Remove parentheses wrapping the entire expression
+        normalized = normalized.replace(/^\((.+)\)$/g, "$1").trim()
+
+        // Normalize ARRAY syntax (PostgreSQL) to IN syntax for comparison
+        // e.g., "col = ANY (ARRAY['val1'::text, 'val2'::text])" -> "col in ('val1', 'val2')"
+        normalized = normalized.replace(
+            /=\s*any\s*\(\s*array\[([^\]]+)\]\s*\)/gi,
+            "in ($1)",
+        )
+
+        // Remove type casts (::text, ::character varying, etc.)
+        normalized = normalized.replace(/::[a-z][a-z ]*\b/g, "")
+
+        // Normalize identifier quotes to plain identifiers
+        normalized = normalized.replace(/"([^"]+)"/g, "$1")
+        normalized = normalized.replace(/`([^`]+)`/g, "$1")
+        normalized = normalized.replace(/\[([^\]]+)\]/g, "$1")
+
+        // Remove redundant parentheses around sub-expressions
+        // Repeatedly remove innermost non-essential parens
+        // Preserves IN (...) by only removing parens whose content has no commas
+        // unless the content already contains "in (" (nested IN expression)
+        let prev = ""
+        while (prev !== normalized) {
+            prev = normalized
+            // Remove parens around expressions with no commas and no inner parens
+            normalized = normalized.replace(/\(([^(),]+)\)/g, "$1")
+            // Remove parens wrapping an "X in (...)" expression
+            normalized = normalized.replace(/\((\w+\s+in\s*\([^)]+\))\)/g, "$1")
+        }
+
+        // Clean up extra spaces introduced by removals
+        normalized = normalized.replace(/\s+/g, " ").trim()
+
+        return normalized
     }
 
     protected async createNewChecks(): Promise<void> {
