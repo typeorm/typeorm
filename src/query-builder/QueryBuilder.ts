@@ -522,6 +522,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     async execute(): Promise<any> {
         const [sql, parameters] = this.getQueryAndParameters()
         const queryRunner = this.obtainQueryRunner()
+
         try {
             return await queryRunner.query(sql, parameters) // await is needed here because we are using finally
         } finally {
