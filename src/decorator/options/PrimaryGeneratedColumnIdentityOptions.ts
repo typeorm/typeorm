@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumnType } from "../../driver/types/ColumnTypes"
+import type { PrimaryGeneratedColumnType } from "../../driver/types/ColumnTypes"
 
 /**
  * Describes all options for PrimaryGeneratedColumn decorator with identity generation strategy.

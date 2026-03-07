@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,19 +10,18 @@ import { SuperLongTableName } from "./entity/SuperLongTableName"
 import { SuperLongTableNameWhichIsRelatedToOriginalTable } from "./entity/SuperLongTableNameIsRelatedToOriginal"
 
 describe("github issues > #9379 RelationIdLoader is not respecting maxAliasLength", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should fetch related entities properly", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const origin = await connection
                 .getRepository(SuperLongTableName)
                 .save({ name: "test" })

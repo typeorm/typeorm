@@ -1,7 +1,7 @@
 import appRootPath from "app-root-path"
 import path from "path"
 
-import { DataSourceOptions } from "../data-source/DataSourceOptions"
+import type { DataSourceOptions } from "../data-source/DataSourceOptions"
 import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 import { importOrRequireFile } from "../util/ImportUtils"

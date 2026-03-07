@@ -1,9 +1,9 @@
-import { TableColumnOptions } from "./TableColumnOptions"
-import { TableIndexOptions } from "./TableIndexOptions"
-import { TableForeignKeyOptions } from "./TableForeignKeyOptions"
-import { TableUniqueOptions } from "./TableUniqueOptions"
-import { TableCheckOptions } from "./TableCheckOptions"
-import { TableExclusionOptions } from "./TableExclusionOptions"
+import type { TableColumnOptions } from "./TableColumnOptions"
+import type { TableIndexOptions } from "./TableIndexOptions"
+import type { TableForeignKeyOptions } from "./TableForeignKeyOptions"
+import type { TableUniqueOptions } from "./TableUniqueOptions"
+import type { TableCheckOptions } from "./TableCheckOptions"
+import type { TableExclusionOptions } from "./TableExclusionOptions"
 
 /**
  * Table options.

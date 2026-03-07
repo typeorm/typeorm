@@ -3,7 +3,8 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource, TypeORMError } from "../../../src"
+import type { DataSource } from "../../../src"
+import { TypeORMError } from "../../../src"
 import { expect } from "chai"
 
 describe("github issues > #9189 check invalid constraint options", () => {

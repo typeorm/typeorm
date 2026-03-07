@@ -1,4 +1,4 @@
-import { Driver } from "./Driver"
+import type { Driver } from "./Driver"
 import { hash, shorten } from "../util/StringUtils"
 import { VersionUtils } from "../util/VersionUtils"
 
@@ -239,7 +239,7 @@ export class DriverUtils {
             secondSlash !== -1 ? preBase.substr(0, secondSlash) : preBase
         let afterBase =
             secondSlash !== -1 ? preBase.substr(secondSlash + 1) : undefined
-        let afterQuestionMark = ""
+        let afterQuestionMark: string
         let host = undefined
         let port = undefined
         let hostReplicaSet = undefined

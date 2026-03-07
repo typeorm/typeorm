@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import "../../../utils/test-setup"
 import {
     closeTestingConnections,
@@ -9,22 +9,21 @@ import {
 import { Record } from "./entity/Record"
 
 describe("jsonb type", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Record],
-                enabledDrivers: ["postgres"], // because only postgres supports jsonb type
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Record],
+            enabledDrivers: ["postgres"], // because only postgres supports jsonb type
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should make correct schema with Postgres' jsonb type", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.synchronize(true)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                await dataSource.synchronize(true)
+                const queryRunner = dataSource.createQueryRunner()
                 const schema = await queryRunner.getTable("record")
                 await queryRunner.release()
                 expect(schema).not.to.be.undefined
@@ -61,9 +60,9 @@ describe("jsonb type", () => {
 
     it("should persist jsonb correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.synchronize(true)
-                const recordRepo = connection.getRepository(Record)
+            dataSources.map(async (dataSource) => {
+                await dataSource.synchronize(true)
+                const recordRepo = dataSource.getRepository(Record)
                 const record = new Record()
                 record.data = { foo: "bar" }
                 const persistedRecord = await recordRepo.save(record)
@@ -82,8 +81,8 @@ describe("jsonb type", () => {
 
     it("should persist jsonb string correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const recordRepo = connection.getRepository(Record)
+            dataSources.map(async (dataSource) => {
+                const recordRepo = dataSource.getRepository(Record)
                 const record = new Record()
                 record.data = `foo`
                 const persistedRecord = await recordRepo.save(record)
@@ -98,8 +97,8 @@ describe("jsonb type", () => {
 
     it("should persist jsonb array correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const recordRepo = connection.getRepository(Record)
+            dataSources.map(async (dataSource) => {
+                const recordRepo = dataSource.getRepository(Record)
                 const record = new Record()
                 record.data = [1, `2`, { a: 3 }]
                 const persistedRecord = await recordRepo.save(record)
@@ -117,12 +116,12 @@ describe("jsonb type", () => {
 
     it("should create updates when changing object", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.query(
+            dataSources.map(async (dataSource) => {
+                await dataSource.query(
                     `ALTER TABLE record ALTER COLUMN "dataWithDefaultObject" SET DEFAULT '{"foo":"baz","hello": "earth"}';`,
                 )
 
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
 
@@ -133,12 +132,12 @@ describe("jsonb type", () => {
 
     it("should not create updates when resorting object", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.query(
+            dataSources.map(async (dataSource) => {
+                await dataSource.query(
                     `ALTER TABLE record ALTER COLUMN "dataWithDefaultObject" SET DEFAULT '{"foo":"bar", "hello": "world"}';`,
                 )
 
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
 
@@ -149,8 +148,8 @@ describe("jsonb type", () => {
 
     it("should not create new migrations when everything is equivalent", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const sqlInMemory = await connection.driver
+            dataSources.map(async (dataSource) => {
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
 

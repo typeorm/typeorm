@@ -1,6 +1,6 @@
-import { ColumnType } from "../../driver/types/ColumnTypes"
-import { ValueTransformer } from "./ValueTransformer"
-import { ColumnCommonOptions } from "./ColumnCommonOptions"
+import type { ColumnType } from "../../driver/types/ColumnTypes"
+import type { ValueTransformer } from "./ValueTransformer"
+import type { ColumnCommonOptions } from "./ColumnCommonOptions"
 
 /**
  * Describes all column's options.
@@ -21,15 +21,6 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * For example type = "string" and length = "100" means that ORM will create a column with type varchar(100).
      */
     length?: string | number
-
-    /**
-     * Column type's display width. Used only on some column types in MySQL.
-     * For example, INT(4) specifies an INT with a display width of four digits.
-     * @deprecated No longer supported in newer MySQL versions, will be removed
-     * from TypeORM in an upcoming version. Use a character column and the
-     * `LPAD` function as suggested by MySQL
-     */
-    width?: number
 
     /**
      * Indicates if column's value can be set to NULL.
@@ -102,15 +93,6 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * of digits to the right of the decimal point and must not be greater than precision.
      */
     scale?: number
-
-    /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to this column
-     * @deprecated No longer supported in newer MySQL versions, will be removed
-     * from TypeORM in an upcoming version. Use a character column and the
-     * `LPAD` function as suggested by MySQL
-     */
-    zerofill?: boolean
 
     /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.

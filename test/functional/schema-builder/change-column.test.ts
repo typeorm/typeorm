@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,9 +12,9 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { ColumnType } from "../../../src/driver/types/ColumnTypes"
 
 describe("schema builder > change column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
@@ -931,16 +931,16 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column name", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const postMetadata = dataSource.getMetadata(Post)
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
                 nameColumn.propertyName = "title"
-                nameColumn.build(connection)
+                nameColumn.build(dataSource)
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -949,14 +949,14 @@ describe("schema builder > change column", () => {
 
                 // revert changes
                 nameColumn.propertyName = "name"
-                nameColumn.build(connection)
+                nameColumn.build(dataSource)
             }),
         ))
 
     it("should correctly change column length", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const postMetadata = dataSource.getMetadata(Post)
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
                 const textColumn =
@@ -964,9 +964,9 @@ describe("schema builder > change column", () => {
                 nameColumn.length = "500"
                 textColumn.length = "300"
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -978,10 +978,10 @@ describe("schema builder > change column", () => {
                     .length.should.be.equal("300")
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "aurora-mysql" ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "aurora-mysql" ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     postTable!.indices.length.should.be.equal(2)
                 } else {
@@ -996,27 +996,27 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column type", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const postMetadata = dataSource.getMetadata(Post)
                 const versionColumn =
                     postMetadata.findColumnWithPropertyName("version")!
                 versionColumn.type =
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "spanner"
                         ? "int64"
                         : "int"
 
                 // in test we must manually change referenced column too, but in real sync, it changes automatically
-                const postVersionMetadata = connection.getMetadata(PostVersion)
+                const postVersionMetadata = dataSource.getMetadata(PostVersion)
                 const postVersionColumn =
                     postVersionMetadata.findColumnWithPropertyName("post")!
                 postVersionColumn.type =
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "spanner"
                         ? "int64"
                         : "int"
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const postVersionTable =
                     await queryRunner.getTable("post_version")
                 await queryRunner.release()
@@ -1024,10 +1024,10 @@ describe("schema builder > change column", () => {
                 postVersionTable!.foreignKeys.length.should.be.equal(1)
 
                 // revert changes
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     versionColumn.type = "string"
                     postVersionColumn.type = "string"
-                } else if (connection.driver.options.type === "sap") {
+                } else if (dataSource.driver.options.type === "sap") {
                     versionColumn.type = "nvarchar"
                     postVersionColumn.type = "nvarchar"
                 } else {
@@ -1039,20 +1039,20 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column default value", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Spanner does not support DEFAULT
-                if (connection.driver.options.type === "spanner") return
+                if (dataSource.driver.options.type === "spanner") return
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = dataSource.getMetadata(Post)
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
 
                 nameColumn.default = "My awesome post"
-                nameColumn.build(connection)
+                nameColumn.build(dataSource)
 
-                await connection.synchronize(false)
+                await dataSource.synchronize(false)
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -1064,15 +1064,15 @@ describe("schema builder > change column", () => {
 
     it("should correctly make column primary and generated", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB does not allow changing PK
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 )
                     return
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = dataSource.getMetadata(Post)
                 const idColumn = postMetadata.findColumnWithPropertyName("id")!
                 const versionColumn =
                     postMetadata.findColumnWithPropertyName("version")!
@@ -1082,14 +1082,14 @@ describe("schema builder > change column", () => {
                 // SQLite does not support AUTOINCREMENT with composite primary keys
                 // Oracle does not support both unique and primary attributes on such column
                 if (
-                    !DriverUtils.isSQLiteFamily(connection.driver) &&
-                    !(connection.driver.options.type === "oracle")
+                    !DriverUtils.isSQLiteFamily(dataSource.driver) &&
+                    !(dataSource.driver.options.type === "oracle")
                 )
                     versionColumn.isPrimary = true
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -1100,8 +1100,8 @@ describe("schema builder > change column", () => {
 
                 // SQLite does not support AUTOINCREMENT with composite primary keys
                 if (
-                    !DriverUtils.isSQLiteFamily(connection.driver) &&
-                    !(connection.driver.options.type === "oracle")
+                    !DriverUtils.isSQLiteFamily(dataSource.driver) &&
+                    !(dataSource.driver.options.type === "oracle")
                 )
                     postTable!.findColumnByName("version")!.isPrimary.should.be
                         .true
@@ -1115,16 +1115,16 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column `isGenerated` property when column is on foreign key", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const teacherMetadata = connection.getMetadata("teacher")
+            dataSources.map(async (dataSource) => {
+                const teacherMetadata = dataSource.getMetadata("teacher")
                 const idColumn =
                     teacherMetadata.findColumnWithPropertyName("id")!
                 idColumn.isGenerated = false
                 idColumn.generationStrategy = undefined
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const teacherTable = await queryRunner.getTable("teacher")
                 await queryRunner.release()
 
@@ -1141,45 +1141,45 @@ describe("schema builder > change column", () => {
 
     it("should correctly change non-generated column on to uuid-generated column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner does not allow changing PK
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 )
                     return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
-                if (connection.driver.options.type === "postgres")
+                if (dataSource.driver.options.type === "postgres")
                     await queryRunner.query(
                         `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`,
                     )
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = dataSource.getMetadata(Post)
                 const idColumn = postMetadata.findColumnWithPropertyName("id")!
                 idColumn.isGenerated = true
                 idColumn.generationStrategy = "uuid"
 
                 // depending on driver, we must change column and referenced column types
-                if (connection.driver.options.type === "postgres") {
+                if (dataSource.driver.options.type === "postgres") {
                     idColumn.type = "uuid"
-                } else if (connection.driver.options.type === "mssql") {
+                } else if (dataSource.driver.options.type === "mssql") {
                     idColumn.type = "uniqueidentifier"
-                } else if (connection.driver.options.type === "sap") {
+                } else if (dataSource.driver.options.type === "sap") {
                     idColumn.type = "nvarchar"
                 } else {
                     idColumn.type = "varchar"
                 }
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
                 const postTable = await queryRunner.getTable("post")
                 await queryRunner.release()
 
                 if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "mssql"
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "mssql"
                 ) {
                     postTable!.findColumnByName("id")!.isGenerated.should.be
                         .true
@@ -1209,16 +1209,16 @@ describe("schema builder > change column", () => {
 
     it("should correctly change generated column generation strategy", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner does not allow changing PK
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 )
                     return
 
-                const teacherMetadata = connection.getMetadata("teacher")
-                const studentMetadata = connection.getMetadata("student")
+                const teacherMetadata = dataSource.getMetadata("teacher")
+                const studentMetadata = dataSource.getMetadata("student")
                 const idColumn =
                     teacherMetadata.findColumnWithPropertyName("id")!
                 const teacherColumn =
@@ -1226,13 +1226,13 @@ describe("schema builder > change column", () => {
                 idColumn.generationStrategy = "uuid"
 
                 // depending on driver, we must change column and referenced column types
-                if (connection.driver.options.type === "postgres") {
+                if (dataSource.driver.options.type === "postgres") {
                     idColumn.type = "uuid"
                     teacherColumn.type = "uuid"
-                } else if (connection.driver.options.type === "mssql") {
+                } else if (dataSource.driver.options.type === "mssql") {
                     idColumn.type = "uniqueidentifier"
                     teacherColumn.type = "uniqueidentifier"
-                } else if (connection.driver.options.type === "sap") {
+                } else if (dataSource.driver.options.type === "sap") {
                     idColumn.type = "nvarchar"
                     teacherColumn.type = "nvarchar"
                 } else {
@@ -1240,15 +1240,15 @@ describe("schema builder > change column", () => {
                     teacherColumn.type = "varchar"
                 }
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const teacherTable = await queryRunner.getTable("teacher")
                 await queryRunner.release()
 
                 if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "mssql"
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "mssql"
                 ) {
                     teacherTable!.findColumnByName("id")!.isGenerated.should.be
                         .true
@@ -1275,21 +1275,21 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column comment", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Skip the contents of this test if not one of the drivers that support comments
                 if (
                     !(
-                        connection.driver.options.type === "cockroachdb" ||
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "sap" ||
-                        DriverUtils.isMySQLFamily(connection.driver)
+                        dataSource.driver.options.type === "cockroachdb" ||
+                        dataSource.driver.options.type === "postgres" ||
+                        dataSource.driver.options.type === "sap" ||
+                        DriverUtils.isMySQLFamily(dataSource.driver)
                     )
                 ) {
                     return
                 }
 
-                const postMetadata = connection.getMetadata("post")
-                const teacherMetadata = connection.getMetadata("teacher")
+                const postMetadata = dataSource.getMetadata("post")
+                const teacherMetadata = dataSource.getMetadata("teacher")
                 const idColumn =
                     teacherMetadata.findColumnWithPropertyName("id")!
                 const tagColumn =
@@ -1299,9 +1299,9 @@ describe("schema builder > change column", () => {
                 tagColumn.isNullable = true // check changing the comment in combination with another option
                 idColumn.comment = "The Teacher's Key"
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunnerA = connection.createQueryRunner()
+                const queryRunnerA = dataSource.createQueryRunner()
                 const postTableA = await queryRunnerA.getTable("post")
                 const persistedTagColumnA = postTableA!.findColumnByName("tag")!
                 const teacherTableA = await queryRunnerA.getTable("teacher")
@@ -1309,24 +1309,24 @@ describe("schema builder > change column", () => {
 
                 expect(persistedTagColumnA.comment).to.be.equal(
                     undefined,
-                    connection.name,
+                    dataSource.name,
                 )
                 expect(persistedTagColumnA.isNullable).to.be.equal(
                     true,
-                    connection.name,
+                    dataSource.name,
                 )
                 expect(
                     teacherTableA!.findColumnByName("id")!.comment,
-                ).to.be.equal("The Teacher's Key", connection.name)
+                ).to.be.equal("The Teacher's Key", dataSource.name)
 
                 // revert changes
                 tagColumn.comment = "Tag"
                 tagColumn.isNullable = false
                 idColumn.comment = ""
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunnerB = connection.createQueryRunner()
+                const queryRunnerB = dataSource.createQueryRunner()
                 const postTableB = await queryRunnerB.getTable("post")
                 const persistedTagColumnB = postTableB!.findColumnByName("tag")!
                 const teacherTableB = await queryRunnerB.getTable("teacher")
@@ -1341,8 +1341,8 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column type when FK relationships impact it", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.getRepository(Post).insert({
+            dataSources.map(async (dataSource) => {
+                await dataSource.getRepository(Post).insert({
                     id: 1234,
                     version: "5",
                     text: "a",
@@ -1350,24 +1350,24 @@ describe("schema builder > change column", () => {
                     likesCount: 45,
                 })
 
-                const post = await connection
+                const post = await dataSource
                     .getRepository(Post)
                     .findOneByOrFail({ id: 1234 })
 
-                await connection.getRepository(PostVersion).insert({
+                await dataSource.getRepository(PostVersion).insert({
                     id: 1,
                     post,
                     details: "Example",
                 })
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = dataSource.getMetadata(Post)
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
                 nameColumn.length = "500"
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const postVersionTable =
                     await queryRunner.getTable("post_version")
                 await queryRunner.release()

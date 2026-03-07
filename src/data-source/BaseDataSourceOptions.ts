@@ -1,11 +1,11 @@
-import { EntitySchema } from "../entity-schema/EntitySchema"
-import { LoggerOptions } from "../logger/LoggerOptions"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { DatabaseType } from "../driver/types/DatabaseType"
-import { Logger } from "../logger/Logger"
-import { DataSource } from "../data-source/DataSource"
-import { QueryResultCache } from "../cache/QueryResultCache"
-import { MixedList } from "../common/MixedList"
+import type { EntitySchema } from "../entity-schema/EntitySchema"
+import type { LoggerOptions } from "../logger/LoggerOptions"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { DatabaseType } from "../driver/types/DatabaseType"
+import type { Logger } from "../logger/Logger"
+import type { DataSource } from "../data-source/DataSource"
+import type { QueryResultCache } from "../cache/QueryResultCache"
+import type { MixedList } from "../common/MixedList"
 
 /**
  * BaseDataSourceOptions is set of DataSourceOptions shared by all database types.

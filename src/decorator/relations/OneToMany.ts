@@ -1,7 +1,7 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
-import { ObjectType } from "../../common/ObjectType"
-import { RelationOptions } from "../options/RelationOptions"
+import type { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
+import type { ObjectType } from "../../common/ObjectType"
+import type { RelationOptions } from "../options/RelationOptions"
 
 /**
  * A one-to-many relation allows creating the type of relation where Entity1 can have multiple instances of Entity2,

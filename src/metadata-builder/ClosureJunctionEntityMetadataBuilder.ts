@@ -1,7 +1,7 @@
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
-import { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source/DataSource"
 import { IndexMetadata } from "../metadata/IndexMetadata"
 
 /**
@@ -65,10 +65,8 @@ export class ClosureJunctionEntityMetadataBuilder {
                             length: primaryColumn.length,
                             type: primaryColumn.type,
                             unsigned: primaryColumn.unsigned,
-                            width: primaryColumn.width,
                             precision: primaryColumn.precision,
                             scale: primaryColumn.scale,
-                            zerofill: primaryColumn.zerofill,
                             charset: primaryColumn.charset,
                             collation: primaryColumn.collation,
                         },
@@ -97,10 +95,8 @@ export class ClosureJunctionEntityMetadataBuilder {
                             length: primaryColumn.length,
                             type: primaryColumn.type,
                             unsigned: primaryColumn.unsigned,
-                            width: primaryColumn.width,
                             precision: primaryColumn.precision,
                             scale: primaryColumn.scale,
-                            zerofill: primaryColumn.zerofill,
                             charset: primaryColumn.charset,
                             collation: primaryColumn.collation,
                         },

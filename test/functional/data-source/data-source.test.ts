@@ -5,7 +5,7 @@ import {
     CannotExecuteNotConnectedError,
 } from "../../../src"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
+import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
 import { CannotGetEntityManagerNotConnectedError } from "../../../src/error/CannotGetEntityManagerNotConnectedError"
 import { NoConnectionForRepositoryError } from "../../../src/error/NoConnectionForRepositoryError"

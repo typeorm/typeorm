@@ -107,11 +107,11 @@
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
+    "@eslint/js": "^10.0.1",
     "@google-cloud/spanner": "^8.6.0",
     "@sap/hana-client": "^2.27.23",
-    "@stryker-mutator/core": "^9.5.1",
-    "@stryker-mutator/mocha-runner": "^9.5.1",
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/mocha-runner": "^9.6.0",
     "@tsconfig/node20": "^20.1.9",
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
@@ -130,9 +130,9 @@
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
     "class-transformer": "^0.5.1",
-    "eslint": "^9.39.3",
+    "eslint": "^10.0.2",
     "eslint-plugin-chai-friendly": "^1.1.0",
-    "eslint-plugin-jsdoc": "^62.7.0",
+    "eslint-plugin-jsdoc": "^62.7.1",
     "globals": "^17.3.0",
     "gulp": "^4.0.2",
     "gulp-rename": "^2.1.0",
@@ -164,7 +164,7 @@
     "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.0"
+    "typescript-eslint": "^8.56.1"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^8.0.0",

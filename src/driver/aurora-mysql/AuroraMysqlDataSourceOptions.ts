@@ -1,5 +1,5 @@
-import { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * MySQL specific connection options.
@@ -32,7 +32,7 @@ export interface AuroraMysqlDataSourceOptions
 
     /**
      * Use spatial functions like GeomFromText and AsText which are removed in MySQL 8.
-     * (Default: true)
+     * (Default: false)
      */
     readonly legacySpatialSupport?: boolean
 

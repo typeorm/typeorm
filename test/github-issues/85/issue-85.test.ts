@@ -1,4 +1,4 @@
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,22 +8,21 @@ import { Document } from "./entity/Document"
 import { expect } from "chai"
 
 describe("github issues > #85 - Column option insert: false, update: false", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should ignore value of non-inserted column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Skip because test relies on DEFAULT values and Spanner does not support it
                 if (connection.driver.options.type === "spanner") return
 
@@ -39,7 +38,7 @@ describe("github issues > #85 - Column option insert: false, update: false", () 
 
     it("should be able to create an entity with column entirely missing", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Skip because test relies on DEFAULT values and Spanner does not support it
                 if (connection.driver.options.type === "spanner") return
 

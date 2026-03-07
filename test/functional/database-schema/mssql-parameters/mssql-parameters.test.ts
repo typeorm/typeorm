@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -9,20 +9,20 @@ import {
 import { Post } from "./entity/Post"
 
 describe("database schema > mssql-parameters", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly insert/update/delete entities on SqlServer driver", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 const post1 = new Post()
                 post1.id = 1
@@ -56,7 +56,7 @@ describe("database schema > mssql-parameters", () => {
                 post2.category = "posts"
                 post2.text = "This is second post"
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -69,7 +69,7 @@ describe("database schema > mssql-parameters", () => {
                 loadedPost2.category.should.be.equal(post2.category)
                 loadedPost2.text.should.be.equal(post2.text)
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .update(Post)
                     .set({ name: "Updated Post #2" })
@@ -79,7 +79,7 @@ describe("database schema > mssql-parameters", () => {
                 loadedPost2 = (await postRepository.findOneBy({ id: 2 }))!
                 loadedPost2.name.should.be.equal("Updated Post #2")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .delete()
                     .from(Post)
