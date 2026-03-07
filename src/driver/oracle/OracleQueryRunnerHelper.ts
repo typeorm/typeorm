@@ -1,28 +1,14 @@
 import { Query } from "../Query"
 import { Table } from "../../schema-builder/table/Table"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
+import {
+    normalizeColumnLength,
+    DriverCreateFullTypeLengthOnlyFastPathArgs,
+} from "../../query-runner/BaseQueryRunnerHelper"
 
 // Helper for the "length-only fast path (Oracle)" logic.
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add
 // operations with safe ALTER COLUMN … TYPE statements when only the length of a varchar (or similar)
-
-export type OracleLengthOnlyFastPathArgs = {
-    table: Table
-    clonedTable: Table
-    oldColumn: TableColumn
-    newColumn: TableColumn
-    upQueries: Query[]
-    downQueries: Query[]
-
-    driver: {
-        createFullType: (col: TableColumn) => string
-        escape?: (name: string) => string
-    }
-
-    escapePath: (table: string | Table) => string
-
-    Query: new (query: string, parameters?: unknown[]) => Query
-}
 
 /**
  * Apply Oracle length-only alter logic, pushing appropriate up/down queries.
@@ -49,13 +35,9 @@ export function handleOracleLengthOnlyFastPath({
     driver,
     escapePath,
     Query,
-}: OracleLengthOnlyFastPathArgs): boolean {
-    const oldLen = oldColumn.length
-        ? parseInt(String(oldColumn.length), 10)
-        : undefined
-    const newLen = newColumn.length
-        ? parseInt(String(newColumn.length), 10)
-        : undefined
+}: DriverCreateFullTypeLengthOnlyFastPathArgs): boolean {
+    const oldLen = normalizeColumnLength(oldColumn.length)
+    const newLen = normalizeColumnLength(newColumn.length)
     const col: string = String(oldColumn.name)
 
     if (oldLen && newLen && newLen < oldLen) {
@@ -115,7 +97,6 @@ export type OracleSafeAlterArgs = {
     executeQueries: (up: Query[], down: Query[]) => Promise<void>
     replaceCachedTable: (table: Table, cloned: Table) => void
 
-    // your guard
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
 }
 

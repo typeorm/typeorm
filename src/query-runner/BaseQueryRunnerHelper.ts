@@ -1,3 +1,5 @@
+import { Query } from "../driver/Query"
+import { Table } from "../schema-builder/table/Table"
 import { TableColumn } from "../schema-builder/table/TableColumn"
 
 /**
@@ -11,6 +13,8 @@ import { TableColumn } from "../schema-builder/table/TableColumn"
  * varchar → nvarchar      true
  * varchar → varbinary     true
  * varchar(50) → varchar(100)  false
+ * @param oldColumn
+ * @param newColumn
  */
 export function isFormalTypeChange(
     oldColumn: TableColumn,
@@ -125,10 +129,10 @@ export function isFormalTypeChange(
             t.startsWith("n")
                 ? "n"
                 : t.includes("text")
-                ? "text"
-                : t.startsWith("char") || t.endsWith("char")
-                ? "char"
-                : "vchar"
+                  ? "text"
+                  : t.startsWith("char") || t.endsWith("char")
+                    ? "char"
+                    : "vchar"
         if (family(oldType) !== family(newType)) return true
     }
 
@@ -177,6 +181,11 @@ Temporals
 */
 
 // Keep the same signature / export used in your project
+/**
+ *
+ * @param oldColumn
+ * @param newColumn
+ */
 export function isSafeAlter(
     oldColumn: TableColumn,
     newColumn: TableColumn,
@@ -431,4 +440,38 @@ export function isSafeAlter(
     }
 
     return false
+}
+
+/**
+ *
+ * @param length
+ */
+export function normalizeColumnLength(
+    length: string | number | null | undefined,
+): number | undefined {
+    if (length === null || length === undefined || length === "") {
+        return undefined
+    }
+
+    const parsed =
+        typeof length === "number"
+            ? length
+            : Number.parseInt(String(length), 10)
+
+    return Number.isFinite(parsed) ? parsed : undefined
+}
+
+export type DriverCreateFullTypeLengthOnlyFastPathArgs = {
+    table: Table
+    clonedTable: Table
+    oldColumn: TableColumn
+    newColumn: TableColumn
+    upQueries: Query[]
+    downQueries: Query[]
+    driver: {
+        createFullType: (col: TableColumn) => string
+        escape?: (name: string) => string
+    }
+    escapePath: (table: string | Table) => string
+    Query: new (query: string, parameters?: unknown[]) => Query
 }

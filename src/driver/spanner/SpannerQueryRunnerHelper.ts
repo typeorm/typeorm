@@ -95,7 +95,6 @@ export type SpannerSafeAlterArgs = {
     executeQueries: (up: Query[], down: Query[]) => Promise<void>
     replaceCachedTable: (table: Table, cloned: Table) => void
 
-    // your guard
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
 
     // must return a Spanner TYPE fragment like: "STRING(1024)", "STRING(MAX)", "BYTES(16)", "TIMESTAMP", "NUMERIC"

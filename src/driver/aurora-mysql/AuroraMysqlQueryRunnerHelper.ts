@@ -161,7 +161,6 @@ export type MysqlSafeAlterArgs = {
     executeQueries: (up: Query[], down: Query[]) => Promise<void>
     replaceCachedTable: (table: Table, cloned: Table) => void
 
-    // your guard
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
 }
 

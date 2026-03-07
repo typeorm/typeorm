@@ -1,26 +1,12 @@
 import { Query } from "../Query"
 import { Table } from "../../schema-builder/table/Table"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { DriverCreateFullTypeLengthOnlyFastPathArgs } from "../../query-runner/BaseQueryRunnerHelper"
 
 // Helper for the "length-only fast path (Cockroach) — FIXED" logic.
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add
 // operations with safe ALTER COLUMN … TYPE statements when only the length of a varchar (or similar)
 // column is modified.
-
-export type CrdbLengthOnlyFastPathArgs = {
-    table: Table // TypeORM Table
-    clonedTable: Table // TypeORM Table
-    oldColumn: TableColumn // TypeORM TableColumn
-    newColumn: TableColumn // TypeORM TableColumn
-    upQueries: Query[] // Array<Query>
-    downQueries: Query[] // Array<Query>
-    driver: {
-        createFullType: (col: TableColumn) => string
-        escape?: (name: string) => string
-    }
-    escapePath: (table: string | Table) => string
-    Query: new (query: string, parameters?: unknown[]) => Query
-}
 
 /**
  * Apply CockroachDB length-only alter logic, pushing appropriate up/down queries.
@@ -48,7 +34,7 @@ export function handleCockroachLengthOnlyFastPath({
     driver,
     escapePath,
     Query,
-}: CrdbLengthOnlyFastPathArgs): boolean {
+}: DriverCreateFullTypeLengthOnlyFastPathArgs): boolean {
     const parseLen = (v?: string | number | null) =>
         v != null && String(v).trim() !== ""
             ? Number.parseInt(String(v), 10)
@@ -150,7 +136,6 @@ export type CockroachSafeAlterArgs = {
     executeQueries: (up: Query[], down: Query[]) => Promise<void>
     replaceCachedTable: (table: Table, cloned: Table) => void
 
-    // your guard
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
 
     // must return a TYPE fragment like: "varchar(200)", "numeric(12,2)", "timestamp"

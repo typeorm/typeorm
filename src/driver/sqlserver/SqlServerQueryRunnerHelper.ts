@@ -115,7 +115,6 @@ export type SqlServerSafeAlterArgs = {
     executeQueries: (up: Query[], down: Query[]) => Promise<void>
     replaceCachedTable: (table: Table, cloned: Table) => void
 
-    // your guard
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
 
     // must return a SQL Server ALTER-COLUMN fragment INCLUDING NULL/NOT NULL, e.g.:

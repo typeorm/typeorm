@@ -1,28 +1,14 @@
 import { Query } from "../Query"
 import { Table } from "../../schema-builder/table/Table"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
+import {
+    normalizeColumnLength,
+    DriverCreateFullTypeLengthOnlyFastPathArgs,
+} from "../../query-runner/BaseQueryRunnerHelper"
 
 // Helper for the "length-only fast path (Postgres)" logic
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add
 // operations with safe ALTER COLUMN … TYPE statements when only the length of a varchar (or similar)
-
-export type PgLengthOnlyFastPathArgs = {
-    table: Table
-    clonedTable: Table
-    oldColumn: TableColumn
-    newColumn: TableColumn
-    upQueries: Query[]
-    downQueries: Query[]
-
-    driver: {
-        createFullType: (col: TableColumn) => string
-        escape?: (name: string) => string
-    }
-
-    escapePath: (table: string | Table) => string
-
-    Query: new (query: string, parameters?: unknown[]) => Query
-}
 
 /**
  * Apply Postgres length-only alter logic, pushing appropriate up/down queries.
@@ -50,15 +36,17 @@ export function handlePostgresLengthOnlyFastPath({
     driver,
     escapePath,
     Query,
-}: PgLengthOnlyFastPathArgs): boolean {
-    const oldLen =
+}: DriverCreateFullTypeLengthOnlyFastPathArgs): boolean {
+    const oldLen = normalizeColumnLength(
         oldColumn.length != null
             ? parseInt(String(oldColumn.length), 10)
-            : undefined
-    const newLen =
+            : undefined,
+    )
+    const newLen = normalizeColumnLength(
         newColumn.length != null
             ? parseInt(String(newColumn.length), 10)
-            : undefined
+            : undefined,
+    )
 
     // Length change never implies rename; guard identifier
     const colName: string = (newColumn?.name ?? oldColumn?.name) as string
@@ -131,7 +119,7 @@ export function handlePostgresLengthOnlyFastPath({
 
     // Update cloned metadata and stop fallthrough
     const clonedCol = clonedTable?.columns?.find?.(
-        (c: tableColumn) => c.name === colName,
+        (c: TableColumn) => c.name === colName,
     )
     if (clonedCol) clonedCol.length = newColumn.length
 
@@ -152,7 +140,6 @@ export type PostgresSafeAlterArgs = {
     executeQueries: (up: Query[], down: Query[]) => Promise<void>
     replaceCachedTable: (table: Table, cloned: Table) => void
 
-    // your guard
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
 
     // must return a Postgres TYPE fragment like: "varchar(200)", "numeric(12,2)", "timestamp without time zone"
