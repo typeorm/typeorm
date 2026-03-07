@@ -8,7 +8,7 @@ import {
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
-describe("columns > no-selection functionality", () => {
+describe("columns > select-control", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
