@@ -4,8 +4,6 @@ import { PlatformTools } from "../platform/PlatformTools"
 import { DataSource } from "../data-source/DataSource"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { TypeORMError } from "../error/TypeORMError"
-import Redis, { Cluster } from "ioredis"
-import { RedisClientType } from "redis"
 
 /**
  * Caches query result into Redis database.
@@ -23,7 +21,7 @@ export class RedisQueryResultCache implements QueryResultCache {
     /**
      * Connected redis client.
      */
-    protected client: RedisClientType | Redis | Cluster
+    protected client: any
 
     /**
      * Type of the Redis Client (redis or ioredis).
@@ -111,7 +109,9 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Disconnects the connection
      */
     async disconnect(): Promise<void> {
-        await this.client.quit()
+        const client = this.client
+        this.client = undefined
+        await client.quit()
     }
 
     /**
@@ -163,7 +163,7 @@ export class RedisQueryResultCache implements QueryResultCache {
         const value = JSON.stringify(options)
         const duration = options.duration
 
-        if (this.isNodeRedisClient(this.client)) {
+        if (this.isNodeRedisClient()) {
             await this.client.set(key, value, {
                 expiration: {
                     type: "PX",
@@ -180,7 +180,7 @@ export class RedisQueryResultCache implements QueryResultCache {
      * @param queryRunner
      */
     async clear(queryRunner?: QueryRunner): Promise<void> {
-        if (this.isNodeRedisClient(this.client)) {
+        if (this.isNodeRedisClient()) {
             await this.client.flushDb()
         } else {
             await this.client.flushdb()
@@ -228,9 +228,7 @@ export class RedisQueryResultCache implements QueryResultCache {
         }
     }
 
-    private isNodeRedisClient(
-        client: Redis | Cluster | RedisClientType,
-    ): client is RedisClientType {
+    private isNodeRedisClient(): boolean {
         return this.clientType === "redis"
     }
 }
