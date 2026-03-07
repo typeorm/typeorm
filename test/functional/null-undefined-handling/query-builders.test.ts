@@ -331,6 +331,32 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
             expect(remaining.length).to.equal(0)
         }
     })
+
+    it("should strip nested null criteria in EntityManager.update() with ignore", async () => {
+        for (const connection of dataSources) {
+            const category = new Category()
+            category.name = "Test Category"
+            await connection.manager.save(category)
+
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            post.category = category
+            await connection.manager.save(post)
+
+            // With ignore, nested null should be stripped, leaving only title
+            await connection.manager.update(
+                Post,
+                { title: "Test Post", category: { name: null } } as any,
+                { text: "Updated" },
+            )
+
+            const updated = await connection.manager.findOneBy(Post, {
+                id: post.id,
+            })
+            expect(updated!.text).to.equal("Updated")
+        }
+    })
 })
 
 describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where()", () => {
