@@ -755,13 +755,16 @@ export class PostgresQueryRunner
             throw new TypeORMError(`View "${viewName}" does not exist.`)
         }
 
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        upQueries.push(await this.deleteViewDefinitionSql(view))
-        upQueries.push(this.dropViewSql(view, ifExists))
-        downQueries.push(await this.insertViewDefinitionSql(view))
-        downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeQueries(
+            [
+                await this.deleteViewDefinitionSql(view),
+                this.dropViewSql(view, ifExists),
+            ],
+            [
+                await this.insertViewDefinitionSql(view),
+                this.createViewSql(view),
+            ],
+        )
     }
 
     /**

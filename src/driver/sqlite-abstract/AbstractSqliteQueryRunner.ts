@@ -450,13 +450,13 @@ export abstract class AbstractSqliteQueryRunner
         const viewName = InstanceChecker.isView(target) ? target.name : target
         const view = await this.getCachedView(viewName)
 
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        upQueries.push(this.deleteViewDefinitionSql(view))
-        upQueries.push(this.dropViewSql(view, ifExists))
-        downQueries.push(this.insertViewDefinitionSql(view))
-        downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeQueries(
+            [
+                this.deleteViewDefinitionSql(view),
+                this.dropViewSql(view, ifExists),
+            ],
+            [this.insertViewDefinitionSql(view), this.createViewSql(view)],
+        )
     }
 
     /**
@@ -2108,9 +2108,13 @@ export abstract class AbstractSqliteQueryRunner
         const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
+        if (!indexName)
+            throw new TypeORMError(
+                `Index name is not set. Unable to drop index.`,
+            )
         const query = ifExists
-            ? `DROP INDEX IF EXISTS ${this.escapePath(indexName!)}`
-            : `DROP INDEX ${this.escapePath(indexName!)}`
+            ? `DROP INDEX IF EXISTS ${this.escapePath(indexName)}`
+            : `DROP INDEX ${this.escapePath(indexName)}`
         return new Query(query)
     }
 

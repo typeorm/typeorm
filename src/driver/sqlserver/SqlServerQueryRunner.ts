@@ -803,18 +803,24 @@ export class SqlServerQueryRunner
      */
     async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
-        const view = ifExists
-            ? await this.getCachedView(viewName).catch(() => undefined)
-            : await this.getCachedView(viewName)
-        if (!view) return
+        let view: View
+        try {
+            view = await this.getCachedView(viewName)
+        } catch {
+            if (ifExists) return
+            throw new TypeORMError(`View "${viewName}" does not exist.`)
+        }
 
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        upQueries.push(await this.deleteViewDefinitionSql(view))
-        upQueries.push(this.dropViewSql(view, ifExists))
-        downQueries.push(await this.insertViewDefinitionSql(view))
-        downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeQueries(
+            [
+                await this.deleteViewDefinitionSql(view),
+                this.dropViewSql(view, ifExists),
+            ],
+            [
+                await this.insertViewDefinitionSql(view),
+                this.createViewSql(view),
+            ],
+        )
     }
 
     /**

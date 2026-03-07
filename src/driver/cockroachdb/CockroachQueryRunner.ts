@@ -853,17 +853,18 @@ export class CockroachQueryRunner
         const viewName = InstanceChecker.isView(target) ? target.name : target
         const view = await this.getCachedView(viewName)
 
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        upQueries.push(await this.deleteViewDefinitionSql(view))
-        upQueries.push(
-            ifExists
-                ? new Query(`DROP VIEW IF EXISTS ${this.escapePath(view)}`)
-                : this.dropViewSql(view),
+        await this.executeQueries(
+            [
+                await this.deleteViewDefinitionSql(view),
+                ifExists
+                    ? new Query(`DROP VIEW IF EXISTS ${this.escapePath(view)}`)
+                    : this.dropViewSql(view),
+            ],
+            [
+                await this.insertViewDefinitionSql(view),
+                this.createViewSql(view),
+            ],
         )
-        downQueries.push(await this.insertViewDefinitionSql(view))
-        downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
     }
 
     /**
