@@ -2450,10 +2450,12 @@ export class PostgresQueryRunner
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
@@ -2851,10 +2853,12 @@ export class PostgresQueryRunner
         const uniqueConstraint = InstanceChecker.isTableUnique(uniqueOrName)
             ? uniqueOrName
             : table.uniques.find((u) => u.name === uniqueOrName)
-        if (!uniqueConstraint)
+        if (!uniqueConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropUniqueConstraintSql(
             table,
@@ -2945,10 +2949,12 @@ export class PostgresQueryRunner
         const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName
             : table.checks.find((c) => c.name === checkOrName)
-        if (!checkConstraint)
+        if (!checkConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied check constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropCheckConstraintSql(table, checkConstraint, ifExists)
         const down = this.createCheckConstraintSql(table, checkConstraint)
@@ -3034,10 +3040,12 @@ export class PostgresQueryRunner
         )
             ? exclusionOrName
             : table.exclusions.find((c) => c.name === exclusionOrName)
-        if (!exclusionConstraint)
+        if (!exclusionConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied exclusion constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropExclusionConstraintSql(
             table,
@@ -3132,10 +3140,12 @@ export class PostgresQueryRunner
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
 
         if (!foreignKey.name) {
             foreignKey.name = this.connection.namingStrategy.foreignKeyName(
@@ -3257,10 +3267,12 @@ export class PostgresQueryRunner
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
         // old index may be passed without name. In this case we generate index name manually.
         if (!index.name) index.name = this.generateIndexName(table, index)
 

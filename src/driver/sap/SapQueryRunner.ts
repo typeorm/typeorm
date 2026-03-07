@@ -2378,6 +2378,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(
             `SAP HANA does not support exclusion constraints.`,
         )
@@ -2394,6 +2395,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(
             `SAP HANA does not support exclusion constraints.`,
         )

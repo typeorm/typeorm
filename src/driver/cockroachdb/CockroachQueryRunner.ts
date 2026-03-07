@@ -2168,10 +2168,12 @@ export class CockroachQueryRunner
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
@@ -2584,10 +2586,12 @@ export class CockroachQueryRunner
         const uniqueConstraint = InstanceChecker.isTableUnique(uniqueOrName)
             ? uniqueOrName
             : table.uniques.find((u) => u.name === uniqueOrName)
-        if (!uniqueConstraint)
+        if (!uniqueConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        }
 
         // CockroachDB creates index for UNIQUE constraint.
         // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
@@ -2676,10 +2680,12 @@ export class CockroachQueryRunner
         const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName
             : table.checks.find((c) => c.name === checkOrName)
-        if (!checkConstraint)
+        if (!checkConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied check constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropCheckConstraintSql(table, checkConstraint, ifExists)
         const down = this.createCheckConstraintSql(table, checkConstraint)
@@ -2743,6 +2749,7 @@ export class CockroachQueryRunner
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(
             `CockroachDB does not support exclusion constraints.`,
         )
@@ -2759,6 +2766,7 @@ export class CockroachQueryRunner
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(
             `CockroachDB does not support exclusion constraints.`,
         )
@@ -2823,10 +2831,12 @@ export class CockroachQueryRunner
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
 
         if (!foreignKey.name) {
             foreignKey.name = this.connection.namingStrategy.foreignKeyName(
@@ -2926,10 +2936,12 @@ export class CockroachQueryRunner
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
 
         // old index may be passed without name. In this case we generate index name manually.
         if (!index.name) index.name = this.generateIndexName(table, index)

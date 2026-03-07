@@ -590,7 +590,7 @@ export class SqlServerQueryRunner
 
         if (schemaPath.indexOf(".") === -1) {
             const upQuery = ifExists
-                ? `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC ('DROP SCHEMA "${schemaPath}"') END`
+                ? `IF SCHEMA_ID('${schemaPath}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA "${schemaPath}"') END`
                 : `DROP SCHEMA "${schemaPath}"`
             upQueries.push(new Query(upQuery))
             downQueries.push(new Query(`CREATE SCHEMA "${schemaPath}"`))
@@ -602,7 +602,7 @@ export class SqlServerQueryRunner
             downQueries.push(new Query(`USE "${currentDB}"`))
 
             const upQuery = ifExists
-                ? `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC ('DROP SCHEMA "${schema}"') END`
+                ? `IF SCHEMA_ID('${schema}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA "${schema}"') END`
                 : `DROP SCHEMA "${schema}"`
             upQueries.push(new Query(upQuery))
             downQueries.push(new Query(`CREATE SCHEMA "${schema}"`))
@@ -2539,6 +2539,7 @@ export class SqlServerQueryRunner
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
         )
@@ -2555,6 +2556,7 @@ export class SqlServerQueryRunner
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
         )

@@ -2149,6 +2149,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(`Oracle does not support exclusion constraints.`)
     }
 
@@ -2163,6 +2164,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(`Oracle does not support exclusion constraints.`)
     }
 

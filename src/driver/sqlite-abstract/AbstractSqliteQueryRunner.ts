@@ -1105,6 +1105,7 @@ export abstract class AbstractSqliteQueryRunner
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(`Sqlite does not support exclusion constraints.`)
     }
 
@@ -1119,6 +1120,7 @@ export abstract class AbstractSqliteQueryRunner
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
+        if (ifExists) return
         throw new TypeORMError(`Sqlite does not support exclusion constraints.`)
     }
 
