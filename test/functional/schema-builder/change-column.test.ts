@@ -642,8 +642,7 @@ describe("schema builder > change column", () => {
                                 }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
                                 break
                             case "tag":
-                                // NOSONAR - Math.random() used for non-security test data
-                                payload.tag ??= `t_${Math.random()
+                                payload.tag ??= `t_${Math.random() // NOSONAR - non-security test data
                                     .toString(36)
                                     .slice(2, 6)}`
                                 break
