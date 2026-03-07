@@ -2749,7 +2749,6 @@ export class CockroachQueryRunner
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(
             `CockroachDB does not support exclusion constraints.`,
         )
@@ -2766,7 +2765,6 @@ export class CockroachQueryRunner
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(
             `CockroachDB does not support exclusion constraints.`,
         )

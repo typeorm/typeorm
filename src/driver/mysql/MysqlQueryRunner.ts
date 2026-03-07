@@ -2146,7 +2146,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         checkOrName: TableCheck | string,
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(`MySql does not support check constraints.`)
     }
 
@@ -2161,7 +2160,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         checkConstraints: TableCheck[],
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(`MySql does not support check constraints.`)
     }
 
@@ -2200,7 +2198,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(`MySql does not support exclusion constraints.`)
     }
 
@@ -2215,7 +2212,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(`MySql does not support exclusion constraints.`)
     }
 

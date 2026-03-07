@@ -1803,7 +1803,6 @@ export class AuroraMysqlQueryRunner
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(`MySql does not support exclusion constraints.`)
     }
 
@@ -1818,7 +1817,6 @@ export class AuroraMysqlQueryRunner
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(`MySql does not support exclusion constraints.`)
     }
 

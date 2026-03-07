@@ -2539,7 +2539,6 @@ export class SqlServerQueryRunner
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
         )
@@ -2556,7 +2555,6 @@ export class SqlServerQueryRunner
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
         )

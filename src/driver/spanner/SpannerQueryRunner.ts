@@ -1170,7 +1170,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         constraintName?: string,
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new Error(
             "The keys of a table can't change; you can't add a key column to an existing table or remove a key column from an existing table.",
         )
@@ -1215,7 +1214,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         uniqueOrName: TableUnique | string,
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(
             `Spanner does not support unique constraints. Use unique index instead.`,
         )
@@ -1232,7 +1230,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         uniqueConstraints: TableUnique[],
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(
             `Spanner does not support unique constraints. Use unique index instead.`,
         )
@@ -1369,7 +1366,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         exclusionOrName: TableExclusion | string,
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(
             `Spanner does not support exclusion constraints.`,
         )
@@ -1386,7 +1382,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
-        if (ifExists) return
         throw new TypeORMError(
             `Spanner does not support exclusion constraints.`,
         )
