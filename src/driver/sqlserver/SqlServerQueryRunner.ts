@@ -25,17 +25,14 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { MssqlParameter } from "./MssqlParameter"
-import { SqlServerDriver } from "./SqlServerDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { MssqlParameter } from "./MssqlParameter"
+import type { SqlServerDriver } from "./SqlServerDriver"
 import {
     handleColumnLengthChange,
     handleSafeAlterSqlServer,
 } from "./SqlServerQueryRunnerHelper"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
-import type { ReplicationMode } from "../types/ReplicationMode"
-import type { MssqlParameter } from "./MssqlParameter"
-import type { SqlServerDriver } from "./SqlServerDriver"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -1751,6 +1748,12 @@ export class SqlServerQueryRunner
                         // Fallback: uppercase raw + nullability
                         return `${t.toUpperCase()} ${nullness}`
                     },
+
+                    defaultConstraintName: (t, columnName) =>
+                        this.connection.namingStrategy.defaultConstraintName(
+                            t,
+                            columnName,
+                        ),
 
                     // optional: if you prefer quoted identifiers different from [brackets],
                     // quoteIdent: (i) => `"${i.replace(/"/g, '""')}"`,

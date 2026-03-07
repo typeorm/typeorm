@@ -1,6 +1,6 @@
-import { Query } from "../Query"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { Query } from "../Query"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
 
 // Helper for the "length-only fast path (SAP HANA)" logic.
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add
@@ -109,11 +109,13 @@ export function handleHanaLengthOnlyFastPath({
         return false
     }
 
-    const col = escapeColumnName(colName)
+    const col = colName
+    const escapedCol = escapeColumnName(colName)
 
     // ---------- SHORTEN (recreate without RENAME) ----------
     if (oldLen && newLen && newLen < oldLen) {
-        const tmp = escapeColumnName(`${colName}__tmp_len`)
+        const tmp = `${colName}__tmp_len`
+        const escapedTmp = escapeColumnName(tmp)
 
         // 1) ADD temp column with the *new* (shorter) length; keep NULLable for the copy
         upQueries.push(
@@ -139,13 +141,13 @@ export function handleHanaLengthOnlyFastPath({
             new Query(
                 `UPDATE ${escapePath(
                     table,
-                )} SET "${tmp}" = SUBSTRING("${col}", 1, ${newLen})`,
+                )} SET ${escapedTmp} = SUBSTRING(${escapedCol}, 1, ${newLen})`,
             ),
         )
 
         // 3) DROP the old column
         upQueries.push(
-            new Query(`ALTER TABLE ${escapePath(table)} DROP ("${col}")`),
+            new Query(`ALTER TABLE ${escapePath(table)} DROP (${escapedCol})`),
         )
 
         // 4) ADD the final column with the new definition (still NULLable for now)
@@ -169,7 +171,9 @@ export function handleHanaLengthOnlyFastPath({
 
         // 5) COPY data back from temp → final
         upQueries.push(
-            new Query(`UPDATE ${escapePath(table)} SET "${col}" = "${tmp}"`),
+            new Query(
+                `UPDATE ${escapePath(table)} SET ${escapedCol} = ${escapedTmp}`,
+            ),
         )
 
         // 6) Enforce NOT NULL (and other attributes) if needed via ALTER (...)
@@ -194,7 +198,7 @@ export function handleHanaLengthOnlyFastPath({
 
         // 7) DROP temp column
         upQueries.push(
-            new Query(`ALTER TABLE ${escapePath(table)} DROP ("${tmp}")`),
+            new Query(`ALTER TABLE ${escapePath(table)} DROP (${escapedTmp})`),
         )
 
         // DOWN (best-effort): widen back to oldLen in place
@@ -246,7 +250,8 @@ export function handleHanaLengthOnlyFastPath({
         )
 
         // DOWN: HANA cannot shrink in-place; use copy/truncate strategy to restore old length
-        const tmpDown = `${col}__tmp_down`
+        const tmpDown = `${colName}__tmp_down`
+        const escapedTmpDown = escapeColumnName(tmpDown)
 
         // 1) ADD temp column with the *old* (shorter) length; keep NULLable for the copy
         downQueries.push(
@@ -272,13 +277,13 @@ export function handleHanaLengthOnlyFastPath({
             new Query(
                 `UPDATE ${escapePath(
                     table,
-                )} SET "${tmpDown}" = SUBSTRING("${col}", 1, ${oldLen})`,
+                )} SET ${escapedTmpDown} = SUBSTRING(${escapedCol}, 1, ${oldLen})`,
             ),
         )
 
         // 3) DROP the widened column
         downQueries.push(
-            new Query(`ALTER TABLE ${escapePath(table)} DROP ("${col}")`),
+            new Query(`ALTER TABLE ${escapePath(table)} DROP (${escapedCol})`),
         )
 
         // 4) ADD the final column with the old definition (NULLable for now)
@@ -303,7 +308,7 @@ export function handleHanaLengthOnlyFastPath({
         // 5) COPY data back from temp → final
         downQueries.push(
             new Query(
-                `UPDATE ${escapePath(table)} SET "${col}" = "${tmpDown}"`,
+                `UPDATE ${escapePath(table)} SET ${escapedCol} = ${escapedTmpDown}`,
             ),
         )
 
@@ -329,7 +334,9 @@ export function handleHanaLengthOnlyFastPath({
 
         // 7) DROP temp column
         downQueries.push(
-            new Query(`ALTER TABLE ${escapePath(table)} DROP ("${tmpDown}")`),
+            new Query(
+                `ALTER TABLE ${escapePath(table)} DROP (${escapedTmpDown})`,
+            ),
         )
         return true
     }

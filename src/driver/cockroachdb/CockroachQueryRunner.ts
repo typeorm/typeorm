@@ -25,15 +25,13 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { CockroachDriver } from "./CockroachDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { CockroachDriver } from "./CockroachDriver"
 import {
     handleCockroachLengthOnlyFastPath,
     handleSafeAlterCockroach,
 } from "./CockroachQueryRunnerHelper"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
-import type { ReplicationMode } from "../types/ReplicationMode"
-import type { CockroachDriver } from "./CockroachDriver"
 
 /**
  * Runs queries on a single postgres database connection.

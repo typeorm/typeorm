@@ -22,13 +22,12 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
+import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 import {
     handleMysqlLengthOnlyFastPath,
     handleSafeAlter,
 } from "./AuroraMysqlQueryRunnerHelper"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
-import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.

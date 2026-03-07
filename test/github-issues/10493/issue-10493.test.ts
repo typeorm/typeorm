@@ -39,6 +39,10 @@ describe("github issues > #10493 Broken migrations for indices on TIMESTAMP WITH
                     .createSchemaBuilder()
                     .log()
 
+                console.log(
+                    "upQueries:",
+                    JSON.stringify(sqlInMemory.upQueries, null, 2),
+                )
                 expect(sqlInMemory.upQueries).to.have.length(0)
                 expect(sqlInMemory.downQueries).to.have.length(0)
             }),

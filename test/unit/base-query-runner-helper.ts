@@ -2,26 +2,19 @@ import { expect } from "chai"
 import { TableColumn } from "../../src/schema-builder/table/TableColumn"
 import { isSafeAlter } from "../../src/query-runner/BaseQueryRunnerHelper"
 
-type ColumnInput = ConstructorParameters<typeof TableColumn>[0]
-
-type Case = {
-    title: string
-    oldColumn: ReturnType<typeof col>
-    newColumn: ReturnType<typeof col>
-    expected: boolean
-}
+type ColumnInput = Partial<ConstructorParameters<typeof TableColumn>[0]>
 
 function col(options: ColumnInput = {}): TableColumn {
     return new TableColumn({
-        name: options.name ?? "test_col",
-        type: options.type ?? "",
+        name: "test_col",
+        type: "",
+        ...options,
         length:
             typeof options.length === "number"
                 ? String(options.length)
                 : options.length,
-        precision: options.precision ?? null,
-        scale: options.scale ?? null,
-        ...options,
+        precision: options.precision ?? undefined,
+        scale: options.scale ?? undefined,
     })
 }
 

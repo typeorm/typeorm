@@ -25,15 +25,13 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { MysqlDriver } from "./MysqlDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { MysqlDriver } from "./MysqlDriver"
 import {
     handleMysqlLengthOnlyFastPathChangeColumn,
     handleSafeAlterMysql,
 } from "./MysqlQueryRunnerHelper"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
-import type { ReplicationMode } from "../types/ReplicationMode"
-import type { MysqlDriver } from "./MysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.

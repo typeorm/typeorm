@@ -1,7 +1,7 @@
 import { Query } from "../Query"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { SqlServerDriver } from "./SqlServerDriver"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { SqlServerDriver } from "./SqlServerDriver"
 
 // Helper for the "length-only fast path (Spanner)" logic
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add
@@ -122,6 +122,9 @@ export type SqlServerSafeAlterArgs = {
     //   DECIMAL(12,2) NOT NULL
     buildAlterColumnDefinition: (column: TableColumn) => string
 
+    // returns the default constraint name for a column (e.g. from naming strategy)
+    defaultConstraintName: (table: Table, columnName: string) => string
+
     // optional custom identifier quoting (defaults to [brackets])
     quoteIdent?: (ident: string) => string
 }
@@ -141,6 +144,7 @@ export type SqlServerSafeAlterArgs = {
  * @param root0.replaceCachedTable
  * @param root0.isSafeAlter
  * @param root0.buildAlterColumnDefinition
+ * @param root0.defaultConstraintName
  * @param root0.quoteIdent
  */
 export async function handleSafeAlterSqlServer({
@@ -156,6 +160,7 @@ export async function handleSafeAlterSqlServer({
     replaceCachedTable,
     isSafeAlter,
     buildAlterColumnDefinition,
+    defaultConstraintName,
     quoteIdent = (i) => `[${i.replace(/]/g, "]]")}]`,
 }: SqlServerSafeAlterArgs): Promise<boolean> {
     // Skip computed/identity columns (cannot freely ALTER type)
@@ -167,6 +172,24 @@ export async function handleSafeAlterSqlServer({
 
     const tableSql = escapePath(table)
     const colName = String(oldColumn.name)
+
+    // SQL Server does not allow ALTER COLUMN when the column has a DEFAULT constraint.
+    // We must drop it before altering and re-add it afterwards.
+    const hasDefault =
+        oldColumn.default !== null && oldColumn.default !== undefined
+    if (hasDefault) {
+        const defName = defaultConstraintName(table, colName)
+        upQueries.push(
+            new QueryCtor(
+                `ALTER TABLE ${tableSql} DROP CONSTRAINT "${defName}"`,
+            ),
+        )
+        downQueries.push(
+            new QueryCtor(
+                `ALTER TABLE ${tableSql} ADD CONSTRAINT "${defName}" DEFAULT ${oldColumn.default} FOR ${quoteIdent(colName)}`,
+            ),
+        )
+    }
 
     // Build ALTER-COLUMN definitions (must include NULL/NOT NULL; do NOT include DEFAULT in SQL Server)
     const newDef = buildAlterColumnDefinition(newColumn)
@@ -181,6 +204,21 @@ export async function handleSafeAlterSqlServer({
 
     upQueries.push(new QueryCtor(upSql))
     downQueries.push(new QueryCtor(downSql))
+
+    // Re-add the default constraint after the ALTER COLUMN
+    if (hasDefault) {
+        const defName = defaultConstraintName(table, colName)
+        upQueries.push(
+            new QueryCtor(
+                `ALTER TABLE ${tableSql} ADD CONSTRAINT "${defName}" DEFAULT ${oldColumn.default} FOR ${quoteIdent(colName)}`,
+            ),
+        )
+        downQueries.push(
+            new QueryCtor(
+                `ALTER TABLE ${tableSql} DROP CONSTRAINT "${defName}"`,
+            ),
+        )
+    }
 
     return true
 }

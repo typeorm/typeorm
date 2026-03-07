@@ -1,6 +1,6 @@
-import { Query } from "../Query"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { Query } from "../Query"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
 
 // Helper for the "length-only fast path (MySQL family)" logic.
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add
@@ -67,9 +67,12 @@ export async function handleMysqlLengthOnlyFastPath({
     replaceCachedTable,
 }: MysqlLengthOnlyFastPathArgs): Promise<boolean> {
     // Only use this path when no other column attributes changed.
-    const newColumnExceptLength = newColumn?.clone
+    const newColumnExceptLength: TableColumn = newColumn?.clone
         ? newColumn.clone()
-        : { ...newColumn }
+        : Object.assign(
+              Object.create(Object.getPrototypeOf(newColumn)),
+              newColumn,
+          )
     newColumnExceptLength.length = oldColumn.length
 
     if (isColumnChanged(oldColumn, newColumnExceptLength, true)) {

@@ -23,15 +23,13 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { OracleDriver } from "./OracleDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { OracleDriver } from "./OracleDriver"
 import {
     handleOracleLengthOnlyFastPath,
     handleSafeAlterOracle,
 } from "./OracleQueryRunnerHelper"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
-import type { ReplicationMode } from "../types/ReplicationMode"
-import type { OracleDriver } from "./OracleDriver"
 
 /**
  * Runs queries on a single oracle database connection.
@@ -2525,7 +2523,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return `("C"."OWNER" = '${OWNER}' AND "C"."TABLE_NAME" = '${TABLE_NAME}')`
             })
             .join(" OR ")
-        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition}) AND NVL("C"."HIDDEN_COLUMN", 'NO') = 'NO'`
+        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition})`
 
         const indicesSql =
             `SELECT "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS", ` +
