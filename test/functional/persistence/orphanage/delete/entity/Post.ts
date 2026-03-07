@@ -13,9 +13,7 @@ export class Post {
     @Column()
     categoryId: string
 
-    @ManyToOne(() => Category, (category) => category.posts, {
-        orphanedRowAction: "delete",
-    })
+    @ManyToOne(() => Category, (category) => category.posts)
     @JoinColumn({ name: "categoryId" })
     category: Category
 }
