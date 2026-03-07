@@ -1,13 +1,11 @@
 [github_app]
 pr_commands = [
     "/describe --pr_description.publish_description_as_comment=true",
-    "/improve",
     "/agentic_review"
 ]
 
 handle_push_trigger = true
 push_commands = [
-    "/improve",
     "/agentic_review"
 ]
 
