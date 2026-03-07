@@ -746,7 +746,14 @@ export class PostgresQueryRunner
      */
     async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
-        const view = await this.getCachedView(viewName)
+
+        let view: View
+        try {
+            view = await this.getCachedView(viewName)
+        } catch {
+            if (ifExists) return
+            throw new TypeORMError(`View "${viewName}" does not exist.`)
+        }
 
         const upQueries: Query[] = []
         const downQueries: Query[] = []
