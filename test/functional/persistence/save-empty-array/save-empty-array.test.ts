@@ -3,12 +3,12 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 
-describe("github issues > #80 repository.save fails when empty array is sent to the method", () => {
+describe("persistence > save-empty-array", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
