@@ -206,6 +206,24 @@ describe("find options > null and undefined handling", () => {
                     posts.length.should.be.equal(3)
                 }),
             ))
+
+        it("should skip nested relation properties with null by default", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await prepareData(dataSource)
+
+                    // { category: { name: null } } — null should be skipped,
+                    // but the join still happens. All posts with a category match.
+                    const posts = await dataSource.getRepository(Post).find({
+                        where: {
+                            category: { name: null },
+                        } as any,
+                    })
+
+                    // All 3 posts have a category, so all match when name filter is skipped
+                    posts.length.should.be.equal(3)
+                }),
+            ))
     })
 
     describe("with invalidWhereValuesBehavior.null set to 'sql-null'", () => {

@@ -140,6 +140,38 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         }
     })
 
+    it("should throw error for null values in EntityManager.restore()", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.restore(Post, {
+                    text: null,
+                } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("should throw error for undefined values in EntityManager.restore()", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.restore(Post, {
+                    text: undefined,
+                } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Undefined value encountered")
+            }
+        }
+    })
+
     it("should throw error for null values in Repository.update()", async () => {
         for (const connection of dataSources) {
             await prepareData(connection)
@@ -355,6 +387,29 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
                 id: post.id,
             })
             expect(updated!.text).to.equal("Updated")
+        }
+    })
+
+    it("should strip nested undefined criteria in EntityManager.delete() with ignore", async () => {
+        for (const connection of dataSources) {
+            const category = new Category()
+            category.name = "Test Category"
+            await connection.manager.save(category)
+
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            post.category = category
+            await connection.manager.save(post)
+
+            // With ignore, nested undefined should be stripped, leaving only title
+            await connection.manager.delete(Post, {
+                title: "Test Post",
+                category: { name: undefined },
+            } as any)
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(0)
         }
     })
 })
