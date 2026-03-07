@@ -471,4 +471,87 @@ describe("schema builder > change column", () => {
                 nameColumn.length = "255"
             }),
         ))
+
+    // #3357 - changeColumn should use ALTER COLUMN TYPE instead of DROP+ADD
+    // to preserve existing data when changing column type or length
+    it("should preserve data when changing column type or length", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                // Only Postgres and Aurora Postgres drivers support in-place ALTER COLUMN TYPE
+                if (
+                    !["postgres", "aurora-postgres"].includes(
+                        connection.driver.options.type,
+                    )
+                )
+                    return
+
+                const queryRunner = connection.createQueryRunner()
+                const postRepository = connection.getRepository(Post)
+
+                // Insert test data before modifying the column
+                await postRepository.insert({
+                    id: 1,
+                    version: "1",
+                    name: "Test Post",
+                    text: "Some text",
+                    tag: "tag1",
+                    likesCount: 10,
+                })
+
+                // --- Test length change ---
+                let table = await queryRunner.getTable("post")
+                const nameColumn = table!.findColumnByName("name")!
+
+                // Change column length (e.g., varchar(255) -> varchar(500))
+                const changedNameColumn = nameColumn.clone()
+                changedNameColumn.length = "500"
+                await queryRunner.changeColumn(
+                    table!,
+                    nameColumn,
+                    changedNameColumn,
+                )
+
+                // Verify data is preserved after length change
+                let post = await postRepository.findOneBy({ id: 1 })
+                expect(post).to.not.be.null
+                expect(post!.name).to.equal("Test Post")
+
+                // Verify column length was actually changed
+                table = await queryRunner.getTable("post")
+                table!.findColumnByName("name")!.length!.should.be.equal("500")
+
+                // Revert length change and verify data is still intact
+                await queryRunner.executeMemoryDownSql()
+                queryRunner.clearSqlMemory()
+
+                post = await postRepository.findOneBy({ id: 1 })
+                expect(post).to.not.be.null
+                expect(post!.name).to.equal("Test Post")
+
+                // --- Test type change (e.g., varchar -> text) ---
+                table = await queryRunner.getTable("post")
+                const nameCol = table!.findColumnByName("name")!
+
+                const typeChangedCol = nameCol.clone()
+                typeChangedCol.type = "text"
+                typeChangedCol.length = ""
+                await queryRunner.changeColumn(table!, nameCol, typeChangedCol)
+
+                // Verify data is preserved after type change
+                post = await postRepository.findOneBy({ id: 1 })
+                expect(post).to.not.be.null
+                expect(post!.name).to.equal("Test Post")
+
+                // Revert type change and verify data is still intact
+                await queryRunner.executeMemoryDownSql()
+
+                post = await postRepository.findOneBy({ id: 1 })
+                expect(post).to.not.be.null
+                expect(post!.name).to.equal("Test Post")
+
+                // Clean up test data
+                await postRepository.delete({ id: 1 })
+                await queryRunner.release()
+            }),
+        ))
 })
