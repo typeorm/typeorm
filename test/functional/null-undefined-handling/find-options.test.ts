@@ -14,7 +14,7 @@ import { expect } from "chai"
 describe("find options > null and undefined handling", () => {
     let dataSources: DataSource[]
 
-    describe("with default behavior", () => {
+    describe("with default behavior (throw)", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, Category],
@@ -53,141 +53,203 @@ describe("find options > null and undefined handling", () => {
             await dataSource.manager.save(post3)
         }
 
-        it("should skip null properties by default", () =>
+        it("should throw error for null properties by default", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     await prepareData(dataSource)
 
                     // Test with QueryBuilder
-                    const postsWithQb = await dataSource
-                        .createQueryBuilder(Post, "post")
-                        .setFindOptions({
-                            // @ts-expect-error - null should be marked as unsafe by default
-                            where: {
-                                title: "Post #1",
-                                text: null,
-                            },
-                        })
-                        .getMany()
-
-                    // This should return post1 since null properties are skipped by default
-                    postsWithQb.should.be.eql([
-                        { id: 1, title: "Post #1", text: "About post #1" },
-                    ])
+                    try {
+                        await dataSource
+                            .createQueryBuilder(Post, "post")
+                            .setFindOptions({
+                                // @ts-expect-error - null should be marked as unsafe by default
+                                where: {
+                                    title: "Post #1",
+                                    text: null,
+                                },
+                            })
+                            .getMany()
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            "Null value encountered",
+                        )
+                    }
 
                     // Test with Repository find
-                    const postsWithRepo = await dataSource
-                        .getRepository(Post)
-                        .find({
+                    try {
+                        await dataSource.getRepository(Post).find({
                             // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 text: null,
                             },
                         })
-
-                    // This should return all posts since null properties are skipped by default
-                    postsWithRepo.length.should.be.equal(3)
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            "Null value encountered",
+                        )
+                    }
                 }),
             ))
 
-        it("should skip undefined properties by default", () =>
+        it("should throw error for undefined properties by default", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     await prepareData(dataSource)
 
                     // Test with QueryBuilder
-                    const postsWithQb = await dataSource
-                        .createQueryBuilder(Post, "post")
-                        .setFindOptions({
-                            where: {
-                                title: "Post #1",
-                                text: undefined,
-                            },
-                        })
-                        .getMany()
-
-                    // This should return post1 since undefined properties are skipped by default
-                    postsWithQb.should.be.eql([
-                        { id: 1, title: "Post #1", text: "About post #1" },
-                    ])
+                    try {
+                        await dataSource
+                            .createQueryBuilder(Post, "post")
+                            .setFindOptions({
+                                where: {
+                                    title: "Post #1",
+                                    text: undefined,
+                                },
+                            })
+                            .getMany()
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            "Undefined value encountered",
+                        )
+                    }
 
                     // Test with Repository
-                    const postsWithRepo = await dataSource
-                        .getRepository(Post)
-                        .find({
+                    try {
+                        await dataSource.getRepository(Post).find({
                             where: {
                                 text: undefined,
                             },
                         })
-
-                    // This should return all posts since undefined properties are skipped by default
-                    postsWithRepo.length.should.be.equal(3)
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            "Undefined value encountered",
+                        )
+                    }
                 }),
             ))
 
-        it("should skip null relation properties by default", () =>
+        it("should throw error for null relation properties by default", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     await prepareData(dataSource)
 
                     // Test with QueryBuilder
-                    const postsWithQb = await dataSource
-                        .createQueryBuilder(Post, "post")
-                        .setFindOptions({
+                    try {
+                        await dataSource
+                            .createQueryBuilder(Post, "post")
+                            .setFindOptions({
+                                // @ts-expect-error - null should be marked as unsafe by default
+                                where: {
+                                    category: null,
+                                },
+                            })
+                            .getMany()
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            "Null value encountered",
+                        )
+                    }
+
+                    // Test with Repository
+                    try {
+                        await dataSource.getRepository(Post).find({
                             // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 category: null,
                             },
                         })
-                        .getMany()
-
-                    // This should return all posts since null properties are skipped by default
-                    postsWithQb.length.should.be.equal(3)
-
-                    // Test with Repository
-                    const postsWithRepo = await dataSource
-                        .getRepository(Post)
-                        .find({
-                            // @ts-expect-error - null should be marked as unsafe by default
-                            where: {
-                                category: null,
-                            },
-                        })
-
-                    // This should return all posts since null properties are skipped by default
-                    postsWithRepo.length.should.be.equal(3)
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            "Null value encountered",
+                        )
+                    }
                 }),
             ))
 
-        it("should skip undefined relation properties by default", () =>
+        it("should throw error for undefined relation properties by default", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     await prepareData(dataSource)
 
                     // Test with QueryBuilder
-                    const postsWithQb = await dataSource
-                        .createQueryBuilder(Post, "post")
-                        .setFindOptions({
-                            where: {
-                                category: undefined,
-                            },
-                        })
-                        .getMany()
-
-                    // This should return all posts since undefined properties are skipped by default
-                    postsWithQb.length.should.be.equal(3)
+                    try {
+                        await dataSource
+                            .createQueryBuilder(Post, "post")
+                            .setFindOptions({
+                                where: {
+                                    category: undefined,
+                                },
+                            })
+                            .getMany()
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            "Undefined value encountered",
+                        )
+                    }
 
                     // Test with Repository
-                    const postsWithRepo = await dataSource
-                        .getRepository(Post)
-                        .find({
+                    try {
+                        await dataSource.getRepository(Post).find({
                             where: {
                                 category: undefined,
                             },
                         })
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            "Undefined value encountered",
+                        )
+                    }
+                }),
+            ))
 
-                    // This should return all posts since undefined properties are skipped by default
-                    postsWithRepo.length.should.be.equal(3)
+        it("should skip empty nested relation objects by default", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await prepareData(dataSource)
+
+                    // Empty object {} should be skipped — no join, no filter
+                    const posts = await dataSource.getRepository(Post).find({
+                        where: {
+                            category: {} as any,
+                        },
+                    })
+
+                    posts.length.should.be.equal(3)
+                }),
+            ))
+
+        it("should skip nested relation properties with null by default", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await prepareData(dataSource)
+
+                    // { category: { name: null } } — null should be skipped,
+                    // but the join still happens. All posts with a category match.
+                    const posts = await dataSource.getRepository(Post).find({
+                        where: {
+                            category: { name: null },
+                        } as any,
+                    })
+
+                    // All 3 posts have a category, so all match when name filter is skipped
+                    posts.length.should.be.equal(3)
                 }),
             ))
     })
@@ -235,8 +297,11 @@ describe("find options > null and undefined handling", () => {
                     // Test QueryBuilder with null text
                     const posts1 = await dataSource
                         .createQueryBuilder(Post, "post")
-                        .where({
-                            text: null,
+                        .setFindOptions({
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            where: {
+                                text: null,
+                            },
                         })
                         .getMany()
 
@@ -276,8 +341,11 @@ describe("find options > null and undefined handling", () => {
                     // Test QueryBuilder with null relation
                     const posts1 = await dataSource
                         .createQueryBuilder(Post, "post")
-                        .where({
-                            category: null,
+                        .setFindOptions({
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            where: {
+                                category: null,
+                            },
                         })
                         .getMany()
 
@@ -345,8 +413,10 @@ describe("find options > null and undefined handling", () => {
                 try {
                     await dataSource
                         .createQueryBuilder(Post, "post")
-                        .where({
-                            text: undefined,
+                        .setFindOptions({
+                            where: {
+                                text: undefined,
+                            },
                         })
                         .getMany()
                     expect.fail("Expected query to throw an error")
@@ -393,8 +463,10 @@ describe("find options > null and undefined handling", () => {
                     try {
                         await dataSource
                             .createQueryBuilder(Post, "post")
-                            .where({
-                                category: undefined,
+                            .setFindOptions({
+                                where: {
+                                    category: undefined,
+                                },
                             })
                             .getMany()
 
@@ -402,7 +474,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Undefined value encountered in property 'post.category.id' of a where condition. Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
+                            "Undefined value encountered in property 'post.category' of a where condition. Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                         )
                     }
 
@@ -454,8 +526,10 @@ describe("find options > null and undefined handling", () => {
                     // Test QueryBuilder
                     const posts1 = await dataSource
                         .createQueryBuilder(Post, "post")
-                        .where({
-                            title: "Post #1",
+                        .setFindOptions({
+                            where: {
+                                title: "Post #1",
+                            },
                         })
                         .getMany()
 
@@ -482,6 +556,28 @@ describe("find options > null and undefined handling", () => {
                         })
 
                     expect(postWithRepo?.title).to.equal("Post #1")
+                }),
+            ))
+
+        it("should throw an error for nested relation with partial undefined properties", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    try {
+                        await connection.getRepository(Post).find({
+                            where: {
+                                category: {
+                                    id: undefined,
+                                    name: "Foo",
+                                },
+                            },
+                        })
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            "Undefined value encountered",
+                        )
+                    }
                 }),
             ))
     })
@@ -555,8 +651,10 @@ describe("find options > null and undefined handling", () => {
                     try {
                         await dataSource
                             .createQueryBuilder(Post, "post")
-                            .where({
-                                text: undefined,
+                            .setFindOptions({
+                                where: {
+                                    text: undefined,
+                                },
                             })
                             .getMany()
 
@@ -572,8 +670,10 @@ describe("find options > null and undefined handling", () => {
                     try {
                         await dataSource
                             .createQueryBuilder(Post, "post")
-                            .where({
-                                category: undefined,
+                            .setFindOptions({
+                                where: {
+                                    category: undefined,
+                                },
                             })
                             .getMany()
 
@@ -581,7 +681,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Undefined value encountered in property 'post.category.id' of a where condition. Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
+                            "Undefined value encountered in property 'post.category' of a where condition. Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                         )
                     }
 
@@ -609,6 +709,159 @@ describe("find options > null and undefined handling", () => {
             ))
     })
 
+    describe("with ignore behavior", () => {
+        before(async () => {
+            connections = await createTestingConnections({
+                entities: [Post, Category],
+                schemaCreate: true,
+                dropSchema: true,
+                driverSpecific: {
+                    invalidWhereValuesBehavior: {
+                        null: "ignore",
+                        undefined: "ignore",
+                    },
+                },
+            })
+        })
+
+        beforeEach(() => reloadTestingDatabases(connections))
+        after(() => closeTestingConnections(connections))
+
+        async function prepareData(connection: DataSource) {
+            const category1 = new Category()
+            category1.name = "Category #1"
+            await connection.manager.save(category1)
+
+            const category2 = new Category()
+            category2.name = "Category #2"
+            await connection.manager.save(category2)
+
+            const post1 = new Post()
+            post1.title = "Post #1"
+            post1.text = "About post #1"
+            post1.category = category1
+            await connection.manager.save(post1)
+
+            const post2 = new Post()
+            post2.title = "Post #2"
+            post2.text = null
+            post2.category = category2
+            await connection.manager.save(post2)
+
+            const post3 = new Post()
+            post3.title = "Post #3"
+            post3.text = "About post #3"
+            post3.category = null
+            await connection.manager.save(post3)
+        }
+
+        it("should skip null properties and return all rows", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // Test with QueryBuilder
+                    const posts1 = await connection
+                        .createQueryBuilder(Post, "post")
+                        .where({
+                            text: null,
+                        })
+                        .getMany()
+
+                    expect(posts1.length).to.equal(3)
+
+                    // Test with Repository
+                    const posts2 = await connection.getRepository(Post).find({
+                        // @ts-expect-error - null should be marked as unsafe by default
+                        where: {
+                            text: null,
+                        },
+                    })
+
+                    expect(posts2.length).to.equal(3)
+                }),
+            ))
+
+        it("should skip undefined properties and return all rows", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // Test with QueryBuilder
+                    const posts1 = await connection
+                        .createQueryBuilder(Post, "post")
+                        .where({
+                            text: undefined,
+                        })
+                        .getMany()
+
+                    expect(posts1.length).to.equal(3)
+
+                    // Test with Repository
+                    const posts2 = await connection.getRepository(Post).find({
+                        where: {
+                            text: undefined,
+                        },
+                    })
+
+                    expect(posts2.length).to.equal(3)
+                }),
+            ))
+
+        it("should skip null relation properties and return all rows", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // Test with QueryBuilder
+                    const posts1 = await connection
+                        .createQueryBuilder(Post, "post")
+                        .where({
+                            category: null,
+                        })
+                        .getMany()
+
+                    expect(posts1.length).to.equal(3)
+
+                    // Test with Repository
+                    const posts2 = await connection.getRepository(Post).find({
+                        // @ts-expect-error - null should be marked as unsafe by default
+                        where: {
+                            category: null,
+                        },
+                    })
+
+                    expect(posts2.length).to.equal(3)
+                }),
+            ))
+
+        it("should skip undefined relation properties and return all rows", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // Test with QueryBuilder
+                    const posts1 = await connection
+                        .createQueryBuilder(Post, "post")
+                        .where({
+                            category: undefined,
+                        })
+                        .getMany()
+
+                    expect(posts1.length).to.equal(3)
+
+                    // Test with Repository
+                    const posts2 = await connection.getRepository(Post).find({
+                        where: {
+                            category: undefined,
+                        },
+                    })
+
+                    expect(posts2.length).to.equal(3)
+                }),
+            ))
+    })
+
     describe("with invalidWhereValuesBehavior.null set to 'throw'", () => {
         before(async () => {
             dataSources = await createTestingConnections({
@@ -631,8 +884,11 @@ describe("find options > null and undefined handling", () => {
                 try {
                     await dataSource
                         .createQueryBuilder(Post, "post")
-                        .where({
-                            text: null,
+                        .setFindOptions({
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            where: {
+                                text: null,
+                            },
                         })
                         .getMany()
                     expect.fail("Expected query to throw an error")
@@ -681,8 +937,11 @@ describe("find options > null and undefined handling", () => {
                     try {
                         await dataSource
                             .createQueryBuilder(Post, "post")
-                            .where({
-                                category: null,
+                            .setFindOptions({
+                                // @ts-expect-error - null should be marked as unsafe by default
+                                where: {
+                                    category: null,
+                                },
                             })
                             .getMany()
 
@@ -690,7 +949,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Null value encountered in property 'post.category.id' of a where condition. To match with SQL NULL, the IsNull() operator must be used. Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                            "Null value encountered in property 'post.category' of a where condition. To match with SQL NULL, the IsNull() operator must be used. Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
                         )
                     }
 
