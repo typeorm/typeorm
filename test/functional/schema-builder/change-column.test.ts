@@ -9,7 +9,7 @@ import {
 import { Post } from "./entity/Post"
 import { PostVersion } from "./entity/PostVersion"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { ColumnType } from "../../../src/driver/types/ColumnTypes"
+import type { ColumnType } from "../../../src/driver/types/ColumnTypes"
 
 describe("schema builder > change column", () => {
     let dataSources: DataSource[]
@@ -132,7 +132,7 @@ describe("schema builder > change column", () => {
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
                     } else if (driver === "mssql") {
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?varchar/i,
+                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[name\]|"name")\s+[^\n]*varchar/i, // NOSONAR - regex matches internally generated SQL
                         )
                         expect(sqlBlob).to.not.match(
                             /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
@@ -142,7 +142,7 @@ describe("schema builder > change column", () => {
                         )
                     } else if (driver === "oracle") {
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*varchar2/i,
+                            /ALTER TABLE [^\n]* (MODIFY|ALTER COLUMN)\s{0,4}\(?\s{0,4}"name"\s+[^\n]*varchar2/i, // NOSONAR - regex matches internally generated SQL
                         )
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
@@ -293,7 +293,7 @@ describe("schema builder > change column", () => {
                         )
                     } else if (driver === "mssql") {
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[version\]|"version")\s+[\s\S]*?float/i,
+                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[version\]|"version")\s+[^\n]*float/i, // NOSONAR - regex matches internally generated SQL
                         )
                         expect(sqlBlob).to.not.match(
                             /ADD\s+COLUMN\s+(?:\[version\]|"version")/i,
@@ -303,7 +303,7 @@ describe("schema builder > change column", () => {
                         )
                     } else if (driver === "oracle") {
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"(?:version)"\s+.*double/i,
+                            /ALTER TABLE [^\n]* (MODIFY|ALTER COLUMN)\s{0,4}\(?\s{0,4}"version"\s+[^\n]*double/i, // NOSONAR - regex matches internally generated SQL
                         )
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+"version"/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+"version"/i)
@@ -440,7 +440,7 @@ describe("schema builder > change column", () => {
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
                     } else if (driver === "mssql") {
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?(datetimeoffset|timestamp)/i,
+                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[name\]|"name")\s+[^\n]*(datetimeoffset|timestamp)/i, // NOSONAR - regex matches internally generated SQL
                         )
                         expect(sqlBlob).to.not.match(
                             /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
@@ -450,7 +450,7 @@ describe("schema builder > change column", () => {
                         )
                     } else if (driver === "oracle") {
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*TIMESTAMP/i,
+                            /ALTER TABLE [^\n]* (MODIFY|ALTER COLUMN)\s{0,4}\(?\s{0,4}"name"\s+[^\n]*TIMESTAMP/i, // NOSONAR - regex matches internally generated SQL
                         )
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
@@ -564,7 +564,7 @@ describe("schema builder > change column", () => {
                     } else if (driver === "mssql") {
                         // widen to 80
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?80/i,
+                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[name\]|"name")\s+[^\n]*80/i, // NOSONAR - regex matches internally generated SQL
                         )
                         expect(sqlBlob).to.not.match(
                             /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
@@ -576,7 +576,7 @@ describe("schema builder > change column", () => {
                         // Oracle uses MODIFY COLUMN or ALTER COLUMN
                         // Oracle uses MODIFY with optional parens around the column def
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*80/i,
+                            /ALTER TABLE [^\n]* (MODIFY|ALTER COLUMN)\s{0,4}\(?\s{0,4}"name"\s+[^\n]*80/i, // NOSONAR - regex matches internally generated SQL
                             `Expected MODIFY/ALTER COLUMN for 'name' in Oracle.\n${sqlBlob}`,
                         )
 
@@ -622,16 +622,16 @@ describe("schema builder > change column", () => {
                                     // still keep it in JS safe integer range
                                     payload.id ??= Math.min(
                                         Number.MAX_SAFE_INTEGER,
-                                        // a “big” but safe number
+                                        // a "big" but safe number
                                         9_000_000_000_000 +
                                             Math.floor(
-                                                Math.random() * 1_000_000,
+                                                Math.random() * 1_000_000, // NOSONAR - non-security test data
                                             ),
                                     )
                                 } else {
                                     // safe 32-bit signed int to avoid MySQL overflow
                                     payload.id ??=
-                                        Math.floor(Math.random() * 1_000_000) +
+                                        Math.floor(Math.random() * 1_000_000) + // NOSONAR - non-security test data
                                         1 /* 1..1,000,000 */
                                 }
                                 break
@@ -639,9 +639,10 @@ describe("schema builder > change column", () => {
                             case "version":
                                 payload.version ??= `v_${Date.now()}_${
                                     connection.name
-                                }_${Math.random().toString(36).slice(2)}`
+                                }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
                                 break
                             case "tag":
+                                // NOSONAR - Math.random() used for non-security test data
                                 payload.tag ??= `t_${Math.random()
                                     .toString(36)
                                     .slice(2, 6)}`
@@ -799,7 +800,7 @@ describe("schema builder > change column", () => {
                     } else if (driver === "mssql") {
                         // shrink to 40
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?40/i,
+                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[name\]|"name")\s+[^\n]*40/i, // NOSONAR - regex matches internally generated SQL
                         )
                         expect(sqlBlob).to.not.match(
                             /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
@@ -811,7 +812,7 @@ describe("schema builder > change column", () => {
                         // Oracle uses MODIFY COLUMN or ALTER COLUMN
                         // Oracle uses MODIFY; some versions include parens around the column def
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*40/i,
+                            /ALTER TABLE [^\n]* (MODIFY|ALTER COLUMN)\s{0,4}\(?\s{0,4}"name"\s+[^\n]*40/i, // NOSONAR - regex matches internally generated SQL
                             `Expected MODIFY/ALTER COLUMN for 'name' in Oracle.\n${sqlBlob}`,
                         )
 
@@ -855,16 +856,16 @@ describe("schema builder > change column", () => {
                                     // still keep it in JS safe integer range
                                     payload.id ??= Math.min(
                                         Number.MAX_SAFE_INTEGER,
-                                        // a “big” but safe number
+                                        // a "big" but safe number
                                         9_000_000_000_000 +
                                             Math.floor(
-                                                Math.random() * 1_000_000,
+                                                Math.random() * 1_000_000, // NOSONAR - non-security test data
                                             ),
                                     )
                                 } else {
                                     // safe 32-bit signed int to avoid MySQL overflow
                                     payload.id ??=
-                                        Math.floor(Math.random() * 1_000_000) +
+                                        Math.floor(Math.random() * 1_000_000) + // NOSONAR - non-security test data
                                         1 /* 1..1,000,000 */
                                 }
                                 break
@@ -872,10 +873,10 @@ describe("schema builder > change column", () => {
                             case "version":
                                 payload.version ??= `v_${Date.now()}_${
                                     connection.name
-                                }_${Math.random().toString(36).slice(2)}`
+                                }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
                                 break
                             case "tag":
-                                payload.tag ??= `t_${Math.random()
+                                payload.tag ??= `t_${Math.random() // NOSONAR - non-security test data
                                     .toString(36)
                                     .slice(2, 6)}`
                                 break

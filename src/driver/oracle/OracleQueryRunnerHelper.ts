@@ -1,10 +1,8 @@
-import { Query } from "../Query"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import {
-    normalizeColumnLength,
-    DriverCreateFullTypeLengthOnlyFastPathArgs,
-} from "../../query-runner/BaseQueryRunnerHelper"
+import type { Query } from "../Query"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { DriverCreateFullTypeLengthOnlyFastPathArgs } from "../../query-runner/BaseQueryRunnerHelper"
+import { normalizeColumnLength } from "../../query-runner/BaseQueryRunnerHelper"
 
 // Helper for the "length-only fast path (Oracle)" logic.
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add
@@ -170,7 +168,7 @@ export async function handleSafeAlterOracle({
 
     if (oldColumn.isNullable === newColumn.isNullable) {
         const stripNullability = (def: string) =>
-            def.replace(/\s+NOT NULL\b/gi, "").replace(/\s+NULL\b/gi, "")
+            def.replace(/[ \t]+NOT NULL\b/gi, "").replace(/[ \t]+NULL\b/gi, "") // NOSONAR - input is internally generated SQL, not user input
         finalNewDef = stripNullability(finalNewDef)
         finalOldDef = stripNullability(finalOldDef)
     }

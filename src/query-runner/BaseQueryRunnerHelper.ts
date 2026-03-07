@@ -1,6 +1,6 @@
-import { Query } from "../driver/Query"
-import { Table } from "../schema-builder/table/Table"
-import { TableColumn } from "../schema-builder/table/TableColumn"
+import type { Query } from "../driver/Query"
+import type { Table } from "../schema-builder/table/Table"
+import type { TableColumn } from "../schema-builder/table/TableColumn"
 
 /**
  * Detects "formal type changes" between two SQL column definitions.
@@ -25,7 +25,7 @@ export function isFormalTypeChange(
             .toString()
             .toLowerCase()
             .trim()
-            .replace(/\s*\(.*?\)\s*$/, "")
+            .replace(/[ \t]*\([^)]*\)[ \t]*$/, "") // NOSONAR - input is internal type string, not user input
 
     const oldType = norm(oldColumn.type)
     const newType = norm(newColumn.type)
@@ -235,9 +235,9 @@ export function isSafeAlter(
         return map[t] ?? t
     }
 
-    const base = (t: string) => t.replace(/\s*\(.*?\)\s*$/, "")
+    const base = (t: string) => t.replace(/[ \t]*\([^)]*\)[ \t]*$/, "") // NOSONAR - input is internal type string
     const paramsFromType = (t: string) => {
-        const m = t.match(/\(([^)]+)\)/)
+        const m = t.match(/\(([^)]+)\)/) // NOSONAR - input is internal type string
         return m
             ? m[1]
                   .split(",")
