@@ -243,3 +243,21 @@ The same applies to find options:
 ### `WhereExpression` type alias
 
 The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
+
+### `ColumnOptions.readonly`
+
+The deprecated `readonly` column option has been removed. Use the `update` option instead — note that it takes the **opposite** value:
+
+```typescript
+// Before
+@Column({ readonly: true })
+authorName: string
+
+// After
+@Column({ update: false })
+authorName: string
+```
+
+### `ColumnNumericOptions.unsigned`
+
+The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected.
