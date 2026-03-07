@@ -255,3 +255,17 @@ const hasUsers = await userRepository.exist({ where: { isActive: true } })
 // After
 const hasUsers = await userRepository.exists({ where: { isActive: true } })
 ```
+
+### `ColumnOptions.readonly`
+
+The deprecated `readonly` column option has been removed. Use the `update` option instead — note that it takes the **opposite** value:
+
+```typescript
+// Before
+@Column({ readonly: true })
+authorName: string
+
+// After
+@Column({ update: false })
+authorName: string
+```
