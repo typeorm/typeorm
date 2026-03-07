@@ -1,7 +1,7 @@
-import { Query } from "../Query"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { DriverCreateFullTypeLengthOnlyFastPathArgs } from "../../query-runner/BaseQueryRunnerHelper"
+import type { Query } from "../Query"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { DriverCreateFullTypeLengthOnlyFastPathArgs } from "../../query-runner/BaseQueryRunnerHelper"
 
 // Helper for the "length-only fast path (Cockroach) — FIXED" logic.
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add
@@ -160,15 +160,15 @@ export type CockroachSafeAlterArgs = {
  */
 export async function handleSafeAlterCockroach({
     table,
-    clonedTable,
+    clonedTable: _clonedTable,
     oldColumn,
     newColumn,
     upQueries,
     downQueries,
     Query: QueryCtor,
     escapePath,
-    executeQueries,
-    replaceCachedTable,
+    executeQueries: _executeQueries,
+    replaceCachedTable: _replaceCachedTable,
     isSafeAlter,
     buildColumnType,
 }: CockroachSafeAlterArgs): Promise<boolean> {

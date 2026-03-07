@@ -10,6 +10,7 @@ import { Post } from "./entity/Post"
 import { PostVersion } from "./entity/PostVersion"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 import type { ColumnType } from "../../../src/driver/types/ColumnTypes"
+import type { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
 
 describe("schema builder > change column", () => {
     let dataSources: DataSource[]
@@ -20,11 +21,11 @@ describe("schema builder > change column", () => {
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
     it("uses ALTER COLUMN when changing from CHAR → VARCHAR", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection: DataSource) => {
                 const driver = connection.driver.options.type
 
                 // Map driver-specific type names for CHAR/VARCHAR
@@ -168,7 +169,7 @@ describe("schema builder > change column", () => {
 
     it("uses ALTER COLUMN when changing from FLOAT → DOUBLE", () =>
         Promise.all(
-            connections.map(async (base) => {
+            dataSources.map(async (base: DataSource) => {
                 // Create a fresh, isolated connection for THIS iteration, with ONLY Post registered.
                 const driverType = base.driver?.options?.type
                 const conns = await createTestingConnections({
@@ -323,7 +324,7 @@ describe("schema builder > change column", () => {
 
     it("uses ALTER COLUMN when changing from DATETIME → TIMESTAMP", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection: DataSource) => {
                 const driver = connection.driver.options.type
 
                 if (
@@ -469,7 +470,7 @@ describe("schema builder > change column", () => {
 
     it("uses ALTER COLUMN when increasing varchar length", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection: DataSource) => {
                 if (DriverUtils.isSQLiteFamily(connection.driver)) return
                 const queryRunner = connection.createQueryRunner()
                 const repo = connection.getRepository("post")
@@ -597,7 +598,8 @@ describe("schema builder > change column", () => {
                     // Build a payload that satisfies NOT NULL columns that lack defaults/generation
                     const meta = repo.metadata
                     const requiredNoDefault = meta.columns.filter(
-                        (c) => !c.isNullable && !c.default && !c.isGenerated,
+                        (c: ColumnMetadata) =>
+                            !c.isNullable && !c.default && !c.isGenerated,
                     )
 
                     // Start with the test's target value
@@ -638,7 +640,7 @@ describe("schema builder > change column", () => {
                             }
                             case "version":
                                 payload.version ??= `v_${Date.now()}_${
-                                    connection.name
+                                    connection.options.type
                                 }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
                                 break
                             case "tag":
@@ -697,7 +699,7 @@ describe("schema builder > change column", () => {
         ))
     it("uses ALTER COLUMN when reducing varchar length", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection: DataSource) => {
                 if (DriverUtils.isSQLiteFamily(connection.driver)) return
                 const queryRunner = connection.createQueryRunner()
                 const repo = connection.getRepository("post")
@@ -831,7 +833,8 @@ describe("schema builder > change column", () => {
                     // Build a payload that satisfies NOT NULL columns that lack defaults/generation
                     const meta = repo.metadata
                     const requiredNoDefault = meta.columns.filter(
-                        (c) => !c.isNullable && !c.default && !c.isGenerated,
+                        (c: ColumnMetadata) =>
+                            !c.isNullable && !c.default && !c.isGenerated,
                     )
 
                     // Start with the test's target value
@@ -871,7 +874,7 @@ describe("schema builder > change column", () => {
                             }
                             case "version":
                                 payload.version ??= `v_${Date.now()}_${
-                                    connection.name
+                                    connection.options.type
                                 }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
                                 break
                             case "tag":
@@ -1307,17 +1310,11 @@ describe("schema builder > change column", () => {
                 const teacherTableA = await queryRunnerA.getTable("teacher")
                 await queryRunnerA.release()
 
-                expect(persistedTagColumnA.comment).to.be.equal(
-                    undefined,
-                    dataSource.name,
-                )
-                expect(persistedTagColumnA.isNullable).to.be.equal(
-                    true,
-                    dataSource.name,
-                )
+                expect(persistedTagColumnA.comment).to.be.equal(undefined)
+                expect(persistedTagColumnA.isNullable).to.be.equal(true)
                 expect(
                     teacherTableA!.findColumnByName("id")!.comment,
-                ).to.be.equal("The Teacher's Key", dataSource.name)
+                ).to.be.equal("The Teacher's Key")
 
                 // revert changes
                 tagColumn.comment = "Tag"

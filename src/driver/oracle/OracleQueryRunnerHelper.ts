@@ -116,7 +116,7 @@ export type OracleSafeAlterArgs = {
  */
 export async function handleSafeAlterOracle({
     table,
-    clonedTable,
+    clonedTable: _clonedTable,
     oldColumn,
     newColumn,
     upQueries,
@@ -124,8 +124,8 @@ export async function handleSafeAlterOracle({
     Query: QueryCtor,
     escapePath,
     buildCreateColumnSql,
-    executeQueries,
-    replaceCachedTable,
+    executeQueries: _executeQueries,
+    replaceCachedTable: _replaceCachedTable,
     isSafeAlter,
 }: OracleSafeAlterArgs): Promise<boolean> {
     // Skip generated/computed/identity columns (Oracle won't freely MODIFY these)
