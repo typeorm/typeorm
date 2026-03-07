@@ -1264,7 +1264,7 @@ export class AuroraMysqlQueryRunner
             ? columnOrName
             : table.findColumnByName(columnOrName)
         if (!column) {
-            if (ifExists) return Promise.resolve()
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
@@ -1879,7 +1879,7 @@ export class AuroraMysqlQueryRunner
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
         if (!foreignKey) {
-            if (ifExists) return Promise.resolve()
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
@@ -1970,7 +1970,7 @@ export class AuroraMysqlQueryRunner
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
         if (!index) {
-            if (ifExists) return Promise.resolve()
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
