@@ -243,3 +243,15 @@ The same applies to find options:
 ### `WhereExpression` type alias
 
 The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
+
+### `Repository.exist()`
+
+The deprecated `Repository.exist()` method has been removed. Use `exists()` instead — the behavior is identical:
+
+```typescript
+// Before
+const hasUsers = await userRepository.exist({ where: { isActive: true } })
+
+// After
+const hasUsers = await userRepository.exists({ where: { isActive: true } })
+```
