@@ -25,7 +25,7 @@ export function isFormalTypeChange(
             .toString()
             .toLowerCase()
             .trim()
-            .replace(/\s*\(.*\)\s*$/, "")
+            .replace(/\s*\(.*?\)\s*$/, "")
 
     const oldType = norm(oldColumn.type)
     const newType = norm(newColumn.type)
@@ -235,7 +235,7 @@ export function isSafeAlter(
         return map[t] ?? t
     }
 
-    const base = (t: string) => t.replace(/\s*\(.*\)\s*$/, "")
+    const base = (t: string) => t.replace(/\s*\(.*?\)\s*$/, "")
     const paramsFromType = (t: string) => {
         const m = t.match(/\(([^)]+)\)/)
         return m
