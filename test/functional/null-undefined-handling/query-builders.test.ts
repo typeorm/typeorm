@@ -207,6 +207,132 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     })
 })
 
+describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+            driverSpecific: {
+                invalidWhereValuesBehavior: {
+                    null: "sql-null",
+                },
+            },
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should transform null to IS NULL in EntityManager.update()", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = null as any
+            await connection.manager.save(post)
+
+            const post2 = new Post()
+            post2.title = "Other Post"
+            post2.text = "has text"
+            await connection.manager.save(post2)
+
+            // With sql-null, { text: null } should match rows where text IS NULL
+            await connection.manager.update(Post, { text: null } as any, {
+                title: "Updated",
+            })
+
+            const updated = await connection.manager.findOneBy(Post, {
+                id: post.id,
+            })
+            const notUpdated = await connection.manager.findOneBy(Post, {
+                id: post2.id,
+            })
+            expect(updated!.title).to.equal("Updated")
+            expect(notUpdated!.title).to.equal("Other Post")
+        }
+    })
+
+    it("should transform null to IS NULL in EntityManager.delete()", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = null as any
+            await connection.manager.save(post)
+
+            const post2 = new Post()
+            post2.title = "Other Post"
+            post2.text = "has text"
+            await connection.manager.save(post2)
+
+            // With sql-null, { text: null } should delete rows where text IS NULL
+            await connection.manager.delete(Post, { text: null } as any)
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+            expect(remaining[0].title).to.equal("Other Post")
+        }
+    })
+})
+
+describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+            driverSpecific: {
+                invalidWhereValuesBehavior: {
+                    null: "ignore",
+                    undefined: "ignore",
+                },
+            },
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should strip null criteria in EntityManager.delete() with ignore", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            // With ignore, { title: "Test Post", text: null } should strip text
+            // and delete by title only
+            await connection.manager.delete(Post, {
+                title: "Test Post",
+                text: null,
+            } as any)
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(0)
+        }
+    })
+
+    it("should strip undefined criteria in EntityManager.delete() with ignore", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            // With ignore, { title: "Test Post", text: undefined } should strip text
+            // and delete by title only
+            await connection.manager.delete(Post, {
+                title: "Test Post",
+                text: undefined,
+            } as any)
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(0)
+        }
+    })
+})
+
 describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where()", () => {
     let dataSources: DataSource[]
 

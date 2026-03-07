@@ -6,6 +6,7 @@ import type {
 } from "../common/PrimitiveCriteria"
 import { InstanceChecker } from "./InstanceChecker"
 import { TypeORMError } from "../error"
+import { IsNull } from "../find-options/operator/IsNull"
 
 export class OrmUtils {
     // -------------------------------------------------------------------------
@@ -640,16 +641,23 @@ export class OrmUtils {
     /**
      * Recursively validates an object where clause, throwing for null/undefined
      * based on the provided invalidWhereValuesBehavior config.
+     * @param criteria
+     * @param options
+     * @param options.null
+     * @param options.undefined
+     * @param path
      */
-    static validateWhereCriteria(
+    static normalizeWhereCriteria(
         criteria: ObjectLiteral,
         options?: {
             null?: "ignore" | "sql-null" | "throw"
             undefined?: "ignore" | "throw"
         },
         path?: string,
-    ): void {
-        if (!options) return
+    ): ObjectLiteral {
+        if (!options) return criteria
+
+        const result: ObjectLiteral = {}
 
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
@@ -662,6 +670,7 @@ export class OrmUtils {
                             `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
                     )
                 }
+                // "ignore" — skip this key
             } else if (value === null) {
                 const behavior = options.null || "ignore"
                 if (behavior === "throw") {
@@ -670,15 +679,29 @@ export class OrmUtils {
                             `To match with SQL NULL, the IsNull() operator must be used. ` +
                             `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                     )
+                } else if (behavior === "sql-null") {
+                    result[key] = IsNull()
                 }
+                // "ignore" — skip this key
             } else if (
                 typeof value === "object" &&
                 !Array.isArray(value) &&
                 !(value instanceof Date) &&
                 !InstanceChecker.isFindOperator(value)
             ) {
-                OrmUtils.validateWhereCriteria(value, options, propertyPath)
+                const nested = OrmUtils.normalizeWhereCriteria(
+                    value,
+                    options,
+                    propertyPath,
+                )
+                if (Object.keys(nested).length > 0) {
+                    result[key] = nested
+                }
+            } else {
+                result[key] = value
             }
         }
+
+        return result
     }
 }

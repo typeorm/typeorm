@@ -4515,10 +4515,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     // this can happen when user defines map with conditional queries inside
                     if (typeof where[key] === "object") {
                         const whereKeys = Object.keys(where[key])
-                        const allAllUndefined =
-                            whereKeys.length > 0 &&
-                            whereKeys.every((k) => where[key][k] === undefined)
-                        if (allAllUndefined) {
+
+                        // empty object — no predicates to apply, skip the join
+                        if (whereKeys.length === 0) {
+                            continue
+                        }
+
+                        const allUndefined = whereKeys.every(
+                            (k) => where[key][k] === undefined,
+                        )
+                        if (allUndefined) {
                             const undefinedBehavior =
                                 this.connection.options
                                     .invalidWhereValuesBehavior?.undefined ||
