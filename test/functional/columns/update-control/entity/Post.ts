@@ -16,9 +16,6 @@ export class Post {
     @Column({ update: false, default: "Default" })
     authorFirstName: string
 
-    @Column({ insert: false, default: "Default" })
-    authorMiddleName: string
-
     @Column({ insert: false, update: false, default: "Default" })
     authorLastName: string
 }
