@@ -1,10 +1,10 @@
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
-import { Column } from "../../../../../../src/decorator/columns/Column"
+import { Entity } from "../../../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../../../../src/decorator/columns/Column"
 import { Post } from "./Post"
-import { ManyToMany } from "../../../../../../src/decorator/relations/ManyToMany"
+import { ManyToMany } from "../../../../../../../src/decorator/relations/ManyToMany"
 import { Tag } from "./Tag"
-import { Unique } from "../../../../../../src"
+import { Unique } from "../../../../../../../src"
 
 @Entity()
 @Unique(["code", "version", "description"])

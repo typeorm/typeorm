@@ -6,15 +6,15 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import type { DataSource } from "../../../../../src/data-source/DataSource"
-import { Post } from "./entity/Post"
-import { Category } from "./entity/Category"
-import { Tag } from "./entity/Tag"
+import { Post } from "./entity/implicit-join-entity/Post"
+import { Category } from "./entity/implicit-join-entity/Category"
+import { Tag } from "./entity/implicit-join-entity/Tag"
 
-describe("relations > multiple-primary-keys > many-to-many", () => {
+describe("relations > multiple-primary-keys > many-to-many > implicit join entity", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/implicit-join-entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
