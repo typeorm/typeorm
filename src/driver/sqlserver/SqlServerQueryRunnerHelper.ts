@@ -1,7 +1,7 @@
 import { Query } from "../Query"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { SqlServerDriver } from "./SqlServerDriver"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { SqlServerDriver } from "./SqlServerDriver"
 
 // Helper for the "length-only fast path (Spanner)" logic
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add

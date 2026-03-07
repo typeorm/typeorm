@@ -26,15 +26,13 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { PostgresDriver } from "./PostgresDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { PostgresDriver } from "./PostgresDriver"
 import {
     handlePostgresLengthOnlyFastPath,
     handleSafeAlterPostgres,
 } from "./PostgresQueryRunnerHelper"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
-import type { ReplicationMode } from "../types/ReplicationMode"
-import type { PostgresDriver } from "./PostgresDriver"
 
 /**
  * Runs queries on a single postgres database connection.

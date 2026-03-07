@@ -23,15 +23,13 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { OracleDriver } from "./OracleDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { OracleDriver } from "./OracleDriver"
 import {
     handleOracleLengthOnlyFastPath,
     handleSafeAlterOracle,
 } from "./OracleQueryRunnerHelper"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
-import type { ReplicationMode } from "../types/ReplicationMode"
-import type { OracleDriver } from "./OracleDriver"
 
 /**
  * Runs queries on a single oracle database connection.

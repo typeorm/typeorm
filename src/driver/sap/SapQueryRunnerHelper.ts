@@ -1,6 +1,6 @@
-import { Query } from "../Query"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { Query } from "../Query"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
 
 // Helper for the "length-only fast path (SAP HANA)" logic.
 // It modernizes schema-change handling across multiple drivers by replacing destructive drop+add

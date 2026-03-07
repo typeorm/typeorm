@@ -26,15 +26,13 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { SapDriver } from "./SapDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { SapDriver } from "./SapDriver"
 import {
     handleHanaLengthOnlyFastPath,
     handleSafeAlterSap,
 } from "./SapQueryRunnerHelper"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
-import type { ReplicationMode } from "../types/ReplicationMode"
-import type { SapDriver } from "./SapDriver"
 
 /**
  * Runs queries on a single SQL Server database connection.
