@@ -45,6 +45,18 @@ export class DriverUtils {
     }
 
     /**
+     * Returns true if given driver is one that treats UUIDs as case-sensitive
+     * @param driver
+     */
+    static isUuidCaseSensitiveDriver(driver: Driver): boolean {
+        return (
+            this.isSQLiteFamily(driver) ||
+            driver.options.type === "oracle" ||
+            driver.options.type === "sap"
+        )
+    }
+
+    /**
      * Normalizes and builds a new driver options.
      * Extracts settings from connection url and sets to a new options object.
      * @param options
