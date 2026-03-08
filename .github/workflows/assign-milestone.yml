@@ -22,7 +22,7 @@ jobs:
             // Extract PR number from merge commit message (e.g. "feat: something (#1234)")
             const match = context.payload.head_commit?.message?.match(/\(#(\d+)\)/)
             if (!match) {
-              core.setFailed(`No PR number found in commit message: "${context.payload.head_commit?.message}"`)
+              console.log(`No PR number found in commit message: "${context.payload.head_commit?.message}", skipping`)
               return
             }
             const prNumber = parseInt(match[1])
@@ -67,8 +67,8 @@ jobs:
               if (!milestone) {
                 const biggest = allSemverMilestones.sort(sortDesc)[0]
                 const nextTitle = biggest
-                  ? `${biggest.major}.${biggest.minor}-next`
-                  : '0.0-next'
+                  ? `${biggest.major}.${biggest.minor}.next`
+                  : '0.0.next'
 
                 console.log(`No open semver milestone found for master, creating ${nextTitle}`)
                 const created = await github.rest.issues.createMilestone({
