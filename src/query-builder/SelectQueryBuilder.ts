@@ -147,6 +147,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
+     * Accepts an object map of selection to alias.
+     * Example: .select({ "user.name": "name", "user.email": "email" })
+     */
+    select(selection: Record<string, string>): this
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all previous selections if they exist.
      * @param selection
      * @param selectionAliasName
      */
@@ -154,6 +162,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         selection?:
             | string
             | string[]
+            | Record<string, string>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         selectionAliasName?: string,
     ): SelectQueryBuilder<Entity> {
@@ -162,6 +171,18 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
+        } else if (
+            typeof selection === "object" &&
+            selection !== null &&
+            !Array.isArray(selection) &&
+            typeof selection !== "function"
+        ) {
+            this.expressionMap.selects = Object.entries(selection).map(
+                ([sel, alias]) => ({
+                    selection: sel,
+                    aliasName: alias,
+                }),
+            )
         } else if (typeof selection === "function") {
             const subQueryBuilder = selection(this.subQuery())
             this.setParameters(subQueryBuilder.getParameters())
@@ -171,7 +192,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             })
         } else if (selection) {
             this.expressionMap.selects = [
-                { selection: selection, aliasName: selectionAliasName },
+                {
+                    selection: selection as string,
+                    aliasName: selectionAliasName,
+                },
             ]
         }
 
@@ -198,6 +222,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new selection to the SELECT query.
+     * Accepts an object map of selection to alias.
+     * Example: .addSelect({ "user.name": "name", "user.email": "email" })
+     */
+    addSelect(selection: Record<string, string>): this
+
+    /**
+     * Adds new selection to the SELECT query.
      * @param selection
      * @param selectionAliasName
      */
@@ -205,6 +236,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         selection:
             | string
             | string[]
+            | Record<string, string>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         selectionAliasName?: string,
     ): this {
@@ -213,6 +245,18 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (Array.isArray(selection)) {
             this.expressionMap.selects = this.expressionMap.selects.concat(
                 selection.map((selection) => ({ selection: selection })),
+            )
+        } else if (
+            typeof selection === "object" &&
+            selection !== null &&
+            !Array.isArray(selection) &&
+            typeof selection !== "function"
+        ) {
+            this.expressionMap.selects = this.expressionMap.selects.concat(
+                Object.entries(selection).map(([sel, alias]) => ({
+                    selection: sel,
+                    aliasName: alias,
+                })),
             )
         } else if (typeof selection === "function") {
             const subQueryBuilder = selection(this.subQuery())
@@ -223,7 +267,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             })
         } else if (selection) {
             this.expressionMap.selects.push({
-                selection: selection,
+                selection: selection as string,
                 aliasName: selectionAliasName,
             })
         }
