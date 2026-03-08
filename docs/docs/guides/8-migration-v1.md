@@ -269,3 +269,7 @@ authorName: string
 @Column({ update: false })
 authorName: string
 ```
+
+### `ColumnNumericOptions.unsigned`
+
+The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
