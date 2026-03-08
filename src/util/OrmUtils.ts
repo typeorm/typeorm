@@ -421,19 +421,11 @@ export class OrmUtils {
      * This prevents internal operations (e.g. softDelete, delete) from
      * accidentally passing null entity properties to where conditions.
      * @param criteria
+     * @param leftChain
+     * @param rightChain
+     * @param x
+     * @param y
      */
-    public static stripNullAndUndefined(
-        criteria: ObjectLiteral,
-    ): ObjectLiteral {
-        const result: ObjectLiteral = {}
-        for (const key of Object.keys(criteria)) {
-            if (criteria[key] !== null && criteria[key] !== undefined) {
-                result[key] = criteria[key]
-            }
-        }
-        return result
-    }
-
     // -------------------------------------------------------------------------
     // Private methods
     // -------------------------------------------------------------------------
@@ -667,10 +659,10 @@ export class OrmUtils {
      */
     static normalizeWhereCriteria(
         criteria: ObjectLiteral,
-        options: {
+        options?: {
             null?: "ignore" | "sql-null" | "throw"
             undefined?: "ignore" | "throw"
-        } = {},
+        },
         path?: string,
     ): ObjectLiteral {
         const result: ObjectLiteral = {}
@@ -679,7 +671,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options.undefined || "throw"
+                const behavior = options?.undefined || "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -688,7 +680,7 @@ export class OrmUtils {
                 }
                 // "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options.null || "throw"
+                const behavior = options?.null || "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
