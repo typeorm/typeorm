@@ -292,6 +292,44 @@ const migrations = await migrationExecutor.getAllMigrations()
 const migrations = migrationExecutor.getMigrations()
 ```
 
+## Null and undefined handling in where conditions
+
+The default behavior for null and undefined values in where conditions has changed. Previously, null values were silently ignored (the property was skipped) and undefined values were also ignored. Now, both **throw an error by default**.
+
+This change prevents subtle bugs where queries like `findBy({ id: undefined })` would silently return the first row instead of failing.
+
+```typescript
+// v0.3: silently returns all posts (null is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: null } })
+
+// v0.3: silently returns all posts (undefined is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: undefined } })
+```
+
+To match null values, use the `IsNull()` operator:
+
+```typescript
+import { IsNull } from "typeorm"
+
+await repository.find({ where: { text: IsNull() } })
+```
+
+To restore the previous behavior, set `invalidWhereValuesBehavior` in your data source options:
+
+```typescript
+new DataSource({
+    // ...
+    invalidWhereValuesBehavior: {
+        null: "ignore",
+        undefined: "ignore",
+    },
+})
+```
+
+This setting only applies to high-level APIs (`find`, `findOne`, `repository.update`, `manager.delete`, etc.). QueryBuilder's `.where()` method is not affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
+
 ## Configuration
 
 ### Drop support for configuration via environment variables
