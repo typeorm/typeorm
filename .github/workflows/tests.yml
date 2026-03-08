@@ -155,6 +155,7 @@ jobs:
     needs:
       - build
       - coverage
+      - detect-changes
       - docs
       - format
       - lint
