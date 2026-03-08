@@ -330,7 +330,7 @@ new DataSource({
 })
 ```
 
-This setting applies to find operations (`find`, `findOne`, `findBy`), EntityManager/Repository mutation methods (`update`, `delete`, `softDelete`, `restore`), and QueryBuilder's `.setFindOptions()`. It does **not** apply to QueryBuilder's `.where()`, `.andWhere()`, or `.orWhere()` — those are low-level APIs where null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
+This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The low-level `.where()`, `.andWhere()`, and `.orWhere()` are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
 
 ### Drop support for configuration via environment variables
 
