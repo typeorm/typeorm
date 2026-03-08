@@ -900,6 +900,20 @@ describe("query builder > select", () => {
                     expect(sql).to.equal("SELECT post.id AS id FROM post post")
                 }),
             ))
+
+        it("should escape aliases that are reserved words", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select({ "post.id": "order", "post.title": "select" })
+                        .getSql()
+
+                    // better-sqlite3 escapes with double quotes
+                    expect(sql).to.contain('AS "order"')
+                    expect(sql).to.contain('AS "select"')
+                }),
+            ))
     })
 
     describe("column order in select statement", () => {
