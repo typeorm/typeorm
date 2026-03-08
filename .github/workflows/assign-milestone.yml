@@ -1,0 +1,114 @@
+name: Assign Milestone
+
+on:
+  push:
+    branches:
+      - master
+      - "v[0-9]*"
+
+jobs:
+  assign-milestone:
+    if: github.repository == 'typeorm/typeorm'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.ref.replace('refs/heads/', '')
+
+            // Extract PR number from merge commit message (e.g. "feat: something (#1234)")
+            const match = context.payload.head_commit?.message?.match(/\(#(\d+)\)/)
+            if (!match) {
+              console.log(`No PR number found in commit message: "${context.payload.head_commit?.message}", skipping`)
+              return
+            }
+            const prNumber = parseInt(match[1])
+
+            // Fetch all milestones (open and closed)
+            const semverRegex = /^(\d+)\.(\d+)(?:\.(\d+|next))?$/
+            const parseMilestones = (data) => data
+              .map(m => {
+                const match = m.title.match(semverRegex)
+                if (!match) return null
+                return {
+                  ...m,
+                  major: parseInt(match[1]),
+                  minor: parseInt(match[2]),
+                  patch: match[3],
+                }
+              })
+              .filter(Boolean)
+
+            const [openMilestones, closedMilestones] = await Promise.all([
+              github.rest.issues.listMilestones({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', per_page: 100 }),
+              github.rest.issues.listMilestones({ owner: context.repo.owner, repo: context.repo.repo, state: 'closed', per_page: 100 }),
+            ])
+            const openSemverMilestones = parseMilestones(openMilestones.data)
+            const allSemverMilestones = parseMilestones([...openMilestones.data, ...closedMilestones.data])
+
+            let milestone
+
+            const sortDesc = (a, b) => {
+              if (a.major !== b.major) return b.major - a.major
+              if (a.minor !== b.minor) return b.minor - a.minor
+              const aPatch = a.patch === 'next' ? -1 : parseInt(a.patch || '0')
+              const bPatch = b.patch === 'next' ? -1 : parseInt(b.patch || '0')
+              return bPatch - aPatch
+            }
+
+            if (branch === 'master') {
+              // Find the biggest open semver milestone
+              milestone = openSemverMilestones.sort(sortDesc)[0]
+
+              // If no open milestone, derive from the biggest across all milestones
+              if (!milestone) {
+                const biggest = allSemverMilestones.sort(sortDesc)[0]
+                const nextTitle = biggest
+                  ? `${biggest.major}.${biggest.minor}.next`
+                  : '0.0.next'
+
+                console.log(`No open semver milestone found for master, creating ${nextTitle}`)
+                const created = await github.rest.issues.createMilestone({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: nextTitle,
+                })
+                milestone = created.data
+              }
+            } else {
+              // Branch is vX.Y or vX.Y.Z — extract major.minor
+              const branchMatch = branch.match(/^v(\d+)\.(\d+)/)
+              if (!branchMatch) {
+                core.setFailed(`Branch "${branch}" does not match vX.Y pattern`)
+                return
+              }
+              const branchMajor = parseInt(branchMatch[1])
+              const branchMinor = parseInt(branchMatch[2])
+
+              // Find matching open milestone for this major.minor
+              milestone = openSemverMilestones
+                .filter(m => m.major === branchMajor && m.minor === branchMinor)
+                .sort(sortDesc)[0]
+
+              // If no matching milestone, create X.Y.next
+              if (!milestone) {
+                console.log(`No milestone found for ${branchMajor}.${branchMinor}, creating ${branchMajor}.${branchMinor}.next`)
+                const created = await github.rest.issues.createMilestone({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `${branchMajor}.${branchMinor}.next`,
+                })
+                milestone = created.data
+              }
+            }
+
+            console.log(`Assigning milestone "${milestone.title}" to PR #${prNumber}`)
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              milestone: milestone.number,
+            })

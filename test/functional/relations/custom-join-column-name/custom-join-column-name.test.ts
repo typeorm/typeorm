@@ -3,13 +3,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Artikel } from "./entity/Artikel"
 import { Kollektion } from "./entity/Kollektion"
 
-describe("github issues > #71 ManyToOne relation with custom column name persistence fails", () => {
+describe("relations > custom-join-column-name", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -19,7 +19,7 @@ describe("github issues > #71 ManyToOne relation with custom column name persist
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should persist successfully entity successfully with its many-to-one relation", () =>
+    it("should persist entity with many-to-one relation using custom join column name", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const kollektion = new Kollektion()
