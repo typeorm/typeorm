@@ -667,21 +667,19 @@ export class OrmUtils {
      */
     static normalizeWhereCriteria(
         criteria: ObjectLiteral,
-        options?: {
+        options: {
             null?: "ignore" | "sql-null" | "throw"
             undefined?: "ignore" | "throw"
-        },
+        } = {},
         path?: string,
     ): ObjectLiteral {
-        const effectiveOptions = options || {}
-
         const result: ObjectLiteral = {}
 
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = effectiveOptions.undefined || "throw"
+                const behavior = options.undefined || "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -690,7 +688,7 @@ export class OrmUtils {
                 }
                 // "ignore" — skip this key
             } else if (value === null) {
-                const behavior = effectiveOptions.null || "throw"
+                const behavior = options.null || "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
@@ -709,7 +707,7 @@ export class OrmUtils {
             ) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
-                    effectiveOptions,
+                    options,
                     propertyPath,
                 )
                 if (Object.keys(nested).length > 0) {
