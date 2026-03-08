@@ -1,6 +1,6 @@
 import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../src/decorator/columns/Column"
 import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Post {
@@ -9,10 +9,4 @@ export class Post {
 
     @Column()
     title: string
-
-    @Column()
-    text: string
-
-    @Column({ readonly: true })
-    authorName: string
 }

@@ -1,6 +1,8 @@
 name: Tests
 on:
   push:
+    branches:
+      - master
   pull_request:
 
 concurrency:
@@ -10,7 +12,6 @@ concurrency:
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.fork) }}
     outputs:
       changes: ${{ steps.detect-changes.outputs.changes }}
     steps:

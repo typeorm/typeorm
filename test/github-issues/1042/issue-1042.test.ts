@@ -10,7 +10,7 @@ import { Profile } from "./entity/Profile"
 import { Information } from "./entity/Information"
 import { expect } from "chai"
 
-describe("github issues > #1042 EntityMetadata.createPropertyPath does not work properly with objects inside entities (date, json, etc.)", () => {
+describe("github issues > #1042 property path resolution does not work properly with objects inside entities (date, json, etc.)", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
