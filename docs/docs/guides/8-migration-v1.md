@@ -277,3 +277,34 @@ authorName: string
 ### `ColumnNumericOptions.unsigned`
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
+
+## Migrations
+
+### `getAllMigrations`
+
+The deprecated `getAllMigrations()` method has been removed. Use `getMigrations()` instead — the behavior is identical:
+
+```typescript
+// Before
+const migrations = await migrationExecutor.getAllMigrations()
+
+// After
+const migrations = migrationExecutor.getMigrations()
+```
+
+## Configuration
+
+### Drop support for configuration via environment variables
+
+The deprecated `ConnectionOptionsEnvReader` class and the ability to configure connections via `TYPEORM_CONNECTION`, `TYPEORM_URL`, and other `TYPEORM_*` environment variables has been removed. The `ormconfig.env` file format is also no longer supported. TypeORM no longer auto-loads `.env` files or depends on `dotenv`.
+
+Use a TypeScript or JavaScript configuration file (`ormconfig.ts`, `ormconfig.js`) instead, referencing environment variables directly:
+
+```typescript
+// ormconfig.ts
+export default {
+    type: process.env.DB_TYPE,
+    url: process.env.DB_URL,
+    // ...
+}
+```

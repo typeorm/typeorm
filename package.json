@@ -99,7 +99,6 @@
     "dayjs": "^1.11.19",
     "debug": "^4.4.3",
     "dedent": "^1.7.1",
-    "dotenv": "^17.3.1",
     "reflect-metadata": "^0.2.2",
     "sql-highlight": "^6.1.0",
     "tinyglobby": "^0.2.15",
