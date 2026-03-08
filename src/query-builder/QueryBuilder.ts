@@ -684,7 +684,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             return this.expressionMap.createAlias({
                 type: "from",
                 name: aliasName,
-                metadata: this.connection.getMetadata(entityTarget),
+                metadata,
                 tablePath: metadata.tablePath,
             })
         } else {
