@@ -1,13 +1,28 @@
 import "reflect-metadata"
 import { expect } from "chai"
+import { GenericContainer, StartedTestContainer } from "testcontainers"
 import { RedisQueryResultCache } from "../../../src/cache/RedisQueryResultCache"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { QueryResultCacheOptions } from "../../../src/cache/QueryResultCacheOptions"
 
-describe("RedisQueryResultCache Integration", () => {
+describe("RedisQueryResultCache Integration", function () {
+    let container: StartedTestContainer
     let caches: RedisQueryResultCache[] = []
 
+    before(async () => {
+        container = await new GenericContainer("redis:8.6.1-alpine")
+            .withExposedPorts(6379)
+            .start()
+    })
+
+    after(async () => {
+        await container?.stop()
+    })
+
     beforeEach(async () => {
+        const host = container.getHost()
+        const port = container.getMappedPort(6379)
+
         const logger = {
             log: (level: string, message: string) => console.log(message),
         }
@@ -17,7 +32,7 @@ describe("RedisQueryResultCache Integration", () => {
                 cache: {
                     type: "redis",
                     options: {
-                        url: "redis://localhost:6379",
+                        url: `redis://${host}:${port}`,
                     },
                 },
             },
@@ -29,8 +44,8 @@ describe("RedisQueryResultCache Integration", () => {
                 cache: {
                     type: "ioredis",
                     options: {
-                        host: "localhost",
-                        port: 6379,
+                        host,
+                        port,
                     },
                 },
             },

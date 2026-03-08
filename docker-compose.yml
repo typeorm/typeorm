@@ -92,7 +92,7 @@ services:
     # volumes:
     #   - cockroach-data:/cockroach/cockroach-data
 
-  # oracle
+    # oracle
   oracle:
     image: "container-registry.oracle.com/database/free:23.7.0.0-lite"
     container_name: "typeorm-oracle"
@@ -147,11 +147,6 @@ services:
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
-  redis:
-    image: "redis:8.6-alpine"
-    container_name: "typeorm-redis"
-    ports:
-      - "6379:6379"
 
 volumes:
   # cockroach-data:
