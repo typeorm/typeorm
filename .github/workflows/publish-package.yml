@@ -25,6 +25,7 @@ concurrency:
 
 jobs:
   setup:
+    if: github.repository == 'typeorm/typeorm'
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
