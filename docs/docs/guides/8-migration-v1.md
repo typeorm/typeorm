@@ -330,7 +330,7 @@ new DataSource({
 })
 ```
 
-This setting only applies to high-level APIs (`find`, `findOne`, `repository.update`, `manager.delete`, etc.). QueryBuilder's `.where()` method is not affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
+This setting only applies to high-level APIs (`find`, `findOne`, `repository.update`, `manager.delete`, `qb.setFindOptions()`, etc.). QueryBuilder's `.where()` method is not affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
 
 ### Drop support for configuration via environment variables
 
