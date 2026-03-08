@@ -459,8 +459,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Gets all parameters.
      */
     getParameters(): ObjectLiteral {
+        const parentParameters = this.parentQueryBuilder
+            ? this.parentQueryBuilder.getParameters()
+            : {}
+
         const parameters: ObjectLiteral = Object.assign(
             {},
+            parentParameters,
             this.expressionMap.parameters,
         )
 
