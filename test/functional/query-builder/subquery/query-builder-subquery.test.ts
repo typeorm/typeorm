@@ -505,4 +505,43 @@ describe("query builder > sub-query", () => {
                 ])
             }),
         ))
+
+    it("should propagate parameters from deeply nested subqueries (3+ levels)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await prepare(dataSource)
+
+                const posts = await dataSource
+                    .getRepository(Post)
+                    .createQueryBuilder("post")
+                    .where((qb) => {
+                        // Level 1 subquery: selects user names
+                        const subQuery = qb
+                            .subQuery()
+                            .select("usr.name")
+                            .from(User, "usr")
+                            .where((qb2) => {
+                                // Level 2 subquery: selects category names
+                                const innerSubQuery = qb2
+                                    .subQuery()
+                                    .select("cat.name")
+                                    .from(Category, "cat")
+                                    .where("cat.name = :catName")
+                                    .getQuery()
+                                return "usr.name IN " + innerSubQuery
+                            })
+                            .andWhere("usr.registered = :registered")
+                            .getQuery()
+                        return "post.title IN " + subQuery
+                    })
+                    .setParameter("catName", "Alex Messer")
+                    .setParameter("registered", true)
+                    .orderBy("post.id")
+                    .getMany()
+
+                posts.should.be.eql([
+                    { id: 1, title: "Alex Messer" },
+                ])
+            }),
+        ))
 })
