@@ -416,16 +416,6 @@ export class OrmUtils {
         return OrmUtils.isSinglePrimitiveCriteria(criteria)
     }
 
-    /**
-     * Strips null and undefined values from an object criteria.
-     * This prevents internal operations (e.g. softDelete, delete) from
-     * accidentally passing null entity properties to where conditions.
-     * @param criteria
-     * @param leftChain
-     * @param rightChain
-     * @param x
-     * @param y
-     */
     // -------------------------------------------------------------------------
     // Private methods
     // -------------------------------------------------------------------------
