@@ -278,6 +278,30 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
 
+## Query Builder
+
+### `printSql` renamed to `logSql`
+
+The `printSql()` method on query builders has been renamed to `logSql()` to better reflect its behavior — it logs the query through the configured logger rather than printing to stdout:
+
+```typescript
+// Before
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .printSql()
+    .getMany()
+
+// After
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .logSql()
+    .getMany()
+```
+
 ## Migrations
 
 ### `getAllMigrations`
