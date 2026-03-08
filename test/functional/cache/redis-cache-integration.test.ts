@@ -1,15 +1,21 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { GenericContainer, StartedTestContainer } from "testcontainers"
+import type { StartedTestContainer } from "testcontainers"
+import { GenericContainer } from "testcontainers"
 import { RedisQueryResultCache } from "../../../src/cache/RedisQueryResultCache"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { QueryResultCacheOptions } from "../../../src/cache/QueryResultCacheOptions"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import type { QueryResultCacheOptions } from "../../../src/cache/QueryResultCacheOptions"
 
 describe("RedisQueryResultCache Integration", function () {
     let container: StartedTestContainer
     let caches: RedisQueryResultCache[] = []
 
-    before(async () => {
+    before(async function () {
+        // testcontainers are not supported on Windows
+        if (process.platform === "win32") {
+            return this.skip()
+        }
+
         container = await new GenericContainer("redis:8.6.1-alpine")
             .withExposedPorts(6379)
             .start()
