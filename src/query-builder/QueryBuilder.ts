@@ -1523,7 +1523,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         } else {
             for (const key of Object.keys(where)) {
                 const parameterValue = where[key]
-
                 const aliasPath = this.expressionMap.aliasNamePrefixingEnabled
                     ? `${this.alias}.${key}`
                     : key
