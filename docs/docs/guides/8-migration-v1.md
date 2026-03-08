@@ -273,3 +273,17 @@ authorName: string
 ### `ColumnNumericOptions.unsigned`
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
+
+## Migrations
+
+### `getAllMigrations`
+
+The deprecated `getAllMigrations()` method has been removed. Use `getMigrations()` instead — the behavior is identical:
+
+```typescript
+// Before
+const migrations = await migrationExecutor.getAllMigrations()
+
+// After
+const migrations = migrationExecutor.getMigrations()
+```
