@@ -1,31 +1,32 @@
-import { DataSource, Equal, FindOperator, Not } from "../../../src"
+import { Equal, FindOperator, Not } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
-} from "../../utils/test-utils"
-import { Pair, PairTransformer, TestEntity } from "./entity/test.entity"
+} from "../../../utils/test-utils"
+import type { Pair } from "./entity/PairEntity"
+import { PairTransformer, TestEntity } from "./entity/PairEntity"
 import { expect } from "chai"
-import { ApplyValueTransformers } from "../../../src/util/ApplyValueTransformers"
+import { ApplyValueTransformers } from "../../../../src/util/ApplyValueTransformers"
 
-describe("github issues > #10397 ValueTransformer gets FindOperator as value instead of transforming its value", () => {
-    let connections: DataSource[]
+describe("columns > value-transformer > find-operator", () => {
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-                entities: [TestEntity],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [TestEntity],
+        })
+    })
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not throw an error from the transformer", async () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const testRepository = connection.getRepository(TestEntity)
+            dataSources.map(async (dataSource) => {
+                const testRepository = dataSource.getRepository(TestEntity)
                 await testRepository.save(
                     testRepository.create({
                         pairs: [{ key: "key", value: "value" }],
@@ -41,7 +42,7 @@ describe("github issues > #10397 ValueTransformer gets FindOperator as value ins
             }),
         ))
 
-    it("should transform the FindOperator value", async () => {
+    it("should transform the FindOperator value", () => {
         const testTransformer = new PairTransformer()
         const testFindOperator = Equal<Pair[]>([{ key: "key", value: "value" }])
 

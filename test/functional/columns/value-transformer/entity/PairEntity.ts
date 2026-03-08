@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
 
 export interface Pair {
     key: string

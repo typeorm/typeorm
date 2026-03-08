@@ -1534,6 +1534,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Sets LIMIT - maximum number of rows to be selected.
      * When joins are present, a two-query distinct-id strategy is used
      * so that LIMIT applies to root entities rather than raw joined rows.
+     * @param limit
      */
     limit(limit?: number): this {
         this.expressionMap.limit = this.normalizeNumber(limit)
@@ -1552,6 +1553,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Sets OFFSET - selection offset.
      * When joins are present, a two-query distinct-id strategy is used
      * so that OFFSET applies to root entities rather than raw joined rows.
+     * @param offset
      */
     offset(offset?: number): this {
         this.expressionMap.offset = this.normalizeNumber(offset)
