@@ -3280,9 +3280,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 if (this.conditions.length)
                     this.andWhere(
-                        this.conditions[0] !== "("
-                            ? "(" + this.conditions + ")"
-                            : this.conditions,
+                        this.conditions.startsWith("(")
+                            ? this.conditions
+                            : "(" + this.conditions + ")",
                     ) // temporary and where and braces
             }
 
