@@ -177,12 +177,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             !Array.isArray(selection) &&
             typeof selection !== "function"
         ) {
-            this.expressionMap.selects = Object.entries(selection).map(
-                ([sel, alias]) => ({
+            const entries = Object.entries(selection)
+            if (entries.length > 0) {
+                this.expressionMap.selects = entries.map(([sel, alias]) => ({
                     selection: sel,
                     aliasName: alias,
-                }),
-            )
+                }))
+            }
         } else if (typeof selection === "function") {
             const subQueryBuilder = selection(this.subQuery())
             this.setParameters(subQueryBuilder.getParameters())
@@ -252,12 +253,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             !Array.isArray(selection) &&
             typeof selection !== "function"
         ) {
-            this.expressionMap.selects = this.expressionMap.selects.concat(
-                Object.entries(selection).map(([sel, alias]) => ({
-                    selection: sel,
-                    aliasName: alias,
-                })),
-            )
+            const entries = Object.entries(selection)
+            if (entries.length > 0) {
+                this.expressionMap.selects = this.expressionMap.selects.concat(
+                    entries.map(([sel, alias]) => ({
+                        selection: sel,
+                        aliasName: alias,
+                    })),
+                )
+            }
         } else if (typeof selection === "function") {
             const subQueryBuilder = selection(this.subQuery())
             this.setParameters(subQueryBuilder.getParameters())
