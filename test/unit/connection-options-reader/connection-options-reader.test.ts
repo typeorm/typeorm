@@ -51,6 +51,7 @@ describe("ConnectionOptionsReader", () => {
 
     it("should log warning when ormconfig file fails to load", async () => {
         // Create a malformed JS config file
+        await fs.mkdir("./temp/configs", { recursive: true })
         await fs.writeFile(
             "./temp/configs/malformed-config.js",
             "module.exports = { invalid syntax here",
