@@ -292,9 +292,11 @@ const migrations = await migrationExecutor.getAllMigrations()
 const migrations = migrationExecutor.getMigrations()
 ```
 
-## Null and undefined handling in where conditions
+## Configuration
 
-The default behavior for null and undefined values in where conditions has changed. Previously, null values were silently ignored (the property was skipped) and undefined values were also ignored. Now, both **throw an error by default**.
+### `invalidWhereValuesBehavior` default changed to `throw`
+
+The default behavior for null and undefined values in where conditions has changed. Previously, null and undefined values were silently ignored (the property was skipped). Now, both **throw an error by default**.
 
 This change prevents subtle bugs where queries like `findBy({ id: undefined })` would silently return the first row instead of failing.
 
@@ -329,8 +331,6 @@ new DataSource({
 ```
 
 This setting only applies to high-level APIs (`find`, `findOne`, `repository.update`, `manager.delete`, etc.). QueryBuilder's `.where()` method is not affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
-
-## Configuration
 
 ### Drop support for configuration via environment variables
 
