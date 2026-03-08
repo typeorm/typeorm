@@ -926,38 +926,6 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a property paths for a given entity.
-     * @param metadata
-     * @param entity
-     * @param prefix
-     * @deprecated
-     */
-    static createPropertyPath(
-        metadata: EntityMetadata,
-        entity: ObjectLiteral,
-        prefix: string = "",
-    ) {
-        const paths: string[] = []
-        Object.keys(entity).forEach((key) => {
-            // check for function is needed in the cases when createPropertyPath used on values contain a function as a value
-            // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
-            const parentPath = prefix ? prefix + "." + key : key
-            if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {
-                const subPaths = this.createPropertyPath(
-                    metadata,
-                    entity[key],
-                    parentPath,
-                )
-                paths.push(...subPaths)
-            } else {
-                const path = prefix ? prefix + "." + key : key
-                paths.push(path)
-            }
-        })
-        return paths
-    }
-
-    /**
      * Finds difference between two entity id maps.
      * Returns items that exist in the first array and absent in the second array.
      * @param firstIdMaps

@@ -1,4 +1,5 @@
-import { Column, Entity, ObjectId, ObjectIdColumn } from "../../../../src"
+import { ObjectId } from "mongodb"
+import { Column, Entity, ObjectIdColumn } from "../../../../src"
 
 @Entity()
 export class Post {

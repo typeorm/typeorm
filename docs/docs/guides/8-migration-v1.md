@@ -91,6 +91,41 @@ new DataSource({
 })
 ```
 
+## MongoDB
+
+### Deprecated connection options removed
+
+The following MongoDB connection options have been removed:
+
+| Removed option       | Action                                           |
+| -------------------- | ------------------------------------------------ |
+| `appname`            | Use `appName` (camelCase) instead                |
+| `fsync`              | Use `writeConcern: { journal: true }` instead    |
+| `j`                  | Use `writeConcern: { journal: true }` instead    |
+| `useNewUrlParser`    | Remove — no-op since MongoDB Driver v4.0         |
+| `useUnifiedTopology` | Remove — no-op since MongoDB Driver v4.0         |
+| `wtimeout`           | Use `writeConcern: { wtimeoutMS: 2500 }` instead |
+
+### `getMongoRepository` and `getMongoManager` globals
+
+The deprecated global functions `getMongoRepository()` and `getMongoManager()` have been removed. Use the corresponding instance methods on `DataSource` or `EntityManager` instead:
+
+```typescript
+// Before
+import { getMongoManager, getMongoRepository } from "typeorm"
+
+const manager = getMongoManager()
+const repository = getMongoRepository(User)
+
+// After
+const manager = dataSource.mongoManager
+const repository = dataSource.getMongoRepository(User)
+```
+
+### Types
+
+The internal MongoDB types are no longer exported. You can import `ObjectId` from `mongodb` instead of `typeorm`.
+
 ## Expo
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
@@ -173,22 +208,6 @@ const UserRepository = dataSource.getRepository(User).extend({
 
 The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
 
-### `getMongoRepository` and `getMongoManager` globals
-
-The deprecated global functions `getMongoRepository()` and `getMongoManager()` have been removed. Use the corresponding instance methods on `DataSource` or `EntityManager` instead:
-
-```typescript
-// Before
-import { getMongoManager, getMongoRepository } from "typeorm"
-
-const manager = getMongoManager()
-const repository = getMongoRepository(User)
-
-// After
-const manager = dataSource.mongoManager
-const repository = dataSource.getMongoRepository(User)
-```
-
 ### Deprecated lock modes
 
 The `pessimistic_partial_write` and `pessimistic_write_or_fail` lock modes have been removed. Use `pessimistic_write` with the `onLocked` option instead:
@@ -228,3 +247,64 @@ The same applies to find options:
 ### `WhereExpression` type alias
 
 The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
+
+### `Repository.exist()`
+
+The deprecated `Repository.exist()` method has been removed. Use `exists()` instead — the behavior is identical:
+
+```typescript
+// Before
+const hasUsers = await userRepository.exist({ where: { isActive: true } })
+
+// After
+const hasUsers = await userRepository.exists({ where: { isActive: true } })
+```
+
+### `ColumnOptions.readonly`
+
+The deprecated `readonly` column option has been removed. Use the `update` option instead — note that it takes the **opposite** value:
+
+```typescript
+// Before
+@Column({ readonly: true })
+authorName: string
+
+// After
+@Column({ update: false })
+authorName: string
+```
+
+### `ColumnNumericOptions.unsigned`
+
+The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
+
+## Migrations
+
+### `getAllMigrations`
+
+The deprecated `getAllMigrations()` method has been removed. Use `getMigrations()` instead — the behavior is identical:
+
+```typescript
+// Before
+const migrations = await migrationExecutor.getAllMigrations()
+
+// After
+const migrations = migrationExecutor.getMigrations()
+```
+
+## Configuration
+
+### Drop support for configuration via environment variables
+
+The deprecated `ConnectionOptionsEnvReader` class and the ability to configure connections via `TYPEORM_CONNECTION`, `TYPEORM_URL`, and other `TYPEORM_*` environment variables has been removed. The `ormconfig.env` file format is also no longer supported. TypeORM no longer auto-loads `.env` files or depends on `dotenv`.
+
+Use a TypeScript or JavaScript configuration file (`ormconfig.ts`, `ormconfig.js`) instead, referencing environment variables directly:
+
+```typescript
+// ormconfig.ts
+export default {
+    type: process.env.DB_TYPE,
+    url: process.env.DB_URL,
+    // ...
+}
+```

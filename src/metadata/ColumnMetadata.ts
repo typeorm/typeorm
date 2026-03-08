@@ -386,8 +386,6 @@ export class ColumnMetadata {
             this.utc = options.args.options.utc
         if (options.args.options.update !== undefined)
             this.isUpdate = options.args.options.update
-        if (options.args.options.readonly !== undefined)
-            this.isUpdate = !options.args.options.readonly
         if (options.args.options.comment)
             this.comment = options.args.options.comment
         if (options.args.options.default !== undefined)
