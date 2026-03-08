@@ -367,3 +367,20 @@ export default {
     // ...
 }
 ```
+
+### Name
+
+The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
+
+`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
+
+```typescript
+const reader = new ConnectionOptionsReader()
+
+// when your ormconfig has a single data source
+const [options] = await reader.get()
+
+// when you need a specific config from multiple data sources
+const allOptions = await reader.get()
+const postgresOptions = allOptions.find((o) => o.type === "postgres")
+```
