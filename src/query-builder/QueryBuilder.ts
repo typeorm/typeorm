@@ -1517,20 +1517,12 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         true,
                     )
 
-                    if (this.shouldSkipWhereValue(parameterValue)) {
-                        continue
-                    }
-
                     yield [aliasPath, parameterValue]
                 }
             }
         } else {
             for (const key of Object.keys(where)) {
                 const parameterValue = where[key]
-
-                if (this.shouldSkipWhereValue(parameterValue)) {
-                    continue
-                }
 
                 const aliasPath = this.expressionMap.aliasNamePrefixingEnabled
                     ? `${this.alias}.${key}`
@@ -1539,27 +1531,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 yield [aliasPath, parameterValue]
             }
         }
-    }
-
-    /**
-     * Checks if a where value should be skipped based on the
-     * invalidWhereValuesBehavior configuration.
-     * @param value
-     */
-    private shouldSkipWhereValue(value: any): boolean {
-        if (value === undefined) {
-            const behavior =
-                this.connection.options.invalidWhereValuesBehavior?.undefined ||
-                "throw"
-            return behavior === "ignore"
-        }
-        if (value === null) {
-            const behavior =
-                this.connection.options.invalidWhereValuesBehavior?.null ||
-                "throw"
-            return behavior === "ignore"
-        }
-        return false
     }
 
     protected getWherePredicateCondition(
@@ -1637,32 +1608,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     operator: parameterValue.type,
                     parameters: [aliasPath, ...parameters],
                 }
-            }
-        } else if (parameterValue === null) {
-            const nullBehavior =
-                this.connection.options.invalidWhereValuesBehavior?.null ||
-                "throw"
-            if (nullBehavior === "sql-null") {
-                return {
-                    operator: "isNull",
-                    parameters: [aliasPath],
-                }
-            } else if (nullBehavior === "throw") {
-                throw new TypeORMError(
-                    `Null value encountered in property '${aliasPath}' of a where condition. ` +
-                        `To match with SQL NULL, the IsNull() operator must be used. ` +
-                        `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
-                )
-            }
-        } else if (parameterValue === undefined) {
-            const undefinedBehavior =
-                this.connection.options.invalidWhereValuesBehavior?.undefined ||
-                "throw"
-            if (undefinedBehavior === "throw") {
-                throw new TypeORMError(
-                    `Undefined value encountered in property '${aliasPath}' of a where condition. ` +
-                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
-                )
             }
         }
 
