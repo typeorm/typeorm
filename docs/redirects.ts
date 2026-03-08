@@ -124,4 +124,5 @@ export const redirects = [
     { from: "/future-of-typeorm", to: "/docs/future-of-typeorm" },
     { from: "/query-runner", to: "/docs/query-runner" },
     { from: "/docs/advanced-topics/migrations", to: "/docs/migrations/why" },
+    { from: "/docs/gsoc/2026", to: "/docs/getting-started" },
 ]
