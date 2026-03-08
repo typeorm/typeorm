@@ -1,8 +1,8 @@
 import { Subject } from "../Subject"
 import { OrmUtils } from "../../util/OrmUtils"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { RelationMetadata } from "../../metadata/RelationMetadata"
+import type { RelationMetadata } from "../../metadata/RelationMetadata"
 
 /**
  * Builds operations needs to be executed for one-to-many relations of the given subjects.

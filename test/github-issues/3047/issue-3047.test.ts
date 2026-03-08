@@ -4,26 +4,25 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { User } from "./entity/User"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #3047 Mysqsl on duplicate key update use current values", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [User],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     const user1 = new User()
     user1.first_name = "John"
@@ -37,7 +36,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
 
     it("should overwrite using current value in MySQL/MariaDB", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 try {
                     if (DriverUtils.isMySQLFamily(connection.driver)) {
                         const UserRepository =
@@ -62,14 +61,14 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
                         expect(loadedUser[0]).to.includes({ is_updated: "yes" })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))
 
     it("should overwrite using current value in PostgreSQL", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 try {
                     if (connection.driver.options.type === "postgres") {
                         const UserRepository =
@@ -97,7 +96,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
                         expect(loadedUser[0]).to.includes({ is_updated: "yes" })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))

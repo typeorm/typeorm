@@ -1,5 +1,5 @@
-import { ColumnType } from "../../driver/types/ColumnTypes"
-import { ValueTransformer } from "./ValueTransformer"
+import type { ColumnType } from "../../driver/types/ColumnTypes"
+import type { ValueTransformer } from "./ValueTransformer"
 
 /**
  * Describes all calculated column's options.

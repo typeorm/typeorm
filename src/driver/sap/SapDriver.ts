@@ -1,30 +1,30 @@
 import { promisify } from "node:util"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { TypeORMError } from "../../error/TypeORMError"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { View } from "../../schema-builder/view/View"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
+import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import { ColumnType } from "../types/ColumnTypes"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { UpsertType } from "../types/UpsertType"
-import { SapDataSourceOptions } from "./SapDataSourceOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
+import type { SapDataSourceOptions } from "./SapDataSourceOptions"
 import { SapQueryRunner } from "./SapQueryRunner"
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -280,18 +280,11 @@ export class SapDriver implements Driver {
         const poolOptions: any = {
             maxConnectedOrPooled:
                 this.options.pool?.maxConnectedOrPooled ??
-                this.options.pool?.max ??
                 this.options.poolSize ??
                 10,
-            maxPooledIdleTime:
-                this.options.pool?.maxPooledIdleTime ??
-                (this.options.pool?.idleTimeout
-                    ? this.options.pool.idleTimeout / 1000
-                    : 30),
+            maxPooledIdleTime: this.options.pool?.maxPooledIdleTime ?? 30,
             maxWaitTimeoutIfPoolExhausted:
-                this.options.pool?.maxWaitTimeoutIfPoolExhausted ??
-                this.options.pool?.requestTimeout ??
-                0,
+                this.options.pool?.maxWaitTimeoutIfPoolExhausted ?? 0,
         }
         if (this.options.pool?.pingCheck) {
             poolOptions.pingCheck = this.options.pool.pingCheck
@@ -894,7 +887,7 @@ export class SapDriver implements Driver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        const client = this.options.driver ?? this.options.hanaClientDriver
+        const client = this.options.driver
         if (client) {
             this.client = client
 

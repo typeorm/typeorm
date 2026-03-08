@@ -1,11 +1,11 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { RelationMetadata } from "../metadata/RelationMetadata"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { BroadcasterResult } from "./BroadcasterResult"
-import { EntitySubscriberInterface } from "./EntitySubscriberInterface"
+import type { EntitySubscriberInterface } from "./EntitySubscriberInterface"
 
 interface BroadcasterEvents {
     BeforeQuery: (query: string, parameters: any[] | undefined) => void
@@ -861,20 +861,6 @@ export class Broadcaster {
                 }
             })
         }
-    }
-
-    /**
-     * @param result
-     * @param metadata
-     * @param entities
-     * @deprecated Use `broadcastLoadForAllEvent`
-     */
-    broadcastLoadEventsForAll(
-        result: BroadcasterResult,
-        metadata: EntityMetadata,
-        entities: ObjectLiteral[],
-    ): void {
-        return this.broadcastLoadEvent(result, metadata, entities)
     }
 
     /**

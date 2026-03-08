@@ -11,8 +11,6 @@ export const PersonSchema = new EntitySchema<any>({
         },
         PostCode: {
             type: "int",
-            width: 9,
-            zerofill: true,
         },
         FirstName: {
             type: String,

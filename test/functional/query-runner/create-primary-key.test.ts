@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,28 +8,28 @@ import {
 import { Table } from "../../../src/schema-builder/table/Table"
 
 describe("query runner > create primary key", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create primary key and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner does not allow altering primary key
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 )
                     return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "category",

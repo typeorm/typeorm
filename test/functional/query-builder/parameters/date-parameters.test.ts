@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,14 +10,13 @@ import { Product } from "./entity/Product"
 
 describe("query builder > parameters > date parameters", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Product],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Product],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

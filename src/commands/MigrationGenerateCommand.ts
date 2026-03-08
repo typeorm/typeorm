@@ -2,8 +2,8 @@ import { format } from "@sqltools/formatter/lib/sqlFormatter"
 import ansi from "ansis"
 import path from "path"
 import process from "process"
-import yargs from "yargs"
-import { DataSource } from "../data-source"
+import type yargs from "yargs"
+import type { DataSource } from "../data-source"
 import { PlatformTools } from "../platform/PlatformTools"
 import { camelCase } from "../util/StringUtils"
 import { CommandUtils } from "./CommandUtils"
@@ -79,7 +79,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             : path.resolve(process.cwd(), args.path)
         const filename = timestamp + "-" + path.basename(fullPath) + extension
 
-        let dataSource: DataSource | undefined = undefined
+        let dataSource: DataSource | undefined
         try {
             dataSource = await CommandUtils.loadDataSource(
                 path.resolve(process.cwd(), args.dataSource as string),

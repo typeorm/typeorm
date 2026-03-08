@@ -1,5 +1,5 @@
 import { getMetadataArgsStorage } from "../globals"
-import { GeneratedMetadataArgs } from "../metadata-args/GeneratedMetadataArgs"
+import type { GeneratedMetadataArgs } from "../metadata-args/GeneratedMetadataArgs"
 
 /**
  * Marks a column to generate a value on entity insertion.

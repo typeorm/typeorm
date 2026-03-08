@@ -4,27 +4,26 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("github issues > #3350 ER_DUP_FIELDNAME with simple find", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
-                enabledDrivers: ["mysql"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+            enabledDrivers: ["mysql"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should find without errors", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const post = new Post()
                 post.category = new Category()
                 post.category.name = "new category"

@@ -1,17 +1,17 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ReadStream } from "../../platform/PlatformTools"
+import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
+import type { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -21,13 +21,12 @@ import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
-import { DriverUtils } from "../DriverUtils"
 import { Query } from "../Query"
-import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { MysqlDriver } from "./MysqlDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { MysqlDriver } from "./MysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -1056,7 +1055,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        let newColumn: TableColumn | undefined = undefined
+        let newColumn: TableColumn
         if (InstanceChecker.isTableColumn(newTableColumnOrName)) {
             newColumn = newTableColumnOrName
         } else {
@@ -1948,7 +1947,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
         const columnNamesString = columnNames
             .map((columnName) => `\`${columnName}\``)
@@ -2771,30 +2772,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 tableColumn.type = "geometrycollection"
                             }
 
-                            tableColumn.zerofill =
-                                dbColumn["COLUMN_TYPE"].includes("zerofill")
                             tableColumn.unsigned =
-                                tableColumn.zerofill ||
                                 dbColumn["COLUMN_TYPE"].includes("unsigned")
-                            if (
-                                this.driver.unsignedColumnTypes.includes(
-                                    tableColumn.type as UnsignedColumnType,
-                                )
-                            ) {
-                                const width = dbColumn["COLUMN_TYPE"].substring(
-                                    dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
-                                    dbColumn["COLUMN_TYPE"].indexOf(")"),
-                                )
-                                tableColumn.width =
-                                    width &&
-                                    !this.isDefaultColumnWidth(
-                                        table,
-                                        tableColumn,
-                                        parseInt(width),
-                                    )
-                                        ? parseInt(width)
-                                        : undefined
-                            }
 
                             if (
                                 dbColumn["COLUMN_DEFAULT"] === null ||
@@ -3455,7 +3434,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         skipPrimary: boolean,
         skipName: boolean = false,
     ) {
-        let c = ""
+        let c: string
         if (skipName) {
             c = this.connection.driver.createFullType(column)
         } else {
@@ -3472,10 +3451,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 column.generatedType ? column.generatedType : "VIRTUAL"
             }`
 
-        // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to that column.
-        if (column.zerofill) {
-            c += " ZEROFILL"
-        } else if (column.unsigned) {
+        if (column.unsigned) {
             c += " UNSIGNED"
         }
         if (column.enum)
@@ -3523,60 +3499,5 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const versionString = result[0]["version"]
 
         return versionString.replace(/^([\d.]+).*$/, "$1")
-    }
-
-    /**
-     * Checks if column display width is by default.
-     * @param table
-     * @param column
-     * @param width
-     * @deprecated MySQL no longer supports column width in newer versions.
-     */
-    protected isDefaultColumnWidth(
-        table: Table,
-        column: TableColumn,
-        width: number,
-    ): boolean {
-        // Skip the whole check on servers that no longer expose width metadata.
-        if (
-            this.driver.options.type === "mysql" &&
-            DriverUtils.isReleaseVersionOrGreater(this.driver, "8.0.0")
-        ) {
-            return true
-        }
-
-        // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
-            const columnMetadata = metadata.findColumnWithDatabaseName(
-                column.name,
-            )
-            if (columnMetadata && columnMetadata.width) return false
-        }
-
-        const defaultWidthForType =
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].width
-
-        if (defaultWidthForType) {
-            // In MariaDB & MySQL 5.7, the default widths of certain numeric types are 1 less than
-            // the usual defaults when the column is unsigned.
-            const typesWithReducedUnsignedDefault = [
-                "int",
-                "tinyint",
-                "smallint",
-                "mediumint",
-            ]
-            const needsAdjustment =
-                typesWithReducedUnsignedDefault.indexOf(column.type) !== -1
-            if (column.unsigned && needsAdjustment) {
-                return defaultWidthForType - 1 === width
-            } else {
-                return defaultWidthForType === width
-            }
-        }
-
-        return false
     }
 }

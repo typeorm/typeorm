@@ -1,5 +1,5 @@
 import { RawSqlResultsToEntityTransformer } from "./transformer/RawSqlResultsToEntityTransformer"
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { PessimisticLockTransactionRequiredError } from "../error/PessimisticLockTransactionRequiredError"
 import { NoVersionOrUpdateDateColumnError } from "../error/NoVersionOrUpdateDateColumnError"
 import { OptimisticLockVersionMismatchError } from "../error/OptimisticLockVersionMismatchError"
@@ -13,39 +13,39 @@ import { RelationIdMetadataToAttributeTransformer } from "./relation-id/Relation
 import { RelationCountLoader } from "./relation-count/RelationCountLoader"
 import { RelationCountMetadataToAttributeTransformer } from "./relation-count/RelationCountMetadataToAttributeTransformer"
 import { QueryBuilder } from "./QueryBuilder"
-import { ReadStream } from "../platform/PlatformTools"
+import type { ReadStream } from "../platform/PlatformTools"
 import { LockNotSupportedOnGivenDriverError } from "../error/LockNotSupportedOnGivenDriverError"
-import { MysqlDriver } from "../driver/mysql/MysqlDriver"
-import { SelectQuery } from "./SelectQuery"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { OrderByCondition } from "../find-options/OrderByCondition"
-import { QueryExpressionMap } from "./QueryExpressionMap"
-import { EntityTarget } from "../common/EntityTarget"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { WhereExpressionBuilder } from "./WhereExpressionBuilder"
-import { Brackets } from "./Brackets"
-import { QueryResultCacheOptions } from "../cache/QueryResultCacheOptions"
+import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import type { SelectQuery } from "./SelectQuery"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
+import type { QueryExpressionMap } from "./QueryExpressionMap"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { WhereExpressionBuilder } from "./WhereExpressionBuilder"
+import type { Brackets } from "./Brackets"
+import type { QueryResultCacheOptions } from "../cache/QueryResultCacheOptions"
 import { OffsetWithoutLimitNotSupportedError } from "../error/OffsetWithoutLimitNotSupportedError"
-import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
+import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { DriverUtils } from "../driver/DriverUtils"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
 import { TypeORMError } from "../error"
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { FindOptionsSelect } from "../find-options/FindOptionsSelect"
-import { RelationMetadata } from "../metadata/RelationMetadata"
-import { FindOptionsOrder } from "../find-options/FindOptionsOrder"
-import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { FindOptionsSelect } from "../find-options/FindOptionsSelect"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
+import type { FindOptionsOrder } from "../find-options/FindOptionsOrder"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import { FindOptionsRelations } from "../find-options/FindOptionsRelations"
+import type { FindOptionsRelations } from "../find-options/FindOptionsRelations"
 import { OrmUtils } from "../util/OrmUtils"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
-import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
+import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
-import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1626,14 +1626,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             | "pessimistic_read"
             | "pessimistic_write"
             | "dirty_read"
-            /*
-                "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
-                will be removed in a future version.
-
-                Use setOnLocked instead.
-             */
-            | "pessimistic_partial_write"
-            | "pessimistic_write_or_fail"
             | "for_no_key_update"
             | "for_key_share",
         lockVersion?: undefined,
@@ -1652,14 +1644,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             | "pessimistic_read"
             | "pessimistic_write"
             | "dirty_read"
-            /*
-                "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
-                will be removed in a future version.
-
-                Use setOnLocked instead.
-             */
-            | "pessimistic_partial_write"
-            | "pessimistic_write_or_fail"
             | "for_no_key_update"
             | "for_key_share",
         lockVersion?: number | Date,
@@ -2531,8 +2515,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     relation.junctionEntityMetadata!.tablePath
 
                 const junctionAlias = joinAttr.junctionAlias
-                let junctionCondition = "",
-                    destinationCondition = ""
+                let junctionCondition: string, destinationCondition: string
 
                 if (relation.isOwning) {
                     junctionCondition = relation.joinColumns
@@ -2883,29 +2866,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     return " FOR UPDATE" + lockTablesClause + onLockExpression
                 } else if (driver.options.type === "mssql") {
                     return ""
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError()
-                }
-            // deprecated, use pessimistic_write with onLocked = "skip_locked" instead
-            case "pessimistic_partial_write":
-                if (DriverUtils.isPostgresFamily(driver)) {
-                    return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED"
-                } else if (driver.options.type === "sap") {
-                    return " FOR UPDATE" + lockTablesClause + " IGNORE LOCKED"
-                } else if (DriverUtils.isMySQLFamily(driver)) {
-                    return " FOR UPDATE SKIP LOCKED"
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError()
-                }
-            // deprecated, use pessimistic_write with onLocked = "nowait" instead
-            case "pessimistic_write_or_fail":
-                if (
-                    DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "sap"
-                ) {
-                    return " FOR UPDATE" + lockTablesClause + " NOWAIT"
-                } else if (DriverUtils.isMySQLFamily(driver)) {
-                    return " FOR UPDATE NOWAIT"
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
@@ -3465,10 +3425,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.lock.mode === "pessimistic_read" ||
                     this.findOptions.lock.mode === "pessimistic_write" ||
                     this.findOptions.lock.mode === "dirty_read" ||
-                    this.findOptions.lock.mode ===
-                        "pessimistic_partial_write" ||
-                    this.findOptions.lock.mode ===
-                        "pessimistic_write_or_fail" ||
                     this.findOptions.lock.mode === "for_no_key_update" ||
                     this.findOptions.lock.mode === "for_key_share"
                 ) {
@@ -3556,8 +3512,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (
             (this.expressionMap.lockMode === "pessimistic_read" ||
                 this.expressionMap.lockMode === "pessimistic_write" ||
-                this.expressionMap.lockMode === "pessimistic_partial_write" ||
-                this.expressionMap.lockMode === "pessimistic_write_or_fail" ||
                 this.expressionMap.lockMode === "for_no_key_update" ||
                 this.expressionMap.lockMode === "for_key_share") &&
             !queryRunner.isTransactionActive
@@ -3587,7 +3541,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             new RelationCountMetadataToAttributeTransformer(this.expressionMap)
         relationCountMetadataTransformer.transform()
 
-        let rawResults: any[] = [],
+        let rawResults: any[],
             entities: any[] = []
 
         // for pagination enabled (e.g. skip and take) its much more complicated - its a special process
@@ -3674,7 +3628,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 .getRawMany()
 
             if (rawResults.length > 0) {
-                let condition = ""
+                let condition: string
                 const parameters: ObjectLiteral = {}
                 if (metadata.hasMultiplePrimaryKeys) {
                     condition = rawResults

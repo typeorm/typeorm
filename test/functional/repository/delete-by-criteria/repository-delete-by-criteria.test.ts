@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import {
     closeTestingConnections,
@@ -13,15 +13,14 @@ describe("repository > delete methods", function () {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -29,8 +28,8 @@ describe("repository > delete methods", function () {
 
     it("remove using delete method should delete successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save some new posts
                 const newPost1 = postRepository.create()
@@ -64,8 +63,8 @@ describe("repository > delete methods", function () {
 
     it("remove multiple rows using delete method should delete successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save some new posts
                 const newPost1 = postRepository.create()
@@ -99,8 +98,8 @@ describe("repository > delete methods", function () {
 
     it("remove row using delete method with partial criteria should delete successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save some new posts
                 const newPost1 = postRepository.create()
@@ -138,8 +137,8 @@ describe("repository > delete methods", function () {
 
     it("removes all rows using deleteAll method", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save some new posts
                 const newPost1 = postRepository.create()

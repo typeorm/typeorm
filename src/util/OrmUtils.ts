@@ -1,6 +1,6 @@
-import { DeepPartial } from "../common/DeepPartial"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import {
+import type { DeepPartial } from "../common/DeepPartial"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type {
     PrimitiveCriteria,
     SinglePrimitiveCriteria,
 } from "../common/PrimitiveCriteria"
@@ -60,7 +60,7 @@ export class OrmUtils {
         criteriaOrProperty?: ((item: T) => unknown) | K,
     ): T[] {
         return array.reduce((uniqueArray, item) => {
-            let found: boolean = false
+            let found: boolean
             if (typeof criteriaOrProperty === "function") {
                 const itemValue = criteriaOrProperty(item)
                 found = !!uniqueArray.find(

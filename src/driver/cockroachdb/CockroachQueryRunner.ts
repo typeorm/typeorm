@@ -1,13 +1,13 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ReadStream } from "../../platform/PlatformTools"
+import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
@@ -22,11 +22,11 @@ import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
 import { Query } from "../Query"
-import { ColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { CockroachDriver } from "./CockroachDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { CockroachDriver } from "./CockroachDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -2456,7 +2456,9 @@ export class CockroachQueryRunner
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
         const pkName = primaryColumns[0].primaryKeyConstraintName
             ? primaryColumns[0].primaryKeyConstraintName
@@ -2965,22 +2967,24 @@ export class CockroachQueryRunner
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`
             const dropViewQueries: ObjectLiteral[] =
                 await this.query(selectViewDropsQuery)
-            await Promise.all(
-                dropViewQueries.map((q) => this.query(q["query"])),
-            )
+            for (const q of dropViewQueries) {
+                await this.query(q["query"])
+            }
 
             const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(table_schema) || '.' || quote_ident(table_name) || ' CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
             const dropQueries: ObjectLiteral[] =
                 await this.query(selectDropsQuery)
-            await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+            for (const q of dropQueries) {
+                await this.query(q["query"])
+            }
 
             const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE ' || quote_ident(sequence_schema) || '.' || quote_ident(sequence_name) || ';' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`
             const sequenceDropQueries: ObjectLiteral[] = await this.query(
                 selectSequenceDropsQuery,
             )
-            await Promise.all(
-                sequenceDropQueries.map((q) => this.query(q["query"])),
-            )
+            for (const q of sequenceDropQueries) {
+                await this.query(q["query"])
+            }
 
             // drop enum types. Supported starting from v20.2.19.
             if (VersionUtils.isGreaterOrEqual(version, "20.2.19")) {
@@ -3166,19 +3170,11 @@ export class CockroachQueryRunner
             `WHERE "n"."nspname" IN (${tableSchemas}) ` +
             `GROUP BY "t"."typname"`
 
-        const [
-            dbColumns,
-            dbConstraints,
-            dbIndices,
-            dbForeignKeys,
-            dbEnums,
-        ]: ObjectLiteral[][] = await Promise.all([
-            this.query(columnsSql),
-            this.query(constraintsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql),
-            this.query(enumsSql),
-        ])
+        const dbColumns: ObjectLiteral[] = await this.query(columnsSql)
+        const dbConstraints: ObjectLiteral[] = await this.query(constraintsSql)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
+        const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
+        const dbEnums: ObjectLiteral[] = await this.query(enumsSql)
 
         // create tables for loaded tables
         return Promise.all(
@@ -3851,12 +3847,11 @@ export class CockroachQueryRunner
 
         table.columns
             .filter((it) => it.comment)
-            .forEach(
-                (it) =>
-                    (sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${
-                        it.name
-                    }" IS ${this.escapeComment(it.comment)}`),
-            )
+            .forEach((it) => {
+                sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${
+                    it.name
+                }" IS ${this.escapeComment(it.comment)}`
+            })
 
         return new Query(sql)
     }
@@ -3955,7 +3950,9 @@ export class CockroachQueryRunner
             `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
             `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`
         const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery)
-        await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+        for (const q of dropQueries) {
+            await this.query(q["query"])
+        }
     }
 
     /**

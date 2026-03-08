@@ -1,5 +1,5 @@
 import { assert } from "chai"
-import { DataSource, ObjectLiteral, TreeRepository } from "../../../src"
+import type { DataSource, ObjectLiteral, TreeRepository } from "../../../src"
 import { NestedSetMultipleRootError } from "../../../src/error/NestedSetMultipleRootError"
 import {
     closeTestingConnections,
@@ -29,10 +29,12 @@ import {
 } from "./entity/SqlServerTreeEntities"
 
 describe("github issues > #7155", () => {
-    let connections: DataSource[]
-    before(async () => (connections = await generateConnections()))
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await generateConnections()
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     /**
      * ------------------ SINGLE ID ------------------
@@ -41,7 +43,7 @@ describe("github issues > #7155", () => {
      */
     it("(Closure/SingleID/Save) Update without parent", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_closure")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -61,7 +63,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Save) Update without tree change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_closure")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -82,7 +84,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Save) Set leaf entity as root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_closure")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -103,7 +105,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Save) Move leaf with multi root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_closure")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -128,7 +130,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Save) Move branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_closure")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -162,7 +164,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Save) Move branch with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_closure")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -196,7 +198,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Save) Move multiple branches with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_closure")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -239,7 +241,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Save) Remove and re-add parent", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_closure")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -273,7 +275,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Remove) Remove leaf with multi root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_closure")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -297,7 +299,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Remove) Remove branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -335,7 +337,7 @@ describe("github issues > #7155", () => {
 
     it("(Closure/SingleID/Remove) Remove multiple branches with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -383,7 +385,7 @@ describe("github issues > #7155", () => {
      */
     it("(Nested/SingleID/Save) Update without tree change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { id: 1, left: 1, right: 4 },
                     { id: 2, left: 2, right: 3 },
@@ -416,7 +418,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/SingleID/Save) Set multiple root entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_nested")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -436,7 +438,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/SingleID/Save) Set leaf entity as root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_nested")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -460,7 +462,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/SingleID/Save) Move leaf with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { id: 1, left: 1, right: 6 },
                     { id: 2, left: 3, right: 4 },
@@ -501,7 +503,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/SingleID/Save) Move branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { id: 1, left: 1, right: 10 },
                     { id: 2, left: 2, right: 7 },
@@ -554,7 +556,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/SingleID/Save) Move branch with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { id: 1, left: 1, right: 10 },
                     { id: 2, left: 2, right: 7 },
@@ -607,7 +609,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/SingleID/Save) Move multiple branches with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { id: 1, left: 1, right: 12 },
                     { id: 2, left: 2, right: 7 },
@@ -671,7 +673,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/SingleID/Remove) Remove leaf with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [{ id: 1, left: 1, right: 2 }]
 
                 const Entity = getEntity(connection, "single_nested")
@@ -702,7 +704,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/SingleID/Remove) Remove branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -757,7 +759,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/SingleID/Remove) Remove multiple branches with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -823,7 +825,7 @@ describe("github issues > #7155", () => {
      */
     it("(Materialized/SingleID/Save) Update without parent", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -843,7 +845,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/SingleID/Save) Update without tree change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -864,7 +866,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/SingleID/Save) Set leaf entity as root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -885,7 +887,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/SingleID/Save) Move leaf with multi root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -910,7 +912,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/SingleID/Save) Move branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -944,7 +946,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/SingleID/Save) Move branch with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -978,7 +980,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/SingleID/Save) Move multiple branches with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1021,7 +1023,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/SingleID/Remove) Remove leaf with multi root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "single_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1045,7 +1047,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/SingleID/Remove) Remove branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -1083,7 +1085,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/SingleID/Remove) Remove multiple branches with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -1133,7 +1135,7 @@ describe("github issues > #7155", () => {
      */
     it("(Nested/MultiID/Save) Update without tree change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { column: "A", row: 1, left: 1, right: 4 },
                     { column: "A", row: 2, left: 2, right: 3 },
@@ -1171,7 +1173,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/MultiID/Save) Set multiple root entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_nested")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1195,7 +1197,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/MultiID/Save) Set leaf entity as root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_nested")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1223,7 +1225,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/MultiID/Save) Move leaf with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { column: "A", row: 1, left: 1, right: 6 },
                     { column: "A", row: 2, left: 3, right: 4 },
@@ -1270,7 +1272,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/MultiID/Save) Move branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { column: "A", row: 1, left: 1, right: 10 },
                     { column: "A", row: 2, left: 2, right: 7 },
@@ -1333,7 +1335,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/MultiID/Save) Move branch with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { column: "A", row: 1, left: 1, right: 10 },
                     { column: "A", row: 2, left: 2, right: 7 },
@@ -1396,7 +1398,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/MultiID/Save) Move multiple branches with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { column: "A", row: 1, left: 1, right: 12 },
                     { column: "A", row: 2, left: 2, right: 7 },
@@ -1472,7 +1474,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/MultiID/Remove) Remove leaf with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const expectedResults = [
                     { column: "A", row: 1, left: 1, right: 2 },
                 ]
@@ -1509,7 +1511,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/MultiID/Remove) Remove branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -1574,7 +1576,7 @@ describe("github issues > #7155", () => {
 
     it("(Nested/MultiID/Remove) Remove multiple branches with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -1652,7 +1654,7 @@ describe("github issues > #7155", () => {
      */
     it("(Materialized/MultiID/Save) Update without parent", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1676,7 +1678,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/MultiID/Save) Update without tree change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1701,7 +1703,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/MultiID/Save) Set leaf entity as root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1726,7 +1728,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/MultiID/Save) Move leaf with multi root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1757,7 +1759,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/MultiID/Save) Move branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1801,7 +1803,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/MultiID/Save) Move branch with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1845,7 +1847,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/MultiID/Save) Move multiple branches with single root via children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1900,7 +1902,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/MultiID/Remove) Remove leaf with multi root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const Entity = getEntity(connection, "multi_materialized")
                 const repo = connection.getTreeRepository(Entity)
 
@@ -1930,7 +1932,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/MultiID/Remove) Remove branch with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -1978,7 +1980,7 @@ describe("github issues > #7155", () => {
 
     it("(Materialized/MultiID/Remove) Remove multiple branches with single root", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") {
                     // This test will not working on sql server
                     return
@@ -2035,20 +2037,19 @@ describe("github issues > #7155", () => {
 })
 
 describe("github issues > #7155 > tree relations", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/RelationEntities{.js,.ts}"],
-                enabledDrivers: ["mysql", "postgres", "mssql"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/RelationEntities{.js,.ts}"],
+            enabledDrivers: ["mysql", "postgres", "mssql"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("(Closure) Validate relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getTreeRepository(RelationClosure)
                 const relationRepo = connection.getRepository(Relation)
 
@@ -2066,7 +2067,7 @@ describe("github issues > #7155 > tree relations", () => {
 
     it("(Nested) Validate relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getTreeRepository(RelationNested)
                 const relationRepo = connection.getRepository(Relation)
 
@@ -2084,7 +2085,7 @@ describe("github issues > #7155 > tree relations", () => {
 
     it("(Materialized) Validate relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getTreeRepository(RelationMaterialized)
                 const relationRepo = connection.getRepository(Relation)
 
@@ -2182,7 +2183,7 @@ function isResultExpected(
 }
 
 async function generateConnections(): Promise<DataSource[]> {
-    const connections = await Promise.all([
+    const dataSources = await Promise.all([
         createTestingConnections({
             entities: [__dirname + "/entity/Remaining*{.js,.ts}"],
             enabledDrivers: ["mysql", "postgres"],
@@ -2194,7 +2195,7 @@ async function generateConnections(): Promise<DataSource[]> {
     ])
 
     let result: DataSource[] = []
-    for (const connection of connections) {
+    for (const connection of dataSources) {
         result = result.concat(connection)
     }
 

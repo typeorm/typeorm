@@ -1,31 +1,31 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source/DataSource"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { View } from "../../schema-builder/view/View"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
-import { Driver, ReturningType } from "../Driver"
+import type { Driver, ReturningType } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { UpsertType } from "../types/UpsertType"
-import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
-import { MysqlDataSourceOptions } from "./MysqlDataSourceOptions"
+import type { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
+import type { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
+import type { MysqlDataSourceOptions } from "./MysqlDataSourceOptions"
 import { MysqlQueryRunner } from "./MysqlQueryRunner"
 
 /**
@@ -287,13 +287,6 @@ export class MysqlDriver implements Driver {
         time: { precision: 0 },
         datetime: { precision: 0 },
         timestamp: { precision: 0 },
-        bit: { width: 1 },
-        int: { width: 11 },
-        integer: { width: 11 },
-        tinyint: { width: 4 },
-        smallint: { width: 6 },
-        mediumint: { width: 9 },
-        bigint: { width: 20 },
     }
 
     /**
@@ -327,7 +320,7 @@ export class MysqlDriver implements Driver {
     constructor(connection: DataSource) {
         this.connection = connection
         this.options = {
-            legacySpatialSupport: true,
+            legacySpatialSupport: false,
             ...connection.options,
         } as MysqlDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
@@ -888,8 +881,6 @@ export class MysqlDriver implements Driver {
         // used 'getColumnLength()' method, because MySQL requires column length for `varchar`, `nvarchar` and `varbinary` data types
         if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`
-        } else if (column.width) {
-            type += `(${column.width})`
         } else if (
             column.precision !== null &&
             column.precision !== undefined &&
@@ -1042,12 +1033,10 @@ export class MysqlDriver implements Driver {
                 tableColumn.name !== columnMetadata.databaseName ||
                 this.isColumnDataTypeChanged(tableColumn, columnMetadata) ||
                 tableColumn.length !== this.getColumnLength(columnMetadata) ||
-                tableColumn.width !== columnMetadata.width ||
                 (columnMetadata.precision !== undefined &&
                     tableColumn.precision !== columnMetadata.precision) ||
                 (columnMetadata.scale !== undefined &&
                     tableColumn.scale !== columnMetadata.scale) ||
-                tableColumn.zerofill !== columnMetadata.zerofill ||
                 tableColumn.unsigned !== columnMetadata.unsigned ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
@@ -1071,95 +1060,6 @@ export class MysqlDriver implements Driver {
                     this.normalizeIsUnique(columnMetadata) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
                     tableColumn.isGenerated !== columnMetadata.isGenerated)
-
-            // DEBUG SECTION
-            // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName)
-            //     console.log(
-            //         "name:",
-            //         tableColumn.name,
-            //         columnMetadata.databaseName,
-            //     )
-            //     console.log(
-            //         "type:",
-            //         tableColumn.type,
-            //         this.normalizeType(columnMetadata),
-            //     )
-            //     console.log(
-            //         "length:",
-            //         tableColumn.length,
-            //         columnMetadata.length,
-            //     )
-            //     console.log("width:", tableColumn.width, columnMetadata.width)
-            //     console.log(
-            //         "precision:",
-            //         tableColumn.precision,
-            //         columnMetadata.precision,
-            //     )
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
-            //     console.log(
-            //         "zerofill:",
-            //         tableColumn.zerofill,
-            //         columnMetadata.zerofill,
-            //     )
-            //     console.log(
-            //         "unsigned:",
-            //         tableColumn.unsigned,
-            //         columnMetadata.unsigned,
-            //     )
-            //     console.log(
-            //         "asExpression:",
-            //         tableColumn.asExpression,
-            //         columnMetadata.asExpression,
-            //     )
-            //     console.log(
-            //         "generatedType:",
-            //         tableColumn.generatedType,
-            //         columnMetadata.generatedType,
-            //     )
-            //     console.log(
-            //         "comment:",
-            //         tableColumn.comment,
-            //         this.escapeComment(columnMetadata.comment),
-            //     )
-            //     console.log(
-            //         "default:",
-            //         tableColumn.default,
-            //         this.normalizeDefault(columnMetadata),
-            //     )
-            //     console.log("enum:", tableColumn.enum, columnMetadata.enum)
-            //     console.log(
-            //         "default changed:",
-            //         !this.compareDefaultValues(
-            //             this.normalizeDefault(columnMetadata),
-            //             tableColumn.default,
-            //         ),
-            //     )
-            //     console.log(
-            //         "isPrimary:",
-            //         tableColumn.isPrimary,
-            //         columnMetadata.isPrimary,
-            //     )
-            //     console.log(
-            //         "isNullable changed:",
-            //         !this.compareNullableValues(columnMetadata, tableColumn),
-            //     )
-            //     console.log(
-            //         "isUnique:",
-            //         tableColumn.isUnique,
-            //         this.normalizeIsUnique(columnMetadata),
-            //     )
-            //     console.log(
-            //         "isGenerated:",
-            //         tableColumn.isGenerated,
-            //         columnMetadata.isGenerated,
-            //     )
-            //     console.log(
-            //         columnMetadata.generationStrategy !== "uuid" &&
-            //             tableColumn.isGenerated !== columnMetadata.isGenerated,
-            //     )
-            //     console.log("==========================================")
-            // }
 
             return isColumnChanged
         })
