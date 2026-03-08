@@ -1,11 +1,13 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
-import { OnDeleteType } from "../../metadata/types/OnDeleteType"
-import { RelationOptions } from "../options/RelationOptions"
+import type { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
+import type { OnDeleteType } from "../../metadata/types/OnDeleteType"
+import type { RelationOptions } from "../options/RelationOptions"
 
 /**
  * Marks an entity property as a parent of the tree.
  * "Tree parent" indicates who owns (is a parent) of this entity in tree structure.
+ * @param options
+ * @param options.onDelete
  */
 export function TreeParent(options?: {
     onDelete?: OnDeleteType

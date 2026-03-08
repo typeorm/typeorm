@@ -1,5 +1,5 @@
 import "../../../../utils/test-setup"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,22 +9,21 @@ import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("mongodb > timestampable columns", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Post],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            enabledDrivers: ["mongodb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist timestampable columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const commentMongoRepository =
-                    connection.getMongoRepository(Post)
+                    dataSource.getMongoRepository(Post)
 
                 // save a post
                 const post = new Post()

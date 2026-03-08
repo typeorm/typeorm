@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import {
@@ -15,15 +15,14 @@ describe.skip("repository > set/add/remove relation methods", function () {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -31,9 +30,9 @@ describe.skip("repository > set/add/remove relation methods", function () {
 
     it("add elements to many-to-many from owner side", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 // save a new category
                 const newCategory1 = categoryRepository.create()
@@ -75,9 +74,9 @@ describe.skip("repository > set/add/remove relation methods", function () {
 
     it("add elements to many-to-many from inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 // save a new post
                 const newPost1 = postRepository.create()
@@ -117,9 +116,9 @@ describe.skip("repository > set/add/remove relation methods", function () {
 
     it("remove elements to many-to-many from owner side", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 // save a new category
                 const newCategory1 = categoryRepository.create()
@@ -171,9 +170,9 @@ describe.skip("repository > set/add/remove relation methods", function () {
 
     it("remove elements to many-to-many from inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 // save a new category
                 const newPost1 = postRepository.create()
@@ -220,9 +219,9 @@ describe.skip("repository > set/add/remove relation methods", function () {
     // todo: fix this test later
     it("set element to one-to-many relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 // save a new category
                 const newCategory1 = categoryRepository.create()
@@ -256,9 +255,9 @@ describe.skip("repository > set/add/remove relation methods", function () {
 
     it("set element to many-to-one relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 // save a new category
                 const newPost = postRepository.create()
@@ -291,9 +290,9 @@ describe.skip("repository > set/add/remove relation methods", function () {
 
     it("set element to NULL in one-to-many relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 // save a new category
                 const newCategory1 = categoryRepository.create()
@@ -327,9 +326,9 @@ describe.skip("repository > set/add/remove relation methods", function () {
 
     it("set element to NULL in many-to-one relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 // save a new category
                 const newPost = postRepository.create()

@@ -1,10 +1,6 @@
 import sinon from "sinon"
-import {
-    ConnectionOptionsReader,
-    DatabaseType,
-    DataSource,
-    DataSourceOptions,
-} from "../../../src"
+import type { DatabaseType, DataSourceOptions } from "../../../src"
+import { ConnectionOptionsReader, DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -30,7 +26,6 @@ describe("commands - migration generate", () => {
         "mssql",
         "mysql",
         "mariadb",
-        "sqlite",
         "better-sqlite3",
         "oracle",
         "cockroachdb",

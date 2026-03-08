@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, QueryRunner } from "../../../src"
+import type { DataSource, QueryRunner } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -11,7 +11,7 @@ import { Album } from "./entity/Album"
 import { Photo } from "./entity/Photo"
 
 describe("github issues > #5898 Postgres primary key of type uuid: default value migration/sync not working", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     const getColumnDefault = async (
         queryRunner: QueryRunner,
         tableName: string,
@@ -24,20 +24,19 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
         const res = await queryRunner.query(query)
         return res.length ? res[0]["column_default"] : null
     }
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-                entities: [User, Document, Album, Photo],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [User, Document, Album, Photo],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should add DEFAULT value when @PrimaryGeneratedColumn('increment') is added", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("photo")
                 const column = table!.findColumnByName("id")!
@@ -71,7 +70,7 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
 
     it("should remove DEFAULT value when @PrimaryGeneratedColumn('increment') is removed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("album")
                 const column = table!.findColumnByName("id")!
@@ -105,7 +104,7 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
 
     it("should add DEFAULT value when @PrimaryGeneratedColumn('uuid') is added", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("document")
                 const column = table!.findColumnByName("id")!
@@ -137,7 +136,7 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
 
     it("should remove DEFAULT value when @PrimaryGeneratedColumn('uuid') is removed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName("id")!

@@ -1,9 +1,6 @@
 import sinon from "sinon"
-import {
-    DataSourceOptions,
-    ConnectionOptionsReader,
-    DatabaseType,
-} from "../../../src"
+import type { DataSourceOptions, DatabaseType } from "../../../src"
+import { ConnectionOptionsReader } from "../../../src"
 import {
     setupTestingConnections,
     createTestingConnections,
@@ -30,7 +27,6 @@ describe.skip("github issues > #4415 allow beautify generated migrations", () =>
         "mssql",
         "mysql",
         "mariadb",
-        "sqlite",
         "better-sqlite3",
         "oracle",
         "cockroachdb",

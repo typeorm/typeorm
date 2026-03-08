@@ -4,26 +4,25 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 
 describe("github issues > #4513 CockroachDB support for onConflict", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["cockroachdb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["cockroachdb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert if no conflict", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.name = "example"
                 user1.email = "example@example.com"
@@ -57,7 +56,7 @@ describe("github issues > #4513 CockroachDB support for onConflict", () => {
 
     it("should update on conflict with do update", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.name = "example"
                 user1.email = "example@example.com"
@@ -100,7 +99,7 @@ describe("github issues > #4513 CockroachDB support for onConflict", () => {
 
     it("should not update on conflict with do nothing", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.name = "example"
                 user1.email = "example@example.com"
@@ -141,7 +140,7 @@ describe("github issues > #4513 CockroachDB support for onConflict", () => {
 
     it("should update with orUpdate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.name = "example"
                 user1.email = "example@example.com"

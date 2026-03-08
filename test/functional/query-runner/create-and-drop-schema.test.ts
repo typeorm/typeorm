@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,21 +7,21 @@ import {
 } from "../../utils/test-utils"
 
 describe("query runner > create and drop schema", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql", "postgres", "sap"],
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create and drop schema and revert it", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 await queryRunner.createSchema("myTestSchema", true)
                 let hasSchema = await queryRunner.hasSchema("myTestSchema")

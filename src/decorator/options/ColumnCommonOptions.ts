@@ -1,4 +1,4 @@
-import { ValueTransformer } from "./ValueTransformer"
+import type { ValueTransformer } from "./ValueTransformer"
 
 /**
  * Column options specific to all column types.
@@ -17,7 +17,7 @@ export interface ColumnCommonOptions {
 
     /**
      * Indicates if this column is a primary key.
-     * Same can be achieved when @PrimaryColumn decorator is used.
+     * Same can be achieved when `@PrimaryColumn` decorator is used.
      */
     primary?: boolean
 

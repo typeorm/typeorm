@@ -9,7 +9,7 @@ Different RDBMS-es have their own specific options.
 
 - `type` - RDBMS type. You must specify what database engine you use.
   Possible values are:
-  "mysql", "postgres", "cockroachdb", "sap", "spanner", "mariadb", "sqlite", "cordova", "react-native", "nativescript", "sqljs", "oracle", "mssql", "mongodb", "aurora-mysql", "aurora-postgres", "expo", "better-sqlite3", "capacitor".
+  "mysql", "postgres", "cockroachdb", "sap", "spanner", "mariadb", "cordova", "react-native", "nativescript", "sqljs", "oracle", "mssql", "mongodb", "aurora-mysql", "aurora-postgres", "expo", "better-sqlite3", "capacitor".
   This option is **required**.
 
 - `extra` - Extra options to be passed to the underlying driver.
@@ -78,7 +78,7 @@ Different RDBMS-es have their own specific options.
 - `isolateWhereStatements` - Enables where statement isolation, wrapping each where clause in brackets automatically.
   eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
 
-- `invalidWhereValuesBehavior` - Controls how null and undefined values are handled in where conditions across all TypeORM operations (find operations, query builders, repository methods).
+- `invalidWhereValuesBehavior` - Controls how null and undefined values are handled in where conditions for high-level operations (find operations, repository methods, EntityManager methods). Does not affect QueryBuilder's `.where()` directly.
     - `null` behavior options:
         - `'ignore'` - skips null properties
         - `'sql-null'` - transforms null to SQL NULL

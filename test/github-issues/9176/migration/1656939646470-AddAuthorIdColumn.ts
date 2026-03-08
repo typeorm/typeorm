@@ -1,9 +1,5 @@
-import {
-    MigrationInterface,
-    QueryRunner,
-    TableColumn,
-    TableForeignKey,
-} from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
+import { TableColumn, TableForeignKey } from "../../../../src"
 
 export class AddAuthorIdColumn1656939646470 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {

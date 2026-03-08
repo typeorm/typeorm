@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource, Repository } from "../../../../../src/index"
+import type { DataSource, Repository } from "../../../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -16,16 +16,15 @@ describe("persistence > orphanage > delete", () => {
     // -------------------------------------------------------------------------
 
     // connect to db
-    let connections: DataSource[] = []
+    let dataSources: DataSource[] = []
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -37,14 +36,14 @@ describe("persistence > orphanage > delete", () => {
         let categoryId: number
 
         beforeEach(async function () {
-            if (connections.length === 0) {
+            if (dataSources.length === 0) {
                 this.skip()
             }
 
             await Promise.all(
-                connections.map(async (connection) => {
-                    categoryRepository = connection.getRepository(Category)
-                    postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    categoryRepository = dataSource.getRepository(Category)
+                    postRepository = dataSource.getRepository(Post)
                 }),
             )
 

@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -16,12 +16,7 @@ describe("query builder > insert > on conflict", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Category, Post],
-            enabledDrivers: [
-                "cockroachdb",
-                "postgres",
-                "sqlite",
-                "better-sqlite3",
-            ], // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
+            enabledDrivers: ["cockroachdb", "postgres", "better-sqlite3"], // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))

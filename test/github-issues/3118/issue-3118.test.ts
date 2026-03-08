@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -20,27 +20,26 @@ import { CategoryWithVeryLongName } from "./entity/CategoryWithVeryLongName"
  * by changing the NAMEDATALEN constant in src/include/pg_config_manual.h."
  */
 describe("github issues > #3118 shorten alias names (for RDBMS with a limit) when they are longer than 63 characters", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: [
-                    "mysql",
-                    "postgres",
-                    "cockroachdb",
-                    "sap",
-                    "mariadb",
-                    "mssql",
-                ],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: [
+                "mysql",
+                "postgres",
+                "cockroachdb",
+                "sap",
+                "mariadb",
+                "mssql",
+            ],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be able to load deeply nested entities, even with long aliases", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const group = new GroupWithVeryLongName()
                 group.name = "La Pléiade"
                 await connection
@@ -156,7 +155,7 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
         ))
 
     it("should shorten table names which exceed the max length", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             const shortName =
                 "cat_wit_ver_lon_nam_pos_wit_ver_lon_nam_pos_wit_ver_lon_nam"
             const normalName =

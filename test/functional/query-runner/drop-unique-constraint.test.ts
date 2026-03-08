@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Table, TableColumn, TableUnique } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table, TableColumn, TableUnique } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,14 +10,13 @@ import {
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop unique constraint", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: [
                 "mssql",
                 "postgres",
-                "sqlite",
                 "better-sqlite3",
                 "oracle",
                 "cockroachdb",
@@ -25,13 +25,13 @@ describe("query runner > drop unique constraint", () => {
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly drop unique constraint and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 table!.uniques.length.should.be.equal(2)
@@ -56,8 +56,8 @@ describe("query runner > drop unique constraint", () => {
 
     it("should drop all unique constraints without skipping any when iterating over array", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.connect()
 
                 try {
@@ -69,7 +69,7 @@ describe("query runner > drop unique constraint", () => {
                                 new TableColumn({
                                     name: "id",
                                     type: DriverUtils.isSQLiteFamily(
-                                        connection.driver,
+                                        dataSource.driver,
                                     )
                                         ? "integer"
                                         : "int",

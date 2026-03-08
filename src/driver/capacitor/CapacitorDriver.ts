@@ -1,14 +1,14 @@
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { CapacitorConnectionOptions } from "./CapacitorConnectionOptions"
-import { CapacitorQueryRunner } from "./CapacitorQueryRunner"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataSource } from "../../data-source/DataSource"
+import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { CapacitorDataSourceOptions } from "./CapacitorDataSourceOptions"
+import { CapacitorQueryRunner } from "./CapacitorQueryRunner"
 
 export class CapacitorDriver extends AbstractSqliteDriver {
     driver: any
-    declare options: CapacitorConnectionOptions
+    declare options: CapacitorDataSourceOptions
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -49,6 +49,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner) this.queryRunner = new CapacitorQueryRunner(this)

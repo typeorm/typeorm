@@ -1,4 +1,4 @@
-import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
+import type { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 
 /**
  * Describes all index options.

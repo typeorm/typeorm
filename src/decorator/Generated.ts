@@ -1,5 +1,5 @@
 import { getMetadataArgsStorage } from "../globals"
-import { GeneratedMetadataArgs } from "../metadata-args/GeneratedMetadataArgs"
+import type { GeneratedMetadataArgs } from "../metadata-args/GeneratedMetadataArgs"
 
 /**
  * Marks a column to generate a value on entity insertion.
@@ -9,6 +9,7 @@ import { GeneratedMetadataArgs } from "../metadata-args/GeneratedMetadataArgs"
  * Rowid supports only in CockroachDB and uses `unique_rowid()` function
  *
  * Note, some databases do not support non-primary generation columns.
+ * @param strategy
  */
 export function Generated(
     strategy: "increment" | "uuid" | "rowid" = "increment",

@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     createTestingConnections,
     reloadTestingDatabases,
@@ -13,20 +13,19 @@ import { DataModel } from "./entity/DataModel"
 // TODO: this test was broken after removing primary: true from relation decorators
 //  due to complexity of cascades, it was skipped fow now
 describe.skip("github issues > #1545 Typeorm runs insert query instead of update query on save of existing entity for ManyToOne relationships", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should add intial validation data", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const validation1 = new ValidationModel()
                 validation1.validation = 123
 

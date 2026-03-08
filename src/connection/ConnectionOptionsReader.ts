@@ -1,12 +1,11 @@
 import appRootPath from "app-root-path"
 import path from "path"
 
-import { DataSourceOptions } from "../data-source/DataSourceOptions"
+import type { DataSourceOptions } from "../data-source/DataSourceOptions"
 import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 import { importOrRequireFile } from "../util/ImportUtils"
 import { isAbsolute } from "../util/PathUtils"
-import { ConnectionOptionsEnvReader } from "./options-reader/ConnectionOptionsEnvReader"
 
 /**
  * Reads connection options from the ormconfig.
@@ -51,6 +50,7 @@ export class ConnectionOptionsReader {
     /**
      * Gets a connection with a given name read from ormconfig.
      * If connection with such name would not be found then it throw error.
+     * @param name
      */
     async get(name: string): Promise<DataSourceOptions> {
         const allOptions = await this.all()
@@ -68,6 +68,7 @@ export class ConnectionOptionsReader {
 
     /**
      * Checks if there is a TypeORM configuration file.
+     * @param name
      */
     async has(name: string): Promise<boolean> {
         const allOptions = await this.load()
@@ -95,16 +96,7 @@ export class ConnectionOptionsReader {
             | DataSourceOptions[]
             | undefined = undefined
 
-        const fileFormats = [
-            "env",
-            "js",
-            "mjs",
-            "cjs",
-            "ts",
-            "mts",
-            "cts",
-            "json",
-        ]
+        const fileFormats = ["js", "mjs", "cjs", "ts", "mts", "cts", "json"]
 
         // Detect if baseFilePath contains file extension
         const possibleExtension = this.baseFilePath.substr(
@@ -126,34 +118,8 @@ export class ConnectionOptionsReader {
             ? this.baseFilePath
             : this.baseFilePath + "." + foundFileFormat
 
-        // if .env file found then load all its variables into process.env using dotenv package
-        if (foundFileFormat === "env") {
-            try {
-                PlatformTools.dotenv(configFile)
-            } catch (err) {
-                PlatformTools.logWarn(
-                    `Warning: Could not load environment variables from .env file at ${configFile}`,
-                    err instanceof Error ? err.message : String(err),
-                )
-            }
-        } else if (PlatformTools.fileExist(this.baseDirectory + "/.env")) {
-            try {
-                PlatformTools.dotenv(this.baseDirectory + "/.env")
-            } catch (err) {
-                PlatformTools.logWarn(
-                    `Warning: Could not load environment variables from .env file at ${this.baseDirectory + "/.env"}`,
-                    err instanceof Error ? err.message : String(err),
-                )
-            }
-        }
-
         // try to find connection options from any of available sources of configuration
         if (
-            PlatformTools.getEnvVariable("TYPEORM_CONNECTION") ||
-            PlatformTools.getEnvVariable("TYPEORM_URL")
-        ) {
-            connectionOptions = new ConnectionOptionsEnvReader().read()
-        } else if (
             foundFileFormat === "js" ||
             foundFileFormat === "mjs" ||
             foundFileFormat === "cjs" ||
@@ -203,6 +169,7 @@ export class ConnectionOptionsReader {
 
     /**
      * Normalize connection options.
+     * @param connectionOptions
      */
     protected normalizeConnectionOptions(
         connectionOptions: DataSourceOptions | DataSourceOptions[],
@@ -254,10 +221,7 @@ export class ConnectionOptionsReader {
             }
 
             // make database path file in sqlite relative to package.json
-            if (
-                options.type === "sqlite" ||
-                options.type === "better-sqlite3"
-            ) {
+            if (options.type === "better-sqlite3") {
                 if (
                     typeof options.database === "string" &&
                     !isAbsolute(options.database) &&

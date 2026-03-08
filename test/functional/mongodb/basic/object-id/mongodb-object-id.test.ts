@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,21 +10,20 @@ import { PostWithUnderscoreId } from "./entity/PostWithUnderscoreId"
 import { expect } from "chai"
 
 describe("mongodb > object id columns", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Post, PostWithUnderscoreId],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, PostWithUnderscoreId],
+            enabledDrivers: ["mongodb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist ObjectIdColumn property as _id to DB", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postMongoRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postMongoRepository = dataSource.getMongoRepository(Post)
 
                 // save a post
                 const post = new Post()
@@ -41,8 +40,8 @@ describe("mongodb > object id columns", () => {
 
     it("should map _id to ObjectIdColumn property and remove BD _id property", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postMongoRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postMongoRepository = dataSource.getMongoRepository(Post)
 
                 // save a post
                 const post = new Post()
@@ -56,9 +55,9 @@ describe("mongodb > object id columns", () => {
 
     it("should save and load properly if objectId property has name _id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const postMongoRepository =
-                    connection.getMongoRepository(PostWithUnderscoreId)
+                    dataSource.getMongoRepository(PostWithUnderscoreId)
 
                 // save a post
                 const post = new PostWithUnderscoreId()
@@ -76,8 +75,8 @@ describe("mongodb > object id columns", () => {
 
     it("should not persist entity ObjectIdColumn property in DB on update by save", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postMongoRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postMongoRepository = dataSource.getMongoRepository(Post)
 
                 // save a post
                 const post = new Post()

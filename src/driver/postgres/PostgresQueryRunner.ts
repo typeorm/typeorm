@@ -1,13 +1,13 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ReadStream } from "../../platform/PlatformTools"
+import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
@@ -23,11 +23,11 @@ import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
 import { DriverUtils } from "../DriverUtils"
 import { Query } from "../Query"
-import { ColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { PostgresDriver } from "./PostgresDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { PostgresDriver } from "./PostgresDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -628,16 +628,13 @@ export class PostgresQueryRunner
         if (table.comment) {
             upQueries.push(
                 new Query(
-                    "COMMENT ON TABLE " +
-                        this.escapePath(table) +
-                        " IS '" +
-                        table.comment +
-                        "'",
+                    `COMMENT ON TABLE ${this.escapePath(table)}` +
+                        ` IS ${this.escapeComment(table.comment)}`,
                 ),
             )
             downQueries.push(
                 new Query(
-                    "COMMENT ON TABLE " + this.escapePath(table) + " IS NULL",
+                    `COMMENT ON TABLE ${this.escapePath(table)}` + ` IS NULL`,
                 ),
             )
         }
@@ -2730,7 +2727,9 @@ export class PostgresQueryRunner
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
         const pkName = primaryColumns[0]?.primaryKeyConstraintName
             ? primaryColumns[0].primaryKeyConstraintName
@@ -3275,9 +3274,17 @@ export class PostgresQueryRunner
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      * @param tableName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`)
+    async clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        const cascade = options?.cascade ? " CASCADE" : ""
+        await this.query(
+            `TRUNCATE TABLE ${this.escapePath(tableName)}${cascade}`,
+        )
     }
 
     /**
@@ -3309,9 +3316,9 @@ export class PostgresQueryRunner
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`
             const dropViewQueries: ObjectLiteral[] =
                 await this.query(selectViewDropsQuery)
-            await Promise.all(
-                dropViewQueries.map((q) => this.query(q["query"])),
-            )
+            for (const q of dropViewQueries) {
+                await this.query(q["query"])
+            }
 
             // drop materialized views
             // Note: materialized views introduced in Postgres 9.3
@@ -3322,9 +3329,9 @@ export class PostgresQueryRunner
                 const dropMatViewQueries: ObjectLiteral[] = await this.query(
                     selectMatViewDropsQuery,
                 )
-                await Promise.all(
-                    dropMatViewQueries.map((q) => this.query(q["query"])),
-                )
+                for (const q of dropMatViewQueries) {
+                    await this.query(q["query"])
+                }
             }
 
             // ignore spatial_ref_sys; it's a special table supporting PostGIS
@@ -3335,9 +3342,9 @@ export class PostgresQueryRunner
             const dropTableQueries: ObjectLiteral[] = await this.query(
                 selectTableDropsQuery,
             )
-            await Promise.all(
-                dropTableQueries.map((q) => this.query(q["query"])),
-            )
+            for (const q of dropTableQueries) {
+                await this.query(q["query"])
+            }
 
             // drop enum types
             await this.dropEnumTypes(schemaNamesString)
@@ -3606,17 +3613,10 @@ export class PostgresQueryRunner
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`
 
-        const [
-            dbColumns,
-            dbConstraints,
-            dbIndices,
-            dbForeignKeys,
-        ]: ObjectLiteral[][] = await Promise.all([
-            this.query(columnsSql),
-            this.query(constraintsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql),
-        ])
+        const dbColumns: ObjectLiteral[] = await this.query(columnsSql)
+        const dbConstraints: ObjectLiteral[] = await this.query(constraintsSql)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
+        const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
 
         // create tables for loaded tables
         return Promise.all(
@@ -4360,12 +4360,11 @@ export class PostgresQueryRunner
 
         table.columns
             .filter((it) => it.comment)
-            .forEach(
-                (it) =>
-                    (sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${
-                        it.name
-                    }" IS ${this.escapeComment(it.comment)}`),
-            )
+            .forEach((it) => {
+                sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${
+                    it.name
+                }" IS ${this.escapeComment(it.comment)}`
+            })
 
         return new Query(sql)
     }
@@ -4479,7 +4478,9 @@ export class PostgresQueryRunner
             `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
             `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`
         const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery)
-        await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+        for (const q of dropQueries) {
+            await this.query(q["query"])
+        }
     }
 
     /**
@@ -5051,26 +5052,27 @@ export class PostgresQueryRunner
             ? tableOrName
             : await this.getCachedTable(tableOrName)
 
-        newComment = this.escapeComment(newComment)
-        const comment = this.escapeComment(table.comment)
+        const escapedNewComment = this.escapeComment(newComment)
+        const escapedComment = this.escapeComment(table.comment)
 
-        if (newComment === comment) {
+        if (escapedNewComment === escapedComment) {
             return
         }
 
         const newTable = table.clone()
+        newTable.comment = newComment
 
         upQueries.push(
             new Query(
                 `COMMENT ON TABLE ${this.escapePath(
                     newTable,
-                )} IS ${newComment}`,
+                )} IS ${escapedNewComment}`,
             ),
         )
 
         downQueries.push(
             new Query(
-                `COMMENT ON TABLE ${this.escapePath(table)} IS ${comment}`,
+                `COMMENT ON TABLE ${this.escapePath(table)} IS ${escapedComment}`,
             ),
         )
 

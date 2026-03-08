@@ -4,7 +4,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, SelectQueryBuilder } from "../../../src"
+import type { DataSource } from "../../../src"
+import { SelectQueryBuilder } from "../../../src"
 import { expect } from "chai"
 import sinon from "sinon"
 import { Node } from "./entity/Node"
@@ -13,16 +14,15 @@ import { Rule } from "./entity/Rule"
 
 describe("github issues > #9673 TreeRepository not loading relations on findDescendants() method using QUERY method (relationLoadStrategy)", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                relationLoadStrategy: "query",
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            relationLoadStrategy: "query",
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

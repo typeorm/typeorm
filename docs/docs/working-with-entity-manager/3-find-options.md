@@ -216,14 +216,6 @@ or
     mode: "pessimistic_read" |
         "pessimistic_write" |
         "dirty_read" |
-        /*
-            "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
-            will be removed in a future version.
-
-            Use onLocked instead.
-         */
-        "pessimistic_partial_write" |
-        "pessimistic_write_or_fail" |
         "for_no_key_update" |
         "for_key_share",
 
@@ -243,7 +235,9 @@ userRepository.findOne({
 })
 ```
 
-See [lock modes](../query-builder/1-select-query-builder.md#lock-modes) for more information
+See [lock modes](../query-builder/1-select-query-builder.md#lock-modes) for more information.
+
+## Example
 
 Complete example of find options:
 
@@ -268,6 +262,10 @@ userRepository.find({
     order: {
         name: "ASC",
         id: "DESC",
+    },
+    lock: {
+        mode: "pessimistic_write",
+        onLocked: "nowait",
     },
     skip: 5,
     take: 10,

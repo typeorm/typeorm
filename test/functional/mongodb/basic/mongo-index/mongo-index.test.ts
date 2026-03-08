@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,21 +9,20 @@ import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("mongodb > indices", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Post],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            enabledDrivers: ["mongodb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert entity with indices correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save a post
                 const post = new Post()
