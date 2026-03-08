@@ -1644,6 +1644,37 @@ export class SqlServerQueryRunner
                 oldColumn.name = newColumn.name
             }
             if (oldColumn.type !== newColumn.type) {
+                // SQL Server refuses ALTER COLUMN when a unique constraint or index
+                // references the column. Drop them first, alter, then recreate.
+                const safeAlterColUnique = clonedTable.uniques.find(
+                    (unique) =>
+                        unique.columnNames.length === 1 &&
+                        unique.columnNames[0] === oldColumn.name,
+                )
+                if (safeAlterColUnique) {
+                    upQueries.push(
+                        this.dropUniqueConstraintSql(table, safeAlterColUnique),
+                    )
+                    downQueries.push(
+                        this.createUniqueConstraintSql(
+                            table,
+                            safeAlterColUnique,
+                        ),
+                    )
+                }
+
+                const safeAlterColIndex = clonedTable.indices.find(
+                    (index) =>
+                        index.columnNames.length === 1 &&
+                        index.columnNames[0] === oldColumn.name,
+                )
+                if (safeAlterColIndex) {
+                    upQueries.push(this.dropIndexSql(table, safeAlterColIndex))
+                    downQueries.push(
+                        this.createIndexSql(table, safeAlterColIndex),
+                    )
+                }
+
                 await handleSafeAlterSqlServer({
                     table,
                     clonedTable,
@@ -1758,6 +1789,27 @@ export class SqlServerQueryRunner
                     // optional: if you prefer quoted identifiers different from [brackets],
                     // quoteIdent: (i) => `"${i.replace(/"/g, '""')}"`,
                 })
+
+                if (safeAlterColIndex) {
+                    upQueries.push(
+                        this.createIndexSql(table, safeAlterColIndex),
+                    )
+                    downQueries.push(
+                        this.dropIndexSql(table, safeAlterColIndex),
+                    )
+                }
+
+                if (safeAlterColUnique) {
+                    upQueries.push(
+                        this.createUniqueConstraintSql(
+                            table,
+                            safeAlterColUnique,
+                        ),
+                    )
+                    downQueries.push(
+                        this.dropUniqueConstraintSql(table, safeAlterColUnique),
+                    )
+                }
             } else if (
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
@@ -1777,6 +1829,32 @@ export class SqlServerQueryRunner
             if (
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
+                // SQL Server refuses ALTER COLUMN when a unique constraint or index
+                // references the column. Drop them first, alter, then recreate.
+                const columnUnique = clonedTable.uniques.find(
+                    (unique) =>
+                        unique.columnNames.length === 1 &&
+                        unique.columnNames[0] === oldColumn.name,
+                )
+                if (columnUnique) {
+                    upQueries.push(
+                        this.dropUniqueConstraintSql(table, columnUnique),
+                    )
+                    downQueries.push(
+                        this.createUniqueConstraintSql(table, columnUnique),
+                    )
+                }
+
+                const columnIndex = clonedTable.indices.find(
+                    (index) =>
+                        index.columnNames.length === 1 &&
+                        index.columnNames[0] === oldColumn.name,
+                )
+                if (columnIndex) {
+                    upQueries.push(this.dropIndexSql(table, columnIndex))
+                    downQueries.push(this.createIndexSql(table, columnIndex))
+                }
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1803,6 +1881,20 @@ export class SqlServerQueryRunner
                         )}`,
                     ),
                 )
+
+                if (columnIndex) {
+                    upQueries.push(this.createIndexSql(table, columnIndex))
+                    downQueries.push(this.dropIndexSql(table, columnIndex))
+                }
+
+                if (columnUnique) {
+                    upQueries.push(
+                        this.createUniqueConstraintSql(table, columnUnique),
+                    )
+                    downQueries.push(
+                        this.dropUniqueConstraintSql(table, columnUnique),
+                    )
+                }
             }
 
             if (this.isEnumChanged(oldColumn, newColumn)) {

@@ -1376,6 +1376,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // Your widening rule function from earlier
                     isSafeAlter,
                 })
+                // Update clonedTable so replaceCachedTable reflects the new type,
+                // preventing a stale cache that would cause the next synchronize()
+                // to falsely detect the column as removed.
+                const clonedCol = clonedTable.columns.find(
+                    (c) => c.name === oldColumn.name,
+                )
+                if (clonedCol) {
+                    clonedCol.type = newColumn.type
+                    clonedCol.length = newColumn.length
+                }
             } else if (
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length &&
@@ -2523,7 +2533,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return `("C"."OWNER" = '${OWNER}' AND "C"."TABLE_NAME" = '${TABLE_NAME}')`
             })
             .join(" OR ")
-        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition})`
+        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition}) AND NOT ("C"."HIDDEN_COLUMN" = 'YES' AND "C"."VIRTUAL_COLUMN" = 'NO')`
 
         const indicesSql =
             `SELECT "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS", ` +

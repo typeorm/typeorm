@@ -260,6 +260,11 @@ describe("schema builder > change column", () => {
                         await connection.synchronize()
                     } catch (e) {
                         err = e
+                        if (err)
+                            console.log(
+                                "FLOAT->DOUBLE error:",
+                                String((err as any)?.message ?? err),
+                            )
                     } finally {
                         removeRecorder()
                     }
