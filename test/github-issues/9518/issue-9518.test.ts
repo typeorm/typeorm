@@ -10,13 +10,12 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #9518 Can't pass ObjectLiteral in MongoRepository.find where condition due to typings", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            enabledDrivers: ["mongodb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

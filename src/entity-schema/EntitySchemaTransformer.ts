@@ -112,7 +112,6 @@ export class EntitySchemaTransformer {
                         regularColumn.primaryKeyConstraintName,
                     length: regularColumn.length,
                     nullable: regularColumn.nullable,
-                    readonly: regularColumn.readonly,
                     update: regularColumn.update,
                     select: regularColumn.select,
                     insert: regularColumn.insert,

@@ -14,16 +14,15 @@ import { Rule } from "./entity/Rule"
 
 describe("github issues > #9673 TreeRepository not loading relations on findDescendants() method using QUERY method (relationLoadStrategy)", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                relationLoadStrategy: "query",
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            relationLoadStrategy: "query",
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

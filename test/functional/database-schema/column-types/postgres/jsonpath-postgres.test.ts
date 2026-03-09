@@ -46,8 +46,8 @@ describe("database schema > column types > postgres > jsonpath", () => {
     ].forEach(([path, canonical]) => {
         it(`should insert and retrieve jsonpath values as strings for: ${path}`, () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repository = connection.getRepository(JsonPathExample)
+                dataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(JsonPathExample)
                     const example = new JsonPathExample()
 
                     example.path = path

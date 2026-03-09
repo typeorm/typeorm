@@ -10,16 +10,15 @@ import { expect } from "chai"
 
 describe("github issues > #10843 TreeRepository does not update mpath if parentId was soft-deleted", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                relationLoadStrategy: "query",
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            relationLoadStrategy: "query",
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

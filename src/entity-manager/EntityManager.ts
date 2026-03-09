@@ -1,7 +1,6 @@
 import type { DataSource } from "../data-source/DataSource"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
 import type { EntityTarget } from "../common/EntityTarget"
-import type { ObjectType } from "../common/ObjectType"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
 import { QueryRunnerProviderAlreadyReleasedError } from "../error/QueryRunnerProviderAlreadyReleasedError"
 import type { FindOneOptions } from "../find-options/FindOneOptions"
@@ -15,13 +14,7 @@ import { Repository } from "../repository/Repository"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import { PlainObjectToNewEntityTransformer } from "../query-builder/transformer/PlainObjectToNewEntityTransformer"
 import { PlainObjectToDatabaseEntityTransformer } from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer"
-import {
-    CustomRepositoryCannotInheritRepositoryError,
-    CustomRepositoryNotFoundError,
-    TreeRepositoryNotSupportedError,
-    TypeORMError,
-} from "../error"
-import { AbstractRepository } from "../repository/AbstractRepository"
+import { TreeRepositoryNotSupportedError, TypeORMError } from "../error"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
@@ -33,7 +26,6 @@ import type { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { getMetadataArgsStorage } from "../globals"
 import type { UpsertOptions } from "../repository/UpsertOptions"
 import type { UpdateOptions } from "../repository/UpdateOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -913,10 +905,14 @@ export class EntityManager {
 
             return qb.execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
 
             if (options?.returning !== undefined) {
                 qb.returning(options.returning)
@@ -988,10 +984,14 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
@@ -1048,10 +1048,14 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
@@ -1094,10 +1098,14 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
@@ -1685,50 +1693,6 @@ export class EntityManager {
                 ...otherRepositoryProperties,
             },
         )
-    }
-
-    /**
-     * Gets custom entity repository marked with `@EntityRepository` decorator.
-     * @param customRepository
-     * @deprecated use Repository.extend to create custom repositories
-     */
-    getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        const entityRepositoryMetadataArgs =
-            getMetadataArgsStorage().entityRepositories.find((repository) => {
-                return (
-                    repository.target ===
-                    (typeof customRepository === "function"
-                        ? customRepository
-                        : (customRepository as any).constructor)
-                )
-            })
-        if (!entityRepositoryMetadataArgs)
-            throw new CustomRepositoryNotFoundError(customRepository)
-
-        const entityMetadata = entityRepositoryMetadataArgs.entity
-            ? this.connection.getMetadata(entityRepositoryMetadataArgs.entity)
-            : undefined
-        const entityRepositoryInstance =
-            new (entityRepositoryMetadataArgs.target as any)(
-                this,
-                entityMetadata,
-            )
-
-        // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-        // however we need these properties for internal work of the class
-        if (entityRepositoryInstance instanceof AbstractRepository) {
-            if (!(entityRepositoryInstance as any)["manager"])
-                (entityRepositoryInstance as any)["manager"] = this
-        } else {
-            if (!entityMetadata)
-                throw new CustomRepositoryCannotInheritRepositoryError(
-                    customRepository,
-                )
-            ;(entityRepositoryInstance as any)["manager"] = this
-            ;(entityRepositoryInstance as any)["metadata"] = entityMetadata
-        }
-
-        return entityRepositoryInstance
     }
 
     /**

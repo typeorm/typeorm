@@ -12,26 +12,25 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > order-by", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should be always in right order(default order)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.myOrder = 1
 
                 const post2 = new Post()
                 post2.myOrder = 2
-                await connection.manager.save([post1, post2])
+                await dataSource.manager.save([post1, post2])
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .getOne()
 
@@ -41,15 +40,15 @@ describe("query builder > order-by", () => {
 
     it("should be always in right order(custom order)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.myOrder = 1
 
                 const post2 = new Post()
                 post2.myOrder = 2
-                await connection.manager.save([post1, post2])
+                await dataSource.manager.save([post1, post2])
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder", "ASC")
                     .getOne()
@@ -60,8 +59,8 @@ describe("query builder > order-by", () => {
 
     it("should be always in right order(custom order)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                if (!(connection.driver.options.type === "postgres"))
+            dataSources.map(async (dataSource) => {
+                if (!(dataSource.driver.options.type === "postgres"))
                     // NULLS FIRST / LAST only supported by postgres
                     return
 
@@ -70,16 +69,16 @@ describe("query builder > order-by", () => {
 
                 const post2 = new Post()
                 post2.myOrder = 2
-                await connection.manager.save([post1, post2])
+                await dataSource.manager.save([post1, post2])
 
-                const loadedPost1 = await connection.manager
+                const loadedPost1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder", "ASC", "NULLS FIRST")
                     .getOne()
 
                 expect(loadedPost1!.myOrder).to.be.equal(1)
 
-                const loadedPost2 = await connection.manager
+                const loadedPost2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder", "ASC", "NULLS LAST")
                     .getOne()
@@ -90,8 +89,8 @@ describe("query builder > order-by", () => {
 
     it("should be always in right order(custom order)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                if (!DriverUtils.isMySQLFamily(connection.driver))
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver))
                     // IS NULL / IS NOT NULL only supported by mysql
                     return
 
@@ -100,16 +99,16 @@ describe("query builder > order-by", () => {
 
                 const post2 = new Post()
                 post2.myOrder = 2
-                await connection.manager.save([post1, post2])
+                await dataSource.manager.save([post1, post2])
 
-                const loadedPost1 = await connection.manager
+                const loadedPost1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder IS NULL", "ASC")
                     .getOne()
 
                 expect(loadedPost1!.myOrder).to.be.equal(1)
 
-                const loadedPost2 = await connection.manager
+                const loadedPost2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder IS NOT NULL", "ASC")
                     .getOne()
@@ -120,8 +119,8 @@ describe("query builder > order-by", () => {
 
     it("should be able to order by sql statement", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                if (!DriverUtils.isMySQLFamily(connection.driver)) return // DIV statement does not supported by all drivers
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) return // DIV statement does not supported by all drivers
 
                 const post1 = new Post()
                 post1.myOrder = 1
@@ -132,9 +131,9 @@ describe("query builder > order-by", () => {
                 post2.myOrder = 2
                 post2.num1 = 10
                 post2.num2 = 2
-                await connection.manager.save([post1, post2])
+                await dataSource.manager.save([post1, post2])
 
-                const loadedPost1 = await connection.manager
+                const loadedPost1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.num1 DIV post.num2")
                     .getOne()
@@ -142,7 +141,7 @@ describe("query builder > order-by", () => {
                 expect(loadedPost1!.num1).to.be.equal(10)
                 expect(loadedPost1!.num2).to.be.equal(5)
 
-                const loadedPost2 = await connection.manager
+                const loadedPost2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.num1 DIV post.num2", "DESC")
                     .getOne()
@@ -154,9 +153,9 @@ describe("query builder > order-by", () => {
 
     it("should order by joined entity column using database column name without pagination", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const commentRepository = connection.getRepository(Comment)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const commentRepository = dataSource.getRepository(Comment)
 
                 for (let i = 0; i < 5; i++) {
                     const post = new Post()
@@ -183,9 +182,9 @@ describe("query builder > order-by", () => {
 
     it("should order by joined entity column using database column name with pagination", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const commentRepository = connection.getRepository(Comment)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const commentRepository = dataSource.getRepository(Comment)
 
                 for (let i = 0; i < 20; i++) {
                     const post = new Post()
@@ -214,9 +213,9 @@ describe("query builder > order-by", () => {
 
     it("should order by joined entity column using property name without pagination", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const commentRepository = connection.getRepository(Comment)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const commentRepository = dataSource.getRepository(Comment)
 
                 for (let i = 0; i < 5; i++) {
                     const post = new Post()
@@ -243,9 +242,9 @@ describe("query builder > order-by", () => {
 
     it("should order by joined entity column using property name with pagination", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const commentRepository = connection.getRepository(Comment)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const commentRepository = dataSource.getRepository(Comment)
 
                 for (let i = 0; i < 20; i++) {
                     const post = new Post()
@@ -273,14 +272,14 @@ describe("query builder > order-by", () => {
         ))
     it("should properly escape column names or aliases in order by", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 for (let i = 0; i < 5; i++) {
                     const post = new Post()
                     post.myOrder = i
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
                 }
 
-                const query = connection.manager
+                const query = dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .select("post.id", "postId")
                     .addSelect("COUNT(*)", "count")
@@ -288,7 +287,7 @@ describe("query builder > order-by", () => {
                     .orderBy("count", "DESC")
 
                 expect(query.getSql()).to.contain(
-                    "ORDER BY " + connection.driver.escape("count") + " DESC",
+                    "ORDER BY " + dataSource.driver.escape("count") + " DESC",
                 )
                 const result = await query.getRawMany()
                 expect(result.length).to.be.equal(5)

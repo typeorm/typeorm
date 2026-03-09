@@ -16,19 +16,18 @@ import { expect } from "chai"
 
 describe("columns > value-transformer functionality", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, PhoneBook, User, Category, View],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, PhoneBook, User, Category, View],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should marshal data using the provided value-transformer", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // create and save a post first
                 const post = new Post()
@@ -48,7 +47,7 @@ describe("columns > value-transformer functionality", () => {
                 expect(loadedPost!.title).to.be.equal("About columns1")
                 expect(loadedPost!.tags).to.deep.eq(["very", "simple"])
 
-                const phoneBookRepository = connection.getRepository(PhoneBook)
+                const phoneBookRepository = dataSource.getRepository(PhoneBook)
                 const phoneBook = new PhoneBook()
                 phoneBook.name = "George"
                 phoneBook.phones = new Map()
@@ -68,9 +67,9 @@ describe("columns > value-transformer functionality", () => {
 
     it("should apply three transformers in the right order", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const userRepository = connection.getRepository(User)
-                const email = `${connection.name}@JOHN.doe`
+            dataSources.map(async (dataSource) => {
+                const userRepository = dataSource.getRepository(User)
+                const email = `${dataSource.options.type}@JOHN.doe`
                 const user = new User()
                 user.email = email
 
@@ -83,9 +82,9 @@ describe("columns > value-transformer functionality", () => {
 
     it("should apply all the transformers", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const categoryRepository = connection.getRepository(Category)
-                const description = `  ${connection.name}-DESCRIPTION   `
+            dataSources.map(async (dataSource) => {
+                const categoryRepository = dataSource.getRepository(Category)
+                const description = `  ${dataSource.options.type}-DESCRIPTION   `
                 const category = new Category()
                 category.description = description
 
@@ -102,9 +101,9 @@ describe("columns > value-transformer functionality", () => {
 
     it("should apply no transformer", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const viewRepository = connection.getRepository(View)
-                const title = `${connection.name}`
+            dataSources.map(async (dataSource) => {
+                const viewRepository = dataSource.getRepository(View)
+                const title = `${dataSource.options.type}`
                 const view = new View()
                 view.title = title
 
@@ -117,8 +116,8 @@ describe("columns > value-transformer functionality", () => {
 
     it("should marshal data using a complex value-transformer", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // create and save a post first
                 const post = new Post()

@@ -24,15 +24,14 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
         const res = await queryRunner.query(query)
         return res.length ? res[0]["column_default"] : null
     }
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-                entities: [User, Document, Album, Photo],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [User, Document, Album, Photo],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should add DEFAULT value when @PrimaryGeneratedColumn('increment') is added", () =>

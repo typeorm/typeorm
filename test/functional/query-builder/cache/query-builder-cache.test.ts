@@ -11,46 +11,45 @@ import { User } from "./entity/User"
 
 describe("query builder > cache", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                cache: true,
-                // cache: {
-                //     type: "redis",
-                //     options: {
-                //         host: "localhost",
-                //     }
-                // }
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            cache: true,
+            // cache: {
+            //     type: "redis",
+            //     options: {
+            //         host: "localhost",
+            //     }
+            // }
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should cache results properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"
                 user1.isAdmin = false
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.firstName = "Alex"
                 user2.lastName = "Messer"
                 user2.isAdmin = false
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.firstName = "Umed"
                 user3.lastName = "Pleerock"
                 user3.isAdmin = true
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
                 // select for the first time with caching enabled
-                const users1 = await connection
+                const users1 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .cache(true)
@@ -62,17 +61,17 @@ describe("query builder > cache", () => {
                 user4.firstName = "Bakhrom"
                 user4.lastName = "Brochik"
                 user4.isAdmin = true
-                await connection.manager.save(user4)
+                await dataSource.manager.save(user4)
 
                 // without cache it must return really how many there entities are
-                const users2 = await connection
+                const users2 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .getMany()
                 expect(users2.length).to.be.equal(2)
 
                 // but with cache enabled it must not return newly inserted entity since cache is not expired yet
-                const users3 = await connection
+                const users3 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .cache(true)
@@ -83,7 +82,7 @@ describe("query builder > cache", () => {
                 await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
-                const users4 = await connection
+                const users4 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .cache(true)
@@ -94,28 +93,28 @@ describe("query builder > cache", () => {
 
     it("should cache results with pagination enabled properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"
                 user1.isAdmin = false
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.firstName = "Alex"
                 user2.lastName = "Messer"
                 user2.isAdmin = false
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.firstName = "Umed"
                 user3.lastName = "Pleerock"
                 user3.isAdmin = true
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
                 // select for the first time with caching enabled
-                const users1 = await connection
+                const users1 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: false })
                     .skip(1)
@@ -130,10 +129,10 @@ describe("query builder > cache", () => {
                 user4.firstName = "Bakhrom"
                 user4.lastName = "Bro"
                 user4.isAdmin = false
-                await connection.manager.save(user4)
+                await dataSource.manager.save(user4)
 
                 // without cache it must return really how many there entities are
-                const users2 = await connection
+                const users2 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: false })
                     .skip(1)
@@ -143,7 +142,7 @@ describe("query builder > cache", () => {
                 expect(users2.length).to.be.equal(2)
 
                 // but with cache enabled it must not return newly inserted entity since cache is not expired yet
-                const users3 = await connection
+                const users3 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: false })
                     .skip(1)
@@ -157,7 +156,7 @@ describe("query builder > cache", () => {
                 await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
-                const users4 = await connection
+                const users4 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: false })
                     .skip(1)
@@ -171,28 +170,28 @@ describe("query builder > cache", () => {
 
     it("should cache results with custom id and duration supplied", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"
                 user1.isAdmin = false
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.firstName = "Alex"
                 user2.lastName = "Messer"
                 user2.isAdmin = false
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.firstName = "Umed"
                 user3.lastName = "Pleerock"
                 user3.isAdmin = true
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
                 // select for the first time with caching enabled
-                const users1 = await connection
+                const users1 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: false })
                     .skip(1)
@@ -207,10 +206,10 @@ describe("query builder > cache", () => {
                 user4.firstName = "Bakhrom"
                 user4.lastName = "Bro"
                 user4.isAdmin = false
-                await connection.manager.save(user4)
+                await dataSource.manager.save(user4)
 
                 // without cache it must return really how many there entities are
-                const users2 = await connection
+                const users2 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: false })
                     .skip(1)
@@ -223,7 +222,7 @@ describe("query builder > cache", () => {
                 await scheduler.wait(1010)
 
                 // but with cache enabled it must not return newly inserted entity since cache is not expired yet
-                const users3 = await connection
+                const users3 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: false })
                     .skip(1)
@@ -237,7 +236,7 @@ describe("query builder > cache", () => {
                 await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
-                const users4 = await connection
+                const users4 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: false })
                     .skip(1)
@@ -251,28 +250,28 @@ describe("query builder > cache", () => {
 
     it("should cache results with `true` provided", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"
                 user1.isAdmin = false
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.firstName = "Alex"
                 user2.lastName = "Messer"
                 user2.isAdmin = false
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.firstName = "Umed"
                 user3.lastName = "Pleerock"
                 user3.isAdmin = true
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
                 // select for the first time with caching enabled
-                const users1 = await connection
+                const users1 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .cache(true)
@@ -284,17 +283,17 @@ describe("query builder > cache", () => {
                 user4.firstName = "Bakhrom"
                 user4.lastName = "Brochik"
                 user4.isAdmin = true
-                await connection.manager.save(user4)
+                await dataSource.manager.save(user4)
 
                 // without cache it must return really how many there entities are
-                const users2 = await connection
+                const users2 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .getCount()
                 expect(users2).to.be.equal(2)
 
                 // but with cache enabled it must not return newly inserted entity since cache is not expired yet
-                const users3 = await connection
+                const users3 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .cache(true)
@@ -305,7 +304,7 @@ describe("query builder > cache", () => {
                 await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
-                const users4 = await connection
+                const users4 = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .cache(true)

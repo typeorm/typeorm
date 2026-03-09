@@ -9,12 +9,11 @@ import { expect } from "chai"
 
 describe("entity-schema > embedded - class-instance", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [UserEntitySchema],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [UserEntitySchema],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
@@ -22,8 +21,8 @@ describe("entity-schema > embedded - class-instance", () => {
 
     it("should create an table", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 await queryRunner.release()
 
@@ -33,8 +32,8 @@ describe("entity-schema > embedded - class-instance", () => {
 
     it("should not create table with embedded", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("name")
                 await queryRunner.release()
 
@@ -44,8 +43,8 @@ describe("entity-schema > embedded - class-instance", () => {
 
     it("should create embedded column name with prefix", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 await queryRunner.release()
 
@@ -56,8 +55,8 @@ describe("entity-schema > embedded - class-instance", () => {
 
     it("should create index for embedded", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 await queryRunner.release()
 

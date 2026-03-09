@@ -12,14 +12,13 @@ import { User } from "./entity/User"
 
 describe("github issues > #5684 eager relation skips children relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User, Company],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User, Company],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

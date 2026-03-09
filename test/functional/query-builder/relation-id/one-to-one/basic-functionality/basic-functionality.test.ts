@@ -11,37 +11,36 @@ import { Post } from "./entity/Post"
 
 describe("query builder > relation-id > one-to-one > basic-functionality", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should load ids when loadRelationIdAndMap used with OneToOne owner side relation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category = new Category()
                 category.name = "kids"
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 const post = new Post()
                 post.title = "about kids"
                 post.category = category
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 const category2 = new Category()
                 category2.name = "cars"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const post2 = new Post()
                 post2.title = "about cars"
                 post2.category = category2
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap("post.categoryId", "post.category")
                     .addOrderBy("post.id")
@@ -52,7 +51,7 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
                 expect(loadedPosts![1].categoryId).to.not.be.undefined
                 expect(loadedPosts![1].categoryId).to.be.equal(2)
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap("post.categoryId", "post.category")
                     .where("post.id = :id", { id: post.id })
@@ -65,26 +64,26 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
 
     it("should load id when loadRelationIdAndMap used with OneToOne inverse side relation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category = new Category()
                 category.name = "kids"
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 const post = new Post()
                 post.title = "about kids"
                 post.category2 = category
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 const category2 = new Category()
                 category2.name = "cars"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const post2 = new Post()
                 post2.title = "about cars"
                 post2.category2 = category2
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedCategories = await connection.manager
+                const loadedCategories = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationIdAndMap("category.postId", "category.post")
                     .addOrderBy("category.id")
@@ -95,7 +94,7 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
                 expect(loadedCategories![1].postId).to.not.be.undefined
                 expect(loadedCategories![1].postId).to.be.equal(2)
 
-                const loadedCategory = await connection.manager
+                const loadedCategory = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationIdAndMap("category.postId", "category.post")
                     .where("category.id = 1")

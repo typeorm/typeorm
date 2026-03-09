@@ -12,7 +12,6 @@ import type { EntitySubscriberMetadataArgs } from "./EntitySubscriberMetadataArg
 import type { RelationIdMetadataArgs } from "./RelationIdMetadataArgs"
 import type { InheritanceMetadataArgs } from "./InheritanceMetadataArgs"
 import type { DiscriminatorValueMetadataArgs } from "./DiscriminatorValueMetadataArgs"
-import type { EntityRepositoryMetadataArgs } from "./EntityRepositoryMetadataArgs"
 import type { TransactionEntityMetadataArgs } from "./TransactionEntityMetadataArgs"
 import type { TransactionRepositoryMetadataArgs } from "./TransactionRepositoryMetadataArgs"
 import { MetadataUtils } from "../metadata-builder/MetadataUtils"
@@ -35,7 +34,6 @@ export class MetadataArgsStorage {
 
     readonly tables: TableMetadataArgs[] = []
     readonly trees: TreeMetadataArgs[] = []
-    readonly entityRepositories: EntityRepositoryMetadataArgs[] = []
     readonly transactionEntityManagers: TransactionEntityMetadataArgs[] = []
     readonly transactionRepositories: TransactionRepositoryMetadataArgs[] = []
     readonly namingStrategies: NamingStrategyMetadataArgs[] = []

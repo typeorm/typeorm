@@ -12,14 +12,13 @@ import { Site } from "./entity/Site"
 describe("github issues > #7974 Adding relations option to findTrees()", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Category, Site],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category, Site],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(async () => {
         await reloadTestingDatabases(dataSources)

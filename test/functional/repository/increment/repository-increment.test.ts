@@ -13,18 +13,17 @@ import { UserWithEmbededEntity } from "./entity/UserWithEmbededEntity"
 describe("repository > increment method", () => {
     describe("basic", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [Post],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Post],
+            })
+        })
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
         it("should increment value", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -34,15 +33,15 @@ describe("repository > increment method", () => {
                     post2.id = 2
                     post2.title = "post #2"
                     post2.counter = 1
-                    await connection.manager.save([post1, post2])
+                    await dataSource.manager.save([post1, post2])
 
                     // increment counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(Post)
                         .increment({ id: 1 }, "counter", 1)
 
                     // increment counter of post 2
-                    await connection.manager.increment(
+                    await dataSource.manager.increment(
                         Post,
                         { id: 2 },
                         "counter",
@@ -50,14 +49,14 @@ describe("repository > increment method", () => {
                     )
 
                     // load and check counter
-                    const loadedPost1 = await connection.manager.findOne(Post, {
+                    const loadedPost1 = await dataSource.manager.findOne(Post, {
                         where: {
                             id: 1,
                         },
                     })
                     loadedPost1!.counter.should.be.equal(2)
 
-                    const loadedPost2 = await connection.manager.findOne(Post, {
+                    const loadedPost2 = await dataSource.manager.findOne(Post, {
                         where: {
                             id: 2,
                         },
@@ -68,7 +67,7 @@ describe("repository > increment method", () => {
 
         it("should accept string as input and increment value", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -78,15 +77,15 @@ describe("repository > increment method", () => {
                     post2.id = 2
                     post2.title = "post #2"
                     post2.counter = 1
-                    await connection.manager.save([post1, post2])
+                    await dataSource.manager.save([post1, post2])
 
                     // increment counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(Post)
                         .increment({ id: 1 }, "counter", "22")
 
                     // increment counter of post 2
-                    await connection.manager.increment(
+                    await dataSource.manager.increment(
                         Post,
                         { id: 2 },
                         "counter",
@@ -94,14 +93,14 @@ describe("repository > increment method", () => {
                     )
 
                     // load and check counter
-                    const loadedPost1 = await connection.manager.findOne(Post, {
+                    const loadedPost1 = await dataSource.manager.findOne(Post, {
                         where: {
                             id: 1,
                         },
                     })
                     loadedPost1!.counter.should.be.equal(23)
 
-                    const loadedPost2 = await connection.manager.findOne(Post, {
+                    const loadedPost2 = await dataSource.manager.findOne(Post, {
                         where: {
                             id: 2,
                         },
@@ -112,16 +111,16 @@ describe("repository > increment method", () => {
 
         it("should return UpdateResult", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
                     post1.title = "post #1"
                     post1.counter = 1
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     // increment counter of post 1
-                    const result = await connection
+                    const result = await dataSource
                         .getRepository(Post)
                         .increment({ id: 1 }, "counter", 22)
 
@@ -131,7 +130,7 @@ describe("repository > increment method", () => {
 
         it("should throw an error if column property path was not found", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -141,10 +140,10 @@ describe("repository > increment method", () => {
                     post2.id = 2
                     post2.title = "post #2"
                     post2.counter = 1
-                    await connection.manager.save([post1, post2])
+                    await dataSource.manager.save([post1, post2])
 
                     // increment counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(Post)
                         .increment({ id: 1 }, "unknownProperty", 1).should.be
                         .rejected
@@ -153,7 +152,7 @@ describe("repository > increment method", () => {
 
         it("should throw an error if input value is not number", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const post1 = new Post()
                     post1.id = 1
@@ -163,10 +162,10 @@ describe("repository > increment method", () => {
                     post2.id = 2
                     post2.title = "post #2"
                     post2.counter = 1
-                    await connection.manager.save([post1, post2])
+                    await dataSource.manager.save([post1, post2])
 
                     // increment counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(Post)
                         .increment({ id: 1 }, "counter", "12abc").should.be
                         .rejected
@@ -176,19 +175,18 @@ describe("repository > increment method", () => {
 
     describe("bigint", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [PostBigInt],
-                    enabledDrivers: ["mysql", "mariadb", "postgres", "sap"],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [PostBigInt],
+                enabledDrivers: ["mysql", "mariadb", "postgres", "sap"],
+            })
+        })
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
         it("should increment value", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // save few dummy posts
                     const postBigInt1 = new PostBigInt()
                     postBigInt1.id = 1
@@ -198,15 +196,15 @@ describe("repository > increment method", () => {
                     postBigInt2.id = 2
                     postBigInt2.title = "post #2"
                     postBigInt2.counter = "2"
-                    await connection.manager.save([postBigInt1, postBigInt2])
+                    await dataSource.manager.save([postBigInt1, postBigInt2])
 
                     // increment counter of post 1
-                    await connection
+                    await dataSource
                         .getRepository(PostBigInt)
                         .increment({ id: 1 }, "counter", "9000000000000000000")
 
                     // increment counter of post 2
-                    await connection.manager.increment(
+                    await dataSource.manager.increment(
                         PostBigInt,
                         { id: 2 },
                         "counter",
@@ -214,7 +212,7 @@ describe("repository > increment method", () => {
                     )
 
                     // load and check counter
-                    const loadedPost1 = await connection.manager.findOne(
+                    const loadedPost1 = await dataSource.manager.findOne(
                         PostBigInt,
                         {
                             where: {
@@ -224,7 +222,7 @@ describe("repository > increment method", () => {
                     )
                     loadedPost1!.counter.should.be.equal("9000000000000000001")
 
-                    const loadedPost2 = await connection.manager.findOne(
+                    const loadedPost2 = await dataSource.manager.findOne(
                         PostBigInt,
                         {
                             where: {
@@ -239,27 +237,26 @@ describe("repository > increment method", () => {
 
     describe("embeded entities", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [UserWithEmbededEntity],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [UserWithEmbededEntity],
+            })
+        })
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
         it("should increment value", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userWithEmbededEntity = new UserWithEmbededEntity()
                     userWithEmbededEntity.id = 1
-                    await connection.manager.save([userWithEmbededEntity])
+                    await dataSource.manager.save([userWithEmbededEntity])
 
-                    await connection
+                    await dataSource
                         .getRepository(UserWithEmbededEntity)
                         .increment({ id: 1 }, "friend.sent", 5)
 
-                    const loadedUser = await connection.manager.findOne(
+                    const loadedUser = await dataSource.manager.findOne(
                         UserWithEmbededEntity,
                         {
                             where: {

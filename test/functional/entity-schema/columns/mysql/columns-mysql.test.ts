@@ -9,20 +9,19 @@ import { PersonSchema } from "./entity/Person"
 
 describe("entity-schema > columns > mysql", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [PersonSchema],
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [PersonSchema],
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should create columns with different options", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("person")
                 await queryRunner.release()
 

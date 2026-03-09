@@ -11,21 +11,20 @@ import { User } from "./entity/User"
 
 describe("persistence > cascades > example 1", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should insert everything by cascades properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const photo = new Photo()
                 photo.id = 1
-                if (connection.driver.options.type === "spanner")
+                if (dataSource.driver.options.type === "spanner")
                     photo.name = "My photo"
 
                 const profile = new Profile()
@@ -37,9 +36,9 @@ describe("persistence > cascades > example 1", () => {
                 user.name = "Umed"
                 user.profile = profile
 
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
-                const loadedUser = await connection.manager
+                const loadedUser = await dataSource.manager
                     .createQueryBuilder(User, "user")
                     .leftJoinAndSelect("user.profile", "profile")
                     .leftJoinAndSelect("profile.photo", "profilePhoto")

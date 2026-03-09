@@ -208,9 +208,9 @@ export class JunctionEntityMetadataBuilder {
             ...junctionColumns,
             ...inverseJunctionColumns,
         ]
-        entityMetadata.ownColumns.forEach(
-            (column) => (column.relationMetadata = relation),
-        )
+        entityMetadata.ownColumns.forEach((column) => {
+            column.relationMetadata = relation
+        })
 
         // create junction table foreign keys
         // Note: UPDATE CASCADE clause is not supported in Oracle.

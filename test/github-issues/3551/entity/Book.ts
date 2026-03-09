@@ -1,4 +1,5 @@
-import { Entity, ObjectIdColumn, Column, ObjectId } from "../../../../src"
+import { ObjectId } from "mongodb"
+import { Column, Entity, ObjectIdColumn } from "../../../../src"
 
 export class Page {
     @Column()

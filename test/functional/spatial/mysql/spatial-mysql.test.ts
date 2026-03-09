@@ -26,17 +26,17 @@ describe("spatial > mysql", () => {
 
         it("should use GeomFromText", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     if (
                         DriverUtils.isReleaseVersionOrGreater(
-                            connection.driver,
+                            dataSource.driver,
                             "8.0",
                         )
                     ) {
                         return
                     }
 
-                    const queryBuilder = connection
+                    const queryBuilder = dataSource
                         .createQueryBuilder()
                         .insert()
                     queryBuilder
@@ -53,17 +53,17 @@ describe("spatial > mysql", () => {
 
         it("should provide SRID", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     if (
                         DriverUtils.isReleaseVersionOrGreater(
-                            connection.driver,
+                            dataSource.driver,
                             "8.0",
                         )
                     ) {
                         return
                     }
 
-                    const queryBuilder = connection
+                    const queryBuilder = dataSource
                         .createQueryBuilder()
                         .insert()
                     queryBuilder
@@ -79,17 +79,17 @@ describe("spatial > mysql", () => {
 
         it("should use AsText", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     if (
                         DriverUtils.isReleaseVersionOrGreater(
-                            connection.driver,
+                            dataSource.driver,
                             "8.0",
                         )
                     ) {
                         return
                     }
 
-                    const repository = connection.getRepository(LetterBox)
+                    const repository = dataSource.getRepository(LetterBox)
                     const queryBuilder = repository
                         .createQueryBuilder("letterBox")
                         .select(["letterBox"])
@@ -106,24 +106,23 @@ describe("spatial > mysql", () => {
     describe("when legacySpatialSupport: false", () => {
         let dataSources: DataSource[]
 
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [__dirname + "/entity/*{.js,.ts}"],
-                    enabledDrivers: ["mysql"],
-                    dropSchema: true,
-                    schemaCreate: true,
-                    driverSpecific: {
-                        legacySpatialSupport: false,
-                    },
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["mysql"],
+                dropSchema: true,
+                schemaCreate: true,
+                driverSpecific: {
+                    legacySpatialSupport: false,
+                },
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should use ST_GeomFromText", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryBuilder = connection
+                dataSources.map(async (dataSource) => {
+                    const queryBuilder = dataSource
                         .createQueryBuilder()
                         .insert()
                     queryBuilder
@@ -139,8 +138,8 @@ describe("spatial > mysql", () => {
 
         it("should provide SRID", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryBuilder = connection
+                dataSources.map(async (dataSource) => {
+                    const queryBuilder = dataSource
                         .createQueryBuilder()
                         .insert()
                     queryBuilder
@@ -156,8 +155,8 @@ describe("spatial > mysql", () => {
 
         it("should use ST_AsText", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repository = connection.getRepository(LetterBox)
+                dataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(LetterBox)
                     const queryBuilder = repository
                         .createQueryBuilder("letterBox")
                         .select(["letterBox"])
