@@ -122,6 +122,41 @@ const manager = dataSource.mongoManager
 const repository = dataSource.getMongoRepository(User)
 ```
 
+### Types
+
+The internal MongoDB types are no longer exported. You can import `ObjectId` from `mongodb` instead of `typeorm`.
+
+## MS SQL Server
+
+### `domain` connection option removed
+
+The deprecated `domain` option on `SqlServerConnectionCredentialsOptions` has been removed. Use the `authentication` option with NTLM type instead:
+
+```typescript
+// Before
+new DataSource({
+    type: "mssql",
+    domain: "MYDOMAIN",
+    username: "user",
+    password: "pass",
+    // ...
+})
+
+// After
+new DataSource({
+    type: "mssql",
+    authentication: {
+        type: "ntlm",
+        options: {
+            domain: "MYDOMAIN",
+            userName: "user",
+            password: "pass",
+        },
+    },
+    // ...
+})
+```
+
 ## Expo
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
@@ -273,3 +308,110 @@ authorName: string
 ### `ColumnNumericOptions.unsigned`
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
+
+### `InsertQueryBuilder.onConflict()`
+
+The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:
+
+```typescript
+// Before
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .onConflict(`("id") DO NOTHING`)
+    .execute()
+
+// After
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .orIgnore()
+    .execute()
+
+// Before
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .onConflict(`("id") DO UPDATE SET "title" = :title`)
+    .setParameter("title", post.title)
+    .execute()
+
+// After
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .orUpdate(["title"], ["id"])
+    .execute()
+```
+
+### Deprecated `orUpdate()` overload
+
+The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, conflict_target? }` has been removed. Use the array-based signature instead:
+
+```typescript
+// Before
+.orUpdate({ conflict_target: ["date"], overwrite: ["title"] })
+
+// After
+.orUpdate(["title"], ["date"])
+```
+
+### `QueryBuilder.setNativeParameters()`
+
+The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
+
+## Migrations
+
+### `getAllMigrations`
+
+The deprecated `getAllMigrations()` method has been removed. Use `getMigrations()` instead — the behavior is identical:
+
+```typescript
+// Before
+const migrations = await migrationExecutor.getAllMigrations()
+
+// After
+const migrations = migrationExecutor.getMigrations()
+```
+
+## Configuration
+
+### Drop support for configuration via environment variables
+
+The deprecated `ConnectionOptionsEnvReader` class and the ability to configure connections via `TYPEORM_CONNECTION`, `TYPEORM_URL`, and other `TYPEORM_*` environment variables has been removed. The `ormconfig.env` file format is also no longer supported. TypeORM no longer auto-loads `.env` files or depends on `dotenv`.
+
+Use a TypeScript or JavaScript configuration file (`ormconfig.ts`, `ormconfig.js`) instead, referencing environment variables directly:
+
+```typescript
+// ormconfig.ts
+export default {
+    type: process.env.DB_TYPE,
+    url: process.env.DB_URL,
+    // ...
+}
+```
+
+### Name
+
+The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
+
+`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
+
+```typescript
+const reader = new ConnectionOptionsReader()
+
+// when your ormconfig has a single data source
+const [options] = await reader.get()
+
+// when you need a specific config from multiple data sources
+const allOptions = await reader.get()
+const postgresOptions = allOptions.find((o) => o.type === "postgres")
+```

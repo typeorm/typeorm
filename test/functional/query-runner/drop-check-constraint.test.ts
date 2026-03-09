@@ -43,4 +43,20 @@ describe("query runner > drop check constraint", () => {
                 await queryRunner.release()
             }),
         ))
+
+    it("should not throw when dropping non-existent check constraint with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Mysql does not support check constraints.
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropCheckConstraint(
+                    "post",
+                    "non_existent_check",
+                    true,
+                )
+                await queryRunner.release()
+            }),
+        ))
 })

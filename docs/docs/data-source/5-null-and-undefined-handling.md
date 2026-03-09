@@ -8,7 +8,11 @@ The acceptance of `null` and `undefined` values can sometimes cause unexpected r
 
 For example, calling `Repository.findOneBy({ id: undefined })` returns the first row from the table, and `Repository.findBy({ userId: null })` is unfiltered and returns all rows.
 
-The way in which `null` and `undefined` values are handled can be customised through the `invalidWhereValuesBehavior` configuration option in your data source options. This applies to all operations that support 'WHERE' conditions, including find operations, query builders, and repository methods.
+The way in which `null` and `undefined` values are handled can be customised through the `invalidWhereValuesBehavior` configuration option in your data source options. This applies to high-level operations such as find operations, repository methods, and EntityManager methods (update, delete, softDelete, restore).
+
+:::warning
+This setting does **not** affect QueryBuilder's `.where()`, `.andWhere()`, or `.orWhere()` methods. QueryBuilder is a low-level API where null/undefined values pass through as-is. Use the `IsNull()` operator or parameterized conditions in QueryBuilder for explicit null handling.
+:::
 
 :::note
 The current behavior will be changing in future versions of TypeORM,
@@ -198,39 +202,21 @@ This combination is useful when you want to:
 - Be explicit about searching for NULL values in the database
 - Catch potential programming errors where undefined values might slip into your queries
 
-## Works with all where operations
+## Supported operations
 
-The `invalidWhereValuesBehavior` configuration applies to **all TypeORM operations** that support where conditions, not just repository find methods:
+The `invalidWhereValuesBehavior` configuration applies to high-level TypeORM operations, not QueryBuilder's direct `.where()` method:
 
-### Query Builders
+### Find Operations
 
 ```typescript
-// UpdateQueryBuilder
-await dataSource
-    .createQueryBuilder()
-    .update(Post)
-    .set({ title: "Updated" })
-    .where({ text: null }) // Respects invalidWhereValuesBehavior
-    .execute()
+// Repository.find() / findOne() / findBy() / findOneBy()
+await repository.find({ where: { text: null } }) // Respects invalidWhereValuesBehavior
 
-// DeleteQueryBuilder
-await dataSource
-    .createQueryBuilder()
-    .delete()
-    .from(Post)
-    .where({ text: null }) // Respects invalidWhereValuesBehavior
-    .execute()
-
-// SoftDeleteQueryBuilder
-await dataSource
-    .createQueryBuilder()
-    .softDelete()
-    .from(Post)
-    .where({ text: null }) // Respects invalidWhereValuesBehavior
-    .execute()
+// EntityManager.find() / findOne() / findBy() / findOneBy()
+await manager.find(Post, { where: { text: null } }) // Respects invalidWhereValuesBehavior
 ```
 
-### Repository Methods
+### Repository and EntityManager Methods
 
 ```typescript
 // Repository.update()
@@ -249,4 +235,91 @@ await manager.delete(Post, { text: null }) // Respects invalidWhereValuesBehavio
 await manager.softDelete(Post, { text: null }) // Respects invalidWhereValuesBehavior
 ```
 
-All these operations will consistently apply your configured `invalidWhereValuesBehavior` settings.
+### QueryBuilder with setFindOptions
+
+```typescript
+// setFindOptions goes through the find-options path, so it respects the setting
+await dataSource
+    .createQueryBuilder(Post, "post")
+    .setFindOptions({ where: { text: null } }) // Respects invalidWhereValuesBehavior
+    .getMany()
+```
+
+### Not affected: QueryBuilder `.where()`
+
+QueryBuilder's `.where()`, `.andWhere()`, and `.orWhere()` are low-level APIs and are **not** affected by this setting. Null and undefined values pass through as-is:
+
+```typescript
+// This does NOT respect invalidWhereValuesBehavior — null passes through as-is
+await dataSource
+    .createQueryBuilder()
+    .update(Post)
+    .set({ title: "Updated" })
+    .where({ text: null })
+    .execute()
+```
+
+## How null and undefined behave in QueryBuilder `.where()`
+
+Since QueryBuilder is a low-level API, null and undefined values are **not** validated or transformed. Understanding their behavior is important to avoid unexpected results.
+
+### `null` in QueryBuilder `.where()`
+
+When `null` is passed as a value in an object-style `.where()`, it generates a SQL equality check against `NULL`:
+
+```typescript
+await dataSource
+    .createQueryBuilder(Post, "post")
+    .where({ text: null })
+    .getMany()
+// Generates: WHERE post.text = NULL
+```
+
+In SQL, `column = NULL` is **always false** — nothing equals NULL. This query will **return zero results**, which is almost certainly not what you intended. To match NULL values, use the `IsNull()` operator:
+
+```typescript
+import { IsNull } from "typeorm"
+
+await dataSource
+    .createQueryBuilder(Post, "post")
+    .where({ text: IsNull() })
+    .getMany()
+// Generates: WHERE post.text IS NULL
+```
+
+Or use a string condition:
+
+```typescript
+await dataSource
+    .createQueryBuilder(Post, "post")
+    .where("post.text IS NULL")
+    .getMany()
+```
+
+### `undefined` in QueryBuilder `.where()`
+
+When `undefined` is passed as a value, the same behavior applies — it generates `WHERE column = NULL`, which is always false:
+
+```typescript
+await dataSource
+    .createQueryBuilder(Post, "post")
+    .where({ text: undefined })
+    .getMany()
+// Generates: WHERE post.text = NULL
+// Returns: zero results
+```
+
+### Summary table
+
+| Value                                 | High-level API (find/repository/manager) | QueryBuilder `.where()`           |
+| ------------------------------------- | ---------------------------------------- | --------------------------------- |
+| `null` with `"ignore"` (default)      | Property skipped — no filter             | `WHERE col = NULL` — zero results |
+| `null` with `"sql-null"`              | `WHERE col IS NULL`                      | `WHERE col = NULL` — zero results |
+| `null` with `"throw"`                 | Throws error                             | `WHERE col = NULL` — zero results |
+| `undefined` with `"ignore"` (default) | Property skipped — no filter             | `WHERE col = NULL` — zero results |
+| `undefined` with `"throw"`            | Throws error                             | `WHERE col = NULL` — zero results |
+| `IsNull()`                            | `WHERE col IS NULL`                      | `WHERE col IS NULL`               |
+
+:::tip
+Always use `IsNull()` when you want to match SQL NULL values, regardless of which API you use. It works correctly in both high-level and QueryBuilder contexts.
+:::

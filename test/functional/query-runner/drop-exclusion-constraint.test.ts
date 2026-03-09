@@ -43,4 +43,17 @@ describe("query runner > drop exclusion constraint", () => {
                 await queryRunner.release()
             }),
         ))
+
+    it("should not throw when dropping non-existent exclusion constraint with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropExclusionConstraint(
+                    "post",
+                    "non_existent_exclusion",
+                    true,
+                )
+                await queryRunner.release()
+            }),
+        ))
 })

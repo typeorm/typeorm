@@ -56,12 +56,4 @@ export interface SqlServerConnectionCredentialsOptions {
      * It overrides username and password, when passed.
      */
     readonly authentication?: SqlServerConnectionCredentialsAuthenticationOptions
-
-    /**
-     * Once you set domain, driver will connect to SQL Server using domain login.
-     * @see SqlServerConnectionCredentialsOptions.authentication
-     * @see NtlmAuthentication
-     * @deprecated
-     */
-    readonly domain?: string
 }
