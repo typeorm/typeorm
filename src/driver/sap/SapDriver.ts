@@ -280,18 +280,11 @@ export class SapDriver implements Driver {
         const poolOptions: any = {
             maxConnectedOrPooled:
                 this.options.pool?.maxConnectedOrPooled ??
-                this.options.pool?.max ??
                 this.options.poolSize ??
                 10,
-            maxPooledIdleTime:
-                this.options.pool?.maxPooledIdleTime ??
-                (this.options.pool?.idleTimeout
-                    ? this.options.pool.idleTimeout / 1000
-                    : 30),
+            maxPooledIdleTime: this.options.pool?.maxPooledIdleTime ?? 30,
             maxWaitTimeoutIfPoolExhausted:
-                this.options.pool?.maxWaitTimeoutIfPoolExhausted ??
-                this.options.pool?.requestTimeout ??
-                0,
+                this.options.pool?.maxWaitTimeoutIfPoolExhausted ?? 0,
         }
         if (this.options.pool?.pingCheck) {
             poolOptions.pingCheck = this.options.pool.pingCheck
@@ -403,16 +396,12 @@ export class SapDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
 
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
@@ -894,7 +883,7 @@ export class SapDriver implements Driver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        const client = this.options.driver ?? this.options.hanaClientDriver
+        const client = this.options.driver
         if (client) {
             this.client = client
 

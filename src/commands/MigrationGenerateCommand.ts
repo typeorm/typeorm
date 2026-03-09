@@ -79,7 +79,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             : path.resolve(process.cwd(), args.path)
         const filename = timestamp + "-" + path.basename(fullPath) + extension
 
-        let dataSource: DataSource | undefined = undefined
+        let dataSource: DataSource | undefined
         try {
             dataSource = await CommandUtils.loadDataSource(
                 path.resolve(process.cwd(), args.dataSource as string),

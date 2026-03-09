@@ -8,15 +8,14 @@ import { ProductBrand } from "./entity/ProductBrand"
 
 describe("github issues > #6412 Generating migrations when having entities with CreateDateColumn/UpdateDateColumn and default values as CURRENT_TIMESTAMP leads to a lot of redundant queries in resulting migrations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["mysql", "mariadb"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [ProductBrand],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["mysql", "mariadb"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [ProductBrand],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>

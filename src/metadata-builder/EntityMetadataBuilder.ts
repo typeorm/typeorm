@@ -926,10 +926,9 @@ export class EntityMetadataBuilder {
                 entityMetadata,
                 this.metadataArgsStorage.filterEmbeddeds(targets),
             )
-            embeddedMetadata.embeddeds.forEach(
-                (subEmbedded) =>
-                    (subEmbedded.parentEmbeddedMetadata = embeddedMetadata),
-            )
+            embeddedMetadata.embeddeds.forEach((subEmbedded) => {
+                subEmbedded.parentEmbeddedMetadata = embeddedMetadata
+            })
             entityMetadata.allEmbeddeds.push(embeddedMetadata)
             return embeddedMetadata
         })

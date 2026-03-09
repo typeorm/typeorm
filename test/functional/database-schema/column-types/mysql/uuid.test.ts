@@ -10,22 +10,21 @@ import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("database schema > column types > mysql > uuid", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [UuidEntity],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mysql", "mariadb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [UuidEntity],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mysql", "mariadb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should create table with appropriate UUID column type based on database version", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const uuidRepository = connection.getRepository(UuidEntity)
+            dataSources.map(async (dataSource) => {
+                const uuidRepository = dataSource.getRepository(UuidEntity)
 
                 // seems there is an issue with the persisting id that crosses over from mysql to mariadb
                 const uuidEntity: UuidEntity = {
@@ -33,14 +32,14 @@ describe("database schema > column types > mysql > uuid", () => {
                 }
                 await uuidRepository.save(uuidEntity)
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const uuidTable = await queryRunner.getTable("uuid_entity")
                 await queryRunner.release()
 
                 const hasNativeUuidSupport =
-                    connection.driver.options.type === "mariadb" &&
+                    dataSource.driver.options.type === "mariadb" &&
                     DriverUtils.isReleaseVersionOrGreater(
-                        connection.driver,
+                        dataSource.driver,
                         "10.7",
                     )
                 const expectedType = hasNativeUuidSupport ? "uuid" : "varchar"

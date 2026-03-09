@@ -511,16 +511,12 @@ export class CockroachDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -920,34 +916,6 @@ export class CockroachDriver implements Driver {
                 (c) => c.name === columnMetadata.databaseName,
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
-
-            // console.log("table:", columnMetadata.entityMetadata.tableName)
-            // console.log("name:", {
-            //     tableColumn: tableColumn.name,
-            //     columnMetadata: columnMetadata.databaseName,
-            // })
-            // console.log("type:", {
-            //     tableColumn: tableColumn.type,
-            //     columnMetadata: this.normalizeType(columnMetadata),
-            // })
-            // console.log("length:", {
-            //     tableColumn: tableColumn.length,
-            //     columnMetadata: columnMetadata.length,
-            // })
-            // console.log("width:", tableColumn.width, columnMetadata.width);
-            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
-            // console.log("default:", tableColumn.default, columnMetadata.default);
-            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
-            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("asExpression:", {
-            //     tableColumn: (tableColumn.asExpression || "").trim(),
-            //     columnMetadata: (columnMetadata.asExpression || "").trim(),
-            // })
-            // console.log("==========================================");
 
             return (
                 tableColumn.name !== columnMetadata.databaseName ||

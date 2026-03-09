@@ -1,7 +1,6 @@
 [
   {
     "skip": false,
-    "name": "cockroachdb",
     "type": "cockroachdb",
     "host": "localhost",
     "port": 26257,

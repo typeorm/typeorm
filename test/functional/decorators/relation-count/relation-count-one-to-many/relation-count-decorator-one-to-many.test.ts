@@ -12,65 +12,64 @@ import { Image } from "./entity/Image"
 
 describe("decorators > relation-count-decorator > one-to-many", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should load relation count", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const image1 = new Image()
                 image1.id = 1
                 image1.isRemoved = true
                 image1.name = "image #1"
-                await connection.manager.save(image1)
+                await dataSource.manager.save(image1)
 
                 const image2 = new Image()
                 image2.id = 2
                 image2.name = "image #2"
-                await connection.manager.save(image2)
+                await dataSource.manager.save(image2)
 
                 const image3 = new Image()
                 image3.id = 3
                 image3.name = "image #3"
-                await connection.manager.save(image3)
+                await dataSource.manager.save(image3)
 
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "cars"
                 category1.isRemoved = true
                 category1.images = [image1, image2]
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.id = 2
                 category2.name = "BMW"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.id = 3
                 category3.name = "airplanes"
                 category3.images = [image3]
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
                 const post1 = new Post()
                 post1.id = 1
                 post1.title = "about BMW"
                 post1.categories = [category1, category2]
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.id = 2
                 post2.title = "about Boeing"
                 post2.categories = [category3]
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .addOrderBy("post.id, categories.id")
@@ -86,7 +85,7 @@ describe("decorators > relation-count-decorator > one-to-many", () => {
                 expect(loadedPosts![1].categoryCount).to.be.equal(1)
                 expect(loadedPosts![1].categories[0].imageCount).to.be.equal(1)
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .where("post.id = :id", { id: 1 })

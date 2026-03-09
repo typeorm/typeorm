@@ -21,34 +21,34 @@ describe("persistence > basic functionality", function () {
 
     it("should save an entity", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.manager.save(new Post(1, "Hello Post"))
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.save(new Post(1, "Hello Post"))
             }),
         ))
 
     it("should remove an entity", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post(1, "Hello Post")
-                await connection.manager.save(post)
-                await connection.manager.remove(post)
+                await dataSource.manager.save(post)
+                await dataSource.manager.remove(post)
             }),
         ))
 
     it("should throw an error when not an object is passed to a save method", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.manager
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager
                     .save(undefined)
                     .should.be.rejectedWith(
                         `Cannot save, given value must be an entity, instead "undefined" is given.`,
                     )
-                await connection.manager
+                await dataSource.manager
                     .save(null)
                     .should.be.rejectedWith(
                         `Cannot save, given value must be an entity, instead "null" is given.`,
                     )
-                await connection.manager
+                await dataSource.manager
                     .save(123)
                     .should.be.rejectedWith(
                         `Cannot save, given value must be an entity, instead "123" is given.`,
@@ -58,18 +58,18 @@ describe("persistence > basic functionality", function () {
 
     it("should throw an error when not an object is passed to a remove method", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.manager
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager
                     .remove(undefined)
                     .should.be.rejectedWith(
                         `Cannot remove, given value must be an entity, instead "undefined" is given.`,
                     )
-                await connection.manager
+                await dataSource.manager
                     .remove(null)
                     .should.be.rejectedWith(
                         `Cannot remove, given value must be an entity, instead "null" is given.`,
                     )
-                await connection.manager
+                await dataSource.manager
                     .remove(123)
                     .should.be.rejectedWith(
                         `Cannot remove, given value must be an entity, instead "123" is given.`,
@@ -79,33 +79,33 @@ describe("persistence > basic functionality", function () {
 
     it("should throw an exception if object literal is given instead of constructed entity because it cannot determine what to save", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.manager
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager
                     .save({})
                     .should.be.rejectedWith(
                         `Cannot save, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`,
                     )
-                await connection.manager
+                await dataSource.manager
                     .save([{}, {}])
                     .should.be.rejectedWith(
                         `Cannot save, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`,
                     )
-                await connection.manager
+                await dataSource.manager
                     .save([new Post(1, "Hello Post"), {}])
                     .should.be.rejectedWith(
                         `Cannot save, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`,
                     )
-                await connection.manager
+                await dataSource.manager
                     .remove({})
                     .should.be.rejectedWith(
                         `Cannot remove, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`,
                     )
-                await connection.manager
+                await dataSource.manager
                     .remove([{}, {}])
                     .should.be.rejectedWith(
                         `Cannot remove, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`,
                     )
-                await connection.manager
+                await dataSource.manager
                     .remove([new Post(1, "Hello Post"), {}])
                     .should.be.rejectedWith(
                         `Cannot remove, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`,
@@ -115,28 +115,28 @@ describe("persistence > basic functionality", function () {
 
     it("should be able to save and remove entities of different types", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post(1, "Hello Post")
                 const category = new Category(1, "Hello Category")
                 const user = new User(1, "Hello User")
 
-                await connection.manager.save([post, category, user])
-                await connection.manager
+                await dataSource.manager.save([post, category, user])
+                await dataSource.manager
                     .findOneBy(Post, { id: 1 })
                     .should.eventually.eql({ id: 1, title: "Hello Post" })
-                await connection.manager
+                await dataSource.manager
                     .findOneBy(Category, { id: 1 })
                     .should.eventually.eql({ id: 1, name: "Hello Category" })
-                await connection.manager
+                await dataSource.manager
                     .findOneBy(User, { id: 1 })
                     .should.eventually.eql({ id: 1, name: "Hello User" })
 
-                await connection.manager.remove([post, category, user])
-                await connection.manager.findOneBy(Post, { id: 1 }).should
+                await dataSource.manager.remove([post, category, user])
+                await dataSource.manager.findOneBy(Post, { id: 1 }).should
                     .eventually.be.null
-                await connection.manager.findOneBy(Category, { id: 1 }).should
+                await dataSource.manager.findOneBy(Category, { id: 1 }).should
                     .eventually.be.null
-                await connection.manager.findOneBy(User, { id: 1 }).should
+                await dataSource.manager.findOneBy(User, { id: 1 }).should
                     .eventually.be.null
             }),
         ))

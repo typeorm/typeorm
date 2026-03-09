@@ -111,9 +111,7 @@ export class EntitySchemaTransformer {
                     primaryKeyConstraintName:
                         regularColumn.primaryKeyConstraintName,
                     length: regularColumn.length,
-                    width: regularColumn.width,
                     nullable: regularColumn.nullable,
-                    readonly: regularColumn.readonly,
                     update: regularColumn.update,
                     select: regularColumn.select,
                     insert: regularColumn.insert,
@@ -124,7 +122,6 @@ export class EntitySchemaTransformer {
                     onUpdate: regularColumn.onUpdate,
                     precision: regularColumn.precision,
                     scale: regularColumn.scale,
-                    zerofill: regularColumn.zerofill,
                     unsigned: regularColumn.unsigned,
                     charset: regularColumn.charset,
                     collation: regularColumn.collation,

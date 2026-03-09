@@ -14,20 +14,19 @@ import { Setting } from "./entity/Setting"
 describe("relations > multiple-primary-keys > one-to-many", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User, Setting],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User, Setting],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     after(() => closeTestingConnections(dataSources))
 
-    function insertSimpleTestData(connection: DataSource) {
-        const userRepo = connection.getRepository(User)
-        // const settingRepo = connection.getRepository(Setting);
+    function insertSimpleTestData(dataSource: DataSource) {
+        const userRepo = dataSource.getRepository(User)
+        // const settingRepo = dataSource.getRepository(Setting);
 
         const user = new User(1, "FooGuy")
         const settingA = new Setting(1, "A", "foo")
@@ -39,9 +38,9 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
     it("should correctly insert relation items", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const userEntity = await insertSimpleTestData(connection)
-                const persistedSettings = await connection
+            dataSources.map(async (dataSource) => {
+                const userEntity = await insertSimpleTestData(dataSource)
+                const persistedSettings = await dataSource
                     .getRepository(Setting)
                     .find()
 
@@ -54,10 +53,10 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
     it("should correctly load relation items", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await insertSimpleTestData(connection)
+            dataSources.map(async (dataSource) => {
+                await insertSimpleTestData(dataSource)
 
-                const [user] = await connection.getRepository(User).find({
+                const [user] = await dataSource.getRepository(User).find({
                     relations: { settings: true },
                     // relationLoadStrategy: "join"
                 })
@@ -70,9 +69,9 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
     it("should correctly update relation items", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await insertSimpleTestData(connection)
-                const userRepo = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                await insertSimpleTestData(dataSource)
+                const userRepo = dataSource.getRepository(User)
 
                 await userRepo.save([
                     {
@@ -84,7 +83,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
                     },
                 ])
 
-                const [user] = await connection
+                const [user] = await dataSource
                     .getRepository(User)
                     .find({ relations: { settings: true } })
 
@@ -99,7 +98,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
                 })
 
                 // make sure only 2 entries are in db, initial ones should have been updated
-                const settings = await connection.getRepository(Setting).find()
+                const settings = await dataSource.getRepository(Setting).find()
                 expect(settings).to.be.an("array")
                 expect(settings!.length).to.equal(2)
             }),
@@ -107,16 +106,16 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
     it("should correctly delete relation items", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await insertSimpleTestData(connection)
-                const userRepo = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                await insertSimpleTestData(dataSource)
+                const userRepo = dataSource.getRepository(User)
 
                 await userRepo.save({
                     id: 1,
                     settings: [],
                 })
 
-                const [user] = await connection.getRepository(User).find({
+                const [user] = await dataSource.getRepository(User).find({
                     relations: { settings: true },
                 })
 
@@ -126,7 +125,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
                 expect(user!.settings!.length).to.equal(0)
 
                 // check there are no orphane relational items
-                const settings = await connection.getRepository(Setting).find()
+                const settings = await dataSource.getRepository(Setting).find()
                 expect(settings).to.be.an("array")
                 expect(settings!.length).to.equal(0)
             }),

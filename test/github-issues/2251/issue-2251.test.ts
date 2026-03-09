@@ -13,14 +13,13 @@ import { Foo } from "./entity/Foo"
 
 describe("github issues > #2251 - Unexpected behavior when passing duplicate entities to repository.save()", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
@@ -35,7 +34,7 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
                     { description: "test2" },
                 ])
 
-                let bars = await repo.find()
+                await repo.find()
                 await repo.save([
                     { id: 1, description: "test1a" },
                     { id: 2, description: "test2a" },
@@ -43,7 +42,7 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
                     { id: 2, description: "test2a" },
                 ])
 
-                bars = await repo.find()
+                const bars = await repo.find()
 
                 expect(bars.length).to.equal(2)
             }),

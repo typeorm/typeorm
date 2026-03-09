@@ -17,15 +17,14 @@ import { Contact, Email, Phone, User } from "./entity"
 
 describe("github issues > #7065 ChildEntity type relationship produces unexpected results", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Contact, Email, Phone, User],
-                schemaCreate: true,
-                dropSchema: true,
-                relationLoadStrategy: "join", // TODO: fix it later
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Contact, Email, Phone, User],
+            schemaCreate: true,
+            dropSchema: true,
+            relationLoadStrategy: "join", // TODO: fix it later
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

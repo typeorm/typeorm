@@ -38,7 +38,9 @@ describe("github issues > #1680 Delete & Update applies to all entities in table
 
                     await connection.manager
                         .delete(User, criteria)
-                        .catch((err) => (error = err))
+                        .catch((err) => {
+                            error = err
+                        })
 
                     expect(error).to.be.instanceof(Error)
                 }
@@ -51,7 +53,9 @@ describe("github issues > #1680 Delete & Update applies to all entities in table
                         .update(User, criteria, {
                             name: "Override Name",
                         })
-                        .catch((err) => (error = err))
+                        .catch((err) => {
+                            error = err
+                        })
 
                     expect(error).to.be.instanceof(Error)
                 }

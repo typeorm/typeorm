@@ -5,7 +5,7 @@ import { expect } from "chai"
 describe("github issues > #7437 MongoDB options never parse in connectionUrl and after my fix was parse incorrect", () => {
     it("should parse options in ConnectionUrl", () => {
         const options = DriverUtils.buildMongoDBDriverOptions({
-            url: "mongodb://testuser:testpwd@test-primary.example.com:27017/testdb?retryWrites=true&w=majority&useUnifiedTopology=true",
+            url: "mongodb://testuser:testpwd@test-primary.example.com:27017/testdb?retryWrites=true&w=majority",
         })
 
         expect(options.host ? (options.host as string) : "").to.equal(
@@ -26,10 +26,5 @@ describe("github issues > #7437 MongoDB options never parse in connectionUrl and
             options.retryWrites ? (options.retryWrites as string) : "",
         ).to.equal("true")
         expect(options.w ? (options.w as string) : "").to.equal("majority")
-        expect(
-            options.useUnifiedTopology
-                ? (options.useUnifiedTopology as string)
-                : "",
-        ).to.equal("true")
     })
 })

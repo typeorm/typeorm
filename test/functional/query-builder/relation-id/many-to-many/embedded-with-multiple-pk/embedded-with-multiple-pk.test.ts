@@ -14,53 +14,52 @@ import { Subcounters } from "./entity/Subcounters"
 
 describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     describe("owner side", () => {
         it("should load ids when loadRelationIdAndMap used on embedded table and each table have primary key", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user1 = new User()
                     user1.id = 1
                     user1.name = "Alice"
-                    await connection.manager.save(user1)
+                    await dataSource.manager.save(user1)
 
                     const user2 = new User()
                     user2.id = 2
                     user2.name = "Bob"
-                    await connection.manager.save(user2)
+                    await dataSource.manager.save(user2)
 
                     const user3 = new User()
                     user3.id = 3
                     user3.name = "Clara"
-                    await connection.manager.save(user3)
+                    await dataSource.manager.save(user3)
 
                     const category1 = new Category()
                     category1.id = 1
                     category1.name = "cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.id = 2
                     category2.name = "BMW"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const category3 = new Category()
                     category3.id = 3
                     category3.name = "airplanes"
-                    await connection.manager.save(category3)
+                    await dataSource.manager.save(category3)
 
                     const category4 = new Category()
                     category4.id = 4
                     category4.name = "Boeing"
-                    await connection.manager.save(category4)
+                    await dataSource.manager.save(category4)
 
                     const post1 = new Post()
                     post1.id = 1
@@ -75,7 +74,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                     post1.counters.subcntrs.version = 1
                     post1.counters.subcntrs.watches = 2
                     post1.counters.subcntrs.watchedUsers = [user1, user2]
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
@@ -90,9 +89,9 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                     post2.counters.subcntrs.version = 1
                     post2.counters.subcntrs.watches = 1
                     post2.counters.subcntrs.watchedUsers = [user3]
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .loadRelationIdAndMap(
                             "post.counters.categoryIds",
@@ -151,7 +150,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         }),
                     )
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .loadRelationIdAndMap(
                             "post.counters.categoryIds",
@@ -199,7 +198,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
     describe("inverse side", () => {
         it("should load ids when loadRelationIdAndMap used on embedded table and each table have primary key", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.title = "About BMW"
@@ -211,7 +210,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                     post1.counters.subcntrs = new Subcounters()
                     post1.counters.subcntrs.version = 1
                     post1.counters.subcntrs.watches = 2
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
@@ -224,7 +223,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                     post2.counters.subcntrs = new Subcounters()
                     post2.counters.subcntrs.version = 1
                     post2.counters.subcntrs.watches = 5
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
                     const post3 = new Post()
                     post3.id = 3
@@ -237,7 +236,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                     post3.counters.subcntrs = new Subcounters()
                     post3.counters.subcntrs.version = 2
                     post3.counters.subcntrs.watches = 10
-                    await connection.manager.save(post3)
+                    await dataSource.manager.save(post3)
 
                     const post4 = new Post()
                     post4.id = 4
@@ -250,33 +249,33 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                     post4.counters.subcntrs = new Subcounters()
                     post4.counters.subcntrs.version = 3
                     post4.counters.subcntrs.watches = 10
-                    await connection.manager.save(post4)
+                    await dataSource.manager.save(post4)
 
                     const category1 = new Category()
                     category1.id = 1
                     category1.name = "cars"
                     category1.posts = [post1, post2]
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.id = 2
                     category2.name = "airplanes"
                     category2.posts = [post3, post4]
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const user1 = new User()
                     user1.id = 1
                     user1.name = "Alice"
                     user1.posts = [post1, post2]
-                    await connection.manager.save(user1)
+                    await dataSource.manager.save(user1)
 
                     const user2 = new User()
                     user2.id = 2
                     user2.name = "Bob"
                     user2.posts = [post3, post4]
-                    await connection.manager.save(user2)
+                    await dataSource.manager.save(user2)
 
-                    const loadedCategories = await connection.manager
+                    const loadedCategories = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .loadRelationIdAndMap(
                             "category.postIds",
@@ -306,7 +305,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         counters: { code: 444, subcntrs: { version: 3 } },
                     })
 
-                    const loadedCategory = await connection.manager
+                    const loadedCategory = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .loadRelationIdAndMap(
                             "category.postIds",
@@ -327,7 +326,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         counters: { code: 222, subcntrs: { version: 1 } },
                     })
 
-                    const loadedUsers = await connection.manager
+                    const loadedUsers = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .loadRelationIdAndMap("user.postIds", "user.posts")
                         .orderBy("user.id")
@@ -354,7 +353,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         counters: { code: 444, subcntrs: { version: 3 } },
                     })
 
-                    const loadedUser = await connection.manager
+                    const loadedUser = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .loadRelationIdAndMap("user.postIds", "user.posts")
                         .where("user.id = :id", { id: 1 })

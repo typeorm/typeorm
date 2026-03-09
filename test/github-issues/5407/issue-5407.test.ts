@@ -8,22 +8,21 @@ import { User } from "./entity/User"
 
 describe("github issues > #5407 Wrong migration created because of default column value format", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                migrations: [],
-                enabledDrivers: [
-                    "mysql",
-                    "mariadb",
-                    "postgres",
-                    "better-sqlite3",
-                    "cockroachdb",
-                ],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [User],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            enabledDrivers: [
+                "mysql",
+                "mariadb",
+                "postgres",
+                "better-sqlite3",
+                "cockroachdb",
+            ],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [User],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("can recognize model changes", () =>

@@ -128,7 +128,7 @@ export class FindOptionsUtils {
         prefix: string,
     ): void {
         // find all relations that match given prefix
-        let matchedBaseRelations: RelationMetadata[] = []
+        let matchedBaseRelations: RelationMetadata[]
         if (prefix) {
             const regexp = new RegExp("^" + prefix.replace(".", "\\.") + "\\.")
             matchedBaseRelations = allRelations

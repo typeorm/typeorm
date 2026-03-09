@@ -22,25 +22,25 @@ describe("schema builder > add column", () => {
 
     it("should correctly add column", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postMetadata = connection.getMetadata("post")
+            dataSources.map(async (dataSource) => {
+                const postMetadata = dataSource.getMetadata("post")
 
                 let numericType = "int"
-                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) {
                     numericType = "integer"
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     numericType = "int64"
                 }
 
                 let stringType = "varchar"
-                if (connection.driver.options.type === "sap") {
+                if (dataSource.driver.options.type === "sap") {
                     stringType = "nvarchar"
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     stringType = "string"
                 }
 
                 const columnMetadata1 = new ColumnMetadata({
-                    connection: connection,
+                    connection: dataSource,
                     entityMetadata: postMetadata!,
                     args: <ColumnMetadataArgs>{
                         target: Post,
@@ -50,16 +50,16 @@ describe("schema builder > add column", () => {
                             type: numericType,
                             name: "secondId",
                             nullable:
-                                connection.driver.options.type === "spanner"
+                                dataSource.driver.options.type === "spanner"
                                     ? true
                                     : false,
                         },
                     },
                 })
-                columnMetadata1.build(connection)
+                columnMetadata1.build(dataSource)
 
                 const columnMetadata2 = new ColumnMetadata({
-                    connection: connection,
+                    connection: dataSource,
                     entityMetadata: postMetadata!,
                     args: <ColumnMetadataArgs>{
                         target: Post,
@@ -70,23 +70,23 @@ describe("schema builder > add column", () => {
                             name: "description",
                             length: 100,
                             nullable:
-                                connection.driver.options.type === "spanner"
+                                dataSource.driver.options.type === "spanner"
                                     ? true
                                     : false,
                         },
                     },
                 })
-                columnMetadata2.build(connection)
+                columnMetadata2.build(dataSource)
 
                 postMetadata.columns.push(...[columnMetadata1, columnMetadata2])
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 const column1 = table!.findColumnByName("secondId")!
                 column1.should.be.exist
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     column1.isNullable.should.be.true
                 } else {
                     column1.isNullable.should.be.false

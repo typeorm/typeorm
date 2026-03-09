@@ -13,7 +13,9 @@ describe("decorators > embedded", () => {
     beforeEach(() =>
         createTestingConnections({
             entities: [Post, Counters],
-        }).then((all) => (dataSources = all)),
+        }).then((all) => {
+            dataSources = all
+        }),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
     afterEach(() => closeTestingConnections(dataSources))
@@ -21,8 +23,8 @@ describe("decorators > embedded", () => {
     describe("basic functionality", function () {
         it("should persist and load entities with embeddeds properly", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     const post = new Post()
                     post.title = "Hello post"
@@ -53,8 +55,8 @@ describe("decorators > embedded", () => {
 
         it("should be used with prop", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     const post1 = new Post()
                     post1.title = "Hello post #1"
