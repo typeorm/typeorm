@@ -84,7 +84,7 @@ export class CockroachQueryRunner
     constructor(driver: CockroachDriver, mode: ReplicationMode) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.mode = mode
         this.broadcaster = new Broadcaster(this)
     }
@@ -280,7 +280,7 @@ export class CockroachQueryRunner
 
         const databaseConnection = await this.connect()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
@@ -308,7 +308,7 @@ export class CockroachQueryRunner
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             ) {
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
@@ -369,7 +369,7 @@ export class CockroachQueryRunner
 
                 let result = undefined
                 for (const q of this.queries) {
-                    this.driver.connection.logger.logQuery(
+                    this.driver.dataSource.logger.logQuery(
                         `Retrying transaction for query "${q.query}"`,
                         q.parameters,
                         this,
@@ -385,7 +385,7 @@ export class CockroachQueryRunner
 
                 return result
             } else {
-                this.driver.connection.logger.logQueryError(
+                this.driver.dataSource.logger.logQueryError(
                     err,
                     query,
                     parameters,
@@ -426,7 +426,7 @@ export class CockroachQueryRunner
         }
 
         const databaseConnection = await this.connect()
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         const stream = databaseConnection.query(
             new QueryStream(query, parameters),
         )
@@ -680,7 +680,7 @@ export class CockroachQueryRunner
                 .forEach((index) => {
                     // new index may be passed without name. In this case we generate index name manually.
                     if (!index.name)
-                        index.name = this.connection.namingStrategy.indexName(
+                        index.name = this.dataSource.namingStrategy.indexName(
                             table,
                             index.columnNames,
                             index.where,
@@ -914,11 +914,11 @@ export class CockroachQueryRunner
                 (column) => column.name,
             )
 
-            const oldPkName = this.connection.namingStrategy.primaryKeyName(
+            const oldPkName = this.dataSource.namingStrategy.primaryKeyName(
                 oldTable,
                 columnNames,
             )
-            const newPkName = this.connection.namingStrategy.primaryKeyName(
+            const newPkName = this.dataSource.namingStrategy.primaryKeyName(
                 newTable,
                 columnNames,
             )
@@ -942,7 +942,7 @@ export class CockroachQueryRunner
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
             const oldUniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     oldTable,
                     unique.columnNames,
                 )
@@ -952,7 +952,7 @@ export class CockroachQueryRunner
 
             // build new constraint name
             const newUniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     newTable,
                     unique.columnNames,
                 )
@@ -983,7 +983,7 @@ export class CockroachQueryRunner
 
         // rename index constraints
         newTable.indices.forEach((index) => {
-            const oldIndexName = this.connection.namingStrategy.indexName(
+            const oldIndexName = this.dataSource.namingStrategy.indexName(
                 oldTable,
                 index.columnNames,
                 index.where,
@@ -994,7 +994,7 @@ export class CockroachQueryRunner
 
             // build new constraint name
             const { schema } = this.driver.parseTableName(newTable)
-            const newIndexName = this.connection.namingStrategy.indexName(
+            const newIndexName = this.dataSource.namingStrategy.indexName(
                 newTable,
                 index.columnNames,
                 index.where,
@@ -1017,7 +1017,7 @@ export class CockroachQueryRunner
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
             const oldForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     oldTable,
                     foreignKey.columnNames,
                     this.getTablePath(foreignKey),
@@ -1029,7 +1029,7 @@ export class CockroachQueryRunner
 
             // build new constraint name
             const newForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     newTable,
                     foreignKey.columnNames,
                     this.getTablePath(foreignKey),
@@ -1149,7 +1149,7 @@ export class CockroachQueryRunner
             if (primaryColumns.length > 0) {
                 const pkName = primaryColumns[0].primaryKeyConstraintName
                     ? primaryColumns[0].primaryKeyConstraintName
-                    : this.connection.namingStrategy.primaryKeyName(
+                    : this.dataSource.namingStrategy.primaryKeyName(
                           clonedTable,
                           primaryColumns.map((column) => column.name),
                       )
@@ -1176,7 +1176,7 @@ export class CockroachQueryRunner
             primaryColumns.push(column)
             const pkName = primaryColumns[0].primaryKeyConstraintName
                 ? primaryColumns[0].primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
+                : this.dataSource.namingStrategy.primaryKeyName(
                       clonedTable,
                       primaryColumns.map((column) => column.name),
                   )
@@ -1235,7 +1235,7 @@ export class CockroachQueryRunner
             // CockroachDB stores unique indices as UNIQUE constraints
             if (columnIndex.isUnique) {
                 const unique = new TableUnique({
-                    name: this.connection.namingStrategy.uniqueConstraintName(
+                    name: this.dataSource.namingStrategy.uniqueConstraintName(
                         table,
                         columnIndex.columnNames,
                     ),
@@ -1253,7 +1253,7 @@ export class CockroachQueryRunner
         // create unique constraint
         if (column.isUnique) {
             const uniqueConstraint = new TableUnique({
-                name: this.connection.namingStrategy.uniqueConstraintName(
+                name: this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     [column.name],
                 ),
@@ -1439,7 +1439,7 @@ export class CockroachQueryRunner
                         (column) => column.name,
                     )
                     const oldPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1450,7 +1450,7 @@ export class CockroachQueryRunner
 
                     // build new primary constraint name
                     const newPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1474,7 +1474,7 @@ export class CockroachQueryRunner
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach((unique) => {
                     const oldUniqueName =
-                        this.connection.namingStrategy.uniqueConstraintName(
+                        this.dataSource.namingStrategy.uniqueConstraintName(
                             clonedTable,
                             unique.columnNames,
                         )
@@ -1489,7 +1489,7 @@ export class CockroachQueryRunner
                     )
                     unique.columnNames.push(newColumn.name)
                     const newUniqueName =
-                        this.connection.namingStrategy.uniqueConstraintName(
+                        this.dataSource.namingStrategy.uniqueConstraintName(
                             clonedTable,
                             unique.columnNames,
                         )
@@ -1521,7 +1521,7 @@ export class CockroachQueryRunner
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
                     const oldIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -1538,7 +1538,7 @@ export class CockroachQueryRunner
                     index.columnNames.push(newColumn.name)
                     const { schema } = this.driver.parseTableName(table)
                     const newIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -1563,7 +1563,7 @@ export class CockroachQueryRunner
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
                         const foreignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                                 this.getTablePath(foreignKey),
@@ -1580,7 +1580,7 @@ export class CockroachQueryRunner
                         )
                         foreignKey.columnNames.push(newColumn.name)
                         const newForeignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                                 this.getTablePath(foreignKey),
@@ -1699,7 +1699,7 @@ export class CockroachQueryRunner
                 if (primaryColumns.length > 0) {
                     const pkName = primaryColumns[0].primaryKeyConstraintName
                         ? primaryColumns[0].primaryKeyConstraintName
-                        : this.connection.namingStrategy.primaryKeyName(
+                        : this.dataSource.namingStrategy.primaryKeyName(
                               clonedTable,
                               primaryColumns.map((column) => column.name),
                           )
@@ -1733,7 +1733,7 @@ export class CockroachQueryRunner
                     column!.isPrimary = true
                     const pkName = primaryColumns[0].primaryKeyConstraintName
                         ? primaryColumns[0].primaryKeyConstraintName
-                        : this.connection.namingStrategy.primaryKeyName(
+                        : this.dataSource.namingStrategy.primaryKeyName(
                               clonedTable,
                               primaryColumns.map((column) => column.name),
                           )
@@ -1776,7 +1776,7 @@ export class CockroachQueryRunner
                         const pkName = primaryColumns[0]
                             .primaryKeyConstraintName
                             ? primaryColumns[0].primaryKeyConstraintName
-                            : this.connection.namingStrategy.primaryKeyName(
+                            : this.dataSource.namingStrategy.primaryKeyName(
                                   clonedTable,
                                   primaryColumns.map((column) => column.name),
                               )
@@ -1805,7 +1805,7 @@ export class CockroachQueryRunner
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique) {
                     const uniqueConstraint = new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(
+                        name: this.dataSource.namingStrategy.uniqueConstraintName(
                             table,
                             [newColumn.name],
                         ),
@@ -2185,7 +2185,7 @@ export class CockroachQueryRunner
         if (column.isPrimary) {
             const pkName = column.primaryKeyConstraintName
                 ? column.primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
+                : this.dataSource.namingStrategy.primaryKeyName(
                       clonedTable,
                       clonedTable.primaryColumns.map((column) => column.name),
                   )
@@ -2217,7 +2217,7 @@ export class CockroachQueryRunner
                 const pkName = clonedTable.primaryColumns[0]
                     .primaryKeyConstraintName
                     ? clonedTable.primaryColumns[0].primaryKeyConstraintName
-                    : this.connection.namingStrategy.primaryKeyName(
+                    : this.dataSource.namingStrategy.primaryKeyName(
                           clonedTable,
                           clonedTable.primaryColumns.map(
                               (column) => column.name,
@@ -2440,7 +2440,7 @@ export class CockroachQueryRunner
         if (primaryColumns.length > 0) {
             const pkName = primaryColumns[0].primaryKeyConstraintName
                 ? primaryColumns[0].primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
+                : this.dataSource.namingStrategy.primaryKeyName(
                       clonedTable,
                       primaryColumns.map((column) => column.name),
                   )
@@ -2474,7 +2474,7 @@ export class CockroachQueryRunner
 
         const pkName = primaryColumns[0].primaryKeyConstraintName
             ? primaryColumns[0].primaryKeyConstraintName
-            : this.connection.namingStrategy.primaryKeyName(
+            : this.dataSource.namingStrategy.primaryKeyName(
                   clonedTable,
                   columnNames,
               )
@@ -2543,7 +2543,7 @@ export class CockroachQueryRunner
         // new unique constraint may be passed without name. In this case we generate unique name manually.
         if (!uniqueConstraint.name)
             uniqueConstraint.name =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     uniqueConstraint.columnNames,
                 )
@@ -2638,7 +2638,7 @@ export class CockroachQueryRunner
         // new unique constraint may be passed without name. In this case we generate unique name manually.
         if (!checkConstraint.name)
             checkConstraint.name =
-                this.connection.namingStrategy.checkConstraintName(
+                this.dataSource.namingStrategy.checkConstraintName(
                     table,
                     checkConstraint.expression!,
                 )
@@ -2786,7 +2786,7 @@ export class CockroachQueryRunner
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -2838,7 +2838,7 @@ export class CockroachQueryRunner
         }
 
         if (!foreignKey.name) {
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -2989,7 +2989,7 @@ export class CockroachQueryRunner
      */
     async clearDatabase(): Promise<void> {
         const schemas: string[] = []
-        this.connection.entityMetadatas
+        this.dataSource.entityMetadatas
             .filter((metadata) => metadata.schema)
             .forEach((metadata) => {
                 const isSchemaExist = !!schemas.find(
@@ -3389,7 +3389,7 @@ export class CockroachQueryRunner
                                         .replace("[]", "")
                                         .toLowerCase()
                                     tableColumn.type =
-                                        this.connection.driver.normalizeType({
+                                        this.dataSource.driver.normalizeType({
                                             type: type,
                                         })
                                 }
@@ -3448,7 +3448,7 @@ export class CockroachQueryRunner
 
                                 // build default primary key constraint name
                                 const pkName =
-                                    this.connection.namingStrategy.primaryKeyName(
+                                    this.dataSource.namingStrategy.primaryKeyName(
                                         table,
                                         columnNames,
                                     )
@@ -3782,7 +3782,7 @@ export class CockroachQueryRunner
                 if (!isUniqueExist)
                     table.uniques.push(
                         new TableUnique({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -3796,7 +3796,7 @@ export class CockroachQueryRunner
             .forEach((index) => {
                 table.uniques.push(
                     new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(
+                        name: this.dataSource.namingStrategy.uniqueConstraintName(
                             table,
                             index.columnNames,
                         ),
@@ -3810,7 +3810,7 @@ export class CockroachQueryRunner
                 .map((unique) => {
                     const uniqueName = unique.name
                         ? unique.name
-                        : this.connection.namingStrategy.uniqueConstraintName(
+                        : this.dataSource.namingStrategy.uniqueConstraintName(
                               table,
                               unique.columnNames,
                           )
@@ -3829,7 +3829,7 @@ export class CockroachQueryRunner
                 .map((check) => {
                     const checkName = check.name
                         ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
+                        : this.dataSource.namingStrategy.checkConstraintName(
                               table,
                               check.expression!,
                           )
@@ -3847,7 +3847,7 @@ export class CockroachQueryRunner
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
                     if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
+                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
                             table,
                             fk.columnNames,
                             this.getTablePath(fk),
@@ -3878,7 +3878,7 @@ export class CockroachQueryRunner
         if (primaryColumns.length > 0) {
             const primaryKeyName = primaryColumns[0].primaryKeyConstraintName
                 ? primaryColumns[0].primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
+                : this.dataSource.namingStrategy.primaryKeyName(
                       table,
                       primaryColumns.map((column) => column.name),
                   )
@@ -3930,7 +3930,7 @@ export class CockroachQueryRunner
         } else {
             return new Query(
                 `CREATE VIEW ${this.escapePath(view)} AS ${view
-                    .expression(this.connection)
+                    .expression(this.dataSource)
                     .getQuery()}`,
             )
         }
@@ -3946,7 +3946,7 @@ export class CockroachQueryRunner
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return this.insertTypeormMetadataSql({
             type: MetadataTableType.VIEW,
             schema: schema,
@@ -4111,7 +4111,7 @@ export class CockroachQueryRunner
     ): Query {
         const primaryKeyName = constraintName
             ? constraintName
-            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+            : this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -4135,7 +4135,7 @@ export class CockroachQueryRunner
         const constraintName = table.primaryColumns[0].primaryKeyConstraintName
         const primaryKeyName = constraintName
             ? constraintName
-            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+            : this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
@@ -4406,7 +4406,7 @@ export class CockroachQueryRunner
             c += " " + this.buildEnumName(table, column)
             if (column.isArray) c += " array"
         } else if (!column.isGenerated) {
-            c += " " + this.connection.driver.createFullType(column)
+            c += " " + this.dataSource.driver.createFullType(column)
         }
 
         if (column.asExpression) {

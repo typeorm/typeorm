@@ -50,7 +50,7 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: MongoDataSourceOptions
 
@@ -214,11 +214,11 @@ export class MongoDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {
-        this.options = connection.options as MongoDataSourceOptions
+    constructor(protected dataSource: DataSource) {
+        this.options = dataSource.options as MongoDataSourceOptions
 
         // validate options to make sure everything is correct and driver will be able to establish connection
-        this.validateOptions(connection.options)
+        this.validateOptions(dataSource.options)
 
         // load mongodb package
         this.loadDependencies()
@@ -243,9 +243,9 @@ export class MongoDriver implements Driver {
             this.buildConnectionOptions(options),
         )
 
-        this.queryRunner = new MongoQueryRunner(this.connection, client)
+        this.queryRunner = new MongoQueryRunner(this.dataSource, client)
         ObjectUtils.assign(this.queryRunner, {
-            manager: this.connection.manager,
+            manager: this.dataSource.manager,
         })
     }
 
@@ -270,7 +270,7 @@ export class MongoDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new MongoSchemaBuilder(this.connection)
+        return new MongoSchemaBuilder(this.dataSource)
     }
 
     /**
