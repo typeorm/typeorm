@@ -14,7 +14,7 @@ jobs:
 
     services:
       cockroachdb:
-        image: cockroachdb/cockroach:v24.3.8
+        image: cockroachdb/cockroach:v25.2.14
         ports:
           - "26257:26257"
         env:

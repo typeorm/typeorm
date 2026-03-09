@@ -84,7 +84,7 @@ services:
 
   # cockroachdb
   cockroachdb:
-    image: "cockroachdb/cockroach:v24.3.8"
+    image: "cockroachdb/cockroach:v25.2.14"
     container_name: "typeorm-cockroachdb"
     command: "start-single-node --insecure --cache=.25 --store=type=mem,size=.25"
     ports:
