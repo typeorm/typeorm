@@ -201,4 +201,17 @@ describe("query runner > drop foreign key", () => {
                 }
             }),
         ))
+
+    it("should not throw when dropping non-existent foreign key with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropForeignKey(
+                    "post",
+                    "non_existent_fk",
+                    true,
+                )
+                await queryRunner.release()
+            }),
+        ))
 })
