@@ -17,13 +17,6 @@ export interface BaseDataSourceOptions {
     readonly type: DatabaseType
 
     /**
-     * Connection name. If connection name is not given then it will be called "default".
-     * Different connections must have different names.
-     * @deprecated
-     */
-    readonly name?: string
-
-    /**
      * Entities to be loaded for this connection.
      * Accepts both entity classes and directories where from entities need to be loaded.
      * Directories support glob patterns.

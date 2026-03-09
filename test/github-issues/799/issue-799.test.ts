@@ -27,7 +27,6 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         if (isEnabled === false) return
 
         dataSource = new DataSource({
-            name: "better-sqlite3",
             type: "better-sqlite3",
             database: path,
         })

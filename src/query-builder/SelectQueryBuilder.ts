@@ -3600,7 +3600,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
 
-            rawResults = await new SelectQueryBuilder(
+            const paginationQueryBuilder = new SelectQueryBuilder(
                 this.connection,
                 queryRunner,
             )
@@ -3624,8 +3624,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.expressionMap.cacheDuration,
                 )
                 .setParameters(this.getParameters())
-                .setNativeParameters(this.expressionMap.nativeParameters)
-                .getRawMany()
+            rawResults = await paginationQueryBuilder.getRawMany()
 
             if (rawResults.length > 0) {
                 let condition: string
@@ -4371,7 +4370,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         embedPrefix?: string,
     ) {
         let condition: string = ""
-        // let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
         if (Array.isArray(where)) {
             if (where.length) {
                 condition = where
@@ -4699,7 +4697,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                         if (condition) {
                             andConditions.push(condition)
-                            // parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
                         }
                     }
                 }
