@@ -14,6 +14,9 @@ import { Profile } from "./Profile"
 @Entity()
 @TableInheritance({ pattern: "CTI", column: { name: "type", type: String } })
 export class Actor extends BaseEntity {
+    /** Discriminator column — auto-managed by @TableInheritance, no @Column needed. */
+    type: string
+
     @Column({ length: 128 })
     nameId: string
 

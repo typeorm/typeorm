@@ -245,7 +245,7 @@ describe("table-inheritance > class-table > lazy-loading", () => {
                 // The lazy profile should resolve to null/undefined
                 const resolvedProfile = await loaded!.profile
                 expect(resolvedProfile).to.satisfy(
-                    (v: any) => v === null || v === undefined,
+                    (v: unknown) => v === null || v === undefined,
                 )
             }),
         ))

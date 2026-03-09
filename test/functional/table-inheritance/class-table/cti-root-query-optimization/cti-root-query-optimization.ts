@@ -67,11 +67,11 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
                 // nameId ASC: "acme" < "alice", so org is first
                 const loadedOrg = actors[0]
                 expect(loadedOrg).to.be.instanceOf(Organization)
-                expect((loadedOrg as any).type).to.equal("organization")
+                expect(loadedOrg.type).to.equal("organization")
 
                 const loadedUser = actors[1]
                 expect(loadedUser).to.be.instanceOf(User)
-                expect((loadedUser as any).type).to.equal("user")
+                expect(loadedUser.type).to.equal("user")
             }),
         ))
 
@@ -89,7 +89,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
 
                 expect(loaded).to.not.be.null
                 expect(loaded).to.be.instanceOf(User)
-                expect((loaded as any).type).to.equal("user")
+                expect(loaded!.type).to.equal("user")
             }),
         ))
 
@@ -106,7 +106,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
                     .findOneBy({ id: user.id })
 
                 expect(loaded).to.not.be.null
-                expect((loaded as any).type).to.equal("user")
+                expect(loaded!.type).to.equal("user")
             }),
         ))
 
@@ -265,7 +265,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
                 expect(loaded).to.not.be.null
                 expect(loaded!.nameId).to.equal("alice")
                 expect(loaded!.email).to.equal("alice@example.com")
-                expect((loaded as any).type).to.equal("user")
+                expect(loaded!.type).to.equal("user")
             }),
         ))
 
@@ -284,7 +284,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
                 expect(loaded).to.not.be.null
                 expect(loaded!.nameId).to.equal("acme")
                 expect(loaded!.industry).to.equal("Tech")
-                expect((loaded as any).type).to.equal("organization")
+                expect(loaded!.type).to.equal("organization")
             }),
         ))
 
