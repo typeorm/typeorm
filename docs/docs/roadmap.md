@@ -8,7 +8,7 @@ For a full list of milestones, see the [milestones page](https://github.com/type
 
 ## Join Us in Supporting TypeORM
 
-If your company is interested in starting or expanding its sponsorship with TypeORM, we encourage you to reach out to us directly [via e-mail](mailto:typeorm@elevantiq.com).
+If your company is interested in starting or expanding its sponsorship with TypeORM, we encourage you to reach out to us directly [via e-mail](mailto:maintainers@typeorm.io).
 
 Thank you for your support, and we're excited to embark on this journey with the TypeORM community!
 
