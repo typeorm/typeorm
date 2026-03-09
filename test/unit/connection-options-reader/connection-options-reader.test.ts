@@ -12,8 +12,8 @@ describe("ConnectionOptionsReader", () => {
             root: __dirname,
             configName: "configs/class-entities",
         })
-        const options: DataSourceOptions =
-            await connectionOptionsReader.get("test-conn")
+        const [options]: DataSourceOptions[] =
+            await connectionOptionsReader.get()
         expect(options.entities).to.be.an.instanceOf(Array)
         const entities: EntititesList = options.entities as EntititesList
         expect(entities.length).to.equal(1)
@@ -24,8 +24,8 @@ describe("ConnectionOptionsReader", () => {
             root: __dirname,
             configName: "configs/test-path-config",
         })
-        const fileOptions: DataSourceOptions =
-            await connectionOptionsReader.get("file")
+        const [fileOptions]: DataSourceOptions[] =
+            await connectionOptionsReader.get()
         expect(fileOptions.database).to.have.string("/test-js")
     })
 
@@ -34,8 +34,8 @@ describe("ConnectionOptionsReader", () => {
             root: __dirname,
             configName: "configs/test-path-config-async",
         })
-        const fileOptions: DataSourceOptions =
-            await connectionOptionsReader.get("file")
+        const [fileOptions]: DataSourceOptions[] =
+            await connectionOptionsReader.get()
         expect(fileOptions.database).to.have.string("/test-js-async")
     })
 
@@ -44,8 +44,8 @@ describe("ConnectionOptionsReader", () => {
             root: __dirname,
             configName: "configs/test-path-config-esm",
         })
-        const fileOptions: DataSourceOptions =
-            await connectionOptionsReader.get("file")
+        const [fileOptions]: DataSourceOptions[] =
+            await connectionOptionsReader.get()
         expect(fileOptions.database).to.have.string("/test-js-esm")
     })
 
@@ -71,7 +71,7 @@ describe("ConnectionOptionsReader", () => {
                 root: "./temp",
                 configName: "configs/malformed-config",
             })
-            await reader.all()
+            await reader.get()
         } catch (err: any) {
             expect(err.message).to.include("No connection options were found")
         } finally {

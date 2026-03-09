@@ -1,7 +1,6 @@
 [
   {
     "skip": false,
-    "name": "mssql",
     "type": "mssql",
     "host": "localhost",
     "port": 1433,

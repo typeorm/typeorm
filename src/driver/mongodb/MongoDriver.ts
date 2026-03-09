@@ -286,12 +286,10 @@ export class MongoDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
         throw new TypeORMError(
             `This operation is not supported by Mongodb driver.`,

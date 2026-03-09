@@ -439,23 +439,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Adds native parameters from the given object.
-     * @param parameters
-     * @deprecated Use `setParameters` instead
-     */
-    setNativeParameters(parameters: ObjectLiteral): this {
-        // set parent query builder parameters as well in sub-query mode
-        if (this.parentQueryBuilder) {
-            this.parentQueryBuilder.setNativeParameters(parameters)
-        }
-
-        Object.keys(parameters).forEach((key) => {
-            this.expressionMap.nativeParameters[key] = parameters[key]
-        })
-        return this
-    }
-
-    /**
      * Gets all parameters.
      */
     getParameters(): ObjectLiteral {
@@ -506,13 +489,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Gets query to be executed with all parameters used in it.
      */
     getQueryAndParameters(): [string, any[]] {
-        // this execution order is important because getQuery method generates this.expressionMap.nativeParameters values
         const query = this.getQuery()
         const parameters = this.getParameters()
         return this.connection.driver.escapeQueryWithParameters(
             query,
             parameters,
-            this.expressionMap.nativeParameters,
         )
     }
 
@@ -1640,8 +1621,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 this.expressionMap.aliasNamePrefixingEnabled
             whereQueryBuilder.expressionMap.parameters =
                 this.expressionMap.parameters
-            whereQueryBuilder.expressionMap.nativeParameters =
-                this.expressionMap.nativeParameters
             whereQueryBuilder.expressionMap.joinAttributes =
                 this.expressionMap.joinAttributes
 
