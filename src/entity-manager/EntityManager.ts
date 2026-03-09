@@ -842,10 +842,14 @@ export class EntityManager {
 
             return qb.execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
 
             if (options?.returning !== undefined) {
                 qb.returning(options.returning)
@@ -917,10 +921,14 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
@@ -977,10 +985,14 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
@@ -1023,10 +1035,14 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }

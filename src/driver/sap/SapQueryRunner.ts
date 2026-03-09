@@ -529,11 +529,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new database.
      * @param database
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createDatabase(
         database: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         return Promise.resolve()
     }
@@ -541,20 +541,20 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops database.
      * @param database
-     * @param ifExist
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Creates a new table schema.
      * @param schemaPath
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         const schema =
             schemaPath.indexOf(".") === -1
@@ -562,13 +562,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : schemaPath.split(".")[1]
 
         let exist = false
-        if (ifNotExist) {
+        if (ifNotExists) {
             const result = await this.query(
                 `SELECT * FROM "SYS"."SCHEMAS" WHERE "SCHEMA_NAME" = '${schema}'`,
             )
             exist = !!result.length
         }
-        if (!ifNotExist || (ifNotExist && !exist)) {
+        if (!ifNotExists || (ifNotExists && !exist)) {
             const up = `CREATE SCHEMA "${schema}"`
             const down = `DROP SCHEMA "${schema}" CASCADE`
             await this.executeQueries(new Query(up), new Query(down))
@@ -578,12 +578,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops table schema
      * @param schemaPath
-     * @param ifExist
+     * @param ifExists
      * @param isCascade
      */
     async dropSchema(
         schemaPath: string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         isCascade?: boolean,
     ): Promise<void> {
         const schema =
@@ -591,13 +591,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 ? schemaPath
                 : schemaPath.split(".")[0]
         let exist = false
-        if (ifExist) {
+        if (ifExists) {
             const result = await this.query(
                 `SELECT * FROM "SYS"."SCHEMAS" WHERE "SCHEMA_NAME" = '${schema}'`,
             )
             exist = !!result.length
         }
-        if (!ifExist || (ifExist && exist)) {
+        if (!ifExists || (ifExists && exist)) {
             const up = `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`
             const down = `CREATE SCHEMA "${schema}"`
             await this.executeQueries(new Query(up), new Query(down))
@@ -607,17 +607,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new table.
      * @param table
-     * @param ifNotExist
+     * @param ifNotExists
      * @param createForeignKeys
      * @param createIndices
      */
     async createTable(
         table: Table,
-        ifNotExist: boolean = false,
+        ifNotExists: boolean = false,
         createForeignKeys: boolean = true,
         createIndices: boolean = true,
     ): Promise<void> {
-        if (ifNotExist) {
+        if (ifNotExists) {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
@@ -654,17 +654,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops the table.
      * @param tableOrName
-     * @param ifExist
+     * @param ifExists
      * @param dropForeignKeys
      * @param dropIndices
      */
     async dropTable(
         tableOrName: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys: boolean = true,
         dropIndices: boolean = true,
     ): Promise<void> {
-        if (ifExist) {
+        if (ifExists) {
             const isTableExist = await this.hasTable(tableOrName)
             if (!isTableExist) return Promise.resolve()
         }
@@ -723,9 +723,16 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops the view.
      * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
+
+        if (ifExists) {
+            const foundViews = await this.loadViews([viewName])
+            if (foundViews.length === 0) return
+        }
+
         const view = await this.getCachedView(viewName)
 
         const upQueries: Query[] = []
@@ -1633,10 +1640,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops column in the table.
      * @param tableOrName
      * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1650,10 +1659,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
@@ -1880,13 +1891,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops the columns in the table.
      * @param tableOrName
      * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const column of [...columns]) {
-            await this.dropColumn(tableOrName, column)
+            await this.dropColumn(tableOrName, column, ifExists)
         }
     }
 
@@ -2073,11 +2086,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops a primary key.
      * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
+
+        if (ifExists && table.primaryColumns.length === 0) return
         const parsedTableName = this.driver.parseTableName(table)
 
         if (!parsedTableName.schema) {
@@ -2204,10 +2225,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops unique constraint.
      * @param tableOrName
      * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `SAP HANA does not support unique constraints. Use unique index instead.`,
@@ -2218,10 +2241,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops unique constraints.
      * @param tableOrName
      * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `SAP HANA does not support unique constraints. Use unique index instead.`,
@@ -2274,10 +2299,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops check constraint.
      * @param tableOrName
      * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2285,10 +2312,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName
             : table.checks.find((c) => c.name === checkOrName)
-        if (!checkConstraint)
+        if (!checkConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied check constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropCheckConstraintSql(table, checkConstraint)
         const down = this.createCheckConstraintSql(table, checkConstraint)
@@ -2300,13 +2329,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops check constraints.
      * @param tableOrName
      * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = checkConstraints.map((checkConstraint) =>
-            this.dropCheckConstraint(tableOrName, checkConstraint),
+            this.dropCheckConstraint(tableOrName, checkConstraint, ifExists),
         )
         await Promise.all(promises)
     }
@@ -2343,10 +2374,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops exclusion constraint.
      * @param tableOrName
      * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `SAP HANA does not support exclusion constraints.`,
@@ -2357,10 +2390,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops exclusion constraints.
      * @param tableOrName
      * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `SAP HANA does not support exclusion constraints.`,
@@ -2414,10 +2449,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops a foreign key from the table.
      * @param tableOrName
      * @param foreignKeyOrName
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2425,10 +2462,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
 
         if (!foreignKey.name) {
             foreignKey.name = this.connection.namingStrategy.foreignKeyName(
@@ -2449,13 +2488,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops a foreign keys from the table.
      * @param tableOrName
      * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = foreignKeys.map((foreignKey) =>
-            this.dropForeignKey(tableOrName, foreignKey),
+            this.dropForeignKey(tableOrName, foreignKey, ifExists),
         )
         await Promise.all(promises)
     }
@@ -2501,10 +2542,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops an index.
      * @param tableOrName
      * @param indexOrName
+     * @param ifExists
      */
     async dropIndex(
         tableOrName: Table | string,
         indexOrName: TableIndex | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2512,10 +2555,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
 
         // old index may be passed without name. In this case we generate index name manually.
         if (!index.name) index.name = this.generateIndexName(table, index)
@@ -2530,13 +2575,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops an indices from the table.
      * @param tableOrName
      * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = indices.map((index) =>
-            this.dropIndex(tableOrName, index),
+            this.dropIndex(tableOrName, index, ifExists),
         )
         await Promise.all(promises)
     }
@@ -3210,13 +3257,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds drop table sql.
      * @param tableOrName
-     * @param ifExist
+     * @param ifExists
      */
     protected dropTableSql(
         tableOrName: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
     ): Query {
-        const query = ifExist
+        const query = ifExists
             ? `DROP TABLE IF EXISTS ${this.escapePath(tableOrName)}`
             : `DROP TABLE ${this.escapePath(tableOrName)}`
         return new Query(query)

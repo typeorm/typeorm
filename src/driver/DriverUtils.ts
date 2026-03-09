@@ -153,34 +153,6 @@ export class DriverUtils {
         return newAlias
     }
 
-    /**
-     * @param root0
-     * @param root0.maxAliasLength
-     * @param buildOptions
-     * @param alias
-     * @deprecated use `buildAlias` instead.
-     */
-    static buildColumnAlias(
-        { maxAliasLength }: Driver,
-        buildOptions: { shorten?: boolean; joiner?: string } | string,
-        ...alias: string[]
-    ) {
-        if (typeof buildOptions === "string") {
-            alias.unshift(buildOptions)
-            buildOptions = { shorten: false, joiner: "_" }
-        } else {
-            buildOptions = Object.assign(
-                { shorten: false, joiner: "_" },
-                buildOptions,
-            )
-        }
-        return this.buildAlias(
-            { maxAliasLength } as Driver,
-            buildOptions,
-            ...alias,
-        )
-    }
-
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------

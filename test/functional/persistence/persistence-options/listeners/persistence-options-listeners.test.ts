@@ -26,62 +26,62 @@ describe("persistence > persistence options > listeners", () => {
 
     it("save listeners should work by default", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Bakhrom"
                 post.description = "Hello"
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
                 post.title.should.be.equal("Bakhrom!")
             }),
         ))
 
     it("save listeners should be disabled if save option is specified", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Bakhrom"
                 post.description = "Hello"
-                await connection.manager.save(post, { listeners: false })
+                await dataSource.manager.save(post, { listeners: false })
                 post.title.should.be.equal("Bakhrom")
             }),
         ))
 
     it("remove listeners should work by default", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Bakhrom"
                 post.description = "Hello"
-                await connection.manager.save(post)
-                await connection.manager.remove(post)
+                await dataSource.manager.save(post)
+                await dataSource.manager.remove(post)
                 post.isRemoved.should.be.equal(true)
             }),
         ))
 
     it("remove listeners should be disabled if remove option is specified", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Bakhrom"
                 post.description = "Hello"
-                await connection.manager.save(post)
-                await connection.manager.remove(post, { listeners: false })
+                await dataSource.manager.save(post)
+                await dataSource.manager.remove(post, { listeners: false })
                 post.isRemoved.should.be.equal(false)
             }),
         ))
 
     it("soft-remove listeners should work by default", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new PostWithDeleteDateColumn()
                 post.title = "Bakhrom"
                 post.description = "Hello"
-                await connection.manager.save(post)
-                await connection.manager.softRemove(post)
+                await dataSource.manager.save(post)
+                await dataSource.manager.softRemove(post)
                 post.title.should.be.equal("Bakhrom!")
                 post.isSoftRemoved.should.be.equal(true)
             }),
@@ -89,12 +89,12 @@ describe("persistence > persistence options > listeners", () => {
 
     it("soft-remove listeners should be disabled if remove option is specified", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new PostWithDeleteDateColumn()
                 post.title = "Bakhrom"
                 post.description = "Hello"
-                await connection.manager.save(post)
-                await connection.manager.softRemove(post, { listeners: false })
+                await dataSource.manager.save(post)
+                await dataSource.manager.softRemove(post, { listeners: false })
                 post.title.should.be.equal("Bakhrom")
                 post.isSoftRemoved.should.be.equal(false)
             }),

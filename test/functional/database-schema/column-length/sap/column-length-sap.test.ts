@@ -22,8 +22,8 @@ describe("database schema > column length > sap", () => {
 
     it("all types should create with correct size", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -47,17 +47,17 @@ describe("database schema > column length > sap", () => {
 
     it("all types should update their size", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const metadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const metadata = dataSource.getMetadata(Post)
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
                 metadata.findColumnWithPropertyName("nvarchar")!.length = "100"
                 metadata.findColumnWithPropertyName("alphanum")!.length = "100"
                 metadata.findColumnWithPropertyName("shorttext")!.length = "100"
                 metadata.findColumnWithPropertyName("varbinary")!.length = "100"
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 

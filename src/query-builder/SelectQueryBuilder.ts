@@ -3600,7 +3600,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
 
-            rawResults = await new SelectQueryBuilder(
+            const paginationQueryBuilder = new SelectQueryBuilder(
                 this.connection,
                 queryRunner,
             )
@@ -3624,8 +3624,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.expressionMap.cacheDuration,
                 )
                 .setParameters(this.getParameters())
-                .setNativeParameters(this.expressionMap.nativeParameters)
-                .getRawMany()
+            rawResults = await paginationQueryBuilder.getRawMany()
 
             if (rawResults.length > 0) {
                 let condition: string
@@ -4371,7 +4370,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         embedPrefix?: string,
     ) {
         let condition: string = ""
-        // let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
         if (Array.isArray(where)) {
             if (where.length) {
                 condition = where
@@ -4410,7 +4408,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === undefined) {
                     const undefinedBehavior =
                         this.connection.options.invalidWhereValuesBehavior
-                            ?.undefined || "ignore"
+                            ?.undefined || "throw"
                     if (undefinedBehavior === "throw") {
                         throw new TypeORMError(
                             `Undefined value encountered in property '${alias}.${key}' of a where condition. ` +
@@ -4423,7 +4421,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === null) {
                     const nullBehavior =
                         this.connection.options.invalidWhereValuesBehavior
-                            ?.null || "ignore"
+                            ?.null || "throw"
                     if (nullBehavior === "ignore") {
                         continue
                     } else if (nullBehavior === "throw") {
@@ -4496,7 +4494,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (where[key] === null) {
                         const nullBehavior =
                             this.connection.options.invalidWhereValuesBehavior
-                                ?.null || "ignore"
+                                ?.null || "throw"
                         if (nullBehavior === "sql-null") {
                             andConditions.push(
                                 `${alias}.${propertyPath} IS NULL`,
@@ -4514,10 +4512,28 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     // if all properties of where are undefined we don't need to join anything
                     // this can happen when user defines map with conditional queries inside
                     if (typeof where[key] === "object") {
-                        const allAllUndefined = Object.keys(where[key]).every(
+                        const whereKeys = Object.keys(where[key])
+
+                        // empty object — no predicates to apply, skip the join
+                        if (whereKeys.length === 0) {
+                            continue
+                        }
+
+                        const allUndefined = whereKeys.every(
                             (k) => where[key][k] === undefined,
                         )
-                        if (allAllUndefined) {
+                        if (allUndefined) {
+                            const undefinedBehavior =
+                                this.connection.options
+                                    .invalidWhereValuesBehavior?.undefined ||
+                                "throw"
+                            if (undefinedBehavior === "throw") {
+                                throw new TypeORMError(
+                                    `Undefined value encountered in nested relation '${alias}.${key}' of a where condition. ` +
+                                        `All properties of the nested object are undefined. ` +
+                                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                                )
+                            }
                             continue
                         }
                     }
@@ -4681,7 +4697,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                         if (condition) {
                             andConditions.push(condition)
-                            // parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
                         }
                     }
                 }

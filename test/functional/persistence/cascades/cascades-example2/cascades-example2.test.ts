@@ -22,9 +22,9 @@ describe("persistence > cascades > example 2", () => {
 
     it("should insert everything by cascades properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // not supported in Spanner
-                if (connection.driver.options.type === "spanner") return
+                if (dataSource.driver.options.type === "spanner") return
 
                 const photo = new Photo()
                 const user = new User()
@@ -41,9 +41,9 @@ describe("persistence > cascades > example 2", () => {
                 question.answers = [answer1, answer2]
                 user.question = question
 
-                await connection.manager.save(question)
+                await dataSource.manager.save(question)
 
-                const loadedQuestion = await connection.manager
+                const loadedQuestion = await dataSource.manager
                     .createQueryBuilder(Question, "question")
                     .leftJoinAndSelect("question.answers", "answer")
                     .leftJoinAndSelect("answer.photo", "answerPhoto")

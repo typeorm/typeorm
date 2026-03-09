@@ -18,19 +18,19 @@ describe("entity-listeners", () => {
 
     it("beforeUpdate", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.title = "post title"
                 post.text = "post text"
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                let loadedPost = await connection
+                let loadedPost = await dataSource
                     .getRepository(Post)
                     .findOneBy({ id: post.id })
                 loadedPost!.title = "post title   "
-                await connection.manager.save(loadedPost)
+                await dataSource.manager.save(loadedPost)
 
-                loadedPost = await connection
+                loadedPost = await dataSource
                     .getRepository(Post)
                     .findOneBy({ id: post.id })
                 loadedPost!.title.should.be.equal("post title")

@@ -26,8 +26,8 @@ describe("pgcrypto", () => {
 
     it("should make correct schema with Postgres' uuid type", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const schema = await queryRunner.getTable("record")
                 await queryRunner.release()
                 expect(schema).not.to.be.undefined
@@ -44,8 +44,8 @@ describe("pgcrypto", () => {
 
     it("should persist uuid correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const recordRepo = connection.getRepository(Record)
+            dataSources.map(async (dataSource) => {
+                const recordRepo = dataSource.getRepository(Record)
                 const record = new Record()
                 record.id = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 const persistedRecord = await recordRepo.save(record)
@@ -63,10 +63,10 @@ describe("pgcrypto", () => {
 
     it("should persist uuid correctly when it is generated non primary column", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const questionRepository = connection.getRepository(Question)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const questionRepository = dataSource.getRepository(Question)
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 const questionTable = await queryRunner.getTable("question")
                 await queryRunner.release()

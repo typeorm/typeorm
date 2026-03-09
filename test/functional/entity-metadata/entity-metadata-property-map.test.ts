@@ -23,7 +23,7 @@ describe("entity-metadata > property-map", () => {
 
     it("should create correct property map object", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.id = 1
                 user1.name = "Alice"
@@ -42,7 +42,7 @@ describe("entity-metadata > property-map", () => {
                 post1.counters.subcounters.watchedUsers = [user1]
 
                 const postPropertiesMap =
-                    connection.getMetadata(Post).propertiesMap
+                    dataSource.getMetadata(Post).propertiesMap
                 expect(
                     postPropertiesMap.should.be.eql({
                         id: "id",

@@ -867,20 +867,6 @@ export class Broadcaster {
     }
 
     /**
-     * @param result
-     * @param metadata
-     * @param entities
-     * @deprecated Use `broadcastLoadForAllEvent`
-     */
-    broadcastLoadEventsForAll(
-        result: BroadcasterResult,
-        metadata: EntityMetadata,
-        entities: ObjectLiteral[],
-    ): void {
-        return this.broadcastLoadEvent(result, metadata, entities)
-    }
-
-    /**
      * Broadcasts "AFTER_LOAD" event for all given entities, and their sub-entities.
      * After load event is executed after entity has been loaded from the database.
      * All subscribers and entity listeners who listened to this event will be executed at this point.

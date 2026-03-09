@@ -60,12 +60,6 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection name.
-     * @deprecated we don't need names anymore since we are going to drop all related methods relying on this property.
-     */
-    readonly name: string
-
-    /**
      * Connection options.
      */
     readonly options: DataSourceOptions
@@ -139,7 +133,6 @@ export class DataSource {
 
     constructor(options: DataSourceOptions) {
         registerQueryBuilders()
-        this.name = options.name || "default"
         this.options = options
         this.logger = new LoggerFactory().create(
             this.options.logger,
@@ -239,8 +232,7 @@ export class DataSource {
      * but it also can setup a connection pool with database to use.
      */
     async initialize(): Promise<this> {
-        if (this.isInitialized)
-            throw new CannotConnectAlreadyConnectedError(this.name)
+        if (this.isInitialized) throw new CannotConnectAlreadyConnectedError()
 
         // connect to the database via its driver
         await this.driver.connect()
@@ -283,8 +275,7 @@ export class DataSource {
      * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
      */
     async destroy(): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         await this.driver.disconnect()
 
@@ -300,8 +291,7 @@ export class DataSource {
      * @param dropBeforeSync If set to true then it drops the database with all its tables and data
      */
     async synchronize(dropBeforeSync: boolean = false): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         if (dropBeforeSync) await this.dropDatabase()
 
@@ -362,8 +352,7 @@ export class DataSource {
         transaction?: "all" | "none" | "each"
         fake?: boolean
     }): Promise<Migration[]> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
@@ -388,8 +377,7 @@ export class DataSource {
         transaction?: "all" | "none" | "each"
         fake?: boolean
     }): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
@@ -405,7 +393,7 @@ export class DataSource {
      */
     async showMigrations(): Promise<boolean> {
         if (!this.isInitialized) {
-            throw new CannotExecuteNotConnectedError(this.name)
+            throw new CannotExecuteNotConnectedError()
         }
         const migrationExecutor = new MigrationExecutor(this)
         return await migrationExecutor.showMigrations()

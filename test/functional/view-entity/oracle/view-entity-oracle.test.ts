@@ -23,8 +23,8 @@ describe("view entity > oracle", () => {
 
     it("should create entity view from string definition", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const postCategory = await queryRunner.getView("post_category")
                 expect(postCategory).to.be.exist
                 await queryRunner.release()
@@ -33,27 +33,27 @@ describe("view entity > oracle", () => {
 
     it("should correctly return data from View", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "Cars"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "Airplanes"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const post1 = new Post()
                 post1.name = "About BMW"
                 post1.categoryId = category1.id
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.name = "About Boeing"
                 post2.categoryId = category2.id
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const postCategories =
-                    await connection.manager.find(PostCategory)
+                    await dataSource.manager.find(PostCategory)
                 postCategories.length.should.be.equal(2)
 
                 postCategories[0].id.should.be.equal(1)
