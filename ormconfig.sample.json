@@ -4,10 +4,9 @@
     "type": "mysql",
     "host": "localhost",
     "port": 3306,
-    "username": "typeorm",
-    "password": "typeorm",
+    "username": "root",
+    "password": "admin",
     "database": "typeorm",
-    "legacySpatialSupport": false,
     "logging": false
   },
   {
@@ -15,10 +14,9 @@
     "type": "mariadb",
     "host": "localhost",
     "port": 3307,
-    "username": "typeorm",
-    "password": "typeorm",
+    "username": "root",
+    "password": "admin",
     "database": "typeorm",
-    "legacySpatialSupport": false,
     "logging": false
   },
   {
@@ -37,8 +35,8 @@
     "type": "postgres",
     "host": "localhost",
     "port": 5432,
-    "username": "typeorm",
-    "password": "typeorm",
+    "username": "username",
+    "password": "password",
     "database": "typeorm",
     "logging": false
   },
@@ -86,7 +84,6 @@
   },
   {
     "skip": false,
-    "disabledIfNotEnabledImplicitly": true,
     "type": "mongodb",
     "host": "localhost",
     "port": 27017,

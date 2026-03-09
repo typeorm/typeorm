@@ -6,9 +6,9 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_RANDOM_ROOT_PASSWORD: "true"
-      MYSQL_USER: "typeorm"
-      MYSQL_PASSWORD: "typeorm"
+      MYSQL_ROOT_PASSWORD: "admin"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
       MYSQL_DATABASE: "typeorm"
 
   mysql-9:
@@ -17,9 +17,9 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_RANDOM_ROOT_PASSWORD: "true"
-      MYSQL_USER: "typeorm"
-      MYSQL_PASSWORD: "typeorm"
+      MYSQL_ROOT_PASSWORD: "admin"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
       MYSQL_DATABASE: "typeorm"
 
   # mariadb
@@ -29,9 +29,9 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_RANDOM_ROOT_PASSWORD: "true"
-      MYSQL_USER: "typeorm"
-      MYSQL_PASSWORD: "typeorm"
+      MYSQL_ROOT_PASSWORD: "admin"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
       MYSQL_DATABASE: "typeorm"
 
   mariadb-12:
@@ -40,9 +40,9 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_RANDOM_ROOT_PASSWORD: "true"
-      MYSQL_USER: "typeorm"
-      MYSQL_PASSWORD: "typeorm"
+      MYSQL_ROOT_PASSWORD: "admin"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
       MYSQL_DATABASE: "typeorm"
 
   # postgres
@@ -54,8 +54,8 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "typeorm"
-      POSTGRES_PASSWORD: "typeorm"
+      POSTGRES_USER: "username"
+      POSTGRES_PASSWORD: "password"
       POSTGRES_DB: "typeorm"
 
   # postgres
@@ -67,8 +67,8 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "typeorm"
-      POSTGRES_PASSWORD: "typeorm"
+      POSTGRES_USER: "username"
+      POSTGRES_PASSWORD: "password"
       POSTGRES_DB: "typeorm"
 
   # mssql

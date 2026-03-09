@@ -15,27 +15,27 @@ jobs:
         ports:
           - "3306:3306"
         env:
-          MYSQL_RANDOM_ROOT_PASSWORD: "true"
-          MYSQL_USER: "typeorm"
-          MYSQL_PASSWORD: "typeorm"
-          MYSQL_DATABASE: "typeorm"
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: typeorm
       mariadb:
         image: mariadb:10.6.24-jammy
         ports:
           - "3307:3306"
         env:
-          MYSQL_RANDOM_ROOT_PASSWORD: "true"
-          MYSQL_USER: "typeorm"
-          MYSQL_PASSWORD: "typeorm"
-          MYSQL_DATABASE: "typeorm"
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: typeorm
       postgres:
         image: ghcr.io/naorpeled/typeorm-postgres:pg17-postgis3-pgvectorv0.8.0
         ports:
           - "5432:5432"
         env:
-          POSTGRES_USER: "typeorm"
-          POSTGRES_PASSWORD: "typeorm"
-          POSTGRES_DB: "typeorm"
+          POSTGRES_USER: username
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: typeorm
         options: >-
           --health-cmd pg_isready
           --health-interval 10s

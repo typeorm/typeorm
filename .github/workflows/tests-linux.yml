@@ -77,9 +77,9 @@ jobs:
         ports:
           - "1433:1433"
         env:
-          SA_PASSWORD: "Admin12345"
-          ACCEPT_EULA: "Y"
-          MSSQL_PID: "Express"
+          SA_PASSWORD: Admin12345
+          ACCEPT_EULA: Y
+          MSSQL_PID: Express
 
     steps:
       - uses: actions/checkout@v6
@@ -110,19 +110,19 @@ jobs:
         ports:
           - "3306:3306"
         env:
-          MYSQL_RANDOM_ROOT_PASSWORD: "true"
-          MYSQL_USER: "typeorm"
-          MYSQL_PASSWORD: "typeorm"
-          MYSQL_DATABASE: "typeorm"
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: typeorm
       mariadb:
         image: mariadb:10.6.24-jammy
         ports:
           - "3307:3306"
         env:
-          MYSQL_RANDOM_ROOT_PASSWORD: "true"
-          MYSQL_USER: "typeorm"
-          MYSQL_PASSWORD: "typeorm"
-          MYSQL_DATABASE: "typeorm"
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: typeorm
 
     steps:
       - uses: actions/checkout@v6
@@ -153,19 +153,19 @@ jobs:
         ports:
           - "3306:3306"
         env:
-          MYSQL_RANDOM_ROOT_PASSWORD: "true"
-          MYSQL_USER: "typeorm"
-          MYSQL_PASSWORD: "typeorm"
-          MYSQL_DATABASE: "typeorm"
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: typeorm
       mariadb:
         image: mariadb:12.1.2
         ports:
           - "3307:3306"
         env:
-          MYSQL_RANDOM_ROOT_PASSWORD: "true"
-          MYSQL_USER: "typeorm"
-          MYSQL_PASSWORD: "typeorm"
-          MYSQL_DATABASE: "typeorm"
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: typeorm
 
     steps:
       - uses: actions/checkout@v6
@@ -246,9 +246,9 @@ jobs:
         ports:
           - "5432:5432"
         env:
-          POSTGRES_USER: "typeorm"
-          POSTGRES_PASSWORD: "typeorm"
-          POSTGRES_DB: "typeorm"
+          POSTGRES_USER: username
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: typeorm
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
