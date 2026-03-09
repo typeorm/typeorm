@@ -311,7 +311,7 @@ jobs:
           path: build/
 
       - run: pnpm install
-      - run: cat ormconfig.sample.json | jq 'map(select(.name == "oracle"))' > ormconfig.json
+      - run: cat ormconfig.sample.json | jq 'map(select(.type == "oracle"))' > ormconfig.json
       - run: docker compose up oracle --no-recreate --wait
       - run: sleep 3 # wait for oracle to be fully ready
       - run: pnpm exec c8 pnpm run test:ci
@@ -341,7 +341,7 @@ jobs:
           path: build/
 
       - run: pnpm install
-      - run: cat ormconfig.sample.json | jq 'map(select(.name == "hanaexpress"))' > ormconfig.json
+      - run: cat ormconfig.sample.json | jq 'map(select(.type == "sap"))' > ormconfig.json
       - run: docker compose up hanaexpress --no-recreate --wait
       - run: pnpm exec c8 pnpm run test:ci
 
