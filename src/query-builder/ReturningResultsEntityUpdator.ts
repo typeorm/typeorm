@@ -203,11 +203,13 @@ export class ReturningResultsEntityUpdator {
                 )
             }
 
-            this.queryRunner.manager.merge(
-                metadata.target as any,
-                entity,
-                generatedMap,
-            )
+            if (!this.expressionMap.onUpdate) {
+                this.queryRunner.manager.merge(
+                    metadata.target as any,
+                    entity,
+                    generatedMap,
+                )
+            }
 
             return generatedMap
         })
