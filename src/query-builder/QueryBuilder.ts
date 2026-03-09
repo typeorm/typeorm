@@ -489,13 +489,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Gets query to be executed with all parameters used in it.
      */
     getQueryAndParameters(): [string, any[]] {
-        // this execution order is important because getQuery method generates this.expressionMap.nativeParameters values
         const query = this.getQuery()
         const parameters = this.getParameters()
         return this.connection.driver.escapeQueryWithParameters(
             query,
             parameters,
-            this.expressionMap.nativeParameters,
         )
     }
 
@@ -1623,8 +1621,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 this.expressionMap.aliasNamePrefixingEnabled
             whereQueryBuilder.expressionMap.parameters =
                 this.expressionMap.parameters
-            whereQueryBuilder.expressionMap.nativeParameters =
-                this.expressionMap.nativeParameters
             whereQueryBuilder.expressionMap.joinAttributes =
                 this.expressionMap.joinAttributes
 

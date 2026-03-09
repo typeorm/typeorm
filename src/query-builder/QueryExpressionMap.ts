@@ -321,12 +321,6 @@ export class QueryExpressionMap {
     timeTravel?: boolean | string
 
     /**
-     * Extra parameters.
-     * @deprecated Use standard parameters instead
-     */
-    nativeParameters: ObjectLiteral = {}
-
-    /**
      * Query Comment to include extra information for debugging or other purposes.
      */
     comment?: string
@@ -544,7 +538,6 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
         map.timeTravel = this.timeTravel
-        map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
         map.commonTableExpressions = this.commonTableExpressions.map(
             (cteOptions) => ({
