@@ -18,7 +18,7 @@ jobs:
         ports:
           - "26257:26257"
         env:
-          COCKROACH_ARGS: "start-single-node --insecure --cache=1GB --store=type=mem,size=4GB"
+          COCKROACH_ARGS: "start-single-node --insecure --store=type=mem,size=2GB"
         options: >-
           --health-cmd "cockroach sql --insecure -e 'SELECT 1'"
           --health-interval 10s
