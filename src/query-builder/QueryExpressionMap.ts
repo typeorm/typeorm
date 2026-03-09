@@ -99,11 +99,6 @@ export class QueryExpressionMap {
     extraReturningColumns: ColumnMetadata[] = []
 
     /**
-     * Optional on conflict statement used in insertion query in postgres.
-     */
-    onConflict: string = ""
-
-    /**
      * Optional on ignore statement used in insertion query in databases.
      */
     onIgnore: boolean = false
@@ -504,7 +499,6 @@ export class QueryExpressionMap {
         map.mainAlias = this.mainAlias
         map.valuesSet = this.valuesSet
         map.returning = this.returning
-        map.onConflict = this.onConflict
         map.onIgnore = this.onIgnore
         map.onUpdate = this.onUpdate
         map.joinAttributes = this.joinAttributes.map(
