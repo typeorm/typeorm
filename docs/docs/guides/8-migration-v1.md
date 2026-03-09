@@ -126,6 +126,37 @@ const repository = dataSource.getMongoRepository(User)
 
 The internal MongoDB types are no longer exported. You can import `ObjectId` from `mongodb` instead of `typeorm`.
 
+## MS SQL Server
+
+### `domain` connection option removed
+
+The deprecated `domain` option on `SqlServerConnectionCredentialsOptions` has been removed. Use the `authentication` option with NTLM type instead:
+
+```typescript
+// Before
+new DataSource({
+    type: "mssql",
+    domain: "MYDOMAIN",
+    username: "user",
+    password: "pass",
+    // ...
+})
+
+// After
+new DataSource({
+    type: "mssql",
+    authentication: {
+        type: "ntlm",
+        options: {
+            domain: "MYDOMAIN",
+            userName: "user",
+            password: "pass",
+        },
+    },
+    // ...
+})
+```
+
 ## Expo
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
