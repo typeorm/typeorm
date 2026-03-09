@@ -180,4 +180,17 @@ describe("query runner > drop unique constraint", () => {
                 }
             }),
         ))
+
+    it("should not throw when dropping non-existent unique constraint with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropUniqueConstraint(
+                    "post",
+                    "non_existent_unique",
+                    true,
+                )
+                await queryRunner.release()
+            }),
+        ))
 })

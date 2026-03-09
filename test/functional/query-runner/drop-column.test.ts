@@ -240,4 +240,17 @@ describe("query runner > drop column", () => {
                 }),
             ))
     })
+
+    it("should not throw when dropping non-existent column with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropColumn(
+                    "post",
+                    "non_existent_column",
+                    true,
+                )
+                await queryRunner.release()
+            }),
+        ))
 })
