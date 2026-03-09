@@ -6,10 +6,10 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_USER: "typeorm"
+      MYSQL_PASSWORD: "typeorm"
+      MYSQL_DATABASE: "typeorm"
 
   mysql-9:
     image: "mysql:9.5.0"
@@ -17,10 +17,10 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_USER: "typeorm"
+      MYSQL_PASSWORD: "typeorm"
+      MYSQL_DATABASE: "typeorm"
 
   # mariadb
   mariadb-10:
@@ -29,10 +29,10 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_USER: "typeorm"
+      MYSQL_PASSWORD: "typeorm"
+      MYSQL_DATABASE: "typeorm"
 
   mariadb-12:
     image: "mariadb:12.1.2"
@@ -40,10 +40,10 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_USER: "typeorm"
+      MYSQL_PASSWORD: "typeorm"
+      MYSQL_DATABASE: "typeorm"
 
   # postgres
   postgres-14:
@@ -54,9 +54,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "typeorm"
+      POSTGRES_PASSWORD: "typeorm"
+      POSTGRES_DB: "typeorm"
 
   # postgres
   postgres-17:
@@ -67,9 +67,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "typeorm"
+      POSTGRES_PASSWORD: "typeorm"
+      POSTGRES_DB: "typeorm"
 
   # mssql
   mssql:
@@ -133,7 +133,7 @@ services:
       - kernel.shmmni=4096 # Maximum number of shared memory segments
       - net.ipv4.ip_local_port_range=40000 60999
     volumes:
-      - volume-hana-xe:/hana/mounts
+      - /hana/mounts
       - ./docker/hana/hxe-config.json:/hana/hxe-config.json:ro
     ports:
       - "39041:39041"
@@ -147,15 +147,3 @@ services:
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
-
-  # redis
-  # redis:
-  #   image: "redis:3.0.3"
-  #   container_name: "typeorm-redis"
-  #   ports:
-  #     - "6379:6379"
-
-volumes:
-  # cockroach-data:
-  # oracle-data:
-  volume-hana-xe:

@@ -11,31 +11,31 @@ jobs:
 
     services:
       mysql:
-        image: mysql:5.7.37
+        image: mysql:5.7.44
         ports:
           - "3306:3306"
         env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
+          MYSQL_RANDOM_ROOT_PASSWORD: "true"
+          MYSQL_USER: "typeorm"
+          MYSQL_PASSWORD: "typeorm"
+          MYSQL_DATABASE: "typeorm"
       mariadb:
-        image: mariadb:10.10.3
+        image: mariadb:10.6.24-jammy
         ports:
           - "3307:3306"
         env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
+          MYSQL_RANDOM_ROOT_PASSWORD: "true"
+          MYSQL_USER: "typeorm"
+          MYSQL_PASSWORD: "typeorm"
+          MYSQL_DATABASE: "typeorm"
       postgres:
         image: ghcr.io/naorpeled/typeorm-postgres:pg17-postgis3-pgvectorv0.8.0
         ports:
           - "5432:5432"
         env:
-          POSTGRES_USERNAME: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
+          POSTGRES_USER: "typeorm"
+          POSTGRES_PASSWORD: "typeorm"
+          POSTGRES_DB: "typeorm"
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -50,7 +50,7 @@ jobs:
           node-version: 24
           cache: "pnpm"
       - run: pnpm install
-      - run: cp .github/workflows/test/mutation-testing.ormconfig.json ormconfig.json
+      - run: jq 'map(select(.type == "better-sqlite3" or .type == "mysql" or .type == "mariadb" or .type == "postgres" or .type == "sqljs"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec stryker run
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}

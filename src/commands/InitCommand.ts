@@ -192,9 +192,9 @@ export class InitCommand implements yargs.CommandModule {
                     'type: "mysql"',
                     'host: "localhost"',
                     "port: 3306",
-                    'username: "test"',
-                    'password: "test"',
-                    'database: "test"',
+                    'username: "typeorm"',
+                    'password: "typeorm"',
+                    'database: "typeorm"',
                 ]
                 break
 
@@ -203,9 +203,9 @@ export class InitCommand implements yargs.CommandModule {
                     'type: "mariadb"',
                     'host: "localhost"',
                     "port: 3306",
-                    'username: "test"',
-                    'password: "test"',
-                    'database: "test"',
+                    'username: "typeorm"',
+                    'password: "typeorm"',
+                    'database: "typeorm"',
                 ]
                 break
 
@@ -221,9 +221,9 @@ export class InitCommand implements yargs.CommandModule {
                     'type: "postgres"',
                     'host: "localhost"',
                     "port: 5432",
-                    'username: "test"',
-                    'password: "test"',
-                    'database: "test"',
+                    'username: "typeorm"',
+                    'password: "typeorm"',
+                    'database: "typeorm"',
                 ]
                 break
 
