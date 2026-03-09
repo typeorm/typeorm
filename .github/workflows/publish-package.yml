@@ -1,20 +1,24 @@
 # Publishing strategy:
 #
-# | Trigger        | Target    | Branch | Version                    | Tag       |
-# |----------------|-----------|--------|----------------------------|-----------|
-# | GitHub Release |           | v0.3   | 0.3.29                     | latest    |
-# | GitHub Release |           | master | 1.0.0                      | latest    |
-# | GitHub Release |           | master | 1.0.0-pre                  | next      |
-# | GitHub Release |           | master | 1.0.0-rc.1                 | next      |
-# | Schedule       |           | v0.3   | 0.3.29-nightly.20260309    | nightly   |
-# | Schedule       |           | master | 1.0.0-nightly.20260309     | dev       |
-# | Manual         | release   | master | (same as GitHub Release)   | (auto)    |
-# | Manual         | master    | master | 1.0.0-nightly.20260309     | dev       |
-# | Manual         | v0.3      | v0.3   | 0.3.29-nightly.20260309    | nightly   |
+# | Trigger        | Target    | Branch | Version                    | Tag                |
+# |----------------|-----------|--------|----------------------------|--------------------|
+# | GitHub Release |           | v0.3   | 0.3.29                     | latest/legacy (*)  |
+# | GitHub Release |           | master | 1.0.0                      | latest (*)         |
+# | GitHub Release |           | master | 1.0.0-pre                  | next               |
+# | GitHub Release |           | master | 1.0.0-rc.1                 | next               |
+# | Schedule       |           | v0.3   | 0.3.29-nightly.20260309    | nightly            |
+# | Schedule       |           | master | 1.0.0-nightly.20260309     | dev                |
+# | Manual         | release   | master | (same as GitHub Release)   | (auto)             |
+# | Manual         | master    | master | 1.0.0-nightly.20260309     | dev                |
+# | Manual         | v0.3      | v0.3   | 0.3.29-nightly.20260309    | nightly            |
 #
-# Tag detection for releases: version with prerelease suffix → "next", otherwise → "latest".
+# (*) Tag detection for releases: prerelease suffix → "next", stable → "latest" only if
+#  the version is greater than the current "latest" (prevents older branches from
+#  overtaking newer releases). Falls back to "legacy" otherwise (pnpm publish without --tag
+#  defaults to latest).
+#
 # Nightly skip logic: compares HEAD against the last published gitHead for the dist-tag.
-
+#
 # Trusted Publishing only supports one workflow file per package, so we need to fit
 # all our publish logic into a single workflow.
 
@@ -101,7 +105,19 @@ jobs:
             if [[ "$VERSION" == *-* ]]; then
               echo "tag=next" >> $GITHUB_OUTPUT
             else
-              echo "tag=latest" >> $GITHUB_OUTPUT
+              CURRENT_LATEST=$(pnpm view typeorm@latest version 2>/dev/null || echo "0.0.0")
+              IS_GREATER=$(node -e "
+                const a = '$VERSION'.split('.').map(Number);
+                const b = '$CURRENT_LATEST'.split('.').map(Number);
+                const gt = a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] > b[2])));
+                console.log(gt ? 'true' : 'false');
+              ")
+              if [ "$IS_GREATER" == "true" ]; then
+                echo "tag=latest" >> $GITHUB_OUTPUT
+              else
+                echo "Version $VERSION is not greater than current latest $CURRENT_LATEST – tagging as 'legacy'"
+                echo "tag=legacy" >> $GITHUB_OUTPUT
+              fi
             fi
           else
             echo "tag=${{ matrix.tag }}" >> $GITHUB_OUTPUT
