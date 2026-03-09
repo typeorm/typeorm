@@ -29,15 +29,7 @@ export class ConnectionOptionsYmlReader {
  * as well as during webpack builds.
  */
 export class ConnectionOptionsReader {
-    async all() {
-        throw new Error(`Cannot read connection options in a browser context.`);
-    }
-
     async get() {
-        throw new Error(`Cannot read connection options in a browser context.`);
-    }
-
-    async has() {
         throw new Error(`Cannot read connection options in a browser context.`);
     }
 }

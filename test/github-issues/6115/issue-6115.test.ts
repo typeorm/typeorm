@@ -26,7 +26,6 @@ describe("github issues > #6115 Down migration for enums with defaults are wrong
                 const options = setupSingleTestingConnection(
                     _connection.options.type,
                     {
-                        name: `${_connection.name}-v2`,
                         entities: [__dirname + "/entity/v2/*{.js,.ts}"],
                         dropSchema: false,
                         schemaCreate: false,

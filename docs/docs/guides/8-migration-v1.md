@@ -126,6 +126,37 @@ const repository = dataSource.getMongoRepository(User)
 
 The internal MongoDB types are no longer exported. You can import `ObjectId` from `mongodb` instead of `typeorm`.
 
+## MS SQL Server
+
+### `domain` connection option removed
+
+The deprecated `domain` option on `SqlServerConnectionCredentialsOptions` has been removed. Use the `authentication` option with NTLM type instead:
+
+```typescript
+// Before
+new DataSource({
+    type: "mssql",
+    domain: "MYDOMAIN",
+    username: "user",
+    password: "pass",
+    // ...
+})
+
+// After
+new DataSource({
+    type: "mssql",
+    authentication: {
+        type: "ntlm",
+        options: {
+            domain: "MYDOMAIN",
+            userName: "user",
+            password: "pass",
+        },
+    },
+    // ...
+})
+```
+
 ## Expo
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
@@ -366,4 +397,21 @@ export default {
     url: process.env.DB_URL,
     // ...
 }
+```
+
+### Name
+
+The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
+
+`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
+
+```typescript
+const reader = new ConnectionOptionsReader()
+
+// when your ormconfig has a single data source
+const [options] = await reader.get()
+
+// when you need a specific config from multiple data sources
+const allOptions = await reader.get()
+const postgresOptions = allOptions.find((o) => o.type === "postgres")
 ```
