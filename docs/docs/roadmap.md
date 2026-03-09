@@ -2,7 +2,7 @@
 
 You can track upcoming releases and their progress via GitHub milestones:
 
-- [**1.0 milestone**](https://github.com/typeorm/typeorm/milestone/11) — the next major release, including removal of all deprecated APIs, modernized defaults, and breaking changes outlined in the [migration guide](./guides/8-migration-v1.md).
+- [**1.0**](https://github.com/typeorm/typeorm/milestone/11) — the next major release, including removal of all deprecated APIs, modernized defaults, and breaking changes outlined in the [migration guide](./guides/8-migration-v1.md).
 
 For a full list of milestones, see the [milestones page](https://github.com/typeorm/typeorm/milestones).
 
