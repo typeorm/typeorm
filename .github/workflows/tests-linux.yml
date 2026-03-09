@@ -18,6 +18,11 @@ jobs:
           - "26257:26257"
         env:
           COCKROACH_ARGS: "start-single-node --insecure --cache=1GB --store=type=mem,size=4GB"
+        options: >-
+          --health-cmd "cockroach sql --insecure -e 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v6
