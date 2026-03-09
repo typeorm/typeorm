@@ -46,4 +46,24 @@ describe("query runner > drop primary key", () => {
                 await queryRunner.release()
             }),
         ))
+
+    it("should not throw when dropping non-existent primary key with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // CockroachDB does not allow dropping primary key
+                if (
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                )
+                    return
+
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropPrimaryKey(
+                    "post",
+                    "non_existent_pk",
+                    true,
+                )
+                await queryRunner.release()
+            }),
+        ))
 })
