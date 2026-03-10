@@ -559,14 +559,10 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                 Object.keys(orderBys)
                     .map((columnName) => {
                         if (typeof orderBys[columnName] === "string") {
-                            return (
-                                this.replacePropertyNames(columnName) +
-                                " " +
-                                orderBys[columnName]
-                            )
+                            return columnName + " " + orderBys[columnName]
                         } else {
                             return (
-                                this.replacePropertyNames(columnName) +
+                                columnName +
                                 " " +
                                 (orderBys[columnName] as any).order +
                                 " " +
