@@ -1,7 +1,6 @@
 import type { DataSource } from "../data-source/DataSource"
 import { MissingDriverError } from "../error/MissingDriverError"
-import { Driver } from "./Driver"
-import { DataSource } from "../data-source/DataSource"
+import type { Driver } from "./Driver"
 
 /**
  * Helps to create drivers.
