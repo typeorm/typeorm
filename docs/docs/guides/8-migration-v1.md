@@ -453,3 +453,20 @@ const [options] = await reader.get()
 const allOptions = await reader.get()
 const postgresOptions = allOptions.find((o) => o.type === "postgres")
 ```
+
+## Container system
+
+The deprecated IoC container integration has been removed: `useContainer()`, `getFromContainer()`, `ContainerInterface`, `ContainedType`, and `UseContainerOptions`. TypeORM now always instantiates migrations and subscribers directly. If you need dependency injection, instantiate your classes yourself and pass them to the `DataSource` options:
+
+```typescript
+// Before
+import { useContainer } from "typeorm"
+useContainer(myContainer)
+
+// After — pass pre-built instances directly
+new DataSource({
+    subscribers: [new MySubscriber(dep1, dep2)],
+    migrations: [new MyMigration(dep1)],
+    // ...
+})
+```
