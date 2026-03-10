@@ -366,13 +366,13 @@ The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, confli
 .orUpdate(["title"], ["date"])
 ```
 
-### `setNativeParameters`
-
-The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
-
 ### `replacePropertyNames`
 
 The deprecated `replacePropertyNames()` protected method has been removed. It was a no-op since property name replacement was moved to end-of-query processing via `replacePropertyNamesForTheWholeQuery()`. If you were overriding this method in a custom QueryBuilder subclass, the override is no longer called.
+
+### `setNativeParameters`
+
+The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
 
 ## Migrations
 
