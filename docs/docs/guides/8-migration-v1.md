@@ -322,7 +322,9 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
 
-### `InsertQueryBuilder.onConflict()`
+## QueryBuilder
+
+### `onConflict`
 
 The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:
 
@@ -365,7 +367,7 @@ await dataSource
     .execute()
 ```
 
-### Deprecated `orUpdate()` overload
+### `orUpdate`
 
 The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, conflict_target? }` has been removed. Use the array-based signature instead:
 
@@ -377,7 +379,11 @@ The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, confli
 .orUpdate(["title"], ["date"])
 ```
 
-### `QueryBuilder.setNativeParameters()`
+### `replacePropertyNames`
+
+The deprecated `replacePropertyNames()` protected method has been removed. It was a no-op since property name replacement was moved to end-of-query processing via `replacePropertyNamesForTheWholeQuery()`. If you were overriding this method in a custom QueryBuilder subclass, the override is no longer called.
+
+### `setNativeParameters`
 
 The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
 
@@ -465,4 +471,21 @@ const [options] = await reader.get()
 // when you need a specific config from multiple data sources
 const allOptions = await reader.get()
 const postgresOptions = allOptions.find((o) => o.type === "postgres")
+```
+
+## Container system
+
+The deprecated IoC container integration has been removed: `useContainer()`, `getFromContainer()`, `ContainerInterface`, `ContainedType`, and `UseContainerOptions`. TypeORM now always instantiates migrations and subscribers directly. If you need dependency injection, instantiate your classes yourself and pass them to the `DataSource` options:
+
+```typescript
+// Before
+import { useContainer } from "typeorm"
+useContainer(myContainer)
+
+// After — pass pre-built instances directly
+new DataSource({
+    subscribers: [new MySubscriber(dep1, dep2)],
+    migrations: [new MyMigration(dep1)],
+    // ...
+})
 ```
