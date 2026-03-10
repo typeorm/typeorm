@@ -6,12 +6,9 @@ import { OptimisticLockVersionMismatchError } from "../error/OptimisticLockVersi
 import { OptimisticLockCanNotBeUsedError } from "../error/OptimisticLockCanNotBeUsedError"
 import { JoinAttribute } from "./JoinAttribute"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
-import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { RelationIdLoader } from "./relation-id/RelationIdLoader"
 import { RelationIdLoader as QueryStrategyRelationIdLoader } from "./RelationIdLoader"
 import { RelationIdMetadataToAttributeTransformer } from "./relation-id/RelationIdMetadataToAttributeTransformer"
-import { RelationCountLoader } from "./relation-count/RelationCountLoader"
-import { RelationCountMetadataToAttributeTransformer } from "./relation-count/RelationCountMetadataToAttributeTransformer"
 import { QueryBuilder } from "./QueryBuilder"
 import type { ReadStream } from "../platform/PlatformTools"
 import { LockNotSupportedOnGivenDriverError } from "../error/LockNotSupportedOnGivenDriverError"
@@ -1120,46 +1117,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 type: "other",
                 name: relationIdAttribute.junctionAlias,
                 metadata: relationIdAttribute.relation.junctionEntityMetadata,
-            })
-        }
-        return this
-    }
-
-    /**
-     * Counts number of entities of entity's relation and maps the value into some entity's property.
-     * Optionally, you can add condition and parameters used in condition.
-     * @param mapToProperty
-     * @param relationName
-     * @param aliasName
-     * @param queryBuilderFactory
-     */
-    loadRelationCountAndMap(
-        mapToProperty: string,
-        relationName: string,
-        aliasName?: string,
-        queryBuilderFactory?: (
-            qb: SelectQueryBuilder<any>,
-        ) => SelectQueryBuilder<any>,
-    ): this {
-        const relationCountAttribute = new RelationCountAttribute(
-            this.expressionMap,
-        )
-        relationCountAttribute.mapToProperty = mapToProperty
-        relationCountAttribute.relationName = relationName
-        relationCountAttribute.alias = aliasName
-        relationCountAttribute.queryBuilderFactory = queryBuilderFactory
-        this.expressionMap.relationCountAttributes.push(relationCountAttribute)
-
-        this.expressionMap.createAlias({
-            type: "other",
-            name: relationCountAttribute.junctionAlias,
-        })
-        if (relationCountAttribute.relation.junctionEntityMetadata) {
-            this.expressionMap.createAlias({
-                type: "other",
-                name: relationCountAttribute.junctionAlias,
-                metadata:
-                    relationCountAttribute.relation.junctionEntityMetadata,
             })
         }
         return this
@@ -3064,8 +3021,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // so we prevent poor query patterns in the most likely cases
         if (
             this.expressionMap.joinAttributes.length === 0 &&
-            this.expressionMap.relationIdAttributes.length === 0 &&
-            this.expressionMap.relationCountAttributes.length === 0
+            this.expressionMap.relationIdAttributes.length === 0
         ) {
             return "COUNT(1)"
         }
@@ -3529,17 +3485,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             queryRunner,
             this.expressionMap.relationIdAttributes,
         )
-        const relationCountLoader = new RelationCountLoader(
-            this.connection,
-            queryRunner,
-            this.expressionMap.relationCountAttributes,
-        )
         const relationIdMetadataTransformer =
             new RelationIdMetadataToAttributeTransformer(this.expressionMap)
         relationIdMetadataTransformer.transform()
-        const relationCountMetadataTransformer =
-            new RelationCountMetadataToAttributeTransformer(this.expressionMap)
-        relationCountMetadataTransformer.transform()
 
         let rawResults: any[],
             entities: any[] = []
@@ -3691,13 +3639,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (rawResults.length > 0) {
             // transform raw results into entities
             const rawRelationIdResults = await relationIdLoader.load(rawResults)
-            const rawRelationCountResults =
-                await relationCountLoader.load(rawResults)
             const transformer = new RawSqlResultsToEntityTransformer(
                 this.expressionMap,
                 this.connection.driver,
                 rawRelationIdResults,
-                rawRelationCountResults,
                 this.queryRunner,
             )
             entities = transformer.transform(
