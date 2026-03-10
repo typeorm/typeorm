@@ -97,14 +97,25 @@ new DataSource({
 
 The following MongoDB connection options have been removed:
 
-| Removed option       | Action                                           |
-| -------------------- | ------------------------------------------------ |
-| `appname`            | Use `appName` (camelCase) instead                |
-| `fsync`              | Use `writeConcern: { journal: true }` instead    |
-| `j`                  | Use `writeConcern: { journal: true }` instead    |
-| `useNewUrlParser`    | Remove — no-op since MongoDB Driver v4.0         |
-| `useUnifiedTopology` | Remove — no-op since MongoDB Driver v4.0         |
-| `wtimeout`           | Use `writeConcern: { wtimeoutMS: 2500 }` instead |
+| Removed option          | Action                                               |
+| ----------------------- | ---------------------------------------------------- |
+| `appname`               | Use `appName` (camelCase) instead                    |
+| `fsync`                 | Use `writeConcern: { journal: true }` instead        |
+| `j`                     | Use `writeConcern: { journal: true }` instead        |
+| `keepAlive`             | Remove — always enabled since MongoDB Driver v6.0    |
+| `keepAliveInitialDelay` | Remove — not configurable since MongoDB Driver v6.0  |
+| `ssl`                   | Use `tls` instead                                    |
+| `sslCA`                 | Use `tlsCAFile` instead                              |
+| `sslCRL`                | Remove — no replacement in modern driver             |
+| `sslCert`               | Use `tlsCertificateKeyFile` instead                  |
+| `sslKey`                | Use `tlsCertificateKeyFile` instead                  |
+| `sslPass`               | Use `tlsCertificateKeyFilePassword` instead          |
+| `sslValidate`           | Use `tlsAllowInvalidCertificates` (inverted) instead |
+| `useNewUrlParser`       | Remove — no-op since MongoDB Driver v4.0             |
+| `useUnifiedTopology`    | Remove — no-op since MongoDB Driver v4.0             |
+| `w`                     | Use `writeConcern: { w: 1 }` instead                 |
+| `wtimeout`              | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
+| `wtimeoutMS`            | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
 
 ### `getMongoRepository` and `getMongoManager` globals
 
