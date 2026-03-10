@@ -309,6 +309,8 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
 
+## QueryBuilder
+
 ### `InsertQueryBuilder.onConflict()`
 
 The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:
