@@ -106,7 +106,7 @@ describe("database-schema > vectors > sap", () => {
             ))
     })
 
-    describe("with vector output type Uint8Array", () => {
+    describe("with vector output type Buffer", () => {
         let dataSources: DataSource[]
         before(async () => {
             dataSources = await createTestingConnections({
