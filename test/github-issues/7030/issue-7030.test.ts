@@ -10,15 +10,14 @@ import { Post } from "./entity/Post"
 describe("github issues > #7030", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

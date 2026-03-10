@@ -12,13 +12,12 @@ import { expect } from "chai"
 
 describe("mysql > tree tables > closure-table", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Foo1Entity, Foo2Entity, Foo3Entity],
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Foo1Entity, Foo2Entity, Foo3Entity],
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -53,7 +52,7 @@ describe("mysql > tree tables > closure-table", () => {
         })
     })
 
-    it("foo2 should create closure columns with specified zerofill, width, precision and scale", () => {
+    it("foo2 should create closure columns with specified precision and scale", () => {
         dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo2",
@@ -78,12 +77,6 @@ describe("mysql > tree tables > closure-table", () => {
             )!
 
             expect(descendantCol).to.exist
-
-            expect(ancestorCol.zerofill).to.be.true
-            expect(descendantCol.zerofill).to.be.true
-
-            expect(ancestorCol.width).to.be.eq(13)
-            expect(descendantCol.width).to.be.eq(13)
 
             expect(ancestorCol.precision).to.be.eq(9)
             expect(descendantCol.precision).to.be.eq(9)

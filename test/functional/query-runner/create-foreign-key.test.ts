@@ -23,20 +23,20 @@ describe("query runner > create foreign key", () => {
 
     it("should correctly create foreign key and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let numericType = "int"
-                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) {
                     numericType = "integer"
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     numericType = "int64"
                 }
 
                 let stringType = "varchar"
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     stringType = "string"
                 }
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "question",
@@ -71,7 +71,7 @@ describe("query runner > create foreign key", () => {
                             {
                                 name: "questionId",
                                 isUnique:
-                                    connection.driver.options.type ===
+                                    dataSource.driver.options.type ===
                                     "cockroachdb", // CockroachDB requires UNIQUE constraints on referenced columns
                                 type: numericType,
                             },

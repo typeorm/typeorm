@@ -8,16 +8,15 @@ import { DefaultUpdateDate } from "./entity/default-update-date"
 
 describe("github issues > #6995 Generating migrations for UpdateDateColumn should generate on update clause", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                migrations: [],
-                enabledDrivers: ["mysql", "mariadb"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [DefaultUpdateDate],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            enabledDrivers: ["mysql", "mariadb"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [DefaultUpdateDate],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should create migration with default ON UPDATE clause", () =>

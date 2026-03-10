@@ -8,21 +8,20 @@ import { Category, Post } from "./entity"
 
 describe("migrations > generate command", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                migrations: [],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [Post, Category],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [Post, Category],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("can recognize model changes", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const sqlInMemory = await connection.driver
+            dataSources.map(async (dataSource) => {
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
                 sqlInMemory.upQueries.length.should.be.greaterThan(0)
@@ -32,10 +31,10 @@ describe("migrations > generate command", () => {
 
     it("does not generate when no model changes", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.driver.createSchemaBuilder().build()
+            dataSources.map(async (dataSource) => {
+                await dataSource.driver.createSchemaBuilder().build()
 
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
 

@@ -913,7 +913,7 @@ export class PostgresDriver implements Driver {
                 const unparsedArrayString = value
 
                 value = []
-                let cube: RegExpExecArray | null = null
+                let cube: RegExpExecArray | null
                 // Iterate through all regexp matches for cubes/null in array
                 while ((cube = regexp.exec(unparsedArrayString)) !== null) {
                     if (cube[1] !== undefined) {
@@ -979,16 +979,12 @@ export class PostgresDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 

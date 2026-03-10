@@ -17,33 +17,32 @@ import { User } from "./entity/User"
 
 describe("repository > find options", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should load relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user = new User()
                 user.name = "Alex Messer"
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
                 const category = new Category()
                 category.name = "Boys"
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 const post = new Post()
                 post.title = "About Alex Messer"
                 post.author = user
                 post.categories = [category]
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const [loadedPost] = await connection.getRepository(Post).find({
+                const [loadedPost] = await dataSource.getRepository(Post).find({
                     relations: { author: true, categories: true },
                 })
                 expect(loadedPost).to.be.eql({
@@ -65,12 +64,12 @@ describe("repository > find options", () => {
 
     it("should execute select query inside transaction", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user = new User()
                 user.name = "Alex Messer"
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 const startTransactionFn = sinon.spy(
                     queryRunner,
@@ -84,7 +83,7 @@ describe("repository > find options", () => {
                 expect(startTransactionFn.called).to.be.false
                 expect(commitTransactionFn.called).to.be.false
 
-                await connection
+                await dataSource
                     .createEntityManager(queryRunner)
                     .getRepository(User)
                     .findOne({
@@ -103,10 +102,10 @@ describe("repository > find options", () => {
 
     it("should select specific columns", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category = new Category()
                 category.name = "Bears"
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 const categories = [category]
                 const photos = []
@@ -119,10 +118,10 @@ describe("repository > find options", () => {
                     photo.isPublished = false
                     photo.categories = categories
                     photos.push(photo)
-                    await connection.manager.save(photo)
+                    await dataSource.manager.save(photo)
                 }
 
-                const loadedPhoto = await connection
+                const loadedPhoto = await dataSource
                     .getRepository(Photo)
                     .findOne({
                         select: { name: true },
@@ -131,20 +130,20 @@ describe("repository > find options", () => {
                         },
                     })
 
-                const loadedPhotos1 = await connection
+                const loadedPhotos1 = await dataSource
                     .getRepository(Photo)
                     .find({
                         select: { filename: true, views: true },
                     })
 
-                const loadedPhotos2 = await connection
+                const loadedPhotos2 = await dataSource
                     .getRepository(Photo)
                     .find({
                         select: { id: true, name: true, description: true },
                         relations: { categories: true },
                     })
 
-                // const loadedPhotos3 = await connection.getRepository(Photo).createQueryBuilder("photo")
+                // const loadedPhotos3 = await dataSource.getRepository(Photo).createQueryBuilder("photo")
                 //     .select(["photo.name", "photo.description"])
                 //     .addSelect(["category.name"])
                 //     .leftJoin("photo.categories", "category")
@@ -182,20 +181,20 @@ describe("repository > find options", () => {
 
     it("should select by given conditions", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "Bears"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "Dogs"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.name = "Cats"
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
-                const loadedCategories1 = await connection
+                const loadedCategories1 = await dataSource
                     .getRepository(Category)
                     .find({
                         where: {
@@ -210,7 +209,7 @@ describe("repository > find options", () => {
                     },
                 ])
 
-                const loadedCategories2 = await connection
+                const loadedCategories2 = await dataSource
                     .getRepository(Category)
                     .find({
                         where: [
@@ -261,8 +260,8 @@ describe("repository > find options > comment", () => {
 
     it("repository should insert comment", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection
+            dataSources.map(async (dataSource) => {
+                await dataSource
                     .getRepository(User)
                     .find({ comment: "This is a query comment." })
 
@@ -278,34 +277,33 @@ describe("repository > find options > comment", () => {
 
 describe("repository > find options > cache", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                cache: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            cache: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("repository should cache results properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.name = "Harry"
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.name = "Ron"
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.name = "Hermione"
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
                 // select for the first time with caching enabled
-                const users1 = await connection
+                const users1 = await dataSource
                     .getRepository(User)
                     .find({ cache: true })
 
@@ -314,15 +312,15 @@ describe("repository > find options > cache", () => {
                 // insert new entity
                 const user4 = new User()
                 user4.name = "Ginny"
-                await connection.manager.save(user4)
+                await dataSource.manager.save(user4)
 
                 // without cache it must return really how many there entities are
-                const users2 = await connection.getRepository(User).find()
+                const users2 = await dataSource.getRepository(User).find()
 
                 expect(users2.length).to.be.equal(4)
 
                 // but with cache enabled it must not return newly inserted entity since cache is not expired yet
-                const users3 = await connection
+                const users3 = await dataSource
                     .getRepository(User)
                     .find({ cache: true })
                 expect(users3.length).to.be.equal(3)
@@ -331,7 +329,7 @@ describe("repository > find options > cache", () => {
                 await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
-                const users4 = await connection
+                const users4 = await dataSource
                     .getRepository(User)
                     .find({ cache: true })
                 expect(users4.length).to.be.equal(4)

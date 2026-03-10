@@ -84,7 +84,9 @@ describe("persistence > custom-column-names", function () {
                         leftJoinAndSelect: { category: "post.category" },
                     },
                 })
-                .then((post) => (loadedPost = post!))
+                .then((post) => {
+                    loadedPost = post!
+                })
         })
 
         it("should contain attached category", function () {
@@ -127,7 +129,9 @@ describe("persistence > custom-column-names", function () {
                         leftJoinAndSelect: { category: "post.category" },
                     },
                 })
-                .then((post) => (loadedPost = post!))
+                .then((post) => {
+                    loadedPost = post!
+                })
         })
 
         it("should contain attached category", function () {
@@ -165,7 +169,9 @@ describe("persistence > custom-column-names", function () {
                         leftJoinAndSelect: { category: "post.category" },
                     },
                 })
-                .then((post) => (loadedPost = post!))
+                .then((post) => {
+                    loadedPost = post!
+                })
         })
 
         it("should contain attached category", function () {
@@ -227,7 +233,9 @@ describe("persistence > custom-column-names", function () {
                         },
                     },
                 })
-                .then((post) => (loadedPost = post!))
+                .then((post) => {
+                    loadedPost = post!
+                })
         })
 
         it("should contain attached category and metadata in the category", function () {
@@ -286,7 +294,9 @@ describe("persistence > custom-column-names", function () {
                         },
                     },
                 })
-                .then((post) => (loadedPost = post!))
+                .then((post) => {
+                    loadedPost = post!
+                })
         })
 
         it("should contain attached category and metadata in the category", function () {

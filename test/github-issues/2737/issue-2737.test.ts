@@ -10,19 +10,18 @@ import {
 describe("github issues > #2737 MySQLDriver findChangedColumns (fields: width, precision)", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                dropSchema: false,
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql", "mariadb", "aurora-mysql"],
-                schemaCreate: false,
-                cache: false,
-                driverSpecific: {
-                    bigNumberStrings: false,
-                },
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            dropSchema: false,
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "mariadb", "aurora-mysql"],
+            schemaCreate: false,
+            cache: false,
+            driverSpecific: {
+                bigNumberStrings: false,
+            },
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 

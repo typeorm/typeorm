@@ -371,16 +371,12 @@ export class SqlServerDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -1175,17 +1171,6 @@ export class SqlServerDriver implements Driver {
             DriverUtils.buildDriverOptions(credentials),
         ) // todo: do it better way
 
-        // todo: credentials.domain is deprecation. remove it in future
-        const authentication = !credentials.domain
-            ? credentials.authentication
-            : {
-                  type: "ntlm",
-                  options: {
-                      domain: credentials.domain,
-                      userName: credentials.username,
-                      password: credentials.password,
-                  },
-              }
         // build connection options for the driver
         const connectionOptions = Object.assign(
             {},
@@ -1202,7 +1187,7 @@ export class SqlServerDriver implements Driver {
                 port: credentials.port,
                 user: credentials.username,
                 password: credentials.password,
-                authentication: authentication,
+                authentication: credentials.authentication,
             },
             options.extra || {},
         )

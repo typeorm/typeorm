@@ -11,53 +11,52 @@ import { Post } from "./entity/Post"
 
 describe("decorators > relation-id > one-to-one", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should load ids when loadRelationIdAndMap used on owner side", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "cars"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.id = 2
                 category2.name = "airplanes"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const categoryByName1 = new Category()
                 categoryByName1.id = 3
                 categoryByName1.name = "BMW"
-                await connection.manager.save(categoryByName1)
+                await dataSource.manager.save(categoryByName1)
 
                 const categoryByName2 = new Category()
                 categoryByName2.id = 4
                 categoryByName2.name = "Boeing"
-                await connection.manager.save(categoryByName2)
+                await dataSource.manager.save(categoryByName2)
 
                 const post1 = new Post()
                 post1.id = 1
                 post1.title = "about BMW"
                 post1.category = category1
                 post1.categoryByName = categoryByName1
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.id = 2
                 post2.title = "about Boeing"
                 post2.category = category2
                 post2.categoryByName = categoryByName2
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.id")
                     .getMany()
@@ -71,7 +70,7 @@ describe("decorators > relation-id > one-to-one", () => {
                 expect(loadedPosts![1].categoryName).to.not.be.undefined
                 expect(loadedPosts![1].categoryName).to.be.equal("Boeing")
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
                     .getOne()
@@ -85,30 +84,30 @@ describe("decorators > relation-id > one-to-one", () => {
 
     it("should load id when loadRelationIdAndMap used on inverse side", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "cars"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.id = 2
                 category2.name = "airplanes"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const post1 = new Post()
                 post1.id = 1
                 post1.title = "about BMW"
                 post1.category2 = category1
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.id = 2
                 post2.title = "about Boeing"
                 post2.category2 = category2
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedCategories = await connection.manager
+                const loadedCategories = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .addOrderBy("category.id")
                     .getMany()
@@ -118,7 +117,7 @@ describe("decorators > relation-id > one-to-one", () => {
                 expect(loadedCategories![1].postId).to.not.be.undefined
                 expect(loadedCategories![1].postId).to.be.equal(2)
 
-                const loadedCategory = await connection.manager
+                const loadedCategory = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
                     .getOne()

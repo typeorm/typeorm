@@ -12,12 +12,11 @@ import { LessThan } from "../../../src"
 
 describe("github issues > #9152 Can't use LessThan for Union field", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Test],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Test],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

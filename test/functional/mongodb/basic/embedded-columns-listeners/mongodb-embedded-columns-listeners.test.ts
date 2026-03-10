@@ -13,20 +13,19 @@ import { Tags } from "./entity/Tags"
 
 describe("mongodb > embedded columns listeners", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, Counters, Information],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, Counters, Information],
+            enabledDrivers: ["mongodb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should work listeners in entity embeddeds correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save posts with embeddeds
                 const post = new Post()
@@ -72,8 +71,8 @@ describe("mongodb > embedded columns listeners", () => {
 
     it("should not work listeners in entity embeddeds if property is optional", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save posts without embeddeds
                 const post = new Post()
@@ -91,8 +90,8 @@ describe("mongodb > embedded columns listeners", () => {
 
     it("should work listeners in entity array embeddeds correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save posts without embeddeds
                 const post = new Post()

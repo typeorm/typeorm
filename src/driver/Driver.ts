@@ -170,7 +170,6 @@ export interface Driver {
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]]
 
     /**

@@ -11,49 +11,48 @@ import type { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational query builder > load operation > many-to-one and one-to-one relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should load relation entity of a given entity object", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "category #1"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "category #2"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.name = "category #3"
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
                 post1.category = category3
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
                 post2.category = category2
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
                 post3.category = category1
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                const loadedPost1 = await connection.manager.findOneBy(Post, {
+                const loadedPost1 = await dataSource.manager.findOneBy(Post, {
                     id: 1,
                 })
-                const loadedCategory1 = await connection
+                const loadedCategory1 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(loadedPost1)
@@ -65,10 +64,10 @@ describe("query builder > relational query builder > load operation > many-to-on
                     name: "category #3",
                 })
 
-                const loadedPost2 = await connection.manager.findOneBy(Post, {
+                const loadedPost2 = await dataSource.manager.findOneBy(Post, {
                     id: 2,
                 })
-                const loadedCategory2 = await connection
+                const loadedCategory2 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(loadedPost2)
@@ -80,10 +79,10 @@ describe("query builder > relational query builder > load operation > many-to-on
                     name: "category #2",
                 })
 
-                const loadedPost3 = await connection.manager.findOneBy(Post, {
+                const loadedPost3 = await dataSource.manager.findOneBy(Post, {
                     id: 3,
                 })
-                const loadedCategory3 = await connection
+                const loadedCategory3 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(loadedPost3)
@@ -99,38 +98,38 @@ describe("query builder > relational query builder > load operation > many-to-on
 
     it("should load relation entity of a given entity id", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "category #1"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "category #2"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.name = "category #3"
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
                 post1.category = category3
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
                 post2.category = category2
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
                 post3.category = category1
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                const loadedPost1 = await connection.manager.findOneBy(Post, {
+                const loadedPost1 = await dataSource.manager.findOneBy(Post, {
                     id: 1,
                 })
-                const loadedCategory1 = await connection
+                const loadedCategory1 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of({ id: 1 })
@@ -142,10 +141,10 @@ describe("query builder > relational query builder > load operation > many-to-on
                     name: "category #3",
                 })
 
-                const loadedPost2 = await connection.manager.findOneBy(Post, {
+                const loadedPost2 = await dataSource.manager.findOneBy(Post, {
                     id: 2,
                 })
-                const loadedCategory2 = await connection
+                const loadedCategory2 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of({ id: 2 })
@@ -157,10 +156,10 @@ describe("query builder > relational query builder > load operation > many-to-on
                     name: "category #2",
                 })
 
-                const loadedPost3 = await connection.manager.findOneBy(Post, {
+                const loadedPost3 = await dataSource.manager.findOneBy(Post, {
                     id: 3,
                 })
-                const loadedCategory3 = await connection
+                const loadedCategory3 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of({ id: 3 })
@@ -176,38 +175,38 @@ describe("query builder > relational query builder > load operation > many-to-on
 
     it("should load relation entity of a given id", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.name = "category #1"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "category #2"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.name = "category #3"
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
                 post1.category = category3
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
                 post2.category = category2
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
                 post3.category = category1
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                const loadedPost1 = await connection.manager.findOneBy(Post, {
+                const loadedPost1 = await dataSource.manager.findOneBy(Post, {
                     id: 1,
                 })
-                const loadedCategory1 = await connection
+                const loadedCategory1 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(1)
@@ -219,10 +218,10 @@ describe("query builder > relational query builder > load operation > many-to-on
                     name: "category #3",
                 })
 
-                const loadedPost2 = await connection.manager.findOneBy(Post, {
+                const loadedPost2 = await dataSource.manager.findOneBy(Post, {
                     id: 2,
                 })
-                const loadedCategory2 = await connection
+                const loadedCategory2 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(2)
@@ -234,10 +233,10 @@ describe("query builder > relational query builder > load operation > many-to-on
                     name: "category #2",
                 })
 
-                const loadedPost3 = await connection.manager.findOneBy(Post, {
+                const loadedPost3 = await dataSource.manager.findOneBy(Post, {
                     id: 3,
                 })
-                const loadedCategory3 = await connection
+                const loadedCategory3 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(3)

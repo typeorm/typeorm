@@ -10,16 +10,15 @@ import { MemoryLogger } from "./memory-logger"
 
 describe("github issues > #5967 @afterUpdate always says array/json field updated", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["postgres"], // Array column are only supported by postgres src/decorator/options/ColumnCommonOptions.ts
-                createLogger: () => new MemoryLogger(true),
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["postgres"], // Array column are only supported by postgres src/decorator/options/ColumnCommonOptions.ts
+            createLogger: () => new MemoryLogger(true),
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

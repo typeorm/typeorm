@@ -582,7 +582,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
                             const paramName = this.createParameter(value)
 
-                            let expression = null
+                            let expression: string
                             if (
                                 (DriverUtils.isMySQLFamily(
                                     this.connection.driver,
