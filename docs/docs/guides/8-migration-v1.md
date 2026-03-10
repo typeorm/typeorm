@@ -126,6 +126,37 @@ const repository = dataSource.getMongoRepository(User)
 
 The internal MongoDB types are no longer exported. You can import `ObjectId` from `mongodb` instead of `typeorm`.
 
+## MS SQL Server
+
+### `domain` connection option removed
+
+The deprecated `domain` option on `SqlServerConnectionCredentialsOptions` has been removed. Use the `authentication` option with NTLM type instead:
+
+```typescript
+// Before
+new DataSource({
+    type: "mssql",
+    domain: "MYDOMAIN",
+    username: "user",
+    password: "pass",
+    // ...
+})
+
+// After
+new DataSource({
+    type: "mssql",
+    authentication: {
+        type: "ntlm",
+        options: {
+            domain: "MYDOMAIN",
+            userName: "user",
+            password: "pass",
+        },
+    },
+    // ...
+})
+```
+
 ## Expo
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
@@ -278,6 +309,65 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
 
+### `InsertQueryBuilder.onConflict()`
+
+The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:
+
+```typescript
+// Before
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .onConflict(`("id") DO NOTHING`)
+    .execute()
+
+// After
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .orIgnore()
+    .execute()
+
+// Before
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .onConflict(`("id") DO UPDATE SET "title" = :title`)
+    .setParameter("title", post.title)
+    .execute()
+
+// After
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(Post)
+    .values(post)
+    .orUpdate(["title"], ["id"])
+    .execute()
+```
+
+### Deprecated `orUpdate()` overload
+
+The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, conflict_target? }` has been removed. Use the array-based signature instead:
+
+```typescript
+// Before
+.orUpdate({ conflict_target: ["date"], overwrite: ["title"] })
+
+// After
+.orUpdate(["title"], ["date"])
+```
+
+### `QueryBuilder.setNativeParameters()`
+
+The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
+
 ## Migrations
 
 ### `getAllMigrations`
@@ -294,6 +384,44 @@ const migrations = migrationExecutor.getMigrations()
 
 ## Configuration
 
+### `invalidWhereValuesBehavior` default changed to `throw`
+
+The default behavior for null and undefined values in where conditions has changed. Previously, null and undefined values were silently ignored (the property was skipped). Now, both **throw an error by default**.
+
+This change prevents subtle bugs where queries like `findBy({ id: undefined })` would silently return the first row instead of failing.
+
+```typescript
+// v0.3: silently returns all posts (null is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: null } })
+
+// v0.3: silently returns all posts (undefined is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: undefined } })
+```
+
+To match null values, use the `IsNull()` operator:
+
+```typescript
+import { IsNull } from "typeorm"
+
+await repository.find({ where: { text: IsNull() } })
+```
+
+To restore the previous behavior, set `invalidWhereValuesBehavior` in your data source options:
+
+```typescript
+new DataSource({
+    // ...
+    invalidWhereValuesBehavior: {
+        null: "ignore",
+        undefined: "ignore",
+    },
+})
+```
+
+This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The rest of the QueryBuilder methods (`.where()`, `.andWhere()`, `.orWhere()`) are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
+
 ### Drop support for configuration via environment variables
 
 The deprecated `ConnectionOptionsEnvReader` class and the ability to configure connections via `TYPEORM_CONNECTION`, `TYPEORM_URL`, and other `TYPEORM_*` environment variables has been removed. The `ormconfig.env` file format is also no longer supported. TypeORM no longer auto-loads `.env` files or depends on `dotenv`.
@@ -307,4 +435,21 @@ export default {
     url: process.env.DB_URL,
     // ...
 }
+```
+
+### Name
+
+The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
+
+`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
+
+```typescript
+const reader = new ConnectionOptionsReader()
+
+// when your ormconfig has a single data source
+const [options] = await reader.get()
+
+// when you need a specific config from multiple data sources
+const allOptions = await reader.get()
+const postgresOptions = allOptions.find((o) => o.type === "postgres")
 ```

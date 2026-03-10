@@ -371,16 +371,6 @@ export class InsertQueryBuilder<
     }
 
     /**
-     * Adds additional ON CONFLICT statement supported in postgres and cockroach.
-     * @param statement
-     * @deprecated Use `orIgnore` or `orUpdate`
-     */
-    onConflict(statement: string): this {
-        this.expressionMap.onConflict = statement
-        return this
-    }
-
-    /**
      * Adds additional ignore statement supported in databases.
      * @param statement
      */
@@ -390,42 +380,17 @@ export class InsertQueryBuilder<
     }
 
     /**
-     * @deprecated
-     *
-     * `.orUpdate({ columns: [ "is_updated" ] }).setParameter("is_updated", value)`
-     *
-     * is now `.orUpdate(["is_updated"])`
-     *
-     * `.orUpdate({ conflict_target: ['date'], overwrite: ['title'] })`
-     *
-     * is now `.orUpdate(['title'], ['date'])`
+     * Adds an "upsert" clause to the insert query — when a row with the same
+     * conflict target already exists the listed columns are updated instead.
+     * @param overwrite - Column names to overwrite on conflict.
+     * @param conflictTarget - Column name(s) or constraint name used to detect
+     *   conflicts. When an array is given the columns form a composite key;
+     *   when a string is given it is treated as a constraint name.
+     * @param orUpdateOptions - Additional options such as `skipUpdateIfNoValuesChanged`,
+     *   `indexPredicate`, `upsertType`, or `overwriteCondition`.
      */
-    orUpdate(statement?: {
-        columns?: string[]
-        overwrite?: string[]
-        conflict_target?: string | string[]
-    }): this
-
     orUpdate(
         overwrite: string[],
-        conflictTarget?: string | string[],
-        orUpdateOptions?: InsertOrUpdateOptions,
-    ): this
-
-    /**
-     * Adds additional update statement supported in databases.
-     * @param statementOrOverwrite
-     * @param conflictTarget
-     * @param orUpdateOptions
-     */
-    orUpdate(
-        statementOrOverwrite?:
-            | {
-                  columns?: string[]
-                  overwrite?: string[]
-                  conflict_target?: string | string[]
-              }
-            | string[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
     ): this {
@@ -438,21 +403,8 @@ export class InsertQueryBuilder<
         }
         if (parameters) this.setParameters(parameters)
 
-        if (!Array.isArray(statementOrOverwrite)) {
-            this.expressionMap.onUpdate = {
-                conflict: statementOrOverwrite?.conflict_target,
-                columns: statementOrOverwrite?.columns,
-                overwrite: statementOrOverwrite?.overwrite,
-                skipUpdateIfNoValuesChanged:
-                    orUpdateOptions?.skipUpdateIfNoValuesChanged,
-                upsertType: orUpdateOptions?.upsertType,
-                overwriteCondition: wheres,
-            }
-            return this
-        }
-
         this.expressionMap.onUpdate = {
-            overwrite: statementOrOverwrite,
+            overwrite: overwrite,
             conflict: conflictTarget,
             skipUpdateIfNoValuesChanged:
                 orUpdateOptions?.skipUpdateIfNoValuesChanged,
@@ -570,8 +522,6 @@ export class InsertQueryBuilder<
             ) {
                 if (this.expressionMap.onIgnore) {
                     query += " ON CONFLICT DO NOTHING "
-                } else if (this.expressionMap.onConflict) {
-                    query += ` ON CONFLICT ${this.expressionMap.onConflict} `
                 } else if (this.expressionMap.onUpdate) {
                     const {
                         overwrite,

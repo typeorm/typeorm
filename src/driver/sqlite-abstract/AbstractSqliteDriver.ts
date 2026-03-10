@@ -444,29 +444,12 @@ export abstract class AbstractSqliteDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => {
-                // Mapping boolean values to their numeric representation
-                if (typeof nativeParameters[key] === "boolean") {
-                    return nativeParameters[key] === true ? 1 : 0
-                }
-
-                if (nativeParameters[key] instanceof Date) {
-                    return DateUtils.mixedDateToUtcDatetimeString(
-                        nativeParameters[key],
-                    )
-                }
-
-                return nativeParameters[key]
-            },
-        )
+        const escapedParameters: any[] = []
 
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]

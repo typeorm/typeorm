@@ -1315,11 +1315,17 @@ describe("schema builder > change column", () => {
                 const teacherTableA = await queryRunnerA.getTable("teacher")
                 await queryRunnerA.release()
 
-                expect(persistedTagColumnA.comment).to.be.equal(undefined)
-                expect(persistedTagColumnA.isNullable).to.be.equal(true)
+                expect(persistedTagColumnA.comment).to.be.equal(
+                    undefined,
+                    dataSource.options.type,
+                )
+                expect(persistedTagColumnA.isNullable).to.be.equal(
+                    true,
+                    dataSource.options.type,
+                )
                 expect(
                     teacherTableA!.findColumnByName("id")!.comment,
-                ).to.be.equal("The Teacher's Key")
+                ).to.be.equal("The Teacher's Key", dataSource.options.type)
 
                 // revert changes
                 tagColumn.comment = "Tag"
