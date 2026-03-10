@@ -309,7 +309,9 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
 
-### `InsertQueryBuilder.onConflict()`
+## QueryBuilder
+
+### `onConflict`
 
 The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:
 
@@ -352,7 +354,7 @@ await dataSource
     .execute()
 ```
 
-### Deprecated `orUpdate()` overload
+### `orUpdate`
 
 The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, conflict_target? }` has been removed. Use the array-based signature instead:
 
@@ -364,7 +366,11 @@ The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, confli
 .orUpdate(["title"], ["date"])
 ```
 
-### `QueryBuilder.setNativeParameters()`
+### `replacePropertyNames`
+
+The deprecated `replacePropertyNames()` protected method has been removed. It was a no-op since property name replacement was moved to end-of-query processing via `replacePropertyNamesForTheWholeQuery()`. If you were overriding this method in a custom QueryBuilder subclass, the override is no longer called.
+
+### `setNativeParameters`
 
 The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
 
