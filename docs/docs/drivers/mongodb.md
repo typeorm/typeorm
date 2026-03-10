@@ -2,9 +2,9 @@
 
 ## MongoDB support
 
-TypeORM has basic MongoDB support.
-Most of TypeORM functionality is RDBMS-specific,
-this page contains all MongoDB-specific functionality documentation.
+TypeORM has basic MongoDB support (server **6.0 or later** and Node.js driver **v6 or later**).
+
+Most of TypeORM functionality is RDBMS-specific, this page contains all MongoDB-specific functionality.
 
 ## Installation
 
@@ -14,7 +14,7 @@ npm install mongodb
 
 ## Data Source Options
 
-- `appName` - The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this value in the server log upon establishing each connection. It is also recorded in the slow query log and profile collections.
+- `appName` - The name of the application that created this MongoClient instance. MongoDB will print this value in the server log upon establishing each connection. It is also recorded in the slow query log and profile collections.
 
 - `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
 
@@ -58,6 +58,8 @@ npm install mongodb
 
 - `pkFactory` - A primary key factory object for generation of custom \_id keys.
 
+- `poolSize` - Maximum number of connections in the connection pool. Mapped to the MongoDB driver's `maxPoolSize` option.
+
 - `port` - Database host port. Default mongodb port is `27017`.
 
 - `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
@@ -76,7 +78,7 @@ npm install mongodb
 
 - `raw` - Return document results as raw BSON buffers. Default: `false`.
 
-- `readConcern` - Specify a read concern for the collection (only MongoDB 3.2 or higher supported).
+- `readConcern` - Specify a read concern for the collection.
 
 - `readPreference` - The preferred read preference.
     - `ReadPreference.PRIMARY`
@@ -395,7 +397,7 @@ Create an index on the db and collection.
 
 ### `createCollectionIndexes`
 
-Create multiple indexes in the collection, this method is only supported in MongoDB 2.6 or higher. Earlier versions of MongoDB will throw a "command not supported" error. Index specifications are defined at [createIndexes](http://docs.mongodb.org/manual/reference/command/createIndexes/).
+Create multiple indexes in the collection. Index specifications are defined at [createIndexes](http://docs.mongodb.org/manual/reference/command/createIndexes/).
 
 ### `deleteMany`
 

@@ -93,6 +93,8 @@ new DataSource({
 
 ## MongoDB
 
+TypeORM now requires **MongoDB server 6.0 or later** and the **`mongodb` Node.js driver v6 or later** (`^6.0.0 || ^7.0.0`). Support for MongoDB server 5.x and the `mongodb` driver v5 has been dropped.
+
 ### Deprecated connection options removed
 
 The following MongoDB connection options have been removed:

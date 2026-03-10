@@ -53,13 +53,13 @@ export interface MongoDataSourceOptions extends BaseDataSourceOptions {
 
     /**
      * MongoClientOptions
-     * Synced with https://mongodb.github.io/node-mongodb-native/5.9/interfaces/MongoClientOptions.html
+     * Synced with https://mongodb.github.io/node-mongodb-native/6.16/interfaces/MongoClientOptions.html
      */
 
     /**
      * The name of the application that created this MongoClient instance.
-     * MongoDB 3.4 and newer will print this value in the server log upon establishing each connection.
-     * It is also recorded in the slow query log and profile collections
+     * MongoDB will print this value in the server log upon establishing each connection.
+     * It is also recorded in the slow query log and profile collections.
      */
     readonly appName?: string
 
@@ -166,7 +166,7 @@ export interface MongoDataSourceOptions extends BaseDataSourceOptions {
     readonly raw?: boolean
 
     /**
-     * Specify a read concern for the collection (only MongoDB 3.2 or higher supported)
+     * Specify a read concern for the collection.
      */
     readonly readConcern?: any
 
