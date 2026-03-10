@@ -6,7 +6,7 @@ import {
     createTestingConnections,
 } from "../../../../utils/test-utils"
 import { ArrayEmbedding } from "./entity/ArrayEmbedding"
-import { Uint8ArrayEmbedding } from "./entity/Uint8ArrayEmbedding"
+import { BufferEmbedding } from "./entity/BufferEmbedding"
 
 describe("database-schema > vectors > sap", () => {
     describe("with vector output type Array", () => {
@@ -110,7 +110,7 @@ describe("database-schema > vectors > sap", () => {
         let dataSources: DataSource[]
         before(async () => {
             dataSources = await createTestingConnections({
-                entities: [Uint8ArrayEmbedding],
+                entities: [BufferEmbedding],
                 enabledDrivers: ["sap"],
                 driverSpecific: {
                     synchronize: false,
@@ -150,10 +150,10 @@ describe("database-schema > vectors > sap", () => {
                             "This is a sample text to be analyzed by SAP Joule AI",
                         metadata: `{"client":"typeorm"}`,
                         realVector: plainVector,
-                    } satisfies DeepPartial<Uint8ArrayEmbedding>
+                    } satisfies DeepPartial<BufferEmbedding>
 
                     const embeddingRepository =
-                        dataSource.getRepository(Uint8ArrayEmbedding)
+                        dataSource.getRepository(BufferEmbedding)
                     const embedding = embeddingRepository.create(plainEmbedding)
                     await embeddingRepository.save(embedding)
 

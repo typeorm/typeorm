@@ -43,7 +43,11 @@ export const areUint8ArraysEqual = (
 const HEX_LOOKUP_TABLE = Array.from({ length: 256 }, (_, i) =>
     i.toString(16).padStart(2, "0"),
 )
-export const uint8ArrayToHex = (value: Uint8Array) => {
+export const uint8ArrayToHex = (value: Uint8Array): string => {
+    if (typeof (value as any).toHex === "function") {
+        return (value as any).toHex()
+    }
+
     let hex = ""
     for (let index = 0; index < value.length; index++) {
         hex += HEX_LOOKUP_TABLE[value[index]]

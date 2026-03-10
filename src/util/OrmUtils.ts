@@ -440,18 +440,15 @@ export class OrmUtils {
         if (x === null || y === null || x === undefined || y === undefined)
             return false
 
+        // Fix the buffer compare bug.
+        // See: https://github.com/typeorm/typeorm/issues/3654
+        if (typeof x.equals === "function" && typeof y.equals === "function") {
+            return x.equals(y)
+        }
+
         if (isUint8Array(x) && isUint8Array(y)) {
             return areUint8ArraysEqual(x, y)
         }
-
-        // Fix the buffer compare bug.
-        // See: https://github.com/typeorm/typeorm/issues/3654
-        if (
-            (typeof x.equals === "function" ||
-                typeof x.equals === "function") &&
-            x.equals(y)
-        )
-            return true
 
         // Works in case when functions are created in constructor.
         // Comparing dates is a common scenario. Another built-ins?
