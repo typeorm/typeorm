@@ -4408,7 +4408,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === undefined) {
                     const undefinedBehavior =
                         this.connection.options.invalidWhereValuesBehavior
-                            ?.undefined || "ignore"
+                            ?.undefined || "throw"
                     if (undefinedBehavior === "throw") {
                         throw new TypeORMError(
                             `Undefined value encountered in property '${alias}.${key}' of a where condition. ` +
@@ -4421,7 +4421,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === null) {
                     const nullBehavior =
                         this.connection.options.invalidWhereValuesBehavior
-                            ?.null || "ignore"
+                            ?.null || "throw"
                     if (nullBehavior === "ignore") {
                         continue
                     } else if (nullBehavior === "throw") {
@@ -4494,7 +4494,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (where[key] === null) {
                         const nullBehavior =
                             this.connection.options.invalidWhereValuesBehavior
-                                ?.null || "ignore"
+                                ?.null || "throw"
                         if (nullBehavior === "sql-null") {
                             andConditions.push(
                                 `${alias}.${propertyPath} IS NULL`,
@@ -4526,7 +4526,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             const undefinedBehavior =
                                 this.connection.options
                                     .invalidWhereValuesBehavior?.undefined ||
-                                "ignore"
+                                "throw"
                             if (undefinedBehavior === "throw") {
                                 throw new TypeORMError(
                                     `Undefined value encountered in nested relation '${alias}.${key}' of a where condition. ` +

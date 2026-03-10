@@ -89,6 +89,11 @@ services:
     command: "start-single-node --insecure --cache=.25 --store=type=mem,size=.25"
     ports:
       - "26257:26257"
+    healthcheck:
+      test: ["CMD", "cockroach", "sql", "--insecure", "-e", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     # volumes:
     #   - cockroach-data:/cockroach/cockroach-data
 

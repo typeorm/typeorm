@@ -388,6 +388,44 @@ const migrations = migrationExecutor.getMigrations()
 
 ## Configuration
 
+### `invalidWhereValuesBehavior` default changed to `throw`
+
+The default behavior for null and undefined values in where conditions has changed. Previously, null and undefined values were silently ignored (the property was skipped). Now, both **throw an error by default**.
+
+This change prevents subtle bugs where queries like `findBy({ id: undefined })` would silently return the first row instead of failing.
+
+```typescript
+// v0.3: silently returns all posts (null is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: null } })
+
+// v0.3: silently returns all posts (undefined is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: undefined } })
+```
+
+To match null values, use the `IsNull()` operator:
+
+```typescript
+import { IsNull } from "typeorm"
+
+await repository.find({ where: { text: IsNull() } })
+```
+
+To restore the previous behavior, set `invalidWhereValuesBehavior` in your data source options:
+
+```typescript
+new DataSource({
+    // ...
+    invalidWhereValuesBehavior: {
+        null: "ignore",
+        undefined: "ignore",
+    },
+})
+```
+
+This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The rest of the QueryBuilder methods (`.where()`, `.andWhere()`, `.orWhere()`) are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
+
 ### Drop support for configuration via environment variables
 
 The deprecated `ConnectionOptionsEnvReader` class and the ability to configure connections via `TYPEORM_CONNECTION`, `TYPEORM_URL`, and other `TYPEORM_*` environment variables has been removed. The `ormconfig.env` file format is also no longer supported. TypeORM no longer auto-loads `.env` files or depends on `dotenv`.
