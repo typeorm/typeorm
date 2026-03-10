@@ -1847,38 +1847,30 @@ export class PostgresDriver implements Driver {
      * @param value
      */
     protected normalizeDatetimeFunction(value: string) {
-        // check if input is datetime function
-        const upperCaseValue = value.toUpperCase()
-        const isDatetimeFunction =
-            upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1 ||
-            upperCaseValue.indexOf("CURRENT_DATE") !== -1 ||
-            upperCaseValue.indexOf("CURRENT_TIME") !== -1 ||
-            upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1 ||
-            upperCaseValue.indexOf("LOCALTIME") !== -1
+        // check if input is exactly a datetime function
+        const upperCaseValue = value.trim().toUpperCase()
 
-        if (isDatetimeFunction) {
-            // extract precision, e.g. "(3)"
-            const precision = value.match(/\(\d+\)/)
+        // extract precision, e.g. "(3)"
+        const precision = value.match(/\(\d+\)/)
 
-            if (upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1) {
-                return precision
-                    ? `('now'::text)::timestamp${precision[0]} with time zone`
-                    : "now()"
-            } else if (upperCaseValue === "CURRENT_DATE") {
-                return "('now'::text)::date"
-            } else if (upperCaseValue.indexOf("CURRENT_TIME") !== -1) {
-                return precision
-                    ? `('now'::text)::time${precision[0]} with time zone`
-                    : "('now'::text)::time with time zone"
-            } else if (upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1) {
-                return precision
-                    ? `('now'::text)::timestamp${precision[0]} without time zone`
-                    : "('now'::text)::timestamp without time zone"
-            } else if (upperCaseValue.indexOf("LOCALTIME") !== -1) {
-                return precision
-                    ? `('now'::text)::time${precision[0]} without time zone`
-                    : "('now'::text)::time without time zone"
-            }
+        if (/^CURRENT_TIMESTAMP(\(\d+\))?$/.test(upperCaseValue)) {
+            return precision
+                ? `('now'::text)::timestamp${precision[0]} with time zone`
+                : "now()"
+        } else if (/^CURRENT_DATE$/.test(upperCaseValue)) {
+            return "('now'::text)::date"
+        } else if (/^CURRENT_TIME(\(\d+\))?$/.test(upperCaseValue)) {
+            return precision
+                ? `('now'::text)::time${precision[0]} with time zone`
+                : "('now'::text)::time with time zone"
+        } else if (/^LOCALTIMESTAMP(\(\d+\))?$/.test(upperCaseValue)) {
+            return precision
+                ? `('now'::text)::timestamp${precision[0]} without time zone`
+                : "('now'::text)::timestamp without time zone"
+        } else if (/^LOCALTIME(\(\d+\))?$/.test(upperCaseValue)) {
+            return precision
+                ? `('now'::text)::time${precision[0]} without time zone`
+                : "('now'::text)::time without time zone"
         }
 
         return value
