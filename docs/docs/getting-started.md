@@ -9,7 +9,7 @@ that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large-scale enterprise applications
 with multiple databases.
 
-TypeORM supports more databases than any other JS/TS ORM: [Google Spanner](./drivers/google-spanner.md), [Microsoft SqlServer](./drivers/microsoft-sqlserver.md), [MongoDB](./drivers/mongodb.md), [MySQL/MariaDB](./drivers/mysql.md), [Oracle](./drivers/oracle.md), [Postgres](./drivers/postgres.md), [SAP HANA](./drivers/sap.md) and [SQLite](./drivers/sqlite.md), as well we derived databases and different drivers.
+TypeORM supports more databases than any other JS/TS ORM: [Google Spanner](./drivers/google-spanner.md), [Microsoft SqlServer](./drivers/microsoft-sqlserver.md), [MongoDB](./drivers/mongodb.md), [MySQL/MariaDB](./drivers/mysql.md), [Oracle](./drivers/oracle.md), [Postgres](./drivers/postgres.md), [SAP HANA](./drivers/sap.md) and [SQLite](./drivers/sqlite.md), as well as derived databases and different drivers.
 
 TypeORM supports both [Active Record](./guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
 unlike all other JavaScript ORMs currently in existence,
@@ -21,42 +21,42 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 ## Features
 
--   Supports both [DataMapper](./guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice).
--   Entities and columns.
--   Database-specific column types.
--   Entity manager.
--   Repositories and custom repositories.
--   Clean object-relational model.
--   Associations (relations).
--   Eager and lazy relations.
--   Unidirectional, bidirectional, and self-referenced relations.
--   Supports multiple inheritance patterns.
--   Cascades.
--   Indices.
--   Transactions.
--   [Migrations](/docs/migrations/why) with automatic generation.
--   Connection pooling.
--   Replication.
--   Using multiple database instances.
--   Working with multiple database types.
--   Cross-database and cross-schema queries.
--   Elegant-syntax, flexible and powerful QueryBuilder.
--   Left and inner joins.
--   Proper pagination for queries using joins.
--   Query caching.
--   Streaming raw results.
--   Logging.
--   Listeners and subscribers (hooks).
--   Supports closure table pattern.
--   Schema declaration in models or separate configuration files.
--   Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
--   Supports MongoDB NoSQL database.
--   Works in Node.js / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
--   TypeScript and JavaScript support.
--   ESM and CommonJS support.
--   Produced code is performant, flexible, clean, and maintainable.
--   Follows all possible best practices.
--   CLI.
+- Supports both [DataMapper](./guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice).
+- Entities and columns.
+- Database-specific column types.
+- Entity manager.
+- Repositories and custom repositories.
+- Clean object-relational model.
+- Associations (relations).
+- Eager and lazy relations.
+- Unidirectional, bidirectional, and self-referenced relations.
+- Supports multiple inheritance patterns.
+- Cascades.
+- Indices.
+- Transactions.
+- [Migrations](/docs/migrations/why) with automatic generation.
+- Connection pooling.
+- Replication.
+- Using multiple database instances.
+- Working with multiple database types.
+- Cross-database and cross-schema queries.
+- Elegant-syntax, flexible and powerful QueryBuilder.
+- Left and inner joins.
+- Proper pagination for queries using joins.
+- Query caching.
+- Streaming raw results.
+- Logging.
+- Listeners and subscribers (hooks).
+- Supports closure table pattern.
+- Schema declaration in models or separate configuration files.
+- Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
+- Supports MongoDB NoSQL database.
+- Works in Node.js / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
+- TypeScript and JavaScript support.
+- ESM and CommonJS support.
+- Produced code is performant, flexible, clean, and maintainable.
+- Follows all possible best practices.
+- CLI.
 
 And more...
 
@@ -197,9 +197,9 @@ This command will generate a new project in the `MyProject` directory with the f
 ```text
 MyProject
 ├── src                   // place of your TypeScript code
-│   ├── entity            // place where your entities (database models) are stored
+│   ├── entities          // place where your entities (database models) are stored
 │   │   └── User.ts       // sample entity
-│   ├── migration         // place where your migrations are stored
+│   ├── migrations        // place where your migrations are stored
 │   ├── data-source.ts    // data source and all connection configuration
 │   └── index.ts          // start point of your application
 ├── .gitignore            // standard gitignore file
@@ -1168,36 +1168,36 @@ Take a look at the samples in [sample](https://github.com/typeorm/typeorm/tree/m
 
 There are a few repositories that you can clone and start with:
 
--   [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)
--   [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
--   [Example how to use TypeORM with JavaScript and Babel](https://github.com/typeorm/babel-example)
--   [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
--   [Example how to use TypeORM with TypeScript and React in Browser](https://github.com/ItayGarin/typeorm-react-swc)
--   [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
--   [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
--   [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
--   [Example how to use TypeORM in a Cordova app](https://github.com/typeorm/cordova-example)
--   [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
--   [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
--   [Example how to use TypeORM with Nativescript-Vue](https://github.com/typeorm/nativescript-vue-typeorm-sample)
--   [Example how to use TypeORM with Nativescript-Angular](https://github.com/betov18x/nativescript-angular-typeorm-example)
--   [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
--   [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
+- [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)
+- [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
+- [Example how to use TypeORM with JavaScript and Babel](https://github.com/typeorm/babel-example)
+- [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
+- [Example how to use TypeORM with TypeScript and React in Browser](https://github.com/ItayGarin/typeorm-react-swc)
+- [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
+- [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
+- [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
+- [Example how to use TypeORM in a Cordova app](https://github.com/typeorm/cordova-example)
+- [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
+- [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
+- [Example how to use TypeORM with Nativescript-Vue](https://github.com/typeorm/nativescript-vue-typeorm-sample)
+- [Example how to use TypeORM with Nativescript-Angular](https://github.com/betov18x/nativescript-angular-typeorm-example)
+- [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
+- [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
 
 ## Extensions
 
 There are several extensions that simplify working with TypeORM and integrating it with other modules:
 
--   [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
--   [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
--   Models generation from the existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
--   Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
--   ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
--   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
--   Create, drop and seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
--   Automatically update `data-source.ts` after generating [migrations](/docs/migrations/why)/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
--   Easy manipulation of `relations` objects - [typeorm-relations](https://npmjs.com/package/typeorm-relations)
--   Automatically generate `relations` based on a GraphQL query - [typeorm-relations-graphql](https://npmjs.com/package/typeorm-relations-graphql)
+- [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
+- [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
+- Models generation from the existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
+- Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
+- ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
+- another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
+- Create, drop and seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
+- Automatically update `data-source.ts` after generating [migrations](/docs/migrations/why)/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
+- Easy manipulation of `relations` objects - [typeorm-relations](https://npmjs.com/package/typeorm-relations)
+- Automatically generate `relations` based on a GraphQL query - [typeorm-relations-graphql](https://npmjs.com/package/typeorm-relations-graphql)
 
 ## Contributing
 

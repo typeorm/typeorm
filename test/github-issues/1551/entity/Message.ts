@@ -47,7 +47,9 @@ export class Message {
             this.type = type
         }
         if (recipients) {
-            recipients.forEach((recipient) => (recipient.message = this))
+            recipients.forEach((recipient) => {
+                recipient.message = this
+            })
             this.recipients = recipients
             // this.recipients = recipients.map(recipient => (new Recipient({...recipient, message: this})));
         }

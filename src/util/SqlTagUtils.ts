@@ -1,4 +1,4 @@
-import { Driver } from "../driver/Driver"
+import type { Driver } from "../driver/Driver"
 import dedent from "dedent"
 
 interface BuildSqlTagParams {
@@ -7,6 +7,13 @@ interface BuildSqlTagParams {
     expressions: unknown[]
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.driver
+ * @param root0.strings
+ * @param root0.expressions
+ */
 export function buildSqlTag({
     driver,
     strings,

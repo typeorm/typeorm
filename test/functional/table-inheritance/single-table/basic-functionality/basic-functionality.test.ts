@@ -4,28 +4,29 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Student } from "./entity/Student"
 import { Teacher } from "./entity/Teacher"
 import { Accountant } from "./entity/Accountant"
 import { Employee } from "./entity/Employee"
 import { Person } from "./entity/Person"
 import { expect } from "chai"
+import { Male } from "./entity/Male"
+import { Human } from "./entity/Human"
 
 describe("table-inheritance > single-table > basic-functionality", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly insert, update and delete data with single-table-inheritance pattern", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // -------------------------------------------------------------------------
                 // Create
                 // -------------------------------------------------------------------------
@@ -33,42 +34,42 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 const student1 = new Student()
                 student1.name = "Alice"
                 student1.faculty = "Economics"
-                await connection.getRepository(Student).save(student1)
+                await dataSource.getRepository(Student).save(student1)
 
                 const student2 = new Student()
                 student2.name = "Bob"
                 student2.faculty = "Programming"
-                await connection.getRepository(Student).save(student2)
+                await dataSource.getRepository(Student).save(student2)
 
                 const teacher1 = new Teacher()
                 teacher1.name = "Mr. Garrison"
                 teacher1.specialization = "Geography"
                 teacher1.salary = 2000
-                await connection.getRepository(Teacher).save(teacher1)
+                await dataSource.getRepository(Teacher).save(teacher1)
 
                 const teacher2 = new Teacher()
                 teacher2.name = "Mr. Adler"
                 teacher2.specialization = "Mathematics"
                 teacher2.salary = 4000
-                await connection.getRepository(Teacher).save(teacher2)
+                await dataSource.getRepository(Teacher).save(teacher2)
 
                 const accountant1 = new Accountant()
                 accountant1.name = "Mr. Burns"
                 accountant1.department = "Bookkeeping"
                 accountant1.salary = 3000
-                await connection.getRepository(Accountant).save(accountant1)
+                await dataSource.getRepository(Accountant).save(accountant1)
 
                 const accountant2 = new Accountant()
                 accountant2.name = "Mr. Trump"
                 accountant2.department = "Director"
                 accountant2.salary = 5000
-                await connection.getRepository(Accountant).save(accountant2)
+                await dataSource.getRepository(Accountant).save(accountant2)
 
                 // -------------------------------------------------------------------------
                 // Select
                 // -------------------------------------------------------------------------
 
-                let loadedStudents = await connection.manager
+                let loadedStudents = await dataSource.manager
                     .createQueryBuilder(Student, "students")
                     .orderBy("students.id")
                     .getMany()
@@ -82,7 +83,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedStudents[1].name.should.equal("Bob")
                 loadedStudents[1].faculty.should.equal("Programming")
 
-                let loadedTeachers = await connection.manager
+                let loadedTeachers = await dataSource.manager
                     .createQueryBuilder(Teacher, "teachers")
                     .orderBy("teachers.id")
                     .getMany()
@@ -108,7 +109,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedTeachers[1].specialization.should.equal("Mathematics")
                 loadedTeachers[1].salary.should.equal(4000)
 
-                let loadedAccountants = await connection.manager
+                let loadedAccountants = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountants")
                     .orderBy("accountants.id")
                     .getMany()
@@ -138,15 +139,15 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 // Update
                 // -------------------------------------------------------------------------
 
-                let loadedStudent = await connection.manager
+                let loadedStudent = await dataSource.manager
                     .createQueryBuilder(Student, "student")
                     .where("student.name = :name", { name: "Bob" })
                     .getOne()
 
                 loadedStudent!.faculty = "Chemistry"
-                await connection.getRepository(Student).save(loadedStudent!)
+                await dataSource.getRepository(Student).save(loadedStudent!)
 
-                loadedStudent = await connection.manager
+                loadedStudent = await dataSource.manager
                     .createQueryBuilder(Student, "student")
                     .where("student.name = :name", { name: "Bob" })
                     .getOne()
@@ -156,15 +157,15 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedStudent!.name.should.equal("Bob")
                 loadedStudent!.faculty.should.equal("Chemistry")
 
-                let loadedTeacher = await connection.manager
+                let loadedTeacher = await dataSource.manager
                     .createQueryBuilder(Teacher, "teacher")
                     .where("teacher.name = :name", { name: "Mr. Adler" })
                     .getOne()
 
                 loadedTeacher!.salary = 1000
-                await connection.getRepository(Teacher).save(loadedTeacher!)
+                await dataSource.getRepository(Teacher).save(loadedTeacher!)
 
-                loadedTeacher = await connection.manager
+                loadedTeacher = await dataSource.manager
                     .createQueryBuilder(Teacher, "teacher")
                     .where("teacher.name = :name", { name: "Mr. Adler" })
                     .getOne()
@@ -180,17 +181,17 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedTeacher!.specialization.should.equal("Mathematics")
                 loadedTeacher!.salary.should.equal(1000)
 
-                let loadedAccountant = await connection.manager
+                let loadedAccountant = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountant")
                     .where("accountant.name = :name", { name: "Mr. Trump" })
                     .getOne()
 
                 loadedAccountant!.salary = 1000
-                await connection
+                await dataSource
                     .getRepository(Accountant)
                     .save(loadedAccountant!)
 
-                loadedAccountant = await connection.manager
+                loadedAccountant = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountant")
                     .where("accountant.name = :name", { name: "Mr. Trump" })
                     .getOne()
@@ -210,9 +211,9 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 // Delete
                 // -------------------------------------------------------------------------
 
-                await connection.getRepository(Student).remove(loadedStudent!)
+                await dataSource.getRepository(Student).remove(loadedStudent!)
 
-                loadedStudents = await connection.manager
+                loadedStudents = await dataSource.manager
                     .createQueryBuilder(Student, "students")
                     .orderBy("students.id")
                     .getMany()
@@ -223,9 +224,9 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedStudents[0].name.should.equal("Alice")
                 loadedStudents[0].faculty.should.equal("Economics")
 
-                await connection.getRepository(Teacher).remove(loadedTeacher!)
+                await dataSource.getRepository(Teacher).remove(loadedTeacher!)
 
-                loadedTeachers = await connection.manager
+                loadedTeachers = await dataSource.manager
                     .createQueryBuilder(Teacher, "teachers")
                     .orderBy("teachers.id")
                     .getMany()
@@ -242,11 +243,11 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedTeachers[0].specialization.should.equal("Geography")
                 loadedTeachers[0].salary.should.equal(2000)
 
-                await connection
+                await dataSource
                     .getRepository(Accountant)
                     .remove(loadedAccountant!)
 
-                loadedAccountants = await connection.manager
+                loadedAccountants = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountants")
                     .orderBy("accountants.id")
                     .getMany()
@@ -267,7 +268,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 // Select parent objects
                 // -------------------------------------------------------------------------
 
-                const loadedEmployees = await connection.manager
+                const loadedEmployees = await dataSource.manager
                     .createQueryBuilder(Employee, "employees")
                     .orderBy("employees.id")
                     .getMany()
@@ -295,7 +296,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 ;(loadedEmployees[1] as Accountant).department = "Bookkeeping"
                 loadedEmployees[1].salary.should.equal(3000)
 
-                const loadedPersons = await connection.manager
+                const loadedPersons = await dataSource.manager
                     .createQueryBuilder(Person, "persons")
                     .orderBy("persons.id")
                     .getMany()
@@ -332,7 +333,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
     it("should be able to save different child entities in bulk", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const student = new Student()
                 student.name = "Alice"
                 student.faculty = "Economics"
@@ -341,7 +342,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 employee.name = "John"
                 employee.salary = 1000
 
-                await connection.manager.save([student, employee])
+                await dataSource.manager.save([student, employee])
 
                 student.name.should.be.eql("Alice")
                 student.faculty.should.be.eql("Economics")
@@ -359,18 +360,18 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
     it("should be able to find correct child entities when base class is used as entity metadata", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const student = new Student()
                 student.name = "Alice"
                 student.faculty = "Economics"
-                await connection.manager.save(student)
+                await dataSource.manager.save(student)
 
                 const employee = new Employee()
                 employee.name = "John"
                 employee.salary = 1000
-                await connection.manager.save(employee)
+                await dataSource.manager.save(employee)
 
-                const loadedEmployee1 = await connection.manager.findOne(
+                const loadedEmployee1 = await dataSource.manager.findOne(
                     Employee,
                     {
                         where: {
@@ -380,7 +381,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 )
                 expect(loadedEmployee1).to.be.null
 
-                const loadedEmployee2 = await connection.manager.findOne(
+                const loadedEmployee2 = await dataSource.manager.findOne(
                     Employee,
                     {
                         where: {
@@ -397,7 +398,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedEmployee2!.should.not.haveOwnProperty("specialization")
                 loadedEmployee2!.should.not.haveOwnProperty("faculty")
 
-                const loadedStudent1 = await connection.manager.findOne(
+                const loadedStudent1 = await dataSource.manager.findOne(
                     Student,
                     {
                         where: {
@@ -413,7 +414,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedStudent1!.should.not.haveOwnProperty("specialization")
                 loadedStudent1!.should.not.haveOwnProperty("salary")
 
-                const loadedStudent2 = await connection.manager.findOne(
+                const loadedStudent2 = await dataSource.manager.findOne(
                     Student,
                     {
                         where: {
@@ -423,7 +424,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 )
                 expect(loadedStudent2).to.be.null
 
-                const loadedPerson1 = await connection.manager.findOne(Person, {
+                const loadedPerson1 = await dataSource.manager.findOne(Person, {
                     where: {
                         id: 1,
                     },
@@ -436,7 +437,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedPerson1!.should.not.haveOwnProperty("specialization")
                 loadedPerson1!.should.not.haveOwnProperty("salary")
 
-                const loadedPerson2 = await connection.manager.findOne(Person, {
+                const loadedPerson2 = await dataSource.manager.findOne(Person, {
                     where: {
                         id: 2,
                     },
@@ -450,4 +451,123 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedPerson2!.should.not.haveOwnProperty("faculty")
             }),
         ))
+
+    it("should correctly upsert data with single-table-inheritance pattern", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // --------------------------------------------------------------------------
+                // Upsert - Initial insert
+                // --------------------------------------------------------------------------
+                const initialInsert = await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Male)
+                    .values([
+                        { id: 1, name: "Alice", age: 22 },
+                        { id: 2, name: "Bob", age: 23 },
+                    ])
+                    .execute()
+
+                initialInsert.identifiers.length.should.equal(2)
+
+                // --------------------------------------------------------------------------
+                // Upsert - Update via conflict
+                // --------------------------------------------------------------------------
+                const secondInsert = await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Male)
+                    .values([
+                        { id: 1, name: "Alice", age: 40 }, // Update faculty for id=1
+                        { id: 2, name: "Bob", age: 45 }, // Update faculty for id=2
+                    ])
+                    .orUpdate(["age"], ["id"], {
+                        skipUpdateIfNoValuesChanged: true,
+                    })
+                    .execute()
+
+                secondInsert.identifiers.length.should.equal(2)
+                // After upsert, we should have 2 rows with updated faculties
+                const loadedMales = await dataSource.manager
+                    .createQueryBuilder(Male, "males")
+                    .orderBy("males.id")
+                    .getMany()
+
+                loadedMales.length.should.equal(2)
+                loadedMales[0].should.have.all.keys("id", "name", "age")
+                loadedMales[0].id.should.equal(1)
+                loadedMales[0].name.should.equal("Alice")
+                loadedMales[0].age.should.equal(40)
+                loadedMales[1].should.have.all.keys("id", "name", "age")
+                loadedMales[1].id.should.equal(2)
+                loadedMales[1].name.should.equal("Bob")
+                loadedMales[1].age.should.equal(45)
+            }),
+        ))
+
+    describe("table-inheritance > single-table > basic-functionality with custom database schema", () => {
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Human, Male],
+                enabledDrivers: ["postgres", "cockroachdb", "mssql"],
+                schema: "my_schema",
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should correctly upsert data with single-table-inheritance pattern", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    // --------------------------------------------------------------------------
+                    // Upsert - Initial insert
+                    // --------------------------------------------------------------------------
+                    const initialInsert = await dataSource
+                        .createQueryBuilder()
+                        .insert()
+                        .into(Male)
+                        .values([
+                            { id: 1, name: "Alice", age: 20 },
+                            { id: 2, name: "Bob", age: 25 },
+                        ])
+                        .execute()
+
+                    initialInsert.identifiers.length.should.equal(2)
+
+                    // --------------------------------------------------------------------------
+                    // Upsert - Update via conflict
+                    // --------------------------------------------------------------------------
+                    const secondInsert = await dataSource
+                        .createQueryBuilder()
+                        .insert()
+                        .into(Male)
+                        .values([
+                            { id: 1, name: "Alice", age: 30 }, // Update age for id=1
+                            { id: 2, name: "Bob", age: 35 }, // Update age for id=2
+                        ])
+                        .orUpdate(["age"], ["id"], {
+                            skipUpdateIfNoValuesChanged: true,
+                        })
+                        .execute()
+
+                    secondInsert.identifiers.length.should.equal(2)
+                    // After upsert, we should have 2 rows with updated ages
+                    const loadedMales = await dataSource.manager
+                        .createQueryBuilder(Male, "males")
+                        .orderBy("males.id")
+                        .getMany()
+
+                    loadedMales.length.should.equal(2)
+                    loadedMales[0].should.have.all.keys("id", "name", "age")
+                    loadedMales[0].id.should.equal(1)
+                    loadedMales[0].name.should.equal("Alice")
+                    loadedMales[0].age.should.equal(30)
+                    loadedMales[1].should.have.all.keys("id", "name", "age")
+                    loadedMales[1].id.should.equal(2)
+                    loadedMales[1].name.should.equal("Bob")
+                    loadedMales[1].age.should.equal(35)
+                }),
+            ))
+    })
 })

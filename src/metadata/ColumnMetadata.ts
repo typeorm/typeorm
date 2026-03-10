@@ -1,16 +1,16 @@
-import { ColumnType } from "../driver/types/ColumnTypes"
-import { EntityMetadata } from "./EntityMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
-import { RelationMetadata } from "./RelationMetadata"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { ColumnMetadataArgs } from "../metadata-args/ColumnMetadataArgs"
-import { DataSource } from "../data-source/DataSource"
+import type { ColumnType } from "../driver/types/ColumnTypes"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { RelationMetadata } from "./RelationMetadata"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ColumnMetadataArgs } from "../metadata-args/ColumnMetadataArgs"
+import type { DataSource } from "../data-source/DataSource"
 import { OrmUtils } from "../util/OrmUtils"
-import { ValueTransformer } from "../decorator/options/ValueTransformer"
+import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
+import type { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
 
 /**
  * This metadata contains all information about entity's column.
@@ -31,7 +31,7 @@ export class ColumnMetadata {
     /**
      * Entity metadata where this column metadata is.
      *
-     * For example for @Column() name: string in Post, entityMetadata will be metadata of Post entity.
+     * For example for `@Column() name: string` in `Post`, `entityMetadata` will be metadata of `Post` entity.
      */
     entityMetadata: EntityMetadata
 
@@ -61,11 +61,6 @@ export class ColumnMetadata {
      * Type's length in the database.
      */
     length: string = ""
-
-    /**
-     * Type's display width in the database.
-     */
-    width?: number
 
     /**
      * Defines column character set.
@@ -159,12 +154,6 @@ export class ColumnMetadata {
     scale?: number
 
     /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-     */
-    zerofill: boolean = false
-
-    /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
      */
     unsigned: boolean = false
@@ -248,14 +237,14 @@ export class ColumnMetadata {
     /**
      * Indicates if column is a virtual property. Virtual properties are not mapped to the entity.
      * This property is used in tandem the virtual column decorator.
-     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
+     * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     isVirtualProperty: boolean = false
 
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
-     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
+     * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     query?: (alias: string) => string
 
@@ -378,7 +367,6 @@ export class ColumnMetadata {
             this.length = options.args.options.length
                 ? options.args.options.length.toString()
                 : ""
-        if (options.args.options.width) this.width = options.args.options.width
         if (options.args.options.charset)
             this.charset = options.args.options.charset
         if (options.args.options.collation)
@@ -398,8 +386,6 @@ export class ColumnMetadata {
             this.utc = options.args.options.utc
         if (options.args.options.update !== undefined)
             this.isUpdate = options.args.options.update
-        if (options.args.options.readonly !== undefined)
-            this.isUpdate = !options.args.options.readonly
         if (options.args.options.comment)
             this.comment = options.args.options.comment
         if (options.args.options.default !== undefined)
@@ -413,10 +399,6 @@ export class ColumnMetadata {
             options.args.options.scale !== undefined
         )
             this.scale = options.args.options.scale
-        if (options.args.options.zerofill) {
-            this.zerofill = options.args.options.zerofill
-            this.unsigned = true // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-        }
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned
         if (options.args.options.precision !== null)
@@ -558,6 +540,8 @@ export class ColumnMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
+     * @param value
+     * @param useDatabaseName
      */
     createValueMap(value: any, useDatabaseName = false) {
         // extract column value from embeds of entity if column is in embedded
@@ -624,6 +608,9 @@ export class ColumnMetadata {
      *
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
+     * @param entity
+     * @param options
+     * @param options.skipNulls
      */
     getEntityValueMap(
         entity: ObjectLiteral,
@@ -766,12 +753,14 @@ export class ColumnMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
+     * @param entity
+     * @param transform
      */
     getEntityValue(
         entity: ObjectLiteral,
         transform: boolean = false,
     ): any | undefined {
-        if (entity === undefined || entity === null) return undefined
+        if (entity === undefined || entity === null) return entity
 
         // extract column value from embeddeds of entity if column is in embedded
         let value: any = undefined
@@ -889,6 +878,8 @@ export class ColumnMetadata {
     /**
      * Sets given entity's column value.
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
+     * @param entity
+     * @param value
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         if (this.embeddedMetadata) {
@@ -943,6 +934,8 @@ export class ColumnMetadata {
 
     /**
      * Compares given entity's column value with a given value.
+     * @param entity
+     * @param valueToCompareWith
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)
@@ -956,12 +949,12 @@ export class ColumnMetadata {
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    build(connection: DataSource): this {
+    build(dataSource: DataSource): this {
         this.propertyPath = this.buildPropertyPath()
         this.propertyAliasName = this.propertyPath.replace(".", "_")
-        this.databaseName = this.buildDatabaseName(connection)
+        this.databaseName = this.buildDatabaseName(dataSource)
         this.databasePath = this.buildDatabasePath()
-        this.databaseNameWithoutPrefixes = connection.namingStrategy.columnName(
+        this.databaseNameWithoutPrefixes = dataSource.namingStrategy.columnName(
             this.propertyName,
             this.givenDatabaseName,
             [],
@@ -1017,14 +1010,14 @@ export class ColumnMetadata {
         return path
     }
 
-    protected buildDatabaseName(connection: DataSource): string {
+    protected buildDatabaseName(dataSource: DataSource): string {
         let propertyNames = this.embeddedMetadata
             ? this.embeddedMetadata.parentPrefixes
             : []
-        if (connection.driver.options.type === "mongodb")
+        if (dataSource.driver.options.type === "mongodb")
             // we don't need to include embedded name for the mongodb column names
             propertyNames = []
-        return connection.namingStrategy.columnName(
+        return dataSource.namingStrategy.columnName(
             this.propertyName,
             this.givenDatabaseName,
             propertyNames,

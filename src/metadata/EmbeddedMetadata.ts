@@ -1,13 +1,13 @@
-import { ColumnMetadata } from "./ColumnMetadata"
-import { RelationMetadata } from "./RelationMetadata"
-import { EntityMetadata } from "./EntityMetadata"
-import { EmbeddedMetadataArgs } from "../metadata-args/EmbeddedMetadataArgs"
-import { RelationIdMetadata } from "./RelationIdMetadata"
-import { RelationCountMetadata } from "./RelationCountMetadata"
-import { DataSource } from "../data-source/DataSource"
-import { EntityListenerMetadata } from "./EntityListenerMetadata"
-import { IndexMetadata } from "./IndexMetadata"
-import { UniqueMetadata } from "./UniqueMetadata"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { RelationMetadata } from "./RelationMetadata"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { EmbeddedMetadataArgs } from "../metadata-args/EmbeddedMetadataArgs"
+import type { RelationIdMetadata } from "./RelationIdMetadata"
+import type { RelationCountMetadata } from "./RelationCountMetadata"
+import type { DataSource as dataSource } from "../data-source/DataSource"
+import type { EntityListenerMetadata } from "./EntityListenerMetadata"
+import type { IndexMetadata } from "./IndexMetadata"
+import type { UniqueMetadata } from "./UniqueMetadata"
 import { TypeORMError } from "../error"
 
 /**
@@ -193,6 +193,8 @@ export class EmbeddedMetadata {
 
     /**
      * Creates a new embedded object.
+     * @param options
+     * @param options.fromDeserializer
      */
     create(options?: { fromDeserializer?: boolean }): any {
         if (!(typeof this.type === "function")) {
@@ -210,7 +212,7 @@ export class EmbeddedMetadata {
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    build(connection: DataSource): this {
+    build(connection: dataSource): this {
         this.embeddeds.forEach((embedded) => embedded.build(connection))
         this.prefix = this.buildPrefix(connection)
         this.parentPropertyNames = this.buildParentPropertyNames()
@@ -258,7 +260,7 @@ export class EmbeddedMetadata {
         )
     }
 
-    protected buildPrefix(connection: DataSource): string {
+    protected buildPrefix(connection: dataSource): string {
         if (connection.driver.options.type === "mongodb")
             return this.propertyName
 

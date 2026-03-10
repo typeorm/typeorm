@@ -4,20 +4,20 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/index"
-import { Email, EmailChanged } from "./entity/EmailChanged"
+import type { DataSource } from "../../../src/index"
+import type { Email } from "./entity/EmailChanged"
+import { EmailChanged } from "./entity/EmailChanged"
 import { Change } from "./entity/Change"
 import { Log } from "./entity/Log"
 
 describe("github issues > #9405 Incorrect subject sorting with multi-inheritance entities", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

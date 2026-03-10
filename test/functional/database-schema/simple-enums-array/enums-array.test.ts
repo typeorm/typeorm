@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -14,21 +14,21 @@ import {
 } from "./entity/EnumArrayEntity"
 
 describe("database schema > simple enum arrays", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres", "cockroachdb", "better-sqlite3"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create default values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumArrayEntity)
+                    dataSource.getRepository(EnumArrayEntity)
 
                 const enumEntity = new EnumArrayEntity()
                 enumEntity.id = 1
@@ -61,9 +61,9 @@ describe("database schema > simple enum arrays", () => {
 
     it("should correctly save and retrieve", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumArrayEntity)
+                    dataSource.getRepository(EnumArrayEntity)
 
                 const enumEntity = new EnumArrayEntity()
                 enumEntity.id = 1

@@ -1,6 +1,7 @@
 import { expect } from "chai"
-import { DataSource, Repository } from "../../../src"
-import { PostgresConnectionOptions } from "../../../src/driver/postgres/PostgresConnectionOptions"
+import type { Repository } from "../../../src"
+import { DataSource } from "../../../src"
+import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 import {
     closeTestingConnections,
     reloadTestingDatabases,
@@ -15,7 +16,7 @@ describe("github issues > #11423", () => {
     before(async () => {
         const options = setupSingleTestingConnection("postgres", {
             entities: [Post],
-        }) as PostgresConnectionOptions
+        }) as PostgresDataSourceOptions
         if (!options) return
 
         dataSource = new DataSource({

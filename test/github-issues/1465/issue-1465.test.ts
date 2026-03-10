@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { assert } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,26 +10,19 @@ import { Account } from "./entity/Account"
 import { AccountActivationToken } from "./entity/AccountActivationToken"
 
 describe("github issues > #1465 save child and parent entity", () => {
-    let connections: DataSource[] = []
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: [
-                    "mysql",
-                    "mariadb",
-                    "sqlite",
-                    "better-sqlite3",
-                    "sqljs",
-                ],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[] = []
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "mariadb", "better-sqlite3", "sqljs"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("account property in accountActivationToken should not be null", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const account = new Account()
                 account.username = "test"
                 account.password = "123456"

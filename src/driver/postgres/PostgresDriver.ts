@@ -1,36 +1,36 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source/DataSource"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { IndexMetadata } from "../../metadata/IndexMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { TableIndex } from "../../schema-builder/table/TableIndex"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
-import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
-import { ColumnType } from "../types/ColumnTypes"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { VersionUtils } from "../../util/VersionUtils"
-import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
-import { PostgresConnectionOptions } from "./PostgresConnectionOptions"
-import { PostgresQueryRunner } from "./PostgresQueryRunner"
-import { DriverUtils } from "../DriverUtils"
-import { TypeORMError } from "../../error"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType"
-import { IndexMetadata } from "../../metadata/IndexMetadata"
-import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import type { Driver, ReturningType } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
+import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
+import type { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
+import { PostgresQueryRunner } from "./PostgresQueryRunner"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -73,7 +73,7 @@ export class PostgresDriver implements Driver {
     /**
      * Connection options.
      */
-    options: PostgresConnectionOptions
+    options: PostgresDataSourceOptions
 
     /**
      * Version of Postgres. Requires a SQL query to the DB, so it is set on the first
@@ -118,7 +118,6 @@ export class PostgresDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://www.postgresql.org/docs/current/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
@@ -328,7 +327,7 @@ export class PostgresDriver implements Driver {
         }
 
         this.connection = connection
-        this.options = connection.options as PostgresConnectionOptions
+        this.options = connection.options as PostgresDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
         if (this.options.useUTC) {
             process.env.PGTZ = "UTC"
@@ -715,6 +714,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
         return new PostgresQueryRunner(this, mode)
@@ -722,6 +722,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -744,10 +746,30 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
+            columnMetadata.type === "timestamptz" ||
             columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp without time zone"
         ) {
             return DateUtils.mixedDateToDate(value)
+        } else if (columnMetadata.type === "point") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined
+            ) {
+                return `(${value.x},${value.y})`
+            }
+            return value
+        } else if (columnMetadata.type === "circle") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined &&
+                value.radius !== undefined
+            ) {
+                return `<(${value.x},${value.y}),${value.radius}>`
+            }
+            return value
         } else if (
             ["json", "jsonb", ...this.spatialTypes].indexOf(
                 columnMetadata.type,
@@ -815,6 +837,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -831,6 +855,7 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
+            columnMetadata.type === "timestamptz" ||
             columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp without time zone"
         ) {
@@ -888,7 +913,7 @@ export class PostgresDriver implements Driver {
                 const unparsedArrayString = value
 
                 value = []
-                let cube: RegExpExecArray | null = null
+                let cube: RegExpExecArray | null
                 // Iterate through all regexp matches for cubes/null in array
                 while ((cube = regexp.exec(unparsedArrayString)) !== null) {
                     if (cube[1] !== undefined) {
@@ -952,15 +977,14 @@ export class PostgresDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -1004,6 +1028,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return '"' + columnName + '"'
@@ -1012,6 +1037,8 @@ export class PostgresDriver implements Driver {
     /**
      * Build full table name with schema name and table name.
      * E.g. myDB.mySchema.myTable
+     * @param tableName
+     * @param schema
      */
     buildTableName(tableName: string, schema?: string): string {
         const tablePath = [tableName]
@@ -1025,6 +1052,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -1077,6 +1105,12 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
+     * @param column.isArray
      */
     normalizeType(column: {
         type?: ColumnType
@@ -1130,6 +1164,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -1172,6 +1207,8 @@ export class PostgresDriver implements Driver {
     /**
      * Compares "default" value of the column.
      * Postgres sorts json values before it is saved, so in that case a deep comparison has to be performed to see if has changed.
+     * @param columnMetadata
+     * @param tableColumn
      */
     private defaultEqual(
         columnMetadata: ColumnMetadata,
@@ -1205,6 +1242,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.uniques.some(
@@ -1214,6 +1252,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
         return column.length ? column.length.toString() : ""
@@ -1221,6 +1260,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -1335,6 +1375,8 @@ export class PostgresDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      *
      * todo: slow. optimize Object.keys(), OrmUtils.mergeDeep and column.createValueMap parts
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
         if (!insertResult) return undefined
@@ -1355,6 +1397,8 @@ export class PostgresDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -1516,8 +1560,9 @@ export class PostgresDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     * @param _returningType
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
     }
 
@@ -1543,6 +1588,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return this.parametersPrefix + (index + 1)
@@ -1598,9 +1645,11 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     * @param options
+     * @param credentials
      */
     protected async createPool(
-        options: PostgresConnectionOptions,
+        options: PostgresDataSourceOptions,
         credentials: PostgresConnectionCredentialsOptions,
     ): Promise<any> {
         const { logger } = this.connection
@@ -1684,6 +1733,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Closes connection pool.
+     * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
         while (this.connectedQueryRunners.length) {
@@ -1697,6 +1747,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Executes given query.
+     * @param connection
+     * @param query
      */
     protected executeQuery(connection: any, query: string) {
         this.connection.logger.logQuery(query)
@@ -1711,6 +1763,7 @@ export class PostgresDriver implements Driver {
     /**
      * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
      * Otherwise returns original input.
+     * @param value
      */
     protected normalizeDatetimeFunction(value: string) {
         // check if input is datetime function
@@ -1752,6 +1805,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment

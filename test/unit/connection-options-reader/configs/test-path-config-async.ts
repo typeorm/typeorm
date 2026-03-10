@@ -1,5 +1,4 @@
 module.exports = Promise.resolve({
-    type: "sqlite",
-    name: "file",
+    type: "better-sqlite3",
     database: "test-js-async",
 })

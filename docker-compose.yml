@@ -89,6 +89,11 @@ services:
     command: "start-single-node --insecure --cache=.25 --store=type=mem,size=.25"
     ports:
       - "26257:26257"
+    healthcheck:
+      test: ["CMD", "cockroach", "sql", "--insecure", "-e", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     # volumes:
     #   - cockroach-data:/cockroach/cockroach-data
 
@@ -116,14 +121,14 @@ services:
   # sap hana
   # works only on linux, minimum 10GB RAM for docker required
   hanaexpress:
-    image: "saplabs/hanaexpress:2.00.076.00.20240701.1"
+    image: "saplabs/hanaexpress:2.00.088.00.20251110.1"
     container_name: "typeorm-hanaexpress"
     hostname: hxe
     command:
       [
+        "--agree-to-sap-license",
         "--passwords-url",
         "file:////hana/hxe-config.json",
-        "--agree-to-sap-license",
       ]
     ulimits:
       nofile: 1048576
@@ -143,7 +148,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:8"
+    image: "mongo:8.2.5"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

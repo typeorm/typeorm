@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Table, TableColumn, TableIndex } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table, TableColumn, TableIndex } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,25 +10,25 @@ import {
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop index", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly drop index and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("student")
                 // CockroachDB also stores indices for relation columns
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     table!.indices.length.should.be.equal(3)
                 } else {
                     table!.indices.length.should.be.equal(1)
@@ -37,7 +38,7 @@ describe("query runner > drop index", () => {
 
                 table = await queryRunner.getTable("student")
                 // CockroachDB also stores indices for relation columns
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     table!.indices.length.should.be.equal(2)
                 } else {
                     table!.indices.length.should.be.equal(0)
@@ -47,7 +48,7 @@ describe("query runner > drop index", () => {
 
                 table = await queryRunner.getTable("student")
                 // CockroachDB also stores indices for relation columns
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     table!.indices.length.should.be.equal(3)
                 } else {
                     table!.indices.length.should.be.equal(1)
@@ -59,8 +60,8 @@ describe("query runner > drop index", () => {
 
     it("should drop all indices without skipping any when iterating over array", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.connect()
 
                 try {
@@ -72,7 +73,7 @@ describe("query runner > drop index", () => {
                                 new TableColumn({
                                     name: "id",
                                     type: DriverUtils.isSQLiteFamily(
-                                        connection.driver,
+                                        dataSource.driver,
                                     )
                                         ? "integer"
                                         : "int",
@@ -176,6 +177,15 @@ describe("query runner > drop index", () => {
                 } finally {
                     await queryRunner.release()
                 }
+            }),
+        ))
+
+    it("should not throw when dropping non-existent index with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropIndex("post", "non_existent_index", true)
+                await queryRunner.release()
             }),
         ))
 })

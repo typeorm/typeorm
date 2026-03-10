@@ -1,8 +1,8 @@
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { DataSource } from "../../data-source/DataSource"
-import { RelationCountAttribute } from "./RelationCountAttribute"
-import { RelationCountLoadResult } from "./RelationCountLoadResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { DataSource } from "../../data-source/DataSource"
+import type { RelationCountAttribute } from "./RelationCountAttribute"
+import type { RelationCountLoadResult } from "./RelationCountLoadResult"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 
 export class RelationCountLoader {
     // -------------------------------------------------------------------------
@@ -10,7 +10,7 @@ export class RelationCountLoader {
     // -------------------------------------------------------------------------
 
     constructor(
-        protected connection: DataSource,
+        protected dataSource: DataSource,
         protected queryRunner: QueryRunner | undefined,
         protected relationCountAttributes: RelationCountAttribute[],
     ) {}
@@ -68,7 +68,7 @@ export class RelationCountLoader {
 
                     // generate query:
                     // SELECT category.post as parentId, COUNT(*) AS cnt FROM category category WHERE category.post IN (1, 2) GROUP BY category.post
-                    const qb = this.connection.createQueryBuilder(
+                    const qb = this.dataSource.createQueryBuilder(
                         this.queryRunner,
                     )
                     qb.select(
@@ -187,7 +187,7 @@ export class RelationCountLoader {
                         "." +
                         inverseJoinColumnName
 
-                    const qb = this.connection.createQueryBuilder(
+                    const qb = this.dataSource.createQueryBuilder(
                         this.queryRunner,
                     )
                     qb.select(

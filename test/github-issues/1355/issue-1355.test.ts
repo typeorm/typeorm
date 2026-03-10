@@ -5,26 +5,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { Animal } from "./entity/Animal"
 
 describe("github issues > #1355 Allow explicitly named primary keys, foreign keys, and indices", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => {
-        return reloadTestingDatabases(connections)
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
     })
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => {
+        return reloadTestingDatabases(dataSources)
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should set foreign keys their names to given names", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.getRepository(Animal).find()
 
                 const metadata = connection.getMetadata(Animal)

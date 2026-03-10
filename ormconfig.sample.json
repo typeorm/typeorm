@@ -1,7 +1,6 @@
 [
   {
     "skip": false,
-    "name": "mysql",
     "type": "mysql",
     "host": "localhost",
     "port": 3306,
@@ -13,7 +12,6 @@
   },
   {
     "skip": false,
-    "name": "mariadb",
     "type": "mariadb",
     "host": "localhost",
     "port": 3307,
@@ -25,36 +23,17 @@
   },
   {
     "skip": false,
-    "name": "sqlite",
-    "type": "sqlite",
-    "database": "./temp/sqlitedb-1.db",
-    "logging": false,
-    "relationLoadStrategy": "join"
-  },
-  {
-    "skip": false,
-    "name": "sqlite-2",
-    "type": "sqlite",
-    "database": "./temp/sqlitedb-2.db",
-    "logging": false,
-    "relationLoadStrategy": "query"
-  },
-  {
-    "skip": false,
-    "name": "better-sqlite3",
     "type": "better-sqlite3",
-    "database": "temp/better-sqlite3db.db",
+    "database": "temp/better-sqlite3.db",
     "logging": false
   },
   {
     "skip": true,
-    "name": "sqljs",
     "type": "sqljs",
     "logging": false
   },
   {
     "skip": false,
-    "name": "postgres",
     "type": "postgres",
     "host": "localhost",
     "port": 5432,
@@ -65,7 +44,6 @@
   },
   {
     "skip": false,
-    "name": "mssql",
     "type": "mssql",
     "host": "localhost",
     "username": "sa",
@@ -78,7 +56,6 @@
   },
   {
     "skip": false,
-    "name": "oracle",
     "type": "oracle",
     "host": "localhost",
     "username": "typeorm",
@@ -89,7 +66,6 @@
   },
   {
     "skip": false,
-    "name": "cockroachdb",
     "type": "cockroachdb",
     "host": "localhost",
     "port": 26257,
@@ -99,7 +75,6 @@
   },
   {
     "skip": false,
-    "name": "hanaexpress",
     "type": "sap",
     "host": "localhost",
     "port": 39041,
@@ -110,16 +85,12 @@
   {
     "skip": false,
     "disabledIfNotEnabledImplicitly": true,
-    "name": "mongodb",
     "type": "mongodb",
     "database": "test",
-    "logging": false,
-    "useNewUrlParser": true,
-    "useUnifiedTopology": true
+    "logging": false
   },
   {
     "skip": true,
-    "name": "aurora-mysql",
     "type": "aurora-mysql",
     "region": "us-east-1",
     "secretArn": "mysecret",
@@ -132,7 +103,6 @@
   },
   {
     "skip": true,
-    "name": "aurora-postgres",
     "type": "aurora-postgres",
     "region": "us-east-1",
     "secretArn": "mysecret",
@@ -145,7 +115,6 @@
   },
   {
     "skip": false,
-    "name": "spanner",
     "type": "spanner",
     "host": "localhost",
     "projectId": "test-project",

@@ -53,20 +53,19 @@ describe("entity subscriber > transaction flow", () => {
         }
     }
 
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Example],
-                subscribers: [PostSubscriber],
-                dropSchema: true,
-                schemaCreate: true,
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Example],
+            subscribers: [PostSubscriber],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("transactionStart", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -153,7 +152,7 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionCommit", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -222,7 +221,7 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionRollback", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -297,7 +296,7 @@ describe("entity subscriber > transaction flow", () => {
         const example = new Example()
         const data = { hello: ["world"] }
 
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             beforeTransactionCommit.resetHistory()
             afterTransactionCommit.resetHistory()
             afterInsert.resetHistory()

@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -13,19 +13,18 @@ import { SettingSubscriber } from "./entity/SettingSubscriber"
  *  Using OneToMany relation with composed primary key should not error and work correctly
  */
 describe("github issues > #8221", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [User, Setting],
-                subscribers: [SettingSubscriber],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User, Setting],
+            subscribers: [SettingSubscriber],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     function insertSimpleTestData(connection: DataSource) {
         const userRepo = connection.getRepository(User)
@@ -42,7 +41,7 @@ describe("github issues > #8221", () => {
     // important: must not use Promise.all! parallel execution against different drivers would mess up the counter within the SettingSubscriber!
 
     it("afterLoad entity modifier must not make relation key matching fail", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const userRepo = connection.getRepository(User)
             const subscriber = connection.subscribers.find(
                 (s) => s instanceof SettingSubscriber,
