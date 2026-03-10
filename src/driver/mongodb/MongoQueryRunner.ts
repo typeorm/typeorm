@@ -101,16 +101,6 @@ export class MongoQueryRunner implements QueryRunner {
     data = {}
 
     /**
-     * All synchronized tables in the database.
-     */
-    loadedTables: Table[]
-
-    /**
-     * All synchronized views in the database.
-     */
-    loadedViews: View[]
-
-    /**
      * Real database connection from a connection pool used to perform queries.
      */
     databaseConnection: MongoClient
