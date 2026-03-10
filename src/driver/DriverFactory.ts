@@ -1,24 +1,6 @@
 import { MissingDriverError } from "../error/MissingDriverError"
-import { CockroachDriver } from "./cockroachdb/CockroachDriver"
-import { MongoDriver } from "./mongodb/MongoDriver"
-import { SqlServerDriver } from "./sqlserver/SqlServerDriver"
-import { OracleDriver } from "./oracle/OracleDriver"
-import { SqliteDriver } from "./sqlite/SqliteDriver"
-import { CordovaDriver } from "./cordova/CordovaDriver"
-import { ReactNativeDriver } from "./react-native/ReactNativeDriver"
-import { NativescriptDriver } from "./nativescript/NativescriptDriver"
-import { SqljsDriver } from "./sqljs/SqljsDriver"
-import { MysqlDriver } from "./mysql/MysqlDriver"
-import { PostgresDriver } from "./postgres/PostgresDriver"
-import { AuroraMysqlDriver } from "./aurora-mysql/AuroraMysqlDriver"
-import { AuroraPostgresDriver } from "./aurora-postgres/AuroraPostgresDriver"
 import { Driver } from "./Driver"
 import { DataSource } from "../data-source/DataSource"
-import { SapDriver } from "./sap/SapDriver"
-import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
-import { CapacitorDriver } from "./capacitor/CapacitorDriver"
-import { SpannerDriver } from "./spanner/SpannerDriver"
-import { ExpoDriver } from "./expo/ExpoDriver"
 
 /**
  * Helps to create drivers.
@@ -29,49 +11,22 @@ export class DriverFactory {
      * @param connection DataSource instance.
      * @returns Driver
      */
-    create(connection: DataSource): Driver {
-        const { type } = connection.options
-        switch (type) {
-            case "mysql":
-                return new MysqlDriver(connection)
-            case "postgres":
-                return new PostgresDriver(connection)
-            case "cockroachdb":
-                return new CockroachDriver(connection)
-            case "sap":
-                return new SapDriver(connection)
-            case "mariadb":
-                return new MysqlDriver(connection)
-            case "sqlite":
-                return new SqliteDriver(connection)
-            case "better-sqlite3":
-                return new BetterSqlite3Driver(connection)
-            case "cordova":
-                return new CordovaDriver(connection)
-            case "nativescript":
-                return new NativescriptDriver(connection)
-            case "react-native":
-                return new ReactNativeDriver(connection)
-            case "sqljs":
-                return new SqljsDriver(connection)
-            case "oracle":
-                return new OracleDriver(connection)
-            case "mssql":
-                return new SqlServerDriver(connection)
-            case "mongodb":
-                return new MongoDriver(connection)
-            case "expo":
-                return new ExpoDriver(connection)
-            case "aurora-mysql":
-                return new AuroraMysqlDriver(connection)
-            case "aurora-postgres":
-                return new AuroraPostgresDriver(connection)
-            case "capacitor":
-                return new CapacitorDriver(connection)
-            case "spanner":
-                return new SpannerDriver(connection)
-            default:
-                throw new MissingDriverError(type, [
+    async create(connection: DataSource): Promise<Driver> {
+        let driverType: string = connection.options.type
+        if (driverType === "mariadb") {
+            driverType = "mysql"
+        } else if (driverType === "mssql") {
+            driverType = "sql-server"
+        }
+
+        try {
+            const driverName = this.getDriverName(driverType)
+            const module = await import(`./${driverType}/${driverName}`)
+            const Driver = module[driverName]
+            return new Driver(connection)
+        } catch (err) {
+            if (err.code === "ERR_MODULE_NOT_FOUND") {
+                throw new MissingDriverError(driverType, [
                     "aurora-mysql",
                     "aurora-postgres",
                     "better-sqlite3",
@@ -92,6 +47,26 @@ export class DriverFactory {
                     "sqljs",
                     "spanner",
                 ])
+            }
+
+            throw err
         }
+    }
+
+    /**
+     * Calculates the driver name from a given driver type
+     * @param driverType Driver type used to calculate driver name
+     */
+    private getDriverName(driverType: string): string {
+        // Convert the kebab-case to PascalCase
+        const pascalDriverName = driverType.split("-").reduce((carry, item) => {
+            return (
+                carry +
+                item.charAt(0).toUpperCase() +
+                item.slice(1).toLowerCase()
+            )
+        }, "")
+
+        return `${pascalDriverName}Driver`
     }
 }
