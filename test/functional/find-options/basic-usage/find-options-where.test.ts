@@ -1,7 +1,16 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
 import type { DataSource } from "../../../../src"
-import { And, In, IsNull, LessThan, MoreThan, Not, Or } from "../../../../src"
+import {
+    And,
+    In,
+    IsNull,
+    LessThan,
+    MoreThan,
+    Not,
+    Or,
+    TypeORMError,
+} from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,6 +21,7 @@ import { Counters } from "./entity/Counters"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
 import { prepareData } from "./find-options-test-utils"
+import { expect } from "chai"
 
 describe("find options > where", () => {
     let dataSources: DataSource[]
@@ -636,59 +646,30 @@ describe("find options > where", () => {
             }),
         ))
 
-    it("should not apply inner join if all conditions return undefined", () =>
+    it("should throw when all nested relation conditions are undefined by default", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await prepareData(dataSource.manager)
 
-                const post4 = new Post()
-                post4.id = 4
-                post4.title = "Post #4"
-                post4.text = "About post #4"
-                post4.counters = new Counters()
-                post4.counters.likes = 1
-                await dataSource.manager.save(post4)
-
-                const posts = await dataSource
-                    .createQueryBuilder(Post, "post")
-                    .setFindOptions({
-                        where: {
-                            author: {
-                                id: undefined,
-                                firstName: undefined,
+                try {
+                    await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .setFindOptions({
+                            where: {
+                                author: {
+                                    id: undefined,
+                                    firstName: undefined,
+                                },
                             },
-                        },
-                        order: {
-                            id: "asc",
-                        },
-                    })
-                    .getMany()
-                posts.should.be.eql([
-                    {
-                        id: 1,
-                        title: "Post #1",
-                        text: "About post #1",
-                        counters: { likes: 1 },
-                    },
-                    {
-                        id: 2,
-                        title: "Post #2",
-                        text: "About post #2",
-                        counters: { likes: 2 },
-                    },
-                    {
-                        id: 3,
-                        title: "Post #3",
-                        text: "About post #3",
-                        counters: { likes: 1 },
-                    },
-                    {
-                        id: 4,
-                        title: "Post #4",
-                        text: "About post #4",
-                        counters: { likes: 1 },
-                    },
-                ])
+                        })
+                        .getMany()
+                    expect.fail("Expected query to throw an error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(
+                        "Undefined value encountered",
+                    )
+                }
             }),
         ))
 
