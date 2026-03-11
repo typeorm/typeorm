@@ -831,10 +831,10 @@ describe("repository > basic methods", () => {
             ))
         it("github issues > #10889: should not update columns with update:false during upsert", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    if (!connection.driver.supportedUpsertTypes.length) return
+                dataSources.map(async (dataSource) => {
+                    if (!dataSource.driver.supportedUpsertTypes.length) return
 
-                    const postRepository = connection.getRepository(Post)
+                    const postRepository = dataSource.getRepository(Post)
                     const externalId = "external-readonly-test"
 
                     // Insert with readonlyField set
