@@ -142,13 +142,13 @@ jobs:
           path: build/
 
       - run: pnpm install
-      - run: >-
-          jq 'map(select(.type | IN($ARGS.positional[])))'
-          ormconfig.sample.json
-          --args
-            "mariadb"
-            "mysql"
-          > ormconfig.json
+      - run: |
+          jq 'map(select(.type | IN($ARGS.positional[])))' \
+            ormconfig.sample.json \
+            --args \
+              "mariadb" \
+              "mysql" \
+            > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
       - uses: coverallsapp/github-action@v2
         with:
@@ -190,13 +190,13 @@ jobs:
           path: build/
 
       - run: pnpm install
-      - run: >-
-          jq 'map(select(.type | IN($ARGS.positional[])))'
-          ormconfig.sample.json
-          --args
-            "mariadb"
-            "mysql"
-          > ormconfig.json
+      - run: |
+          jq 'map(select(.type | IN($ARGS.positional[])))' \
+            ormconfig.sample.json \
+            --args \
+              "mariadb" \
+              "mysql" \
+            > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
       - uses: coverallsapp/github-action@v2
         with:
