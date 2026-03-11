@@ -92,7 +92,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ matrix.ref }}
+          ref: ${{ matrix.ref || github.ref }}
 
       - uses: pnpm/action-setup@v4
 
