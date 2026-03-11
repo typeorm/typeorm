@@ -388,7 +388,7 @@ describe("repository > basic methods", () => {
         it("should update existing entity using transformers", () =>
             Promise.all(
                 dataSources
-                    .filter((c) => c.name === "better-sqlite3")
+                    .filter((c) => c.options.type === "better-sqlite3")
                     .map(async (dataSource) => {
                         if (
                             !dataSource ||

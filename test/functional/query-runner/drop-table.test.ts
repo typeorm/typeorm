@@ -75,4 +75,13 @@ describe("query runner > drop table", () => {
                 await queryRunner.release()
             }),
         ))
+
+    it("should not throw when dropping non-existent table with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropTable("non_existent_table", true)
+                await queryRunner.release()
+            }),
+        ))
 })

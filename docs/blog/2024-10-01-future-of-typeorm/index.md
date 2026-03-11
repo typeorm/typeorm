@@ -1,8 +1,13 @@
-# The Future of TypeORM
-
-> By [David Hoeck (@dlhck)](https://github.com/dlhck) and [Michael Bromley (@michaelbromley)](https://github.com/michaelbromley)
+---
+slug: future-of-typeorm
+title: The Future of TypeORM
+authors: [dlhck, michaelbromley]
+tags: [announcement]
+---
 
 TypeORM is one of the most high-performance, feature-rich, and battle-tested ORMs in the Node.js ecosystem, relied upon by hundreds of thousands of projects and companies worldwide. With nearly 2 million downloads each week, it powers countless applications as a critical dependency. However, over the past few years, maintenance has slowed significantly, leading to growing uncertainty about the project's future among its dedicated community.
+
+<!-- truncate -->
 
 We're thrilled to announce that Michael Bromley and David Hoeck, under the umbrella of our parent company [Elevantiq](https://elevantiq.com/), are
 stepping up to lead TypeORM into its next chapter. At Elevantiq, where we
@@ -44,7 +49,7 @@ We'll also remain in close contact with [Umed](https://github.com/pleerock) to k
 
 ## Join Us in Supporting TypeORM
 
-If your company is interested in starting or expanding its sponsorship with TypeORM, we encourage you to reach out to us directly [via e-mail](mailto:typeorm@elevantiq.com).
+If your company is interested in starting or expanding its sponsorship with TypeORM, we encourage you to reach out to us directly [via e-mail](mailto:maintainers@typeorm.io).
 
 Thank you for your support, and we're excited to embark on this journey with the TypeORM community!
 

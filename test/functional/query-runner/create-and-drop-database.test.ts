@@ -40,4 +40,13 @@ describe("query runner > create and drop database", () => {
                 await queryRunner.release()
             }),
         ))
+
+    it("should not throw when dropping non-existent database with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropDatabase("non_existent_database", true)
+                await queryRunner.release()
+            }),
+        ))
 })
