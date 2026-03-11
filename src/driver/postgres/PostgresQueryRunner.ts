@@ -3369,10 +3369,10 @@ export class PostgresQueryRunner
         if (this.driver.options.schema) {
             schemas.push(this.driver.options.schema)
         } else {
-            const [{ current_schema }] = await this.query(
-                `SELECT current_schema()`,
+            const [{ currentSchema }] = await this.query(
+                `SELECT current_schema() AS "currentSchema"`,
             )
-            schemas.push(current_schema)
+            schemas.push(currentSchema)
         }
 
         const isAnotherTransactionActive = this.isTransactionActive

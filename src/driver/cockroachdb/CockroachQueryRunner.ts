@@ -3000,10 +3000,10 @@ export class CockroachQueryRunner
         if (this.driver.options.schema) {
             schemas.push(this.driver.options.schema)
         } else {
-            const [{ current_schema }] = await this.query(
-                `SELECT current_schema()`,
+            const [{ currentSchema }] = await this.query(
+                `SELECT current_schema() AS "currentSchema"`,
             )
-            schemas.push(current_schema)
+            schemas.push(currentSchema)
         }
 
         const isAnotherTransactionActive = this.isTransactionActive
@@ -3015,7 +3015,7 @@ export class CockroachQueryRunner
             // drop views
             const views: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(schemaname) || '.' || quote_ident(viewname) as "name" ` +
-                    `FROM "pg_views" WHERE "schemaname" = ANY($1)`,
+                    `FROM "pg_views" WHERE "schemaname"::STRING = ANY($1::STRING[])`,
                 [schemas],
             )
 
@@ -3028,7 +3028,7 @@ export class CockroachQueryRunner
             // drop tables
             const tables: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(table_schema) || '.' || quote_ident(table_name) as "name" ` +
-                    `FROM "information_schema"."tables" WHERE "table_schema" = ANY($1) AND "table_type" = 'BASE TABLE'`,
+                    `FROM "information_schema"."tables" WHERE "table_schema"::STRING = ANY($1::STRING[]) AND "table_type" = 'BASE TABLE'`,
                 [schemas],
             )
 
@@ -3041,7 +3041,7 @@ export class CockroachQueryRunner
             // drop sequences
             const sequences: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(sequence_schema) || '.' || quote_ident(sequence_name) as "name" ` +
-                    `FROM "information_schema"."sequences" WHERE "sequence_schema" = ANY($1)`,
+                    `FROM "information_schema"."sequences" WHERE "sequence_schema"::STRING = ANY($1::STRING[])`,
                 [schemas],
             )
 
@@ -4013,7 +4013,7 @@ export class CockroachQueryRunner
             `SELECT quote_ident(n.nspname) || '.' || quote_ident(t.typname) as "name" FROM "pg_type" "t" ` +
                 `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
                 `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-                `WHERE "n"."nspname" = ANY($1) GROUP BY "n"."nspname", "t"."typname"`,
+                `WHERE "n"."nspname"::STRING = ANY($1::STRING[]) GROUP BY "n"."nspname", "t"."typname"`,
             [schemaNames],
         )
 
