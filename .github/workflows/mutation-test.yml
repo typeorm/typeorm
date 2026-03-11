@@ -50,16 +50,16 @@ jobs:
           node-version: 24
           cache: "pnpm"
       - run: pnpm install
-      - run: jq --argjson types "$DATABASES" 'map(select(.type | IN($types[])))' ormconfig.sample.json > ormconfig.json
-        env:
-          DATABASES: |-
-            [
-              "better-sqlite3",
-              "mariadb",
-              "mysql",
-              "postgres",
-              "sqljs"
-            ]
+      - run: >-
+          jq 'map(select(.type | IN($ARGS.positional[])))'
+          ormconfig.sample.json
+          --args
+            "better-sqlite3"
+            "mariadb"
+            "mysql"
+            "postgres"
+            "sqljs"
+          > ormconfig.json
       - run: pnpm exec stryker run
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
