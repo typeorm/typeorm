@@ -701,7 +701,7 @@ describe("repository > find options > locking", () => {
                         .innerJoinAndSelect("post.categories", "categories")
                         .innerJoinAndSelect("categories.images", "images")
                         .where("post.id = :id", { id: 1 })
-                        .setLock("pessimistic_write", undefined, ["image"])
+                        .setLock("pessimistic_write", undefined, ["images"])
                         .getOne(),
                 )
             }),
