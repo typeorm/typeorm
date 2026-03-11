@@ -226,36 +226,6 @@ const qb = dataSource.createQueryBuilder("user")
 
 The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
 
-### `AbstractRepository`, `@EntityRepository`, and `getCustomRepository`
-
-The `AbstractRepository` class, `@EntityRepository` decorator, and `getCustomRepository()` method have been removed. These were deprecated in v0.3 in favor of `Repository.extend()`.
-
-Before:
-
-```typescript
-@EntityRepository(User)
-class UserRepository extends AbstractRepository<User> {
-    findByName(name: string) {
-        return this.repository.findOneBy({ name })
-    }
-}
-
-// Usage
-const userRepo = dataSource.getCustomRepository(UserRepository)
-```
-
-After:
-
-```typescript
-const UserRepository = dataSource.getRepository(User).extend({
-    findByName(name: string) {
-        return this.findOneBy({ name })
-    },
-})
-```
-
-The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
-
 ### Deprecated lock modes
 
 The `pessimistic_partial_write` and `pessimistic_write_or_fail` lock modes have been removed. Use `pessimistic_write` with the `onLocked` option instead:
@@ -296,32 +266,6 @@ The same applies to find options:
 
 The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
 
-### `findByIds`
-
-The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, and `BaseEntity`. Use `findBy` with the `In` operator instead:
-
-```typescript
-// Before
-const users = await repository.findByIds([1, 2, 3])
-
-// After
-import { In } from "typeorm"
-
-const users = await repository.findBy({ id: In([1, 2, 3]) })
-```
-
-### `Repository.exist()`
-
-The deprecated `Repository.exist()` method has been removed. Use `exists()` instead — the behavior is identical:
-
-```typescript
-// Before
-const hasUsers = await userRepository.exist({ where: { isActive: true } })
-
-// After
-const hasUsers = await userRepository.exists({ where: { isActive: true } })
-```
-
 ### `ColumnOptions.readonly`
 
 The deprecated `readonly` column option has been removed. Use the `update` option instead — note that it takes the **opposite** value:
@@ -339,6 +283,64 @@ authorName: string
 ### `ColumnNumericOptions.unsigned`
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
+
+## Repository
+
+### `findByIds`
+
+The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, and `BaseEntity`. Use `findBy` with the `In` operator instead:
+
+```typescript
+// Before
+const users = await repository.findByIds([1, 2, 3])
+
+// After
+import { In } from "typeorm"
+
+const users = await repository.findBy({ id: In([1, 2, 3]) })
+```
+
+### `exist`
+
+The deprecated `Repository.exist()` method has been removed. Use `exists()` instead — the behavior is identical:
+
+```typescript
+// Before
+const hasUsers = await userRepository.exist({ where: { isActive: true } })
+
+// After
+const hasUsers = await userRepository.exists({ where: { isActive: true } })
+```
+
+### `AbstractRepository`, `@EntityRepository`, and `getCustomRepository`
+
+The `AbstractRepository` class, `@EntityRepository` decorator, and `getCustomRepository()` method have been removed. These were deprecated in v0.3 in favor of `Repository.extend()`.
+
+Before:
+
+```typescript
+@EntityRepository(User)
+class UserRepository extends AbstractRepository<User> {
+    findByName(name: string) {
+        return this.repository.findOneBy({ name })
+    }
+}
+
+// Usage
+const userRepo = dataSource.getCustomRepository(UserRepository)
+```
+
+After:
+
+```typescript
+const UserRepository = dataSource.getRepository(User).extend({
+    findByName(name: string) {
+        return this.findOneBy({ name })
+    },
+})
+```
+
+The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
 
 ## QueryBuilder
 
