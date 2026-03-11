@@ -494,7 +494,7 @@ export default {
 }
 ```
 
-### Name
+### `name`
 
 The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
 
