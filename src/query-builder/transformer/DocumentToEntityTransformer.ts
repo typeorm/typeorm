@@ -11,7 +11,7 @@ export class DocumentToEntityTransformer {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private enableRelationIdValues: boolean = false) {}
+    constructor(private readonly enableRelationIdValues: boolean = false) {}
 
     // -------------------------------------------------------------------------
     // Public Methods

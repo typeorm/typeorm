@@ -266,9 +266,10 @@ The `@RelationCount` decorator and `SelectQueryBuilder.loadRelationCountAndMap()
 categoryCount: number
 
 // After — use @VirtualColumn with a sub-query
+// Replace the junction table name and column names to match your schema
 @VirtualColumn({
     query: (alias) =>
-        `SELECT COUNT(*) FROM post_categories WHERE postId = ${alias}.id`,
+        `SELECT COUNT(*) FROM post_categories_category WHERE postId = ${alias}.id`,
 })
 categoryCount: number
 ```
