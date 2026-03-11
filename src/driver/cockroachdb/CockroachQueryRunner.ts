@@ -2919,6 +2919,70 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Creates a new index on a materialized view.
+     * @param viewOrName
+     * @param index
+     */
+    async createViewIndex(
+        viewOrName: View | string,
+        index: TableIndex,
+    ): Promise<void> {
+        const view = InstanceChecker.isView(viewOrName)
+            ? viewOrName
+            : await this.getCachedView(viewOrName)
+
+        // new index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(view, index)
+
+        const up = this.createViewIndexSql(view, index)
+        const down = this.dropViewIndexSql(view, index)
+        await this.executeQueries(up, down)
+        view.addIndex(index)
+    }
+
+    /**
+     * Creates new indices on a materialized view.
+     * @param viewOrName
+     * @param indices
+     */
+    async createViewIndices(
+        viewOrName: View | string,
+        indices: TableIndex[],
+    ): Promise<void> {
+        for (const index of indices) {
+            await this.createViewIndex(viewOrName, index)
+        }
+    }
+
+    /**
+     * Drops an index from a materialized view.
+     * @param viewOrName
+     * @param indexOrName
+     */
+    async dropViewIndex(
+        viewOrName: View | string,
+        indexOrName: TableIndex | string,
+    ): Promise<void> {
+        const view = InstanceChecker.isView(viewOrName)
+            ? viewOrName
+            : await this.getCachedView(viewOrName)
+        const index = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName
+            : view.indices.find((i) => i.name === indexOrName)
+        if (!index)
+            throw new TypeORMError(
+                `Supplied index ${indexOrName} was not found in view ${view.name}`,
+            )
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(view, index)
+
+        const up = this.dropViewIndexSql(view, index)
+        const down = this.createViewIndexSql(view, index)
+        await this.executeQueries(up, down)
+        view.removeIndex(index)
+    }
+
+    /**
      * Drops an index from the table.
      * @param tableOrName
      * @param indexOrName
@@ -3017,6 +3081,16 @@ export class CockroachQueryRunner
                 await this.query(q["query"])
             }
 
+            const selectMatViewDropsQuery =
+                `SELECT 'DROP MATERIALIZED VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(matviewname) || ' CASCADE;' as "query" ` +
+                `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`
+            const dropMatViewQueries: ObjectLiteral[] = await this.query(
+                selectMatViewDropsQuery,
+            )
+            await Promise.all(
+                dropMatViewQueries.map((q) => this.query(q["query"])),
+            )
+
             const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(table_schema) || '.' || quote_ident(table_name) || ' CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
             const dropQueries: ObjectLiteral[] =
                 await this.query(selectDropsQuery)
@@ -3078,15 +3152,51 @@ export class CockroachQueryRunner
             })
             .join(" OR ")
 
+        const indicesCondition = viewNames
+            .map((viewName) => {
+                const { schema, tableName } =
+                    this.driver.parseTableName(viewName)
+
+                return `("ns"."nspname" = '${
+                    schema || currentSchema
+                }' AND "t"."relname" = '${tableName}')`
+            })
+            .join(" OR ")
+
+        const indicesSql =
+            `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
+            `"types"."typname" AS "type_name" ` +
+            `FROM "pg_class" "t" ` +
+            `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
+            `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
+            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
+            `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
+            `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
+            `WHERE "t"."relkind" = 'm' AND ("cnst"."contype" IS NULL OR "cnst"."contype" != 'p')${indicesCondition ? ` AND (${indicesCondition})` : ""}`
+
         const query =
-            `SELECT "t".*, "v"."check_option" FROM ${this.escapePath(
+            `SELECT "t".* FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
             )} "t" ` +
-            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" WHERE "t"."type" = '${
+            `INNER JOIN "pg_catalog"."pg_class" "c" ON "c"."relname" = "t"."name" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "c"."relnamespace" AND "n"."nspname" = "t"."schema" ` +
+            `WHERE "t"."type" IN ('${
                 MetadataTableType.VIEW
-            }' ${viewsCondition ? `AND (${viewsCondition})` : ""}`
+            }', '${MetadataTableType.MATERIALIZED_VIEW}') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
         const dbViews = await this.query(query)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         return dbViews.map((dbView: any) => {
+            const tableIndexConstraints = OrmUtils.uniq(
+                dbIndices.filter((dbIndex) => {
+                    return (
+                        dbIndex["table_name"] === dbView["name"] &&
+                        dbIndex["table_schema"] === dbView["schema"]
+                    )
+                }),
+                (dbIndex) => dbIndex["constraint_name"],
+            )
             const view = new View()
             const schema =
                 dbView["schema"] === currentSchema &&
@@ -3097,6 +3207,33 @@ export class CockroachQueryRunner
             view.schema = dbView["schema"]
             view.name = this.driver.buildTableName(dbView["name"], schema)
             view.expression = dbView["value"]
+            view.materialized =
+                dbView["type"] === MetadataTableType.MATERIALIZED_VIEW
+            view.indices = tableIndexConstraints.map((constraint) => {
+                const indices = dbIndices.filter((index) => {
+                    return (
+                        index["table_schema"] === constraint["table_schema"] &&
+                        index["table_name"] === constraint["table_name"] &&
+                        index["constraint_name"] ===
+                            constraint["constraint_name"]
+                    )
+                })
+
+                return new TableIndex(<TableIndexOptions>{
+                    view: view,
+                    name: constraint["constraint_name"],
+                    columnNames: indices.map((i) => i["column_name"]),
+                    isUnique: constraint["is_unique"] === "TRUE",
+                    where: constraint["condition"],
+                    isSpatial: indices.every(
+                        (i) =>
+                            this.driver.spatialTypes.indexOf(i["type_name"]) >=
+                            0,
+                    ),
+                    isFulltext: false,
+                    type: "btree",
+                })
+            })
             return view
         })
     }
@@ -3923,13 +4060,15 @@ export class CockroachQueryRunner
     }
 
     protected createViewSql(view: View): Query {
+        const materializedClause = view.materialized ? "MATERIALIZED " : ""
+
         if (typeof view.expression === "string") {
             return new Query(
-                `CREATE VIEW ${this.escapePath(view)} AS ${view.expression}`,
+                `CREATE ${materializedClause}VIEW ${this.escapePath(view)} AS ${view.expression}`,
             )
         } else {
             return new Query(
-                `CREATE VIEW ${this.escapePath(view)} AS ${view
+                `CREATE ${materializedClause}VIEW ${this.escapePath(view)} AS ${view
                     .expression(this.connection)
                     .getQuery()}`,
             )
@@ -3947,8 +4086,11 @@ export class CockroachQueryRunner
             typeof view.expression === "string"
                 ? view.expression.trim()
                 : view.expression(this.connection).getQuery()
+        const type = view.materialized
+            ? MetadataTableType.MATERIALIZED_VIEW
+            : MetadataTableType.VIEW
         return this.insertTypeormMetadataSql({
-            type: MetadataTableType.VIEW,
+            type: type,
             schema: schema,
             name: name,
             value: expression,
@@ -3958,9 +4100,13 @@ export class CockroachQueryRunner
     /**
      * Builds drop view sql.
      * @param viewOrPath
+     * @param view
      */
-    protected dropViewSql(viewOrPath: View | string): Query {
-        return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
+    protected dropViewSql(view: View): Query {
+        const materializedClause = view.materialized ? "MATERIALIZED " : ""
+        return new Query(
+            `DROP ${materializedClause}VIEW ${this.escapePath(view)}`,
+        )
     }
 
     /**
@@ -3978,8 +4124,13 @@ export class CockroachQueryRunner
             schema = currentSchema
         }
 
+        const type =
+            InstanceChecker.isView(viewOrPath) && viewOrPath.materialized
+                ? MetadataTableType.MATERIALIZED_VIEW
+                : MetadataTableType.VIEW
+
         return this.deleteTypeormMetadataSql({
-            type: MetadataTableType.VIEW,
+            type: type,
             schema,
             name,
         })
@@ -4095,6 +4246,26 @@ export class CockroachQueryRunner
                 : indexOrName
         return new Query(
             `DROP INDEX ${ifExists ? "IF EXISTS " : ""}${this.escapePath(table)}@"${indexName}" CASCADE`,
+        )
+    }
+
+    protected createViewIndexSql(view: View, index: TableIndex): Query {
+        const columns = index.columnNames
+            .map((columnName) => `"${columnName}"`)
+            .join(", ")
+        return new Query(
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
+                index.name
+            }" ON ${this.escapePath(view)} ${
+                index.isSpatial ? "USING GiST " : ""
+            }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+        )
+    }
+
+    protected dropViewIndexSql(view: View, index: TableIndex): Query {
+        const indexName = index.name
+        return new Query(
+            `DROP INDEX ${this.escapePath(view)}@"${indexName}" CASCADE`,
         )
     }
 
