@@ -3366,12 +3366,14 @@ export class PostgresQueryRunner
                 )
                 if (!isSchemaExist) schemas.push(metadata.schema!)
             })
-        schemas.push(this.driver.options.schema || "current_schema()")
-        const schemaNamesString = schemas
-            .map((name) => {
-                return name === "current_schema()" ? name : "'" + name + "'"
-            })
-            .join(", ")
+        if (this.driver.options.schema) {
+            schemas.push(this.driver.options.schema)
+        } else {
+            const [{ currentSchema }] = await this.query(
+                `SELECT current_schema() AS "currentSchema"`,
+            )
+            schemas.push(currentSchema)
+        }
 
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
@@ -3379,7 +3381,8 @@ export class PostgresQueryRunner
             // drop views
             const views: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(schemaname) || '.' || quote_ident(viewname) as "name" ` +
-                    `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`,
+                    `FROM "pg_views" WHERE "schemaname" = ANY($1) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`,
+                [schemas],
             )
             if (views.length > 0) {
                 await this.query(
@@ -3392,7 +3395,8 @@ export class PostgresQueryRunner
             if (DriverUtils.isReleaseVersionOrGreater(this.driver, "9.3")) {
                 const matViews: ObjectLiteral[] = await this.query(
                     `SELECT quote_ident(schemaname) || '.' || quote_ident(matviewname) as "name" ` +
-                        `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`,
+                        `FROM "pg_matviews" WHERE "schemaname" = ANY($1)`,
+                    [schemas],
                 )
                 if (matViews.length > 0) {
                     await this.query(
@@ -3407,7 +3411,8 @@ export class PostgresQueryRunner
             // drop tables
             const tables: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(schemaname) || '.' || quote_ident(tablename) as "name" ` +
-                    `FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`,
+                    `FROM "pg_tables" WHERE "schemaname" = ANY($1) AND "tablename" NOT IN ('spatial_ref_sys')`,
+                [schemas],
             )
             if (tables.length > 0) {
                 await this.query(
@@ -3416,7 +3421,7 @@ export class PostgresQueryRunner
             }
 
             // drop enum types
-            await this.dropEnumTypes(schemaNamesString)
+            await this.dropEnumTypes(schemas)
 
             if (!isAnotherTransactionActive) {
                 await this.commitTransaction()
@@ -4542,12 +4547,13 @@ export class PostgresQueryRunner
      * Drops ENUM type from given schemas.
      * @param schemaNames
      */
-    protected async dropEnumTypes(schemaNames: string): Promise<void> {
+    protected async dropEnumTypes(schemaNames: string[]): Promise<void> {
         const enums: ObjectLiteral[] = await this.query(
             `SELECT quote_ident(n.nspname) || '.' || quote_ident(t.typname) as "name" FROM "pg_type" "t" ` +
                 `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
                 `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-                `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`,
+                `WHERE "n"."nspname" = ANY($1) GROUP BY "n"."nspname", "t"."typname"`,
+            [schemaNames],
         )
         if (enums.length > 0) {
             await this.query(
