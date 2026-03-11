@@ -93,18 +93,31 @@ new DataSource({
 
 ## MongoDB
 
+TypeORM now requires **MongoDB server 6.0 or later** and the **`mongodb` Node.js driver v6 or later** (`^6.0.0 || ^7.0.0`). Support for MongoDB server 5.x and the `mongodb` driver v5 has been dropped.
+
 ### Deprecated connection options removed
 
 The following MongoDB connection options have been removed:
 
-| Removed option       | Action                                           |
-| -------------------- | ------------------------------------------------ |
-| `appname`            | Use `appName` (camelCase) instead                |
-| `fsync`              | Use `writeConcern: { journal: true }` instead    |
-| `j`                  | Use `writeConcern: { journal: true }` instead    |
-| `useNewUrlParser`    | Remove — no-op since MongoDB Driver v4.0         |
-| `useUnifiedTopology` | Remove — no-op since MongoDB Driver v4.0         |
-| `wtimeout`           | Use `writeConcern: { wtimeoutMS: 2500 }` instead |
+| Removed option          | Action                                               |
+| ----------------------- | ---------------------------------------------------- |
+| `appname`               | Use `appName` (camelCase) instead                    |
+| `fsync`                 | Use `writeConcern: { journal: true }` instead        |
+| `j`                     | Use `writeConcern: { journal: true }` instead        |
+| `keepAlive`             | Remove — always enabled since MongoDB Driver v6.0    |
+| `keepAliveInitialDelay` | Remove — not configurable since MongoDB Driver v6.0  |
+| `ssl`                   | Use `tls` instead                                    |
+| `sslCA`                 | Use `tlsCAFile` instead                              |
+| `sslCRL`                | Remove — no replacement in modern driver             |
+| `sslCert`               | Use `tlsCertificateKeyFile` instead                  |
+| `sslKey`                | Use `tlsCertificateKeyFile` instead                  |
+| `sslPass`               | Use `tlsCertificateKeyFilePassword` instead          |
+| `sslValidate`           | Use `tlsAllowInvalidCertificates` (inverted) instead |
+| `useNewUrlParser`       | Remove — no-op since MongoDB Driver v4.0             |
+| `useUnifiedTopology`    | Remove — no-op since MongoDB Driver v4.0             |
+| `w`                     | Use `writeConcern: { w: 1 }` instead                 |
+| `wtimeout`              | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
+| `wtimeoutMS`            | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
 
 ### `getMongoRepository` and `getMongoManager` globals
 
@@ -178,6 +191,10 @@ Glob patterns are now handled by `tinyglobby` instead of `glob`. While `tinyglob
 `DataSource` replaced `Connection` in v0.3 to provide a better meaning to the abstract concept represented by this class. For backwards compatibility, `Connection` was kept as an alias to `DataSource`, now this alias was removed. Similarly, `ConnectionOptions` is now `DataSourceOptions`.
 
 In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
+
+### Redis
+
+Removed support for legacy (v3/v4) Redis clients in `RedisQueryResultCache`.
 
 ### Global convenience functions
 
@@ -309,7 +326,9 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
 
-### `InsertQueryBuilder.onConflict()`
+## QueryBuilder
+
+### `onConflict`
 
 The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:
 
@@ -352,7 +371,7 @@ await dataSource
     .execute()
 ```
 
-### Deprecated `orUpdate()` overload
+### `orUpdate`
 
 The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, conflict_target? }` has been removed. Use the array-based signature instead:
 
@@ -364,7 +383,11 @@ The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, confli
 .orUpdate(["title"], ["date"])
 ```
 
-### `QueryBuilder.setNativeParameters()`
+### `replacePropertyNames`
+
+The deprecated `replacePropertyNames()` protected method has been removed. It was a no-op since property name replacement was moved to end-of-query processing via `replacePropertyNamesForTheWholeQuery()`. If you were overriding this method in a custom QueryBuilder subclass, the override is no longer called.
+
+### `setNativeParameters`
 
 The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
 
@@ -383,6 +406,44 @@ const migrations = migrationExecutor.getMigrations()
 ```
 
 ## Configuration
+
+### `invalidWhereValuesBehavior` default changed to `throw`
+
+The default behavior for null and undefined values in where conditions has changed. Previously, null and undefined values were silently ignored (the property was skipped). Now, both **throw an error by default**.
+
+This change prevents subtle bugs where queries like `findBy({ id: undefined })` would silently return the first row instead of failing.
+
+```typescript
+// v0.3: silently returns all posts (null is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: null } })
+
+// v0.3: silently returns all posts (undefined is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: undefined } })
+```
+
+To match null values, use the `IsNull()` operator:
+
+```typescript
+import { IsNull } from "typeorm"
+
+await repository.find({ where: { text: IsNull() } })
+```
+
+To restore the previous behavior, set `invalidWhereValuesBehavior` in your data source options:
+
+```typescript
+new DataSource({
+    // ...
+    invalidWhereValuesBehavior: {
+        null: "ignore",
+        undefined: "ignore",
+    },
+})
+```
+
+This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The rest of the QueryBuilder methods (`.where()`, `.andWhere()`, `.orWhere()`) are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
 
 ### Drop support for configuration via environment variables
 
@@ -414,4 +475,21 @@ const [options] = await reader.get()
 // when you need a specific config from multiple data sources
 const allOptions = await reader.get()
 const postgresOptions = allOptions.find((o) => o.type === "postgres")
+```
+
+## Container system
+
+The deprecated IoC container integration has been removed: `useContainer()`, `getFromContainer()`, `ContainerInterface`, `ContainedType`, and `UseContainerOptions`. TypeORM now always instantiates migrations and subscribers directly. If you need dependency injection, instantiate your classes yourself and pass them to the `DataSource` options:
+
+```typescript
+// Before
+import { useContainer } from "typeorm"
+useContainer(myContainer)
+
+// After — pass pre-built instances directly
+new DataSource({
+    subscribers: [new MySubscriber(dep1, dep2)],
+    migrations: [new MyMigration(dep1)],
+    // ...
+})
 ```
