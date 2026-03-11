@@ -79,20 +79,6 @@ export class PlatformTools {
         return false;
     }
 
-    static dotenv(pathStr: string): void {
-        if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: dotenv.config({ path: "${pathStr}" }).`);
-    }
-
-    /**
-     * Gets environment variable.
-     */
-    static getEnvVariable(name: string): any {
-        // if (this.type === "browser")
-        //     throw new Error(`This option/function is not supported in the browser environment. Failed operation: process.env["${name}"].`);
-        return undefined;
-    }
-
     static readFileSync(filename: string): any {
         if (this.type === "browser")
             throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.readFileSync("${filename}").`);

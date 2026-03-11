@@ -402,15 +402,15 @@ describe("schema builder > change column", () => {
 
                 expect(persistedTagColumnA.comment).to.be.equal(
                     undefined,
-                    dataSource.name,
+                    dataSource.options.type,
                 )
                 expect(persistedTagColumnA.isNullable).to.be.equal(
                     true,
-                    dataSource.name,
+                    dataSource.options.type,
                 )
                 expect(
                     teacherTableA!.findColumnByName("id")!.comment,
-                ).to.be.equal("The Teacher's Key", dataSource.name)
+                ).to.be.equal("The Teacher's Key", dataSource.options.type)
 
                 // revert changes
                 tagColumn.comment = "Tag"

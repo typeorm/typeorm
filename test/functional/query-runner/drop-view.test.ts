@@ -65,4 +65,13 @@ describe("query runner > drop view", () => {
                 await queryRunner.release()
             }),
         ))
+
+    it("should not throw when dropping non-existent view with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropView("non_existent_view", true)
+                await queryRunner.release()
+            }),
+        ))
 })

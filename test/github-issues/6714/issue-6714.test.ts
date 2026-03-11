@@ -42,7 +42,6 @@ describe("github issues > #6714 Migration:generate issue with onUpdate using mar
             schemaCreate: false, // don't change the entity
             dropSchema: false,
             enabledDrivers: ["mariadb"],
-            name: "test",
         })
         await Promise.all(
             connections.map(async (connection) => {

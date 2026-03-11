@@ -89,10 +89,15 @@ services:
     command: "start-single-node --insecure --cache=.25 --store=type=mem,size=.25"
     ports:
       - "26257:26257"
+    healthcheck:
+      test: ["CMD", "cockroach", "sql", "--insecure", "-e", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     # volumes:
     #   - cockroach-data:/cockroach/cockroach-data
 
-  # oracle
+    # oracle
   oracle:
     image: "container-registry.oracle.com/database/free:23.7.0.0-lite"
     container_name: "typeorm-oracle"
@@ -143,17 +148,10 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:8"
+    image: "mongo:8.2.5"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
-
-  # redis
-  # redis:
-  #   image: "redis:3.0.3"
-  #   container_name: "typeorm-redis"
-  #   ports:
-  #     - "6379:6379"
 
 volumes:
   # cockroach-data:

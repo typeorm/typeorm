@@ -519,17 +519,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Checks whether any entity exists that matches the given options.
      * @param options
-     * @deprecated use `exists` method instead, for example:
-     *
-     * .exists()
-     */
-    exist(options?: FindManyOptions<Entity>): Promise<boolean> {
-        return this.manager.exists(this.metadata.target, options)
-    }
-
-    /**
-     * Checks whether any entity exists that matches the given options.
-     * @param options
      */
     exists(options?: FindManyOptions<Entity>): Promise<boolean> {
         return this.manager.exists(this.metadata.target, options)
