@@ -389,9 +389,11 @@ The deprecated `loadedTables` and `loadedViews` properties have been removed fro
 ```typescript
 // Before
 const tables = queryRunner.loadedTables
+const views = queryRunner.loadedViews
 
 // After
 const tables = await queryRunner.getTables()
+const views = await queryRunner.getViews()
 ```
 
 ## Configuration
