@@ -192,6 +192,10 @@ Glob patterns are now handled by `tinyglobby` instead of `glob`. While `tinyglob
 
 In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
 
+### Redis
+
+Removed support for legacy (v3/v4) Redis clients in `RedisQueryResultCache`.
+
 ### Global convenience functions
 
 The following deprecated global functions have been removed:
