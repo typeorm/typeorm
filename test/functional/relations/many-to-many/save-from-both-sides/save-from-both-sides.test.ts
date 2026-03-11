@@ -3,13 +3,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Game } from "./entity/Game"
 import { Platform } from "./entity/Platform"
 import { expect } from "chai"
 
-describe("github issues > #163 ManyToMany relation : Cannot read property 'joinColumnName' of undefined", () => {
+describe("relations > many-to-many > save from both sides", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -19,7 +19,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should persist class table child successfully", () =>
+    it("should save many-to-many relation from both owning and inverse sides", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const battlefront = new Game()
@@ -89,8 +89,6 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
                         },
                     ],
                 })
-
-                // what code shall I put there to completely reproduce your issue?
             }),
         ))
 })
