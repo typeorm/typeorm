@@ -24,7 +24,7 @@ services:
 
   # mariadb
   mariadb-10:
-    image: "mariadb:10.6.24-jammy"
+    image: "mariadb:10.11.16"
     container_name: "typeorm-mariadb-10"
     ports:
       - "3307:3306"
@@ -35,7 +35,7 @@ services:
       MYSQL_DATABASE: "typeorm"
 
   mariadb-12:
-    image: "mariadb:12.1.2"
+    image: "mariadb:12.2.2"
     container_name: "typeorm-mariadb-12"
     ports:
       - "3307:3306"

@@ -120,7 +120,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
       mariadb:
-        image: mariadb:10.6.24-jammy
+        image: mariadb:10.11.16
         ports:
           - "3307:3306"
         env:
@@ -163,7 +163,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
       mariadb:
-        image: mariadb:12.1.2
+        image: mariadb:12.2.2
         ports:
           - "3307:3306"
         env:
