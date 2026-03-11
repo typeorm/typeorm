@@ -146,6 +146,47 @@ describe("jsonb type", () => {
             }),
         ))
 
+    it("should persist json and jsonb arrays of complex objects correctly", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const recordRepo = dataSource.getRepository(Record)
+                const record = new Record()
+                record.data = [
+                    {
+                        data1: "hello1",
+                        data2: "hello2",
+                        isActive: true,
+                    },
+                    {
+                        data1: "hi1",
+                        data2: "hi2",
+                        isActive: false,
+                    },
+                ]
+                record.config = [
+                    {
+                        id: 1,
+                        option1: "1",
+                        isActive: true,
+                        extra: { data1: "one", data2: "two" },
+                    },
+                    {
+                        id: 2,
+                        option1: "2",
+                        isActive: false,
+                        extra: { data1: "one", data2: "two" },
+                    },
+                ]
+                const persistedRecord = await recordRepo.save(record)
+                const foundRecord = await recordRepo.findOneBy({
+                    id: persistedRecord.id,
+                })
+                expect(foundRecord).to.be.not.undefined
+                expect(foundRecord!.data).to.eql(record.data)
+                expect(foundRecord!.config).to.eql(record.config)
+            }),
+        ))
+
     it("should not create new migrations when everything is equivalent", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
