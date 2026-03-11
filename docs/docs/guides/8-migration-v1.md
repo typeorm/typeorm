@@ -262,10 +262,6 @@ The same applies to find options:
 { lock: { mode: "pessimistic_write", onLocked: "nowait" } }
 ```
 
-### `WhereExpression` type alias
-
-The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
-
 ### `ColumnOptions.readonly`
 
 The deprecated `readonly` column option has been removed. Use the `update` option instead — note that it takes the **opposite** value:
@@ -406,6 +402,10 @@ The deprecated `replacePropertyNames()` protected method has been removed. It wa
 ### `setNativeParameters`
 
 The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
+
+### `WhereExpression` type alias
+
+The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
 
 ## Migrations
 
