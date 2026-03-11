@@ -256,6 +256,24 @@ const UserRepository = dataSource.getRepository(User).extend({
 
 The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
 
+### `@RelationCount` decorator and `loadRelationCountAndMap`
+
+The `@RelationCount` decorator and `SelectQueryBuilder.loadRelationCountAndMap()` method have been removed. Use `@VirtualColumn` or a sub-query in your query builder instead:
+
+```typescript
+// Before
+@RelationCount((post: Post) => post.categories)
+categoryCount: number
+
+// After — use @VirtualColumn with a sub-query
+// Replace the junction table name and column names to match your schema
+@VirtualColumn({
+    query: (alias) =>
+        `SELECT COUNT(*) FROM post_categories_category WHERE postId = ${alias}.id`,
+})
+categoryCount: number
+```
+
 ### Deprecated lock modes
 
 The `pessimistic_partial_write` and `pessimistic_write_or_fail` lock modes have been removed. Use `pessimistic_write` with the `onLocked` option instead:
