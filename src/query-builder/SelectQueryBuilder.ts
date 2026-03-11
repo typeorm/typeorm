@@ -3160,6 +3160,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             if (this.findOptions.select) {
+                if (Array.isArray(this.findOptions.select)) {
+                    throw new TypeORMError(
+                        `String-array "select" syntax is no longer supported. Use object syntax instead, e.g.: select: { id: true, name: true }`,
+                    )
+                }
                 this.buildSelect(
                     this.findOptions.select,
                     this.expressionMap.mainAlias!.metadata,
@@ -3174,6 +3179,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.selects = []
 
             if (this.findOptions.relations) {
+                if (Array.isArray(this.findOptions.relations)) {
+                    throw new TypeORMError(
+                        `String-array "relations" syntax is no longer supported. Use object syntax instead, e.g.: relations: { profile: true, posts: true }`,
+                    )
+                }
                 this.buildRelations(
                     this.findOptions.relations,
                     this.findOptions.select,
