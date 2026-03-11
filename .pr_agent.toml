@@ -1,8 +1,5 @@
 [github_app]
-pr_commands = [
-    "/agentic_describe",
-    "/agentic_review",
-]
+pr_commands = ["/agentic_describe", "/agentic_review"]
 
 handle_push_trigger = true
 push_commands = ["/agentic_review"]
