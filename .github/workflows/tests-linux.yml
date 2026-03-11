@@ -142,9 +142,14 @@ jobs:
           path: build/
 
       - run: pnpm install
-      - run: jq 'map(select(.type == "mysql" or .type == "mariadb"))' ormconfig.sample.json > ormconfig.json
+      - run: jq --argjson types "$DATABASES" 'map(select(.type | IN($types[])))' ormconfig.sample.json > ormconfig.json
+        env:
+          DATABASES: |-
+            [
+              "mariadb",
+              "mysql"
+            ]
       - run: pnpm exec c8 pnpm run test:ci
-
       - uses: coverallsapp/github-action@v2
         with:
           flag-name: mysql_mariadb-node:${{ inputs.node-version }}
@@ -185,9 +190,14 @@ jobs:
           path: build/
 
       - run: pnpm install
-      - run: jq 'map(select(.type == "mysql" or .type == "mariadb"))' ormconfig.sample.json > ormconfig.json
+      - run: jq --argjson types "$DATABASES" 'map(select(.type | IN($types[])))' ormconfig.sample.json > ormconfig.json
+        env:
+          DATABASES: |-
+            [
+              "mariadb",
+              "mysql"
+            ]
       - run: pnpm exec c8 pnpm run test:ci
-
       - uses: coverallsapp/github-action@v2
         with:
           flag-name: mysql_mariadb_latest-node:${{ inputs.node-version }}
