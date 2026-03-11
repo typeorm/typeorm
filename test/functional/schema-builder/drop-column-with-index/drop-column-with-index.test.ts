@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import { expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -28,9 +29,24 @@ describe("schema-builder > drop column with index", () => {
                     (x) => x.databaseName === "firstname",
                 )
                 entityMetadata.columns.splice(idx, 1)
-                entityMetadata.indices = [] // clear the referenced index from metadata too
+                entityMetadata.indices = []
 
                 await connection.synchronize(false)
+
+                const queryRunner = connection.createQueryRunner()
+                try {
+                    const table = await queryRunner.getTable("person")
+                    expect(table).to.exist
+
+                    const firstnameColumn = table!.columns.find(
+                        (c) => c.name === "firstname",
+                    )
+                    expect(firstnameColumn).to.be.undefined
+
+                    expect(table!.indices).to.have.length(0)
+                } finally {
+                    await queryRunner.release()
+                }
             }),
         ))
 })
