@@ -3,13 +3,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Organisation } from "./entity/Organisation"
 import { Contact } from "./entity/Contact"
 
-describe("github issues > #174 Embeded types confusing with order by", () => {
+describe("embedded > order by with duplicate column name", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
