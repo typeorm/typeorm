@@ -1,7 +1,10 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { UpdateDateColumn } from "../../../../src/decorator/columns/UpdateDateColumn"
-import { ObjectId, ObjectIdColumn } from "../../../../src"
+import { ObjectId } from "mongodb"
+import {
+    Column,
+    Entity,
+    ObjectIdColumn,
+    UpdateDateColumn,
+} from "../../../../src"
 
 @Entity()
 export class Post {

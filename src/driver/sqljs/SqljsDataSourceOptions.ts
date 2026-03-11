@@ -1,4 +1,4 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * Sql.js-specific connection options.

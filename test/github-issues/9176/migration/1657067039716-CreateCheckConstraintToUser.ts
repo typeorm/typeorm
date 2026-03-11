@@ -1,4 +1,5 @@
-import { MigrationInterface, QueryRunner, TableCheck } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
+import { TableCheck } from "../../../../src"
 
 export class CreateCheckConstraintToUser1657067039716 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {

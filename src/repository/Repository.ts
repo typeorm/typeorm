@@ -1,22 +1,22 @@
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { FindOneOptions } from "../find-options/FindOneOptions"
-import { DeepPartial } from "../common/DeepPartial"
-import { SaveOptions } from "./SaveOptions"
-import { RemoveOptions } from "./RemoveOptions"
-import { EntityManager } from "../entity-manager/EntityManager"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { InsertResult } from "../query-builder/result/InsertResult"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
-import { ObjectId } from "../driver/mongodb/typings"
-import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { UpsertOptions } from "./UpsertOptions"
-import { UpdateOptions } from "./UpdateOptions"
-import { EntityTarget } from "../common/EntityTarget"
-import { PickKeysByType } from "../common/PickKeysByType"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
+import type { DeepPartial } from "../common/DeepPartial"
+import type { SaveOptions } from "./SaveOptions"
+import type { RemoveOptions } from "./RemoveOptions"
+import type { EntityManager } from "../entity-manager/EntityManager"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { InsertResult } from "../query-builder/result/InsertResult"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import type { ObjectId } from "../driver/mongodb/typings"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { UpsertOptions } from "./UpsertOptions"
+import type { UpdateOptions } from "./UpdateOptions"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
 
 /**
@@ -519,17 +519,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Checks whether any entity exists that matches the given options.
      * @param options
-     * @deprecated use `exists` method instead, for example:
-     *
-     * .exists()
-     */
-    exist(options?: FindManyOptions<Entity>): Promise<boolean> {
-        return this.manager.exists(this.metadata.target, options)
-    }
-
-    /**
-     * Checks whether any entity exists that matches the given options.
-     * @param options
      */
     exists(options?: FindManyOptions<Entity>): Promise<boolean> {
         return this.manager.exists(this.metadata.target, options)
@@ -762,10 +751,12 @@ export class Repository<Entity extends ObjectLiteral> {
      * Clears all the data from the given table/collection (truncates/drops it).
      *
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
+     * @param options
+     * @param options.cascade
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    clear(): Promise<void> {
-        return this.manager.clear(this.metadata.target)
+    clear(options?: { cascade?: boolean }): Promise<void> {
+        return this.manager.clear(this.metadata.target, options)
     }
 
     /**

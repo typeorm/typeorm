@@ -5,7 +5,8 @@ import {
     reloadTestingDatabases,
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
-import { DataSource, Repository } from "../../../src"
+import type { Repository } from "../../../src"
+import { DataSource } from "../../../src"
 import { Bar } from "./entity/Bar"
 import { DocumentEnum } from "./documentEnum"
 

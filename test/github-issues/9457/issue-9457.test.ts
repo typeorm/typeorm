@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
 describe("github issues > #9457 No changes in database schema were found, when simple-enum is changed.", () => {

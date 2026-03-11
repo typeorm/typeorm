@@ -60,7 +60,6 @@
     "./browser/driver/oracle/OracleDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sap/SapDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sqlite/SqliteDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sqlserver/SqlServerDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/entity-manager/MongoEntityManager.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/logger/FileLogger.js": "./browser/platform/BrowserFileLoggerDummy.js",
@@ -100,7 +99,6 @@
     "dayjs": "^1.11.19",
     "debug": "^4.4.3",
     "dedent": "^1.7.1",
-    "dotenv": "^17.3.1",
     "reflect-metadata": "^0.2.2",
     "sql-highlight": "^6.1.0",
     "tinyglobby": "^0.2.15",
@@ -108,11 +106,11 @@
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
+    "@eslint/js": "^10.0.1",
     "@google-cloud/spanner": "^8.6.0",
     "@sap/hana-client": "^2.27.23",
-    "@stryker-mutator/core": "^9.5.1",
-    "@stryker-mutator/mocha-runner": "^9.5.1",
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/mocha-runner": "^9.6.0",
     "@tsconfig/node20": "^20.1.9",
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
@@ -131,9 +129,9 @@
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
     "class-transformer": "^0.5.1",
-    "eslint": "^9.39.3",
+    "eslint": "^10.0.2",
     "eslint-plugin-chai-friendly": "^1.1.0",
-    "eslint-plugin-jsdoc": "^62.7.0",
+    "eslint-plugin-jsdoc": "^62.7.1",
     "globals": "^17.3.0",
     "gulp": "^4.0.2",
     "gulp-rename": "^2.1.0",
@@ -162,18 +160,18 @@
     "sort-package-json": "^3.6.1",
     "source-map-support": "^0.5.21",
     "sql.js": "^1.14.0",
-    "sqlite3": "^5.1.7",
     "standard-changelog": "^7.0.1",
+    "testcontainers": "^11.12.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.0"
+    "typescript-eslint": "^8.56.1"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^8.0.0",
     "@sap/hana-client": "^2.14.22",
     "better-sqlite3": "^12.0.0",
     "ioredis": "^5.0.4",
-    "mongodb": "^5.8.0 || ^6.0.0 || ^7.0.0",
+    "mongodb": "^6.0.0 || ^7.0.0",
     "mssql": "^12.0.0",
     "mysql2": "^3.15.3",
     "oracledb": "^6.3.0",
@@ -182,7 +180,6 @@
     "pg-query-stream": "^4.0.0",
     "redis": "^5.0.0",
     "sql.js": "^1.4.0",
-    "sqlite3": "^5.0.3",
     "ts-node": "^10.9.2",
     "typeorm-aurora-data-api-driver": "^3.0.0"
   },
@@ -226,9 +223,6 @@
     "sql.js": {
       "optional": true
     },
-    "sqlite3": {
-      "optional": true
-    },
     "ts-node": {
       "optional": true
     },
@@ -249,8 +243,7 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "sqlite3"
+      "better-sqlite3"
     ],
     "ignoredBuiltDependencies": [
       "@sap/hana-client",
@@ -284,6 +277,7 @@
     "cloud-spanner-orm",
     "sqlite",
     "sqlite-orm",
+    "better-sqlite3",
     "sql-server",
     "sql-server-orm"
   ]

@@ -1,6 +1,6 @@
 import "../../utils/test-setup"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,22 +9,22 @@ import {
 import { Test } from "./entity/Test"
 
 describe("github issues > #7650 Inappropriate migration generated", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             entities: [Test],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not create migrations for json default which are equivalent", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()

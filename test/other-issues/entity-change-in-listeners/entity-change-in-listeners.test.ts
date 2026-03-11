@@ -4,24 +4,23 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("other issues > entity change in listeners should affect persistence", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("if entity was changed in the listener, changed property should be updated in the db", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 // insert a post
                 const post = new Post()
                 post.title = "hello"

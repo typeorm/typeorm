@@ -1,4 +1,4 @@
-import { Driver } from "./Driver"
+import type { Driver } from "./Driver"
 import { hash, shorten } from "../util/StringUtils"
 import { VersionUtils } from "../util/VersionUtils"
 
@@ -16,14 +16,13 @@ export class DriverUtils {
      */
     static isSQLiteFamily(driver: Driver): boolean {
         return [
-            "sqlite",
-            "cordova",
-            "react-native",
-            "nativescript",
-            "sqljs",
-            "expo",
             "better-sqlite3",
             "capacitor",
+            "cordova",
+            "expo",
+            "nativescript",
+            "react-native",
+            "sqljs",
         ].includes(driver.options.type)
     }
 
@@ -154,34 +153,6 @@ export class DriverUtils {
         return newAlias
     }
 
-    /**
-     * @param root0
-     * @param root0.maxAliasLength
-     * @param buildOptions
-     * @param alias
-     * @deprecated use `buildAlias` instead.
-     */
-    static buildColumnAlias(
-        { maxAliasLength }: Driver,
-        buildOptions: { shorten?: boolean; joiner?: string } | string,
-        ...alias: string[]
-    ) {
-        if (typeof buildOptions === "string") {
-            alias.unshift(buildOptions)
-            buildOptions = { shorten: false, joiner: "_" }
-        } else {
-            buildOptions = Object.assign(
-                { shorten: false, joiner: "_" },
-                buildOptions,
-            )
-        }
-        return this.buildAlias(
-            { maxAliasLength } as Driver,
-            buildOptions,
-            ...alias,
-        )
-    }
-
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------
@@ -240,7 +211,7 @@ export class DriverUtils {
             secondSlash !== -1 ? preBase.substr(0, secondSlash) : preBase
         let afterBase =
             secondSlash !== -1 ? preBase.substr(secondSlash + 1) : undefined
-        let afterQuestionMark = ""
+        let afterQuestionMark: string
         let host = undefined
         let port = undefined
         let hostReplicaSet = undefined

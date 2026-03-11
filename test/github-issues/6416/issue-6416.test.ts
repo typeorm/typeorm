@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 import { assert } from "chai"
 
@@ -13,20 +13,19 @@ import PostTag, { PostTagSchema } from "./entity/PostTag"
 import PostAttachment, { PostAttachmentSchema } from "./entity/PostAttachment"
 
 describe("github issues > #6399 Combining ManyToOne, Cascade, & Composite Primary Key causes Unique Constraint issues", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [PostSchema, PostTagSchema, PostAttachmentSchema],
-                enabledDrivers: ["sqlite"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [PostSchema, PostTagSchema, PostAttachmentSchema],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("persisting the cascading entities should succeed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 const postTag = new PostTag()
                 post.tags = [postTag]
@@ -47,7 +46,7 @@ describe("github issues > #6399 Combining ManyToOne, Cascade, & Composite Primar
 
     it("persisting the cascading entities without JoinColumn should succeed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 const postAttachment = new PostAttachment()
                 post.attachments = [postAttachment]
@@ -68,7 +67,7 @@ describe("github issues > #6399 Combining ManyToOne, Cascade, & Composite Primar
 
     it("persisting the child entity should succeed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
 
                 await connection.manager.save<Post>(post)

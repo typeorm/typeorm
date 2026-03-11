@@ -1,29 +1,29 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source/DataSource"
-import { DataSourceOptions } from "../../data-source/DataSourceOptions"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
+import type { DataSourceOptions } from "../../data-source/DataSourceOptions"
 import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { MongoSchemaBuilder } from "../../schema-builder/MongoSchemaBuilder"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { View } from "../../schema-builder/view/View"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { ObjectUtils } from "../../util/ObjectUtils"
-import { Driver } from "../Driver"
+import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import { ColumnType } from "../types/ColumnTypes"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { UpsertType } from "../types/UpsertType"
-import { MongoDataSourceOptions } from "./MongoDataSourceOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
+import type { MongoDataSourceOptions } from "./MongoDataSourceOptions"
 import { MongoQueryRunner } from "./MongoQueryRunner"
 
 /**
@@ -169,8 +169,6 @@ export class MongoDriver implements Driver {
         "family",
         "forceServerObjectId",
         "ignoreUndefined",
-        "keepAlive",
-        "keepAliveInitialDelay",
         "localThresholdMS",
         "maxStalenessSeconds",
         "minPoolSize",
@@ -188,34 +186,17 @@ export class MongoDriver implements Driver {
         "retryWrites",
         "serializeFunctions",
         "socketTimeoutMS",
-        "ssl",
-        "sslCA",
-        "sslCRL",
-        "sslCert",
-        "sslKey",
-        "sslPass",
-        "sslValidate",
         "tls",
         "tlsAllowInvalidCertificates",
         "tlsCAFile",
         "tlsCertificateKeyFile",
         "tlsCertificateKeyFilePassword",
-        "w",
         "writeConcern",
-        "wtimeoutMS",
         // Proxy configuration for Socks5
         "proxyHost",
         "proxyPort",
         "proxyUsername",
         "proxyPassword",
-        // Undocumented deprecated options
-        // todo: remove next major version
-        "appname",
-        "fsync",
-        "j",
-        "useNewUrlParser",
-        "useUnifiedTopology",
-        "wtimeout",
     ]
 
     // -------------------------------------------------------------------------
@@ -294,12 +275,10 @@ export class MongoDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
         throw new TypeORMError(
             `This operation is not supported by Mongodb driver.`,

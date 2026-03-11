@@ -1,6 +1,6 @@
 import "../../../../utils/test-setup"
 import { Post } from "./entity/Post"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,21 +10,21 @@ import { PostWithoutTypes } from "./entity/PostWithoutTypes"
 import { FruitEnum } from "./enum/FruitEnum"
 
 describe("database schema > column types > sqlite", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["sqlite", "better-sqlite3"],
+            enabledDrivers: ["better-sqlite3"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -208,10 +208,10 @@ describe("database schema > column types > sqlite", () => {
 
     it("all types should work correctly - persist and hydrate when types are not specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const postRepository =
-                    connection.getRepository(PostWithoutTypes)
-                const queryRunner = connection.createQueryRunner()
+                    dataSource.getRepository(PostWithoutTypes)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post_without_types")
                 await queryRunner.release()
 

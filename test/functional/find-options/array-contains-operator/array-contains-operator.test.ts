@@ -1,4 +1,4 @@
-import { DataSource, EntityManager } from "../../../../src"
+import type { DataSource, EntityManager } from "../../../../src"
 import { ArrayContains } from "../../../../src/find-options/operator/ArrayContains"
 import "../../../utils/test-setup"
 import {
@@ -9,16 +9,15 @@ import {
 import { Post, PostStatus } from "./entity/Post"
 
 describe("find options > find operators > ArrayContains", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                __dirname,
-                enabledDrivers: ["postgres", "cockroachdb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            enabledDrivers: ["postgres", "cockroachdb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(manager: EntityManager) {
         const post1 = new Post()
@@ -42,10 +41,10 @@ describe("find options > find operators > ArrayContains", () => {
 
     it("should find entries in regular arrays", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const loadedPost1 = await connection.manager.find(Post, {
+                const loadedPost1 = await dataSource.manager.find(Post, {
                     where: {
                         authors: ArrayContains(["dmitry"]),
                     },
@@ -62,7 +61,7 @@ describe("find options > find operators > ArrayContains", () => {
                     },
                 ])
 
-                const loadedPost2 = await connection.manager.find(Post, {
+                const loadedPost2 = await dataSource.manager.find(Post, {
                     where: {
                         authors: ArrayContains(["olimjon"]),
                     },
@@ -89,10 +88,10 @@ describe("find options > find operators > ArrayContains", () => {
 
     it("should find entries in enum arrays", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const loadedPost1 = await connection.manager.find(Post, {
+                const loadedPost1 = await dataSource.manager.find(Post, {
                     where: {
                         statuses: ArrayContains([PostStatus.draft]),
                     },
@@ -109,7 +108,7 @@ describe("find options > find operators > ArrayContains", () => {
                     },
                 ])
 
-                const loadedPost2 = await connection.manager.find(Post, {
+                const loadedPost2 = await dataSource.manager.find(Post, {
                     where: {
                         statuses: ArrayContains([PostStatus.published]),
                     },

@@ -1,24 +1,24 @@
-import { EntityTarget } from "../common/EntityTarget"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { DriverUtils } from "../driver/DriverUtils"
-import { MysqlDriver } from "../driver/mysql/MysqlDriver"
-import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { TypeORMError } from "../error"
 import { InsertValuesMissingError } from "../error/InsertValuesMissingError"
 import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { RandomGenerator } from "../util/RandomGenerator"
-import { InsertOrUpdateOptions } from "./InsertOrUpdateOptions"
+import type { InsertOrUpdateOptions } from "./InsertOrUpdateOptions"
 import { QueryBuilder } from "./QueryBuilder"
-import { QueryDeepPartialEntity } from "./QueryPartialEntity"
+import type { QueryDeepPartialEntity } from "./QueryPartialEntity"
 import { InsertResult } from "./result/InsertResult"
 import { ReturningResultsEntityUpdator } from "./ReturningResultsEntityUpdator"
-import { SelectQueryBuilder } from "./SelectQueryBuilder"
-import { WhereClause } from "./WhereClause"
+import type { SelectQueryBuilder } from "./SelectQueryBuilder"
+import type { WhereClause } from "./WhereClause"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -371,16 +371,6 @@ export class InsertQueryBuilder<
     }
 
     /**
-     * Adds additional ON CONFLICT statement supported in postgres and cockroach.
-     * @param statement
-     * @deprecated Use `orIgnore` or `orUpdate`
-     */
-    onConflict(statement: string): this {
-        this.expressionMap.onConflict = statement
-        return this
-    }
-
-    /**
      * Adds additional ignore statement supported in databases.
      * @param statement
      */
@@ -390,42 +380,17 @@ export class InsertQueryBuilder<
     }
 
     /**
-     * @deprecated
-     *
-     * `.orUpdate({ columns: [ "is_updated" ] }).setParameter("is_updated", value)`
-     *
-     * is now `.orUpdate(["is_updated"])`
-     *
-     * `.orUpdate({ conflict_target: ['date'], overwrite: ['title'] })`
-     *
-     * is now `.orUpdate(['title'], ['date'])`
+     * Adds an "upsert" clause to the insert query — when a row with the same
+     * conflict target already exists the listed columns are updated instead.
+     * @param overwrite - Column names to overwrite on conflict.
+     * @param conflictTarget - Column name(s) or constraint name used to detect
+     *   conflicts. When an array is given the columns form a composite key;
+     *   when a string is given it is treated as a constraint name.
+     * @param orUpdateOptions - Additional options such as `skipUpdateIfNoValuesChanged`,
+     *   `indexPredicate`, `upsertType`, or `overwriteCondition`.
      */
-    orUpdate(statement?: {
-        columns?: string[]
-        overwrite?: string[]
-        conflict_target?: string | string[]
-    }): this
-
     orUpdate(
         overwrite: string[],
-        conflictTarget?: string | string[],
-        orUpdateOptions?: InsertOrUpdateOptions,
-    ): this
-
-    /**
-     * Adds additional update statement supported in databases.
-     * @param statementOrOverwrite
-     * @param conflictTarget
-     * @param orUpdateOptions
-     */
-    orUpdate(
-        statementOrOverwrite?:
-            | {
-                  columns?: string[]
-                  overwrite?: string[]
-                  conflict_target?: string | string[]
-              }
-            | string[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
     ): this {
@@ -438,21 +403,8 @@ export class InsertQueryBuilder<
         }
         if (parameters) this.setParameters(parameters)
 
-        if (!Array.isArray(statementOrOverwrite)) {
-            this.expressionMap.onUpdate = {
-                conflict: statementOrOverwrite?.conflict_target,
-                columns: statementOrOverwrite?.columns,
-                overwrite: statementOrOverwrite?.overwrite,
-                skipUpdateIfNoValuesChanged:
-                    orUpdateOptions?.skipUpdateIfNoValuesChanged,
-                upsertType: orUpdateOptions?.upsertType,
-                overwriteCondition: wheres,
-            }
-            return this
-        }
-
         this.expressionMap.onUpdate = {
-            overwrite: statementOrOverwrite,
+            overwrite: overwrite,
             conflict: conflictTarget,
             skipUpdateIfNoValuesChanged:
                 orUpdateOptions?.skipUpdateIfNoValuesChanged,
@@ -570,8 +522,6 @@ export class InsertQueryBuilder<
             ) {
                 if (this.expressionMap.onIgnore) {
                     query += " ON CONFLICT DO NOTHING "
-                } else if (this.expressionMap.onConflict) {
-                    query += ` ON CONFLICT ${this.expressionMap.onConflict} `
                 } else if (this.expressionMap.onUpdate) {
                     const {
                         overwrite,

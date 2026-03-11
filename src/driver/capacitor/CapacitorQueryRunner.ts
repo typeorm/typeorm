@@ -1,9 +1,9 @@
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { CapacitorDriver } from "./CapacitorDriver"
+import type { CapacitorDriver } from "./CapacitorDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryResult } from "../../query-runner/QueryResult"
 
 /**

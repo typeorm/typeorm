@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import "../../utils/test-setup"
 import {
     closeTestingConnections,
@@ -10,19 +10,18 @@ import { Note } from "./entity/note"
 import { Person } from "./entity/person"
 
 describe("github issues > #2965 Reuse preloaded lazy relations", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should resuse preloaded lazy relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repoPerson = connection.getRepository(Person)
                 const repoNote = connection.getRepository(Note)
 

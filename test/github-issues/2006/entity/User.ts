@@ -11,7 +11,6 @@ export class User {
     @Column({
         type: "tinyint",
         default: 0,
-        width: 1,
     })
     dnd: boolean = false
 }

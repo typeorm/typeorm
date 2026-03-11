@@ -1,21 +1,21 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { DataSource } from "../data-source/DataSource"
-import { CockroachDataSourceOptions } from "../driver/cockroachdb/CockroachDataSourceOptions"
-import { UpsertType } from "../driver/types/UpsertType"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { DataSource } from "../data-source/DataSource"
+import type { CockroachDataSourceOptions } from "../driver/cockroachdb/CockroachDataSourceOptions"
+import type { UpsertType } from "../driver/types/UpsertType"
 import { TypeORMError } from "../error"
-import { OrderByCondition } from "../find-options/OrderByCondition"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { RelationMetadata } from "../metadata/RelationMetadata"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { Alias } from "./Alias"
 import { JoinAttribute } from "./JoinAttribute"
-import { QueryBuilder } from "./QueryBuilder"
-import { QueryBuilderCteOptions } from "./QueryBuilderCte"
+import type { QueryBuilder } from "./QueryBuilder"
+import type { QueryBuilderCteOptions } from "./QueryBuilderCte"
 import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
-import { SelectQuery } from "./SelectQuery"
-import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
-import { WhereClause } from "./WhereClause"
+import type { SelectQuery } from "./SelectQuery"
+import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
+import type { WhereClause } from "./WhereClause"
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -97,11 +97,6 @@ export class QueryExpressionMap {
      * Extra returning columns to be added to the returning statement if driver supports it.
      */
     extraReturningColumns: ColumnMetadata[] = []
-
-    /**
-     * Optional on conflict statement used in insertion query in postgres.
-     */
-    onConflict: string = ""
 
     /**
      * Optional on ignore statement used in insertion query in databases.
@@ -191,14 +186,6 @@ export class QueryExpressionMap {
         | "pessimistic_read"
         | "pessimistic_write"
         | "dirty_read"
-        /*
-            "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
-            will be removed in a future version.
-
-            Use onLocked instead.
-         */
-        | "pessimistic_partial_write"
-        | "pessimistic_write_or_fail"
         | "for_no_key_update"
         | "for_key_share"
 
@@ -332,12 +319,6 @@ export class QueryExpressionMap {
      * https://www.cockroachlabs.com/docs/stable/as-of-system-time.html
      */
     timeTravel?: boolean | string
-
-    /**
-     * Extra parameters.
-     * @deprecated Use standard parameters instead
-     */
-    nativeParameters: ObjectLiteral = {}
 
     /**
      * Query Comment to include extra information for debugging or other purposes.
@@ -512,7 +493,6 @@ export class QueryExpressionMap {
         map.mainAlias = this.mainAlias
         map.valuesSet = this.valuesSet
         map.returning = this.returning
-        map.onConflict = this.onConflict
         map.onIgnore = this.onIgnore
         map.onUpdate = this.onUpdate
         map.joinAttributes = this.joinAttributes.map(
@@ -558,7 +538,6 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
         map.timeTravel = this.timeTravel
-        map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
         map.commonTableExpressions = this.commonTableExpressions.map(
             (cteOptions) => ({

@@ -1,8 +1,8 @@
-import { DataSource } from "../../data-source/DataSource"
+import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ExpoDataSourceOptions } from "./ExpoDataSourceOptions"
+import type { ExpoDataSourceOptions } from "./ExpoDataSourceOptions"
 import { ExpoQueryRunner } from "./ExpoQueryRunner"
 
 export class ExpoDriver extends AbstractSqliteDriver {

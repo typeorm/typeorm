@@ -1,4 +1,4 @@
-import { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source/DataSource"
 import { MissingDriverError } from "../error/MissingDriverError"
 import { AuroraMysqlDriver } from "./aurora-mysql/AuroraMysqlDriver"
 import { AuroraPostgresDriver } from "./aurora-postgres/AuroraPostgresDriver"
@@ -6,7 +6,7 @@ import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
 import { CapacitorDriver } from "./capacitor/CapacitorDriver"
 import { CockroachDriver } from "./cockroachdb/CockroachDriver"
 import { CordovaDriver } from "./cordova/CordovaDriver"
-import { Driver } from "./Driver"
+import type { Driver } from "./Driver"
 import { ExpoDriver } from "./expo/ExpoDriver"
 import { MongoDriver } from "./mongodb/MongoDriver"
 import { MysqlDriver } from "./mysql/MysqlDriver"
@@ -16,7 +16,6 @@ import { PostgresDriver } from "./postgres/PostgresDriver"
 import { ReactNativeDriver } from "./react-native/ReactNativeDriver"
 import { SapDriver } from "./sap/SapDriver"
 import { SpannerDriver } from "./spanner/SpannerDriver"
-import { SqliteDriver } from "./sqlite/SqliteDriver"
 import { SqljsDriver } from "./sqljs/SqljsDriver"
 import { SqlServerDriver } from "./sqlserver/SqlServerDriver"
 
@@ -66,8 +65,6 @@ export class DriverFactory {
                 return new SapDriver(dataSource)
             case "spanner":
                 return new SpannerDriver(dataSource)
-            case "sqlite":
-                return new SqliteDriver(dataSource)
             case "sqljs":
                 return new SqljsDriver(dataSource)
             default:
@@ -89,7 +86,6 @@ export class DriverFactory {
                     "react-native",
                     "sap",
                     "spanner",
-                    "sqlite",
                     "sqljs",
                 ])
         }

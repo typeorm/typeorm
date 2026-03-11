@@ -5,17 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { expect } from "chai"
 
 describe("custom repository", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

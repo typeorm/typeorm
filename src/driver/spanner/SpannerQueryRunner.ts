@@ -1,17 +1,17 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ReadStream } from "../../platform/PlatformTools"
+import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -20,11 +20,11 @@ import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
-import { ColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { SpannerDriver } from "./SpannerDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { SpannerDriver } from "./SpannerDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -461,13 +461,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new database.
      * Note: Spanner does not support database creation inside a transaction block.
      * @param database
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createDatabase(
         database: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
-        if (ifNotExist) {
+        if (ifNotExists) {
             const databaseAlreadyExists = await this.hasDatabase(database)
 
             if (databaseAlreadyExists) return Promise.resolve()
@@ -482,12 +482,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops database.
      * Note: Spanner does not support database dropping inside a transaction block.
      * @param database
-     * @param ifExist
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        const up = ifExist
-            ? `DROP DATABASE IF EXISTS "${database}"`
-            : `DROP DATABASE "${database}"`
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
+        if (ifExists) {
+            const databaseExists = await this.hasDatabase(database)
+            if (!databaseExists) return
+        }
+
+        const up = `DROP DATABASE "${database}"`
         const down = `CREATE DATABASE "${database}"`
         await this.executeQueries(new Query(up), new Query(down))
     }
@@ -495,11 +498,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new table schema.
      * @param schemaPath
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         return Promise.resolve()
     }
@@ -507,12 +510,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops table schema.
      * @param schemaPath
-     * @param ifExist
+     * @param ifExists
      * @param isCascade
      */
     async dropSchema(
         schemaPath: string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         isCascade?: boolean,
     ): Promise<void> {
         return Promise.resolve()
@@ -521,17 +524,17 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new table.
      * @param table
-     * @param ifNotExist
+     * @param ifNotExists
      * @param createForeignKeys
      * @param createIndices
      */
     async createTable(
         table: Table,
-        ifNotExist: boolean = false,
+        ifNotExists: boolean = false,
         createForeignKeys: boolean = true,
         createIndices: boolean = true,
     ): Promise<void> {
-        if (ifNotExist) {
+        if (ifNotExists) {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
@@ -591,19 +594,19 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops the table.
      * @param target
-     * @param ifExist
+     * @param ifExists
      * @param dropForeignKeys
      * @param dropIndices
      */
     async dropTable(
         target: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys: boolean = true,
         dropIndices: boolean = true,
     ): Promise<void> {
         // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
         // to perform drop queries for foreign keys and indices.
-        if (ifExist) {
+        if (ifExists) {
             const isTableExist = await this.hasTable(target)
             if (!isTableExist) return Promise.resolve()
         }
@@ -673,9 +676,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops the view.
      * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = target instanceof View ? target.name : target
+
+        if (ifExists) {
+            const foundViews = await this.loadViews([viewName])
+            if (foundViews.length === 0) return
+        }
+
         const view = await this.getCachedView(viewName)
 
         const upQueries: Query[] = []
@@ -1004,10 +1014,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops column in the table.
      * @param tableOrName
      * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table =
             tableOrName instanceof Table
@@ -1017,10 +1029,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             columnOrName instanceof TableColumn
                 ? columnOrName
                 : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
@@ -1099,13 +1113,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops the columns in the table.
      * @param tableOrName
      * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const column of [...columns]) {
-            await this.dropColumn(tableOrName, column)
+            await this.dropColumn(tableOrName, column, ifExists)
         }
     }
 
@@ -1141,13 +1157,19 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new primary key.
+     * Drops a primary key.
      *
      * Not supported in Spanner.
      * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      * @see https://cloud.google.com/spanner/docs/schema-and-data-model#notes_about_key_columns
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         throw new Error(
             "The keys of a table can't change; you can't add a key column to an existing table or remove a key column from an existing table.",
         )
@@ -1185,10 +1207,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops unique constraint.
      * @param tableOrName
      * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Spanner does not support unique constraints. Use unique index instead.`,
@@ -1199,10 +1223,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops unique constraints.
      * @param tableOrName
      * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Spanner does not support unique constraints. Use unique index instead.`,
@@ -1256,10 +1282,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops check constraint.
      * @param tableOrName
      * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table =
             tableOrName instanceof Table
@@ -1269,10 +1297,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             checkOrName instanceof TableCheck
                 ? checkOrName
                 : table.checks.find((c) => c.name === checkOrName)
-        if (!checkConstraint)
+        if (!checkConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied check constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropCheckConstraintSql(table, checkConstraint)
         const down = this.createCheckConstraintSql(table, checkConstraint)
@@ -1284,13 +1314,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops check constraints.
      * @param tableOrName
      * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = checkConstraints.map((checkConstraint) =>
-            this.dropCheckConstraint(tableOrName, checkConstraint),
+            this.dropCheckConstraint(tableOrName, checkConstraint, ifExists),
         )
         await Promise.all(promises)
     }
@@ -1327,10 +1359,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops exclusion constraint.
      * @param tableOrName
      * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Spanner does not support exclusion constraints.`,
@@ -1341,10 +1375,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops exclusion constraints.
      * @param tableOrName
      * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Spanner does not support exclusion constraints.`,
@@ -1398,10 +1434,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops a foreign key from the table.
      * @param tableOrName
      * @param foreignKeyOrName
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table =
             tableOrName instanceof Table
@@ -1411,10 +1449,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             foreignKeyOrName instanceof TableForeignKey
                 ? foreignKeyOrName
                 : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
 
         if (!foreignKey.name) {
             foreignKey.name = this.connection.namingStrategy.foreignKeyName(
@@ -1435,13 +1475,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops a foreign keys from the table.
      * @param tableOrName
      * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const foreignKey of [...foreignKeys]) {
-            await this.dropForeignKey(tableOrName, foreignKey)
+            await this.dropForeignKey(tableOrName, foreignKey, ifExists)
         }
     }
 
@@ -1486,10 +1528,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops an index from the table.
      * @param tableOrName
      * @param indexOrName
+     * @param ifExists
      */
     async dropIndex(
         tableOrName: Table | string,
         indexOrName: TableIndex | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table =
             tableOrName instanceof Table
@@ -1499,10 +1543,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             indexOrName instanceof TableIndex
                 ? indexOrName
                 : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
 
         // new index may be passed without name. In this case we generate index name manually.
         if (!index.name) index.name = this.generateIndexName(table, index)
@@ -1517,13 +1563,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops an indices from the table.
      * @param tableOrName
      * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const index of [...indices]) {
-            await this.dropIndex(tableOrName, index)
+            await this.dropIndex(tableOrName, index, ifExists)
         }
     }
 
@@ -1531,8 +1579,18 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Clears all table contents.
      * Spanner does not support TRUNCATE TABLE statement, so we use DELETE FROM.
      * @param tableName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tableName: string): Promise<void> {
+    async clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        if (options?.cascade) {
+            throw new TypeORMError(
+                `Spanner does not support clearing table with cascade option`,
+            )
+        }
         await this.query(`DELETE FROM ${this.escapePath(tableName)} WHERE true`)
     }
 

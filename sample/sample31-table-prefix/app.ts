@@ -1,12 +1,13 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { Category } from "./entity/Category"
 
 const options: DataSourceOptions = {
-    type: "sqlite",
-    database: "temp/sqlitedb.db",
+    type: "better-sqlite3",
+    database: "temp/better-sqlite3.db",
     entityPrefix: "samples_", // pay attention on this prefix
     synchronize: true,
     logging: ["query", "error"],
