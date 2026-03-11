@@ -3,13 +3,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
-describe("github issues > #175 ManyToMany relation doesn't put an empty array when the relation is empty", () => {
+describe("relations > empty relation returns array", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
