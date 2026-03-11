@@ -306,6 +306,24 @@ const UserRepository = dataSource.getRepository(User).extend({
 
 The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
 
+### `@RelationCount` decorator and `loadRelationCountAndMap`
+
+The `@RelationCount` decorator and `SelectQueryBuilder.loadRelationCountAndMap()` method have been removed. Use `@VirtualColumn` or a sub-query in your query builder instead:
+
+```typescript
+// Before
+@RelationCount((post: Post) => post.categories)
+categoryCount: number
+
+// After — use @VirtualColumn with a sub-query
+// Replace the junction table name and column names to match your schema
+@VirtualColumn({
+    query: (alias) =>
+        `SELECT COUNT(*) FROM post_categories_category WHERE postId = ${alias}.id`,
+})
+categoryCount: number
+```
+
 ## QueryBuilder
 
 ### `onConflict`
