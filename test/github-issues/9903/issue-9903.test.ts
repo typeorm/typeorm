@@ -63,6 +63,7 @@ describe("github issues > #9903 json data type", () => {
                         )
                     }
 
+                    const dbName = connection.options.database
                     try {
                         await userRepository.query(
                             "INSERT INTO user values (?, ?)",
@@ -73,7 +74,7 @@ describe("github issues > #9903 json data type", () => {
                         expect(err).not.to.be.undefined
                         expect(err.sqlMessage).not.to.be.undefined
                         expect(err.sqlMessage).to.equal(
-                            "CONSTRAINT `user.jsonData` failed for `test`.`user`",
+                            `CONSTRAINT \`user.jsonData\` failed for \`${dbName}\`.\`user\``,
                         )
                     }
                 }),

@@ -38,8 +38,8 @@ jobs:
 
             src-or-tests: &src-or-tests
               - *src
-              - .github/workflows/test/**/*
               - .github/workflows/test*.yml
+              - ormconfig.sample.json
               - test/**/*
               - .c8rc.json
               - .mocharc.json

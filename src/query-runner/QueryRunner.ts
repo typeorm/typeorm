@@ -53,18 +53,6 @@ export interface QueryRunner extends AsyncDisposable {
     data: ObjectLiteral
 
     /**
-     * All synchronized tables in the database.
-     * @deprecated Call `getTables()`
-     */
-    loadedTables: Table[]
-
-    /**
-     * All synchronized views in the database.
-     * @deprecated Call `getViews()`
-     */
-    loadedViews: View[]
-
-    /**
      * Creates/uses database connection from the connection pool to perform further operations.
      * Returns obtained database connection.
      */
