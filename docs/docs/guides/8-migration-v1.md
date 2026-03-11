@@ -262,7 +262,9 @@ The same applies to find options:
 { lock: { mode: "pessimistic_write", onLocked: "nowait" } }
 ```
 
-### `ColumnOptions.readonly`
+## Columns
+
+### `readonly`
 
 The deprecated `readonly` column option has been removed. Use the `update` option instead — note that it takes the **opposite** value:
 
@@ -276,7 +278,7 @@ authorName: string
 authorName: string
 ```
 
-### `ColumnNumericOptions.unsigned`
+### `unsigned`
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
 
