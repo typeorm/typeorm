@@ -176,6 +176,8 @@ await repository.updateAll(
 
 When an upsert operation results in an update (due to a conflict), special columns like `@UpdateDateColumn` and `@VersionColumn` are automatically updated to their current values.
 
+> **Note for drivers without `RETURNING` support (e.g. MySQL):** When a no-op upsert occurs (the incoming values are identical to those already in the database), the underlying driver returns `insertId=0`. In this case TypeORM cannot determine the entity's primary key from the insert result, so the re-fetch of generated/default column values is skipped for that entity and its entry in `InsertResult.identifiers` will be an empty object (`{}`).
+
 ```typescript
 await repository.upsert(
     [
