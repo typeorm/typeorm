@@ -97,7 +97,7 @@ services:
     # volumes:
     #   - cockroach-data:/cockroach/cockroach-data
 
-  # oracle
+    # oracle
   oracle:
     image: "container-registry.oracle.com/database/free:23.7.0.0-lite"
     container_name: "typeorm-oracle"
@@ -152,3 +152,8 @@ services:
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
+
+volumes:
+  # cockroach-data:
+  # oracle-data:
+  volume-hana-xe:

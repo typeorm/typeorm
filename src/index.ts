@@ -7,7 +7,6 @@ import "reflect-metadata"
 // -------------------------------------------------------------------------
 
 export * from "./globals"
-export * from "./container"
 export type * from "./common/EntityTarget"
 export type * from "./common/ObjectType"
 export type * from "./common/ObjectLiteral"
