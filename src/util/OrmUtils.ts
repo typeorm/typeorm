@@ -663,7 +663,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options.undefined || "ignore"
+                const behavior = options?.undefined || "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -672,7 +672,7 @@ export class OrmUtils {
                 }
                 // "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options.null || "ignore"
+                const behavior = options?.null || "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +

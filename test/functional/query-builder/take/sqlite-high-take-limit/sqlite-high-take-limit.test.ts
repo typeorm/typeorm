@@ -3,11 +3,11 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
-describe("github issues > #190 too many SQL variables when using setMaxResults in SQLite", () => {
+describe("query-builder > take > sqlite high take limit", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -18,7 +18,7 @@ describe("github issues > #190 too many SQL variables when using setMaxResults i
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should not fail if high max results is used", () =>
+    it("should not fail with too many SQL variables when take is 1000", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 for (let i = 0; i < 1000; i++) {

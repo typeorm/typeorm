@@ -2300,7 +2300,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .filter((select) => excludedSelects.indexOf(select) === -1)
             .forEach((select) =>
                 allSelects.push({
-                    selection: this.replacePropertyNames(select.selection),
+                    selection: select.selection,
                     aliasName: select.aliasName,
                 }),
             )
@@ -2375,9 +2375,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             DriverUtils.isPostgresFamily(driver) &&
             selectDistinctOn.length > 0
         ) {
-            const selectDistinctOnMap = selectDistinctOn
-                .map((on) => this.replacePropertyNames(on))
-                .join(", ")
+            const selectDistinctOnMap = selectDistinctOn.join(", ")
 
             select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `
         } else if (selectDistinct) {
@@ -2422,9 +2420,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     " " +
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
-                    (joinAttr.condition
-                        ? " ON " + this.replacePropertyNames(joinAttr.condition)
-                        : "")
+                    (joinAttr.condition ? " ON " + joinAttr.condition : "")
                 )
             }
 
@@ -2456,7 +2452,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(condition + appendedCondition)
+                    condition +
+                    appendedCondition
                 )
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
@@ -2507,7 +2504,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(condition + appendedCondition)
+                    condition +
+                    appendedCondition
                 )
             } else {
                 // means many-to-many
@@ -2590,7 +2588,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(junctionAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(junctionCondition) +
+                    junctionCondition +
                     " " +
                     joinAttr.direction +
                     " JOIN " +
@@ -2599,9 +2597,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(
-                        destinationCondition + appendedCondition,
-                    )
+                    destinationCondition +
+                    appendedCondition
                 )
             }
         })
@@ -2615,10 +2612,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     protected createGroupByExpression() {
         if (!this.expressionMap.groupBys || !this.expressionMap.groupBys.length)
             return ""
-        return (
-            " GROUP BY " +
-            this.replacePropertyNames(this.expressionMap.groupBys.join(", "))
-        )
+        return " GROUP BY " + this.expressionMap.groupBys.join(", ")
     }
 
     /**
@@ -2676,9 +2670,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             }
                         }
                     }
-                    return (
-                        this.replacePropertyNames(columnName) + " " + orderValue
-                    )
+                    return columnName + " " + orderValue
                 })
                 .join(", ")
         )
@@ -2902,17 +2894,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .map((having, index) => {
                 switch (having.type) {
                     case "and":
-                        return (
-                            (index > 0 ? "AND " : "") +
-                            this.replacePropertyNames(having.condition)
-                        )
+                        return (index > 0 ? "AND " : "") + having.condition
                     case "or":
-                        return (
-                            (index > 0 ? "OR " : "") +
-                            this.replacePropertyNames(having.condition)
-                        )
+                        return (index > 0 ? "OR " : "") + having.condition
                     default:
-                        return this.replacePropertyNames(having.condition)
+                        return having.condition
                 }
             })
             .join(" ")
@@ -4408,7 +4394,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === undefined) {
                     const undefinedBehavior =
                         this.connection.options.invalidWhereValuesBehavior
-                            ?.undefined || "ignore"
+                            ?.undefined || "throw"
                     if (undefinedBehavior === "throw") {
                         throw new TypeORMError(
                             `Undefined value encountered in property '${alias}.${key}' of a where condition. ` +
@@ -4421,7 +4407,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === null) {
                     const nullBehavior =
                         this.connection.options.invalidWhereValuesBehavior
-                            ?.null || "ignore"
+                            ?.null || "throw"
                     if (nullBehavior === "ignore") {
                         continue
                     } else if (nullBehavior === "throw") {
@@ -4494,7 +4480,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (where[key] === null) {
                         const nullBehavior =
                             this.connection.options.invalidWhereValuesBehavior
-                                ?.null || "ignore"
+                                ?.null || "throw"
                         if (nullBehavior === "sql-null") {
                             andConditions.push(
                                 `${alias}.${propertyPath} IS NULL`,
@@ -4526,7 +4512,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             const undefinedBehavior =
                                 this.connection.options
                                     .invalidWhereValuesBehavior?.undefined ||
-                                "ignore"
+                                "throw"
                             if (undefinedBehavior === "throw") {
                                 throw new TypeORMError(
                                     `Undefined value encountered in nested relation '${alias}.${key}' of a where condition. ` +
