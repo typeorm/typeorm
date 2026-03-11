@@ -152,8 +152,3 @@ services:
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
-
-volumes:
-  # cockroach-data:
-  # oracle-data:
-  volume-hana-xe:
