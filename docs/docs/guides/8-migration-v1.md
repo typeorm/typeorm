@@ -186,12 +186,6 @@ Glob patterns are now handled by `tinyglobby` instead of `glob`. While `tinyglob
 
 ## Removed deprecations
 
-### `Connection` vs `DataSource`
-
-`DataSource` replaced `Connection` in v0.3 to provide a better meaning to the abstract concept represented by this class. For backwards compatibility, `Connection` was kept as an alias to `DataSource`, now this alias was removed. Similarly, `ConnectionOptions` is now `DataSourceOptions`.
-
-In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
-
 ### Redis
 
 Removed support for legacy (v3/v4) Redis clients in `RedisQueryResultCache`.
@@ -222,9 +216,65 @@ const repo = dataSource.getRepository(User)
 const qb = dataSource.createQueryBuilder("user")
 ```
 
+## Data Source
+
+### `Connection` vs `DataSource`
+
+`DataSource` replaced `Connection` in v0.3 to provide a better meaning to the abstract concept represented by this class. For backwards compatibility, `Connection` was kept as an alias to `DataSource`, now this alias was removed. Similarly, `ConnectionOptions` is now `DataSourceOptions`.
+
+In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
+
 ### `ConnectionManager`
 
 The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
+
+## Columns
+
+### `readonly`
+
+The deprecated `readonly` column option has been removed. Use the `update` option instead — note that it takes the **opposite** value:
+
+```typescript
+// Before
+@Column({ readonly: true })
+authorName: string
+
+// After
+@Column({ update: false })
+authorName: string
+```
+
+### `unsigned`
+
+The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
+
+## Repository
+
+### `findByIds`
+
+The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, and `BaseEntity`. Use `findBy` with the `In` operator instead:
+
+```typescript
+// Before
+const users = await repository.findByIds([1, 2, 3])
+
+// After
+import { In } from "typeorm"
+
+const users = await repository.findBy({ id: In([1, 2, 3]) })
+```
+
+### `exist`
+
+The deprecated `Repository.exist()` method has been removed. Use `exists()` instead — the behavior is identical:
+
+```typescript
+// Before
+const hasUsers = await userRepository.exist({ where: { isActive: true } })
+
+// After
+const hasUsers = await userRepository.exists({ where: { isActive: true } })
+```
 
 ### `AbstractRepository`, `@EntityRepository`, and `getCustomRepository`
 
@@ -273,76 +323,6 @@ categoryCount: number
 })
 categoryCount: number
 ```
-
-### Deprecated lock modes
-
-The `pessimistic_partial_write` and `pessimistic_write_or_fail` lock modes have been removed. Use `pessimistic_write` with the `onLocked` option instead:
-
-```typescript
-// Before
-.setLock("pessimistic_partial_write")
-
-// After
-.setLock("pessimistic_write")
-.setOnLocked("skip_locked")
-
-// Before
-.setLock("pessimistic_write_or_fail")
-
-// After
-.setLock("pessimistic_write")
-.setOnLocked("nowait")
-```
-
-The same applies to find options:
-
-```typescript
-// Before
-{ lock: { mode: "pessimistic_partial_write" } }
-
-// After
-{ lock: { mode: "pessimistic_write", onLocked: "skip_locked" } }
-
-// Before
-{ lock: { mode: "pessimistic_write_or_fail" } }
-
-// After
-{ lock: { mode: "pessimistic_write", onLocked: "nowait" } }
-```
-
-### `WhereExpression` type alias
-
-The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
-
-### `Repository.exist()`
-
-The deprecated `Repository.exist()` method has been removed. Use `exists()` instead — the behavior is identical:
-
-```typescript
-// Before
-const hasUsers = await userRepository.exist({ where: { isActive: true } })
-
-// After
-const hasUsers = await userRepository.exists({ where: { isActive: true } })
-```
-
-### `ColumnOptions.readonly`
-
-The deprecated `readonly` column option has been removed. Use the `update` option instead — note that it takes the **opposite** value:
-
-```typescript
-// Before
-@Column({ readonly: true })
-authorName: string
-
-// After
-@Column({ update: false })
-authorName: string
-```
-
-### `ColumnNumericOptions.unsigned`
-
-The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
 
 ## QueryBuilder
 
@@ -408,6 +388,46 @@ The deprecated `replacePropertyNames()` protected method has been removed. It wa
 ### `setNativeParameters`
 
 The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
+
+### `WhereExpression` type alias
+
+The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
+
+### Deprecated lock modes
+
+The `pessimistic_partial_write` and `pessimistic_write_or_fail` lock modes have been removed. Use `pessimistic_write` with the `onLocked` option instead:
+
+```typescript
+// Before
+.setLock("pessimistic_partial_write")
+
+// After
+.setLock("pessimistic_write")
+.setOnLocked("skip_locked")
+
+// Before
+.setLock("pessimistic_write_or_fail")
+
+// After
+.setLock("pessimistic_write")
+.setOnLocked("nowait")
+```
+
+The same applies to find options:
+
+```typescript
+// Before
+{ lock: { mode: "pessimistic_partial_write" } }
+
+// After
+{ lock: { mode: "pessimistic_write", onLocked: "skip_locked" } }
+
+// Before
+{ lock: { mode: "pessimistic_write_or_fail" } }
+
+// After
+{ lock: { mode: "pessimistic_write", onLocked: "nowait" } }
+```
 
 ## Migrations
 
@@ -492,7 +512,7 @@ export default {
 }
 ```
 
-### Name
+### `name`
 
 The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
 
