@@ -3025,7 +3025,7 @@ export class CockroachQueryRunner
             // drop tables
             const tables: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(table_schema) || '.' || quote_ident(table_name) as "name" ` +
-                    `FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`,
+                    `FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString}) AND "table_type" = 'BASE TABLE'`,
             )
 
             if (tables.length > 0) {
@@ -3042,7 +3042,7 @@ export class CockroachQueryRunner
 
             if (sequences.length > 0) {
                 await this.query(
-                    `DROP SEQUENCE ${sequences.map(({ name }) => name).join(", ")}`,
+                    `DROP SEQUENCE IF EXISTS ${sequences.map(({ name }) => name).join(", ")}`,
                 )
             }
 
@@ -4005,7 +4005,7 @@ export class CockroachQueryRunner
      */
     protected async dropEnumTypes(schemaNames: string): Promise<void> {
         const enums: ObjectLiteral[] = await this.query(
-            `SELECT '"' || n.nspname || '"."' || t.typname || '"' as "name" FROM "pg_type" "t" ` +
+            `SELECT quote_ident(n.nspname) || '.' || quote_ident(t.typname) as "name" FROM "pg_type" "t" ` +
                 `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
                 `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
                 `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`,
