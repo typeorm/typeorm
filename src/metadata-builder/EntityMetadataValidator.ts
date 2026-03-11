@@ -117,16 +117,6 @@ export class EntityMetadataValidator {
                 )
         }
 
-        entityMetadata.relationCounts.forEach((relationCount) => {
-            if (
-                relationCount.relation.isManyToOne ||
-                relationCount.relation.isOneToOne
-            )
-                throw new TypeORMError(
-                    `Relation count can not be implemented on ManyToOne or OneToOne relations.`,
-                )
-        })
-
         if (!(driver.options.type === "mongodb")) {
             entityMetadata.columns
                 .filter((column) => !column.isVirtualProperty)

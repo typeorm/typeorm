@@ -9,7 +9,6 @@ import { ObjectUtils } from "../../util/ObjectUtils"
 import { OrmUtils } from "../../util/OrmUtils"
 import type { Alias } from "../Alias"
 import type { QueryExpressionMap } from "../QueryExpressionMap"
-import type { RelationCountLoadResult } from "../relation-count/RelationCountLoadResult"
 import type { RelationIdLoadResult } from "../relation-id/RelationIdLoadResult"
 
 /**
@@ -39,7 +38,6 @@ export class RawSqlResultsToEntityTransformer {
         protected expressionMap: QueryExpressionMap,
         protected driver: Driver,
         protected rawRelationIdResults: RelationIdLoadResult[],
-        protected rawRelationCountResults: RelationCountLoadResult[],
         protected queryRunner?: QueryRunner,
     ) {
         this.pojo = this.expressionMap.options.includes("create-pojo")
@@ -221,12 +219,6 @@ export class RawSqlResultsToEntityTransformer {
             entity,
             metadata,
         )
-        const hasRelationCounts = this.transformRelationCounts(
-            rawResults,
-            alias,
-            entity,
-        )
-
         // if we have at least one selected column then return this entity
         // since entity must have at least primary columns to be really selected and transformed into entity
         if (hasColumns) return entity
@@ -237,10 +229,7 @@ export class RawSqlResultsToEntityTransformer {
         const hasOnlyVirtualPrimaryColumns = metadata.primaryColumns.every(
             (column) => column.isVirtual === true,
         ) // todo: create metadata.hasOnlyVirtualPrimaryColumns
-        if (
-            hasOnlyVirtualPrimaryColumns &&
-            (hasRelations || hasRelationIds || hasRelationCounts)
-        )
+        if (hasOnlyVirtualPrimaryColumns && (hasRelations || hasRelationIds))
             return entity
 
         return undefined
@@ -412,57 +401,6 @@ export class RawSqlResultsToEntityTransformer {
             } else {
                 mapToProperty(properties, entity, idMaps)
                 hasData = hasData || idMaps.length > 0
-            }
-        }
-
-        return hasData
-    }
-
-    protected transformRelationCounts(
-        rawSqlResults: any[],
-        alias: Alias,
-        entity: ObjectLiteral,
-    ): boolean {
-        let hasData = false
-        for (const rawRelationCountResult of this.rawRelationCountResults) {
-            if (
-                rawRelationCountResult.relationCountAttribute.parentAlias !==
-                alias.name
-            )
-                continue
-            const relation =
-                rawRelationCountResult.relationCountAttribute.relation
-            let referenceColumnName: string
-
-            if (relation.isOneToMany) {
-                referenceColumnName =
-                    relation.inverseRelation!.joinColumns[0].referencedColumn!
-                        .databaseName // todo: fix joinColumns[0]
-            } else {
-                referenceColumnName = relation.isOwning
-                    ? relation.joinColumns[0].referencedColumn!.databaseName
-                    : relation.inverseRelation!.joinColumns[0].referencedColumn!
-                          .databaseName
-            }
-
-            const referenceColumnValue =
-                rawSqlResults[0][
-                    this.buildAlias(alias.name, referenceColumnName)
-                ] // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
-            if (
-                referenceColumnValue !== undefined &&
-                referenceColumnValue !== null
-            ) {
-                entity[
-                    rawRelationCountResult.relationCountAttribute.mapToPropertyPropertyName
-                ] = 0
-                for (const result of rawRelationCountResult.results) {
-                    if (result["parentId"] !== referenceColumnValue) continue
-                    entity[
-                        rawRelationCountResult.relationCountAttribute.mapToPropertyPropertyName
-                    ] = parseInt(result["cnt"])
-                    hasData = true
-                }
             }
         }
 
