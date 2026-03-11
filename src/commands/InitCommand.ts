@@ -601,10 +601,8 @@ AppDataSource.initialize().then(async () => {
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
 `
             case "mariadb":
@@ -615,10 +613,8 @@ AppDataSource.initialize().then(async () => {
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
 `
             case "postgres":
@@ -629,9 +625,9 @@ AppDataSource.initialize().then(async () => {
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "root"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "typeorm"
 
 `
             case "cockroachdb":
