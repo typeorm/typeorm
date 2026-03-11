@@ -68,6 +68,24 @@ const config: Config = {
                     editUrl:
                         "https://github.com/typeorm/typeorm/tree/master/docs/",
                 },
+                blog: {
+                    showReadingTime: true,
+                    blogTitle: "TypeORM Blog",
+                    blogDescription:
+                        "News, release updates, and insights from the TypeORM team.",
+                    blogSidebarTitle: "Recent Posts",
+                    blogSidebarCount: 10,
+                    postsPerPage: 10,
+                    feedOptions: {
+                        type: ["rss", "atom"],
+                        title: "TypeORM Blog",
+                        description:
+                            "News, release updates, and insights from the TypeORM team.",
+                        copyright: `Copyright © ${new Date().getFullYear()} TypeORM`,
+                    },
+                    editUrl:
+                        "https://github.com/typeorm/typeorm/tree/master/docs/",
+                },
                 sitemap: {
                     lastmod: "datetime",
                     changefreq: null,
@@ -105,6 +123,11 @@ const config: Config = {
                 {
                     to: "/maintainers",
                     label: "Maintainers",
+                    position: "left",
+                },
+                {
+                    to: "/blog",
+                    label: "Blog",
                     position: "left",
                 },
                 {
@@ -161,6 +184,10 @@ const config: Config = {
                 {
                     title: "More",
                     items: [
+                        {
+                            label: "Blog",
+                            to: "/blog",
+                        },
                         {
                             label: "GitHub",
                             href: "https://github.com/typeorm/typeorm",

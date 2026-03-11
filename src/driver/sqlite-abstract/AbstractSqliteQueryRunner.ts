@@ -257,11 +257,11 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Creates a new database.
      * @param database
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createDatabase(
         database: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         return Promise.resolve()
     }
@@ -269,20 +269,20 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Drops database.
      * @param database
-     * @param ifExist
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Creates a new table schema.
      * @param schemaPath
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         return Promise.resolve()
     }
@@ -290,29 +290,29 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Drops table schema.
      * @param schemaPath
-     * @param ifExist
+     * @param ifExists
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    async dropSchema(schemaPath: string, ifExists?: boolean): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Creates a new table.
      * @param table
-     * @param ifNotExist
+     * @param ifNotExists
      * @param createForeignKeys
      * @param createIndices
      */
     async createTable(
         table: Table,
-        ifNotExist: boolean = false,
+        ifNotExists: boolean = false,
         createForeignKeys: boolean = true,
         createIndices: boolean = true,
     ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
-        if (ifNotExist) {
+        if (ifNotExists) {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
@@ -363,17 +363,17 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Drops the table.
      * @param tableOrName
-     * @param ifExist
+     * @param ifExists
      * @param dropForeignKeys
      * @param dropIndices
      */
     async dropTable(
         tableOrName: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys: boolean = true,
         dropIndices: boolean = true,
     ): Promise<void> {
-        if (ifExist) {
+        if (ifExists) {
             const isTableExist = await this.hasTable(tableOrName)
             if (!isTableExist) return Promise.resolve()
         }
@@ -393,7 +393,7 @@ export abstract class AbstractSqliteQueryRunner
             })
         }
 
-        upQueries.push(this.dropTableSql(table, ifExist))
+        upQueries.push(this.dropTableSql(table, ifExists))
         downQueries.push(this.createTableSql(table, createForeignKeys))
 
         // if table had columns with generated type, we must remove the expression from the metadata table
@@ -444,18 +444,19 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Drops the view.
      * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
         const view = await this.getCachedView(viewName)
 
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        upQueries.push(this.deleteViewDefinitionSql(view))
-        upQueries.push(this.dropViewSql(view))
-        downQueries.push(this.insertViewDefinitionSql(view))
-        downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeQueries(
+            [
+                this.deleteViewDefinitionSql(view),
+                this.dropViewSql(view, ifExists),
+            ],
+            [this.insertViewDefinitionSql(view), this.createViewSql(view)],
+        )
     }
 
     /**
@@ -764,10 +765,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops column in the table.
      * @param tableOrName
      * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -775,10 +778,12 @@ export abstract class AbstractSqliteQueryRunner
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         await this.dropColumns(table, [column])
     }
@@ -787,10 +792,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops the columns in the table.
      * @param tableOrName
      * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -802,10 +809,12 @@ export abstract class AbstractSqliteQueryRunner
             const columnInstance = InstanceChecker.isTableColumn(column)
                 ? column
                 : table.findColumnByName(column)
-            if (!columnInstance)
+            if (!columnInstance) {
+                if (ifExists) return
                 throw new Error(
                     `Column "${column}" was not found in table "${table.name}"`,
                 )
+            }
 
             changedTable.removeColumn(columnInstance)
             changedTable
@@ -866,11 +875,20 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Drops a primary key.
      * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
+
+        if (ifExists && table.primaryColumns.length === 0) return
+
         // clone original table and mark primary columns as non-primary
         const changedTable = table.clone()
         changedTable.primaryColumns.forEach((column) => {
@@ -921,10 +939,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops a unique constraint.
      * @param tableOrName
      * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -932,22 +952,26 @@ export abstract class AbstractSqliteQueryRunner
         const uniqueConstraint = InstanceChecker.isTableUnique(uniqueOrName)
             ? uniqueOrName
             : table.uniques.find((u) => u.name === uniqueOrName)
-        if (!uniqueConstraint)
+        if (!uniqueConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        }
 
         await this.dropUniqueConstraints(table, [uniqueConstraint])
     }
 
     /**
-     * Creates a unique constraints.
+     * Drops unique constraints.
      * @param tableOrName
      * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -999,10 +1023,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops check constraint.
      * @param tableOrName
      * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1010,10 +1036,12 @@ export abstract class AbstractSqliteQueryRunner
         const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName
             : table.checks.find((c) => c.name === checkOrName)
-        if (!checkConstraint)
+        if (!checkConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied check constraint was not found in table ${table.name}`,
             )
+        }
 
         await this.dropCheckConstraints(table, [checkConstraint])
     }
@@ -1022,10 +1050,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops check constraints.
      * @param tableOrName
      * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1068,10 +1098,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops exclusion constraint.
      * @param tableOrName
      * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`Sqlite does not support exclusion constraints.`)
     }
@@ -1080,10 +1112,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops exclusion constraints.
      * @param tableOrName
      * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`Sqlite does not support exclusion constraints.`)
     }
@@ -1125,10 +1159,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops a foreign key from the table.
      * @param tableOrName
      * @param foreignKeyOrName
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1136,10 +1172,12 @@ export abstract class AbstractSqliteQueryRunner
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
 
         await this.dropForeignKeys(tableOrName, [foreignKey])
     }
@@ -1148,10 +1186,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops a foreign keys from the table.
      * @param tableOrName
      * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1207,10 +1247,12 @@ export abstract class AbstractSqliteQueryRunner
      * Drops an index from the table.
      * @param tableOrName
      * @param indexOrName
+     * @param ifExists
      */
     async dropIndex(
         tableOrName: Table | string,
         indexOrName: TableIndex | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1218,15 +1260,17 @@ export abstract class AbstractSqliteQueryRunner
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
 
         // old index may be passed without name. In this case we generate index name manually.
         if (!index.name) index.name = this.generateIndexName(table, index)
 
-        const up = this.dropIndexSql(index)
+        const up = this.dropIndexSql(index, ifExists)
         const down = this.createIndexSql(table, index)
         await this.executeQueries(up, down)
         table.removeIndex(index)
@@ -1236,13 +1280,15 @@ export abstract class AbstractSqliteQueryRunner
      * Drops an indices from the table.
      * @param tableOrName
      * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = indices.map((index) =>
-            this.dropIndex(tableOrName, index),
+            this.dropIndex(tableOrName, index, ifExists),
         )
         await Promise.all(promises)
     }
@@ -1960,16 +2006,16 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Builds drop table sql.
      * @param tableOrName
-     * @param ifExist
+     * @param ifExists
      */
     protected dropTableSql(
         tableOrName: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
     ): Query {
         const tableName = InstanceChecker.isTable(tableOrName)
             ? tableOrName.name
             : tableOrName
-        const query = ifExist
+        const query = ifExists
             ? `DROP TABLE IF EXISTS ${this.escapePath(tableName)}`
             : `DROP TABLE ${this.escapePath(tableName)}`
         return new Query(query)
@@ -2002,12 +2048,19 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Builds drop view sql.
      * @param viewOrPath
+     * @param ifExists
      */
-    protected dropViewSql(viewOrPath: View | string): Query {
+    protected dropViewSql(
+        viewOrPath: View | string,
+        ifExists?: boolean,
+    ): Query {
         const viewName = InstanceChecker.isView(viewOrPath)
             ? viewOrPath.name
             : viewOrPath
-        return new Query(`DROP VIEW "${viewName}"`)
+        const query = ifExists
+            ? `DROP VIEW IF EXISTS "${viewName}"`
+            : `DROP VIEW "${viewName}"`
+        return new Query(query)
     }
 
     /**
@@ -2046,12 +2099,23 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Builds drop index sql.
      * @param indexOrName
+     * @param ifExists
      */
-    protected dropIndexSql(indexOrName: TableIndex | string): Query {
+    protected dropIndexSql(
+        indexOrName: TableIndex | string,
+        ifExists?: boolean,
+    ): Query {
         const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
-        return new Query(`DROP INDEX ${this.escapePath(indexName!)}`)
+        if (!indexName)
+            throw new TypeORMError(
+                `Index name is not set. Unable to drop index.`,
+            )
+        const query = ifExists
+            ? `DROP INDEX IF EXISTS ${this.escapePath(indexName)}`
+            : `DROP INDEX ${this.escapePath(indexName)}`
+        return new Query(query)
     }
 
     /**

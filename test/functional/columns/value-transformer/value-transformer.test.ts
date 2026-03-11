@@ -69,7 +69,7 @@ describe("columns > value-transformer functionality", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const userRepository = dataSource.getRepository(User)
-                const email = `${dataSource.name}@JOHN.doe`
+                const email = `${dataSource.options.type}@JOHN.doe`
                 const user = new User()
                 user.email = email
 
@@ -84,7 +84,7 @@ describe("columns > value-transformer functionality", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const categoryRepository = dataSource.getRepository(Category)
-                const description = `  ${dataSource.name}-DESCRIPTION   `
+                const description = `  ${dataSource.options.type}-DESCRIPTION   `
                 const category = new Category()
                 category.description = description
 
@@ -103,7 +103,7 @@ describe("columns > value-transformer functionality", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const viewRepository = dataSource.getRepository(View)
-                const title = `${dataSource.name}`
+                const title = `${dataSource.options.type}`
                 const view = new View()
                 view.title = title
 

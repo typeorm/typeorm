@@ -185,7 +185,6 @@ export class MongoEntityManager extends EntityManager {
      * @param entityClassOrName
      * @param ids
      * @param optionsOrConditions
-     * @deprecated use `findBy` method instead.
      */
     async findByIds<Entity>(
         entityClassOrName: EntityTarget<Entity>,
@@ -197,21 +196,21 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             ) || {}
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
         query["_id"] = {
             $in: ids.map((id) => {
                 if (typeof id === "string") {
-                    return new objectIdInstance(id)
+                    return new objectIdClass(id)
                 }
 
                 if (typeof id === "object") {
-                    if (id instanceof objectIdInstance) {
+                    if (id instanceof objectIdClass) {
                         return id
                     }
 
                     const propertyName = metadata.objectIdColumn!.propertyName
 
-                    if (id[propertyName] instanceof objectIdInstance) {
+                    if (id[propertyName] instanceof objectIdClass) {
                         return id[propertyName]
                     }
                 }
@@ -1212,9 +1211,9 @@ export class MongoEntityManager extends EntityManager {
         optionsOrConditions?: any,
         maybeOptions?: MongoFindOneOptions<Entity>,
     ): Promise<Entity | null> {
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
         const id =
-            optionsOrConditions instanceof objectIdInstance ||
+            optionsOrConditions instanceof objectIdClass ||
             typeof optionsOrConditions === "string"
                 ? optionsOrConditions
                 : undefined
@@ -1227,7 +1226,7 @@ export class MongoEntityManager extends EntityManager {
             ) || {}
         if (id) {
             query["_id"] =
-                id instanceof objectIdInstance ? id : new objectIdInstance(id)
+                id instanceof objectIdClass ? id : new objectIdClass(id)
         }
         const cursor = this.createEntityCursor<Entity>(entityClassOrName, query)
         const deleteDateColumn =

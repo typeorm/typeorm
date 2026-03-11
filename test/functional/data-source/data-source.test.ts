@@ -34,7 +34,6 @@ describe("DataSource", () => {
         let dataSource: DataSource
         before(() => {
             const options = setupSingleTestingConnection("mysql", {
-                name: "default",
                 entities: [],
             })
             if (!options) return
@@ -300,14 +299,12 @@ describe("DataSource", () => {
         let dataSources: DataSource[]
         beforeEach(async () => {
             const dataSources1 = await createTestingConnections({
-                name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "test-schema",
                 dropSchema: true,
             })
             const dataSources2 = await createTestingConnections({
-                name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "another-schema",
@@ -321,7 +318,6 @@ describe("DataSource", () => {
             await Promise.all(dataSources.map((c) => c.synchronize()))
             await closeTestingConnections(dataSources)
             const dataSources1 = await createTestingConnections({
-                name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
                 schema: "test-schema",
@@ -329,7 +325,6 @@ describe("DataSource", () => {
                 schemaCreate: true,
             })
             const dataSources2 = await createTestingConnections({
-                name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
                 schema: "another-schema",
@@ -344,14 +339,12 @@ describe("DataSource", () => {
         let dataSources: DataSource[]
         beforeEach(async () => {
             const dataSources1 = await createTestingConnections({
-                name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "test-schema",
                 dropSchema: true,
             })
             const dataSources2 = await createTestingConnections({
-                name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "another-schema",
