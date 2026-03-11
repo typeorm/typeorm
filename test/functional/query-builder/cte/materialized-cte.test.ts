@@ -7,20 +7,19 @@ import {
 } from "../../../utils/test-utils"
 import { Foo } from "./entity/foo"
 import { filterByCteCapabilities } from "./helpers"
-import { QueryBuilderCteOptions } from "../../../../src/query-builder/QueryBuilderCte"
-import { DataSource } from "../../../../src"
+import type { QueryBuilderCteOptions } from "../../../../src/query-builder/QueryBuilderCte"
+import type { DataSource } from "../../../../src"
 
 describe("query builder > cte > materialized", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                // enabledDrivers: [']
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            // enabledDrivers: [']
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

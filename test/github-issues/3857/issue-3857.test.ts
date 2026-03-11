@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,15 +12,14 @@ import { Women } from "./entity/Women"
 
 describe("github issues > #3857 Schema inheritance when STI pattern is used", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schema: "custom",
-                schemaCreate: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schema: "custom",
+            schemaCreate: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

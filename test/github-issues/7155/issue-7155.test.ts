@@ -1,5 +1,5 @@
 import { assert } from "chai"
-import { DataSource, ObjectLiteral, TreeRepository } from "../../../src"
+import type { DataSource, ObjectLiteral, TreeRepository } from "../../../src"
 import { NestedSetMultipleRootError } from "../../../src/error/NestedSetMultipleRootError"
 import {
     closeTestingConnections,
@@ -30,7 +30,9 @@ import {
 
 describe("github issues > #7155", () => {
     let dataSources: DataSource[]
-    before(async () => (dataSources = await generateConnections()))
+    before(async () => {
+        dataSources = await generateConnections()
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -2036,13 +2038,12 @@ describe("github issues > #7155", () => {
 
 describe("github issues > #7155 > tree relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/RelationEntities{.js,.ts}"],
-                enabledDrivers: ["mysql", "postgres", "mssql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/RelationEntities{.js,.ts}"],
+            enabledDrivers: ["mysql", "postgres", "mssql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

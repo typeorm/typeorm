@@ -4,28 +4,27 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
 describe("github issues > #3158 Cannot run sync a second time", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: [
-                    "mysql",
-                    "mariadb",
-                    "oracle",
-                    "mssql",
-                    "sqljs",
-                    "better-sqlite3",
-                ],
-                // todo(AlexMesser): check why tests are failing under postgres driver
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: [
+                "mysql",
+                "mariadb",
+                "oracle",
+                "mssql",
+                "sqljs",
+                "better-sqlite3",
+            ],
+            // todo(AlexMesser): check why tests are failing under postgres driver
+        })
+    })
     beforeEach(async () => await reloadTestingDatabases(dataSources))
     after(async () => await closeTestingConnections(dataSources))
 

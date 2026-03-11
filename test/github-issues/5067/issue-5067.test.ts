@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,12 +8,11 @@ import {
 
 describe("github issues > #5067 ORA-00972: identifier is too long", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["oracle"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["oracle"],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("generated parameter name is within the size constraints", () => {

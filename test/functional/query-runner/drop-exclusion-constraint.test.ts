@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -21,8 +21,8 @@ describe("query runner > drop exclusion constraint", () => {
 
     it("should correctly drop exclusion constraint and revert drop", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 table!.exclusions.length.should.be.equal(1)
@@ -40,6 +40,19 @@ describe("query runner > drop exclusion constraint", () => {
                 table = await queryRunner.getTable("post")
                 table!.exclusions.length.should.be.equal(1)
 
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should not throw when dropping non-existent exclusion constraint with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropExclusionConstraint(
+                    "post",
+                    "non_existent_exclusion",
+                    true,
+                )
                 await queryRunner.release()
             }),
         ))

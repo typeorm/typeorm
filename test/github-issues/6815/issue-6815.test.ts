@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
 import {
     createTestingConnections,
@@ -12,21 +12,20 @@ import { ParentEntity } from "./entity/ParentEntity"
 describe("github issues > #6815 RelationId() on nullable relation returns 'null' string", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: [
-                    "cockroachdb",
-                    "mariadb",
-                    "mssql",
-                    "mysql",
-                    "postgres",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: [
+                "cockroachdb",
+                "mariadb",
+                "mssql",
+                "mysql",
+                "postgres",
+            ],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

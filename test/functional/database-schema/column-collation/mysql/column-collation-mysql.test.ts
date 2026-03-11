@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -21,9 +21,9 @@ describe("database schema > column collation > mysql", () => {
 
     it("should correctly create column with collation option", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -40,9 +40,9 @@ describe("database schema > column collation > mysql", () => {
                 })
 
                 if (
-                    connection.driver.options.type === "mysql" &&
+                    dataSource.driver.options.type === "mysql" &&
                     DriverUtils.isReleaseVersionOrGreater(
-                        connection.driver,
+                        dataSource.driver,
                         "8.0",
                     )
                 ) {

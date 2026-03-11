@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import { Record } from "./entity/Record"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -23,8 +23,8 @@ describe("uuid-cockroach", () => {
 
     it("should make correct schema with CockroachDB uuid type", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("record")
                 await queryRunner.release()
                 expect(table).not.to.be.undefined
@@ -41,8 +41,8 @@ describe("uuid-cockroach", () => {
 
     it("should persist uuid correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const recordRepo = connection.getRepository(Record)
+            dataSources.map(async (dataSource) => {
+                const recordRepo = dataSource.getRepository(Record)
                 const record = new Record()
                 record.id = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 const persistedRecord = await recordRepo.save(record)
@@ -60,10 +60,10 @@ describe("uuid-cockroach", () => {
 
     it("should persist uuid correctly when it is generated non primary column", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const questionRepository = connection.getRepository(Question)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const questionRepository = dataSource.getRepository(Question)
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 const questionTable = await queryRunner.getTable("question")
                 await queryRunner.release()

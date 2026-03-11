@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -24,8 +24,8 @@ describe("schema builder > change exclusion constraint", () => {
 
     it("should correctly add new exclusion constraint", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const teacherMetadata = connection.getMetadata(Teacher)
+            dataSources.map(async (dataSource) => {
+                const teacherMetadata = dataSource.getMetadata(Teacher)
                 const exclusionMetadata = new ExclusionMetadata({
                     entityMetadata: teacherMetadata,
                     args: {
@@ -33,12 +33,12 @@ describe("schema builder > change exclusion constraint", () => {
                         expression: `USING gist ("name" WITH =)`,
                     },
                 })
-                exclusionMetadata.build(connection.namingStrategy)
+                exclusionMetadata.build(dataSource.namingStrategy)
                 teacherMetadata.exclusions.push(exclusionMetadata)
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("teacher")
                 await queryRunner.release()
 
@@ -48,14 +48,14 @@ describe("schema builder > change exclusion constraint", () => {
 
     it("should correctly change exclusion", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const postMetadata = dataSource.getMetadata(Post)
                 postMetadata.exclusions[0].expression = `USING gist ("tag" WITH =)`
-                postMetadata.exclusions[0].build(connection.namingStrategy)
+                postMetadata.exclusions[0].build(dataSource.namingStrategy)
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -67,13 +67,13 @@ describe("schema builder > change exclusion constraint", () => {
 
     it("should correctly drop removed exclusion", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const postMetadata = dataSource.getMetadata(Post)
                 postMetadata.exclusions = []
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 

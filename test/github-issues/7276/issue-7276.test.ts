@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,15 +10,14 @@ import { ClusterCluster as ClusterClusterMssql } from "./entity/TestMssql"
 describe("github issues > #7276 Schema sync not able to find diff correctly and executes same queries on every run", () => {
     describe("postgres", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["postgres"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [ClusterClusterPg],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["postgres"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [ClusterClusterPg],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
@@ -47,15 +46,14 @@ describe("github issues > #7276 Schema sync not able to find diff correctly and 
 
     describe("mssql", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["mssql"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [ClusterClusterMssql],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["mssql"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [ClusterClusterMssql],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>

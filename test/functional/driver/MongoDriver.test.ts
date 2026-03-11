@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import sinon from "sinon"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { MongoDriver } from "../../../src/driver/mongodb/MongoDriver"
 

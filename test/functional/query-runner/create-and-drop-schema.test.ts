@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -20,8 +20,8 @@ describe("query runner > create and drop schema", () => {
 
     it("should correctly create and drop schema and revert it", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 await queryRunner.createSchema("myTestSchema", true)
                 let hasSchema = await queryRunner.hasSchema("myTestSchema")
@@ -36,6 +36,15 @@ describe("query runner > create and drop schema", () => {
                 hasSchema = await queryRunner.hasSchema("myTestSchema")
                 hasSchema.should.be.false
 
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should not throw when dropping non-existent schema with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropSchema("non_existent_schema", true)
                 await queryRunner.release()
             }),
         ))

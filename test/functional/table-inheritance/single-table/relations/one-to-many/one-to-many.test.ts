@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
-import { DataSource } from "../../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Student } from "./entity/Student"
 import { Teacher } from "./entity/Teacher"
 import { Accountant } from "./entity/Accountant"
@@ -16,44 +16,43 @@ import { Department } from "./entity/Department"
 
 describe("table-inheritance > single-table > relations > one-to-many", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should work correctly with OneToMany relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // -------------------------------------------------------------------------
                 // Create
                 // -------------------------------------------------------------------------
 
                 const faculty1 = new Faculty()
                 faculty1.name = "Economics"
-                await connection.getRepository(Faculty).save(faculty1)
+                await dataSource.getRepository(Faculty).save(faculty1)
 
                 const faculty2 = new Faculty()
                 faculty2.name = "Programming"
-                await connection.getRepository(Faculty).save(faculty2)
+                await dataSource.getRepository(Faculty).save(faculty2)
 
                 const student = new Student()
                 student.name = "Alice"
                 student.faculties = [faculty1, faculty2]
-                await connection.getRepository(Student).save(student)
+                await dataSource.getRepository(Student).save(student)
 
                 const specialization1 = new Specialization()
                 specialization1.name = "Geography"
-                await connection
+                await dataSource
                     .getRepository(Specialization)
                     .save(specialization1)
 
                 const specialization2 = new Specialization()
                 specialization2.name = "Economist"
-                await connection
+                await dataSource
                     .getRepository(Specialization)
                     .save(specialization2)
 
@@ -61,27 +60,27 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                 teacher.name = "Mr. Garrison"
                 teacher.specializations = [specialization1, specialization2]
                 teacher.salary = 2000
-                await connection.getRepository(Teacher).save(teacher)
+                await dataSource.getRepository(Teacher).save(teacher)
 
                 const department1 = new Department()
                 department1.name = "Bookkeeping"
-                await connection.getRepository(Department).save(department1)
+                await dataSource.getRepository(Department).save(department1)
 
                 const department2 = new Department()
                 department2.name = "HR"
-                await connection.getRepository(Department).save(department2)
+                await dataSource.getRepository(Department).save(department2)
 
                 const accountant = new Accountant()
                 accountant.name = "Mr. Burns"
                 accountant.departments = [department1, department2]
                 accountant.salary = 3000
-                await connection.getRepository(Accountant).save(accountant)
+                await dataSource.getRepository(Accountant).save(accountant)
 
                 // -------------------------------------------------------------------------
                 // Select
                 // -------------------------------------------------------------------------
 
-                const loadedStudent = await connection.manager
+                const loadedStudent = await dataSource.manager
                     .createQueryBuilder(Student, "student")
                     .leftJoinAndSelect("student.faculties", "faculty")
                     .where("student.name = :name", { name: "Alice" })
@@ -95,7 +94,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                 loadedStudent!.faculties[0].name.should.be.equal("Economics")
                 loadedStudent!.faculties[1].name.should.be.equal("Programming")
 
-                const loadedTeacher = await connection.manager
+                const loadedTeacher = await dataSource.manager
                     .createQueryBuilder(Teacher, "teacher")
                     .leftJoinAndSelect(
                         "teacher.specializations",
@@ -122,7 +121,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                 )
                 loadedTeacher!.salary.should.equal(2000)
 
-                const loadedAccountant = await connection.manager
+                const loadedAccountant = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountant")
                     .leftJoinAndSelect("accountant.departments", "department")
                     .where("accountant.name = :name", { name: "Mr. Burns" })
@@ -144,7 +143,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                 loadedAccountant!.departments[1].name.should.be.equal("HR")
                 loadedAccountant!.salary.should.equal(3000)
 
-                const loadedEmployees = await connection.manager
+                const loadedEmployees = await dataSource.manager
                     .createQueryBuilder(Employee, "employee")
                     .leftJoinAndSelect(
                         "employee.specializations",
@@ -193,7 +192,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                 ).departments[1].name.should.be.equal("HR")
                 loadedEmployees[1].salary.should.equal(3000)
 
-                const loadedPersons = await connection.manager
+                const loadedPersons = await dataSource.manager
                     .createQueryBuilder(Person, "person")
                     .leftJoinAndSelect("person.faculties", "faculty")
                     .leftJoinAndSelect(

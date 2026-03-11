@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { Category } from "./entity/Category"
 
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import {
     createTestingConnections,
     reloadTestingDatabases,
@@ -10,21 +10,20 @@ import {
 
 describe("entity-schema > tree tables > nested-set", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Category],
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("attach should work properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = await categoryRepository.save({ name: "a1" })
 

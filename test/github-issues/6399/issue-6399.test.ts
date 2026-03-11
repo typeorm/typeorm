@@ -1,4 +1,4 @@
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -12,12 +12,12 @@ describe("github issues > #6399 Process extraAppendedAndWhereCondition for inher
     let dataSources: DataSource[]
 
     before(async () => {
-        return (dataSources = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post, TargetPost, Comment],
             schemaCreate: true,
             dropSchema: true,
             enabledDrivers: ["mysql"],
-        }))
+        })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

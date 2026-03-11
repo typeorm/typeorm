@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,15 +10,14 @@ import { TestEntity } from "./entity/TestEntity"
 describe("github issues > #8527 cannot clear database inside a transaction.", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [TestEntity],
-                enabledDrivers: ["postgres", "better-sqlite3", "mysql"],
-                dropSchema: true,
-                schemaCreate: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [TestEntity],
+            enabledDrivers: ["postgres", "better-sqlite3", "mysql"],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

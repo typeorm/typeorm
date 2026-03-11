@@ -1,5 +1,5 @@
 import "../../../utils/test-setup"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import {
@@ -14,12 +14,11 @@ describe("persistence > bulk-insert-remove-optimization", function () {
     // -------------------------------------------------------------------------
 
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -29,7 +28,7 @@ describe("persistence > bulk-insert-remove-optimization", function () {
 
     it("should group multiple insert and remove queries", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "cat#1"
@@ -43,9 +42,9 @@ describe("persistence > bulk-insert-remove-optimization", function () {
                 post.title = "about post"
                 post.categories = [category1, category2]
 
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                await connection.manager.remove([post, category2, category1])
+                await dataSource.manager.remove([post, category2, category1])
 
                 // todo: finish test, e.g. check actual queries
             }),

@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Animal } from "./entity/Animal"
 import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest"
 
@@ -13,13 +13,12 @@ describe("github issues > #3847 FEATURE REQUEST - Naming strategy foreign key ov
     let dataSources: DataSource[]
     const namingStrategy = new NamingStrategyUnderTest()
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                namingStrategy,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            namingStrategy,
+        })
+    })
     beforeEach(() => {
         return reloadTestingDatabases(dataSources)
     })

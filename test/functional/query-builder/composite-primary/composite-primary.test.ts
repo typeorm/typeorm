@@ -4,37 +4,36 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import { Foo } from "./entity/Foo"
 import { Bar } from "./entity/Bar"
 import { expect } from "chai"
 
 describe("query builder > composite primary", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Foo, Bar],
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Foo, Bar],
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should find entity by another entity with a composite key", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const foo = new Foo()
                 foo.id1 = 1
                 foo.id2 = 2
-                await connection.manager.save(foo)
+                await dataSource.manager.save(foo)
 
                 const bar = new Bar()
                 bar.id = 1
                 bar.foo = foo
-                await connection.manager.save(bar)
+                await dataSource.manager.save(bar)
 
-                const loadedBar = await connection.manager
+                const loadedBar = await dataSource.manager
                     .getRepository(Bar)
                     .findOne({
                         where: {

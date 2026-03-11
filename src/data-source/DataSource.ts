@@ -1,10 +1,9 @@
-import { Driver } from "../driver/Driver"
+import type { Driver } from "../driver/Driver"
 import { registerQueryBuilders } from "../query-builder"
-import { Repository } from "../repository/Repository"
-import { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
-import { EntityTarget } from "../common/EntityTarget"
-import { ObjectType } from "../common/ObjectType"
-import { EntityManager } from "../entity-manager/EntityManager"
+import type { Repository } from "../repository/Repository"
+import type { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { EntityManager } from "../entity-manager/EntityManager"
 import { DefaultNamingStrategy } from "../naming-strategy/DefaultNamingStrategy"
 import {
     CannotConnectAlreadyConnectedError,
@@ -13,34 +12,34 @@ import {
     QueryRunnerProviderAlreadyReleasedError,
     TypeORMError,
 } from "../error"
-import { TreeRepository } from "../repository/TreeRepository"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { Logger } from "../logger/Logger"
-import { MigrationInterface } from "../migration/MigrationInterface"
+import type { TreeRepository } from "../repository/TreeRepository"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { Logger } from "../logger/Logger"
+import type { MigrationInterface } from "../migration/MigrationInterface"
 import { MigrationExecutor } from "../migration/MigrationExecutor"
-import { Migration } from "../migration/Migration"
-import { MongoRepository } from "../repository/MongoRepository"
-import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
+import type { Migration } from "../migration/Migration"
+import type { MongoRepository } from "../repository/MongoRepository"
+import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
 import { EntityMetadataValidator } from "../metadata-builder/EntityMetadataValidator"
-import { DataSourceOptions } from "./DataSourceOptions"
+import type { DataSourceOptions } from "./DataSourceOptions"
 import { EntityManagerFactory } from "../entity-manager/EntityManagerFactory"
 import { DriverFactory } from "../driver/DriverFactory"
 import { ConnectionMetadataBuilder } from "../connection/ConnectionMetadataBuilder"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { LoggerFactory } from "../logger/LoggerFactory"
 import { QueryResultCacheFactory } from "../cache/QueryResultCacheFactory"
-import { QueryResultCache } from "../cache/QueryResultCache"
-import { SqljsEntityManager } from "../entity-manager/SqljsEntityManager"
+import type { QueryResultCache } from "../cache/QueryResultCache"
+import type { SqljsEntityManager } from "../entity-manager/SqljsEntityManager"
 import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { IsolationLevel } from "../driver/types/IsolationLevel"
-import { ReplicationMode } from "../driver/types/ReplicationMode"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { ReplicationMode } from "../driver/types/ReplicationMode"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { buildSqlTag } from "../util/SqlTagUtils"
 
 registerQueryBuilders()
@@ -59,12 +58,6 @@ export class DataSource {
     // -------------------------------------------------------------------------
     // Public Readonly Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Connection name.
-     * @deprecated we don't need names anymore since we are going to drop all related methods relying on this property.
-     */
-    readonly name: string
 
     /**
      * Connection options.
@@ -140,7 +133,6 @@ export class DataSource {
 
     constructor(options: DataSourceOptions) {
         registerQueryBuilders()
-        this.name = options.name || "default"
         this.options = options
         this.logger = new LoggerFactory().create(
             this.options.logger,
@@ -240,8 +232,7 @@ export class DataSource {
      * but it also can setup a connection pool with database to use.
      */
     async initialize(): Promise<this> {
-        if (this.isInitialized)
-            throw new CannotConnectAlreadyConnectedError(this.name)
+        if (this.isInitialized) throw new CannotConnectAlreadyConnectedError()
 
         // connect to the database via its driver
         await this.driver.connect()
@@ -284,8 +275,7 @@ export class DataSource {
      * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
      */
     async destroy(): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         await this.driver.disconnect()
 
@@ -301,8 +291,7 @@ export class DataSource {
      * @param dropBeforeSync If set to true then it drops the database with all its tables and data
      */
     async synchronize(dropBeforeSync: boolean = false): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         if (dropBeforeSync) await this.dropDatabase()
 
@@ -363,8 +352,7 @@ export class DataSource {
         transaction?: "all" | "none" | "each"
         fake?: boolean
     }): Promise<Migration[]> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
@@ -389,8 +377,7 @@ export class DataSource {
         transaction?: "all" | "none" | "each"
         fake?: boolean
     }): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
@@ -406,7 +393,7 @@ export class DataSource {
      */
     async showMigrations(): Promise<boolean> {
         if (!this.isInitialized) {
-            throw new CannotExecuteNotConnectedError(this.name)
+            throw new CannotExecuteNotConnectedError()
         }
         const migrationExecutor = new MigrationExecutor(this)
         return await migrationExecutor.showMigrations()
@@ -466,15 +453,6 @@ export class DataSource {
             )
 
         return this.manager.getRepository(target) as any
-    }
-
-    /**
-     * Gets custom entity repository marked with `@EntityRepository` decorator.
-     * @param customRepository
-     * @deprecated use Repository.extend function to create a custom repository
-     */
-    getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        return this.manager.getCustomRepository(customRepository)
     }
 
     /**

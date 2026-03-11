@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { Table } from "../../../src/schema-builder/table/Table"
 import {
@@ -24,23 +24,23 @@ describe("query runner > rename table", () => {
 
     it("should correctly rename table and revert rename", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner does not support renaming constraints and removing PK.
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     return
                 }
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 const sequenceQuery = (name: string) => {
                     return `SELECT COUNT(*) FROM information_schema.sequences WHERE sequence_schema = 'public' and sequence_name = '${name}'`
                 }
 
                 // check if sequence "faculty_id_seq" exist
-                if (connection.driver.options.type === "postgres") {
+                if (dataSource.driver.options.type === "postgres") {
                     const facultySeq = await queryRunner.query(
                         sequenceQuery("faculty_id_seq"),
                     )
@@ -54,7 +54,7 @@ describe("query runner > rename table", () => {
                 expect(table).to.exist
 
                 // check if sequence "faculty_id_seq" was renamed to "question_id_seq"
-                if (connection.driver.options.type === "postgres") {
+                if (dataSource.driver.options.type === "postgres") {
                     const facultySeq = await queryRunner.query(
                         sequenceQuery("faculty_id_seq"),
                     )
@@ -70,7 +70,7 @@ describe("query runner > rename table", () => {
                 expect(table).to.exist
 
                 // check if sequence "question_id_seq" was renamed to "answer_id_seq"
-                if (connection.driver.options.type === "postgres") {
+                if (dataSource.driver.options.type === "postgres") {
                     const questionSeq = await queryRunner.query(
                         sequenceQuery("question_id_seq"),
                     )
@@ -87,7 +87,7 @@ describe("query runner > rename table", () => {
                 expect(table).to.exist
 
                 // check if sequence "answer_id_seq" was renamed to "faculty_id_seq"
-                if (connection.driver.options.type === "postgres") {
+                if (dataSource.driver.options.type === "postgres") {
                     const answerSeq = await queryRunner.query(
                         sequenceQuery("answer_id_seq"),
                     )
@@ -104,16 +104,16 @@ describe("query runner > rename table", () => {
 
     it("should correctly rename table with all constraints depend to that table and revert rename", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner does not support renaming constraints and removing PK.
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     return
                 }
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
 
@@ -126,11 +126,11 @@ describe("query runner > rename table", () => {
 
                 // MySql does not support unique constraints
                 if (
-                    !DriverUtils.isMySQLFamily(connection.driver) &&
-                    !(connection.driver.options.type === "sap")
+                    !DriverUtils.isMySQLFamily(dataSource.driver) &&
+                    !(dataSource.driver.options.type === "sap")
                 ) {
                     const newUniqueConstraintName =
-                        connection.namingStrategy.uniqueConstraintName(table!, [
+                        dataSource.namingStrategy.uniqueConstraintName(table!, [
                             "text",
                             "tag",
                         ])
@@ -153,16 +153,16 @@ describe("query runner > rename table", () => {
 
     it("should correctly rename table with custom schema and database and all its dependencies and revert rename", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner does not support renaming constraints and removing PK.
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     return
                 }
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 let table: Table | undefined
 
                 let questionTableName: string = "question"
@@ -171,7 +171,7 @@ describe("query runner > rename table", () => {
                 let renamedCategoryTableName: string = "renamedCategory"
 
                 // create different names to test renaming with custom schema and database.
-                if (connection.driver.options.type === "mssql") {
+                if (dataSource.driver.options.type === "mssql") {
                     questionTableName = "testDB.testSchema.question"
                     renamedQuestionTableName =
                         "testDB.testSchema.renamedQuestion"
@@ -181,15 +181,15 @@ describe("query runner > rename table", () => {
                     await queryRunner.createDatabase("testDB", true)
                     await queryRunner.createSchema("testDB.testSchema", true)
                 } else if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "sap"
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "sap"
                 ) {
                     questionTableName = "testSchema.question"
                     renamedQuestionTableName = "testSchema.renamedQuestion"
                     categoryTableName = "testSchema.category"
                     renamedCategoryTableName = "testSchema.renamedCategory"
                     await queryRunner.createSchema("testSchema", true)
-                } else if (DriverUtils.isMySQLFamily(connection.driver)) {
+                } else if (DriverUtils.isMySQLFamily(dataSource.driver)) {
                     questionTableName = "testDB.question"
                     renamedQuestionTableName = "testDB.renamedQuestion"
                     categoryTableName = "testDB.category"
@@ -204,7 +204,7 @@ describe("query runner > rename table", () => {
                             {
                                 name: "id",
                                 type: DriverUtils.isSQLiteFamily(
-                                    connection.driver,
+                                    dataSource.driver,
                                 )
                                     ? "integer"
                                     : "int",
@@ -229,7 +229,7 @@ describe("query runner > rename table", () => {
                             {
                                 name: "id",
                                 type: DriverUtils.isSQLiteFamily(
-                                    connection.driver,
+                                    dataSource.driver,
                                 )
                                     ? "integer"
                                     : "int",
@@ -262,7 +262,7 @@ describe("query runner > rename table", () => {
                     "renamedQuestion",
                 )
                 table = await queryRunner.getTable(renamedQuestionTableName)
-                const newIndexName = connection.namingStrategy.indexName(
+                const newIndexName = dataSource.namingStrategy.indexName(
                     table!,
                     ["name"],
                 )
@@ -274,7 +274,7 @@ describe("query runner > rename table", () => {
                 )
                 table = await queryRunner.getTable(renamedCategoryTableName)
                 const newForeignKeyName =
-                    connection.namingStrategy.foreignKeyName(
+                    dataSource.namingStrategy.foreignKeyName(
                         table!,
                         ["questionId"],
                         "question",

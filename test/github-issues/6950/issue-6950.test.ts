@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 import {
     createTestingConnections,
@@ -12,14 +12,13 @@ import { Post as Post2 } from "./entity/post_with_null_2.entity"
 describe("github issues > #6950 postgres: Inappropiate migration generated for `default: null`", () => {
     describe("null default", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [Post1],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [Post1],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("can recognize model changes", () =>
@@ -50,14 +49,13 @@ describe("github issues > #6950 postgres: Inappropiate migration generated for `
 
     describe("null default and nullable", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [Post2],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [Post2],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("can recognize model changes", () =>

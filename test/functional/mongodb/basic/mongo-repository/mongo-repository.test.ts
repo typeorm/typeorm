@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,37 +11,36 @@ import { MongoRepository } from "../../../../../src/repository/MongoRepository"
 
 describe("mongodb > MongoRepository", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, PostWithDeleted],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, PostWithDeleted],
+            enabledDrivers: ["mongodb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("connection should return mongo repository when requested", () =>
+    it("dataSource should return mongo repository when requested", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
                 expect(postRepository).to.be.instanceOf(MongoRepository)
             }),
         ))
 
     it("entity manager should return mongo repository when requested", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const postRepository =
-                    connection.manager.getMongoRepository(Post)
+                    dataSource.manager.getMongoRepository(Post)
                 expect(postRepository).to.be.instanceOf(MongoRepository)
             }),
         ))
 
     it("should be able to use entity cursor which will return instances of entity classes", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const firstPost = new Post()
@@ -69,8 +68,8 @@ describe("mongodb > MongoRepository", () => {
 
     it("should be able to use entity cursor which will return instances of entity classes", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const firstPost = new Post()
@@ -106,8 +105,8 @@ describe("mongodb > MongoRepository", () => {
 
     it("should be able to use findByIds with both ObjectId and strings", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const firstPost = new Post()
@@ -140,8 +139,8 @@ describe("mongodb > MongoRepository", () => {
     // todo: cover other methods as well
     it("should be able to save and update mongo entities", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const firstPost = new Post()
@@ -170,9 +169,9 @@ describe("mongodb > MongoRepository", () => {
 
     it("should ignore non-column properties", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Github issue #5321
-                const postRepository = connection.getMongoRepository(Post)
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 await postRepository.save({
                     title: "Hello",
@@ -191,9 +190,9 @@ describe("mongodb > MongoRepository", () => {
     describe("with DeletedDataColumn", () => {
         it("with $or query", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const postRepository =
-                        connection.getMongoRepository(PostWithDeleted)
+                        dataSource.getMongoRepository(PostWithDeleted)
                     await seedPosts(postRepository)
                     const loadedPosts = await postRepository.find({
                         where: {
@@ -206,9 +205,9 @@ describe("mongodb > MongoRepository", () => {
 
         it("filter delete data", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const postRepository =
-                        connection.getMongoRepository(PostWithDeleted)
+                        dataSource.getMongoRepository(PostWithDeleted)
                     await seedPosts(postRepository)
 
                     const loadedPosts = await postRepository.find()
@@ -224,9 +223,9 @@ describe("mongodb > MongoRepository", () => {
         describe("findOne filtered data properly", () => {
             it("findOne()", () =>
                 Promise.all(
-                    dataSources.map(async (connection) => {
+                    dataSources.map(async (dataSource) => {
                         const postRepository =
-                            connection.getMongoRepository(PostWithDeleted)
+                            dataSource.getMongoRepository(PostWithDeleted)
                         await seedPosts(postRepository)
 
                         const loadedPost = await postRepository.findOne({
@@ -245,9 +244,9 @@ describe("mongodb > MongoRepository", () => {
 
             it("findOneBy()", () =>
                 Promise.all(
-                    dataSources.map(async (connection) => {
+                    dataSources.map(async (dataSource) => {
                         const postRepository =
-                            connection.getMongoRepository(PostWithDeleted)
+                            dataSource.getMongoRepository(PostWithDeleted)
                         await seedPosts(postRepository)
 
                         const loadedPost = await postRepository.findOneBy({
@@ -268,8 +267,8 @@ describe("mongodb > MongoRepository", () => {
 
     it("should be able to use findBy method", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const firstPost = new Post()

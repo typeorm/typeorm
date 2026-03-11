@@ -1,12 +1,12 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Table } from "../../../src/schema-builder/table/Table"
-import { TableOptions } from "../../../src/schema-builder/options/TableOptions"
+import type { TableOptions } from "../../../src/schema-builder/options/TableOptions"
 import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
 import { Book2, Book } from "./entity/Book"
@@ -24,13 +24,13 @@ describe("query runner > create table", () => {
 
     it("should correctly create table from simple object and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let numericType = "int"
-                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) {
                     numericType = "integer"
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     numericType = "int64"
                 }
 
@@ -42,18 +42,18 @@ describe("query runner > create table", () => {
                             type: numericType,
                             isPrimary: true,
                             isGenerated:
-                                connection.driver.options.type === "spanner"
+                                dataSource.driver.options.type === "spanner"
                                     ? false
                                     : true,
                             generationStrategy:
-                                connection.driver.options.type === "spanner"
+                                dataSource.driver.options.type === "spanner"
                                     ? undefined
                                     : "increment",
                         },
                         {
                             name: "name",
                             type:
-                                connection.driver.options.type === "spanner"
+                                dataSource.driver.options.type === "spanner"
                                     ? "string"
                                     : "varchar",
                             isUnique: true,
@@ -69,7 +69,7 @@ describe("query runner > create table", () => {
                 const nameColumn = table!.findColumnByName("name")
                 idColumn!.should.be.exist
                 idColumn!.isPrimary.should.be.true
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     idColumn!.isGenerated.should.be.false
                     expect(idColumn!.generationStrategy).to.be.undefined
                 } else {
@@ -82,10 +82,10 @@ describe("query runner > create table", () => {
 
                 if (
                     !(
-                        DriverUtils.isMySQLFamily(connection.driver) ||
-                        connection.driver.options.type === "aurora-mysql" ||
-                        connection.driver.options.type === "sap" ||
-                        connection.driver.options.type === "spanner"
+                        DriverUtils.isMySQLFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "aurora-mysql" ||
+                        dataSource.driver.options.type === "sap" ||
+                        dataSource.driver.options.type === "spanner"
                     )
                 ) {
                     table!.uniques.length.should.be.equal(1)
@@ -101,10 +101,10 @@ describe("query runner > create table", () => {
 
     it("should correctly create table from Entity", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
-                const metadata = connection.getMetadata(Post)
-                const newTable = Table.create(metadata, connection.driver)
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const metadata = dataSource.getMetadata(Post)
+                const newTable = Table.create(metadata, dataSource.driver)
                 await queryRunner.createTable(newTable)
 
                 const table = await queryRunner.getTable("post")
@@ -115,10 +115,10 @@ describe("query runner > create table", () => {
                 table!.should.exist
                 if (
                     !(
-                        DriverUtils.isMySQLFamily(connection.driver) ||
-                        connection.driver.options.type === "aurora-mysql" ||
-                        connection.driver.options.type === "sap" ||
-                        connection.driver.options.type === "spanner"
+                        DriverUtils.isMySQLFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "aurora-mysql" ||
+                        dataSource.driver.options.type === "sap" ||
+                        dataSource.driver.options.type === "spanner"
                     )
                 ) {
                     table!.uniques.length.should.be.equal(2)
@@ -129,7 +129,7 @@ describe("query runner > create table", () => {
                 versionColumn!.isUnique.should.be.true
 
                 // Spanner does not support DEFAULT values
-                if (!(connection.driver.options.type === "spanner")) {
+                if (!(dataSource.driver.options.type === "spanner")) {
                     nameColumn!.default!.should.be.exist
                 }
 
@@ -139,18 +139,18 @@ describe("query runner > create table", () => {
 
     it("should correctly create table with all dependencies and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let numericType = "int"
-                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) {
                     numericType = "integer"
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     numericType = "int64"
                 }
 
                 let stringType = "varchar"
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     stringType = "string"
                 }
 
@@ -185,11 +185,11 @@ describe("query runner > create table", () => {
                             type: numericType,
                             isPrimary: true,
                             isGenerated:
-                                connection.driver.options.type === "spanner"
+                                dataSource.driver.options.type === "spanner"
                                     ? false
                                     : true,
                             generationStrategy:
-                                connection.driver.options.type === "spanner"
+                                dataSource.driver.options.type === "spanner"
                                     ? undefined
                                     : "increment",
                         },
@@ -227,10 +227,10 @@ describe("query runner > create table", () => {
                 }
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "aurora-mysql" ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "aurora-mysql" ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     questionTableOptions.indices!.push({
                         columnNames: ["name", "text"],
@@ -241,7 +241,7 @@ describe("query runner > create table", () => {
                     ]
                     questionTableOptions.checks = [
                         {
-                            expression: `${connection.driver.escape(
+                            expression: `${dataSource.driver.escape(
                                 "name",
                             )} <> 'ASD'`,
                         },
@@ -261,11 +261,11 @@ describe("query runner > create table", () => {
                             type: numericType,
                             isPrimary: true,
                             isGenerated:
-                                connection.driver.options.type === "spanner"
+                                dataSource.driver.options.type === "spanner"
                                     ? false
                                     : true,
                             generationStrategy:
-                                connection.driver.options.type === "spanner"
+                                dataSource.driver.options.type === "spanner"
                                     ? undefined
                                     : "increment",
                         },
@@ -296,10 +296,10 @@ describe("query runner > create table", () => {
                 }
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "aurora-mysql" ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "aurora-mysql" ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     categoryTableOptions.indices = [
                         { columnNames: ["name", "alternativeName"] },
@@ -313,11 +313,11 @@ describe("query runner > create table", () => {
                 // When we mark column as unique, MySql create index for that column and we don't need to create index separately.
                 if (
                     !(
-                        DriverUtils.isMySQLFamily(connection.driver) ||
-                        connection.driver.options.type === "aurora-mysql" ||
-                        connection.driver.options.type === "oracle" ||
-                        connection.driver.options.type === "sap" ||
-                        connection.driver.options.type === "spanner"
+                        DriverUtils.isMySQLFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "aurora-mysql" ||
+                        dataSource.driver.options.type === "oracle" ||
+                        dataSource.driver.options.type === "sap" ||
+                        dataSource.driver.options.type === "spanner"
                     )
                 )
                     categoryTableOptions.indices = [
@@ -339,7 +339,7 @@ describe("query runner > create table", () => {
                 let questionTable = await queryRunner.getTable("question")
                 const questionIdColumn = questionTable!.findColumnByName("id")
                 questionIdColumn!.isPrimary.should.be.true
-                if (!(connection.driver.options.type === "spanner")) {
+                if (!(dataSource.driver.options.type === "spanner")) {
                     questionIdColumn!.isGenerated.should.be.true
                     questionIdColumn!.generationStrategy!.should.be.equal(
                         "increment",
@@ -348,16 +348,16 @@ describe("query runner > create table", () => {
                 questionTable!.should.exist
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "aurora-mysql" ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "aurora-mysql" ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     // MySql, SAP HANA and Spanner does not have unique constraints.
                     // all unique constraints are unique indexes.
                     questionTable!.uniques.length.should.be.equal(0)
                     questionTable!.indices.length.should.be.equal(2)
-                } else if (connection.driver.options.type === "cockroachdb") {
+                } else if (dataSource.driver.options.type === "cockroachdb") {
                     // CockroachDB stores unique indices as UNIQUE constraints
                     questionTable!.uniques.length.should.be.equal(2)
                     questionTable!.uniques[0].columnNames.length.should.be.equal(
@@ -392,7 +392,7 @@ describe("query runner > create table", () => {
                 const categoryTableIdColumn =
                     categoryTable!.findColumnByName("id")
                 categoryTableIdColumn!.isPrimary.should.be.true
-                if (!(connection.driver.options.type === "spanner")) {
+                if (!(dataSource.driver.options.type === "spanner")) {
                     categoryTableIdColumn!.isGenerated.should.be.true
                     categoryTableIdColumn!.generationStrategy!.should.be.equal(
                         "increment",
@@ -402,14 +402,14 @@ describe("query runner > create table", () => {
                 categoryTable!.foreignKeys.length.should.be.equal(1)
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "aurora-mysql" ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "aurora-mysql" ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     // MySql, SAP HANA and Spanner does not have unique constraints. All unique constraints are unique indexes.
                     categoryTable!.indices.length.should.be.equal(3)
-                } else if (connection.driver.options.type === "oracle") {
+                } else if (dataSource.driver.options.type === "oracle") {
                     // Oracle does not allow to put index on primary or unique columns.
                     categoryTable!.indices.length.should.be.equal(0)
                 } else {
@@ -432,10 +432,10 @@ describe("query runner > create table", () => {
 
     it("should correctly create table with different `Unique` definitions", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
-                const metadata = connection.getMetadata(Photo)
-                const newTable = Table.create(metadata, connection.driver)
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const metadata = dataSource.getMetadata(Photo)
+                const newTable = Table.create(metadata, dataSource.driver)
                 await queryRunner.createTable(newTable)
 
                 let table = await queryRunner.getTable("photo")
@@ -449,16 +449,16 @@ describe("query runner > create table", () => {
                 descriptionColumn!.isUnique.should.be.true
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "aurora-mysql" ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "aurora-mysql" ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     table!.uniques.length.should.be.equal(0)
                     table!.indices.length.should.be.equal(4)
                     tagColumn!.isUnique.should.be.true
                     textColumn!.isUnique.should.be.true
-                } else if (connection.driver.options.type === "cockroachdb") {
+                } else if (dataSource.driver.options.type === "cockroachdb") {
                     // CockroachDB stores unique indices as UNIQUE constraints
                     table!.uniques.length.should.be.equal(4)
                     table!.indices.length.should.be.equal(0)
@@ -482,23 +482,23 @@ describe("query runner > create table", () => {
 
     it("should correctly create table with different `withoutRowid` definitions", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                if (!DriverUtils.isSQLiteFamily(connection.driver)) return
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isSQLiteFamily(dataSource.driver)) return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 // the table 'book' must contain a 'rowid' column
-                const metadataBook = connection.getMetadata(Book)
+                const metadataBook = dataSource.getMetadata(Book)
                 const newTableBook = Table.create(
                     metadataBook,
-                    connection.driver,
+                    dataSource.driver,
                 )
                 await queryRunner.createTable(newTableBook)
                 const aBook = new Book()
                 aBook.ean = "asdf"
-                await connection.manager.save(aBook)
+                await dataSource.manager.save(aBook)
 
-                const desc = await connection.manager.query(
+                const desc = await dataSource.manager.query(
                     "SELECT rowid FROM book WHERE ean = 'asdf'",
                 )
                 expect(desc[0].rowid).equals(1)
@@ -508,15 +508,15 @@ describe("query runner > create table", () => {
                 expect(bookTableIsGone).to.be.undefined
 
                 // the table 'book2' must NOT contain a 'rowid' column
-                const metadataBook2 = connection.getMetadata(Book2)
+                const metadataBook2 = dataSource.getMetadata(Book2)
                 const newTableBook2 = Table.create(
                     metadataBook2,
-                    connection.driver,
+                    dataSource.driver,
                 )
                 await queryRunner.createTable(newTableBook2)
 
                 try {
-                    await connection.manager.query("SELECT rowid FROM book2")
+                    await dataSource.manager.query("SELECT rowid FROM book2")
                 } catch (e) {
                     expect(e.message).contains("no such column: rowid")
                 }

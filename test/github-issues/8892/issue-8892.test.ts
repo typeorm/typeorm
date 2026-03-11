@@ -7,7 +7,7 @@ import { expect } from "chai"
 import { City } from "./entity/city"
 import { Zip } from "./entity/zip"
 import { Country } from "./entity/country"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe('github issues > #8892 ManyToMany relations save throws "Violation of PRIMARY KEY constraint"', () => {
     let dataSources: DataSource[]

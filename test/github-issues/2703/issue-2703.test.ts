@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     createTestingConnections,
     reloadTestingDatabases,
@@ -12,15 +12,14 @@ import { MemoryLogger } from "./memory-logger"
 describe("github issues > #2703 Column with transformer is not normalized for update", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [`${__dirname}/entity/*{.js,.ts}`],
-                schemaCreate: true,
-                dropSchema: true,
-                createLogger: () => new MemoryLogger(false),
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [`${__dirname}/entity/*{.js,.ts}`],
+            schemaCreate: true,
+            dropSchema: true,
+            createLogger: () => new MemoryLogger(false),
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
     afterEach(() =>

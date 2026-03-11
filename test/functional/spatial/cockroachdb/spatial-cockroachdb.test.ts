@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Point } from "../../../../src/index"
+import type { DataSource, Point } from "../../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -35,8 +35,8 @@ describe("spatial-cockroachdb", () => {
 
     it("should create correct schema with geometry type", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
                 expect(schema).not.to.be.undefined
@@ -55,8 +55,8 @@ describe("spatial-cockroachdb", () => {
 
     it("should create correct schema with geography type", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
                 expect(schema).not.to.be.undefined
@@ -72,8 +72,8 @@ describe("spatial-cockroachdb", () => {
 
     it("should create correct schema with geometry indices", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
                 expect(schema).not.to.be.undefined
@@ -90,12 +90,12 @@ describe("spatial-cockroachdb", () => {
 
     it("should persist geometry correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
                 }
-                const recordRepo = connection.getRepository(Post)
+                const recordRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.geom = geom
                 const persistedPost = await recordRepo.save(post)
@@ -111,12 +111,12 @@ describe("spatial-cockroachdb", () => {
 
     it("should persist geography correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
                 }
-                const recordRepo = connection.getRepository(Post)
+                const recordRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.geog = geom
                 const persistedPost = await recordRepo.save(post)
@@ -132,7 +132,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should update geometry correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -141,7 +141,7 @@ describe("spatial-cockroachdb", () => {
                     type: "Point",
                     coordinates: [45, 45],
                 }
-                const recordRepo = connection.getRepository(Post)
+                const recordRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.geom = geom
                 const persistedPost = await recordRepo.save(post)
@@ -167,7 +167,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should re-save geometry correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -176,7 +176,7 @@ describe("spatial-cockroachdb", () => {
                     type: "Point",
                     coordinates: [45, 45],
                 }
-                const recordRepo = connection.getRepository(Post)
+                const recordRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.geom = geom
                 const persistedPost = await recordRepo.save(post)
@@ -196,7 +196,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should be able to order geometries by distance", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const geoJson1: Point = {
                     type: "Point",
                     coordinates: [139.9341032213472, 36.80798008559315],
@@ -217,9 +217,9 @@ describe("spatial-cockroachdb", () => {
 
                 const post2 = new Post()
                 post2.geom = geoJson2
-                await connection.manager.save([post1, post2])
+                await dataSource.manager.save([post1, post2])
 
-                const posts1 = await connection.manager
+                const posts1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where(
                         "ST_Distance(post.geom, ST_GeomFromGeoJSON(:origin)) > 0",
@@ -233,7 +233,7 @@ describe("spatial-cockroachdb", () => {
                     .setParameters({ origin: JSON.stringify(origin) })
                     .getMany()
 
-                const posts2 = await connection.manager
+                const posts2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy(
                         "ST_Distance(post.geom, ST_GeomFromGeoJSON(:origin))",

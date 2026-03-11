@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/index"
+import type { DataSource } from "../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,15 +7,14 @@ import {
 
 describe("github issues > #9601 view+schema+synchronize broken for oracle", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: false,
-                dropSchema: true,
-                enabledDrivers: ["oracle"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: false,
+            dropSchema: true,
+            enabledDrivers: ["oracle"],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>

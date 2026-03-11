@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, Table } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -22,8 +23,8 @@ describe("query runner > create exclusion constraint", () => {
 
     it("should correctly create exclusion constraint and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "question",
@@ -53,7 +54,7 @@ describe("query runner > create exclusion constraint", () => {
                 // clear sqls in memory to avoid removing tables when down queries executed.
                 queryRunner.clearSqlMemory()
 
-                const driver = connection.driver
+                const driver = dataSource.driver
                 const exclusion1 = new TableExclusion({
                     expression: `USING gist (${driver.escape("name")} WITH =)`,
                 })

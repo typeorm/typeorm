@@ -1,4 +1,4 @@
-import { FindOperator } from "../FindOperator"
+import type { FindOperator } from "../FindOperator"
 import { EqualOperator } from "../EqualOperator"
 
 /**

@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../src/data-source/DataSource"
+import type { DataSource } from "../../src/data-source/DataSource"
 import { Post } from "../../sample/sample1-simple-entity/entity/Post"
 import {
     closeTestingConnections,
@@ -14,12 +14,11 @@ describe("insertion", function () {
     // -------------------------------------------------------------------------
 
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -6,7 +6,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Event } from "./entity/Event"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 
 describe("columns > date utc flag", () => {
     let originalTZ: string | undefined
@@ -29,15 +29,15 @@ describe("columns > date utc flag", () => {
 
     it("should save date columns in UTC when utc flag is true and in local timezone when false", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const event = new Event()
                 const testDate = new Date(Date.UTC(2025, 5, 1)) // 2025-06-01 in UTC
 
                 event.localDate = testDate
                 event.utcDate = testDate
 
-                const savedEvent = await connection.manager.save(event)
-                const result = await connection.manager.findOneBy(Event, {
+                const savedEvent = await dataSource.manager.save(event)
+                const result = await dataSource.manager.findOneBy(Event, {
                     id: savedEvent.id,
                 })
 

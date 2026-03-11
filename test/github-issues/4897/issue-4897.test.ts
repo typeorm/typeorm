@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -8,16 +8,15 @@ import { SomeEntity } from "./entity/SomeEntity"
 
 describe("github issues > #4897 [MSSQL] Enum column definition removes and recreates constraint overwritting existing data", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                migrations: [],
-                enabledDrivers: ["mssql", "better-sqlite3"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [SomeEntity],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            enabledDrivers: ["mssql", "better-sqlite3"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [SomeEntity],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>

@@ -5,51 +5,50 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
 
 describe("relations > multiple-primary-keys > one-to-one", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     describe("owning side", () => {
         it("should load related entity when JoinColumn is specified without options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
                     category1.code = 1
                     category1.version = 1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
                     category2.type = "common-category"
                     category2.code = 2
                     category2.version = 1
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post1 = new Post()
                     post1.title = "About cars #1"
                     post1.category = category1
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.title = "About cars #2"
                     post2.category = category2
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect("post.category", "category")
                         .orderBy("post.id")
@@ -68,7 +67,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         "common-category",
                     )
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect("post.category", "category")
                         .where("post.id = :id", { id: 1 })
@@ -84,32 +83,32 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when JoinColumn is specified with options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
                     category1.code = 1
                     category1.version = 1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
                     category2.type = "common-category"
                     category2.code = 2
                     category2.version = 1
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post1 = new Post()
                     post1.title = "About cars #1"
                     post1.categoryWithOptions = category1
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.title = "About cars #2"
                     post2.categoryWithOptions = category2
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.categoryWithOptions",
@@ -133,7 +132,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         "common-category",
                     )
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.categoryWithOptions",
@@ -154,14 +153,14 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when JoinColumn references on to non-primary columns", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
                     category1.code = 1
                     category1.version = 1
                     category1.description = "category about cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
@@ -169,19 +168,19 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category2.code = 2
                     category2.version = 1
                     category2.description = "category about airplanes"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post1 = new Post()
                     post1.title = "About cars #1"
                     post1.categoryWithNonPKColumns = category1
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.title = "About cars #2"
                     post2.categoryWithNonPKColumns = category2
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.categoryWithNonPKColumns",
@@ -212,7 +211,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         loadedPosts[1].categoryWithNonPKColumns.version,
                     ).to.be.equal(1)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.categoryWithNonPKColumns",
@@ -238,36 +237,36 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinColumn defined without options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
                     category1.code = 1
                     category1.version = 1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
                     category2.type = "common-category"
                     category2.code = 2
                     category2.version = 1
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
                     tag1.description = "Tag about BMW"
                     tag1.category = category1
-                    await connection.manager.save(tag1)
+                    await dataSource.manager.save(tag1)
 
                     const tag2 = new Tag()
                     tag2.code = 3
                     tag2.title = "About Boeing"
                     tag2.description = "tag about Boeing"
                     tag2.category = category2
-                    await connection.manager.save(tag2)
+                    await dataSource.manager.save(tag2)
 
-                    const loadedTags = await connection.manager
+                    const loadedTags = await dataSource.manager
                         .createQueryBuilder(Tag, "tag")
                         .leftJoinAndSelect("tag.category", "category")
                         .orderBy("tag.code, category.code")
@@ -284,7 +283,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         "common-category",
                     )
 
-                    const loadedTag = await connection.manager
+                    const loadedTag = await dataSource.manager
                         .createQueryBuilder(Tag, "tag")
                         .leftJoinAndSelect("tag.category", "category")
                         .orderBy("category.code")
@@ -301,36 +300,36 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinColumn defined with options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
                     category1.code = 1
                     category1.version = 1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
                     category2.type = "common-category"
                     category2.code = 2
                     category2.version = 1
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
                     tag1.description = "Tag about BMW"
                     tag1.categoryWithOptions = category1
-                    await connection.manager.save(tag1)
+                    await dataSource.manager.save(tag1)
 
                     const tag2 = new Tag()
                     tag2.code = 3
                     tag2.title = "About Boeing"
                     tag2.description = "tag about Boeing"
                     tag2.categoryWithOptions = category2
-                    await connection.manager.save(tag2)
+                    await dataSource.manager.save(tag2)
 
-                    const loadedTags = await connection.manager
+                    const loadedTags = await dataSource.manager
                         .createQueryBuilder(Tag, "tag")
                         .leftJoinAndSelect(
                             "tag.categoryWithOptions",
@@ -354,7 +353,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         "common-category",
                     )
 
-                    const loadedTag = await connection.manager
+                    const loadedTag = await dataSource.manager
                         .createQueryBuilder(Tag, "tag")
                         .leftJoinAndSelect(
                             "tag.categoryWithOptions",
@@ -376,14 +375,14 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinColumn references on to non-primary columns", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
                     category1.code = 1
                     category1.version = 1
                     category1.description = "category of cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
@@ -391,23 +390,23 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category2.code = 2
                     category2.version = 1
                     category2.description = "category of airplanes"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
                     tag1.description = "Tag about BMW"
                     tag1.categoryWithNonPKColumns = category1
-                    await connection.manager.save(tag1)
+                    await dataSource.manager.save(tag1)
 
                     const tag2 = new Tag()
                     tag2.code = 3
                     tag2.title = "About Boeing"
                     tag2.description = "tag about Boeing"
                     tag2.categoryWithNonPKColumns = category2
-                    await connection.manager.save(tag2)
+                    await dataSource.manager.save(tag2)
 
-                    const loadedTags = await connection.manager
+                    const loadedTags = await dataSource.manager
                         .createQueryBuilder(Tag, "tag")
                         .leftJoinAndSelect(
                             "tag.categoryWithNonPKColumns",
@@ -435,7 +434,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         loadedTags[1].categoryWithNonPKColumns.type,
                     ).to.be.equal("common-category")
 
-                    const loadedTag = await connection.manager
+                    const loadedTag = await dataSource.manager
                         .createQueryBuilder(Tag, "tag")
                         .leftJoinAndSelect(
                             "tag.categoryWithNonPKColumns",
@@ -461,14 +460,14 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
     describe("inverse side", () => {
         it("should load related entity when JoinColumn is specified without options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const post1 = new Post()
                     post1.title = "About BMW"
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.title = "About Boeing"
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
                     const category1 = new Category()
                     category1.name = "cars"
@@ -476,7 +475,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category1.code = 1
                     category1.version = 1
                     category1.post = post1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
@@ -484,9 +483,9 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category2.code = 2
                     category2.version = 1
                     category2.post = post2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
-                    const loadedCategories = await connection.manager
+                    const loadedCategories = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect("category.post", "post")
                         .orderBy("category.code, post.id")
@@ -497,7 +496,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     expect(loadedCategories[1].post).to.not.be.undefined
                     expect(loadedCategories[1].post.id).to.be.equal(2)
 
-                    const loadedCategory = await connection.manager
+                    const loadedCategory = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect("category.post", "post")
                         .orderBy("post.id")
@@ -511,18 +510,18 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinColumn defined without options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
                     tag1.description = "Tag about BMW"
-                    await connection.manager.save(tag1)
+                    await dataSource.manager.save(tag1)
 
                     const tag2 = new Tag()
                     tag2.code = 3
                     tag2.title = "About Boeing"
                     tag2.description = "tag about Boeing"
-                    await connection.manager.save(tag2)
+                    await dataSource.manager.save(tag2)
 
                     const category1 = new Category()
                     category1.name = "cars"
@@ -530,7 +529,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category1.code = 1
                     category1.version = 1
                     category1.tag = tag1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
@@ -538,9 +537,9 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category2.code = 2
                     category2.version = 1
                     category2.tag = tag2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
-                    const loadedCategories = await connection.manager
+                    const loadedCategories = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect("category.tag", "tag")
                         .orderBy("category.code, tag.code")
@@ -561,7 +560,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         "tag about Boeing",
                     )
 
-                    const loadedCategory = await connection.manager
+                    const loadedCategory = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect("category.tag", "tag")
                         .orderBy("tag.code")
@@ -578,18 +577,18 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinColumn defined with options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
                     tag1.description = "Tag about BMW"
-                    await connection.manager.save(tag1)
+                    await dataSource.manager.save(tag1)
 
                     const tag2 = new Tag()
                     tag2.code = 3
                     tag2.title = "About Boeing"
                     tag2.description = "tag about Boeing"
-                    await connection.manager.save(tag2)
+                    await dataSource.manager.save(tag2)
 
                     const category1 = new Category()
                     category1.name = "cars"
@@ -597,7 +596,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category1.code = 1
                     category1.version = 1
                     category1.tagWithOptions = tag1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
@@ -605,9 +604,9 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category2.code = 2
                     category2.version = 1
                     category2.tagWithOptions = tag2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
-                    const loadedCategories = await connection.manager
+                    const loadedCategories = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect("category.tagWithOptions", "tag")
                         .orderBy("category.code, tag.code")
@@ -628,7 +627,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         loadedCategories[1].tagWithOptions.description,
                     ).to.be.equal("tag about Boeing")
 
-                    const loadedCategory = await connection.manager
+                    const loadedCategory = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect("category.tagWithOptions", "tag")
                         .orderBy("tag.code")
@@ -647,18 +646,18 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when JoinColumns references on to non-primary columns", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
                     tag1.description = "Tag about BMW"
-                    await connection.manager.save(tag1)
+                    await dataSource.manager.save(tag1)
 
                     const tag2 = new Tag()
                     tag2.code = 3
                     tag2.title = "About Boeing"
                     tag2.description = "tag about Boeing"
-                    await connection.manager.save(tag2)
+                    await dataSource.manager.save(tag2)
 
                     const category1 = new Category()
                     category1.name = "cars"
@@ -667,7 +666,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category1.version = 1
                     category1.description = "category of cars"
                     category1.tagWithNonPKColumns = tag1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
@@ -676,9 +675,9 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category2.version = 1
                     category2.description = "category of airplanes"
                     category2.tagWithNonPKColumns = tag2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
-                    const loadedCategories = await connection.manager
+                    const loadedCategories = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect(
                             "category.tagWithNonPKColumns",
@@ -706,7 +705,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         loadedCategories[1].tagWithNonPKColumns.description,
                     ).to.be.equal("tag about Boeing")
 
-                    const loadedCategory = await connection.manager
+                    const loadedCategory = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect(
                             "category.tagWithNonPKColumns",
@@ -730,18 +729,18 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinColumn defined with options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
                     tag1.description = "Tag about BMW"
-                    await connection.manager.save(tag1)
+                    await dataSource.manager.save(tag1)
 
                     const tag2 = new Tag()
                     tag2.code = 3
                     tag2.title = "About Boeing"
                     tag2.description = "tag about Boeing"
-                    await connection.manager.save(tag2)
+                    await dataSource.manager.save(tag2)
 
                     const category1 = new Category()
                     category1.name = "cars"
@@ -749,7 +748,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category1.code = 1
                     category1.version = 1
                     category1.tagWithOptions = tag1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
@@ -757,9 +756,9 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category2.code = 2
                     category2.version = 1
                     category2.tagWithOptions = tag2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
-                    const loadedCategories = await connection.manager
+                    const loadedCategories = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect("category.tagWithOptions", "tag")
                         .orderBy("category.code, tag.code")
@@ -780,7 +779,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         loadedCategories[1].tagWithOptions.description,
                     ).to.be.equal("tag about Boeing")
 
-                    const loadedCategory = await connection.manager
+                    const loadedCategory = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect("category.tagWithOptions", "tag")
                         .orderBy("tag.code")
@@ -799,18 +798,18 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
 
         it("should load related entity when both entities have multiple primary columns and JoinColumn references on to non-primary columns", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const tag1 = new Tag()
                     tag1.code = 1
                     tag1.title = "About BMW"
                     tag1.description = "Tag about BMW"
-                    await connection.manager.save(tag1)
+                    await dataSource.manager.save(tag1)
 
                     const tag2 = new Tag()
                     tag2.code = 3
                     tag2.title = "About Boeing"
                     tag2.description = "tag about Boeing"
-                    await connection.manager.save(tag2)
+                    await dataSource.manager.save(tag2)
 
                     const category1 = new Category()
                     category1.name = "cars"
@@ -819,7 +818,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category1.version = 1
                     category1.description = "category of cars"
                     category1.tagWithNonPKColumns = tag1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "airplanes"
@@ -828,9 +827,9 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                     category2.version = 1
                     category2.description = "category of airplanes"
                     category2.tagWithNonPKColumns = tag2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
-                    const loadedCategories = await connection.manager
+                    const loadedCategories = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect(
                             "category.tagWithNonPKColumns",
@@ -858,7 +857,7 @@ describe("relations > multiple-primary-keys > one-to-one", () => {
                         loadedCategories[1].tagWithNonPKColumns.description,
                     ).to.be.equal("tag about Boeing")
 
-                    const loadedCategory = await connection.manager
+                    const loadedCategory = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .leftJoinAndSelect(
                             "category.tagWithNonPKColumns",

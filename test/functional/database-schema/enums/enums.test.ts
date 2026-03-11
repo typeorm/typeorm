@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -26,9 +26,9 @@ describe("database schema > enums", () => {
 
     it("should correctly use default values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumEntity)
+                    dataSource.getRepository(EnumEntity)
 
                 const enumEntity = new EnumEntity()
                 enumEntity.id = 1
@@ -55,9 +55,9 @@ describe("database schema > enums", () => {
 
     it("should correctly save and retrieve", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumEntity)
+                    dataSource.getRepository(EnumEntity)
 
                 const enumEntity = new EnumEntity()
                 enumEntity.id = 1
@@ -88,10 +88,10 @@ describe("database schema > enums", () => {
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.driver.createSchemaBuilder().build()
+            dataSources.map(async (dataSource) => {
+                await dataSource.driver.createSchemaBuilder().build()
 
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
 

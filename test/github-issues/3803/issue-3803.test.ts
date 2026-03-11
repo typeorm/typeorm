@@ -3,20 +3,20 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { EntitySchema } from "../../../src"
-import { Post, PostSchema } from "./entity/Post"
+import type { Post } from "./entity/Post"
+import { PostSchema } from "./entity/Post"
 import { expect } from "chai"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #3803 column option unique sqlite error", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [new EntitySchema<Post>(PostSchema)],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [new EntitySchema<Post>(PostSchema)],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

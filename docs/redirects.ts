@@ -121,7 +121,9 @@ export const redirects = [
     { from: "/support", to: "/docs/help/support" },
 
     { from: "/getting-started", to: "/docs/getting-started" },
-    { from: "/future-of-typeorm", to: "/docs/future-of-typeorm" },
+    { from: "/future-of-typeorm", to: "/blog/future-of-typeorm" },
+    { from: "/docs/future-of-typeorm", to: "/blog/future-of-typeorm" },
     { from: "/query-runner", to: "/docs/query-runner" },
     { from: "/docs/advanced-topics/migrations", to: "/docs/migrations/why" },
+    { from: "/docs/gsoc/2026", to: "/docs/getting-started" },
 ]

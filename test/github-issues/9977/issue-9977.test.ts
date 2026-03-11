@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource, LessThanOrEqual, MoreThanOrEqual } from "../../../src"
+import type { DataSource } from "../../../src"
+import { LessThanOrEqual, MoreThanOrEqual } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -13,12 +14,11 @@ import { prepareData } from "./find-options-test-utils"
 
 describe("github issues > #9977", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -1,20 +1,20 @@
 import { EntityManager } from "./EntityManager"
-import { EntityTarget } from "../common/EntityTarget"
+import type { EntityTarget } from "../common/EntityTarget"
 
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
-import { MongoDriver } from "../driver/mongodb/MongoDriver"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
+import type { MongoDriver } from "../driver/mongodb/MongoDriver"
 import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
-import { FindManyOptions } from "../find-options/FindManyOptions"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import { PlatformTools } from "../platform/PlatformTools"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 
-import {
+import type {
     AggregateOptions,
     AggregationCursor,
     AnyBulkWriteOperation,
@@ -56,15 +56,15 @@ import {
     UpdateOptions,
     UpdateResult as UpdateResultMongoDb,
 } from "../driver/mongodb/typings"
-import { DataSource } from "../data-source/DataSource"
-import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
-import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
-import {
+import type { DataSource } from "../data-source/DataSource"
+import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
+import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
+import type {
     FindOptionsSelect,
     FindOptionsSelectByString,
 } from "../find-options/FindOptionsSelect"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -185,7 +185,6 @@ export class MongoEntityManager extends EntityManager {
      * @param entityClassOrName
      * @param ids
      * @param optionsOrConditions
-     * @deprecated use `findBy` method instead.
      */
     async findByIds<Entity>(
         entityClassOrName: EntityTarget<Entity>,
@@ -197,21 +196,21 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             ) || {}
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
         query["_id"] = {
             $in: ids.map((id) => {
                 if (typeof id === "string") {
-                    return new objectIdInstance(id)
+                    return new objectIdClass(id)
                 }
 
                 if (typeof id === "object") {
-                    if (id instanceof objectIdInstance) {
+                    if (id instanceof objectIdClass) {
                         return id
                     }
 
                     const propertyName = metadata.objectIdColumn!.propertyName
 
-                    if (id[propertyName] instanceof objectIdInstance) {
+                    if (id[propertyName] instanceof objectIdClass) {
                         return id[propertyName]
                     }
                 }
@@ -1212,9 +1211,9 @@ export class MongoEntityManager extends EntityManager {
         optionsOrConditions?: any,
         maybeOptions?: MongoFindOneOptions<Entity>,
     ): Promise<Entity | null> {
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
         const id =
-            optionsOrConditions instanceof objectIdInstance ||
+            optionsOrConditions instanceof objectIdClass ||
             typeof optionsOrConditions === "string"
                 ? optionsOrConditions
                 : undefined
@@ -1227,7 +1226,7 @@ export class MongoEntityManager extends EntityManager {
             ) || {}
         if (id) {
             query["_id"] =
-                id instanceof objectIdInstance ? id : new objectIdInstance(id)
+                id instanceof objectIdClass ? id : new objectIdClass(id)
         }
         const cursor = this.createEntityCursor<Entity>(entityClassOrName, query)
         const deleteDateColumn =

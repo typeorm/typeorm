@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import {
@@ -18,7 +18,9 @@ describe("persistence > one-to-many", function () {
     before(() => {
         return createTestingConnections({
             entities: [Post, Category],
-        }).then((all) => (dataSources = all))
+        }).then((all) => {
+            dataSources = all
+        })
     })
     after(() => closeTestingConnections(dataSources))
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -29,9 +31,9 @@ describe("persistence > one-to-many", function () {
 
     it("should add exist element to exist object with empty one-to-many relation and save it", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const newCategory = categoryRepository.create()
                 newCategory.id = 1
@@ -62,9 +64,9 @@ describe("persistence > one-to-many", function () {
 
     it("should add exist element to new object with empty one-to-many relation and save it", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const newCategory = categoryRepository.create()
                 newCategory.id = 1
@@ -93,9 +95,9 @@ describe("persistence > one-to-many", function () {
 
     it("should remove exist element from one-to-many relation and save it", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const firstNewCategory = categoryRepository.create()
                 firstNewCategory.id = 1
@@ -138,9 +140,9 @@ describe("persistence > one-to-many", function () {
 
     it("should remove all elements from one-to-many relation and save it", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const firstNewCategory = categoryRepository.create()
                 firstNewCategory.id = 1
@@ -181,9 +183,9 @@ describe("persistence > one-to-many", function () {
 
     it("set relation to null (elements exist there) from one-to-many relation and save it", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const firstNewCategory = categoryRepository.create()
                 firstNewCategory.id = 1

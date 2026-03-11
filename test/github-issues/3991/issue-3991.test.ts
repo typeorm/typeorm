@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -14,15 +14,14 @@ import { Post as SqlitePost } from "./entity/sqlite/Post"
 describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@UpdateDateColumn timestamp column to same definition", () => {
     describe("postgres", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["postgres"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [PostgresPost],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["postgres"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [PostgresPost],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
@@ -51,15 +50,14 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("cockroachdb", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["cockroachdb"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [CockroachPost],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["cockroachdb"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [CockroachPost],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
@@ -88,15 +86,14 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("oracle", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["oracle"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [OraclePost],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["oracle"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [OraclePost],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
@@ -125,15 +122,14 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("better-sqlite3", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["better-sqlite3"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [SqlitePost],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["better-sqlite3"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [SqlitePost],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
@@ -162,15 +158,14 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("mysql, mariadb", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["mysql", "mariadb"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [MysqlPost],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["mysql", "mariadb"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [MysqlPost],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
@@ -199,15 +194,14 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("mssql", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["mssql"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [MssqlPost],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["mssql"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [MssqlPost],
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>

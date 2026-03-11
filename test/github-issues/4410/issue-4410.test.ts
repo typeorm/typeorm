@@ -1,11 +1,12 @@
 import appRootPath from "app-root-path"
 import sinon from "sinon"
-import { DataSource, FileLogger } from "../../../src"
+import type { DataSource } from "../../../src"
+import { FileLogger } from "../../../src"
+import type { TestingOptions } from "../../utils/test-utils"
 import {
     createTestingConnections,
     reloadTestingDatabases,
     closeTestingConnections,
-    TestingOptions,
 } from "../../utils/test-utils"
 import { Username } from "./entity/Username"
 import { PlatformTools } from "../../../src/platform/PlatformTools"

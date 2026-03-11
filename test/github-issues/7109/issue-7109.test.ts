@@ -4,9 +4,9 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Dummy } from "./entity/Dummy"
-import { ReadStream } from "fs"
+import type { ReadStream } from "fs"
 import { expect } from "chai"
 
 function ingestStream(stream: ReadStream): Promise<any[]> {
@@ -20,21 +20,20 @@ function ingestStream(stream: ReadStream): Promise<any[]> {
 
 describe("github issues > #7109 stream() bug from 0.2.25 to 0.2.26 with postgresql", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: [
-                    "postgres",
-                    "mysql",
-                    "mariadb",
-                    "cockroachdb",
-                    "spanner",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: [
+                "postgres",
+                "mysql",
+                "mariadb",
+                "cockroachdb",
+                "spanner",
+            ],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -1,7 +1,7 @@
 import fs from "fs/promises"
 import path from "path"
 import { TypeORMError } from "../error"
-import { DataSource } from "../data-source"
+import type { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { importOrRequireFile } from "../util/ImportUtils"
 
@@ -19,6 +19,7 @@ export class CommandUtils {
         } catch (err) {
             throw new Error(
                 `Unable to open file: "${dataSourceFilePath}". ${err.message}`,
+                { cause: err },
             )
         }
 

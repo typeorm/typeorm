@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource, ObjectLiteral } from "../../../src"
+import type { DataSource, ObjectLiteral } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,13 +11,12 @@ import { FruitEnum } from "./enum/FruitEnum"
 
 describe("github issues > #3694 Sync enums on schema sync", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql", "postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

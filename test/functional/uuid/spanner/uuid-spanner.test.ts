@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -22,10 +22,10 @@ describe("uuid-spanner", () => {
 
     it("should persist uuid correctly when it is generated non primary column", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const questionRepository = connection.getRepository(Question)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const questionRepository = dataSource.getRepository(Question)
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 const questionTable = await queryRunner.getTable("question")
                 await queryRunner.release()

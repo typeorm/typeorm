@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Message, MessageType } from "./entity/Message"
 import { Recipient } from "./entity/Recipient"
 import { User } from "./entity/User"
@@ -12,12 +12,11 @@ import { Chat } from "./entity/Chat"
 
 describe("github issues > #1551 complex example of cascades + multiple primary keys = persistence order", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

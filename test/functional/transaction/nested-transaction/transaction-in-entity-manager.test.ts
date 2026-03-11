@@ -4,24 +4,23 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("transaction > nested transaction", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should execute operations based on conditions in deeply nested scenario", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const conditions: {
                     id: number
                     title: string
@@ -29,9 +28,9 @@ describe("transaction > nested transaction", () => {
                 }[] = []
 
                 // SAP HANA, Spanner etc. do not support nested transactions
-                if (connection.driver.transactionSupport !== "nested") return
+                if (dataSource.driver.transactionSupport !== "nested") return
 
-                await connection.manager.transaction(async (em0) => {
+                await dataSource.manager.transaction(async (em0) => {
                     const post = new Post()
                     post.title = "Post #1"
                     await em0.save(post)
@@ -131,7 +130,7 @@ describe("transaction > nested transaction", () => {
                 }).should.not.be.rejected
 
                 for (const condition of conditions) {
-                    const post = await connection.manager.findOne(Post, {
+                    const post = await dataSource.manager.findOne(Post, {
                         where: { title: condition.title },
                     })
                     if (condition.shouldExist) {
@@ -149,10 +148,10 @@ describe("transaction > nested transaction", () => {
 
     it("should fail operations when first transaction fails", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const conditions: { id: number; title: string }[] = []
 
-                await connection.manager.transaction(async (em0) => {
+                await dataSource.manager.transaction(async (em0) => {
                     const post = new Post()
                     post.title = "Post #1"
                     await em0.save(post)
@@ -203,7 +202,7 @@ describe("transaction > nested transaction", () => {
                 }).should.be.rejected
 
                 for (const condition of conditions) {
-                    const post = await connection.manager.findOne(Post, {
+                    const post = await dataSource.manager.findOne(Post, {
                         where: { title: condition.title },
                     })
                     expect(post).to.be.null

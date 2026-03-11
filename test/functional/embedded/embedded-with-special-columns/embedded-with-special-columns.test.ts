@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import { scheduler } from "timers/promises"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -13,18 +13,17 @@ import { Post } from "./entity/Post"
 
 describe("embedded > embedded-with-special-columns", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should insert, load, update and remove entities with embeddeds when embeds contains special columns (e.g. CreateDateColumn, UpdateDateColumn, DeleteDateColumn, VersionColumn", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.id = 1
                 post1.title = "About cars"
@@ -34,7 +33,7 @@ describe("embedded > embedded-with-special-columns", () => {
                 post1.counters.likes = 3
                 post1.counters.subcounters = new Subcounters()
                 post1.counters.subcounters.watches = 5
-                await connection.getRepository(Post).save(post1)
+                await dataSource.getRepository(Post).save(post1)
 
                 const post2 = new Post()
                 post2.id = 2
@@ -45,9 +44,9 @@ describe("embedded > embedded-with-special-columns", () => {
                 post2.counters.likes = 4
                 post2.counters.subcounters = new Subcounters()
                 post2.counters.subcounters.watches = 10
-                await connection.getRepository(Post).save(post2)
+                await dataSource.getRepository(Post).save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.id")
                     .getMany()
@@ -85,7 +84,7 @@ describe("embedded > embedded-with-special-columns", () => {
                     ),
                 )
 
-                let loadedPost = await connection.manager
+                let loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.id")
                     .where("post.id = :id", { id: 1 })
@@ -109,9 +108,9 @@ describe("embedded > embedded-with-special-columns", () => {
                 // wait a second
                 await scheduler.wait(1010)
 
-                await connection.getRepository(Post).save(loadedPost!)
+                await dataSource.getRepository(Post).save(loadedPost!)
 
-                loadedPost = await connection.manager
+                loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
                     .getOne()

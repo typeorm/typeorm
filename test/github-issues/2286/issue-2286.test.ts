@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
 import { Example } from "./entity/Example"
@@ -12,16 +12,15 @@ import { Between } from "../../../src"
 
 describe("github issues > #2286 find operators like MoreThan and LessThan doesn't work properly for date fields", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, Example],
-                schemaCreate: true,
-                dropSchema: true,
-                /* Test not eligible for better-sql where binding Dates is impossible */
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, Example],
+            schemaCreate: true,
+            dropSchema: true,
+            /* Test not eligible for better-sql where binding Dates is impossible */
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
 
     after(() => closeTestingConnections(dataSources))

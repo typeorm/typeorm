@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -11,19 +11,18 @@ import {
 
 describe("embedded > outer-primary-column", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should insert, load, update and remove entities with embeddeds when primary column defined only in embedded entity", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 const post1 = new Post()
                 post1.title = "About cars"
@@ -33,7 +32,7 @@ describe("embedded > outer-primary-column", () => {
                 post1.counters.comments = 1
                 post1.counters.favorites = 2
                 post1.counters.likes = 3
-                await connection.getRepository(Post).save(post1)
+                await dataSource.getRepository(Post).save(post1)
 
                 const post2 = new Post()
                 post2.title = "About airplanes"
@@ -45,7 +44,7 @@ describe("embedded > outer-primary-column", () => {
                 post2.counters.likes = 4
                 await postRepository.save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.counters.code")
                     .getMany()

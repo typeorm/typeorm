@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -23,20 +23,20 @@ describe("query runner > create index", () => {
 
     it("should correctly create index and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let numericType = "int"
-                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) {
                     numericType = "integer"
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     numericType = "int64"
                 }
 
                 let stringType = "varchar"
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     stringType = "string"
                 }
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "question",
@@ -76,7 +76,7 @@ describe("query runner > create index", () => {
                 let table = await queryRunner.getTable("question")
 
                 // CockroachDB stores unique indices as UNIQUE constraints
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     table!.indices.length.should.be.equal(1)
                     table!.uniques.length.should.be.equal(1)
                 } else {

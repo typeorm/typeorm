@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { ForeignKeyMetadata } from "../../../src/metadata/ForeignKeyMetadata"
 import {
     closeTestingConnections,
@@ -26,10 +26,10 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
         it("should correctly sync tables with custom schema and database", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
-                    const photoMetadata = connection.getMetadata("photo")
-                    const albumMetadata = connection.getMetadata("album")
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    const photoMetadata = dataSource.getMetadata("photo")
+                    const albumMetadata = dataSource.getMetadata("album")
 
                     // create tables
                     photoMetadata.synchronize = true
@@ -46,7 +46,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                         true,
                     )
 
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     // create foreign key
                     const albumTable = await queryRunner.getTable(
@@ -69,11 +69,11 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                         referencedEntityMetadata: albumMetadata,
                         columns: columns,
                         referencedColumns: referencedColumns,
-                        namingStrategy: connection.namingStrategy,
+                        namingStrategy: dataSource.namingStrategy,
                     })
                     photoMetadata.foreignKeys.push(fkMetadata)
 
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     photoTable = await queryRunner.getTable(
                         photoMetadata.tablePath,
@@ -82,7 +82,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
                     // drop foreign key
                     photoMetadata.foreignKeys = []
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     // drop tables manually, because they will not synchronize automatically
                     await queryRunner.dropTable(
@@ -118,10 +118,10 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
         it("should correctly sync tables with custom schema", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
-                    const photoMetadata = connection.getMetadata("photo")
-                    const albumMetadata = connection.getMetadata("album")
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    const photoMetadata = dataSource.getMetadata("photo")
+                    const albumMetadata = dataSource.getMetadata("album")
 
                     // create tables
                     photoMetadata.synchronize = true
@@ -136,7 +136,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await queryRunner.createSchema(photoMetadata.schema, true)
                     await queryRunner.createSchema(albumMetadata.schema, true)
 
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     // create foreign key
                     const albumTable = await queryRunner.getTable(
@@ -159,11 +159,11 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                         referencedEntityMetadata: albumMetadata,
                         columns: columns,
                         referencedColumns: referencedColumns,
-                        namingStrategy: connection.namingStrategy,
+                        namingStrategy: dataSource.namingStrategy,
                     })
                     photoMetadata.foreignKeys.push(fkMetadata)
 
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     photoTable = await queryRunner.getTable(
                         photoMetadata.tablePath,
@@ -172,7 +172,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
                     // drop foreign key
                     photoMetadata.foreignKeys = []
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     // drop tables manually, because they will not synchronize automatically
                     await queryRunner.dropTable(
@@ -195,10 +195,10 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
         it("should correctly sync tables with `public` schema", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
-                    const photoMetadata = connection.getMetadata("photo")
-                    const albumMetadata = connection.getMetadata("album")
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    const photoMetadata = dataSource.getMetadata("photo")
+                    const albumMetadata = dataSource.getMetadata("album")
 
                     // create tables
                     photoMetadata.synchronize = true
@@ -213,7 +213,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await queryRunner.createSchema(photoMetadata.schema, true)
                     await queryRunner.createSchema(albumMetadata.schema, true)
 
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     // create foreign key
                     const albumTable = await queryRunner.getTable(
@@ -239,11 +239,11 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                         referencedEntityMetadata: albumMetadata,
                         columns: columns,
                         referencedColumns: referencedColumns,
-                        namingStrategy: connection.namingStrategy,
+                        namingStrategy: dataSource.namingStrategy,
                     })
 
                     photoMetadata.foreignKeys.push(fkMetadata)
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     photoTable = await queryRunner.getTable(
                         photoMetadata.tablePath,
@@ -252,7 +252,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
                     // drop foreign key
                     photoMetadata.foreignKeys = []
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     // drop tables manually, because they will not synchronize automatically
                     await queryRunner.dropTable(
@@ -288,10 +288,10 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
         it("should correctly sync tables with custom schema and database", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
-                    const photoMetadata = connection.getMetadata("photo")
-                    const albumMetadata = connection.getMetadata("album")
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    const photoMetadata = dataSource.getMetadata("photo")
+                    const albumMetadata = dataSource.getMetadata("album")
 
                     // create tables
                     photoMetadata.synchronize = true
@@ -320,7 +320,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                         true,
                     )
 
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     // create foreign key
                     const albumTable = await queryRunner.getTable(
@@ -343,11 +343,11 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                         referencedEntityMetadata: albumMetadata,
                         columns: columns,
                         referencedColumns: referencedColumns,
-                        namingStrategy: connection.namingStrategy,
+                        namingStrategy: dataSource.namingStrategy,
                     })
                     photoMetadata.foreignKeys.push(fkMetadata)
 
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     photoTable = await queryRunner.getTable(
                         photoMetadata.tablePath,
@@ -356,7 +356,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
                     // drop foreign key
                     photoMetadata.foreignKeys = []
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     // drop tables manually, because they will not synchronize automatically
                     await queryRunner.dropTable(

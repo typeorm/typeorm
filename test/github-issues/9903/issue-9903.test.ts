@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { expect } from "chai"
 import { User } from "./entity/User"
 
@@ -26,15 +26,14 @@ describe("github issues > #9903 json data type", () => {
             jsonData: `'''faux---'''`,
         }
 
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [__dirname + "/entity/*{.js,.ts}"],
-                    schemaCreate: true,
-                    dropSchema: true,
-                    enabledDrivers: ["mariadb"],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: true,
+                dropSchema: true,
+                enabledDrivers: ["mariadb"],
+            })
+        })
         beforeEach(() => reloadTestingDatabases(dataSources))
 
         it("should create table with json constraint", () =>

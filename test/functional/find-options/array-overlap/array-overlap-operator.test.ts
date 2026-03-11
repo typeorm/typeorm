@@ -1,4 +1,4 @@
-import { DataSource, EntityManager } from "../../../../src"
+import type { DataSource, EntityManager } from "../../../../src"
 import { ArrayOverlap } from "../../../../src/find-options/operator/ArrayOverlap"
 import "../../../utils/test-setup"
 import {
@@ -10,13 +10,12 @@ import { Post, PostStatus } from "./entity/Post"
 
 describe("find options > find operators > ArrayOverlap", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -42,10 +41,10 @@ describe("find options > find operators > ArrayOverlap", () => {
 
     it("should find entries in regular arrays", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const loadedPost1 = await connection.manager.find(Post, {
+                const loadedPost1 = await dataSource.manager.find(Post, {
                     where: {
                         authors: ArrayOverlap(["dmitry", "umed"]),
                     },
@@ -62,7 +61,7 @@ describe("find options > find operators > ArrayOverlap", () => {
                     },
                 ])
 
-                const loadedPost2 = await connection.manager.find(Post, {
+                const loadedPost2 = await dataSource.manager.find(Post, {
                     where: {
                         authors: ArrayOverlap(["olimjon", "umed"]),
                     },
@@ -89,10 +88,10 @@ describe("find options > find operators > ArrayOverlap", () => {
 
     it("should find entries in enum arrays", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const loadedPost1 = await connection.manager.find(Post, {
+                const loadedPost1 = await dataSource.manager.find(Post, {
                     where: {
                         statuses: ArrayOverlap([
                             PostStatus.draft,
@@ -112,7 +111,7 @@ describe("find options > find operators > ArrayOverlap", () => {
                     },
                 ])
 
-                const loadedPost2 = await connection.manager.find(Post, {
+                const loadedPost2 = await dataSource.manager.find(Post, {
                     where: {
                         statuses: ArrayOverlap([
                             PostStatus.published,

@@ -1,11 +1,11 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
 import { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
-import { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArgs"
+import type { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArgs"
 import { User } from "./entity/User"
 
 describe("github issues > #1623 NOT NULL constraint failed after a new column is added (SQLite)", () => {

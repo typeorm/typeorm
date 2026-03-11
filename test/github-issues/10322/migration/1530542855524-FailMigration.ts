@@ -1,4 +1,4 @@
-import { MigrationInterface } from "../../../../src"
+import type { MigrationInterface } from "../../../../src"
 
 export class FailMigration1530542855524 implements MigrationInterface {
     public async up() {

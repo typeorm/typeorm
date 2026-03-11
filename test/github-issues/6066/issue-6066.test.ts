@@ -3,21 +3,21 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { QueryFailedError, DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
+import { QueryFailedError } from "../../../src"
 import { Session } from "./entity/Session"
 import { expect } from "chai"
 
 describe("github issues > #6066 Column comment string is not escaped during synchronization", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Session],
-                enabledDrivers: ["mysql", "mariadb"],
-                schemaCreate: false,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Session],
+            enabledDrivers: ["mysql", "mariadb"],
+            schemaCreate: false,
+            dropSchema: true,
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should synchronize", () =>

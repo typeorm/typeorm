@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import "../../../utils/test-setup"
 import {
     closeTestingConnections,
@@ -10,20 +10,19 @@ import { JsonEntity } from "./entity/JsonEntity"
 
 describe("mysql json parsing", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [JsonEntity],
-                enabledDrivers: ["mysql", "mariadb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [JsonEntity],
+            enabledDrivers: ["mysql", "mariadb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should correctly parse JSON objects", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(JsonEntity)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonObject = { foo: "bar", nested: { value: 123 } }
 
@@ -40,8 +39,8 @@ describe("mysql json parsing", () => {
 
     it("should correctly parse JSON arrays", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(JsonEntity)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonArray = [1, "two", { three: 3 }, null, true]
 
@@ -61,8 +60,8 @@ describe("mysql json parsing", () => {
 
     it("should correctly handle JSON string primitives", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(JsonEntity)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonString = "hello world"
 
@@ -77,8 +76,8 @@ describe("mysql json parsing", () => {
 
     it("should correctly handle JSON number primitives", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(JsonEntity)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonNumber = 42.5
 
@@ -93,8 +92,8 @@ describe("mysql json parsing", () => {
 
     it("should correctly handle JSON boolean primitives", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(JsonEntity)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonBoolean = true
 
@@ -109,8 +108,8 @@ describe("mysql json parsing", () => {
 
     it("should correctly handle JSON null", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(JsonEntity)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonNull = null
 
@@ -124,8 +123,8 @@ describe("mysql json parsing", () => {
 
     it("should handle complex nested JSON structures", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(JsonEntity)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.complexJson = {
                     users: [
@@ -153,8 +152,8 @@ describe("mysql json parsing", () => {
 
     it("should handle edge case of JSON strings containing quotes", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(JsonEntity)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonString = 'string with "quotes" inside'
 
@@ -171,8 +170,8 @@ describe("mysql json parsing", () => {
 
     it("should handle edge case of empty strings", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(JsonEntity)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonString = ""
 

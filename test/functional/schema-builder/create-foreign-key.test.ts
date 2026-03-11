@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { UniqueMetadata } from "../../../src/metadata/UniqueMetadata"
 import {
     closeTestingConnections,
@@ -22,9 +22,9 @@ describe("schema builder > create foreign key", () => {
 
     it("should correctly create foreign key", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const categoryMetadata = connection.getMetadata("category")
-                const postMetadata = connection.getMetadata("post")
+            dataSources.map(async (dataSource) => {
+                const categoryMetadata = dataSource.getMetadata("category")
+                const postMetadata = dataSource.getMetadata("post")
                 const columns = categoryMetadata.columns.filter(
                     (column) =>
                         ["postText", "postTag"].indexOf(column.propertyName) !==
@@ -40,17 +40,17 @@ describe("schema builder > create foreign key", () => {
                     referencedEntityMetadata: postMetadata,
                     columns: columns,
                     referencedColumns: referencedColumns,
-                    namingStrategy: connection.namingStrategy,
+                    namingStrategy: dataSource.namingStrategy,
                 })
                 categoryMetadata.foreignKeys.push(fkMetadata)
 
                 // CockroachDB requires unique constraint for foreign key referenced columns
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     const uniqueConstraint = new UniqueMetadata({
                         entityMetadata: categoryMetadata,
                         columns: fkMetadata.columns,
                         args: {
-                            name: connection.namingStrategy.relationConstraintName(
+                            name: dataSource.namingStrategy.relationConstraintName(
                                 categoryMetadata.tableName,
                                 fkMetadata.columns.map((c) => c.databaseName),
                             ),
@@ -60,9 +60,9 @@ describe("schema builder > create foreign key", () => {
                     categoryMetadata.uniques.push(uniqueConstraint)
                 }
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("category")
                 await queryRunner.release()
 

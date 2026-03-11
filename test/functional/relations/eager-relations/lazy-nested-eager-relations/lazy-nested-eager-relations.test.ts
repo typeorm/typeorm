@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -14,61 +14,60 @@ import { expect } from "chai"
 
 describe("relations > eager relations > lazy nested eager relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    async function prepareData(connection: DataSource) {
+    async function prepareData(dataSource: DataSource) {
         const profile = new Profile()
         profile.about = "I cut trees!"
-        await connection.manager.save(profile)
+        await dataSource.manager.save(profile)
 
         const user = new User()
         user.firstName = "Timber"
         user.lastName = "Saw"
         user.profile = profile
-        await connection.manager.save(user)
+        await dataSource.manager.save(user)
 
         const primaryCategory1 = new Category()
         primaryCategory1.name = "primary category #1"
-        await connection.manager.save(primaryCategory1)
+        await dataSource.manager.save(primaryCategory1)
 
         const primaryCategory2 = new Category()
         primaryCategory2.name = "primary category #2"
-        await connection.manager.save(primaryCategory2)
+        await dataSource.manager.save(primaryCategory2)
 
         const secondaryCategory1 = new Category()
         secondaryCategory1.name = "secondary category #1"
-        await connection.manager.save(secondaryCategory1)
+        await dataSource.manager.save(secondaryCategory1)
 
         const secondaryCategory2 = new Category()
         secondaryCategory2.name = "secondary category #2"
-        await connection.manager.save(secondaryCategory2)
+        await dataSource.manager.save(secondaryCategory2)
 
         const post = new Post()
         post.title = "about eager relations"
         post.categories1 = [primaryCategory1, primaryCategory2]
         post.categories2 = [secondaryCategory1, secondaryCategory2]
         post.author = user
-        await connection.manager.save(post)
+        await dataSource.manager.save(post)
 
         const editor = new Editor()
         editor.post = Promise.resolve(post)
         editor.user = user
-        await connection.manager.save(editor)
+        await dataSource.manager.save(editor)
     }
 
     it("should load all eager relations nested inside a lazy relation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
 
-                const loadedEditor = await connection.manager.findOne(Editor, {
+                const loadedEditor = await dataSource.manager.findOne(Editor, {
                     where: {
                         id: 1,
                     },

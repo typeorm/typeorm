@@ -1,5 +1,5 @@
-import { City } from "./city"
-import { Country } from "./country"
+import type { City } from "./city"
+import type { Country } from "./country"
 
 export class Order {
     id: number

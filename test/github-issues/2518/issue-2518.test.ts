@@ -4,29 +4,28 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { File } from "./entity/file.entity"
-import { TreeRepository } from "../../../src"
+import type { TreeRepository } from "../../../src"
 
 describe("github issues > #2518 TreeRepository.findDescendantsTree does not load descendants when relationship id property exist", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                // data type text isn't compatible with oracle
-                enabledDrivers: [
-                    "postgres",
-                    "cockroachdb",
-                    "mariadb",
-                    "mssql",
-                    "mysql",
-                    "better-sqlite3",
-                    "sqljs",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            // data type text isn't compatible with oracle
+            enabledDrivers: [
+                "postgres",
+                "cockroachdb",
+                "mariadb",
+                "mssql",
+                "mysql",
+                "better-sqlite3",
+                "sqljs",
+            ],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

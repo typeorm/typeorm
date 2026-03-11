@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, Table } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -22,23 +23,23 @@ describe("query runner > create check constraint", () => {
 
     it("should correctly create check constraint and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Mysql does not support check constraints.
-                if (DriverUtils.isMySQLFamily(connection.driver)) return
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) return
 
                 let numericType = "int"
-                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) {
                     numericType = "integer"
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     numericType = "int64"
                 }
 
                 let stringType = "varchar"
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     stringType = "string"
                 }
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "question",
@@ -68,7 +69,7 @@ describe("query runner > create check constraint", () => {
                 // clear sqls in memory to avoid removing tables when down queries executed.
                 queryRunner.clearSqlMemory()
 
-                const driver = connection.driver
+                const driver = dataSource.driver
                 const check1 = new TableCheck({
                     expression: `${driver.escape(
                         "name",

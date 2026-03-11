@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -13,18 +13,17 @@ import { User } from "./entity/User"
 
 describe("entity-metadata > property-map", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should create correct property map object", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.id = 1
                 user1.name = "Alice"
@@ -43,7 +42,7 @@ describe("entity-metadata > property-map", () => {
                 post1.counters.subcounters.watchedUsers = [user1]
 
                 const postPropertiesMap =
-                    connection.getMetadata(Post).propertiesMap
+                    dataSource.getMetadata(Post).propertiesMap
                 expect(
                     postPropertiesMap.should.be.eql({
                         id: "id",
