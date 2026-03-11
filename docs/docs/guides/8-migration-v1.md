@@ -186,12 +186,6 @@ Glob patterns are now handled by `tinyglobby` instead of `glob`. While `tinyglob
 
 ## Removed deprecations
 
-### `Connection` vs `DataSource`
-
-`DataSource` replaced `Connection` in v0.3 to provide a better meaning to the abstract concept represented by this class. For backwards compatibility, `Connection` was kept as an alias to `DataSource`, now this alias was removed. Similarly, `ConnectionOptions` is now `DataSourceOptions`.
-
-In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
-
 ### Redis
 
 Removed support for legacy (v3/v4) Redis clients in `RedisQueryResultCache`.
@@ -221,6 +215,14 @@ const qb = createQueryBuilder("user")
 const repo = dataSource.getRepository(User)
 const qb = dataSource.createQueryBuilder("user")
 ```
+
+## Data Source
+
+### `Connection` vs `DataSource`
+
+`DataSource` replaced `Connection` in v0.3 to provide a better meaning to the abstract concept represented by this class. For backwards compatibility, `Connection` was kept as an alias to `DataSource`, now this alias was removed. Similarly, `ConnectionOptions` is now `DataSourceOptions`.
+
+In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
 
 ### `ConnectionManager`
 
