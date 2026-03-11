@@ -324,6 +324,52 @@ categoryCount: number
 categoryCount: number
 ```
 
+## Find Options
+
+### `join` option removed
+
+The deprecated `join` property on `FindOneOptions` and `FindManyOptions` has been removed, along with the `JoinOptions` interface. Use `relations` with the object syntax instead:
+
+```typescript
+// Before
+const posts = await repository.find({
+    join: {
+        alias: "post",
+        leftJoinAndSelect: {
+            categories: "post.categories",
+            author: "post.author",
+        },
+    },
+})
+
+// After
+const posts = await repository.find({
+    relations: { categories: true, author: true },
+})
+```
+
+For more complex join scenarios (e.g., `leftJoin` without select, or `innerJoin`), use the QueryBuilder API directly.
+
+### String-based `select` and `relations` removed
+
+The deprecated string-array syntax for `select` and `relations` find options has been removed. Use the object syntax instead:
+
+```typescript
+// Before
+const users = await repository.find({
+    select: ["id", "name"],
+    relations: ["profile", "posts"],
+})
+
+// After
+const users = await repository.find({
+    select: { id: true, name: true },
+    relations: { profile: true, posts: true },
+})
+```
+
+The removed types are `FindOptionsSelectByString` and `FindOptionsRelationByString`.
+
 ## QueryBuilder
 
 ### `onConflict`

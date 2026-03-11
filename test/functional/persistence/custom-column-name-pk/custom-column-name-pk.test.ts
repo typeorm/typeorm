@@ -38,12 +38,7 @@ describe("persistence > cascade operations with custom name", () => {
 
                     // now check
                     const posts = await dataSource.manager.find(Post, {
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                category: "post.category",
-                            },
-                        },
+                        relations: { category: true },
                         order: {
                             id: "ASC",
                         },

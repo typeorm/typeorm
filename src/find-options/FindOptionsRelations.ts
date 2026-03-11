@@ -34,10 +34,3 @@ export type FindOptionsRelations<Entity> = {
         ? unknown
         : FindOptionsRelationsProperty<NonNullable<Entity[P]>>
 }
-
-/**
- * Relation names to be selected by "relation" defined as string.
- * Old relation mechanism in TypeORM.
- * @deprecated will be removed in the next version, use FindOptionsRelation type notation instead
- */
-export type FindOptionsRelationByString = string[]

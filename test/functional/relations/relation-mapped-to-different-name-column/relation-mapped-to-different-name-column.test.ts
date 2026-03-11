@@ -36,12 +36,7 @@ describe.skip("relations > relation mapped to relation with different name (#56)
 
                 // now check
                 const posts = await dataSource.manager.find(Post, {
-                    join: {
-                        alias: "post",
-                        innerJoinAndSelect: {
-                            details: "post.details",
-                        },
-                    },
+                    relations: { details: true },
                 })
 
                 posts.should.be.eql([

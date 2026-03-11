@@ -57,12 +57,7 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            manyCategories: "post.manyCategories",
-                        },
-                    },
+                    relations: { manyCategories: true },
                 })
 
                 expect(loadedPost!).not.to.be.null
@@ -101,10 +96,7 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "category",
-                        leftJoinAndSelect: { manyPosts: "category.manyPosts" },
-                    },
+                    relations: { manyPosts: true },
                 })
 
                 expect(loadedCategory).not.to.be.null
@@ -153,12 +145,7 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            manyCategories: "post.manyCategories",
-                        },
-                    },
+                    relations: { manyCategories: true },
                 })
 
                 expect(loadedPost!).not.to.be.null
@@ -203,10 +190,7 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "category",
-                        leftJoinAndSelect: { manyPosts: "category.manyPosts" },
-                    },
+                    relations: { manyPosts: true },
                 })
 
                 expect(loadedCategory!).not.to.be.null
@@ -241,10 +225,7 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: { categories: "post.categories" },
-                    },
+                    relations: { categories: true },
                 })
 
                 expect(loadedPost!).not.to.be.null
@@ -277,10 +258,7 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "category",
-                        leftJoinAndSelect: { post: "category.post" },
-                    },
+                    relations: { post: true },
                 })
 
                 expect(loadedCategory!).not.to.be.null
@@ -313,10 +291,7 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: { categories: "post.categories" },
-                    },
+                    relations: { categories: true },
                 })
 
                 expect(loadedPost!).not.to.be.null
@@ -349,10 +324,7 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "category",
-                        leftJoinAndSelect: { post: "category.post" },
-                    },
+                    relations: { post: true },
                 })
 
                 expect(loadedCategory).not.to.be.null

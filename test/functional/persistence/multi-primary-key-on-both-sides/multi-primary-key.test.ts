@@ -39,12 +39,7 @@ describe("persistence > multi primary keys on both sides", () => {
 
                     // now check
                     const posts = await dataSource.manager.find(Post, {
-                        join: {
-                            alias: "post",
-                            innerJoinAndSelect: {
-                                category: "post.category",
-                            },
-                        },
+                        relations: { category: true },
                         order: {
                             firstId: "ASC",
                         },
