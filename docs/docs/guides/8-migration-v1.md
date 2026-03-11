@@ -423,6 +423,20 @@ const migrations = await migrationExecutor.getAllMigrations()
 const migrations = migrationExecutor.getMigrations()
 ```
 
+### `QueryRunner.loadedTables` and `loadedViews`
+
+The deprecated `loadedTables` and `loadedViews` properties have been removed from the `QueryRunner` interface. Use `getTables()` and `getViews()` instead:
+
+```typescript
+// Before
+const tables = queryRunner.loadedTables
+const views = queryRunner.loadedViews
+
+// After
+const tables = await queryRunner.getTables()
+const views = await queryRunner.getViews()
+```
+
 ## Configuration
 
 ### `invalidWhereValuesBehavior` default changed to `throw`
