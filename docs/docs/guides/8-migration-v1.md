@@ -537,7 +537,7 @@ TypeORM no longer has built-in IoC container support. The `typeorm-typedi-extens
 
 ### Subscribers and migrations with dependencies
 
-If your subscribers or migrations need injected dependencies, instantiate them yourself and pass the instances to `DataSource` options:
+TypeORM always instantiates subscribers and migrations internally using a zero-argument constructor, so you cannot pass pre-built instances. If your migrations need access to services, use the `DataSource` (available via `queryRunner.connection`) inside the migration itself:
 
 ```typescript
 // Before
@@ -545,12 +545,13 @@ import { useContainer } from "typeorm"
 import { Container } from "typedi"
 useContainer(Container)
 
-// After — pass pre-built instances directly
-new DataSource({
-    subscribers: [new MySubscriber(dep1, dep2)],
-    migrations: [new MyMigration(dep1)],
-    // ...
-})
+// After — access dependencies via the DataSource inside the migration
+export class MyMigration1234 implements MigrationInterface {
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        const repo = queryRunner.connection.getRepository(User)
+        // ...
+    }
+}
 ```
 
 ### Accessing repositories and entity manager
@@ -587,6 +588,7 @@ If you use a DI framework, register the `DataSource` (or its repositories) as pr
 
 ```typescript
 // typedi example
+import { DataSource } from "typeorm"
 import { Container } from "typedi"
 
 const dataSource = new DataSource({
