@@ -533,7 +533,7 @@ const postgresOptions = allOptions.find((o) => o.type === "postgres")
 
 The deprecated IoC container integration has been removed: `useContainer()`, `getFromContainer()`, `ContainerInterface`, `ContainedType`, and `UseContainerOptions`.
 
-TypeORM no longer has built-in IoC container support. The `typeorm-typedi-extensions` package is also no longer compatible. The sections below cover how to migrate depending on your setup.
+TypeORM no longer has built-in IoC container support. The `typeorm-typedi-extensions` and `typeorm-routing-controllers-extensions` packages are also no longer compatible. The sections below cover how to migrate depending on your setup.
 
 ### Subscribers and migrations with dependencies
 
