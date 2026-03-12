@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import {
+import type {
     DataSource,
     GeometryCollection,
     LineString,
@@ -19,21 +19,21 @@ import { PostWithOptions } from "./entity/PostWithOptions"
 import { PostWithoutTypes } from "./entity/PostWithoutTypes"
 
 describe("database schema > column types > cockroachdb", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -414,9 +414,9 @@ describe("database schema > column types > cockroachdb", () => {
 
     it("all types should work correctly - persist and hydrate when options are specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(PostWithOptions)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(PostWithOptions)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post_with_options")
                 await queryRunner.release()
 
@@ -499,10 +499,10 @@ describe("database schema > column types > cockroachdb", () => {
 
     it("all types should work correctly - persist and hydrate when types are not specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const postRepository =
-                    connection.getRepository(PostWithoutTypes)
-                const queryRunner = connection.createQueryRunner()
+                    dataSource.getRepository(PostWithoutTypes)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post_without_types")
                 await queryRunner.release()
 

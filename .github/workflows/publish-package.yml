@@ -1,23 +1,45 @@
-name: Publish Package to npmjs
+# Publishing strategy:
+#
+# | Trigger        | Target    | Branch | Version                    | Tag                |
+# |----------------|-----------|--------|----------------------------|--------------------|
+# | GitHub Release |           | v0.3   | 0.3.29                     | latest/legacy (*)  |
+# | GitHub Release |           | master | 1.0.0                      | latest (*)         |
+# | GitHub Release |           | master | 1.0.0-pre                  | next               |
+# | GitHub Release |           | master | 1.0.0-rc.1                 | next               |
+# | Schedule       |           | v0.3   | 0.3.29-nightly.20260309    | nightly            |
+# | Schedule       |           | master | 1.0.0-nightly.20260309     | dev                |
+# | Manual         | release   | master | (same as GitHub Release)   | (auto)             |
+# | Manual         | master    | master | 1.0.0-nightly.20260309     | dev                |
+# | Manual         | v0.3      | v0.3   | 0.3.29-nightly.20260309    | nightly            |
+#
+# (*) Tag detection for releases: prerelease suffix → "next", stable → "latest" only if
+#  the version is greater than the current "latest" (prevents older branches from
+#  overtaking newer releases). Falls back to "legacy" otherwise (pnpm publish without --tag
+#  defaults to latest).
+#
+# Nightly skip logic: compares HEAD against the last published gitHead for the dist-tag.
+#
+# Trusted Publishing only supports one workflow file per package, so we need to fit
+# all our publish logic into a single workflow.
 
-# Single workflow file: Trusted Publishing only supports one workflow file per package.
+name: Publish Package
 
 on:
   release:
     types:
       - published
   schedule:
-    - cron: "0 2 * * *" # Nightly at 02:00 UTC
+    - cron: "0 2 * * *"
   workflow_dispatch:
     inputs:
-      publish_type:
-        description: "Type of publish"
+      target:
+        description: "Publish target"
         required: true
         type: choice
         options:
           - release
-          - master-nightly
-          - v0.3-nightly
+          - master
+          - v0.3
 
 concurrency:
   group: publish-package
@@ -25,27 +47,40 @@ concurrency:
 
 jobs:
   setup:
+    if: github.repository == 'typeorm/typeorm'
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Determine publish matrix
         id: set-matrix
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          PUBLISH_TYPE: ${{ inputs.publish_type }}
         run: |
-          if [ "$EVENT_NAME" == "release" ]; then
-            echo 'matrix=["release"]' >> $GITHUB_OUTPUT
-          elif [ "$EVENT_NAME" == "schedule" ]; then
-            echo 'matrix=["master-nightly", "v0.3-nightly"]' >> $GITHUB_OUTPUT
-          else
-            echo "matrix=[\"$PUBLISH_TYPE\"]" >> $GITHUB_OUTPUT
-          fi
+          case "${{ github.event_name }}" in
+            release)
+              echo 'matrix=[{"target":"release"}]' >> $GITHUB_OUTPUT
+              ;;
+            schedule)
+              echo 'matrix=[{"ref":"master","tag":"dev"},{"ref":"v0.3","tag":"nightly"}]' >> $GITHUB_OUTPUT
+              ;;
+            workflow_dispatch)
+              TARGET="${{ inputs.target }}"
+              if [ "$TARGET" == "release" ]; then
+                echo 'matrix=[{"target":"release"}]' >> $GITHUB_OUTPUT
+              else
+                if [ "$TARGET" == "master" ]; then
+                  TAG="dev"
+                else
+                  TAG="nightly"
+                fi
+                echo "matrix=[{\"ref\":\"$TARGET\",\"tag\":\"$TAG\"}]" >> $GITHUB_OUTPUT
+              fi
+              ;;
+          esac
 
   publish:
     needs: setup
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: npm
     permissions:
       contents: read
@@ -53,57 +88,76 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        type: ${{ fromJson(needs.setup.outputs.matrix) }}
+        include: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ matrix.type == 'v0.3-nightly' && 'v0.3' || matrix.type == 'master-nightly' && 'master' || '' }}
-          fetch-depth: ${{ matrix.type == 'release' && 1 || 0 }}
-
-      - name: Check for new commits
-        id: commit_check
-        if: matrix.type != 'release'
-        env:
-          MATRIX_TYPE: ${{ matrix.type }}
-        run: |
-          COMMITS=$(git rev-list --count --since="24 hours" HEAD)
-          echo "Commits in last 24h: $COMMITS"
-          echo "dist_tag=${MATRIX_TYPE%-nightly}" >> $GITHUB_OUTPUT
-          if [ "$COMMITS" -eq 0 ]; then
-            echo "should_publish=false" >> $GITHUB_OUTPUT
-          else
-            echo "should_publish=true" >> $GITHUB_OUTPUT
-          fi
+          ref: ${{ matrix.ref || github.ref }}
 
       - uses: pnpm/action-setup@v4
-        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
+
+      - name: Check if there are new commits since last publish (nightly) or if it's a release
+        id: publishable
+        run: |
+          if [ "${{ matrix.target }}" == "release" ]; then
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            VERSION=$(node -p "require('./package.json').version")
+            if [[ "$VERSION" == *-* ]]; then
+              echo "tag=next" >> $GITHUB_OUTPUT
+            else
+              CURRENT_LATEST=$(pnpm view typeorm@latest version 2>/dev/null || echo "0.0.0")
+              IS_GREATER=$(node -e "
+                const a = '$VERSION'.split('.').map(Number);
+                const b = '$CURRENT_LATEST'.split('.').map(Number);
+                const gt = a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] > b[2])));
+                console.log(gt ? 'true' : 'false');
+              ")
+              if [ "$IS_GREATER" == "true" ]; then
+                echo "tag=latest" >> $GITHUB_OUTPUT
+              else
+                echo "Version $VERSION is not greater than current latest $CURRENT_LATEST – tagging as 'legacy'"
+                echo "tag=legacy" >> $GITHUB_OUTPUT
+              fi
+            fi
+          else
+            echo "tag=${{ matrix.tag }}" >> $GITHUB_OUTPUT
+
+            PUBLISHED_SHA=$(pnpm view typeorm@"${{ matrix.tag }}" gitHead 2>/dev/null || echo "")
+            if [ -z "$PUBLISHED_SHA" ]; then
+              echo "No published nightly found – publishing"
+              echo "should_publish=true" >> $GITHUB_OUTPUT
+            elif [ "$PUBLISHED_SHA" == "$(git rev-parse HEAD)" ]; then
+              echo "HEAD matches last published nightly – skipping"
+              echo "should_publish=false" >> $GITHUB_OUTPUT
+            else
+              echo "New commits since last published nightly – publishing"
+              echo "should_publish=true" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       # registry-url is deliberately omitted: with Trusted Publishing, the npm
       # CLI handles OIDC auth automatically. Setting registry-url would create
       # an .npmrc with an empty auth token placeholder that blocks the OIDC flow.
       - uses: actions/setup-node@v6
-        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
+        if: steps.publishable.outputs.should_publish == 'true'
         with:
-          node-version: 22
+          node-version: 24
           cache: "pnpm"
 
-      - name: Update npm
-        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
-        run: npm install -g npm@latest
+      - run: npm install -g npm@latest
+        if: steps.publishable.outputs.should_publish == 'true'
 
-      - name: Install dependencies
-        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
-        run: pnpm install
+      - run: pnpm install --frozen-lockfile
+        if: steps.publishable.outputs.should_publish == 'true'
 
-      - name: Build package
-        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
-        run: pnpm run package
+      - run: pnpm run package
+        if: steps.publishable.outputs.should_publish == 'true'
 
       # The gulp package task copies the root package.json into build/package.
       # Dev-only fields like "prepare" (husky), "scripts", and "devEngines"
       # cause publish to fail since their dependencies aren't installed there.
       - name: Clean built package.json
-        if: matrix.type == 'release' || steps.commit_check.outputs.should_publish == 'true'
+        if: steps.publishable.outputs.should_publish == 'true'
         run: |
           node -e "
             const pkg = require('./build/package/package.json');
@@ -115,33 +169,13 @@ jobs:
           "
 
       - name: Set nightly version
-        if: matrix.type != 'release' && steps.commit_check.outputs.should_publish == 'true'
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.target != 'release'
         run: |
-          cd build/package
-          node -e "
-            const pkg = require('./package.json');
-            const base = pkg.version.replace(/-.*/, '');
-            const [major, minor, patch] = base.split('.').map(Number);
-            const hasPrerelease = pkg.version.includes('-');
-            pkg.version = major + '.' + minor + '.' + (hasPrerelease ? patch : patch + 1) + '-nightly.' + new Date().toISOString().slice(0,10).replace(/-/g, '');
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-            console.log('Publishing nightly version: ' + pkg.version);
-          "
+          BASE=$(node -p "require('./package.json').version.replace(/-.*/, '')")
+          pnpm version "${BASE}-nightly.$(date -u +%Y%m%d)" --no-git-tag-version --allow-same-version
+        working-directory: build/package
 
-      - name: Publish (release)
-        if: matrix.type == 'release'
-        run: |
-          cd build/package
-          pnpm publish --provenance --access public --no-git-checks
-
-      - name: Publish (nightly)
-        if: matrix.type != 'release' && steps.commit_check.outputs.should_publish == 'true'
-        env:
-          DIST_TAG: ${{ steps.commit_check.outputs.dist_tag }}
-        run: |
-          cd build/package
-          pnpm publish --provenance --access public --no-git-checks --tag "$DIST_TAG"
-
-      - name: Skip publish (no new commits)
-        if: matrix.type != 'release' && steps.commit_check.outputs.should_publish == 'false'
-        run: echo "No new commits in last 24 hours – skipping ${{ matrix.type }} publish."
+      - name: Publish
+        if: steps.publishable.outputs.should_publish == 'true'
+        run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
+        working-directory: build/package

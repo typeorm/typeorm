@@ -4,27 +4,26 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
 
 // todo: fix later
 describe.skip("persistence > cascades > remove", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                __dirname,
-                enabledDrivers: ["mysql"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            enabledDrivers: ["mysql"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should remove everything by cascades properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.manager.save(new Photo("Photo #1"))
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.save(new Photo("Photo #1"))
 
                 const user = new User()
                 user.id = 1
@@ -38,9 +37,9 @@ describe.skip("persistence > cascades > remove", () => {
                     new Photo("many-to-many #2"),
                     new Photo("many-to-many #3"),
                 ]
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
-                const loadedUser = await connection.manager
+                const loadedUser = await dataSource.manager
                     .createQueryBuilder(User, "user")
                     .leftJoinAndSelect("user.manyPhotos", "manyPhotos")
                     .leftJoinAndSelect(
@@ -67,9 +66,9 @@ describe.skip("persistence > cascades > remove", () => {
                 manyToManyPhotoNames.should.deep.include("many-to-many #2")
                 manyToManyPhotoNames.should.deep.include("many-to-many #3")
 
-                await connection.manager.remove(user)
+                await dataSource.manager.remove(user)
 
-                const allPhotos = await connection.manager.find(Photo)
+                const allPhotos = await dataSource.manager.find(Photo)
                 allPhotos.length.should.be.equal(1)
                 allPhotos[0].name.should.be.equal("Photo #1")
             }),

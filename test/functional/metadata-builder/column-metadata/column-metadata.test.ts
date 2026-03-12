@@ -5,25 +5,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
 import { Subcounters } from "./entity/Subcounters"
 
 describe("metadata-builder > ColumnMetadata", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("getValue", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Post #1"
@@ -36,7 +35,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                 post.counters.subcounters.version = 1
                 post.counters.subcounters.watches = 10
 
-                const titleColumnMetadata = connection
+                const titleColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "title")
                 expect(titleColumnMetadata).not.to.be.undefined
@@ -44,7 +43,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                     "Post #1",
                 )
 
-                const codeColumnMetadata = connection
+                const codeColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "code")
                 expect(codeColumnMetadata).not.to.be.undefined
@@ -52,7 +51,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                     123,
                 )
 
-                const watchesColumnMetadata = connection
+                const watchesColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "watches")
                 expect(watchesColumnMetadata).not.to.be.undefined
@@ -64,7 +63,7 @@ describe("metadata-builder > ColumnMetadata", () => {
 
     it("getValueMap", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Post #1"
@@ -77,7 +76,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                 post.counters.subcounters.version = 1
                 post.counters.subcounters.watches = 10
 
-                const titleColumnMetadata = connection
+                const titleColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "title")
                 expect(titleColumnMetadata).not.to.be.undefined
@@ -87,7 +86,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                 expect(titleColumnMetadata!.getEntityValueMap({ id: 1 })).to.be
                     .undefined
 
-                const codeColumnMetadata = connection
+                const codeColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "code")
                 expect(codeColumnMetadata).not.to.be.undefined
@@ -133,7 +132,7 @@ describe("metadata-builder > ColumnMetadata", () => {
                     }),
                 ).to.be.undefined
 
-                const watchesColumnMetadata = connection
+                const watchesColumnMetadata = dataSource
                     .getMetadata(Post)
                     .columns.find((column) => column.propertyName === "watches")
                 expect(watchesColumnMetadata).not.to.be.undefined

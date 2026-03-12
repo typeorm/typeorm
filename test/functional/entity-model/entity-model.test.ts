@@ -6,22 +6,21 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe("entity-model", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save successfully and use static methods successfully", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             Post.useDataSource(connection) // change connection each time because of AR specifics
 
             const post = Post.create()
@@ -46,7 +45,7 @@ describe("entity-model", () => {
     describe("upsert", function () {
         it("should upsert successfully", async () => {
             // These must run sequentially as we have the global context of the `Post` ActiveRecord class
-            for (const connection of connections.filter(
+            for (const connection of dataSources.filter(
                 (c) => c.driver.supportedUpsertTypes.length > 0,
             )) {
                 Post.useDataSource(connection) // change connection each time because of AR specifics
@@ -81,7 +80,7 @@ describe("entity-model", () => {
 
     it("should reload given entity successfully", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await connection.synchronize(true)
             Post.useDataSource(connection)
             Category.useDataSource(connection)
@@ -124,7 +123,7 @@ describe("entity-model", () => {
 
     it("should reload exactly the same entity", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await connection.synchronize(true)
             Post.useDataSource(connection)
             Category.useDataSource(connection)

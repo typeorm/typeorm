@@ -1,14 +1,14 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { Repository } from "./Repository"
-import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
-import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
+import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { TypeORMError } from "../error/TypeORMError"
-import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
-import { FindOneOptions } from "../find-options/FindOneOptions"
+import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
 
-import {
+import type {
     CreateIndexesOptions,
     ObjectId,
     ReplaceOptions,
@@ -45,7 +45,7 @@ import {
     UpdateResult,
     CountDocumentsOptions,
 } from "../driver/mongodb/typings"
-import { FindManyOptions } from "../find-options/FindManyOptions"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -137,11 +137,6 @@ export class MongoRepository<
      * Optionally find options can be applied.
      * @param ids
      * @param options
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
      */
     findByIds(ids: any[], options?: any): Promise<Entity[]> {
         return this.manager.findByIds(this.metadata.target, ids, options)

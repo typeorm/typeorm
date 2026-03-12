@@ -1,9 +1,9 @@
-import { Subject } from "../Subject"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { Subject } from "../Subject"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
 import { NestedSetMultipleRootError } from "../../error/NestedSetMultipleRootError"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 
 class NestedSetIds {
     left: number

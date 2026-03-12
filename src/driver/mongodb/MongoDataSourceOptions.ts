@@ -1,5 +1,5 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
-import { ReadPreference } from "./typings"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { ReadPreference } from "./typings"
 
 /**
  * MongoDB specific connection options.
@@ -53,13 +53,13 @@ export interface MongoDataSourceOptions extends BaseDataSourceOptions {
 
     /**
      * MongoClientOptions
-     * Synced with https://mongodb.github.io/node-mongodb-native/5.9/interfaces/MongoClientOptions.html
+     * Synced with https://mongodb.github.io/node-mongodb-native/6.16/interfaces/MongoClientOptions.html
      */
 
     /**
      * The name of the application that created this MongoClient instance.
-     * MongoDB 3.4 and newer will print this value in the server log upon establishing each connection.
-     * It is also recorded in the slow query log and profile collections
+     * MongoDB will print this value in the server log upon establishing each connection.
+     * It is also recorded in the slow query log and profile collections.
      */
     readonly appName?: string
 
@@ -116,17 +116,6 @@ export interface MongoDataSourceOptions extends BaseDataSourceOptions {
     readonly ignoreUndefined?: boolean
 
     /**
-     * @deprecated TCP Connection keep alive enabled. Will not be able to turn off in the future.
-     */
-    readonly keepAlive?: boolean
-
-    /**
-     * @deprecated The number of milliseconds to wait before initiating keepAlive on the TCP socket.
-     * Will not be configurable in the future.
-     */
-    readonly keepAliveInitialDelay?: number
-
-    /**
      * The size (in milliseconds) of the latency window for selecting among multiple suitable MongoDB instances.
      */
     readonly localThresholdMS?: number
@@ -177,7 +166,7 @@ export interface MongoDataSourceOptions extends BaseDataSourceOptions {
     readonly raw?: boolean
 
     /**
-     * Specify a read concern for the collection (only MongoDB 3.2 or higher supported)
+     * Specify a read concern for the collection.
      */
     readonly readConcern?: any
 
@@ -212,54 +201,6 @@ export interface MongoDataSourceOptions extends BaseDataSourceOptions {
     readonly socketTimeoutMS?: number
 
     /**
-     * @deprecated A boolean to enable or disables TLS/SSL for the connection.
-     * (The ssl option is equivalent to the {@link tls} option.)
-     */
-    readonly ssl?: boolean
-
-    /**
-     * @deprecated SSL Root Certificate file path.
-     *
-     * Will be removed in the next major version. Please use {@link tlsCAFile} instead.
-     */
-    readonly sslCA?: string
-
-    /**
-     * @deprecated SSL Certificate revocation list file path.
-     *
-     * Will be removed in the next major version.
-     */
-    readonly sslCRL?: string
-
-    /**
-     * @deprecated SSL Certificate file path.
-     *
-     * Will be removed in the next major version. Please use {@link tlsCertificateKeyFile} instead.
-     */
-    readonly sslCert?: string
-
-    /**
-     * @deprecated SSL Key file file path.
-     *
-     * Will be removed in the next major version. Please use {@link tlsCertificateKeyFile} instead.
-     */
-    readonly sslKey?: string
-
-    /**
-     * @deprecated SSL Certificate pass phrase.
-     *
-     * Will be removed in the next major version. Please use {@link tlsCertificateKeyFilePassword} instead.
-     */
-    readonly sslPass?: string
-
-    /**
-     * @deprecated Validate mongod server certificate against Certificate Authority
-     *
-     * Will be removed in the next major version. Please use {@link tlsAllowInvalidCertificates} instead.
-     */
-    readonly sslValidate?: boolean
-
-    /**
      * Enables or disables TLS/SSL for the connection.
      */
     readonly tls?: boolean
@@ -285,24 +226,10 @@ export interface MongoDataSourceOptions extends BaseDataSourceOptions {
     readonly tlsCertificateKeyFilePassword?: string
 
     /**
-     * @deprecated The write concern w value
-     *
-     * Please use the {@link writeConcern} option instead
-     */
-    readonly w?: string | number
-
-    /**
      * A MongoDB WriteConcern, which describes the level of acknowledgement
      * requested from MongoDB for write operations.
      */
     readonly writeConcern?: any
-
-    /**
-     * @deprecated The write concern timeout
-     *
-     * Please use the {@link writeConcern} option instead
-     */
-    readonly wtimeoutMS?: number
 
     /**
      * Configures a Socks5 proxy host used for creating TCP connections.

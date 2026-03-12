@@ -3,31 +3,26 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { EntitySchema } from "../../../src"
 import { Author, AuthorSchema } from "./entity/Author"
-import { Post, PostSchema } from "./entity/Post"
+import type { Post } from "./entity/Post"
+import { PostSchema } from "./entity/Post"
 
 describe("github issues > #1308 Raw Postgresql Update query result is always an empty array", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [
-                    new EntitySchema<Author>(AuthorSchema),
-                    new EntitySchema<Post>(PostSchema),
-                ],
-                dropSchema: true,
-                enabledDrivers: [
-                    "postgres",
-                    "mysql",
-                    "mariadb",
-                    "aurora-mysql",
-                ],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [
+                new EntitySchema<Author>(AuthorSchema),
+                new EntitySchema<Post>(PostSchema),
+            ],
+            dropSchema: true,
+            enabledDrivers: ["postgres", "mysql", "mariadb", "aurora-mysql"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const author = new Author()
@@ -38,7 +33,7 @@ describe("github issues > #1308 Raw Postgresql Update query result is always an 
 
     it("Update query returns the number of affected rows", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const result1 = await connection

@@ -1,14 +1,13 @@
 import { importClassesFromDirectories } from "../util/DirectoryExportedClassesLoader"
 import { OrmUtils } from "../util/OrmUtils"
-import { getFromContainer } from "../container"
-import { MigrationInterface } from "../migration/MigrationInterface"
+import type { MigrationInterface } from "../migration/MigrationInterface"
 import { getMetadataArgsStorage } from "../globals"
 import { EntityMetadataBuilder } from "../metadata-builder/EntityMetadataBuilder"
 import { EntitySchemaTransformer } from "../entity-schema/EntitySchemaTransformer"
-import { DataSource } from "../data-source/DataSource"
-import { EntitySchema } from "../entity-schema/EntitySchema"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
+import type { DataSource } from "../data-source/DataSource"
+import type { EntitySchema } from "../entity-schema/EntitySchema"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
 import { InstanceChecker } from "../util/InstanceChecker"
 
 /**
@@ -41,8 +40,9 @@ export class ConnectionMetadataBuilder {
                 migrationDirectories,
             )),
         ]
-        return allMigrationClasses.map((migrationClass) =>
-            getFromContainer<MigrationInterface>(migrationClass),
+        return allMigrationClasses.map(
+            (migrationClass) =>
+                new (migrationClass as new () => MigrationInterface)(),
         )
     }
 
@@ -64,10 +64,9 @@ export class ConnectionMetadataBuilder {
         ]
         return getMetadataArgsStorage()
             .filterSubscribers(allSubscriberClasses)
-            .map((metadata) =>
-                getFromContainer<EntitySubscriberInterface<any>>(
-                    metadata.target,
-                ),
+            .map(
+                (metadata) =>
+                    new (metadata.target as new () => EntitySubscriberInterface<any>)(),
             )
     }
 

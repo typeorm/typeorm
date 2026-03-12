@@ -1,11 +1,11 @@
-import { EntitySchema } from "../entity-schema/EntitySchema"
-import { LoggerOptions } from "../logger/LoggerOptions"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { DatabaseType } from "../driver/types/DatabaseType"
-import { Logger } from "../logger/Logger"
-import { DataSource } from "../data-source/DataSource"
-import { QueryResultCache } from "../cache/QueryResultCache"
-import { MixedList } from "../common/MixedList"
+import type { EntitySchema } from "../entity-schema/EntitySchema"
+import type { LoggerOptions } from "../logger/LoggerOptions"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { DatabaseType } from "../driver/types/DatabaseType"
+import type { Logger } from "../logger/Logger"
+import type { DataSource } from "../data-source/DataSource"
+import type { QueryResultCache } from "../cache/QueryResultCache"
+import type { MixedList } from "../common/MixedList"
 
 /**
  * BaseDataSourceOptions is set of DataSourceOptions shared by all database types.
@@ -15,13 +15,6 @@ export interface BaseDataSourceOptions {
      * Database type. This value is required.
      */
     readonly type: DatabaseType
-
-    /**
-     * Connection name. If connection name is not given then it will be called "default".
-     * Different connections must have different names.
-     * @deprecated
-     */
-    readonly name?: string
 
     /**
      * Entities to be loaded for this connection.
@@ -219,16 +212,16 @@ export interface BaseDataSourceOptions {
     readonly invalidWhereValuesBehavior?: {
         /**
          * How to handle null values in where conditions.
-         * - 'ignore': Skip null properties (default)
+         * - 'ignore': Skip null properties
          * - 'sql-null': Transform null to SQL NULL
-         * - 'throw': Throw an error when null is encountered
+         * - 'throw': Throw an error when null is encountered (default)
          */
         readonly null?: "ignore" | "sql-null" | "throw"
 
         /**
          * How to handle undefined values in where conditions.
-         * - 'ignore': Skip undefined properties (default)
-         * - 'throw': Throw an error when undefined is encountered
+         * - 'ignore': Skip undefined properties
+         * - 'throw': Throw an error when undefined is encountered (default)
          */
         readonly undefined?: "ignore" | "throw"
     }

@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -14,21 +14,21 @@ import {
 } from "./entity/EnumEntity"
 
 describe("database schema > enums", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres", "mysql", "mariadb", "cockroachdb"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly use default values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumEntity)
+                    dataSource.getRepository(EnumEntity)
 
                 const enumEntity = new EnumEntity()
                 enumEntity.id = 1
@@ -55,9 +55,9 @@ describe("database schema > enums", () => {
 
     it("should correctly save and retrieve", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumEntity)
+                    dataSource.getRepository(EnumEntity)
 
                 const enumEntity = new EnumEntity()
                 enumEntity.id = 1
@@ -88,10 +88,10 @@ describe("database schema > enums", () => {
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.driver.createSchemaBuilder().build()
+            dataSources.map(async (dataSource) => {
+                await dataSource.driver.createSchemaBuilder().build()
 
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
 

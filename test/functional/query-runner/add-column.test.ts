@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { TableColumn } from "../../../src/schema-builder/table/TableColumn"
 import {
     closeTestingConnections,
@@ -8,49 +8,49 @@ import {
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 
 describe("query runner > add column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly add column and revert add", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 let numericType = "int"
-                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) {
                     numericType = "integer"
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     numericType = "int64"
                 }
 
                 let stringType = "varchar"
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     stringType = "string"
                 }
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 let column1 = new TableColumn({
                     name: "secondId",
                     type: numericType,
                     isUnique: true,
-                    isNullable: connection.driver.options.type === "spanner",
+                    isNullable: dataSource.driver.options.type === "spanner",
                 })
 
                 // CockroachDB and Spanner does not support altering primary key constraint
                 if (
                     !(
-                        connection.driver.options.type === "cockroachdb" ||
-                        connection.driver.options.type === "spanner"
+                        dataSource.driver.options.type === "cockroachdb" ||
+                        dataSource.driver.options.type === "spanner"
                     )
                 )
                     column1.isPrimary = true
@@ -59,10 +59,10 @@ describe("query runner > add column", () => {
                 // Spanner does not support autoincrement.
                 if (
                     !(
-                        DriverUtils.isMySQLFamily(connection.driver) ||
-                        DriverUtils.isSQLiteFamily(connection.driver) ||
-                        connection.driver.options.type === "cockroachdb" ||
-                        connection.driver.options.type === "spanner"
+                        DriverUtils.isMySQLFamily(dataSource.driver) ||
+                        DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "cockroachdb" ||
+                        dataSource.driver.options.type === "spanner"
                     )
                 ) {
                     column1.isGenerated = true
@@ -74,7 +74,7 @@ describe("query runner > add column", () => {
                     type: stringType,
                     length: "100",
                     default: "'this is description'",
-                    isNullable: connection.driver.options.type === "spanner",
+                    isNullable: dataSource.driver.options.type === "spanner",
                 })
 
                 let column3 = new TableColumn({
@@ -83,7 +83,7 @@ describe("query runner > add column", () => {
                     length: "200",
                     generatedType: "STORED",
                     asExpression: "text || tag",
-                    isNullable: connection.driver.options.type === "spanner",
+                    isNullable: dataSource.driver.options.type === "spanner",
                 })
 
                 let column4 = new TableColumn({
@@ -92,7 +92,7 @@ describe("query runner > add column", () => {
                     length: "200",
                     generatedType: "VIRTUAL",
                     asExpression: "text || tag",
-                    isNullable: connection.driver.options.type === "spanner",
+                    isNullable: dataSource.driver.options.type === "spanner",
                 })
 
                 await queryRunner.addColumn(table!, column1)
@@ -102,7 +102,7 @@ describe("query runner > add column", () => {
                 column1 = table!.findColumnByName("secondId")!
                 column1!.should.be.exist
                 column1!.isUnique.should.be.true
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     column1!.isNullable.should.be.true
                 } else {
                     column1!.isNullable.should.be.false
@@ -111,8 +111,8 @@ describe("query runner > add column", () => {
                 // CockroachDB and Spanner does not support altering primary key constraint
                 if (
                     !(
-                        connection.driver.options.type === "cockroachdb" ||
-                        connection.driver.options.type === "spanner"
+                        dataSource.driver.options.type === "cockroachdb" ||
+                        dataSource.driver.options.type === "spanner"
                     )
                 )
                     column1!.isPrimary.should.be.true
@@ -121,10 +121,10 @@ describe("query runner > add column", () => {
                 // Spanner does not support autoincrement.
                 if (
                     !(
-                        DriverUtils.isMySQLFamily(connection.driver) ||
-                        DriverUtils.isSQLiteFamily(connection.driver) ||
-                        connection.driver.options.type === "cockroachdb" ||
-                        connection.driver.options.type === "spanner"
+                        DriverUtils.isMySQLFamily(dataSource.driver) ||
+                        DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "cockroachdb" ||
+                        dataSource.driver.options.type === "spanner"
                     )
                 ) {
                     column1!.isGenerated.should.be.true
@@ -136,30 +136,30 @@ describe("query runner > add column", () => {
                 column2.length.should.be.equal("100")
 
                 // Spanner does not support DEFAULT
-                if (!(connection.driver.options.type === "spanner")) {
+                if (!(dataSource.driver.options.type === "spanner")) {
                     column2!.default!.should.be.equal("'this is description'")
                 }
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
-                    const isMySQL = connection.options.type === "mysql"
+                    const isMySQL = dataSource.options.type === "mysql"
                     const isSpanner =
-                        connection.driver.options.type === "spanner"
+                        dataSource.driver.options.type === "spanner"
                     let postgresSupported = false
 
-                    if (connection.driver.options.type === "postgres") {
+                    if (dataSource.driver.options.type === "postgres") {
                         postgresSupported = (
-                            connection.driver as PostgresDriver
+                            dataSource.driver as PostgresDriver
                         ).isGeneratedColumnsSupported
                     }
 
                     if (isMySQL || isSpanner || postgresSupported) {
                         // create typeorm_metadata table manually
                         await createTypeormMetadataTable(
-                            connection.driver,
+                            dataSource.driver,
                             queryRunner,
                         )
                         await queryRunner.addColumn(table!, column3)
@@ -169,7 +169,7 @@ describe("query runner > add column", () => {
                         column3!.generatedType!.should.be.equals("STORED")
                         column3!.asExpression!.should.be.a("string")
 
-                        if (DriverUtils.isMySQLFamily(connection.driver)) {
+                        if (DriverUtils.isMySQLFamily(dataSource.driver)) {
                             await queryRunner.addColumn(table!, column4)
                             table = await queryRunner.getTable("post")
                             column4 = table!.findColumnByName("textAndTag2")!

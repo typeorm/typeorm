@@ -1,7 +1,7 @@
 import { expect } from "chai"
-import { DataSource } from "../../../../src"
-import { EntitySubscriberInterface } from "../../../../src"
-import { UpdateEvent } from "../../../../src"
+import type { DataSource } from "../../../../src"
+import type { EntitySubscriberInterface } from "../../../../src"
+import type { UpdateEvent } from "../../../../src"
 import { PostWithLuxonDate, DateTime } from "./entity/PostWithLuxonDate"
 import {
     createTestingConnections,

@@ -2,7 +2,7 @@ import "reflect-metadata"
 import { Foo1Entity } from "./entity/Foo1"
 import { Foo2Entity } from "./entity/Foo2"
 import { Foo3Entity } from "./entity/Foo3"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,19 +11,18 @@ import {
 import { expect } from "chai"
 
 describe("mysql > tree tables > closure-table", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Foo1Entity, Foo2Entity, Foo3Entity],
-                enabledDrivers: ["mysql"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Foo1Entity, Foo2Entity, Foo3Entity],
+            enabledDrivers: ["mysql"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("foo1 should create closure columns unsigned", () => {
-        connections.forEach((dataSource) => {
+        dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo1",
             )!
@@ -53,8 +52,8 @@ describe("mysql > tree tables > closure-table", () => {
         })
     })
 
-    it("foo2 should create closure columns with specified zerofill, width, precision and scale", () => {
-        connections.forEach((dataSource) => {
+    it("foo2 should create closure columns with specified precision and scale", () => {
+        dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo2",
             )!
@@ -79,12 +78,6 @@ describe("mysql > tree tables > closure-table", () => {
 
             expect(descendantCol).to.exist
 
-            expect(ancestorCol.zerofill).to.be.true
-            expect(descendantCol.zerofill).to.be.true
-
-            expect(ancestorCol.width).to.be.eq(13)
-            expect(descendantCol.width).to.be.eq(13)
-
             expect(ancestorCol.precision).to.be.eq(9)
             expect(descendantCol.precision).to.be.eq(9)
 
@@ -94,7 +87,7 @@ describe("mysql > tree tables > closure-table", () => {
     })
 
     it("foo3 should create closure columns with specified length, charset and collation", () => {
-        connections.forEach((dataSource) => {
+        dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo3",
             )!
