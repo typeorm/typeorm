@@ -29,7 +29,7 @@ export class Gulpfile {
     @Task()
     compile() {
         return gulp.src("package.json", { read: false })
-            .pipe(shell(["npm run compile"]));
+            .pipe(shell(["pnpm run compile"]));
     }
 
     // -------------------------------------------------------------------------
@@ -101,7 +101,7 @@ export class Gulpfile {
     packagePublish() {
         return gulp.src("package.json", { read: false })
             .pipe(shell([
-                "cd ./build/package && npm publish"
+                "cd ./build/package && pnpm publish"
             ]));
     }
 
@@ -112,7 +112,7 @@ export class Gulpfile {
     packagePack() {
         return gulp.src("package.json", { read: false })
             .pipe(shell([
-                "cd ./build/package && npm pack && mv -f typeorm-*.tgz .."
+                "cd ./build/package && pnpm pack && mv -f typeorm-*.tgz .."
             ]));
     }
 

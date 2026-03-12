@@ -85,10 +85,9 @@
     "lint": "eslint",
     "pack": "gulp pack",
     "package": "gulp package",
-    "pre-commit": "lint-staged",
     "prepare": "is-ci || husky",
     "publish:preview": "pkg-pr-new publish './build/package' --template='./sample/playground'",
-    "test": "npm run compile && npm run test:fast --",
+    "test": "pnpm run compile && pnpm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
     "typecheck": "tsc --noEmit",
@@ -119,6 +118,7 @@
     "@types/chai": "^4.3.20",
     "@types/chai-as-promised": "^7.1.8",
     "@types/debug": "^4.1.12",
+    "@types/gulp": "^4.0.18",
     "@types/gulp-rename": "^2.0.7",
     "@types/gulp-sourcemaps": "^0.0.38",
     "@types/mocha": "^10.0.10",
@@ -238,8 +238,23 @@
       "optional": true
     }
   },
+  "packageManager": "pnpm@10.26.2",
   "engines": {
     "node": ">=16.13.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "sqlite3"
+    ],
+    "ignoredBuiltDependencies": [
+      "@sap/hana-client",
+      "es5-ext",
+      "libpq",
+      "oracledb",
+      "protobufjs"
+    ],
+    "minimumReleaseAge": 1440
   },
   "collective": {
     "type": "opencollective",
@@ -248,7 +263,9 @@
   },
   "devEngines": {
     "packageManager": {
-      "name": "npm"
+      "name": "pnpm",
+      "version": "^10.26.2",
+      "onFail": "error"
     }
   },
   "readmeFilename": "README.md",

@@ -3,10 +3,11 @@
 ._*
 
 ### Node ###
+.node-version
+.nvmrc
 build/
 coverage/
 node_modules/
-npm-debug.log*
 *.lcov
 
 ### VisualStudioCode ###
