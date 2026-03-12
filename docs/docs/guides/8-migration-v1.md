@@ -262,6 +262,12 @@ const user = await repository.findOneById(1)
 const user = await repository.findOneBy({ id: 1 })
 ```
 
+> **MongoDB note:** For entities using `@ObjectIdColumn()`, use `_id` instead of `id`:
+>
+> ```typescript
+> const post = await repository.findOneBy({ _id: post.id })
+> ```
+
 ### `findByIds`
 
 The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, and `BaseEntity`. Use `findBy` with the `In` operator instead:
