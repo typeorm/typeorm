@@ -73,6 +73,79 @@ describe("mongodb > object id columns", () => {
             }),
         ))
 
+    it("should find entity by ObjectIdColumn property name using findOneBy", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postMongoRepository = dataSource.getMongoRepository(Post)
+
+                const post = new Post()
+                post.title = "Post"
+                await postMongoRepository.save(post)
+
+                const loadedPost = await postMongoRepository.findOneBy({
+                    nonIdNameOfObjectId: post.nonIdNameOfObjectId,
+                })
+                expect(loadedPost).to.be.not.null
+                expect(loadedPost!.title).to.be.equal("Post")
+                expect(loadedPost!.nonIdNameOfObjectId.toString()).to.be.equal(
+                    post.nonIdNameOfObjectId.toString(),
+                )
+            }),
+        ))
+
+    it("should find entity by ObjectIdColumn property name using find with where", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postMongoRepository = dataSource.getMongoRepository(Post)
+
+                const post = new Post()
+                post.title = "Post"
+                await postMongoRepository.save(post)
+
+                const loadedPosts = await postMongoRepository.find({
+                    where: {
+                        nonIdNameOfObjectId: post.nonIdNameOfObjectId,
+                    },
+                })
+                expect(loadedPosts).to.have.length(1)
+                expect(loadedPosts[0].title).to.be.equal("Post")
+            }),
+        ))
+
+    it("should find entity by ObjectIdColumn property name using findAndCount", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postMongoRepository = dataSource.getMongoRepository(Post)
+
+                const post = new Post()
+                post.title = "Post"
+                await postMongoRepository.save(post)
+
+                const [posts, count] = await postMongoRepository.findAndCount({
+                    where: {
+                        nonIdNameOfObjectId: post.nonIdNameOfObjectId,
+                    },
+                })
+                expect(count).to.be.equal(1)
+                expect(posts[0].title).to.be.equal("Post")
+            }),
+        ))
+
+    it("should find entity by ObjectIdColumn using EntityManager.findOneBy", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const post = new Post()
+                post.title = "Post"
+                await dataSource.manager.save(post)
+
+                const loadedPost = await dataSource.manager.findOneBy(Post, {
+                    nonIdNameOfObjectId: post.nonIdNameOfObjectId,
+                })
+                expect(loadedPost).to.be.not.null
+                expect(loadedPost!.title).to.be.equal("Post")
+            }),
+        ))
+
     it("should not persist entity ObjectIdColumn property in DB on update by save", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
