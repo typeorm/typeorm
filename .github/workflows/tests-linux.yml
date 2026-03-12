@@ -59,7 +59,7 @@ jobs:
           name: mocharc-shard-${{ matrix.shard }}
           path: .mocharc.${{ matrix.shard }}.json
 
-      - run: pnpm exec c8 pnpm run test:ci -- --config .mocharc.${{ matrix.shard }}.json
+      - run: pnpm exec c8 mocha --bail --config .mocharc.${{ matrix.shard }}.json
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
