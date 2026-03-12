@@ -3111,44 +3111,63 @@ export class CockroachQueryRunner
                 )
                 if (!isSchemaExist) schemas.push(metadata.schema!)
             })
-        schemas.push(this.driver.options.schema || "current_schema()")
-        const schemaNamesString = schemas
-            .map((name) => {
-                return name === "current_schema()" ? name : "'" + name + "'"
-            })
-            .join(", ")
+        if (this.driver.options.schema) {
+            schemas.push(this.driver.options.schema)
+        } else {
+            const [{ currentSchema }] = await this.query(
+                `SELECT current_schema() AS "currentSchema"`,
+            )
+            schemas.push(currentSchema)
+        }
 
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
+
         try {
             const version = await this.getVersion()
-            const selectViewDropsQuery =
-                `SELECT 'DROP VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(viewname) || ' CASCADE;' as "query" ` +
-                `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`
-            const dropViewQueries: ObjectLiteral[] =
-                await this.query(selectViewDropsQuery)
-            for (const q of dropViewQueries) {
-                await this.query(q["query"])
-            }
 
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(table_schema) || '.' || quote_ident(table_name) || ' CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
-            const dropQueries: ObjectLiteral[] =
-                await this.query(selectDropsQuery)
-            for (const q of dropQueries) {
-                await this.query(q["query"])
-            }
-
-            const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE ' || quote_ident(sequence_schema) || '.' || quote_ident(sequence_name) || ';' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`
-            const sequenceDropQueries: ObjectLiteral[] = await this.query(
-                selectSequenceDropsQuery,
+            // drop views
+            const views: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(schemaname) || '.' || quote_ident(viewname) as "name" ` +
+                    `FROM "pg_views" WHERE "schemaname"::STRING = ANY($1::STRING[])`,
+                [schemas],
             )
-            for (const q of sequenceDropQueries) {
-                await this.query(q["query"])
+
+            if (views.length > 0) {
+                await this.query(
+                    `DROP VIEW IF EXISTS ${views.map(({ name }) => name).join(", ")} CASCADE`,
+                )
+            }
+
+            // drop tables
+            const tables: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(table_schema) || '.' || quote_ident(table_name) as "name" ` +
+                    `FROM "information_schema"."tables" WHERE "table_schema"::STRING = ANY($1::STRING[]) AND "table_type" = 'BASE TABLE'`,
+                [schemas],
+            )
+
+            if (tables.length > 0) {
+                await this.query(
+                    `DROP TABLE IF EXISTS ${tables.map(({ name }) => name).join(", ")} CASCADE`,
+                )
+            }
+
+            // drop sequences
+            const sequences: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(sequence_schema) || '.' || quote_ident(sequence_name) as "name" ` +
+                    `FROM "information_schema"."sequences" WHERE "sequence_schema"::STRING = ANY($1::STRING[])`,
+                [schemas],
+            )
+
+            if (sequences.length > 0) {
+                await this.query(
+                    `DROP SEQUENCE IF EXISTS ${sequences.map(({ name }) => name).join(", ")}`,
+                )
             }
 
             // drop enum types. Supported starting from v20.2.19.
             if (VersionUtils.isGreaterOrEqual(version, "20.2.19")) {
-                await this.dropEnumTypes(schemaNamesString)
+                await this.dropEnumTypes(schemas)
             }
 
             if (!isAnotherTransactionActive) await this.commitTransaction()
@@ -4103,15 +4122,19 @@ export class CockroachQueryRunner
      * Drops ENUM type from given schemas.
      * @param schemaNames
      */
-    protected async dropEnumTypes(schemaNames: string): Promise<void> {
-        const selectDropsQuery =
-            `SELECT 'DROP TYPE IF EXISTS "' || n.nspname || '"."' || t.typname || '";' as "query" FROM "pg_type" "t" ` +
-            `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-            `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery)
-        for (const q of dropQueries) {
-            await this.query(q["query"])
+    protected async dropEnumTypes(schemaNames: string[]): Promise<void> {
+        const enums: ObjectLiteral[] = await this.query(
+            `SELECT quote_ident(n.nspname) || '.' || quote_ident(t.typname) as "name" FROM "pg_type" "t" ` +
+                `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
+                `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+                `WHERE "n"."nspname"::STRING = ANY($1::STRING[]) GROUP BY "n"."nspname", "t"."typname"`,
+            [schemaNames],
+        )
+
+        if (enums.length > 0) {
+            await this.query(
+                `DROP TYPE IF EXISTS ${enums.map(({ name }) => name).join(", ")}`,
+            )
         }
     }
 

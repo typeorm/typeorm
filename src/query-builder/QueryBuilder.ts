@@ -700,15 +700,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * @param statement
-     * @deprecated this way of replace property names is too slow.
-     *  Instead, we'll replace property names at the end - once query is build.
-     */
-    protected replacePropertyNames(statement: string) {
-        return statement
-    }
-
-    /**
      * Replaces all entity's propertyName to name in the given SQL string.
      * @param statement
      */
@@ -859,7 +850,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         )
 
         if (whereExpression.length > 0 && whereExpression !== "1=1") {
-            conditionsArray.push(this.replacePropertyNames(whereExpression))
+            conditionsArray.push(whereExpression)
         }
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
@@ -876,7 +867,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                       metadata.deleteDateColumn.propertyName
                     : metadata.deleteDateColumn.propertyName
 
-                const condition = `${this.replacePropertyNames(column)} IS NULL`
+                const condition = `${column} IS NULL`
                 conditionsArray.push(condition)
             }
 
@@ -887,18 +878,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                       metadata.discriminatorColumn.databaseName
                     : metadata.discriminatorColumn.databaseName
 
-                const condition = `${this.replacePropertyNames(
-                    column,
-                )} IN (:...discriminatorColumnValues)`
+                const condition = `${column} IN (:...discriminatorColumnValues)`
                 conditionsArray.push(condition)
             }
         }
 
         if (this.expressionMap.extraAppendedAndWhereCondition) {
-            const condition = this.replacePropertyNames(
+            conditionsArray.push(
                 this.expressionMap.extraAppendedAndWhereCondition,
             )
-            conditionsArray.push(condition)
         }
 
         let condition = ""

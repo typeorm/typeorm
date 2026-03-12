@@ -137,11 +137,6 @@ export class MongoRepository<
      * Optionally find options can be applied.
      * @param ids
      * @param options
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
      */
     findByIds(ids: any[], options?: any): Promise<Entity[]> {
         return this.manager.findByIds(this.metadata.target, ids, options)

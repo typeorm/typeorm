@@ -3490,37 +3490,42 @@ export class PostgresQueryRunner
                 )
                 if (!isSchemaExist) schemas.push(metadata.schema!)
             })
-        schemas.push(this.driver.options.schema || "current_schema()")
-        const schemaNamesString = schemas
-            .map((name) => {
-                return name === "current_schema()" ? name : "'" + name + "'"
-            })
-            .join(", ")
+        if (this.driver.options.schema) {
+            schemas.push(this.driver.options.schema)
+        } else {
+            const [{ currentSchema }] = await this.query(
+                `SELECT current_schema() AS "currentSchema"`,
+            )
+            schemas.push(currentSchema)
+        }
 
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
             // drop views
-            const selectViewDropsQuery =
-                `SELECT 'DROP VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(viewname) || ' CASCADE;' as "query" ` +
-                `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`
-            const dropViewQueries: ObjectLiteral[] =
-                await this.query(selectViewDropsQuery)
-            for (const q of dropViewQueries) {
-                await this.query(q["query"])
+            const views: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(schemaname) || '.' || quote_ident(viewname) as "name" ` +
+                    `FROM "pg_views" WHERE "schemaname" = ANY($1) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`,
+                [schemas],
+            )
+            if (views.length > 0) {
+                await this.query(
+                    `DROP VIEW IF EXISTS ${views.map(({ name }) => name).join(", ")} CASCADE`,
+                )
             }
 
             // drop materialized views
             // Note: materialized views introduced in Postgres 9.3
             if (DriverUtils.isReleaseVersionOrGreater(this.driver, "9.3")) {
-                const selectMatViewDropsQuery =
-                    `SELECT 'DROP MATERIALIZED VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(matviewname) || ' CASCADE;' as "query" ` +
-                    `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`
-                const dropMatViewQueries: ObjectLiteral[] = await this.query(
-                    selectMatViewDropsQuery,
+                const matViews: ObjectLiteral[] = await this.query(
+                    `SELECT quote_ident(schemaname) || '.' || quote_ident(matviewname) as "name" ` +
+                        `FROM "pg_matviews" WHERE "schemaname" = ANY($1)`,
+                    [schemas],
                 )
-                for (const q of dropMatViewQueries) {
-                    await this.query(q["query"])
+                if (matViews.length > 0) {
+                    await this.query(
+                        `DROP MATERIALIZED VIEW IF EXISTS ${matViews.map(({ name }) => name).join(", ")} CASCADE`,
+                    )
                 }
             }
 
@@ -3528,16 +3533,19 @@ export class PostgresQueryRunner
             // TODO generalize this as this.driver.ignoreTables
 
             // drop tables
-            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(tablename) || ' CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`
-            const dropTableQueries: ObjectLiteral[] = await this.query(
-                selectTableDropsQuery,
+            const tables: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(schemaname) || '.' || quote_ident(tablename) as "name" ` +
+                    `FROM "pg_tables" WHERE "schemaname" = ANY($1) AND "tablename" NOT IN ('spatial_ref_sys')`,
+                [schemas],
             )
-            for (const q of dropTableQueries) {
-                await this.query(q["query"])
+            if (tables.length > 0) {
+                await this.query(
+                    `DROP TABLE IF EXISTS ${tables.map(({ name }) => name).join(", ")} CASCADE`,
+                )
             }
 
             // drop enum types
-            await this.dropEnumTypes(schemaNamesString)
+            await this.dropEnumTypes(schemas)
 
             if (!isAnotherTransactionActive) {
                 await this.commitTransaction()
@@ -4663,15 +4671,18 @@ export class PostgresQueryRunner
      * Drops ENUM type from given schemas.
      * @param schemaNames
      */
-    protected async dropEnumTypes(schemaNames: string): Promise<void> {
-        const selectDropsQuery =
-            `SELECT 'DROP TYPE IF EXISTS "' || n.nspname || '"."' || t.typname || '" CASCADE;' as "query" FROM "pg_type" "t" ` +
-            `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-            `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery)
-        for (const q of dropQueries) {
-            await this.query(q["query"])
+    protected async dropEnumTypes(schemaNames: string[]): Promise<void> {
+        const enums: ObjectLiteral[] = await this.query(
+            `SELECT quote_ident(n.nspname) || '.' || quote_ident(t.typname) as "name" FROM "pg_type" "t" ` +
+                `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
+                `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+                `WHERE "n"."nspname" = ANY($1) GROUP BY "n"."nspname", "t"."typname"`,
+            [schemaNames],
+        )
+        if (enums.length > 0) {
+            await this.query(
+                `DROP TYPE IF EXISTS ${enums.map(({ name }) => name).join(", ")} CASCADE`,
+            )
         }
     }
 

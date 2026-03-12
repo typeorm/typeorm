@@ -1,6 +1,5 @@
 import { importClassesFromDirectories } from "../util/DirectoryExportedClassesLoader"
 import { OrmUtils } from "../util/OrmUtils"
-import { getFromContainer } from "../container"
 import type { MigrationInterface } from "../migration/MigrationInterface"
 import { getMetadataArgsStorage } from "../globals"
 import { EntityMetadataBuilder } from "../metadata-builder/EntityMetadataBuilder"
@@ -41,8 +40,9 @@ export class ConnectionMetadataBuilder {
                 migrationDirectories,
             )),
         ]
-        return allMigrationClasses.map((migrationClass) =>
-            getFromContainer<MigrationInterface>(migrationClass),
+        return allMigrationClasses.map(
+            (migrationClass) =>
+                new (migrationClass as new () => MigrationInterface)(),
         )
     }
 
@@ -64,10 +64,9 @@ export class ConnectionMetadataBuilder {
         ]
         return getMetadataArgsStorage()
             .filterSubscribers(allSubscriberClasses)
-            .map((metadata) =>
-                getFromContainer<EntitySubscriberInterface<any>>(
-                    metadata.target,
-                ),
+            .map(
+                (metadata) =>
+                    new (metadata.target as new () => EntitySubscriberInterface<any>)(),
             )
     }
 
