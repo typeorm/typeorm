@@ -27,9 +27,9 @@ describe("other issues > mongodb entity change in subscribers should affect pers
                 await connection.manager.save(post)
 
                 // check if it was inserted correctly
-                const loadedPost = await connection.manager.findOne(Post, {
-                    where: { title: "hello world" },
-                })
+                const loadedPost = await connection.manager.findOneBy(Post, {
+                    _id: post.id,
+                } as any)
                 expect(loadedPost).not.to.be.null
                 loadedPost!.active.should.be.equal(false)
 
@@ -39,9 +39,9 @@ describe("other issues > mongodb entity change in subscribers should affect pers
                 await connection.manager.save(loadedPost!)
 
                 // check if subscriber was triggered and entity was really taken changed columns in the subscriber
-                const loadedUpdatedPost = await connection.manager.findOne(
+                const loadedUpdatedPost = await connection.manager.findOneBy(
                     Post,
-                    { where: { title: "hello world!" } },
+                    { _id: post.id } as any,
                 )
                 expect(loadedUpdatedPost).not.to.be.null
                 expect(loadedUpdatedPost!.title).to.equals("hello world!")
