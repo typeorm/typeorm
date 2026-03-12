@@ -8,7 +8,7 @@ import {
 import type { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
 import { User } from "./entity/User"
 
-describe.only("github issues > #12094", () => {
+describe("github issues > #12094", () => {
     let dataSource: DataSource
 
     before(async () => {
