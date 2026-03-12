@@ -33,7 +33,7 @@ jobs:
               - *package-json
               - extra/**/*.js
               - src/**/*.ts
-              - gulpfile.js
+              - gulpfile.ts
               - tsconfig.json
 
             src-or-tests: &src-or-tests
@@ -58,19 +58,9 @@ jobs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
     needs: detect-changes
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./docs
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
-      - run: pnpm run build
+      - uses: ./.github/actions/build-docs
 
   build:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
@@ -78,13 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
+      - uses: ./.github/actions/setup-node
       - run: pnpm run compile
 
       - uses: actions/upload-artifact@v5
@@ -99,13 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
+      - uses: ./.github/actions/setup-node
       - run: pnpm run format:ci
 
   lint:
@@ -114,14 +92,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
+      - uses: ./.github/actions/setup-node
       - run: pnpm run lint
+
+  preview:
+    if: github.event_name == 'pull_request' && contains(needs.detect-changes.outputs.changes, 'src')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node
+      - run: pnpm run package
+      - run: pnpm run publish:preview
 
   tests-linux:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
