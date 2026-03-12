@@ -33,12 +33,10 @@ describe("columns > value-transformer > find-operator", () => {
                     }),
                 )
 
-                expect(() =>
-                    testRepository
-                        .createQueryBuilder()
-                        .where({ pairs: Not([]) })
-                        .getMany(),
-                ).not.to.throw()
+                await testRepository
+                    .createQueryBuilder()
+                    .where({ pairs: Not([]) })
+                    .getMany()
             }),
         ))
 

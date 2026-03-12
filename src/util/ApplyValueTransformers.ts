@@ -1,5 +1,5 @@
 import type { ValueTransformer } from "../decorator/options/ValueTransformer"
-import { FindOperator } from "../find-options/FindOperator"
+import { InstanceChecker } from "./InstanceChecker"
 
 export class ApplyValueTransformers {
     static transformFrom(
@@ -21,7 +21,7 @@ export class ApplyValueTransformers {
         transformer: ValueTransformer | ValueTransformer[],
         entityValue: any,
     ) {
-        if (entityValue instanceof FindOperator) {
+        if (InstanceChecker.isFindOperator(entityValue)) {
             entityValue.transformValue(transformer)
             return entityValue
         }
