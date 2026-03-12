@@ -53,18 +53,6 @@ export interface QueryRunner extends AsyncDisposable {
     data: ObjectLiteral
 
     /**
-     * All synchronized tables in the database.
-     * @deprecated Call `getTables()`
-     */
-    loadedTables: Table[]
-
-    /**
-     * All synchronized views in the database.
-     * @deprecated Call `getViews()`
-     */
-    loadedViews: View[]
-
-    /**
      * Creates/uses database connection from the connection pool to perform further operations.
      * Returns obtained database connection.
      */
@@ -218,26 +206,26 @@ export interface QueryRunner extends AsyncDisposable {
     /**
      * Creates a new database.
      */
-    createDatabase(database: string, ifNotExist?: boolean): Promise<void>
+    createDatabase(database: string, ifNotExists?: boolean): Promise<void>
 
     /**
-     * Drops database.
+     * Drops a database.
      */
-    dropDatabase(database: string, ifExist?: boolean): Promise<void>
+    dropDatabase(database: string, ifExists?: boolean): Promise<void>
 
     /**
      * Creates a new table schema.
      */
-    createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>
+    createSchema(schemaPath: string, ifNotExists?: boolean): Promise<void>
 
     /**
-     * Drops table schema.
+     * Drops a table schema.
      * For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
      * If schema path passed, it will drop schema in specified database.
      */
     dropSchema(
         schemaPath: string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         isCascade?: boolean,
     ): Promise<void>
 
@@ -246,7 +234,7 @@ export interface QueryRunner extends AsyncDisposable {
      */
     createTable(
         table: Table,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
         createForeignKeys?: boolean,
         createIndices?: boolean,
     ): Promise<void>
@@ -256,7 +244,7 @@ export interface QueryRunner extends AsyncDisposable {
      */
     dropTable(
         table: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys?: boolean,
         dropIndices?: boolean,
     ): Promise<void>
@@ -273,7 +261,7 @@ export interface QueryRunner extends AsyncDisposable {
     /**
      * Drops a view.
      */
-    dropView(view: View | string): Promise<void>
+    dropView(view: View | string, ifExists?: boolean): Promise<void>
 
     /**
      * Renames a table.
@@ -333,6 +321,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropColumn(
         table: Table | string,
         column: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -341,6 +330,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropColumns(
         table: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -366,6 +356,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropPrimaryKey(
         table: Table | string,
         constraintName?: string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -390,6 +381,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropUniqueConstraint(
         table: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -398,6 +390,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropUniqueConstraints(
         table: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -422,6 +415,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropCheckConstraint(
         table: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -430,6 +424,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropCheckConstraints(
         table: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -449,11 +444,12 @@ export interface QueryRunner extends AsyncDisposable {
     ): Promise<void>
 
     /**
-     * Drops a exclusion constraint.
+     * Drops an exclusion constraint.
      */
     dropExclusionConstraint(
         table: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -462,6 +458,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropExclusionConstraints(
         table: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -486,6 +483,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropForeignKey(
         table: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -494,6 +492,7 @@ export interface QueryRunner extends AsyncDisposable {
     dropForeignKeys(
         table: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -509,12 +508,20 @@ export interface QueryRunner extends AsyncDisposable {
     /**
      * Drops an index.
      */
-    dropIndex(table: Table | string, index: TableIndex | string): Promise<void>
+    dropIndex(
+        table: Table | string,
+        index: TableIndex | string,
+        ifExists?: boolean,
+    ): Promise<void>
 
     /**
      * Drops indices.
      */
-    dropIndices(table: Table | string, indices: TableIndex[]): Promise<void>
+    dropIndices(
+        table: Table | string,
+        indices: TableIndex[],
+        ifExists?: boolean,
+    ): Promise<void>
 
     /**
      * Clears all table contents.

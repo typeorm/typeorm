@@ -19,9 +19,9 @@ describe("tree tables > closure-table", () => {
 
     it("categories should be attached via parent and saved properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -60,9 +60,9 @@ describe("tree tables > closure-table", () => {
 
     it("categories should be attached via children and saved properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -100,9 +100,9 @@ describe("tree tables > closure-table", () => {
 
     it("categories should be attached via children and saved properly and everything must be saved in cascades", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -150,9 +150,9 @@ describe("tree tables > closure-table", () => {
     // todo: finish implementation and implement on other trees
     it.skip("categories should remove removed children", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -185,9 +185,9 @@ describe("tree tables > closure-table", () => {
     // todo: finish implementation and implement on other trees
     it.skip("sub-category should be removed with all its children", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -221,9 +221,9 @@ describe("tree tables > closure-table", () => {
 
     it("findTrees() tests > findTrees should load all category roots and attached children", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -286,9 +286,9 @@ describe("tree tables > closure-table", () => {
 
     it("findTrees() tests > findTrees should load multiple category roots if they exist", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -383,9 +383,9 @@ describe("tree tables > closure-table", () => {
 
     it("findTrees() tests > findTrees should filter by depth if optionally provided", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -526,9 +526,9 @@ describe("tree tables > closure-table", () => {
 
     it("findDescendantsTree() tests > findDescendantsTree should load all category descendents and nested children", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -590,9 +590,9 @@ describe("tree tables > closure-table", () => {
 
     it("findDescendantsTree() tests > findDescendantsTree should filter by depth if optionally provided", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"

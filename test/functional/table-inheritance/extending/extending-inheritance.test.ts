@@ -20,13 +20,13 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
 
     it("should work correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.name = "Super title"
                 post.text = "About this post"
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
                     .getOne()

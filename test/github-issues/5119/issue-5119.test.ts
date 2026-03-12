@@ -24,7 +24,6 @@ describe("github issues > #5119 migration with foreign key that changes target",
                 const options = setupSingleTestingConnection(
                     dataSource.options.type,
                     {
-                        name: `${dataSource.name}-v2`,
                         entities: [__dirname + "/entity/v2/*{.js,.ts}"],
                         dropSchema: false,
                         schemaCreate: false,

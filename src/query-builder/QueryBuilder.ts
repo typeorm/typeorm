@@ -439,23 +439,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Adds native parameters from the given object.
-     * @param parameters
-     * @deprecated Use `setParameters` instead
-     */
-    setNativeParameters(parameters: ObjectLiteral): this {
-        // set parent query builder parameters as well in sub-query mode
-        if (this.parentQueryBuilder) {
-            this.parentQueryBuilder.setNativeParameters(parameters)
-        }
-
-        Object.keys(parameters).forEach((key) => {
-            this.expressionMap.nativeParameters[key] = parameters[key]
-        })
-        return this
-    }
-
-    /**
      * Gets all parameters.
      */
     getParameters(): ObjectLiteral {
@@ -506,13 +489,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Gets query to be executed with all parameters used in it.
      */
     getQueryAndParameters(): [string, any[]] {
-        // this execution order is important because getQuery method generates this.expressionMap.nativeParameters values
         const query = this.getQuery()
         const parameters = this.getParameters()
         return this.connection.driver.escapeQueryWithParameters(
             query,
             parameters,
-            this.expressionMap.nativeParameters,
         )
     }
 
@@ -690,8 +671,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         } else {
             if (typeof entityTarget === "string") {
                 const isSubquery =
-                    entityTarget.substr(0, 1) === "(" &&
-                    entityTarget.substr(-1) === ")"
+                    entityTarget.startsWith("(") && entityTarget.endsWith(")")
 
                 return this.expressionMap.createAlias({
                     type: "from",
@@ -715,15 +695,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 subQuery: subquery,
             })
         }
-    }
-
-    /**
-     * @param statement
-     * @deprecated this way of replace property names is too slow.
-     *  Instead, we'll replace property names at the end - once query is build.
-     */
-    protected replacePropertyNames(statement: string) {
-        return statement
     }
 
     /**
@@ -877,7 +848,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         )
 
         if (whereExpression.length > 0 && whereExpression !== "1=1") {
-            conditionsArray.push(this.replacePropertyNames(whereExpression))
+            conditionsArray.push(whereExpression)
         }
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
@@ -894,7 +865,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                       metadata.deleteDateColumn.propertyName
                     : metadata.deleteDateColumn.propertyName
 
-                const condition = `${this.replacePropertyNames(column)} IS NULL`
+                const condition = `${column} IS NULL`
                 conditionsArray.push(condition)
             }
 
@@ -905,18 +876,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                       metadata.discriminatorColumn.databaseName
                     : metadata.discriminatorColumn.databaseName
 
-                const condition = `${this.replacePropertyNames(
-                    column,
-                )} IN (:...discriminatorColumnValues)`
+                const condition = `${column} IN (:...discriminatorColumnValues)`
                 conditionsArray.push(condition)
             }
         }
 
         if (this.expressionMap.extraAppendedAndWhereCondition) {
-            const condition = this.replacePropertyNames(
+            conditionsArray.push(
                 this.expressionMap.extraAppendedAndWhereCondition,
             )
-            conditionsArray.push(condition)
         }
 
         let condition = ""
@@ -1608,32 +1576,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     parameters: [aliasPath, ...parameters],
                 }
             }
-        } else if (parameterValue === null) {
-            const nullBehavior =
-                this.connection.options.invalidWhereValuesBehavior?.null ||
-                "ignore"
-            if (nullBehavior === "sql-null") {
-                return {
-                    operator: "isNull",
-                    parameters: [aliasPath],
-                }
-            } else if (nullBehavior === "throw") {
-                throw new TypeORMError(
-                    `Null value encountered in property '${aliasPath}' of a where condition. ` +
-                        `To match with SQL NULL, the IsNull() operator must be used. ` +
-                        `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
-                )
-            }
-        } else if (parameterValue === undefined) {
-            const undefinedBehavior =
-                this.connection.options.invalidWhereValuesBehavior?.undefined ||
-                "ignore"
-            if (undefinedBehavior === "throw") {
-                throw new TypeORMError(
-                    `Undefined value encountered in property '${aliasPath}' of a where condition. ` +
-                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
-                )
-            }
         }
 
         return {
@@ -1666,8 +1608,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 this.expressionMap.aliasNamePrefixingEnabled
             whereQueryBuilder.expressionMap.parameters =
                 this.expressionMap.parameters
-            whereQueryBuilder.expressionMap.nativeParameters =
-                this.expressionMap.nativeParameters
             whereQueryBuilder.expressionMap.joinAttributes =
                 this.expressionMap.joinAttributes
 

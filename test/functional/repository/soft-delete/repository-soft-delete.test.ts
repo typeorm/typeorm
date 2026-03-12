@@ -20,8 +20,8 @@ describe("repository > soft-delete", () => {
 
     it("should perform soft deletion and restoration correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save a new posts
                 const newPost1 = postRepository.create({

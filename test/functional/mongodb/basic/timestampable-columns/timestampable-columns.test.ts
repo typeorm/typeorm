@@ -21,9 +21,9 @@ describe("mongodb > timestampable columns", () => {
 
     it("should persist timestampable columns", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const commentMongoRepository =
-                    connection.getMongoRepository(Post)
+                    dataSource.getMongoRepository(Post)
 
                 // save a post
                 const post = new Post()

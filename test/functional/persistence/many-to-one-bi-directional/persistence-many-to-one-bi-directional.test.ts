@@ -21,15 +21,15 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should save a category with a post attached", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post(1, "Hello Post")
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 const category = new Category(1, "Hello Category")
                 category.post = post
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
-                const loadedCategory = await connection.manager.findOne(
+                const loadedCategory = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -51,13 +51,13 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should save a category and a new post by cascades", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post(1, "Hello Post")
                 const category = new Category(1, "Hello Category")
                 category.post = post
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
-                const loadedCategory = await connection.manager.findOne(
+                const loadedCategory = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -79,20 +79,20 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should update exist post by cascades when category is saved", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post(1, "Hello Post")
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 // update exist post from newly created category
                 const category = new Category(1, "Hello Category")
                 category.post = post
                 post.title = "Updated post"
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 // save once again, just for fun
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
-                const loadedCategory1 = await connection.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -112,9 +112,9 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
                 // update post from loaded category
                 ;(loadedCategory1!.post as Post).title = "Again Updated post"
-                await connection.manager.save(loadedCategory1)
+                await dataSource.manager.save(loadedCategory1)
 
-                const loadedCategory2 = await connection.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -136,17 +136,17 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should NOT remove exist post by cascades when category is saved without a post (post is set to undefined)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post(1, "Hello Post")
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 // update exist post from newly created category
                 const category = new Category(1, "Hello Category")
                 category.post = post
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 // load and check if it was correctly saved
-                const loadedCategory1 = await connection.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -166,9 +166,9 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
                 // remove post from loaded category
                 loadedCategory1!.post = undefined
-                await connection.manager.save(loadedCategory1)
+                await dataSource.manager.save(loadedCategory1)
 
-                const loadedCategory2 = await connection.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -186,7 +186,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     post: { id: 1, title: "Hello Post" },
                 })
 
-                const loadedPost = await connection.manager.findOne(Post, {
+                const loadedPost = await dataSource.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -198,16 +198,16 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should unset exist post when its set to null", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post(1, "Hello Post")
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 // update exist post from newly created category
                 const category = new Category(1, "Hello Category")
                 category.post = post
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
-                const loadedCategory1 = await connection.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -227,9 +227,9 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
                 // remove post from loaded category
                 loadedCategory1!.post = null
-                await connection.manager.save(loadedCategory1)
+                await dataSource.manager.save(loadedCategory1)
 
-                const loadedCategory2 = await connection.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -251,19 +251,19 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should set category's post to NULL when post is removed from the database (database ON DELETE)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Spanner does not support ON DELETE clause
-                if (connection.driver.options.type === "spanner") return
+                if (dataSource.driver.options.type === "spanner") return
 
                 const post = new Post(1, "Hello Post")
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 // update exist post from newly created category
                 const category = new Category(1, "Hello Category")
                 category.post = post
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
-                const loadedCategory1 = await connection.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -282,10 +282,10 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 })
 
                 // remove post from loaded category
-                await connection.manager.remove(post)
+                await dataSource.manager.remove(post)
 
                 // now lets load category and make sure post isn't set there
-                const loadedCategory2 = await connection.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -307,20 +307,20 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should work when relation id is directly set into relation (without related object)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post(1, "Hello Post #1")
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post(2, "Hello Post #2")
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // update exist post from newly created category
                 const category = new Category(1, "Hello Category")
                 category.post = 1
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 // check if category is saved with post set
-                const loadedCategory1 = await connection.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {
@@ -340,10 +340,10 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
                 // now update a category with another post
                 category.post = 2
-                await connection.manager.save(category)
+                await dataSource.manager.save(category)
 
                 // and check again if category is saved with new post
-                const loadedCategory2 = await connection.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOne(
                     Category,
                     {
                         where: {

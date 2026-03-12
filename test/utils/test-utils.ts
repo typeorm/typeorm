@@ -41,12 +41,6 @@ export interface TestingOptions {
     __dirname?: string
 
     /**
-     * Connection name to be overridden.
-     * This can be used to create multiple connections with single connection configuration.
-     */
-    name?: string
-
-    /**
      * List of enabled drivers for the given test suite.
      */
     enabledDrivers?: DatabaseType[]
@@ -174,7 +168,6 @@ export function setupSingleTestingConnection(
     options: TestingOptions,
 ): DataSourceOptions | undefined {
     const testingConnections = setupTestingConnections({
-        name: options.name ? options.name : undefined,
         entities: options.entities ? options.entities : [],
         subscribers: options.subscribers ? options.subscribers : [],
         dropSchema: options.dropSchema ? options.dropSchema : false,
@@ -255,10 +248,6 @@ export function setupTestingConnections(
                 {},
                 connectionOptions as DataSourceOptions,
                 {
-                    name:
-                        options && options.name
-                            ? options.name
-                            : connectionOptions.name,
                     entities:
                         options && options.entities ? options.entities : [],
                     migrations:

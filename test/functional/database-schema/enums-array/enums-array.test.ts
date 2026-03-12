@@ -28,9 +28,9 @@ describe("database schema > enum arrays", () => {
 
     it("should correctly create default values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumArrayEntity)
+                    dataSource.getRepository(EnumArrayEntity)
 
                 const enumEntity = new EnumArrayEntity()
                 enumEntity.id = 1
@@ -63,9 +63,9 @@ describe("database schema > enum arrays", () => {
 
     it("should correctly save and retrieve", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumArrayEntity)
+                    dataSource.getRepository(EnumArrayEntity)
 
                 const enumEntity = new EnumArrayEntity()
                 enumEntity.id = 1

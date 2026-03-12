@@ -192,9 +192,9 @@ export class InitCommand implements yargs.CommandModule {
                     'type: "mysql"',
                     'host: "localhost"',
                     "port: 3306",
-                    'username: "test"',
-                    'password: "test"',
-                    'database: "test"',
+                    'username: "root"',
+                    'password: "password"',
+                    'database: "typeorm"',
                 ]
                 break
 
@@ -203,9 +203,9 @@ export class InitCommand implements yargs.CommandModule {
                     'type: "mariadb"',
                     'host: "localhost"',
                     "port: 3306",
-                    'username: "test"',
-                    'password: "test"',
-                    'database: "test"',
+                    'username: "root"',
+                    'password: "password"',
+                    'database: "typeorm"',
                 ]
                 break
 
@@ -221,9 +221,9 @@ export class InitCommand implements yargs.CommandModule {
                     'type: "postgres"',
                     'host: "localhost"',
                     "port: 5432",
-                    'username: "test"',
-                    'password: "test"',
-                    'database: "test"',
+                    'username: "root"',
+                    'password: "password"',
+                    'database: "typeorm"',
                 ]
                 break
 
@@ -350,11 +350,11 @@ temp/`
      * @param database
      */
     protected static getUserEntityTemplate(database: string): string {
-        return `import { Entity, ${
+        return `${
             database === "mongodb"
-                ? "ObjectIdColumn, ObjectId"
-                : "PrimaryGeneratedColumn"
-        }, Column } from "typeorm"
+                ? `import { Entity, ObjectIdColumn, Column } from "typeorm"\nimport { ObjectId } from "mongodb"`
+                : `import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"`
+        }
 
 @Entity()
 export class User {
@@ -601,10 +601,8 @@ AppDataSource.initialize().then(async () => {
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
 `
             case "mariadb":
@@ -615,10 +613,8 @@ AppDataSource.initialize().then(async () => {
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
 `
             case "postgres":
@@ -629,9 +625,9 @@ AppDataSource.initialize().then(async () => {
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "root"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "typeorm"
 
 `
             case "cockroachdb":

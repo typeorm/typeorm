@@ -14,7 +14,7 @@ import { expect } from "chai"
 describe("persistence > order of persistence execution operations", () => {
     describe("should throw exception when non-resolvable circular relations found", function () {
         it("should throw CircularRelationsError", async () => {
-            const connection = new DataSource({
+            const dataSource = new DataSource({
                 // dummy connection options, connection won't be established anyway
                 type: "mysql",
                 host: "localhost",
@@ -24,7 +24,7 @@ describe("persistence > order of persistence execution operations", () => {
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })
             const connectionMetadataBuilder = new ConnectionMetadataBuilder(
-                connection,
+                dataSource,
             )
             const entityMetadatas =
                 await connectionMetadataBuilder.buildEntityMetadatas([
@@ -34,7 +34,7 @@ describe("persistence > order of persistence execution operations", () => {
             expect(() =>
                 entityMetadataValidator.validateMany(
                     entityMetadatas,
-                    connection.driver,
+                    dataSource.driver,
                 ),
             ).to.throw(Error)
         })
@@ -51,7 +51,7 @@ describe("persistence > order of persistence execution operations", () => {
         after(() => closeTestingConnections(dataSources))
         it("", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // create first category and post and save them
                     const category1 = new Category()
                     category1.name = "Category saved by cascades #1"
@@ -60,10 +60,10 @@ describe("persistence > order of persistence execution operations", () => {
                     post1.title = "Hello Post #1"
                     post1.category = category1
 
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     // now check
-                    /*const posts = await connection.manager.find(Post, {
+                    /*const posts = await dataSource.manager.find(Post, {
              alias: "post",
              innerJoinAndSelect: {
              category: "post.category"

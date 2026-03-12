@@ -11,7 +11,6 @@ import { Alias } from "./Alias"
 import { JoinAttribute } from "./JoinAttribute"
 import type { QueryBuilder } from "./QueryBuilder"
 import type { QueryBuilderCteOptions } from "./QueryBuilderCte"
-import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import type { SelectQuery } from "./SelectQuery"
 import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
@@ -99,11 +98,6 @@ export class QueryExpressionMap {
     extraReturningColumns: ColumnMetadata[] = []
 
     /**
-     * Optional on conflict statement used in insertion query in postgres.
-     */
-    onConflict: string = ""
-
-    /**
      * Optional on ignore statement used in insertion query in databases.
      */
     onIgnore: boolean = false
@@ -130,11 +124,6 @@ export class QueryExpressionMap {
      * RelationId queries.
      */
     relationIdAttributes: RelationIdAttribute[] = []
-
-    /**
-     * Relation count queries.
-     */
-    relationCountAttributes: RelationCountAttribute[] = []
 
     /**
      * WHERE queries.
@@ -326,12 +315,6 @@ export class QueryExpressionMap {
     timeTravel?: boolean | string
 
     /**
-     * Extra parameters.
-     * @deprecated Use standard parameters instead
-     */
-    nativeParameters: ObjectLiteral = {}
-
-    /**
      * Query Comment to include extra information for debugging or other purposes.
      */
     comment?: string
@@ -504,7 +487,6 @@ export class QueryExpressionMap {
         map.mainAlias = this.mainAlias
         map.valuesSet = this.valuesSet
         map.returning = this.returning
-        map.onConflict = this.onConflict
         map.onIgnore = this.onIgnore
         map.onUpdate = this.onUpdate
         map.joinAttributes = this.joinAttributes.map(
@@ -512,9 +494,6 @@ export class QueryExpressionMap {
         )
         map.relationIdAttributes = this.relationIdAttributes.map(
             (relationId) => new RelationIdAttribute(this, relationId),
-        )
-        map.relationCountAttributes = this.relationCountAttributes.map(
-            (relationCount) => new RelationCountAttribute(this, relationCount),
         )
         map.wheres = this.wheres.map((where) => ({ ...where }))
         map.havings = this.havings.map((having) => ({ ...having }))
@@ -550,7 +529,6 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
         map.timeTravel = this.timeTravel
-        map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
         map.commonTableExpressions = this.commonTableExpressions.map(
             (cteOptions) => ({

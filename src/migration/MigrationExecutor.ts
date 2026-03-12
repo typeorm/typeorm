@@ -91,14 +91,6 @@ export class MigrationExecutor {
     }
 
     /**
-     * Returns an array of all migrations.
-     * @deprecated use getMigrations instead
-     */
-    public async getAllMigrations(): Promise<Migration[]> {
-        return Promise.resolve(this.getMigrations())
-    }
-
-    /**
      * @returns An array of all executed migrations
      */
     public async getExecutedMigrations(): Promise<Migration[]> {

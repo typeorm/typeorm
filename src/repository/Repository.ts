@@ -519,17 +519,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Checks whether any entity exists that matches the given options.
      * @param options
-     * @deprecated use `exists` method instead, for example:
-     *
-     * .exists()
-     */
-    exist(options?: FindManyOptions<Entity>): Promise<boolean> {
-        return this.manager.exists(this.metadata.target, options)
-    }
-
-    /**
-     * Checks whether any entity exists that matches the given options.
-     * @param options
      */
     exists(options?: FindManyOptions<Entity>): Promise<boolean> {
         return this.manager.exists(this.metadata.target, options)
@@ -653,20 +642,6 @@ export class Repository<Entity extends ObjectLiteral> {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<[Entity[], number]> {
         return this.manager.findAndCountBy(this.metadata.target, where)
-    }
-
-    /**
-     * Finds entities with ids.
-     * Optionally find options or conditions can be applied.
-     * @param ids
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    async findByIds(ids: any[]): Promise<Entity[]> {
-        return this.manager.findByIds(this.metadata.target, ids)
     }
 
     /**

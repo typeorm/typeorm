@@ -23,8 +23,8 @@ describe("query builder > brackets", () => {
     after(() => closeTestingConnections(dataSources))
 
     it("should put parentheses in the SQL", () => {
-        for (const connection of dataSources) {
-            const sql = connection
+        for (const dataSource of dataSources) {
+            const sql = dataSource
                 .createQueryBuilder(User, "user")
                 .where("user.isAdmin = :isAdmin", { isAdmin: true })
                 .orWhere(
@@ -55,7 +55,7 @@ describe("query builder > brackets", () => {
                 .disableEscaping()
                 .getSql()
 
-            if (connection.driver.options.type === "postgres") {
+            if (dataSource.driver.options.type === "postgres") {
                 expect(sql).to.be.equal(
                     "SELECT user.id AS user_id, user.firstName AS user_firstName, " +
                         "user.lastName AS user_lastName, user.isAdmin AS user_isAdmin " +
@@ -81,26 +81,26 @@ describe("query builder > brackets", () => {
 
     it("should put brackets correctly into WHERE expression", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"
                 user1.isAdmin = false
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.firstName = "Alex"
                 user2.lastName = "Messer"
                 user2.isAdmin = false
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.firstName = "Umed"
                 user3.lastName = "Pleerock"
                 user3.isAdmin = true
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
-                const users = await connection
+                const users = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .orWhere(
@@ -129,17 +129,17 @@ describe("query builder > brackets", () => {
 
     it("should be able to use join attributes in brackets", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const author = new Author()
                 author.name = "gioboa"
-                await connection.manager.save(author)
+                await dataSource.manager.save(author)
 
                 const post = new Post()
                 post.title = "About TypeORM"
                 post.author = author
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.author", "author")
                     .andWhere(
