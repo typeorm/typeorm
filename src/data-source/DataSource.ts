@@ -139,7 +139,6 @@ export class DataSource {
         registerQueryBuilders()
         const normalizedOptions =
             DataSource.normalizeReplicationOptions(options)
-        this.name = normalizedOptions.name || "default"
         this.options = normalizedOptions
         this.logger = new LoggerFactory().create(
             this.options.logger,
