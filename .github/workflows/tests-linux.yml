@@ -11,6 +11,14 @@ jobs:
     # CockroachDB is slow, run less often so it doesn't block other workflows
     if: ${{ inputs.node-version >= 22 }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+
+    env:
+      TOTAL_SHARDS: 6
+
     services:
       cockroachdb:
         image: cockroachdb/cockroach:v24.3.8
@@ -38,11 +46,25 @@ jobs:
 
       - run: pnpm install
       - run: jq 'map(select(.type == "cockroachdb"))' ormconfig.sample.json > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
 
-      - uses: coverallsapp/github-action@v2
+      - name: Split test files for shard ${{ matrix.shard }}/${{ env.TOTAL_SHARDS }}
+        run: |
+          find build/compiled/test -name "*.test.js" | sort | awk "NR % $TOTAL_SHARDS == ${{ matrix.shard }} - 1" \
+            | jq -R -s 'split("\n") | map(select(length > 0))' \
+            | jq -s '.[0] as $files | .[1] | .spec = $files | .recursive = false' - .mocharc.json > .mocharc.${{ matrix.shard }}.json
+          echo "Shard ${{ matrix.shard }}/$TOTAL_SHARDS: $(jq '.spec | length' .mocharc.${{ matrix.shard }}.json) test files"
+
+      - uses: actions/upload-artifact@v4
         with:
-          flag-name: crdb-node:${{ inputs.node-version }}
+          name: mocharc-shard-${{ matrix.shard }}
+          path: .mocharc.${{ matrix.shard }}.json
+
+      - run: pnpm exec c8 pnpm run test:ci -- --config .mocharc.${{ matrix.shard }}.json
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: crdb-shard:${{ matrix.shard }}-node:${{ inputs.node-version }}
           parallel: true
 
   mongodb:
