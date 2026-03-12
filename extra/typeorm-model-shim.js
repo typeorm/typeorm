@@ -197,11 +197,6 @@ exports.OneToMany = OneToMany;
 }
 exports.OneToOne = OneToOne;
 
-/* export */ function RelationCount() {
-    return noop
-}
-exports.RelationCount = RelationCount;
-
 /* export */ function RelationId() {
     return noop
 }

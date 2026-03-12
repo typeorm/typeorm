@@ -7,9 +7,9 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
   mysql-9:
     image: "mysql:9.5.0"
@@ -18,32 +18,32 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
   # mariadb
   mariadb-10:
-    image: "mariadb:10.6.24-jammy"
+    image: "mariadb:10.11.16"
     container_name: "typeorm-mariadb-10"
     ports:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
   mariadb-12:
-    image: "mariadb:12.1.2"
+    image: "mariadb:12.2.2"
     container_name: "typeorm-mariadb-12"
     ports:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
   # postgres
   postgres-14:
@@ -54,9 +54,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "username"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "typeorm"
 
   # postgres
   postgres-17:
@@ -67,9 +67,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "username"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "typeorm"
 
   # mssql
   mssql:
@@ -89,10 +89,15 @@ services:
     command: "start-single-node --insecure --cache=.25 --store=type=mem,size=.25"
     ports:
       - "26257:26257"
+    healthcheck:
+      test: ["CMD", "cockroach", "sql", "--insecure", "-e", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     # volumes:
     #   - cockroach-data:/cockroach/cockroach-data
 
-  # oracle
+    # oracle
   oracle:
     image: "container-registry.oracle.com/database/free:23.7.0.0-lite"
     container_name: "typeorm-oracle"
@@ -133,7 +138,7 @@ services:
       - kernel.shmmni=4096 # Maximum number of shared memory segments
       - net.ipv4.ip_local_port_range=40000 60999
     volumes:
-      - volume-hana-xe:/hana/mounts
+      - /hana/mounts
       - ./docker/hana/hxe-config.json:/hana/hxe-config.json:ro
     ports:
       - "39041:39041"
@@ -147,15 +152,3 @@ services:
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
-
-  # redis
-  # redis:
-  #   image: "redis:3.0.3"
-  #   container_name: "typeorm-redis"
-  #   ports:
-  #     - "6379:6379"
-
-volumes:
-  # cockroach-data:
-  # oracle-data:
-  volume-hana-xe:

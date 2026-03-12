@@ -169,8 +169,6 @@ export class MongoDriver implements Driver {
         "family",
         "forceServerObjectId",
         "ignoreUndefined",
-        "keepAlive",
-        "keepAliveInitialDelay",
         "localThresholdMS",
         "maxStalenessSeconds",
         "minPoolSize",
@@ -188,21 +186,12 @@ export class MongoDriver implements Driver {
         "retryWrites",
         "serializeFunctions",
         "socketTimeoutMS",
-        "ssl",
-        "sslCA",
-        "sslCRL",
-        "sslCert",
-        "sslKey",
-        "sslPass",
-        "sslValidate",
         "tls",
         "tlsAllowInvalidCertificates",
         "tlsCAFile",
         "tlsCertificateKeyFile",
         "tlsCertificateKeyFilePassword",
-        "w",
         "writeConcern",
-        "wtimeoutMS",
         // Proxy configuration for Socks5
         "proxyHost",
         "proxyPort",
@@ -286,12 +275,10 @@ export class MongoDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
         throw new TypeORMError(
             `This operation is not supported by Mongodb driver.`,
