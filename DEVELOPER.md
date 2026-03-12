@@ -4,7 +4,7 @@ This document describes how to set up your development environment and run TypeO
 
 -   [Prerequisite Software](#prerequisite-software)
 -   [Getting the Sources](#getting-the-sources)
--   [Installing NPM Modules](#installing-npm-modules)
+-   [Installing Dependencies](#installing-dependencies)
 -   [Building](#building)
 -   [Running Tests Locally](#running-tests-locally)
 
@@ -60,12 +60,12 @@ It is recommended to configure your OS to automatically switch to use this versi
 -   [`zsh-nvm`](https://github.com/lukechilds/zsh-nvm#auto-use)
 -   [`asdf`](https://asdf-vm.com) with `asdf-nodejs` plugin and [`legacy_version_file = true`](https://asdf-vm.com/manage/configuration.html#legacy-version-file) option
 
-## Installing package dependencies
+## Installing dependencies
 
 Install all TypeORM dependencies by running this command:
 
 ```shell
-npm install
+pnpm install
 ```
 
 ## ORM config
@@ -81,7 +81,7 @@ cp ormconfig.sample.json ormconfig.json
 To build a distribution package of TypeORM run:
 
 ```shell
-npm run package
+pnpm run package
 ```
 
 This command will generate a distribution package in the `build/package` directory.
@@ -91,11 +91,11 @@ You can link (or simply copy/paste) this directory into your project and test Ty
 To build the distribution package of TypeORM packed into a `.tgz`, run:
 
 ```shell
-npm run pack
+pnpm run pack
 ```
 
 This command will generate a distribution package tar in the `build` directory (`build/typeorm-x.x.x.tgz`).
-You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz` to bundle your build of TypeORM in your project.
+You can copy this tar into your project and run `pnpm install ./typeorm-x.x.x.tgz` to bundle your build of TypeORM in your project.
 
 ## Running Tests Locally
 
@@ -151,7 +151,7 @@ To run the tests, setup your environment configuration by copying `ormconfig.sam
 Run the tests as follows:
 
 ```shell
-npm test
+pnpm test
 ```
 
 You should make sure the test suites pass before submitting a PR to GitHub. Tests are run on PRs via GitHub Actions after approval, but your fork repository should be able to run CI as well. All tests need to pass before a PR will be merged.
@@ -167,16 +167,16 @@ describe.only('your describe test', ....)
 Alternatively, you can use the `--grep` flag to pass a regex to `mocha`. Only the tests that have `describe`/`it` statements that match the regex will be run. For example:
 
 ```shell
-npm run test -- --grep "your test name"
+pnpm run test -- --grep "your test name"
 ```
 
 ### Faster developer cycle for editing code and running tests
 
-The `npm run test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
+The `pnpm test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
 
-Instead, for a quicker feedback cycle, you can run `npm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
+Instead, for a quicker feedback cycle, you can run `pnpm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
 
-Once TypeScript finishes compiling your changes, you can run `npm run test:fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
+Once TypeScript finishes compiling your changes, you can run `pnpm run test:fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
 
 ## Using Docker
 
@@ -191,8 +191,8 @@ in the root of the project. Once all images are fetched and are running, you can
 To create a new release, follow these steps:
 
 1. Create a new branch from `master` with the format `release-x.x.x` (e.g. `release-0.3.23`).
-2. Update the version in `package.json` and run `npm install` to update the lock file.
-3. Run the `npm run changelog` command to generate the changelog for the new version.
+2. Update the version in `package.json` and run `pnpm install` to update the lockfile.
+3. Run `pnpm run changelog` to generate the changelog for the new version.
 4. Commit the changes and create a pull request to merge the release branch into `master`.
 5. Once the pull request is approved and merged, create a new release on GitHub with the same version number.
 6. The `publish-package.yml` script will then run a GitHub Actions workflow that will publish the new version to npm.
