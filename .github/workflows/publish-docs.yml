@@ -1,4 +1,4 @@
-name: Deploy Docs to Cloudflare Pages
+name: Publish Docs
 
 on:
   push:
@@ -6,16 +6,17 @@ on:
       - master
     paths:
       - "docs/**"
-      - ".github/workflows/deploy-docs-cloudflare-pages.yml"
+      - ".github/workflows/publish-docs.yml"
 
 concurrency:
-  group: deploy-docs-${{ github.ref }}
+  group: publish-docs-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy Docs
+    environment: docs
     permissions:
       contents: read
       deployments: write
