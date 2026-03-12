@@ -763,11 +763,16 @@ export class EntityManager {
         const overwriteColumns = metadata.columns.filter(
             (col) =>
                 !conflictColumns.includes(col) &&
+                col.isUpdate !== false &&
+                !col.generatedType &&
                 entities.some(
                     (entity) =>
                         typeof col.getEntityValue(entity) !== "undefined",
                 ),
         )
+
+        const upsertType =
+            options.upsertType || this.connection.driver.supportedUpsertTypes[0]
 
         const qb = this.createQueryBuilder()
             .insert()
@@ -782,9 +787,7 @@ export class EntityManager {
                     skipUpdateIfNoValuesChanged:
                         options.skipUpdateIfNoValuesChanged,
                     indexPredicate: options.indexPredicate,
-                    upsertType:
-                        options.upsertType ||
-                        this.connection.driver.supportedUpsertTypes[0],
+                    upsertType,
                 },
             )
 
@@ -1282,33 +1285,6 @@ export class EntityManager {
         )
             .setFindOptions({ where })
             .getManyAndCount()
-    }
-
-    /**
-     * Finds entities with ids.
-     * Optionally find options or conditions can be applied.
-     * @param entityClass
-     * @param ids
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    async findByIds<Entity extends ObjectLiteral>(
-        entityClass: EntityTarget<Entity>,
-        ids: any[],
-    ): Promise<Entity[]> {
-        // if no ids passed, no need to execute a query - just return an empty array of values
-        if (!ids.length) return Promise.resolve([])
-
-        const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder<Entity>(
-            entityClass as any,
-            metadata.name,
-        )
-            .andWhereInIds(ids)
-            .getMany()
     }
 
     /**
