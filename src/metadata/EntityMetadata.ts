@@ -12,7 +12,6 @@ import type { EntityListenerMetadata } from "./EntityListenerMetadata"
 import type { ExclusionMetadata } from "./ExclusionMetadata"
 import type { ForeignKeyMetadata } from "./ForeignKeyMetadata"
 import type { IndexMetadata } from "./IndexMetadata"
-import type { RelationCountMetadata } from "./RelationCountMetadata"
 import type { RelationIdMetadata } from "./RelationIdMetadata"
 import type { RelationMetadata } from "./RelationMetadata"
 import type { TableType } from "./types/TableTypes"
@@ -392,11 +391,6 @@ export class EntityMetadata {
      * Entity's relation id metadatas.
      */
     relationIds: RelationIdMetadata[] = []
-
-    /**
-     * Entity's relation id metadatas.
-     */
-    relationCounts: RelationCountMetadata[] = []
 
     /**
      * Entity's foreign key metadatas.

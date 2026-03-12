@@ -101,16 +101,6 @@ export class MongoQueryRunner implements QueryRunner {
     data = {}
 
     /**
-     * All synchronized tables in the database.
-     */
-    loadedTables: Table[]
-
-    /**
-     * All synchronized views in the database.
-     */
-    loadedViews: View[]
-
-    /**
      * Real database connection from a connection pool used to perform queries.
      */
     databaseConnection: MongoClient
@@ -238,8 +228,8 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates multiple indexes in the collection, this method is only supported for MongoDB 2.6 or higher.
-     * Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+     * Creates multiple indexes in the collection.
+     * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      * @param collectionName
      * @param indexSpecs
      */

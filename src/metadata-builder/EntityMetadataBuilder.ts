@@ -6,7 +6,6 @@ import { EmbeddedMetadata } from "../metadata/EmbeddedMetadata"
 import type { MetadataArgsStorage } from "../metadata-args/MetadataArgsStorage"
 import type { EmbeddedMetadataArgs } from "../metadata-args/EmbeddedMetadataArgs"
 import { RelationIdMetadata } from "../metadata/RelationIdMetadata"
-import { RelationCountMetadata } from "../metadata/RelationCountMetadata"
 import { EventListenerTypes } from "../metadata/types/EventListenerTypes"
 import { MetadataUtils } from "./MetadataUtils"
 import type { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
@@ -749,18 +748,6 @@ export class EntityMetadataBuilder {
 
                 return new RelationIdMetadata({ entityMetadata, args })
             })
-        entityMetadata.relationCounts = this.metadataArgsStorage
-            .filterRelationCounts(entityMetadata.inheritanceTree)
-            .map((args) => {
-                // for single table children we reuse relation counts created for their parents
-                if (entityMetadata.tableType === "entity-child")
-                    return entityMetadata.parentEntityMetadata.relationCounts.find(
-                        (relationCount) =>
-                            relationCount.propertyName === args.propertyName,
-                    )!
-
-                return new RelationCountMetadata({ entityMetadata, args })
-            })
         entityMetadata.ownListeners = this.metadataArgsStorage
             .filterListeners(entityMetadata.inheritanceTree)
             .map((args) => {
@@ -916,11 +903,6 @@ export class EntityMetadataBuilder {
                 .filterRelationIds(targets)
                 .map((args) => {
                     return new RelationIdMetadata({ entityMetadata, args })
-                })
-            embeddedMetadata.relationCounts = this.metadataArgsStorage
-                .filterRelationCounts(targets)
-                .map((args) => {
-                    return new RelationCountMetadata({ entityMetadata, args })
                 })
             embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(
                 entityMetadata,
@@ -1099,15 +1081,9 @@ export class EntityMetadataBuilder {
         )
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap()
         entityMetadata.relationIds.forEach((relationId) => relationId.build())
-        entityMetadata.relationCounts.forEach((relationCount) =>
-            relationCount.build(),
-        )
         entityMetadata.embeddeds.forEach((embedded) => {
             embedded.relationIdsFromTree.forEach((relationId) =>
                 relationId.build(),
-            )
-            embedded.relationCountsFromTree.forEach((relationCount) =>
-                relationCount.build(),
             )
         })
     }

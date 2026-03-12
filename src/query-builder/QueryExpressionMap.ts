@@ -11,7 +11,6 @@ import { Alias } from "./Alias"
 import { JoinAttribute } from "./JoinAttribute"
 import type { QueryBuilder } from "./QueryBuilder"
 import type { QueryBuilderCteOptions } from "./QueryBuilderCte"
-import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import type { SelectQuery } from "./SelectQuery"
 import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
@@ -125,11 +124,6 @@ export class QueryExpressionMap {
      * RelationId queries.
      */
     relationIdAttributes: RelationIdAttribute[] = []
-
-    /**
-     * Relation count queries.
-     */
-    relationCountAttributes: RelationCountAttribute[] = []
 
     /**
      * WHERE queries.
@@ -500,9 +494,6 @@ export class QueryExpressionMap {
         )
         map.relationIdAttributes = this.relationIdAttributes.map(
             (relationId) => new RelationIdAttribute(this, relationId),
-        )
-        map.relationCountAttributes = this.relationCountAttributes.map(
-            (relationCount) => new RelationCountAttribute(this, relationCount),
         )
         map.wheres = this.wheres.map((where) => ({ ...where }))
         map.havings = this.havings.map((having) => ({ ...having }))
