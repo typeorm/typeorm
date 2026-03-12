@@ -141,8 +141,11 @@ jobs:
       - uses: actions/setup-node@v6
         if: steps.publishable.outputs.should_publish == 'true'
         with:
-          node-version: 22
+          node-version: 24
           cache: "pnpm"
+
+      - run: npm install -g npm@latest
+        if: steps.publishable.outputs.should_publish == 'true'
 
       - run: pnpm install --frozen-lockfile
         if: steps.publishable.outputs.should_publish == 'true'
