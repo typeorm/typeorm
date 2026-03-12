@@ -36,10 +36,11 @@ describe("github issues > #1034 Issue using setter with promises", () => {
                 await connection.manager.save(circle)
 
                 users.push(user)
-                const circleFromDB = await connection.manager.findOneById(
-                    Circle,
-                    circle.getId(),
-                )
+                const circleFromDB = await connection.manager
+                    .getRepository(Circle)
+                    .createQueryBuilder("circle")
+                    .where("circle.id = :id", { id: circle.getId() })
+                    .getOne()
                 expect(circleFromDB).is.not.null
 
                 // Setting users with setter
