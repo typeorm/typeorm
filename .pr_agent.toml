@@ -20,4 +20,3 @@ publish_output_progress = false
 
 [checks]
 enable_auto_checks_feedback = false
-final_update_message = false
