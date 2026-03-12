@@ -429,9 +429,9 @@ export class SqlServerQueryRunner
      * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
-        const result = await this.query(
-            `SELECT DB_ID('${database}') as "db_id"`,
-        )
+        const result = await this.query(`SELECT DB_ID(@0) as "db_id"`, [
+            database,
+        ])
         const dbId = result[0]["db_id"]
         return !!dbId
     }
@@ -449,9 +449,9 @@ export class SqlServerQueryRunner
      * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
-        const result = await this.query(
-            `SELECT SCHEMA_ID('${schema}') as "schema_id"`,
-        )
+        const result = await this.query(`SELECT SCHEMA_ID(@0) as "schema_id"`, [
+            schema,
+        ])
         const schemaId = result[0]["schema_id"]
         return !!schemaId
     }
@@ -481,8 +481,11 @@ export class SqlServerQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.tableName}' AND "TABLE_SCHEMA" = '${parsedTableName.schema}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1`
+        const result = await this.query(sql, [
+            parsedTableName.tableName,
+            parsedTableName.schema,
+        ])
         return result.length ? true : false
     }
 
@@ -505,8 +508,12 @@ export class SqlServerQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = '${parsedTableName.tableName}' AND "TABLE_SCHEMA" = '${parsedTableName.schema}' AND "COLUMN_NAME" = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1 AND "COLUMN_NAME" = @2`
+        const result = await this.query(sql, [
+            parsedTableName.tableName,
+            parsedTableName.schema,
+            columnName,
+        ])
         return result.length ? true : false
     }
 
