@@ -87,9 +87,9 @@ describe("embedded > outer-primary-column", () => {
                 const loadedPost2 = (await postRepository.findOneBy({
                     counters: { code: 1 },
                 }))!
-                expect(loadedPost.title).to.be.equal("About cars")
+                expect(loadedPost2.title).to.be.equal("About cars")
                 expect(
-                    loadedPost.counters.should.be.eql({
+                    loadedPost2.counters.should.be.eql({
                         code: 1,
                         comments: 1,
                         favorites: 3,
