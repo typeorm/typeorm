@@ -39,6 +39,7 @@ describe("query builder > sql injection", () => {
     })
     after(() => closeTestingConnections(dataSources))
 
+    // inputs for parameterized queries (where clauses with :param binding)
     const maliciousInputs = [
         "'; DROP TABLE post; --",
         "test' OR '1'='1",
@@ -54,6 +55,22 @@ describe("query builder > sql injection", () => {
         "1 OR 1=1",
     ]
 
+    // inputs for raw SQL expression methods (select, orderBy, groupBy, etc.)
+    // these methods accept raw SQL by design, so we only test quote-based
+    // injection vectors — not semicolon statement stacking which would execute
+    // as valid multi-statement SQL on some drivers
+    const rawExpressionInputs = [
+        "'; DROP TABLE post; --",
+        "test' OR '1'='1",
+        "' UNION SELECT * FROM post --",
+        "\\'; DROP TABLE post; --",
+        '"; DROP TABLE post; --',
+        "'/**/OR/**/1=1--",
+        "'' OR ''='",
+        "0x27 OR 1=1--",
+        "' OR SLEEP(5)--",
+    ]
+
     function verifyIntegrity(dataSource: DataSource) {
         return async () => {
             const count = await dataSource.getRepository(Post).count()
@@ -62,7 +79,7 @@ describe("query builder > sql injection", () => {
     }
 
     describe("addSelect", () => {
-        for (const malicious of maliciousInputs) {
+        for (const malicious of rawExpressionInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
@@ -128,7 +145,7 @@ describe("query builder > sql injection", () => {
     })
 
     describe("groupBy", () => {
-        for (const malicious of maliciousInputs) {
+        for (const malicious of rawExpressionInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
@@ -171,7 +188,7 @@ describe("query builder > sql injection", () => {
     })
 
     describe("orderBy", () => {
-        for (const malicious of maliciousInputs) {
+        for (const malicious of rawExpressionInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
@@ -217,7 +234,7 @@ describe("query builder > sql injection", () => {
     })
 
     describe("select", () => {
-        for (const malicious of maliciousInputs) {
+        for (const malicious of rawExpressionInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {

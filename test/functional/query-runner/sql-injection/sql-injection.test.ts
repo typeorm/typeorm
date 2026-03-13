@@ -180,7 +180,7 @@ describe("query runner > sql injection", () => {
 
                             const queryRunner = dataSource.createQueryRunner()
                             try {
-                                await queryRunner.dropTable(malicious, true)
+                                await queryRunner.dropTable(malicious)
                             } catch {
                                 // expected to throw on invalid table name
                             }
