@@ -261,7 +261,10 @@ export class RelationIdLoader {
         const inverseColumns = relation.isOwning
             ? junctionMetadata.inverseColumns
             : junctionMetadata.ownerColumns
-        const qb = this.dataSource.createQueryBuilder(this.queryRunner)
+        const fieldsToMetadata = new Map<string, ColumnMetadata>()
+        const qb = this.dataSource.manager.connection.createQueryBuilder(
+            this.queryRunner,
+        )
 
         // select all columns from junction table
         columns.forEach((column) => {
@@ -272,6 +275,7 @@ export class RelationIdLoader {
                     "_" +
                     column.referencedColumn!.propertyPath.replace(".", "_"),
             )
+            fieldsToMetadata.set(columnName, column.referencedColumn!)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
         inverseColumns.forEach((column) => {
@@ -284,6 +288,7 @@ export class RelationIdLoader {
                     "_" +
                     column.referencedColumn!.propertyPath.replace(".", "_"),
             )
+            fieldsToMetadata.set(columnName, column.referencedColumn!)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
 
@@ -407,6 +412,21 @@ export class RelationIdLoader {
             .from(junctionMetadata.target, mainAlias)
             .where(condition)
             .getRawMany()
+            .then((result) => {
+                result.forEach((data) => {
+                    Object.keys(data).forEach((key) => {
+                        const column = fieldsToMetadata.get(key)
+                        if (column) {
+                            data[key] =
+                                this.dataSource.manager.connection.driver.prepareHydratedValue(
+                                    data[key],
+                                    column,
+                                )
+                        }
+                    })
+                })
+                return result
+            })
     }
 
     /**
@@ -590,26 +610,31 @@ export class RelationIdLoader {
         entities: ObjectLiteral[],
         relatedEntities?: ObjectLiteral[],
     ) {
-        const originalRelation = relation
-        relation = relation.inverseRelation!
+        ;[relation, relation.inverseRelation!] = [
+            relation.inverseRelation!,
+            relation,
+        ]
 
         if (
             relation.entityMetadata.primaryColumns.length ===
             relation.joinColumns.length
         ) {
-            const sameReferencedColumns =
-                relation.entityMetadata.primaryColumns.every((column) => {
-                    return relation.joinColumns.indexOf(column) !== -1
-                })
-            if (sameReferencedColumns) {
+            const sameReferencedColumns = relation.joinColumns.every(
+                (column) =>
+                    relation.entityMetadata.nonVirtualColumns.indexOf(
+                        column,
+                    ) !== -1,
+            )
+            if (sameReferencedColumns && relatedEntities) {
                 return Promise.resolve(
-                    entities.map((entity) => {
+                    relatedEntities.map((entity) => {
                         const result: ObjectLiteral = {}
                         relation.joinColumns.forEach((joinColumn) => {
                             const value =
                                 joinColumn.referencedColumn!.getEntityValue(
                                     entity,
                                 )
+                            const joinValue = joinColumn.getEntityValue(entity)
                             const joinColumnName = DriverUtils.buildAlias(
                                 this.dataSource.driver,
                                 undefined,
@@ -626,15 +651,18 @@ export class RelationIdLoader {
                                 undefined,
                                 joinColumn.entityMetadata.name +
                                     "_" +
-                                    originalRelation.propertyPath.replace(
+                                    relation.inverseRelation!.propertyPath.replace(
                                         ".",
                                         "_",
                                     ) +
                                     "_" +
-                                    joinColumn.propertyPath.replace(".", "_"),
+                                    joinColumn.referencedColumn!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ),
                             )
-                            result[joinColumnName] = value
                             result[primaryColumnName] = value
+                            result[joinColumnName] = joinValue
                         })
                         return result
                     }),
@@ -652,7 +680,7 @@ export class RelationIdLoader {
                 undefined,
                 primaryColumn.entityMetadata.name +
                     "_" +
-                    originalRelation.propertyPath.replace(".", "_") +
+                    relation.inverseRelation!.propertyPath.replace(".", "_") +
                     "_" +
                     primaryColumn.propertyPath.replace(".", "_"),
             )
