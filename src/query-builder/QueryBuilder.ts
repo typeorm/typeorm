@@ -671,8 +671,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         } else {
             if (typeof entityTarget === "string") {
                 const isSubquery =
-                    entityTarget.substr(0, 1) === "(" &&
-                    entityTarget.substr(-1) === ")"
+                    entityTarget.startsWith("(") && entityTarget.endsWith(")")
 
                 return this.expressionMap.createAlias({
                     type: "from",
