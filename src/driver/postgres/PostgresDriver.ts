@@ -1670,7 +1670,7 @@ export class PostgresDriver implements Driver {
                 connectionTimeoutMillis: options.connectTimeoutMS,
                 application_name:
                     options.applicationName ?? credentials.applicationName,
-                max: options.poolSize,
+                max: credentials.poolSize ?? options.poolSize,
             },
             options.extra || {},
         )
