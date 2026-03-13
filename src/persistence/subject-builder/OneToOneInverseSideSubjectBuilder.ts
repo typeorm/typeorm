@@ -95,6 +95,7 @@ export class OneToOneInverseSideSubjectBuilder {
                 const removedRelatedEntitySubject = new Subject({
                     metadata: relation.inverseEntityMetadata,
                     parentSubject: subject,
+                    parentSubjectRelation: relation,
                     canBeUpdated: true,
                     identifier: relatedEntityDatabaseRelationId,
                     changeMaps: [

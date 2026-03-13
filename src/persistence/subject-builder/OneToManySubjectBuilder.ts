@@ -164,6 +164,7 @@ export class OneToManySubjectBuilder {
                     relatedEntitySubject = new Subject({
                         metadata: relation.inverseEntityMetadata,
                         parentSubject: subject,
+                        parentSubjectRelation: relation,
                         canBeUpdated: true,
                         identifier: relationIdMap,
                     })
@@ -198,6 +199,7 @@ export class OneToManySubjectBuilder {
                 const removedRelatedEntitySubject = new Subject({
                     metadata: relation.inverseEntityMetadata,
                     parentSubject: subject,
+                    parentSubjectRelation: relation,
                     identifier: removedRelatedEntityRelationId,
                 })
 
