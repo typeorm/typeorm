@@ -2201,7 +2201,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (Array.isArray(selection)) {
             return selection.map((s) => ({ selection: s }))
         } else if (typeof selection === "object" && selection !== null) {
-            return Object.entries(selection).map(([sel, alias]) => ({
+            const entries = Object.entries(selection)
+            if (entries.length === 0) return undefined
+            return entries.map(([sel, alias]) => ({
                 selection: sel,
                 aliasName: alias,
             }))

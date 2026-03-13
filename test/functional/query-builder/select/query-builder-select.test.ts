@@ -873,7 +873,7 @@ describe("query builder > select", () => {
                 }),
             ))
 
-        it("should clear existing selections when select is called with an empty object", () =>
+        it("should not clear existing selections when select is called with an empty object", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const sql = dataSource
@@ -883,7 +883,7 @@ describe("query builder > select", () => {
                         .disableEscaping()
                         .getSql()
 
-                    expect(sql).to.equal("SELECT * FROM post post")
+                    expect(sql).to.equal("SELECT post.id AS id FROM post post")
                 }),
             ))
 
