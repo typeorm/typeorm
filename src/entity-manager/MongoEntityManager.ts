@@ -185,7 +185,6 @@ export class MongoEntityManager extends EntityManager {
      * @param entityClassOrName
      * @param ids
      * @param optionsOrConditions
-     * @deprecated use `findBy` method instead.
      */
     async findByIds<Entity>(
         entityClassOrName: EntityTarget<Entity>,

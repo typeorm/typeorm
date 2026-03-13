@@ -173,31 +173,31 @@ To run your tests you need the Database Management Systems (DBMS) installed on y
 
 TypeORM maintains two active branches:
 
-| Branch   | npm dist-tag | Purpose                        |
-| -------- | ------------ | ------------------------------ |
-| `v0.3`   | `latest`     | Current stable release (0.3.x) |
-| `master` | `master`     | v1.0 preview / pre-release     |
+| Branch   | npm dist-tag (release) | npm dist-tag (nightly) | Purpose                        |
+| -------- | ---------------------- | ---------------------- | ------------------------------ |
+| `master` | `latest` or `next`     | `dev`                  | v1.0 development               |
+| `v0.3`   | `latest` or `legacy`   | `nightly`              | Current stable release (0.3.x) |
 
 Publishing is handled by the `publish-package.yml` workflow using npm trusted publishing (OIDC). No npm tokens are needed.
 
-### Stable release (v0.3.x)
+### Stable release
 
-1. Create a branch from `v0.3` (e.g. `release-0.3.29`).
+1. Create a branch from the target branch (e.g. `release-0.3.29` from `v0.3`, or `release-1.0.0` from `master`).
 2. Update the version in `package.json` and run `pnpm install` to update the lock file.
 3. Run `pnpm run changelog` to generate the changelog.
-4. Commit the changes and create a pull request targeting `v0.3`.
-5. Once merged, create a GitHub Release from the `v0.3` branch with a matching tag (e.g. `0.3.29`).
-6. The workflow triggers on the `release: published` event and publishes to npm.
+4. Commit the changes and create a pull request targeting the release branch.
+5. Once merged, create a GitHub Release with a matching tag (e.g. `0.3.29` or `1.0.0`).
+6. The workflow triggers on the `release: published` event and publishes to npm. The dist-tag is determined automatically: `latest` if the version is greater than the current latest on npm, otherwise `legacy`.
 
 ### Pre-release (v1.0)
 
 1. Create a branch from `master` (e.g. `release-1.0.0-alpha.2`).
-2. Update the version in `package.json` and run `pnpm install` to update the lock file.
+2. Update the version in `package.json` (use a prerelease identifier, e.g. `1.0.0-alpha.2`) and run `pnpm install` to update the lock file.
 3. Run `pnpm run changelog` to generate the changelog.
 4. Commit the changes and create a pull request targeting `master`.
 5. Once merged, create a GitHub Release from `master` with a matching tag and mark it as a **pre-release**.
-6. The workflow publishes to npm. Use the GitHub Release UI to set the appropriate dist-tag (e.g. `next`), or update the workflow if a custom tag is needed.
+6. The workflow publishes to npm with the `next` dist-tag (any version containing a prerelease identifier like `-alpha` or `-beta` is automatically tagged `next`).
 
 ### Nightly builds
 
-Nightly versions are published automatically at 02:00 UTC for both `master` and `v0.3` when there have been commits in the last 24 hours. They can also be triggered manually via workflow dispatch. Nightlies are tagged `master` and `v0.3` on npm respectively.
+Nightly versions are published automatically at 02:00 UTC for both `master` and `v0.3` when there have been commits since the last published nightly. They can also be triggered manually via workflow dispatch. Nightlies are tagged `dev` (master) and `nightly` (v0.3) on npm.

@@ -634,7 +634,10 @@ export class SapDriver implements Driver {
             return "timestamp"
         } else if (column.type === Boolean) {
             return "boolean"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         } else if (column.type === "uuid") {
             return "nvarchar"
