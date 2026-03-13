@@ -10,7 +10,7 @@ import {
 import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 
-describe.only("view entity > mysql", () => {
+describe("view entity > mysql", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -68,7 +68,7 @@ describe.only("view entity > mysql", () => {
 })
 
 // Refer to: https://github.com/typeorm/typeorm/issues/8828
-describe.only("view entity > mysql with named placeholders", () => {
+describe("view entity > mysql with named placeholders", () => {
     let dataSources: DataSource[]
 
     before(async () => {
