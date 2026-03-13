@@ -37,7 +37,7 @@ export class ConnectionOptionsReader {
     /**
      * Returns all connection options read from the ormconfig.
      */
-    async all(): Promise<DataSourceOptions[]> {
+    async get(): Promise<DataSourceOptions[]> {
         const options = await this.load()
         if (!options)
             throw new TypeORMError(
@@ -45,40 +45,6 @@ export class ConnectionOptionsReader {
             )
 
         return options
-    }
-
-    /**
-     * Gets a connection with a given name read from ormconfig.
-     * If connection with such name would not be found then it throw error.
-     * @param name
-     */
-    async get(name: string): Promise<DataSourceOptions> {
-        const allOptions = await this.all()
-        const targetOptions = allOptions.find(
-            (options) =>
-                options.name === name || (name === "default" && !options.name),
-        )
-        if (!targetOptions)
-            throw new TypeORMError(
-                `Cannot find connection ${name} because its not defined in any orm configuration files.`,
-            )
-
-        return targetOptions
-    }
-
-    /**
-     * Checks if there is a TypeORM configuration file.
-     * @param name
-     */
-    async has(name: string): Promise<boolean> {
-        const allOptions = await this.load()
-        if (!allOptions) return false
-
-        const targetOptions = allOptions.find(
-            (options) =>
-                options.name === name || (name === "default" && !options.name),
-        )
-        return !!targetOptions
     }
 
     // -------------------------------------------------------------------------

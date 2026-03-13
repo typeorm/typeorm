@@ -384,16 +384,12 @@ export class AuroraMysqlDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -656,7 +652,12 @@ export class AuroraMysqlDriver implements Driver {
             return "varchar"
         } else if (column.type === Date) {
             return "datetime"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            // (column.type as any) === Uint8Array ||
+            // (typeof Buffer !== "undefined" && (column.type as any) === Buffer)
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         } else if (column.type === Boolean) {
             return "tinyint"

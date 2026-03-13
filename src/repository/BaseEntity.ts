@@ -561,23 +561,6 @@ export class BaseEntity {
     }
 
     /**
-     * Finds entities by ids.
-     * Optionally find options can be applied.
-     * @param ids
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    static findByIds<T extends BaseEntity>(
-        this: { new (): T } & typeof BaseEntity,
-        ids: any[],
-    ): Promise<T[]> {
-        return this.getRepository<T>().findByIds(ids)
-    }
-
-    /**
      * Finds first entity that matches given conditions.
      * @param options
      */

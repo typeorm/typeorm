@@ -20,7 +20,7 @@ describe.skip("github issues > #4415 allow beautify generated migrations", () =>
     let getConnectionOptionsStub: sinon.SinonStub
     let migrationGenerateCommand: MigrationGenerateCommand
     let connectionOptionsReader: ConnectionOptionsReader
-    let baseConnectionOptions: DataSourceOptions
+    let baseConnectionOptions: DataSourceOptions[]
 
     const enabledDrivers = [
         "postgres",
@@ -63,19 +63,19 @@ describe.skip("github issues > #4415 allow beautify generated migrations", () =>
     it("writes regular migration file when no option is passed", async () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
+            baseConnectionOptions = await connectionOptionsReader.get()
             getConnectionOptionsStub = sinon
                 .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Username, Post],
-                })
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Username, Post],
+                    },
+                ])
 
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
-                    connection: connectionOption.name,
+                    connection: connectionOption.type,
                 }),
             )
 
@@ -97,19 +97,19 @@ describe.skip("github issues > #4415 allow beautify generated migrations", () =>
     it("writes pretty printed file when pretty option is passed", async () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
+            baseConnectionOptions = await connectionOptionsReader.get()
             getConnectionOptionsStub = sinon
                 .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Username, Post],
-                })
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Username, Post],
+                    },
+                ])
 
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
-                    connection: connectionOption.name,
+                    connection: connectionOption.type,
                     pretty: true,
                 }),
             )

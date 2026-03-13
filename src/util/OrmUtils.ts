@@ -4,6 +4,7 @@ import type {
     PrimitiveCriteria,
     SinglePrimitiveCriteria,
 } from "../common/PrimitiveCriteria"
+import { areUint8ArraysEqual, isUint8Array } from "./Uint8ArrayUtils"
 import { InstanceChecker } from "./InstanceChecker"
 import { TypeORMError } from "../error"
 import { IsNull } from "../find-options/operator/IsNull"
@@ -444,12 +445,13 @@ export class OrmUtils {
 
         // Fix the buffer compare bug.
         // See: https://github.com/typeorm/typeorm/issues/3654
-        if (
-            (typeof x.equals === "function" ||
-                typeof x.equals === "function") &&
-            x.equals(y)
-        )
-            return true
+        if (typeof x.equals === "function" && typeof y.equals === "function") {
+            return x.equals(y)
+        }
+
+        if (isUint8Array(x) && isUint8Array(y)) {
+            return areUint8ArraysEqual(x, y)
+        }
 
         // Works in case when functions are created in constructor.
         // Comparing dates is a common scenario. Another built-ins?
@@ -663,7 +665,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options.undefined || "ignore"
+                const behavior = options?.undefined || "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -672,7 +674,7 @@ export class OrmUtils {
                 }
                 // "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options.null || "ignore"
+                const behavior = options?.null || "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +

@@ -6,12 +6,9 @@ import { OptimisticLockVersionMismatchError } from "../error/OptimisticLockVersi
 import { OptimisticLockCanNotBeUsedError } from "../error/OptimisticLockCanNotBeUsedError"
 import { JoinAttribute } from "./JoinAttribute"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
-import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { RelationIdLoader } from "./relation-id/RelationIdLoader"
 import { RelationIdLoader as QueryStrategyRelationIdLoader } from "./RelationIdLoader"
 import { RelationIdMetadataToAttributeTransformer } from "./relation-id/RelationIdMetadataToAttributeTransformer"
-import { RelationCountLoader } from "./relation-count/RelationCountLoader"
-import { RelationCountMetadataToAttributeTransformer } from "./relation-count/RelationCountMetadataToAttributeTransformer"
 import { QueryBuilder } from "./QueryBuilder"
 import type { ReadStream } from "../platform/PlatformTools"
 import { LockNotSupportedOnGivenDriverError } from "../error/LockNotSupportedOnGivenDriverError"
@@ -43,7 +40,6 @@ import { OrmUtils } from "../util/OrmUtils"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 
@@ -1113,46 +1109,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 type: "other",
                 name: relationIdAttribute.junctionAlias,
                 metadata: relationIdAttribute.relation.junctionEntityMetadata,
-            })
-        }
-        return this
-    }
-
-    /**
-     * Counts number of entities of entity's relation and maps the value into some entity's property.
-     * Optionally, you can add condition and parameters used in condition.
-     * @param mapToProperty
-     * @param relationName
-     * @param aliasName
-     * @param queryBuilderFactory
-     */
-    loadRelationCountAndMap(
-        mapToProperty: string,
-        relationName: string,
-        aliasName?: string,
-        queryBuilderFactory?: (
-            qb: SelectQueryBuilder<any>,
-        ) => SelectQueryBuilder<any>,
-    ): this {
-        const relationCountAttribute = new RelationCountAttribute(
-            this.expressionMap,
-        )
-        relationCountAttribute.mapToProperty = mapToProperty
-        relationCountAttribute.relationName = relationName
-        relationCountAttribute.alias = aliasName
-        relationCountAttribute.queryBuilderFactory = queryBuilderFactory
-        this.expressionMap.relationCountAttributes.push(relationCountAttribute)
-
-        this.expressionMap.createAlias({
-            type: "other",
-            name: relationCountAttribute.junctionAlias,
-        })
-        if (relationCountAttribute.relation.junctionEntityMetadata) {
-            this.expressionMap.createAlias({
-                type: "other",
-                name: relationCountAttribute.junctionAlias,
-                metadata:
-                    relationCountAttribute.relation.junctionEntityMetadata,
             })
         }
         return this
@@ -2335,7 +2291,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .filter((select) => excludedSelects.indexOf(select) === -1)
             .forEach((select) =>
                 allSelects.push({
-                    selection: this.replacePropertyNames(select.selection),
+                    selection: select.selection,
                     aliasName: select.aliasName,
                 }),
             )
@@ -2410,9 +2366,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             DriverUtils.isPostgresFamily(driver) &&
             selectDistinctOn.length > 0
         ) {
-            const selectDistinctOnMap = selectDistinctOn
-                .map((on) => this.replacePropertyNames(on))
-                .join(", ")
+            const selectDistinctOnMap = selectDistinctOn.join(", ")
 
             select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `
         } else if (selectDistinct) {
@@ -2457,9 +2411,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     " " +
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
-                    (joinAttr.condition
-                        ? " ON " + this.replacePropertyNames(joinAttr.condition)
-                        : "")
+                    (joinAttr.condition ? " ON " + joinAttr.condition : "")
                 )
             }
 
@@ -2491,7 +2443,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(condition + appendedCondition)
+                    condition +
+                    appendedCondition
                 )
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
@@ -2542,7 +2495,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(condition + appendedCondition)
+                    condition +
+                    appendedCondition
                 )
             } else {
                 // means many-to-many
@@ -2625,7 +2579,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(junctionAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(junctionCondition) +
+                    junctionCondition +
                     " " +
                     joinAttr.direction +
                     " JOIN " +
@@ -2634,9 +2588,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(
-                        destinationCondition + appendedCondition,
-                    )
+                    destinationCondition +
+                    appendedCondition
                 )
             }
         })
@@ -2650,10 +2603,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     protected createGroupByExpression() {
         if (!this.expressionMap.groupBys || !this.expressionMap.groupBys.length)
             return ""
-        return (
-            " GROUP BY " +
-            this.replacePropertyNames(this.expressionMap.groupBys.join(", "))
-        )
+        return " GROUP BY " + this.expressionMap.groupBys.join(", ")
     }
 
     /**
@@ -2711,9 +2661,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             }
                         }
                     }
-                    return (
-                        this.replacePropertyNames(columnName) + " " + orderValue
-                    )
+                    return columnName + " " + orderValue
                 })
                 .join(", ")
         )
@@ -2937,17 +2885,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .map((having, index) => {
                 switch (having.type) {
                     case "and":
-                        return (
-                            (index > 0 ? "AND " : "") +
-                            this.replacePropertyNames(having.condition)
-                        )
+                        return (index > 0 ? "AND " : "") + having.condition
                     case "or":
-                        return (
-                            (index > 0 ? "OR " : "") +
-                            this.replacePropertyNames(having.condition)
-                        )
+                        return (index > 0 ? "OR " : "") + having.condition
                     default:
-                        return this.replacePropertyNames(having.condition)
+                        return having.condition
                 }
             })
             .join(" ")
@@ -3099,8 +3041,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // so we prevent poor query patterns in the most likely cases
         if (
             this.expressionMap.joinAttributes.length === 0 &&
-            this.expressionMap.relationIdAttributes.length === 0 &&
-            this.expressionMap.relationCountAttributes.length === 0
+            this.expressionMap.relationIdAttributes.length === 0
         ) {
             return "COUNT(1)"
         }
@@ -3315,9 +3256,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 if (this.conditions.length)
                     this.andWhere(
-                        this.conditions.substr(0, 1) !== "("
-                            ? "(" + this.conditions + ")"
-                            : this.conditions,
+                        this.conditions.startsWith("(")
+                            ? this.conditions
+                            : `(${this.conditions})`,
                     ) // temporary and where and braces
             }
 
@@ -3564,17 +3505,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             queryRunner,
             this.expressionMap.relationIdAttributes,
         )
-        const relationCountLoader = new RelationCountLoader(
-            this.connection,
-            queryRunner,
-            this.expressionMap.relationCountAttributes,
-        )
         const relationIdMetadataTransformer =
             new RelationIdMetadataToAttributeTransformer(this.expressionMap)
         relationIdMetadataTransformer.transform()
-        const relationCountMetadataTransformer =
-            new RelationCountMetadataToAttributeTransformer(this.expressionMap)
-        relationCountMetadataTransformer.transform()
 
         let rawResults: any[],
             entities: any[] = []
@@ -3635,7 +3568,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
 
-            rawResults = await new SelectQueryBuilder(
+            const paginationQueryBuilder = new SelectQueryBuilder(
                 this.connection,
                 queryRunner,
             )
@@ -3659,8 +3592,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.expressionMap.cacheDuration,
                 )
                 .setParameters(this.getParameters())
-                .setNativeParameters(this.expressionMap.nativeParameters)
-                .getRawMany()
+            rawResults = await paginationQueryBuilder.getRawMany()
 
             if (rawResults.length > 0) {
                 let condition: string
@@ -3727,13 +3659,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (rawResults.length > 0) {
             // transform raw results into entities
             const rawRelationIdResults = await relationIdLoader.load(rawResults)
-            const rawRelationCountResults =
-                await relationCountLoader.load(rawResults)
             const transformer = new RawSqlResultsToEntityTransformer(
                 this.expressionMap,
                 this.connection.driver,
                 rawRelationIdResults,
-                rawRelationCountResults,
                 this.queryRunner,
             )
             entities = transformer.transform(
@@ -4406,7 +4335,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         embedPrefix?: string,
     ) {
         let condition: string = ""
-        // let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
         if (Array.isArray(where)) {
             if (where.length) {
                 condition = where
@@ -4445,7 +4373,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === undefined) {
                     const undefinedBehavior =
                         this.connection.options.invalidWhereValuesBehavior
-                            ?.undefined || "ignore"
+                            ?.undefined || "throw"
                     if (undefinedBehavior === "throw") {
                         throw new TypeORMError(
                             `Undefined value encountered in property '${alias}.${key}' of a where condition. ` +
@@ -4458,7 +4386,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === null) {
                     const nullBehavior =
                         this.connection.options.invalidWhereValuesBehavior
-                            ?.null || "ignore"
+                            ?.null || "throw"
                     if (nullBehavior === "ignore") {
                         continue
                     } else if (nullBehavior === "throw") {
@@ -4490,14 +4418,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
 
                     if (column.transformer) {
-                        if (parameterValue instanceof FindOperator) {
-                            parameterValue.transformValue(column.transformer)
-                        } else {
-                            parameterValue = ApplyValueTransformers.transformTo(
-                                column.transformer,
-                                parameterValue,
-                            )
-                        }
+                        parameterValue = ApplyValueTransformers.transformTo(
+                            column.transformer,
+                            parameterValue,
+                        )
                     }
 
                     // MSSQL requires parameters to carry extra type information
@@ -4531,7 +4455,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (where[key] === null) {
                         const nullBehavior =
                             this.connection.options.invalidWhereValuesBehavior
-                                ?.null || "ignore"
+                                ?.null || "throw"
                         if (nullBehavior === "sql-null") {
                             andConditions.push(
                                 `${alias}.${propertyPath} IS NULL`,
@@ -4563,7 +4487,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             const undefinedBehavior =
                                 this.connection.options
                                     .invalidWhereValuesBehavior?.undefined ||
-                                "ignore"
+                                "throw"
                             if (undefinedBehavior === "throw") {
                                 throw new TypeORMError(
                                     `Undefined value encountered in nested relation '${alias}.${key}' of a where condition. ` +
@@ -4734,7 +4658,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                         if (condition) {
                             andConditions.push(condition)
-                            // parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
                         }
                     }
                 }

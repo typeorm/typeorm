@@ -18,6 +18,7 @@ import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
+import { isUint8Array } from "../util/Uint8ArrayUtils"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -541,7 +542,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             typeof value === "object" &&
                             !(value instanceof Date) &&
                             value !== null &&
-                            !Buffer.isBuffer(value)
+                            !isUint8Array(value)
                         ) {
                             value =
                                 column.referencedColumn.getEntityValue(value)
@@ -744,14 +745,10 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 Object.keys(orderBys)
                     .map((columnName) => {
                         if (typeof orderBys[columnName] === "string") {
-                            return (
-                                this.replacePropertyNames(columnName) +
-                                " " +
-                                orderBys[columnName]
-                            )
+                            return columnName + " " + orderBys[columnName]
                         } else {
                             return (
-                                this.replacePropertyNames(columnName) +
+                                columnName +
                                 " " +
                                 (orderBys[columnName] as any).order +
                                 " " +
