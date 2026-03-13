@@ -26,6 +26,7 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { SapDriver } from "./SapDriver"
 
@@ -196,10 +197,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
 
         const release = await this.lock.acquire()
 

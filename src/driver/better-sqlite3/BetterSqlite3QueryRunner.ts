@@ -5,6 +5,8 @@ import { Broadcaster } from "../../subscriber/Broadcaster"
 import type { BetterSqlite3Driver } from "./BetterSqlite3Driver"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -82,10 +84,12 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
      */
     async query(
         query: string,
-        parameters: any[] = [],
+        parameters: any[] | ObjectLiteral = [],
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
 
         const connection = this.driver.connection
 
