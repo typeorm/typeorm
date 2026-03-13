@@ -1,6 +1,6 @@
 [github_app]
 pr_commands = ["/agentic_describe", "/agentic_review"]
-feedback_or_draft_pr=false
+feedback_or_draft_pr = false
 
 handle_push_trigger = true
 push_commands = ["/agentic_review"]
