@@ -44,6 +44,7 @@ jobs:
             src-or-tests: &src-or-tests
               - *src
               - .github/workflows/test*.yml
+              - docker-compose.yml
               - docker/**/*
               - test/**/*
               - .c8rc.json
