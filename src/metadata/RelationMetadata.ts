@@ -278,6 +278,13 @@ export class RelationMetadata {
      */
     inverseJoinColumns: ColumnMetadata[] = []
 
+    isPolymorphic: boolean = false
+    polymorphicOptions?: {
+        entityColumnName: string
+        idColumnName: string
+        value: string
+    }
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -337,6 +344,15 @@ export class RelationMetadata {
         this.orphanedRowAction = args.options.orphanedRowAction || "nullify"
         this.isTreeParent = args.isTreeParent || false
         this.isTreeChildren = args.isTreeChildren || false
+
+        if (args.options?.polymorphic) {
+            this.isPolymorphic = true
+            this.createForeignKeyConstraints = false
+
+            if (typeof args.options.polymorphic === "object") {
+                this.polymorphicOptions = args.options.polymorphic
+            }
+        }
 
         if (typeof args.type === "function") {
             this.type =
