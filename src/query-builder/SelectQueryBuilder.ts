@@ -155,6 +155,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                if (s.includes(";"))
+                    throw new TypeORMError(
+                        `Semicolons are not allowed in select() to prevent SQL injection. Use parameter binding instead.`,
+                    )
+            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
@@ -166,6 +172,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
+            if (selection.includes(";"))
+                throw new TypeORMError(
+                    `Semicolons are not allowed in select() to prevent SQL injection. Use parameter binding instead.`,
+                )
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -207,6 +217,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (!selection) return this
 
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                if (s.includes(";"))
+                    throw new TypeORMError(
+                        `Semicolons are not allowed in addSelect() to prevent SQL injection. Use parameter binding instead.`,
+                    )
+            }
             this.expressionMap.selects = this.expressionMap.selects.concat(
                 selection.map((selection) => ({ selection: selection })),
             )
@@ -218,6 +234,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
+            if (selection.includes(";"))
+                throw new TypeORMError(
+                    `Semicolons are not allowed in addSelect() to prevent SQL injection. Use parameter binding instead.`,
+                )
             this.expressionMap.selects.push({
                 selection: selection,
                 aliasName: selectionAliasName,
@@ -1352,6 +1372,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     groupBy(groupBy?: string): this {
         if (groupBy) {
+            if (groupBy.includes(";"))
+                throw new TypeORMError(
+                    `Semicolons are not allowed in groupBy() to prevent SQL injection. Use parameter binding instead.`,
+                )
             this.expressionMap.groupBys = [groupBy]
         } else {
             this.expressionMap.groupBys = []
@@ -1364,6 +1388,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param groupBy
      */
     addGroupBy(groupBy: string): this {
+        if (groupBy.includes(";"))
+            throw new TypeORMError(
+                `Semicolons are not allowed in addGroupBy() to prevent SQL injection. Use parameter binding instead.`,
+            )
         this.expressionMap.groupBys.push(groupBy)
         return this
     }
@@ -1439,8 +1467,18 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (sort) {
             if (typeof sort === "object") {
+                for (const key of Object.keys(sort)) {
+                    if (key.includes(";"))
+                        throw new TypeORMError(
+                            `Semicolons are not allowed in orderBy() to prevent SQL injection. Use parameter binding instead.`,
+                        )
+                }
                 this.expressionMap.orderBys = sort as OrderByCondition
             } else {
+                if (sort.includes(";"))
+                    throw new TypeORMError(
+                        `Semicolons are not allowed in orderBy() to prevent SQL injection. Use parameter binding instead.`,
+                    )
                 if (nulls) {
                     this.expressionMap.orderBys = {
                         [sort as string]: { order, nulls },
@@ -1477,6 +1515,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         )
             throw new TypeORMError(
                 `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
+            )
+
+        if (sort.includes(";"))
+            throw new TypeORMError(
+                `Semicolons are not allowed in addOrderBy() to prevent SQL injection. Use parameter binding instead.`,
             )
 
         if (nulls) {
