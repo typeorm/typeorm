@@ -26,6 +26,11 @@ jobs:
               - package.json
               - package-lock.json
 
+            ci: &ci
+              - .github/**/*
+              - .pr_agent.toml
+              - pr_compliance_checklist.yaml
+
             docs: &docs
               - docs/**/*
 
@@ -39,12 +44,15 @@ jobs:
             src-or-tests: &src-or-tests
               - *src
               - .github/workflows/test*.yml
-              - ormconfig.sample.json
+              - docker/**/*
               - test/**/*
               - .c8rc.json
               - .mocharc.json
+              - ormconfig.sample.json
 
             format:
+              - *ci
+              - *docs
               - *src-or-tests
               - .editorconfig
               - .prettierignore
