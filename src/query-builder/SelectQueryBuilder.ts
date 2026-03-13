@@ -167,37 +167,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         selectionAliasName?: string,
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
-        if (Array.isArray(selection)) {
-            this.expressionMap.selects = selection.map((selection) => ({
-                selection: selection,
-            }))
-        } else if (
-            typeof selection === "object" &&
-            selection !== null &&
-            !Array.isArray(selection) &&
-            typeof selection !== "function"
-        ) {
-            const entries = Object.entries(selection)
-            if (entries.length > 0) {
-                this.expressionMap.selects = entries.map(([sel, alias]) => ({
-                    selection: sel,
-                    aliasName: alias,
-                }))
-            }
-        } else if (typeof selection === "function") {
-            const subQueryBuilder = selection(this.subQuery())
-            this.setParameters(subQueryBuilder.getParameters())
-            this.expressionMap.selects.push({
-                selection: subQueryBuilder.getQuery(),
-                aliasName: selectionAliasName,
-            })
-        } else if (selection) {
-            this.expressionMap.selects = [
-                {
-                    selection: selection as string,
-                    aliasName: selectionAliasName,
-                },
-            ]
+        const parsed = this.parseSelectInput(selection, selectionAliasName)
+        if (parsed !== undefined) {
+            this.expressionMap.selects = parsed
         }
 
         return this
@@ -243,37 +215,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         if (!selection) return this
 
-        if (Array.isArray(selection)) {
-            this.expressionMap.selects = this.expressionMap.selects.concat(
-                selection.map((selection) => ({ selection: selection })),
-            )
-        } else if (
-            typeof selection === "object" &&
-            selection !== null &&
-            !Array.isArray(selection) &&
-            typeof selection !== "function"
-        ) {
-            const entries = Object.entries(selection)
-            if (entries.length > 0) {
-                this.expressionMap.selects = this.expressionMap.selects.concat(
-                    entries.map(([sel, alias]) => ({
-                        selection: sel,
-                        aliasName: alias,
-                    })),
-                )
-            }
-        } else if (typeof selection === "function") {
-            const subQueryBuilder = selection(this.subQuery())
-            this.setParameters(subQueryBuilder.getParameters())
-            this.expressionMap.selects.push({
-                selection: subQueryBuilder.getQuery(),
-                aliasName: selectionAliasName,
-            })
-        } else if (selection) {
-            this.expressionMap.selects.push({
-                selection: selection as string,
-                aliasName: selectionAliasName,
-            })
+        const parsed = this.parseSelectInput(selection, selectionAliasName)
+        if (parsed !== undefined) {
+            this.expressionMap.selects =
+                this.expressionMap.selects.concat(parsed)
         }
 
         return this
@@ -2280,6 +2225,48 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 subQuery: isSubQuery === true ? subQuery : undefined,
             })
         }
+    }
+
+    /**
+     * Parses the selection input into an array of SelectQuery objects.
+     * Returns undefined when the input is falsy (no-arg call).
+     * @param selection
+     * @param selectionAliasName
+     */
+    private parseSelectInput(
+        selection:
+            | string
+            | string[]
+            | Record<string, string>
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)
+            | undefined,
+        selectionAliasName?: string,
+    ): SelectQuery[] | undefined {
+        if (Array.isArray(selection)) {
+            return selection.map((s) => ({ selection: s }))
+        } else if (typeof selection === "object" && selection !== null) {
+            return Object.entries(selection).map(([sel, alias]) => ({
+                selection: sel,
+                aliasName: alias,
+            }))
+        } else if (typeof selection === "function") {
+            const subQueryBuilder = selection(this.subQuery())
+            this.setParameters(subQueryBuilder.getParameters())
+            return [
+                {
+                    selection: subQueryBuilder.getQuery(),
+                    aliasName: selectionAliasName,
+                },
+            ]
+        } else if (selection) {
+            return [
+                {
+                    selection: selection,
+                    aliasName: selectionAliasName,
+                },
+            ]
+        }
+        return undefined
     }
 
     /**
