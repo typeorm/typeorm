@@ -10,7 +10,7 @@ import {
 import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 
-describe("view entity > mysql", () => {
+describe.only("view entity > mysql", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -68,7 +68,7 @@ describe("view entity > mysql", () => {
 })
 
 // Refer to: https://github.com/typeorm/typeorm/issues/8828
-describe("view entity > mysql with named placeholders", () => {
+describe.only("view entity > mysql with named placeholders", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -89,12 +89,18 @@ describe("view entity > mysql with named placeholders", () => {
     it("can use named placeholders in a sql query", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
+                const category = new Category()
+                category.name = "Cars"
+                await dataSource.manager.save(category)
+
                 const foo = new Post()
                 foo.name = "foo"
+                foo.categoryId = category.id
                 await dataSource.manager.save(foo)
 
                 const bar = new Post()
                 bar.name = "bar"
+                bar.categoryId = category.id
                 await dataSource.manager.save(bar)
 
                 const examples = await dataSource.manager.query(
