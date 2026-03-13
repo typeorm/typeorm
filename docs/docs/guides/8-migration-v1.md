@@ -326,9 +326,9 @@ categoryCount: number
 
 ## QueryBuilder
 
-### `printSql` renamed to `logSql`
+### `printSql` renamed to `logQuery`
 
-The `printSql()` method on query builders has been renamed to `logSql()` to better reflect its behavior — it logs the query through the configured logger rather than printing to stdout:
+The `printSql()` method on query builders has been renamed to `logQuery()` to better reflect its behavior — it logs the query through the configured logger rather than printing to stdout:
 
 ```typescript
 // Before
@@ -344,7 +344,7 @@ const users = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .where("user.id = :id", { id: 1 })
-    .logSql()
+    .logQuery()
     .getMany()
 ```
 

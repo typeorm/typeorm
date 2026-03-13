@@ -798,14 +798,14 @@ const sql = dataSource
     .getSql()
 ```
 
-For debugging purposes you can use `logSql`:
+For debugging purposes you can use `logQuery`:
 
 ```typescript
 const users = await dataSource
     .createQueryBuilder("user")
     .where("user.firstName = :firstName", { firstName: "Timber" })
     .orWhere("user.lastName = :lastName", { lastName: "Saw" })
-    .logSql()
+    .logQuery()
     .getMany()
 ```
 

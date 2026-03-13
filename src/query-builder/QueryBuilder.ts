@@ -470,7 +470,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Logs the generated sql query using the configured logger.
      */
-    logSql(): this {
+    logQuery(): this {
         const [query, parameters] = this.getQueryAndParameters()
         this.connection.logger.logQuery(query, parameters)
         return this
