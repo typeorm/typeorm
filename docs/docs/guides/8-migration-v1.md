@@ -93,7 +93,7 @@ new DataSource({
 
 ## MongoDB
 
-TypeORM now requires **MongoDB server 6.0 or later** and the **`mongodb` Node.js driver v6 or later** (`^6.0.0 || ^7.0.0`). Support for MongoDB server 5.x and the `mongodb` driver v5 has been dropped.
+TypeORM now requires **MongoDB server 6.0 or later** and the **`mongodb` Node.js driver v7 or later** (`^7.0.0`). Support for MongoDB server 5.x and the `mongodb` driver v5/v6 has been dropped.
 
 ### Deprecated connection options removed
 
@@ -118,6 +118,14 @@ The following MongoDB connection options have been removed:
 | `w`                     | Use `writeConcern: { w: 1 }` instead                 |
 | `wtimeout`              | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
 | `wtimeoutMS`            | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
+| `promoteBuffers`        | Remove — not available in MongoDB Driver v7          |
+| `promoteLongs`          | Remove — not available in MongoDB Driver v7          |
+| `promoteValues`         | Remove — not available in MongoDB Driver v7          |
+| `raw`                   | Remove — not available in MongoDB Driver v7          |
+
+### `stats()` method removed
+
+The `stats()` method has been removed from `MongoQueryRunner`, `MongoEntityManager`, and `MongoRepository`. The underlying `collStats` command was deprecated in MongoDB server 6.2 and the `Collection.stats()` method was removed in MongoDB Driver v7.
 
 ### `getMongoRepository` and `getMongoManager` globals
 
