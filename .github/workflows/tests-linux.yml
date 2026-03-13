@@ -254,10 +254,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        postgres-version: ["14", "17"]
+        postgres-version: ["14.22", "17.9"]
+
     services:
       postgres:
-        image: ghcr.io/naorpeled/typeorm-postgres:pg${{ matrix.postgres-version }}-postgis3-pgvectorv0.8.0
+        image: ghcr.io/typeorm/docker:postgres-${{ matrix.postgres-version }}-postgis-3.6.2-pgvector-0.8.2
         ports:
           - "5432:5432"
         env:
