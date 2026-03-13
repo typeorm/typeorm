@@ -81,9 +81,10 @@ describe("query runner > sql injection", () => {
                                 await queryRunner.clearTable(malicious)
                             } catch {
                                 // expected to throw on invalid table name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -105,9 +106,10 @@ describe("query runner > sql injection", () => {
                                 )
                             } catch {
                                 // expected to throw on invalid database name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -126,9 +128,10 @@ describe("query runner > sql injection", () => {
                                 await queryRunner.createSchema(malicious, true)
                             } catch {
                                 // expected to throw on invalid schema name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -147,9 +150,10 @@ describe("query runner > sql injection", () => {
                                 await queryRunner.dropDatabase(malicious, true)
                             } catch {
                                 // expected to throw on invalid database name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -168,9 +172,10 @@ describe("query runner > sql injection", () => {
                                 await queryRunner.dropSchema(malicious, true)
                             } catch {
                                 // expected to throw on invalid schema name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -189,9 +194,10 @@ describe("query runner > sql injection", () => {
                                 await queryRunner.dropTable(malicious, true)
                             } catch {
                                 // expected to throw on invalid table name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -210,9 +216,10 @@ describe("query runner > sql injection", () => {
                                 await queryRunner.dropView(malicious)
                             } catch {
                                 // expected to throw on invalid view name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -234,9 +241,10 @@ describe("query runner > sql injection", () => {
                                 )
                             } catch {
                                 // expected to throw on invalid table name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
 
@@ -254,9 +262,10 @@ describe("query runner > sql injection", () => {
                                 )
                             } catch {
                                 // expected to throw on nonexistent/invalid table name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -281,9 +290,10 @@ describe("query runner > sql injection", () => {
                                 await queryRunner.getSchemas(malicious)
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -304,9 +314,10 @@ describe("query runner > sql injection", () => {
                                 expect(result).to.be.undefined
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -328,9 +339,10 @@ describe("query runner > sql injection", () => {
                                 expect(results).to.have.length(0)
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -351,9 +363,10 @@ describe("query runner > sql injection", () => {
                                 expect(result).to.be.undefined
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -375,9 +388,10 @@ describe("query runner > sql injection", () => {
                                 expect(results).to.have.length(0)
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -397,9 +411,10 @@ describe("query runner > sql injection", () => {
                                 expect(result).to.be.false
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
 
@@ -415,9 +430,10 @@ describe("query runner > sql injection", () => {
                                 expect(result).to.be.false
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -438,9 +454,10 @@ describe("query runner > sql injection", () => {
                                 expect(result).to.be.false
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -461,9 +478,10 @@ describe("query runner > sql injection", () => {
                                 expect(result).to.be.false
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
@@ -481,9 +499,10 @@ describe("query runner > sql injection", () => {
                                 expect(result).to.be.false
                             } catch {
                                 // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
                             }
-                            await verifyIntegrity(dataSource)()
-                            await queryRunner.release()
                         }),
                     ))
             }
