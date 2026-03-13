@@ -798,18 +798,18 @@ const sql = dataSource
     .getSql()
 ```
 
-For debugging purposes you can use `printSql`:
+For debugging purposes you can use `logQuery`:
 
 ```typescript
 const users = await dataSource
     .createQueryBuilder("user")
     .where("user.firstName = :firstName", { firstName: "Timber" })
     .orWhere("user.lastName = :lastName", { lastName: "Saw" })
-    .printSql()
+    .logQuery()
     .getMany()
 ```
 
-This query will return users and print the used sql statement to the console.
+This query will return users and log the used sql statement through the configured logger.
 
 ## Getting raw results
 
