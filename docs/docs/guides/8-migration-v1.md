@@ -326,6 +326,28 @@ categoryCount: number
 
 ## QueryBuilder
 
+### `printSql` renamed to `logQuery`
+
+The `printSql()` method on query builders has been renamed to `logQuery()` to better reflect its behavior — it logs the query through the configured logger rather than printing to stdout:
+
+```typescript
+// Before
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .printSql()
+    .getMany()
+
+// After
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .logQuery()
+    .getMany()
+```
+
 ### `onConflict`
 
 The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:

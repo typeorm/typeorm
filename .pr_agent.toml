@@ -15,8 +15,6 @@ publish_output = true
 comments_location_policy = "summary"
 persistent_comment = true
 final_update_message = false
-
-[config]
 publish_output_progress = false
 
 [checks]
