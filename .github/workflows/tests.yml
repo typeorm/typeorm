@@ -51,14 +51,6 @@ jobs:
               - .mocharc.json
               - ormconfig.sample.json
 
-            format:
-              - *ci
-              - *docs
-              - *src-or-tests
-              - .editorconfig
-              - .prettierignore
-              - .prettierrc.js
-
             lint:
               - *src-or-tests
               - eslint.config.mjs
@@ -103,8 +95,6 @@ jobs:
           retention-days: 1
 
   format:
-    if: contains(needs.detect-changes.outputs.changes, 'format')
-    needs: detect-changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
