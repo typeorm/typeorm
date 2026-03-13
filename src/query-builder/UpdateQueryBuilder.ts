@@ -18,6 +18,9 @@ import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
+import { EntityTarget } from "../common/EntityTarget"
+import { FromOnUpdateNotSupportedError } from "../error/FromOnUpdateNotSupportedError"
+import { SelectQueryBuilder } from "./SelectQueryBuilder"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -204,6 +207,53 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     set(values: QueryDeepPartialEntity<Entity>): this {
         this.expressionMap.valuesSet = values
         return this
+    }
+
+    /**
+     * Specifies additional FROMs for update query.
+     * @param entityTarget
+     * @param aliasName
+     */
+    from(
+        entityTarget:
+            | EntityTarget<any>
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
+        aliasName: string,
+    ): this {
+        if (!this.connection.driver.isUpdateFromSqlSupported()) {
+            throw new FromOnUpdateNotSupportedError()
+        }
+
+        if (
+            typeof entityTarget === "function" &&
+            !this.connection.hasMetadata(entityTarget)
+        ) {
+            const selectQb = this.createSubQueryBuilder()
+            const subQueryBuilder = (
+                entityTarget as (
+                    qb: SelectQueryBuilder<any>,
+                ) => SelectQueryBuilder<any>
+            )(selectQb)
+            this.createFromAlias(subQueryBuilder.getQuery(), aliasName)
+        } else {
+            this.createFromAlias(entityTarget, aliasName)
+        }
+
+        return this
+    }
+
+    /**
+     * Specifies additional FROMs for update query.
+     * @param entityTarget
+     * @param aliasName
+     */
+    addFrom(
+        entityTarget:
+            | EntityTarget<any>
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
+        aliasName: string,
+    ): this {
+        return this.from(entityTarget, aliasName)
     }
 
     /**
@@ -702,6 +752,33 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             throw new UpdateValuesMissingError()
         }
 
+        const froms = this.expressionMap.aliases
+            .filter(
+                (alias) =>
+                    this.expressionMap.mainAlias !== alias &&
+                    alias.type === "from" &&
+                    (alias.tablePath || alias.subQuery),
+            )
+            .map((alias) => {
+                if (alias.subQuery)
+                    return alias.subQuery + " " + this.escape(alias.name)
+
+                return (
+                    this.getTableName(alias.tablePath!) +
+                    " " +
+                    this.escape(alias.name)
+                )
+            })
+
+        if (
+            froms.length &&
+            !this.connection.driver.isUpdateFromSqlSupported()
+        ) {
+            throw new FromOnUpdateNotSupportedError()
+        }
+
+        const fromExpression = froms.length ? " FROM " + froms.join(", ") : ""
+
         // get a table name and all column database names
         const whereExpression = this.createWhereExpression()
         const returningExpression = this.createReturningExpression("update")
@@ -709,28 +786,30 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         if (returningExpression === "") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
-            )} SET ${updateColumnAndValues.join(", ")}${whereExpression}` // todo: how do we replace aliases in where to nothing?
+            )} SET ${updateColumnAndValues.join(
+                ", ",
+            )}${fromExpression}${whereExpression}` // todo: how do we replace aliases in where to nothing?
         }
         if (this.connection.driver.options.type === "mssql") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(
                 ", ",
-            )} OUTPUT ${returningExpression}${whereExpression}`
+            )} OUTPUT ${returningExpression}${fromExpression}${whereExpression}`
         }
         if (this.connection.driver.options.type === "spanner") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(
                 ", ",
-            )}${whereExpression} THEN RETURN ${returningExpression}`
+            )}${fromExpression}${whereExpression} THEN RETURN ${returningExpression}`
         }
 
         return `UPDATE ${this.getTableName(
             this.getMainTableName(),
         )} SET ${updateColumnAndValues.join(
             ", ",
-        )}${whereExpression} RETURNING ${returningExpression}`
+        )}${fromExpression}${whereExpression} RETURNING ${returningExpression}`
     }
 
     /**
