@@ -8,7 +8,7 @@ import type {
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { LoggerOptions } from "./LoggerOptions"
 import { PlatformTools } from "../platform/PlatformTools"
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 
 export abstract class AbstractLogger implements Logger {
     // -------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { TypeORMError } from "./TypeORMError"
 
