@@ -5,7 +5,7 @@ import type { SqlServerDataSourceOptions } from "../driver/sqlserver/SqlServerDa
 import type { TableIndex } from "../schema-builder/table/TableIndex"
 import type { View } from "../schema-builder/view/View"
 import type { DataSource } from "../data-source/DataSource"
-import type { Table } from "../schema-builder/table/Table"
+import { Table } from "../schema-builder/table/Table"
 import type { EntityManager } from "../entity-manager/EntityManager"
 import type { TableColumn } from "../schema-builder/table/TableColumn"
 import type { Broadcaster } from "../subscriber/Broadcaster"
@@ -14,9 +14,10 @@ import { TypeORMError } from "../error/TypeORMError"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { OrmUtils } from "../util/OrmUtils"
-import type { MetadataTableType } from "../driver/types/MetadataTableType"
+import { MetadataTableType } from "../driver/types/MetadataTableType"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import type { TableCheck } from "../schema-builder/table/TableCheck"
 
 export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
@@ -160,6 +161,13 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
     // Protected Abstract Methods
     // -------------------------------------------------------------------------
+
+    abstract createTable(
+        table: Table,
+        ifNotExists?: boolean,
+        createForeignKeys?: boolean,
+        createIndices?: boolean,
+    ): Promise<void>
 
     protected abstract loadTables(tablePaths?: string[]): Promise<Table[]>
 
@@ -762,6 +770,136 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             table,
             index.columnNames,
             index.where,
+        )
+    }
+
+    protected async insertCheckConstraintMetadata(
+        table: Table,
+        checkConstraint: TableCheck,
+    ) {
+        await this.createTypeormMetadataTable()
+
+        if (!checkConstraint.name)
+            checkConstraint.name =
+                this.connection.namingStrategy.checkConstraintName(
+                    table,
+                    checkConstraint.expression!,
+                )
+
+        const { schema, tableName, database } =
+            this.connection.driver.parseTableName(table)
+        return this.insertTypeormMetadataSql({
+            database,
+            type: MetadataTableType.CHECK_CONSTRAINT,
+            table: tableName,
+            schema: schema,
+            name: checkConstraint.name,
+            value: checkConstraint.expression,
+        })
+    }
+
+    protected async dropCheckConstraintMetadata(
+        table: Table,
+        checkConstraint: TableCheck,
+    ) {
+        await this.createTypeormMetadataTable()
+
+        if (!checkConstraint.name)
+            checkConstraint.name =
+                this.connection.namingStrategy.checkConstraintName(
+                    table,
+                    checkConstraint.expression!,
+                )
+
+        const { schema, tableName, database } =
+            this.connection.driver.parseTableName(table)
+        return this.deleteTypeormMetadataSql({
+            database,
+            type: MetadataTableType.CHECK_CONSTRAINT,
+            table: tableName,
+            schema: schema,
+            name: checkConstraint.name,
+        })
+    }
+
+    async createTypeormMetadataTable() {
+        if (this.sqlMemoryMode === true) return
+
+        const schema = this.connection.driver.schema
+        const database = this.connection.driver.database
+        const typeormMetadataTable = this.connection.driver.buildTableName(
+            this.connection.metadataTableName,
+            schema,
+            database,
+        )
+
+        // Spanner requires at least one primary key in a table.
+        // Since we don't have unique column in "typeorm_metadata" table
+        // and we should avoid breaking changes, we mark all columns as primary for Spanner driver.
+        const isPrimary = this.connection.driver.options.type === "spanner"
+        await this.createTable(
+            new Table({
+                database: database,
+                schema: schema,
+                name: typeormMetadataTable,
+                columns: [
+                    {
+                        name: "type",
+                        type: this.connection.driver.normalizeType({
+                            type: this.connection.driver.mappedDataTypes
+                                .metadataType,
+                        }),
+                        isNullable: false,
+                        isPrimary,
+                    },
+                    {
+                        name: "database",
+                        type: this.connection.driver.normalizeType({
+                            type: this.connection.driver.mappedDataTypes
+                                .metadataDatabase,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                    {
+                        name: "schema",
+                        type: this.connection.driver.normalizeType({
+                            type: this.connection.driver.mappedDataTypes
+                                .metadataSchema,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                    {
+                        name: "table",
+                        type: this.connection.driver.normalizeType({
+                            type: this.connection.driver.mappedDataTypes
+                                .metadataTable,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                    {
+                        name: "name",
+                        type: this.connection.driver.normalizeType({
+                            type: this.connection.driver.mappedDataTypes
+                                .metadataName,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                    {
+                        name: "value",
+                        type: this.connection.driver.normalizeType({
+                            type: this.connection.driver.mappedDataTypes
+                                .metadataValue,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                ],
+            }),
+            true,
         )
     }
 }
