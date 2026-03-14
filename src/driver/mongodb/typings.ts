@@ -961,6 +961,7 @@ export { Binary }
 export declare type BitwiseFilter = number /** numeric bit mask */ | Binary /** BinData bit mask */ | ReadonlyArray<number>;
 
 /* Excluded from this release type: BSONElement */
+export { BSONRegExp }
 
 /**
  * BSON Serialization options.
