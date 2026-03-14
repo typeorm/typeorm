@@ -1039,48 +1039,6 @@ export class MongoEntityManager extends EntityManager {
         const propertyName = objectIdColumn.propertyName
         if (propertyName === "_id") return query
 
-        const objectIdClass = PlatformTools.load("mongodb").ObjectId
-
-        const convertValue = (value: any): any => {
-            if (value instanceof objectIdClass) return value
-            if (typeof value === "string" || typeof value === "number")
-                return new objectIdClass(value)
-            if (Array.isArray(value)) return value.map(convertValue)
-            if (
-                value !== null &&
-                typeof value === "object" &&
-                Object.keys(value).some((k) => k.startsWith("$"))
-            ) {
-                const result: ObjectLiteral = {}
-                for (const [k, v] of Object.entries(value)) {
-                    result[k] = convertValue(v)
-                }
-                return result
-            }
-            return value
-        }
-
-        const rewriteQuery = (obj: ObjectLiteral): ObjectLiteral => {
-            const result: ObjectLiteral = {}
-            for (const [key, value] of Object.entries(obj)) {
-                if (key === propertyName) {
-                    result["_id"] = convertValue(value)
-                } else if (
-                    (key === "$or" || key === "$and") &&
-                    Array.isArray(value)
-                ) {
-                    result[key] = value.map((item: any) =>
-                        typeof item === "object" && item !== null
-                            ? rewriteQuery(item)
-                            : item,
-                    )
-                } else {
-                    result[key] = value
-                }
-            }
-            return result
-        }
-
         if (!(propertyName in query)) {
             const hasNested =
                 ("$or" in query && Array.isArray(query.$or)) ||
@@ -1088,7 +1046,70 @@ export class MongoEntityManager extends EntityManager {
             if (!hasNested) return query
         }
 
-        return rewriteQuery(query)
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
+        return this.rewriteObjectIdQuery(query, propertyName, objectIdClass)
+    }
+
+    /**
+     * Recursively rewrites a query object, renaming the given property to
+     * "_id" and converting values to ObjectId instances. Walks into $or/$and.
+     * @param obj
+     * @param propertyName
+     * @param objectIdClass
+     */
+    private rewriteObjectIdQuery(
+        obj: ObjectLiteral,
+        propertyName: string,
+        objectIdClass: any,
+    ): ObjectLiteral {
+        const result: ObjectLiteral = {}
+        for (const [key, value] of Object.entries(obj)) {
+            if (key === propertyName) {
+                result["_id"] = this.convertToObjectId(value, objectIdClass)
+            } else if (
+                (key === "$or" || key === "$and") &&
+                Array.isArray(value)
+            ) {
+                result[key] = value.map((item: any) =>
+                    typeof item === "object" && item !== null
+                        ? this.rewriteObjectIdQuery(
+                              item,
+                              propertyName,
+                              objectIdClass,
+                          )
+                        : item,
+                )
+            } else {
+                result[key] = value
+            }
+        }
+        return result
+    }
+
+    /**
+     * Converts a query value to ObjectId, handling scalars, arrays, and
+     * MongoDB operator objects (e.g. { $in: [...] }, { $ne: ... }).
+     * @param value
+     * @param objectIdClass
+     */
+    private convertToObjectId(value: any, objectIdClass: any): any {
+        if (value instanceof objectIdClass) return value
+        if (typeof value === "string" || typeof value === "number")
+            return new objectIdClass(value)
+        if (Array.isArray(value))
+            return value.map((v) => this.convertToObjectId(v, objectIdClass))
+        if (
+            value !== null &&
+            typeof value === "object" &&
+            Object.keys(value).some((k) => k.startsWith("$"))
+        ) {
+            const result: ObjectLiteral = {}
+            for (const [k, v] of Object.entries(value)) {
+                result[k] = this.convertToObjectId(v, objectIdClass)
+            }
+            return result
+        }
+        return value
     }
 
     /**
