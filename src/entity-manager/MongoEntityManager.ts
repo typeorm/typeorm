@@ -23,8 +23,6 @@ import type {
     ChangeStream,
     ChangeStreamOptions,
     Collection,
-    CollStats,
-    CollStatsOptions,
     CommandOperationOptions,
     CountDocumentsOptions,
     CountOptions,
@@ -942,19 +940,6 @@ export class MongoEntityManager extends EntityManager {
             doc,
             options,
         )
-    }
-
-    /**
-     * Get all the collection statistics.
-     * @param entityClassOrName
-     * @param options
-     */
-    stats<Entity>(
-        entityClassOrName: EntityTarget<Entity>,
-        options?: CollStatsOptions,
-    ): Promise<CollStats> {
-        const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.stats(metadata.tableName, options)
     }
 
     watch<Entity>(
