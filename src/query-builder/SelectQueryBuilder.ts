@@ -1465,31 +1465,31 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
             )
 
-        if (sort) {
-            if (typeof sort === "object") {
-                for (const key of Object.keys(sort)) {
-                    if (key.includes(";"))
-                        throw new TypeORMError(
-                            `Semicolons are not allowed in orderBy() to prevent SQL injection. Use parameter binding instead.`,
-                        )
-                }
-                this.expressionMap.orderBys = sort as OrderByCondition
-            } else {
-                if (sort.includes(";"))
+        if (!sort) {
+            this.expressionMap.orderBys = {}
+            return this
+        }
+
+        if (typeof sort === "object") {
+            for (const key of Object.keys(sort)) {
+                if (key.includes(";"))
                     throw new TypeORMError(
                         `Semicolons are not allowed in orderBy() to prevent SQL injection. Use parameter binding instead.`,
                     )
-                if (nulls) {
-                    this.expressionMap.orderBys = {
-                        [sort as string]: { order, nulls },
-                    }
-                } else {
-                    this.expressionMap.orderBys = { [sort as string]: order }
-                }
             }
-        } else {
-            this.expressionMap.orderBys = {}
+            this.expressionMap.orderBys = sort as OrderByCondition
+            return this
         }
+
+        if (sort.includes(";"))
+            throw new TypeORMError(
+                `Semicolons are not allowed in orderBy() to prevent SQL injection. Use parameter binding instead.`,
+            )
+
+        this.expressionMap.orderBys = nulls
+            ? { [sort as string]: { order, nulls } }
+            : { [sort as string]: order }
+
         return this
     }
 
@@ -3102,7 +3102,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )}`,
                 )
-                .join(", '|;|', ")
+                .join(", '|:|', ")
 
             if (primaryColumns.length === 1) {
                 return `COUNT(DISTINCT(${columnsExpression}))`
@@ -3128,7 +3128,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )} AS STRING)`,
                 )
-                .join(", '|;|', ")
+                .join(", '|:|', ")
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
 
@@ -3143,7 +3143,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             `COUNT(DISTINCT(` +
             primaryColumns
                 .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
-                .join(" || '|;|' || ") +
+                .join(" || '|:|' || ") +
             "))"
         )
     }

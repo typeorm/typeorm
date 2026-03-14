@@ -348,6 +348,18 @@ categoryCount: number
 
 ## QueryBuilder
 
+### Semicolons rejected in raw SQL expression methods
+
+The `select()`, `addSelect()`, `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods now reject inputs containing semicolons at runtime to prevent SQL statement stacking attacks. If you have legitimate SQL expressions that contain semicolons (e.g., inside string literals), use parameter binding instead:
+
+```typescript
+// This now throws
+qb.select("col; DROP TABLE post")
+
+// Use parameter binding for values
+qb.where("post.title = :title", { title: "value;with;semicolons" })
+```
+
 ### `printSql` renamed to `logQuery`
 
 The `printSql()` method on query builders has been renamed to `logQuery()` to better reflect its behavior — it logs the query through the configured logger rather than printing to stdout:
