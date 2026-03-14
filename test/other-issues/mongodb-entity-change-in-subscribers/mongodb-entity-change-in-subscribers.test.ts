@@ -39,10 +39,12 @@ describe("other issues > mongodb entity change in subscribers should affect pers
                 await connection.manager.save(loadedPost!)
 
                 // check if subscriber was triggered and entity was really taken changed columns in the subscriber
-                const loadedUpdatedPost =
-                    await connection.manager.findOneBy(Post, {
+                const loadedUpdatedPost = await connection.manager.findOneBy(
+                    Post,
+                    {
                         id: post.id,
-                    })
+                    },
+                )
                 expect(loadedUpdatedPost).not.to.be.null
                 expect(loadedUpdatedPost!.title).to.equals("hello world!")
                 expect(loadedUpdatedPost!.updatedColumns).to.equals(4) // it actually should be 3, but ObjectId column always added
