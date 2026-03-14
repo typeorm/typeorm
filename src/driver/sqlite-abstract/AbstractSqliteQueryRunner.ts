@@ -1380,7 +1380,7 @@ export abstract class AbstractSqliteQueryRunner
         let query = `SELECT "t".* FROM "${this.getTypeormMetadataTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view' WHERE "t"."type" = '${
             MetadataTableType.VIEW
         }'`
-        const parameters: any[] = []
+        const parameters: string[] = []
         if (viewNames.length > 0) {
             const placeholders = viewNames.map(() => "?").join(", ")
             query += ` AND "t"."name" IN (${placeholders})`

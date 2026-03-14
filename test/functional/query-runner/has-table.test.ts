@@ -19,7 +19,7 @@ describe("query runner > has table", () => {
     it("should return true for existing tables and false for non-existing", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
+                await using queryRunner = dataSource.createQueryRunner()
 
                 const hasPostTable = await queryRunner.hasTable("post")
                 const hasPhotoTable = await queryRunner.hasTable("photo")
@@ -29,8 +29,6 @@ describe("query runner > has table", () => {
                 hasPostTable.should.be.true
                 hasPhotoTable.should.be.true
                 hasNonExistentTable.should.be.false
-
-                await queryRunner.release()
             }),
         ))
 })
