@@ -1377,15 +1377,16 @@ export abstract class AbstractSqliteQueryRunner
             viewNames = []
         }
 
-        const viewNamesString = viewNames
-            .map((name) => "'" + name + "'")
-            .join(", ")
         let query = `SELECT "t".* FROM "${this.getTypeormMetadataTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view' WHERE "t"."type" = '${
             MetadataTableType.VIEW
         }'`
-        if (viewNamesString.length > 0)
-            query += ` AND "t"."name" IN (${viewNamesString})`
-        const dbViews = await this.query(query)
+        const parameters: string[] = []
+        if (viewNames.length > 0) {
+            const placeholders = viewNames.map(() => "?").join(", ")
+            query += ` AND "t"."name" IN (${placeholders})`
+            parameters.push(...viewNames)
+        }
+        const dbViews = await this.query(query, parameters)
         return dbViews.map((dbView: any) => {
             const view = new View()
             view.name = dbView["name"]

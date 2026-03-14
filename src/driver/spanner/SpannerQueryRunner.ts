@@ -1759,15 +1759,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
+            const placeholders = tableNames
+                .map((_, i) => `@param${i}`)
+                .join(", ")
             const tablesSql =
                 `SELECT \`TABLE_NAME\` ` +
                 `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
                 `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE' ` +
-                `AND \`TABLE_NAME\` IN (${tableNames
-                    .map((tableName) => `'${tableName}'`)
-                    .join(", ")})`
+                `AND \`TABLE_NAME\` IN (${placeholders})`
 
-            dbTables.push(...(await this.query(tablesSql)))
+            dbTables.push(...(await this.query(tablesSql, tableNames)))
         }
 
         // if tables were not found in the db, no need to proceed
