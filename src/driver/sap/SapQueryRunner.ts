@@ -496,8 +496,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT COUNT(*) as "hasTable" FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}'`
-        const result: [{ hasTable: number }] = await this.query(sql)
+        const sql = `SELECT COUNT(*) as "hasTable" FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" = ? AND "TABLE_NAME" = ?`
+        const result: [{ hasTable: number }] = await this.query(sql, [
+            parsedTableName.schema,
+            parsedTableName.tableName,
+        ])
 
         return result[0].hasTable > 0
     }
@@ -517,8 +520,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT COUNT(*) as "hasColumn" FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}' AND "COLUMN_NAME" = '${columnName}'`
-        const result: [{ hasColumn: number }] = await this.query(sql)
+        const sql = `SELECT COUNT(*) as "hasColumn" FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = ? AND "TABLE_NAME" = ? AND "COLUMN_NAME" = ?`
+        const result: [{ hasColumn: number }] = await this.query(sql, [
+            parsedTableName.schema,
+            parsedTableName.tableName,
+            columnName,
+        ])
 
         return result[0].hasColumn > 0
     }
@@ -2618,25 +2625,24 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (!isSchemaExist) schemas.push(metadata.schema!)
             })
 
-        schemas.push(this.driver.options.schema || "current_schema")
-        const schemaNamesString = schemas
-            .map((name) => {
-                return name === "current_schema" ? name : "'" + name + "'"
-            })
-            .join(", ")
+        if (this.driver.options.schema) {
+            schemas.push(this.driver.options.schema)
+        } else {
+            const [{ currentSchema }] = await this.query(
+                `SELECT CURRENT_SCHEMA AS "currentSchema" FROM "SYS"."DUMMY"`,
+            )
+            schemas.push(currentSchema)
+        }
+
+        const schemaNamesPlaceholders = schemas.map(() => "?").join(", ")
 
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            // const selectViewDropsQuery = `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
-            //     `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`;
-            // const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
-            // await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
-
-            // ignore spatial_ref_sys; it's a special table supporting PostGIS
-            const selectTableDropsQuery = `SELECT 'DROP TABLE "' || schema_name || '"."' || table_name || '" CASCADE;' as "query" FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" IN (${schemaNamesString}) AND "TABLE_NAME" NOT IN ('SYS_AFL_GENERATOR_PARAMETERS') AND "IS_COLUMN_TABLE" = 'TRUE'`
+            const selectTableDropsQuery = `SELECT 'DROP TABLE "' || schema_name || '"."' || table_name || '" CASCADE;' as "query" FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" IN (${schemaNamesPlaceholders}) AND "TABLE_NAME" NOT IN ('SYS_AFL_GENERATOR_PARAMETERS') AND "IS_COLUMN_TABLE" = 'TRUE'`
             const dropTableQueries: ObjectLiteral[] = await this.query(
                 selectTableDropsQuery,
+                schemas,
             )
             await Promise.all(
                 dropTableQueries.map((q) => this.query(q["query"])),
