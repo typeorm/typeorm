@@ -2,7 +2,7 @@
 
 ## MongoDB support
 
-TypeORM has basic MongoDB support (server **6.0 or later** and Node.js driver **v7 or later**).
+TypeORM has basic MongoDB support (Node.js driver **v7 or later**).
 
 Most of TypeORM functionality is RDBMS-specific, this page contains all MongoDB-specific functionality.
 
