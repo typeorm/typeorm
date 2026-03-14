@@ -166,7 +166,7 @@ importers:
         specifier: ^11.7.5
         version: 11.7.5
       mongodb:
-        specifier: ^7.0.0
+        specifier: ^7.1.0
         version: 7.1.0(socks@2.8.7)
       mssql:
         specifier: ^12.2.0
