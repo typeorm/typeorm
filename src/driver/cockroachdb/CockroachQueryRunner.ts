@@ -464,7 +464,8 @@ export class CockroachQueryRunner
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM "pg_database" WHERE "datname" = '${database}'`,
+            `SELECT * FROM "pg_database" WHERE "datname" = $1`,
+            [database],
         )
         return result.length ? true : false
     }
@@ -483,7 +484,8 @@ export class CockroachQueryRunner
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM "information_schema"."schemata" WHERE "schema_name" = '${schema}'`,
+            `SELECT * FROM "information_schema"."schemata" WHERE "schema_name" = $1`,
+            [schema],
         )
         return result.length ? true : false
     }
@@ -507,8 +509,11 @@ export class CockroachQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = '${parsedTableName.schema}' AND "table_name" = '${parsedTableName.tableName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = $1 AND "table_name" = $2`
+        const result = await this.query(sql, [
+            parsedTableName.schema,
+            parsedTableName.tableName,
+        ])
         return result.length ? true : false
     }
 
@@ -527,8 +532,12 @@ export class CockroachQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = '${parsedTableName.schema}' AND "table_name" = '${parsedTableName.tableName}' AND "column_name" = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = $1 AND "table_name" = $2 AND "column_name" = $3`
+        const result = await this.query(sql, [
+            parsedTableName.schema,
+            parsedTableName.tableName,
+            columnName,
+        ])
         return result.length ? true : false
     }
 
@@ -541,10 +550,11 @@ export class CockroachQueryRunner
         database: string,
         ifNotExists?: boolean,
     ): Promise<void> {
+        const escaped = database.replace(/"/g, '""')
         const up = `CREATE DATABASE ${
             ifNotExists ? "IF NOT EXISTS " : ""
-        } "${database}"`
-        const down = `DROP DATABASE "${database}"`
+        } "${escaped}"`
+        const down = `DROP DATABASE "${escaped}"`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -554,8 +564,9 @@ export class CockroachQueryRunner
      * @param ifExists
      */
     async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
-        const up = `DROP DATABASE ${ifExists ? "IF EXISTS " : ""} "${database}"`
-        const down = `CREATE DATABASE "${database}"`
+        const escaped = database.replace(/"/g, '""')
+        const up = `DROP DATABASE ${ifExists ? "IF EXISTS " : ""} "${escaped}"`
+        const down = `CREATE DATABASE "${escaped}"`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -572,11 +583,12 @@ export class CockroachQueryRunner
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
+        const escaped = schema.replace(/"/g, '""')
 
         const up = ifNotExists
-            ? `CREATE SCHEMA IF NOT EXISTS "${schema}"`
-            : `CREATE SCHEMA "${schema}"`
-        const down = `DROP SCHEMA "${schema}" CASCADE`
+            ? `CREATE SCHEMA IF NOT EXISTS "${escaped}"`
+            : `CREATE SCHEMA "${escaped}"`
+        const down = `DROP SCHEMA "${escaped}" CASCADE`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -595,11 +607,12 @@ export class CockroachQueryRunner
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
+        const escaped = schema.replace(/"/g, '""')
 
         const up = ifExists
-            ? `DROP SCHEMA IF EXISTS "${schema}" ${isCascade ? "CASCADE" : ""}`
-            : `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`
-        const down = `CREATE SCHEMA "${schema}"`
+            ? `DROP SCHEMA IF EXISTS "${escaped}" ${isCascade ? "CASCADE" : ""}`
+            : `DROP SCHEMA "${escaped}" ${isCascade ? "CASCADE" : ""}`
+        const down = `CREATE SCHEMA "${escaped}"`
         await this.executeQueries(new Query(up), new Query(down))
     }
 

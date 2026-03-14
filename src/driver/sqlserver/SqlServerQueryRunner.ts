@@ -429,9 +429,9 @@ export class SqlServerQueryRunner
      * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
-        const result = await this.query(
-            `SELECT DB_ID('${database}') as "db_id"`,
-        )
+        const result = await this.query(`SELECT DB_ID(@0) as "db_id"`, [
+            database,
+        ])
         const dbId = result[0]["db_id"]
         return !!dbId
     }
@@ -449,9 +449,9 @@ export class SqlServerQueryRunner
      * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
-        const result = await this.query(
-            `SELECT SCHEMA_ID('${schema}') as "schema_id"`,
-        )
+        const result = await this.query(`SELECT SCHEMA_ID(@0) as "schema_id"`, [
+            schema,
+        ])
         const schemaId = result[0]["schema_id"]
         return !!schemaId
     }
@@ -481,8 +481,11 @@ export class SqlServerQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.tableName}' AND "TABLE_SCHEMA" = '${parsedTableName.schema}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1`
+        const result = await this.query(sql, [
+            parsedTableName.tableName,
+            parsedTableName.schema,
+        ])
         return result.length ? true : false
     }
 
@@ -505,8 +508,12 @@ export class SqlServerQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = '${parsedTableName.tableName}' AND "TABLE_SCHEMA" = '${parsedTableName.schema}' AND "COLUMN_NAME" = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1 AND "COLUMN_NAME" = @2`
+        const result = await this.query(sql, [
+            parsedTableName.tableName,
+            parsedTableName.schema,
+            columnName,
+        ])
         return result.length ? true : false
     }
 
@@ -519,10 +526,12 @@ export class SqlServerQueryRunner
         database: string,
         ifNotExists?: boolean,
     ): Promise<void> {
+        const escapedQuote = database.replace(/'/g, "''")
+        const escapedIdent = database.replace(/"/g, '""')
         const up = ifNotExists
-            ? `IF DB_ID('${database}') IS NULL CREATE DATABASE "${database}"`
-            : `CREATE DATABASE "${database}"`
-        const down = `DROP DATABASE "${database}"`
+            ? `IF DB_ID('${escapedQuote}') IS NULL CREATE DATABASE "${escapedIdent}"`
+            : `CREATE DATABASE "${escapedIdent}"`
+        const down = `DROP DATABASE "${escapedIdent}"`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -532,10 +541,12 @@ export class SqlServerQueryRunner
      * @param ifExists
      */
     async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
+        const escapedQuote = database.replace(/'/g, "''")
+        const escapedIdent = database.replace(/"/g, '""')
         const up = ifExists
-            ? `IF DB_ID('${database}') IS NOT NULL DROP DATABASE "${database}"`
-            : `DROP DATABASE "${database}"`
-        const down = `CREATE DATABASE "${database}"`
+            ? `IF DB_ID('${escapedQuote}') IS NOT NULL DROP DATABASE "${escapedIdent}"`
+            : `DROP DATABASE "${escapedIdent}"`
+        const down = `CREATE DATABASE "${escapedIdent}"`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -553,26 +564,34 @@ export class SqlServerQueryRunner
         const downQueries: Query[] = []
 
         if (schemaPath.indexOf(".") === -1) {
+            const escapedQuote = schemaPath.replace(/'/g, "''")
+            const escapedIdent = schemaPath.replace(/"/g, '""')
+            const escapedExec = escapedIdent.replace(/'/g, "''")
             const upQuery = ifNotExists
-                ? `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${schemaPath}"') END`
-                : `CREATE SCHEMA "${schemaPath}"`
+                ? `IF SCHEMA_ID('${escapedQuote}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${escapedExec}"') END`
+                : `CREATE SCHEMA "${escapedIdent}"`
             upQueries.push(new Query(upQuery))
-            downQueries.push(new Query(`DROP SCHEMA "${schemaPath}"`))
+            downQueries.push(new Query(`DROP SCHEMA "${escapedIdent}"`))
         } else {
             const dbName = schemaPath.split(".")[0]
             const schema = schemaPath.split(".")[1]
+            const escapedDbIdent = dbName.replace(/"/g, '""')
+            const escapedSchemaQuote = schema.replace(/'/g, "''")
+            const escapedSchemaIdent = schema.replace(/"/g, '""')
+            const escapedSchemaExec = escapedSchemaIdent.replace(/'/g, "''")
             const currentDB = await this.getCurrentDatabase()
-            upQueries.push(new Query(`USE "${dbName}"`))
-            downQueries.push(new Query(`USE "${currentDB}"`))
+            const escapedCurrentDB = currentDB.replace(/"/g, '""')
+            upQueries.push(new Query(`USE "${escapedDbIdent}"`))
+            downQueries.push(new Query(`USE "${escapedCurrentDB}"`))
 
             const upQuery = ifNotExists
-                ? `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${schema}"') END`
-                : `CREATE SCHEMA "${schema}"`
+                ? `IF SCHEMA_ID('${escapedSchemaQuote}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${escapedSchemaExec}"') END`
+                : `CREATE SCHEMA "${escapedSchemaIdent}"`
             upQueries.push(new Query(upQuery))
-            downQueries.push(new Query(`DROP SCHEMA "${schema}"`))
+            downQueries.push(new Query(`DROP SCHEMA "${escapedSchemaIdent}"`))
 
-            upQueries.push(new Query(`USE "${currentDB}"`))
-            downQueries.push(new Query(`USE "${dbName}"`))
+            upQueries.push(new Query(`USE "${escapedCurrentDB}"`))
+            downQueries.push(new Query(`USE "${escapedDbIdent}"`))
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -589,26 +608,34 @@ export class SqlServerQueryRunner
         const downQueries: Query[] = []
 
         if (schemaPath.indexOf(".") === -1) {
+            const escapedQuote = schemaPath.replace(/'/g, "''")
+            const escapedIdent = schemaPath.replace(/"/g, '""')
+            const escapedExec = escapedIdent.replace(/'/g, "''")
             const upQuery = ifExists
-                ? `IF SCHEMA_ID('${schemaPath}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA "${schemaPath}"') END`
-                : `DROP SCHEMA "${schemaPath}"`
+                ? `IF SCHEMA_ID('${escapedQuote}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA "${escapedExec}"') END`
+                : `DROP SCHEMA "${escapedIdent}"`
             upQueries.push(new Query(upQuery))
-            downQueries.push(new Query(`CREATE SCHEMA "${schemaPath}"`))
+            downQueries.push(new Query(`CREATE SCHEMA "${escapedIdent}"`))
         } else {
             const dbName = schemaPath.split(".")[0]
             const schema = schemaPath.split(".")[1]
+            const escapedDbIdent = dbName.replace(/"/g, '""')
+            const escapedSchemaQuote = schema.replace(/'/g, "''")
+            const escapedSchemaIdent = schema.replace(/"/g, '""')
+            const escapedSchemaExec = escapedSchemaIdent.replace(/'/g, "''")
             const currentDB = await this.getCurrentDatabase()
-            upQueries.push(new Query(`USE "${dbName}"`))
-            downQueries.push(new Query(`USE "${currentDB}"`))
+            const escapedCurrentDB = currentDB.replace(/"/g, '""')
+            upQueries.push(new Query(`USE "${escapedDbIdent}"`))
+            downQueries.push(new Query(`USE "${escapedCurrentDB}"`))
 
             const upQuery = ifExists
-                ? `IF SCHEMA_ID('${schema}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA "${schema}"') END`
-                : `DROP SCHEMA "${schema}"`
+                ? `IF SCHEMA_ID('${escapedSchemaQuote}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA "${escapedSchemaExec}"') END`
+                : `DROP SCHEMA "${escapedSchemaIdent}"`
             upQueries.push(new Query(upQuery))
-            downQueries.push(new Query(`CREATE SCHEMA "${schema}"`))
+            downQueries.push(new Query(`CREATE SCHEMA "${escapedSchemaIdent}"`))
 
-            upQueries.push(new Query(`USE "${currentDB}"`))
-            downQueries.push(new Query(`USE "${dbName}"`))
+            upQueries.push(new Query(`USE "${escapedCurrentDB}"`))
+            downQueries.push(new Query(`USE "${escapedDbIdent}"`))
         }
 
         await this.executeQueries(upQueries, downQueries)

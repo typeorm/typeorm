@@ -232,8 +232,8 @@ export abstract class AbstractSqliteQueryRunner
         const tableName = InstanceChecker.isTable(tableOrName)
             ? tableOrName.name
             : tableOrName
-        const sql = `SELECT * FROM "sqlite_master" WHERE "type" = 'table' AND "name" = '${tableName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM "sqlite_master" WHERE "type" = 'table' AND "name" = ?`
+        const result = await this.query(sql, [tableName])
         return result.length ? true : false
     }
 
@@ -2419,7 +2419,7 @@ export abstract class AbstractSqliteQueryRunner
         return tableName
             .replace(/^\.+|\.+$/g, "")
             .split(".")
-            .map((i) => (disableEscape ? i : `"${i}"`))
+            .map((i) => (disableEscape ? i : `"${i.replace(/"/g, '""')}"`))
             .join(".")
     }
 
