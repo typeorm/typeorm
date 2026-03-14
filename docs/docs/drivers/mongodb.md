@@ -62,6 +62,12 @@ npm install mongodb
 
 - `port` - Database host port. Default mongodb port is `27017`.
 
+- `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
+
+- `promoteLongs` - Promotes Long values to number if they fit inside the 53-bit resolution. Default: `true`.
+
+- `promoteValues` - Promotes BSON values to native types where possible, set to false to only receive wrapper types. Default: `true`.
+
 - `proxyHost` - Configures a Socks5 proxy host used for creating TCP connections.
 
 - `proxyPassword` - Configures a Socks5 proxy password when the proxy requires username/password authentication.
@@ -69,6 +75,8 @@ npm install mongodb
 - `proxyPort` - Configures a Socks5 proxy port used for creating TCP connections.
 
 - `proxyUsername` - Configures a Socks5 proxy username when the proxy requires username/password authentication.
+
+- `raw` - Return document results as raw BSON buffers. Default: `false`.
 
 - `readConcern` - Specify a read concern for the collection.
 

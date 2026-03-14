@@ -146,6 +146,26 @@ export interface MongoDataSourceOptions extends BaseDataSourceOptions {
     readonly pkFactory?: any
 
     /**
+     * when deserializing a Binary will return it as a node.js Buffer instance.
+     */
+    readonly promoteBuffers?: boolean
+
+    /**
+     * when deserializing a Long will fit it into a Number if it's smaller than 53 bits.
+     */
+    readonly promoteLongs?: boolean
+
+    /**
+     * when deserializing will promote BSON values to their Node.js closest equivalent types.
+     */
+    readonly promoteValues?: boolean
+
+    /**
+     * Enabling the raw option will return a Node.js Buffer which is allocated using allocUnsafe API
+     */
+    readonly raw?: boolean
+
+    /**
      * Specify a read concern for the collection.
      */
     readonly readConcern?: any

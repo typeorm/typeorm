@@ -118,10 +118,6 @@ The following MongoDB connection options have been removed:
 | `w`                     | Use `writeConcern: { w: 1 }` instead                 |
 | `wtimeout`              | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
 | `wtimeoutMS`            | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
-| `promoteBuffers`        | Remove — not available in MongoDB Driver v7          |
-| `promoteLongs`          | Remove — not available in MongoDB Driver v7          |
-| `promoteValues`         | Remove — not available in MongoDB Driver v7          |
-| `raw`                   | Remove — not available in MongoDB Driver v7          |
 
 ### `stats()` method removed
 
