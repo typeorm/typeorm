@@ -86,8 +86,8 @@ describe("mongodb > object id columns", () => {
                     nonIdNameOfObjectId: post.nonIdNameOfObjectId,
                 })
                 expect(loadedPost).to.be.not.null
-                expect(loadedPost!.title).to.be.equal("Post")
-                expect(loadedPost!.nonIdNameOfObjectId.toString()).to.be.equal(
+                expect(loadedPost?.title).to.be.equal("Post")
+                expect(loadedPost?.nonIdNameOfObjectId.toString()).to.be.equal(
                     post.nonIdNameOfObjectId.toString(),
                 )
             }),
@@ -142,7 +142,7 @@ describe("mongodb > object id columns", () => {
                     nonIdNameOfObjectId: post.nonIdNameOfObjectId,
                 })
                 expect(loadedPost).to.be.not.null
-                expect(loadedPost!.title).to.be.equal("Post")
+                expect(loadedPost?.title).to.be.equal("Post")
             }),
         ))
 
