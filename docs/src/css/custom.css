@@ -311,3 +311,211 @@ div[class*="announcementBarContent_"] a {
     color: #ffe6d9 !important;
     text-decoration: underline;
 }
+
+/* =============================================
+   Search Results Styling (docusaurus-lunr-search)
+   ============================================= */
+
+/* --- Dropdown arrow — hide the dark triangle --- */
+.algolia-autocomplete .ds-dropdown-menu::before {
+    display: none !important;
+}
+
+/* --- Dropdown container --- */
+.ds-dropdown-menu {
+    border-radius: 12px !important;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        0 20px 25px -5px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid #e5e7eb !important;
+    max-height: min(60vh, 480px) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    padding: 4px 0 !important;
+}
+
+[data-theme="dark"] .ds-dropdown-menu {
+    background: #1a0030 !important;
+    border-color: rgba(179, 102, 204, 0.15) !important;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.2),
+        0 20px 25px -5px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Dataset container background */
+[data-theme="dark"] .ds-dropdown-menu [class^="ds-dataset-"] {
+    background: #1a0030 !important;
+    border-radius: 12px !important;
+}
+
+/*
+ * WCAG AA contrast targets (against backgrounds):
+ *   Light (#ffffff): normal text ≥ 4.5:1 → max ~#767676
+ *   Dark  (#180028): normal text ≥ 4.5:1 → min ~#8a7a9a (luminance ≥ 0.187)
+ *   Dark  (#180028): large text  ≥ 3.0:1 → min ~#6d5d7d
+ */
+
+/* --- Category headers — subtle dividers, not blocks --- */
+.algolia-docsearch-suggestion--category-header {
+    background: transparent !important;
+    border: none !important;
+    padding: 6px 16px !important;
+    margin-top: 4px !important;
+}
+
+.algolia-docsearch-suggestion--category-header:first-child {
+    margin-top: 0 !important;
+}
+
+.algolia-docsearch-suggestion--category-header
+    .algolia-docsearch-suggestion--category-header-lvl0 {
+    font-size: 0.6875rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: #5a3d73 !important; /* 5.3:1 on #fff */
+}
+
+[data-theme="dark"]
+    .algolia-docsearch-suggestion--category-header
+    .algolia-docsearch-suggestion--category-header-lvl0 {
+    color: #d4b8e8 !important; /* ~9.5:1 on #180028 */
+}
+
+/* --- Result wrapper — remove all inner borders --- */
+.algolia-docsearch-suggestion--wrapper {
+    padding: 0 !important;
+    border: none !important;
+}
+
+[data-theme="dark"] .algolia-docsearch-suggestion--wrapper {
+    background: transparent !important;
+}
+
+/* --- Result items --- */
+.algolia-docsearch-suggestion {
+    padding: 0 !important;
+    border: none !important;
+}
+
+.algolia-docsearch-suggestion--content {
+    padding: 8px 12px !important;
+}
+
+/* Remove the vertical divider line between subcategory and content */
+.algolia-docsearch-suggestion--content::before {
+    display: none !important;
+}
+
+/* --- Hover & cursor state --- */
+.algolia-docsearch-suggestion--wrapper:hover {
+    background-color: rgba(46, 0, 75, 0.03) !important;
+}
+
+.ds-cursor .algolia-docsearch-suggestion--wrapper {
+    background-color: rgba(46, 0, 75, 0.05) !important;
+    box-shadow: inset 3px 0 0 var(--ifm-color-primary) !important;
+}
+
+[data-theme="dark"] .algolia-docsearch-suggestion--wrapper:hover {
+    background-color: rgba(179, 102, 204, 0.06) !important;
+}
+
+[data-theme="dark"] .ds-cursor .algolia-docsearch-suggestion--wrapper {
+    background-color: rgba(179, 102, 204, 0.1) !important;
+    box-shadow: inset 3px 0 0 var(--ifm-color-primary) !important;
+}
+
+/* --- Search highlights — subtle tint, inherit weight --- */
+.algolia-docsearch-suggestion--highlight {
+    background: rgba(217, 68, 0, 0.13) !important;
+    color: inherit !important;
+    font-weight: inherit !important;
+    box-shadow: none !important;
+    border-radius: 2px !important;
+    padding: 0.5px 2px !important;
+}
+
+[data-theme="dark"] .algolia-docsearch-suggestion--highlight {
+    background: rgba(255, 119, 51, 0.25) !important;
+}
+
+/* --- Subcategory column --- */
+.algolia-docsearch-suggestion--subcategory-column {
+    color: #4b5563 !important; /* 8.2:1 on #fff */
+    font-size: 0.75rem !important;
+    border-right: none !important;
+    padding-right: 10px !important;
+}
+
+.algolia-docsearch-suggestion--subcategory-column::before,
+.algolia-docsearch-suggestion--subcategory-column::after {
+    display: none !important;
+}
+
+[data-theme="dark"] .algolia-docsearch-suggestion--subcategory-column {
+    color: #c8b5d8 !important; /* ~8.7:1 on #180028 */
+    border-right: none !important;
+}
+
+/* --- Title & text styling --- */
+.algolia-docsearch-suggestion--title {
+    font-family: var(--ifm-heading-font-family) !important;
+    font-weight: 500 !important;
+    color: #111827 !important; /* 15.8:1 on #fff */
+    line-height: 1.4 !important;
+    font-size: 0.875rem !important;
+}
+
+[data-theme="dark"] .algolia-docsearch-suggestion--title {
+    color: #f5eefa !important; /* ~15:1 on #180028 */
+}
+
+.algolia-docsearch-suggestion--text {
+    color: #374151 !important; /* 10.3:1 on #fff */
+    font-size: 0.8125rem !important;
+    line-height: 1.4 !important;
+}
+
+[data-theme="dark"] .algolia-docsearch-suggestion--text {
+    color: #ddd0ea !important; /* ~11:1 on #180028 */
+}
+
+/* --- No-results state --- */
+.algolia-docsearch-suggestion--no-results {
+    background: #faf8fc !important;
+    padding: 20px 16px !important;
+    border-radius: 6px !important;
+    margin: 6px !important;
+}
+
+[data-theme="dark"] .algolia-docsearch-suggestion--no-results {
+    background: rgba(179, 102, 204, 0.06) !important;
+}
+
+.algolia-docsearch-suggestion--no-results .algolia-docsearch-suggestion--text {
+    color: #374151 !important;
+}
+
+[data-theme="dark"]
+    .algolia-docsearch-suggestion--no-results
+    .algolia-docsearch-suggestion--text {
+    color: #ddd0ea !important;
+}
+
+/* --- Footer (hide Algolia branding since we use Lunr) --- */
+.algolia-docsearch-footer {
+    display: none !important;
+}
+
+/* --- On-page search highlight (mark element) --- */
+mark {
+    background-color: rgba(217, 68, 0, 0.12) !important;
+    color: inherit !important;
+    border-radius: 2px !important;
+    padding: 1px 2px !important;
+}
+
+[data-theme="dark"] mark {
+    background-color: rgba(255, 119, 51, 0.2) !important;
+}
