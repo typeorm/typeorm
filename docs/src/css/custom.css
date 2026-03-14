@@ -70,8 +70,8 @@
 
     /* Additional UI colors for dark mode */
     --ifm-navbar-background-color: rgba(24, 0, 40, 0.8);
-    --ifm-background-color: #180028;
-    --ifm-footer-background-color: #180028;
+    --ifm-background-color: #1a0030;
+    --ifm-footer-background-color: #1a0030;
     --ifm-footer-color: #ffffff;
     --ifm-footer-link-color: #ffe6d9; /* Warmer white for better contrast */
     --ifm-footer-title-color: #ffffff;
@@ -227,7 +227,7 @@ div[class*="announcementBar"] .close:hover {
 }
 
 [data-theme="dark"] .footer {
-    background: linear-gradient(160deg, #180028 0%, #2a0045 100%) !important;
+    background: linear-gradient(160deg, #1a0030 0%, #2a0045 100%) !important;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
 }
 
@@ -331,7 +331,7 @@ div[class*="announcementBarContent_"] a {
     max-height: min(60vh, 480px) !important;
     overflow-y: auto !important;
     overscroll-behavior: contain;
-    padding: 4px 0 !important;
+    padding: 0 !important;
 }
 
 [data-theme="dark"] .ds-dropdown-menu {
@@ -342,17 +342,21 @@ div[class*="announcementBarContent_"] a {
         0 20px 25px -5px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* Dataset container background */
+/* Dataset container — flush with dropdown, no extra spacing */
+.ds-dropdown-menu [class^="ds-dataset-"] {
+    padding: 0 !important;
+    border-radius: 12px !important;
+}
+
 [data-theme="dark"] .ds-dropdown-menu [class^="ds-dataset-"] {
     background: #1a0030 !important;
-    border-radius: 12px !important;
 }
 
 /*
  * WCAG AA contrast targets (against backgrounds):
  *   Light (#ffffff): normal text ≥ 4.5:1 → max ~#767676
- *   Dark  (#180028): normal text ≥ 4.5:1 → min ~#8a7a9a (luminance ≥ 0.187)
- *   Dark  (#180028): large text  ≥ 3.0:1 → min ~#6d5d7d
+ *   Dark  (#1a0030): normal text ≥ 4.5:1 → min ~#8a7a9a (luminance ≥ 0.187)
+ *   Dark  (#1a0030): large text  ≥ 3.0:1 → min ~#6d5d7d
  */
 
 /* --- Category headers — subtle dividers, not blocks --- */
@@ -379,7 +383,7 @@ div[class*="announcementBarContent_"] a {
 [data-theme="dark"]
     .algolia-docsearch-suggestion--category-header
     .algolia-docsearch-suggestion--category-header-lvl0 {
-    color: #d4b8e8 !important; /* ~9.5:1 on #180028 */
+    color: #d4b8e8 !important; /* ~9.5:1 on #1a0030 */
 }
 
 /* --- Result wrapper — remove all inner borders --- */
@@ -393,9 +397,15 @@ div[class*="announcementBarContent_"] a {
 }
 
 /* --- Result items --- */
-.algolia-docsearch-suggestion {
+.algolia-autocomplete .algolia-docsearch-suggestion {
     padding: 0 !important;
     border: none !important;
+}
+
+@media (min-width: 768px) {
+    .algolia-autocomplete .algolia-docsearch-suggestion {
+        border: none !important;
+    }
 }
 
 .algolia-docsearch-suggestion--content {
@@ -454,7 +464,7 @@ div[class*="announcementBarContent_"] a {
 }
 
 [data-theme="dark"] .algolia-docsearch-suggestion--subcategory-column {
-    color: #c8b5d8 !important; /* ~8.7:1 on #180028 */
+    color: #c8b5d8 !important; /* ~8.7:1 on #1a0030 */
     border-right: none !important;
 }
 
@@ -468,7 +478,7 @@ div[class*="announcementBarContent_"] a {
 }
 
 [data-theme="dark"] .algolia-docsearch-suggestion--title {
-    color: #f5eefa !important; /* ~15:1 on #180028 */
+    color: #f5eefa !important; /* ~15:1 on #1a0030 */
 }
 
 .algolia-docsearch-suggestion--text {
@@ -478,7 +488,7 @@ div[class*="announcementBarContent_"] a {
 }
 
 [data-theme="dark"] .algolia-docsearch-suggestion--text {
-    color: #ddd0ea !important; /* ~11:1 on #180028 */
+    color: #ddd0ea !important; /* ~11:1 on #1a0030 */
 }
 
 /* --- No-results state --- */
@@ -508,14 +518,18 @@ div[class*="announcementBarContent_"] a {
     display: none !important;
 }
 
-/* --- On-page search highlight (mark element) --- */
-mark {
+/* --- On-page search highlight (mark element) — scoped to doc content --- */
+article mark,
+.markdown mark,
+[class*="docItemContainer"] mark {
     background-color: rgba(217, 68, 0, 0.12) !important;
     color: inherit !important;
     border-radius: 2px !important;
     padding: 1px 2px !important;
 }
 
-[data-theme="dark"] mark {
+[data-theme="dark"] article mark,
+[data-theme="dark"] .markdown mark,
+[data-theme="dark"] [class*="docItemContainer"] mark {
     background-color: rgba(255, 119, 51, 0.2) !important;
 }
