@@ -350,6 +350,24 @@ const posts = await repository.find({
 
 For more complex join scenarios (e.g., `leftJoin` without select, or `innerJoin`), use the QueryBuilder API directly.
 
+### String-based `select` removed
+
+The deprecated string-array syntax for `select` find options has been removed. Use the object syntax instead:
+
+```typescript
+// Before
+const users = await repository.find({
+    select: ["id", "name"],
+})
+
+// After
+const users = await repository.find({
+    select: { id: true, name: true },
+})
+```
+
+The removed type is `FindOptionsSelectByString`.
+
 ## QueryBuilder
 
 ### `printSql` renamed to `logQuery`

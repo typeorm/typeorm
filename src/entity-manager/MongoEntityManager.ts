@@ -59,10 +59,7 @@ import type {
 import type { DataSource } from "../data-source/DataSource"
 import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
 import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
-import type {
-    FindOptionsSelect,
-    FindOptionsSelectByString,
-} from "../find-options/FindOptionsSelect"
+import type { FindOptionsSelect } from "../find-options/FindOptionsSelect"
 import { ObjectUtils } from "../util/ObjectUtils"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 
@@ -1183,17 +1180,10 @@ export class MongoEntityManager extends EntityManager {
      * @param selects
      */
     protected convertFindOptionsSelectToProjectCriteria(
-        selects: FindOptionsSelect<any> | FindOptionsSelectByString<any>,
+        selects: FindOptionsSelect<any>,
     ) {
-        if (Array.isArray(selects)) {
-            return selects.reduce((projectCriteria, key) => {
-                projectCriteria[key] = 1
-                return projectCriteria
-            }, {} as any)
-        } else {
-            // todo: implement
-            return {}
-        }
+        // todo: implement
+        return {}
     }
 
     /**
