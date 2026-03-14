@@ -383,7 +383,7 @@ export class PostgresQueryRunner
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM pg_database WHERE datname=$1`,
+            `SELECT * FROM pg_database WHERE datname=$1;`,
             [database],
         )
         return result.length ? true : false

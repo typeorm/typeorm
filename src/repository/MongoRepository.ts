@@ -19,8 +19,6 @@ import type {
     BulkWriteOptions,
     BulkWriteResult,
     Collection,
-    CollStats,
-    CollStatsOptions,
     CommandOperationOptions,
     CountOptions,
     DeleteOptions,
@@ -563,14 +561,6 @@ export class MongoRepository<
             doc,
             options,
         )
-    }
-
-    /**
-     * Get all the collection statistics.
-     * @param options
-     */
-    stats(options?: CollStatsOptions): Promise<CollStats> {
-        return this.manager.stats(this.metadata.tableName, options)
     }
 
     /**
