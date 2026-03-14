@@ -32,8 +32,6 @@ export class FindOptionsUtils {
                 typeof possibleOptions.select === "object" ||
                 typeof possibleOptions.relations === "object" ||
                 typeof possibleOptions.where === "object" ||
-                // typeof possibleOptions.where === "string" ||
-                typeof possibleOptions.join === "object" ||
                 typeof possibleOptions.order === "object" ||
                 typeof possibleOptions.cache === "object" ||
                 typeof possibleOptions.cache === "boolean" ||
@@ -69,17 +67,6 @@ export class FindOptionsUtils {
                 typeof (possibleOptions as FindManyOptions<any>).take ===
                     "string")
         )
-    }
-
-    /**
-     * Checks if given object is really instance of FindOptions interface.
-     * @param object
-     */
-    static extractFindManyOptionsAlias(object: any): string | undefined {
-        if (this.isFindManyOptions(object) && object.join)
-            return object.join.alias
-
-        return undefined
     }
 
     static applyOptionsToTreeQueryBuilder<T extends ObjectLiteral>(

@@ -697,11 +697,9 @@ describe("repository > find options > locking", () => {
                 await dataSource.manager.transaction((entityManager) =>
                     entityManager.getRepository(Post).findOne({
                         where: { id: 1 },
-                        join: {
-                            alias: "post",
-                            innerJoinAndSelect: {
-                                categorys: "post.categories",
-                                images: "categorys.images",
+                        relations: {
+                            categories: {
+                                images: true,
                             },
                         },
                         lock: {

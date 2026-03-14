@@ -64,9 +64,8 @@ dataSource.initialize().then(
                 console.log("Author has been updated: ", updatedAuthor)
                 console.log("Now lets load all posts with their authors:")
                 return postRepository.find({
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: { author: "post.author" },
+                    relations: {
+                        author: true,
                     },
                 })
             })
@@ -98,9 +97,8 @@ dataSource.initialize().then(
                 console.log("Post has been saved with its categories. ")
                 console.log("Lets find it now. ")
                 return postRepository.find({
-                    join: {
-                        alias: "post",
-                        innerJoinAndSelect: { categories: "post.categories" },
+                    relations: {
+                        categories: true,
                     },
                 })
             })
