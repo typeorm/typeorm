@@ -31,7 +31,7 @@ describe("github issues > #3256 wrong subscriber methods being called", () => {
 
                 const loadedPost = await connection
                     .getRepository(Post)
-                    .findOneById(1)
+                    .findOneBy({ id: 1 })
                 loadedPost!.title = "updated world"
                 await connection.manager.save(loadedPost)
 

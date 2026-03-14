@@ -26,7 +26,7 @@ describe("github issues > #3395 Transform.from does nothing when column is NULL"
 
                 const loadedPost = await connection
                     .getRepository(Post)
-                    .findOneById(1)
+                    .findOneBy({ id: 1 })
 
                 loadedPost!.text!.should.be.eq("This is null")
             }),

@@ -250,6 +250,34 @@ The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/
 
 ## Repository
 
+### `findOneById`
+
+The deprecated `findOneById` method has been removed from `EntityManager`, `Repository`, `BaseEntity`, `MongoEntityManager`, and `MongoRepository`. Use `findOneBy` instead:
+
+```typescript
+// Before
+const user = await repository.findOneById(1)
+
+// After
+const user = await repository.findOneBy({ id: 1 })
+```
+
+> **MongoDB note:** For entities using `@ObjectIdColumn()`, `findOneBy` does not
+> automatically translate the property name to `_id` or convert strings to `ObjectId`.
+> Use `_id` with an `ObjectId` value:
+>
+> ```typescript
+> import { ObjectId } from "mongodb"
+>
+> // If post.id is already an ObjectId:
+> const post = await repository.findOneBy({ _id: post.id } as any)
+>
+> // If you have a string ID:
+> const post = await repository.findOneBy({
+>     _id: new ObjectId(stringId),
+> } as any)
+> ```
+
 ### `findByIds`
 
 The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, and `BaseEntity`. Use `findBy` with the `In` operator instead:

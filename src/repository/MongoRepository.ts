@@ -10,7 +10,6 @@ import type { FindOneOptions } from "../find-options/FindOneOptions"
 
 import type {
     CreateIndexesOptions,
-    ObjectId,
     ReplaceOptions,
     //
     AggregateOptions,
@@ -158,21 +157,6 @@ export class MongoRepository<
      */
     async findOneBy(where: any): Promise<Entity | null> {
         return this.manager.findOneBy(this.metadata.target, where)
-    }
-
-    /**
-     * Finds entity that matches given id.
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById(
-        id: string | number | Date | ObjectId,
-    ): Promise<Entity | null> {
-        return this.manager.findOneById(this.metadata.target, id)
     }
 
     /**
