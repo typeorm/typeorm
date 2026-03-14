@@ -464,6 +464,15 @@ export class SubjectExecutor {
                                 this.queryRunner,
                             ).insert(subject)
 
+                        // for closure table we execute additional queries
+                        if (
+                            subject.metadata.treeType === "closure-table" &&
+                            subject.metadata.treeLevelColumn
+                        )
+                            await new ClosureSubjectExecutor(
+                                this.queryRunner,
+                            ).insertLevel(subject)
+
                         await this.queryRunner.manager
                             .createQueryBuilder()
                             .insert()
