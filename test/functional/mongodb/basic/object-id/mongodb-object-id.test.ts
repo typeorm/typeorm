@@ -228,7 +228,9 @@ describe("mongodb > object id columns", () => {
                     } as any,
                 })
                 expect(loadedPosts).to.have.length(2)
-                const titles = loadedPosts.map((p) => p.title).sort()
+                const titles = loadedPosts
+                    .map((p) => p.title)
+                    .sort((a, b) => a.localeCompare(b))
                 expect(titles).to.deep.equal(["Post 1", "Post 3"])
             }),
         ))
