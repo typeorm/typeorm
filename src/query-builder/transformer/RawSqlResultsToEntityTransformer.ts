@@ -6,6 +6,7 @@ import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import type { RelationMetadata } from "../../metadata/RelationMetadata"
 import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { ObjectUtils } from "../../util/ObjectUtils"
+import { isUint8Array, uint8ArrayToHex } from "../../util/Uint8ArrayUtils"
 import { OrmUtils } from "../../util/OrmUtils"
 import type { Alias } from "../Alias"
 import type { QueryExpressionMap } from "../QueryExpressionMap"
@@ -132,8 +133,8 @@ export class RawSqlResultsToEntityTransformer {
                     .map((key) => {
                         const keyValue = rawResult[key]
 
-                        if (Buffer.isBuffer(keyValue)) {
-                            return keyValue.toString("hex")
+                        if (isUint8Array(keyValue)) {
+                            return uint8ArrayToHex(keyValue)
                         }
 
                         if (ObjectUtils.isObject(keyValue)) {

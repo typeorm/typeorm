@@ -326,6 +326,28 @@ categoryCount: number
 
 ## QueryBuilder
 
+### `printSql` renamed to `logQuery`
+
+The `printSql()` method on query builders has been renamed to `logQuery()` to better reflect its behavior — it logs the query through the configured logger rather than printing to stdout:
+
+```typescript
+// Before
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .printSql()
+    .getMany()
+
+// After
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .logQuery()
+    .getMany()
+```
+
 ### `onConflict`
 
 The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:
@@ -531,17 +553,74 @@ const postgresOptions = allOptions.find((o) => o.type === "postgres")
 
 ## Container system
 
-The deprecated IoC container integration has been removed: `useContainer()`, `getFromContainer()`, `ContainerInterface`, `ContainedType`, and `UseContainerOptions`. TypeORM now always instantiates migrations and subscribers directly. If you need dependency injection, instantiate your classes yourself and pass them to the `DataSource` options:
+The deprecated IoC container integration has been removed: `useContainer()`, `getFromContainer()`, `ContainerInterface`, `ContainedType`, and `UseContainerOptions`.
+
+TypeORM no longer has built-in IoC container support. The `typeorm-typedi-extensions` and `typeorm-routing-controllers-extensions` packages are also no longer compatible. The sections below cover how to migrate depending on your setup.
+
+### Subscribers and migrations with dependencies
+
+TypeORM always instantiates subscribers and migrations internally using a zero-argument constructor, so you cannot pass pre-built instances. If your migrations need access to services, use the `DataSource` (available via `queryRunner.connection`) inside the migration itself:
 
 ```typescript
 // Before
 import { useContainer } from "typeorm"
-useContainer(myContainer)
+import { Container } from "typedi"
+useContainer(Container)
 
-// After — pass pre-built instances directly
-new DataSource({
-    subscribers: [new MySubscriber(dep1, dep2)],
-    migrations: [new MyMigration(dep1)],
-    // ...
-})
+// After — access dependencies via the DataSource inside the migration
+export class MyMigration1234 implements MigrationInterface {
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        const repo = queryRunner.connection.getRepository(User)
+        // ...
+    }
+}
 ```
+
+### Accessing repositories and entity manager
+
+If you previously used `typeorm-typedi-extensions` to inject `EntityManager` or repositories into your services, use the `DataSource` directly instead:
+
+```typescript
+// Before (with typeorm-typedi-extensions)
+import { InjectManager, InjectRepository } from "typeorm-typedi-extensions"
+
+class UserService {
+    @InjectManager()
+    private manager: EntityManager
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>
+}
+
+// After — access from the DataSource instance
+class UserService {
+    private manager: EntityManager
+    private userRepository: Repository<User>
+
+    constructor(dataSource: DataSource) {
+        this.manager = dataSource.manager
+        this.userRepository = dataSource.getRepository(User)
+    }
+}
+```
+
+### Using with a DI framework
+
+If you use a DI framework, register the `DataSource` (or its repositories) as providers in your container:
+
+```typescript
+// typedi example
+import { DataSource } from "typeorm"
+import { Container } from "typedi"
+
+const dataSource = new DataSource({
+    /* ... */
+})
+await dataSource.initialize()
+Container.set(DataSource, dataSource)
+Container.set("UserRepository", dataSource.getRepository(User))
+```
+
+### NestJS
+
+NestJS users are not affected — the `@nestjs/typeorm` package has its own integration that does not depend on TypeORM's removed container system. No changes are needed.
