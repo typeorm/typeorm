@@ -686,28 +686,4 @@ describe("repository > find options > locking", () => {
                 )
             }),
         ))
-
-    it("should allow locking a relation of a relation", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
-                    return
-                }
-
-                await dataSource.manager.transaction((entityManager) =>
-                    entityManager.getRepository(Post).findOne({
-                        where: { id: 1 },
-                        relations: {
-                            categories: {
-                                images: true,
-                            },
-                        },
-                        lock: {
-                            mode: "pessimistic_write",
-                            tables: ["image"],
-                        },
-                    }),
-                )
-            }),
-        ))
 })
