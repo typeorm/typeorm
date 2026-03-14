@@ -28,6 +28,11 @@ import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { MssqlParameter } from "./MssqlParameter"
 import type { SqlServerDriver } from "./SqlServerDriver"
+import {
+    handleColumnLengthChange,
+    handleSafeAlterSqlServer,
+} from "./SqlServerQueryRunnerHelper"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -1322,8 +1327,8 @@ export class SqlServerQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
+            (newColumn.type !== oldColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
@@ -1657,10 +1662,218 @@ export class SqlServerQueryRunner
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
             }
+            if (oldColumn.type !== newColumn.type) {
+                // SQL Server refuses ALTER COLUMN when a unique constraint or index
+                // references the column. Drop them first, alter, then recreate.
+                const safeAlterColUnique = clonedTable.uniques.find(
+                    (unique) =>
+                        unique.columnNames.length === 1 &&
+                        unique.columnNames[0] === oldColumn.name,
+                )
+                if (safeAlterColUnique) {
+                    upQueries.push(
+                        this.dropUniqueConstraintSql(table, safeAlterColUnique),
+                    )
+                    downQueries.push(
+                        this.createUniqueConstraintSql(
+                            table,
+                            safeAlterColUnique,
+                        ),
+                    )
+                }
+
+                const safeAlterColIndex = clonedTable.indices.find(
+                    (index) =>
+                        index.columnNames.length === 1 &&
+                        index.columnNames[0] === oldColumn.name,
+                )
+                if (safeAlterColIndex) {
+                    upQueries.push(this.dropIndexSql(table, safeAlterColIndex))
+                    downQueries.push(
+                        this.createIndexSql(table, safeAlterColIndex),
+                    )
+                }
+
+                await handleSafeAlterSqlServer({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query, // from "../Query"
+                    escapePath: (t) => this.escapePath(t),
+                    executeQueries: (up, down) => this.executeQueries(up, down),
+                    replaceCachedTable: (t, ct) =>
+                        this.replaceCachedTable(t, ct),
+
+                    // your widening/safety rule from earlier
+                    isSafeAlter,
+
+                    // build an ALTER-COLUMN definition (TYPE + NULLABILITY). No DEFAULT/IDENTITY here.
+                    buildAlterColumnDefinition: (col) => {
+                        const t = String(col.type ?? "")
+                            .toLowerCase()
+                            .trim()
+                        const len = col.length
+                            ? parseInt(String(col.length), 10)
+                            : undefined
+                        const prec = col.precision
+                        const scale = col.scale
+                        const nullness = col.isNullable ? "NULL" : "NOT NULL"
+
+                        const withLen = (base: string) =>
+                            len ? `${base}(${len})` : base
+                        const withPS = (base: string) => {
+                            if (prec == null) return base
+                            if (scale == null) return `${base}(${prec})`
+                            return `${base}(${prec},${scale})`
+                        }
+
+                        // Strings
+                        if (t === "varchar" || t === "nvarchar")
+                            return `${withLen(t.toUpperCase())} ${nullness}`
+                        if (t === "char" || t === "nchar")
+                            return `${withLen(t.toUpperCase())} ${nullness}`
+                        if (t === "text" || t === "ntext")
+                            return `${t.toUpperCase()} ${nullness}`
+
+                        // Numerics
+                        if (t === "decimal" || t === "numeric")
+                            return `${withPS(t.toUpperCase())} ${nullness}`
+                        if (
+                            t === "tinyint" ||
+                            t === "smallint" ||
+                            t === "int" ||
+                            t === "bigint"
+                        )
+                            return `${t.toUpperCase()} ${nullness}`
+                        if (t === "real") return `REAL ${nullness}`
+                        if (
+                            t === "float" ||
+                            t === "double" ||
+                            t === "double precision"
+                        )
+                            return `FLOAT ${nullness}` // SQL Server's FLOAT is double precision
+
+                        // Temporals
+                        if (t === "date") return `DATE ${nullness}`
+                        if (t === "datetime" || t === "smalldatetime")
+                            return `${t.toUpperCase()} ${nullness}`
+                        if (t === "datetime2")
+                            return `${
+                                prec != null
+                                    ? `DATETIME2(${prec})`
+                                    : "DATETIME2"
+                            } ${nullness}`
+                        if (t === "datetimeoffset")
+                            return `${
+                                prec != null
+                                    ? `DATETIMEOFFSET(${prec})`
+                                    : "DATETIMEOFFSET"
+                            } ${nullness}`
+                        if (t === "time")
+                            return `${
+                                prec != null ? `TIME(${prec})` : "TIME"
+                            } ${nullness}`
+                        if (t === "timestamp" || t === "rowversion")
+                            return `ROWVERSION ${nullness}` // note: type name is ROWVERSION; usually not ALTERed
+
+                        // Binary / varbinary
+                        if (t === "binary" || t === "varbinary")
+                            return `${withLen(t.toUpperCase())} ${nullness}`
+                        if (t === "image") return `IMAGE ${nullness}`
+
+                        // Other common
+                        if (t === "uniqueidentifier")
+                            return `UNIQUEIDENTIFIER ${nullness}`
+                        if (t === "bit" || t === "bool" || t === "boolean")
+                            return `BIT ${nullness}`
+                        if (t === "money" || t === "smallmoney")
+                            return `${t.toUpperCase()} ${nullness}`
+                        if (t === "xml") return `XML ${nullness}`
+                        if (t === "sql_variant")
+                            return `SQL_VARIANT ${nullness}`
+
+                        // Fallback: uppercase raw + nullability
+                        return `${t.toUpperCase()} ${nullness}`
+                    },
+
+                    defaultConstraintName: (t, columnName) =>
+                        this.connection.namingStrategy.defaultConstraintName(
+                            t,
+                            columnName,
+                        ),
+
+                    // optional: if you prefer quoted identifiers different from [brackets],
+                    // quoteIdent: (i) => `"${i.replace(/"/g, '""')}"`,
+                })
+
+                if (safeAlterColIndex) {
+                    upQueries.push(
+                        this.createIndexSql(table, safeAlterColIndex),
+                    )
+                    downQueries.push(
+                        this.dropIndexSql(table, safeAlterColIndex),
+                    )
+                }
+
+                if (safeAlterColUnique) {
+                    upQueries.push(
+                        this.createUniqueConstraintSql(
+                            table,
+                            safeAlterColUnique,
+                        ),
+                    )
+                    downQueries.push(
+                        this.dropUniqueConstraintSql(table, safeAlterColUnique),
+                    )
+                }
+            } else if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                // BEGIN pre-truncate oversized values when shrinking, then length-only ALTER
+                handleColumnLengthChange({
+                    oldColumn,
+                    newColumn,
+                    table,
+                    driver: this.driver,
+                    upQueries,
+                    escapePath: this.escapePath.bind(this), // keep "this" context
+                })
+                // END length-only ALTER
+            }
 
             if (
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
+                // SQL Server refuses ALTER COLUMN when a unique constraint or index
+                // references the column. Drop them first, alter, then recreate.
+                const columnUnique = clonedTable.uniques.find(
+                    (unique) =>
+                        unique.columnNames.length === 1 &&
+                        unique.columnNames[0] === oldColumn.name,
+                )
+                if (columnUnique) {
+                    upQueries.push(
+                        this.dropUniqueConstraintSql(table, columnUnique),
+                    )
+                    downQueries.push(
+                        this.createUniqueConstraintSql(table, columnUnique),
+                    )
+                }
+
+                const columnIndex = clonedTable.indices.find(
+                    (index) =>
+                        index.columnNames.length === 1 &&
+                        index.columnNames[0] === oldColumn.name,
+                )
+                if (columnIndex) {
+                    upQueries.push(this.dropIndexSql(table, columnIndex))
+                    downQueries.push(this.createIndexSql(table, columnIndex))
+                }
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1687,6 +1900,20 @@ export class SqlServerQueryRunner
                         )}`,
                     ),
                 )
+
+                if (columnIndex) {
+                    upQueries.push(this.createIndexSql(table, columnIndex))
+                    downQueries.push(this.dropIndexSql(table, columnIndex))
+                }
+
+                if (columnUnique) {
+                    upQueries.push(
+                        this.createUniqueConstraintSql(table, columnUnique),
+                    )
+                    downQueries.push(
+                        this.dropUniqueConstraintSql(table, columnUnique),
+                    )
+                }
             }
 
             if (this.isEnumChanged(oldColumn, newColumn)) {

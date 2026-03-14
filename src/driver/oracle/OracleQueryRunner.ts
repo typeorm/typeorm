@@ -25,6 +25,11 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { OracleDriver } from "./OracleDriver"
+import {
+    handleOracleLengthOnlyFastPath,
+    handleSafeAlterOracle,
+} from "./OracleQueryRunnerHelper"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single oracle database connection.
@@ -1117,6 +1122,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : table.columns.find(
                   (column) => column.name === oldTableColumnOrName,
               )
+
         if (!oldColumn)
             throw new TypeORMError(
                 `Column "${oldTableColumnOrName}" was not found in the ${this.escapePath(
@@ -1127,8 +1133,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1350,6 +1356,63 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+            if (oldColumn.type !== newColumn.type) {
+                await handleSafeAlterOracle({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query, // from "../Query"
+                    escapePath: (t) => this.escapePath(t),
+
+                    // IMPORTANT: match your runner's signature for building a full column definition.
+                    // Many Oracle runners expose: buildCreateColumnSql(column: TableColumn)
+                    buildCreateColumnSql: (col) =>
+                        this.buildCreateColumnSql(col),
+
+                    executeQueries: (up, down) => this.executeQueries(up, down),
+                    replaceCachedTable: (t, ct) =>
+                        this.replaceCachedTable(t, ct),
+
+                    // Your widening rule function from earlier
+                    isSafeAlter,
+                })
+                // Update clonedTable so replaceCachedTable reflects the new type,
+                // preventing a stale cache that would cause the next synchronize()
+                // to falsely detect the column as removed.
+                const clonedCol = clonedTable.columns.find(
+                    (c) => c.name === oldColumn.name,
+                )
+                if (clonedCol) {
+                    clonedCol.type = newColumn.type
+                    clonedCol.length = newColumn.length
+                }
+            } else if (
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length &&
+                // ensure *only* the length changed – everything else must be identical
+                oldColumn?.isNullable === newColumn?.isNullable &&
+                oldColumn?.default === newColumn?.default &&
+                oldColumn?.name === newColumn?.name &&
+                oldColumn?.isPrimary === newColumn?.isPrimary &&
+                oldColumn?.isUnique === newColumn?.isUnique
+            ) {
+                // BEGIN length-only fast path (Oracle)
+                handleOracleLengthOnlyFastPath({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    driver: this.driver,
+                    escapePath: this.escapePath.bind(this),
+                    Query, // pass the Query class TypeORM uses
+                })
+                // END length-only fast path
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
@@ -2512,7 +2575,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return `("C"."OWNER" = '${OWNER}' AND "C"."TABLE_NAME" = '${TABLE_NAME}')`
             })
             .join(" OR ")
-        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition})`
+        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition}) AND NOT ("C"."HIDDEN_COLUMN" = 'YES' AND "C"."VIRTUAL_COLUMN" = 'NO')`
 
         const indicesSql =
             `SELECT "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS", ` +
