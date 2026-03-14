@@ -1,5 +1,6 @@
 import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReplicationConfig } from "../types/ReplicationConfig"
 import type { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 
 /**
@@ -109,18 +110,9 @@ export interface MysqlDataSourceOptions
 
     /**
      * Replication setup.
+     * Supports both `master`/`slaves` and `primary`/`replicas` keys.
      */
-    readonly replication?: {
-        /**
-         * Master server used by orm to perform writes.
-         */
-        readonly master: MysqlConnectionCredentialsOptions
-
-        /**
-         * List of read-from servers (slaves).
-         */
-        readonly slaves: MysqlConnectionCredentialsOptions[]
-
+    readonly replication?: ReplicationConfig<MysqlConnectionCredentialsOptions> & {
         /**
          * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)
          */
