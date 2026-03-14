@@ -58,12 +58,7 @@ describe("persistence > partial persist", () => {
                     where: {
                         id: newPost.id,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            categories: "post.categories",
-                        },
-                    },
+                    relations: { categories: true },
                 })
 
                 expect(loadedPost!).not.to.be.null
@@ -92,12 +87,7 @@ describe("persistence > partial persist", () => {
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                categories: "post.categories",
-                            },
-                        },
+                        relations: { categories: true },
                     },
                 )
 
@@ -136,12 +126,7 @@ describe("persistence > partial persist", () => {
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                categories: "post.categories",
-                            },
-                        },
+                        relations: { categories: true },
                     },
                 )
 
@@ -180,12 +165,7 @@ describe("persistence > partial persist", () => {
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                categories: "post.categories",
-                            },
-                        },
+                        relations: { categories: true },
                     })
 
                 expect(loadedPostAfterCategoryUpdate!).not.to.be.undefined
