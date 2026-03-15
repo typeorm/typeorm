@@ -27,6 +27,7 @@ import { OffsetWithoutLimitNotSupportedError } from "../error/OffsetWithoutLimit
 import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { DriverUtils } from "../driver/DriverUtils"
+import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
 import { TypeORMError } from "../error"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
@@ -42,6 +43,7 @@ import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -2914,6 +2916,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             if (column.isVirtualProperty && column.query) {
                 selectionPath = `(${column.query(escapedAliasName)})`
+            }
+
+            if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
+                selectionPath = (
+                    this.connection.driver as
+                        | AbstractSqliteDriver
+                        | ReactNativeDriver
+                ).wrapWithJsonFunction(selectionPath, column, false)
             }
 
             if (
