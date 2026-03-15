@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -240,6 +241,29 @@ describe("query builder > sql injection", () => {
                         .orderBy({
                             "post.id": "DESC",
                             "post.name": "ASC",
+                        })
+                        .getMany()
+                }),
+            ))
+
+        it("should accept valid OrderByCondition with nulls option", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (
+                        DriverUtils.isMySQLFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "mssql"
+                    )
+                        return
+
+                    await dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .orderBy({
+                            "post.id": "DESC",
+                            "post.name": {
+                                order: "ASC",
+                                nulls: "NULLS LAST",
+                            },
                         })
                         .getMany()
                 }),
