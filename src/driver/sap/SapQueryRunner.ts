@@ -595,7 +595,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const schema =
             schemaPath.indexOf(".") === -1
                 ? schemaPath
-                : schemaPath.split(".")[0]
+                : schemaPath.split(".")[1]
         const escaped = schema.replace(/"/g, '""')
         let exist = false
         if (ifExists) {
