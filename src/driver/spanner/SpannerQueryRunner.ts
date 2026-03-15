@@ -412,7 +412,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM "information_schema"."schemata" WHERE "schema_name" = '${schema}'`,
+            `SELECT * FROM "information_schema"."schemata" WHERE "schema_name" = @param0`,
+            [schema],
         )
         return result.length ? true : false
     }
@@ -436,8 +437,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const sql =
             `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
             `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE' ` +
-            `AND \`TABLE_NAME\` = '${tableName}'`
-        const result = await this.query(sql)
+            `AND \`TABLE_NAME\` = @param0`
+        const result = await this.query(sql, [tableName])
         return result.length ? true : false
     }
 
@@ -455,8 +456,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const sql =
             `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` ` +
             `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' ` +
-            `AND \`TABLE_NAME\` = '${tableName}' AND \`COLUMN_NAME\` = '${columnName}'`
-        const result = await this.query(sql)
+            `AND \`TABLE_NAME\` = @param0 AND \`COLUMN_NAME\` = @param1`
+        const result = await this.query(sql, [tableName, columnName])
         return result.length ? true : false
     }
 
@@ -1761,15 +1762,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
+            const placeholders = tableNames
+                .map((_, i) => `@param${i}`)
+                .join(", ")
             const tablesSql =
                 `SELECT \`TABLE_NAME\` ` +
                 `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
                 `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE' ` +
-                `AND \`TABLE_NAME\` IN (${tableNames
-                    .map((tableName) => `'${tableName}'`)
-                    .join(", ")})`
+                `AND \`TABLE_NAME\` IN (${placeholders})`
 
-            dbTables.push(...(await this.query(tablesSql)))
+            dbTables.push(...(await this.query(tablesSql, tableNames)))
         }
 
         // if tables were not found in the db, no need to proceed
