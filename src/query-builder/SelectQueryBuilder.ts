@@ -1441,8 +1441,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (sort) {
             if (typeof sort === "object") {
-                this.validateOrderByCondition(sort as OrderByCondition)
-                this.expressionMap.orderBys = sort as OrderByCondition
+                this.validateOrderByCondition(sort)
+                this.expressionMap.orderBys = sort
             } else {
                 if (nulls) {
                     this.expressionMap.orderBys = {

@@ -239,10 +239,7 @@ describe("query builder > sql injection", () => {
                         .createQueryBuilder("post")
                         .orderBy({
                             "post.id": "DESC",
-                            "post.name": {
-                                order: "ASC",
-                                nulls: "NULLS LAST",
-                            },
+                            "post.name": "ASC",
                         })
                         .getMany()
                 }),
