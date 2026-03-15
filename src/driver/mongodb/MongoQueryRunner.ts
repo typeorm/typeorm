@@ -40,8 +40,6 @@ import type {
     RenameOptions,
     ReplaceOptions,
     UpdateResult,
-    CollStats,
-    CollStatsOptions,
     ChangeStreamOptions,
     ChangeStream,
     UpdateOptions,
@@ -315,7 +313,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops all indexes from the collection.
      * @param collectionName
      */
-    async dropCollectionIndexes(collectionName: string): Promise<Document> {
+    async dropCollectionIndexes(collectionName: string): Promise<boolean> {
         return this.getCollection(collectionName).dropIndexes()
     }
 
@@ -521,18 +519,6 @@ export class MongoQueryRunner implements QueryRunner {
             replacement,
             options || {},
         )
-    }
-
-    /**
-     * Get all the collection statistics.
-     * @param collectionName
-     * @param options
-     */
-    async stats(
-        collectionName: string,
-        options?: CollStatsOptions,
-    ): Promise<CollStats> {
-        return this.getCollection(collectionName).stats(options || {})
     }
 
     /**
