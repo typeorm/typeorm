@@ -1297,21 +1297,83 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // Stored generated columns require full recreation
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                newColumn.isArray !== oldColumn.isArray
+            ) {
+                // Use ALTER COLUMN ... TYPE to preserve existing data instead of DROP + ADD.
+                // If the type is actually changing and the column has a default, drop the default
+                // before the type change and restore it after — required by PostgreSQL to avoid
+                // implicit-cast failures (same pattern used for enum migrations in this codebase).
+                if (
+                    oldColumn.type !== newColumn.type &&
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    defaultValueChanged = true
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${oldColumn.default}`,
+                        ),
+                    )
+                }
+
+                // ALTER COLUMN ... TYPE uses oldColumn.name because the rename step (if any) runs later.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${this.driver.createFullType(newColumn)}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${oldColumn.name}"::${this.driver.createFullType(newColumn)}`
+                                : ""
+                        }`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${oldColumn.name}"::${this.driver.createFullType(oldColumn)}`
+                                : ""
+                        }`,
+                    ),
+                )
+
+                // Restore default after type change
+                if (
+                    defaultValueChanged &&
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${newColumn.default}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                }
+            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(

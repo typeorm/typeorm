@@ -1110,8 +1110,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1119,12 +1117,33 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
         ) {
+            // Generated column changes require full recreation
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+            ) {
+                // Use MODIFY to preserve existing data instead of DROP + ADD.
+                // Clone newColumn but keep oldColumn.name so the MODIFY targets
+                // the current column name (rename, if any, happens separately below).
+                const colForModify = newColumn.clone()
+                colForModify.name = oldColumn.name
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(colForModify, true)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(oldColumn, true)}`,
+                    ),
+                )
+            }
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
                 upQueries.push(
