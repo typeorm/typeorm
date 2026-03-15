@@ -405,7 +405,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         if (sort) {
             if (typeof sort === "object") {
-                this.expressionMap.orderBys = sort as OrderByCondition
+                this.validateOrderByCondition(sort)
+                this.expressionMap.orderBys = sort
             } else {
                 if (nulls) {
                     this.expressionMap.orderBys = {

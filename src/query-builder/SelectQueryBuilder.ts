@@ -2574,32 +2574,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return " GROUP BY " + this.expressionMap.groupBys.join(", ")
     }
 
-    protected validateOrderByCondition(sort: OrderByCondition): void {
-        const validOrders = ["ASC", "DESC"]
-        const validNulls = ["NULLS FIRST", "NULLS LAST"]
-
-        for (const [key, value] of Object.entries(sort)) {
-            if (typeof value === "string") {
-                if (!validOrders.includes(value))
-                    throw new TypeORMError(
-                        `Invalid order direction "${value}" for "${key}". Allowed values: ${validOrders.join(", ")}.`,
-                    )
-            } else if (typeof value === "object" && value !== null) {
-                if (!validOrders.includes(value.order))
-                    throw new TypeORMError(
-                        `Invalid order direction "${value.order}" for "${key}". Allowed values: ${validOrders.join(", ")}.`,
-                    )
-                if (
-                    value.nulls !== undefined &&
-                    !validNulls.includes(value.nulls)
-                )
-                    throw new TypeORMError(
-                        `Invalid nulls option "${value.nulls}" for "${key}". Allowed values: ${validNulls.join(", ")}.`,
-                    )
-            }
-        }
-    }
-
     /**
      * Creates "ORDER BY" part of SQL query.
      */
