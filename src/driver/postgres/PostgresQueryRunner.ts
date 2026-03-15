@@ -1315,13 +1315,43 @@ export class PostgresQueryRunner
                 newColumn.isArray !== oldColumn.isArray
             ) {
                 // Use ALTER COLUMN ... TYPE to preserve data instead of DROP + ADD
+                // Use oldColumn.name since rename hasn't happened yet
+
+                // If the column has a default and the type is changing, drop the default first
+                // to avoid type-casting issues (same pattern as enum migrations)
+                if (
+                    oldColumn.type !== newColumn.type &&
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    defaultValueChanged = true
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                oldColumn.name
+                            }" DROP DEFAULT`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                oldColumn.name
+                            }" SET DEFAULT ${oldColumn.default}`,
+                        ),
+                    )
+                }
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
+                            oldColumn.name
                         }" TYPE ${this.driver.createFullType(newColumn)}${
                             oldColumn.type !== newColumn.type
-                                ? ` USING "${newColumn.name}"::${this.driver.createFullType(newColumn)}`
+                                ? ` USING "${oldColumn.name}"::${this.driver.createFullType(newColumn)}`
                                 : ""
                         }`,
                     ),
@@ -1337,6 +1367,32 @@ export class PostgresQueryRunner
                         }`,
                     ),
                 )
+
+                // Restore default after type change if it was dropped
+                if (
+                    defaultValueChanged &&
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                oldColumn.name
+                            }" SET DEFAULT ${newColumn.default}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                oldColumn.name
+                            }" DROP DEFAULT`,
+                        ),
+                    )
+                }
             }
             if (oldColumn.name !== newColumn.name) {
                 // rename column

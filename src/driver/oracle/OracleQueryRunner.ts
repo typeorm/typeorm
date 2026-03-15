@@ -1143,10 +1143,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.length !== newColumn.length
             ) {
                 // Use MODIFY to preserve data instead of DROP + ADD
+                // Use oldColumn.name since rename hasn't happened yet
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} MODIFY "${
-                            newColumn.name
+                            oldColumn.name
                         }" ${this.driver.createFullType(newColumn)}`,
                     ),
                 )

@@ -897,7 +897,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
+                            oldColumn.name
                         }" TYPE ${this.driver.createFullType(newColumn)}`,
                     ),
                 )

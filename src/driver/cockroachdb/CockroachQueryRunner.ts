@@ -1383,10 +1383,11 @@ export class CockroachQueryRunner
                 newColumn.isArray !== oldColumn.isArray
             ) {
                 // Use ALTER COLUMN ... TYPE to preserve data instead of DROP + ADD
+                // Use oldColumn.name since rename hasn't happened yet
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
+                            oldColumn.name
                         }" TYPE ${this.driver.createFullType(newColumn)}`,
                     ),
                 )

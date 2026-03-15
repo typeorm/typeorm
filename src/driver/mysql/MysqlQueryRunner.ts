@@ -1129,18 +1129,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.length !== newColumn.length
             ) {
                 // Use MODIFY COLUMN to preserve data instead of DROP + ADD
+                // Use oldColumn.name in upQuery since rename hasn't happened yet
+                const upCol = newColumn.clone()
+                upCol.name = oldColumn.name
                 upQueries.push(
                     new Query(
-                        `ALTER TABLE ${this.escapePath(table)} MODIFY \`${
-                            newColumn.name
-                        }\` ${this.buildCreateColumnSql(newColumn, true)}`,
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(upCol, true)}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
-                        `ALTER TABLE ${this.escapePath(table)} MODIFY \`${
-                            oldColumn.name
-                        }\` ${this.buildCreateColumnSql(oldColumn, true)}`,
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(oldColumn, true)}`,
                     ),
                 )
             }
