@@ -268,6 +268,39 @@ describe("query builder > sql injection", () => {
                         .getMany()
                 }),
             ))
+        it("should reject invalid order direction in UpdateQueryBuilder", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy({
+                                id: "ASC; DROP TABLE post;" as any,
+                            }),
+                    ).to.throw(/Invalid order direction/)
+                }),
+            ))
+
+        it("should reject invalid order direction in SoftDeleteQueryBuilder", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy({
+                                id: "ASC; DROP TABLE post;" as any,
+                            }),
+                    ).to.throw(/Invalid order direction/)
+                }),
+            ))
     })
 
     describe("orWhere", () => {
