@@ -60,6 +60,7 @@ describe("database schema > column types > sqlite", () => {
                 post.datetime = new Date()
                 post.datetime.setMilliseconds(0)
                 post.json = { id: 1, name: "Post" }
+                post.jsonb = { id: 1, name: "Post" }
                 post.simpleArray = ["A", "B", "C"]
                 post.simpleJson = { param: "VALUE" }
                 post.simpleEnum = "A"
@@ -101,6 +102,7 @@ describe("database schema > column types > sqlite", () => {
                     .valueOf()
                     .should.be.equal(post.datetime.valueOf())
                 loadedPost.json.should.be.deep.equal(post.json)
+                loadedPost.jsonb.should.be.deep.equal(post.jsonb)
                 loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0])
                 loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1])
                 loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2])
@@ -173,6 +175,7 @@ describe("database schema > column types > sqlite", () => {
                     .findColumnByName("datetime")!
                     .type.should.be.equal("datetime")
                 table!.findColumnByName("json")!.type.should.be.equal("json")
+                table!.findColumnByName("jsonb")!.type.should.be.equal("jsonb")
                 table!
                     .findColumnByName("simpleArray")!
                     .type.should.be.equal("text")

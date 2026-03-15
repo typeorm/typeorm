@@ -27,6 +27,7 @@ import { OffsetWithoutLimitNotSupportedError } from "../error/OffsetWithoutLimit
 import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { DriverUtils } from "../driver/DriverUtils"
+import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
 import { TypeORMError } from "../error"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
@@ -40,9 +41,9 @@ import { OrmUtils } from "../util/OrmUtils"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -2917,6 +2918,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 selectionPath = `(${column.query(escapedAliasName)})`
             }
 
+            if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
+                selectionPath = (
+                    this.connection.driver as
+                        | AbstractSqliteDriver
+                        | ReactNativeDriver
+                ).wrapWithJsonFunction(selectionPath, column, false)
+            }
+
             if (
                 this.connection.driver.spatialTypes.indexOf(column.type) !== -1
             ) {
@@ -3222,9 +3231,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 if (this.conditions.length)
                     this.andWhere(
-                        this.conditions.substr(0, 1) !== "("
-                            ? "(" + this.conditions + ")"
-                            : this.conditions,
+                        this.conditions.startsWith("(")
+                            ? this.conditions
+                            : `(${this.conditions})`,
                     ) // temporary and where and braces
             }
 
@@ -4384,14 +4393,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
 
                     if (column.transformer) {
-                        if (parameterValue instanceof FindOperator) {
-                            parameterValue.transformValue(column.transformer)
-                        } else {
-                            parameterValue = ApplyValueTransformers.transformTo(
-                                column.transformer,
-                                parameterValue,
-                            )
-                        }
+                        parameterValue = ApplyValueTransformers.transformTo(
+                            column.transformer,
+                            parameterValue,
+                        )
                     }
 
                     // MSSQL requires parameters to carry extra type information
