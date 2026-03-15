@@ -1439,6 +1439,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (sort) {
             if (typeof sort === "object") {
+                this.validateOrderByCondition(sort as OrderByCondition)
                 this.expressionMap.orderBys = sort as OrderByCondition
             } else {
                 if (nulls) {
@@ -2571,6 +2572,32 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return " GROUP BY " + this.expressionMap.groupBys.join(", ")
     }
 
+    protected validateOrderByCondition(sort: OrderByCondition): void {
+        const validOrders = ["ASC", "DESC"]
+        const validNulls = ["NULLS FIRST", "NULLS LAST"]
+
+        for (const [key, value] of Object.entries(sort)) {
+            if (typeof value === "string") {
+                if (!validOrders.includes(value))
+                    throw new TypeORMError(
+                        `Invalid order direction "${value}" for "${key}". Allowed values: ${validOrders.join(", ")}.`,
+                    )
+            } else if (typeof value === "object" && value !== null) {
+                if (!validOrders.includes(value.order))
+                    throw new TypeORMError(
+                        `Invalid order direction "${value.order}" for "${key}". Allowed values: ${validOrders.join(", ")}.`,
+                    )
+                if (
+                    value.nulls !== undefined &&
+                    !validNulls.includes(value.nulls)
+                )
+                    throw new TypeORMError(
+                        `Invalid nulls option "${value.nulls}" for "${key}". Allowed values: ${validNulls.join(", ")}.`,
+                    )
+            }
+        }
+    }
+
     /**
      * Creates "ORDER BY" part of SQL query.
      */
@@ -2588,6 +2615,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             : (orderBys[columnName] as any).order +
                               " " +
                               (orderBys[columnName] as any).nulls
+                    if (/[;'"\\]/.test(orderValue))
+                        throw new TypeORMError(
+                            `Unsafe order-by value "${orderValue}" for "${columnName}".`,
+                        )
                     const selectionByAlias = this.expressionMap.selects.find(
                         (s) => s.aliasName === columnName,
                     )

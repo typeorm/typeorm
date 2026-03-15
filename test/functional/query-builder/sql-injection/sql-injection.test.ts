@@ -199,6 +199,56 @@ describe("query builder > sql injection", () => {
         }
     })
 
+    describe("orderBy value injection", () => {
+        it("should reject invalid order direction in OrderByCondition", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    expect(() =>
+                        dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            .orderBy({
+                                "post.id": "ASC; DELETE FROM post;" as any,
+                            }),
+                    ).to.throw(/Invalid order direction/)
+                }),
+            ))
+
+        it("should reject invalid nulls option in OrderByCondition", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    expect(() =>
+                        dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            .orderBy({
+                                "post.id": {
+                                    order: "ASC",
+                                    nulls: "NULLS FIRST; DROP TABLE post;" as any,
+                                },
+                            }),
+                    ).to.throw(/Invalid nulls option/)
+                }),
+            ))
+
+        it("should accept valid OrderByCondition values", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .orderBy({
+                            "post.id": "DESC",
+                            "post.name": {
+                                order: "ASC",
+                                nulls: "NULLS LAST",
+                            },
+                        })
+                        .getMany()
+                }),
+            ))
+    })
+
     describe("orWhere", () => {
         for (const malicious of maliciousInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
