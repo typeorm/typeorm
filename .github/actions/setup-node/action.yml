@@ -5,6 +5,7 @@ inputs:
   node-version:
     description: Node.js version
     required: false
+    default: "24"
   working-directory:
     description: Working directory
     required: false
@@ -23,8 +24,7 @@ runs:
 
     - uses: actions/setup-node@v6
       with:
-        node-version: ${{ inputs.node-version || '' }}
-        node-version-file: ${{ inputs.node-version && '' || '.nvmrc' }}
+        node-version: ${{ inputs.node-version }}
         cache: pnpm
         cache-dependency-path: ${{ inputs.cache-dependency-path || '' }}
 
