@@ -155,11 +155,13 @@ describe("jsonb type", () => {
                         data1: "hello1",
                         data2: "hello2",
                         isActive: true,
+                        extra: { nested: "value1", count: 42 },
                     },
                     {
                         data1: "hi1",
                         data2: "hi2",
                         isActive: false,
+                        extra: { nested: "value2", count: 99 },
                     },
                 ]
                 record.config = [
