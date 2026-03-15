@@ -7,9 +7,9 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
   mysql-9:
     image: "mysql:9.5.0"
@@ -18,58 +18,58 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
   # mariadb
   mariadb-10:
-    image: "mariadb:10.6.24-jammy"
+    image: "mariadb:10.11.16"
     container_name: "typeorm-mariadb-10"
     ports:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
   mariadb-12:
-    image: "mariadb:12.1.2"
+    image: "mariadb:12.2.2"
     container_name: "typeorm-mariadb-12"
     ports:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_USER: "username"
+      MYSQL_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
   # postgres
   postgres-14:
     # postgis is postgres + PostGIS (only). If you need additional extensions,
     # it's probably time to create a purpose-built image.
-    image: "ghcr.io/naorpeled/typeorm-postgres:pg14-postgis3-pgvectorv0.8.0"
+    image: "ghcr.io/typeorm/docker:postgres-14.22-postgis-3.6.2-pgvector-0.8.2"
     container_name: "typeorm-postgres-14"
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "username"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "typeorm"
 
   # postgres
   postgres-17:
     # postgis is postgres + PostGIS (only). If you need additional extensions,
     # it's probably time to create a purpose-built image.
-    image: "ghcr.io/naorpeled/typeorm-postgres:pg17-postgis3-pgvectorv0.8.0"
+    image: "ghcr.io/typeorm/docker:postgres-17.9-postgis-3.6.2-pgvector-0.8.2"
     container_name: "typeorm-postgres-17"
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "username"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "typeorm"
 
   # mssql
   mssql:
@@ -138,7 +138,7 @@ services:
       - kernel.shmmni=4096 # Maximum number of shared memory segments
       - net.ipv4.ip_local_port_range=40000 60999
     volumes:
-      - volume-hana-xe:/hana/mounts
+      - /hana/mounts
       - ./docker/hana/hxe-config.json:/hana/hxe-config.json:ro
     ports:
       - "39041:39041"
@@ -152,8 +152,3 @@ services:
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
-
-volumes:
-  # cockroach-data:
-  # oracle-data:
-  volume-hana-xe:
