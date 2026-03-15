@@ -468,15 +468,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Logs the generated sql query using the configured logger.
-     */
-    logQuery(): this {
-        const [query, parameters] = this.getQueryAndParameters()
-        this.connection.logger.logQuery(query, parameters)
-        return this
-    }
-
-    /**
      * Gets generated sql that will be executed.
      * Parameters in the query are escaped for the currently used driver.
      */
