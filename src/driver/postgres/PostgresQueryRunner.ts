@@ -1297,21 +1297,47 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // Generated/stored columns require full recreation
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                newColumn.isArray !== oldColumn.isArray
+            ) {
+                // Use ALTER COLUMN ... TYPE to preserve data instead of DROP + ADD
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${newColumn.name}"::${this.driver.createFullType(newColumn)}`
+                                : ""
+                        }`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${oldColumn.name}"::${this.driver.createFullType(oldColumn)}`
+                                : ""
+                        }`,
+                    ),
+                )
+            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
