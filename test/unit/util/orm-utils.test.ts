@@ -1,5 +1,6 @@
 import { expect } from "chai"
-import { DeepPartial } from "../../../src"
+import { runInNewContext } from "node:vm"
+import type { DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
@@ -249,6 +250,23 @@ describe(`OrmUtils`, () => {
             ).to.equal(true)
             expect(
                 OrmUtils.deepCompare(new Set([1, 2]), new Set([1, 2, 3])),
+            ).to.equal(false)
+        })
+
+        it("should compare cross-realm Uint8Array values by content", () => {
+            const crossRealmArray = runInNewContext("new Uint8Array([1, 2, 3])")
+
+            expect(
+                OrmUtils.deepCompare(
+                    crossRealmArray,
+                    new Uint8Array([1, 2, 3]),
+                ),
+            ).to.equal(true)
+            expect(
+                OrmUtils.deepCompare(
+                    crossRealmArray,
+                    new Uint8Array([1, 2, 4]),
+                ),
             ).to.equal(false)
         })
     })

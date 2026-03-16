@@ -1,12 +1,12 @@
-import { FindManyOptions } from "./FindManyOptions"
-import { FindOneOptions } from "./FindOneOptions"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { FindManyOptions } from "./FindManyOptions"
+import type { FindOneOptions } from "./FindOneOptions"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { FindRelationsNotFoundError } from "../error"
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { DriverUtils } from "../driver/DriverUtils"
-import { FindTreeOptions } from "./FindTreeOptions"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { RelationMetadata } from "../metadata/RelationMetadata"
+import type { FindTreeOptions } from "./FindTreeOptions"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { EntityPropertyNotFoundError } from "../error"
 
 /**
@@ -19,6 +19,7 @@ export class FindOptionsUtils {
 
     /**
      * Checks if given object is really instance of FindOneOptions interface.
+     * @param obj
      */
     static isFindOneOptions<Entity = any>(
         obj: any,
@@ -50,6 +51,7 @@ export class FindOptionsUtils {
 
     /**
      * Checks if given object is really instance of FindManyOptions interface.
+     * @param obj
      */
     static isFindManyOptions<Entity = any>(
         obj: any,
@@ -71,6 +73,7 @@ export class FindOptionsUtils {
 
     /**
      * Checks if given object is really instance of FindOptions interface.
+     * @param object
      */
     static extractFindManyOptionsAlias(object: any): string | undefined {
         if (this.isFindManyOptions(object) && object.join)
@@ -111,6 +114,11 @@ export class FindOptionsUtils {
 
     /**
      * Adds joins for all relations and sub-relations of the given relations provided in the find options.
+     * @param qb
+     * @param allRelations
+     * @param alias
+     * @param metadata
+     * @param prefix
      */
     public static applyRelationsRecursively(
         qb: SelectQueryBuilder<any>,
@@ -120,7 +128,7 @@ export class FindOptionsUtils {
         prefix: string,
     ): void {
         // find all relations that match given prefix
-        let matchedBaseRelations: RelationMetadata[] = []
+        let matchedBaseRelations: RelationMetadata[]
         if (prefix) {
             const regexp = new RegExp("^" + prefix.replace(".", "\\.") + "\\.")
             matchedBaseRelations = allRelations
@@ -234,10 +242,8 @@ export class FindOptionsUtils {
             // add a join for the relation
             // Checking whether the relation wasn't joined yet.
             let addJoin = true
-            // TODO: Review this validation
             for (const join of qb.expressionMap.joinAttributes) {
                 if (
-                    join.condition !== undefined ||
                     join.mapToProperty !== undefined ||
                     join.isMappingMany !== undefined ||
                     join.direction !== "LEFT" ||

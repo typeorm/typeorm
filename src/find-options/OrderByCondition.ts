@@ -6,8 +6,6 @@
  *  "name": "ASC",
  *  "id": "DESC"
  * }
- *
- * @deprecated
  */
 export type OrderByCondition = {
     [columnName: string]:

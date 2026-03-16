@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/index"
+import type { DataSource } from "../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,20 +7,19 @@ import {
 import { Foo } from "./entity/Foo"
 
 describe("github issues > #9684 Incorrect enum default value when table name contains dash character", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Foo],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Foo],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
     it("should get default enum value", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("module-foo_table_x")
 

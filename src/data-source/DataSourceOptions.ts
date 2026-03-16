@@ -1,41 +1,39 @@
-import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConnectionOptions"
-import { MysqlConnectionOptions } from "../driver/mysql/MysqlConnectionOptions"
-import { PostgresConnectionOptions } from "../driver/postgres/PostgresConnectionOptions"
-import { SqliteConnectionOptions } from "../driver/sqlite/SqliteConnectionOptions"
-import { SqlServerConnectionOptions } from "../driver/sqlserver/SqlServerConnectionOptions"
-import { OracleConnectionOptions } from "../driver/oracle/OracleConnectionOptions"
-import { MongoConnectionOptions } from "../driver/mongodb/MongoConnectionOptions"
-import { CordovaConnectionOptions } from "../driver/cordova/CordovaConnectionOptions"
-import { SqljsConnectionOptions } from "../driver/sqljs/SqljsConnectionOptions"
-import { ReactNativeConnectionOptions } from "../driver/react-native/ReactNativeConnectionOptions"
-import { NativescriptConnectionOptions } from "../driver/nativescript/NativescriptConnectionOptions"
-import { ExpoConnectionOptions } from "../driver/expo/ExpoConnectionOptions"
-import { AuroraMysqlConnectionOptions } from "../driver/aurora-mysql/AuroraMysqlConnectionOptions"
-import { SapConnectionOptions } from "../driver/sap/SapConnectionOptions"
-import { AuroraPostgresConnectionOptions } from "../driver/aurora-postgres/AuroraPostgresConnectionOptions"
-import { BetterSqlite3ConnectionOptions } from "../driver/better-sqlite3/BetterSqlite3ConnectionOptions"
-import { CapacitorConnectionOptions } from "../driver/capacitor/CapacitorConnectionOptions"
-import { SpannerConnectionOptions } from "../driver/spanner/SpannerConnectionOptions"
+import type { AuroraMysqlDataSourceOptions } from "../driver/aurora-mysql/AuroraMysqlDataSourceOptions"
+import type { AuroraPostgresDataSourceOptions } from "../driver/aurora-postgres/AuroraPostgresDataSourceOptions"
+import type { BetterSqlite3DataSourceOptions } from "../driver/better-sqlite3/BetterSqlite3DataSourceOptions"
+import type { CapacitorDataSourceOptions } from "../driver/capacitor/CapacitorDataSourceOptions"
+import type { CockroachDataSourceOptions } from "../driver/cockroachdb/CockroachDataSourceOptions"
+import type { CordovaDataSourceOptions } from "../driver/cordova/CordovaDataSourceOptions"
+import type { ExpoDataSourceOptions } from "../driver/expo/ExpoDataSourceOptions"
+import type { MongoDataSourceOptions } from "../driver/mongodb/MongoDataSourceOptions"
+import type { MysqlDataSourceOptions } from "../driver/mysql/MysqlDataSourceOptions"
+import type { NativescriptDataSourceOptions } from "../driver/nativescript/NativescriptDataSourceOptions"
+import type { OracleDataSourceOptions } from "../driver/oracle/OracleDataSourceOptions"
+import type { PostgresDataSourceOptions } from "../driver/postgres/PostgresDataSourceOptions"
+import type { ReactNativeDataSourceOptions } from "../driver/react-native/ReactNativeDataSourceOptions"
+import type { SapDataSourceOptions } from "../driver/sap/SapDataSourceOptions"
+import type { SpannerDataSourceOptions } from "../driver/spanner/SpannerDataSourceOptions"
+import type { SqljsDataSourceOptions } from "../driver/sqljs/SqljsDataSourceOptions"
+import type { SqlServerDataSourceOptions } from "../driver/sqlserver/SqlServerDataSourceOptions"
 
 /**
  * DataSourceOptions is an interface with settings and options for specific DataSource.
  */
 export type DataSourceOptions =
-    | MysqlConnectionOptions
-    | PostgresConnectionOptions
-    | CockroachConnectionOptions
-    | SqliteConnectionOptions
-    | SqlServerConnectionOptions
-    | SapConnectionOptions
-    | OracleConnectionOptions
-    | CordovaConnectionOptions
-    | NativescriptConnectionOptions
-    | ReactNativeConnectionOptions
-    | SqljsConnectionOptions
-    | MongoConnectionOptions
-    | AuroraMysqlConnectionOptions
-    | AuroraPostgresConnectionOptions
-    | ExpoConnectionOptions
-    | BetterSqlite3ConnectionOptions
-    | CapacitorConnectionOptions
-    | SpannerConnectionOptions
+    | AuroraMysqlDataSourceOptions
+    | AuroraPostgresDataSourceOptions
+    | BetterSqlite3DataSourceOptions
+    | CapacitorDataSourceOptions
+    | CockroachDataSourceOptions
+    | CordovaDataSourceOptions
+    | ExpoDataSourceOptions
+    | MongoDataSourceOptions
+    | MysqlDataSourceOptions
+    | NativescriptDataSourceOptions
+    | OracleDataSourceOptions
+    | PostgresDataSourceOptions
+    | ReactNativeDataSourceOptions
+    | SapDataSourceOptions
+    | SpannerDataSourceOptions
+    | SqljsDataSourceOptions
+    | SqlServerDataSourceOptions

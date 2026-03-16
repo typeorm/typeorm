@@ -4,32 +4,30 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
 import { Address, LatLong, User } from "./entity/User"
 
 describe("github issues > #9272 Fix select on deeply nested embedded entities, using Repository API", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: [
-                    "better-sqlite3",
-                    "cockroachdb",
-                    "mariadb",
-                    "mssql",
-                    "mysql",
-                    "oracle",
-                    "postgres",
-                    "spanner",
-                    "sqlite",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: [
+                "better-sqlite3",
+                "cockroachdb",
+                "mariadb",
+                "mssql",
+                "mysql",
+                "oracle",
+                "postgres",
+                "spanner",
+            ],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

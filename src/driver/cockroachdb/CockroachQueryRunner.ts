@@ -1,13 +1,13 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ReadStream } from "../../platform/PlatformTools"
+import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
@@ -22,11 +22,11 @@ import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
 import { Query } from "../Query"
-import { ColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { CockroachDriver } from "./CockroachDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { CockroachDriver } from "./CockroachDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -153,6 +153,7 @@ export class CockroachQueryRunner
     /**
      * Release a connection back to the pool, optionally specifying an Error to release with.
      * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
+     * @param err
      */
     private async releaseConnection(err?: Error) {
         if (this.isReleased) {
@@ -182,6 +183,7 @@ export class CockroachQueryRunner
 
     /**
      * Starts transaction.
+     * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         this.isTransactionActive = true
@@ -265,6 +267,9 @@ export class CockroachQueryRunner
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -404,6 +409,10 @@ export class CockroachQueryRunner
 
     /**
      * Returns raw data stream.
+     * @param query
+     * @param parameters
+     * @param onEnd
+     * @param onError
      */
     async stream(
         query: string,
@@ -443,6 +452,7 @@ export class CockroachQueryRunner
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
         return Promise.resolve([])
@@ -450,6 +460,7 @@ export class CockroachQueryRunner
 
     /**
      * Checks if database with the given name exist.
+     * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
@@ -468,6 +479,7 @@ export class CockroachQueryRunner
 
     /**
      * Checks if schema with the given name exist.
+     * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(
@@ -486,6 +498,7 @@ export class CockroachQueryRunner
 
     /**
      * Checks if table with the given name exist in the database.
+     * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
@@ -501,6 +514,8 @@ export class CockroachQueryRunner
 
     /**
      * Checks if column with the given name exist in the given table.
+     * @param tableOrName
+     * @param columnName
      */
     async hasColumn(
         tableOrName: Table | string,
@@ -519,13 +534,15 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new database.
+     * @param database
+     * @param ifNotExists
      */
     async createDatabase(
         database: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         const up = `CREATE DATABASE ${
-            ifNotExist ? "IF NOT EXISTS " : ""
+            ifNotExists ? "IF NOT EXISTS " : ""
         } "${database}"`
         const down = `DROP DATABASE "${database}"`
         await this.executeQueries(new Query(up), new Query(down))
@@ -533,26 +550,30 @@ export class CockroachQueryRunner
 
     /**
      * Drops database.
+     * @param database
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        const up = `DROP DATABASE ${ifExist ? "IF EXISTS " : ""} "${database}"`
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
+        const up = `DROP DATABASE ${ifExists ? "IF EXISTS " : ""} "${database}"`
         const down = `CREATE DATABASE "${database}"`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
     /**
      * Creates a new table schema.
+     * @param schemaPath
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         const schema =
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
 
-        const up = ifNotExist
+        const up = ifNotExists
             ? `CREATE SCHEMA IF NOT EXISTS "${schema}"`
             : `CREATE SCHEMA "${schema}"`
         const down = `DROP SCHEMA "${schema}" CASCADE`
@@ -561,10 +582,13 @@ export class CockroachQueryRunner
 
     /**
      * Drops table schema.
+     * @param schemaPath
+     * @param ifExists
+     * @param isCascade
      */
     async dropSchema(
         schemaPath: string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         isCascade?: boolean,
     ): Promise<void> {
         const schema =
@@ -572,7 +596,7 @@ export class CockroachQueryRunner
                 ? schemaPath
                 : schemaPath.split(".")[1]
 
-        const up = ifExist
+        const up = ifExists
             ? `DROP SCHEMA IF EXISTS "${schema}" ${isCascade ? "CASCADE" : ""}`
             : `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`
         const down = `CREATE SCHEMA "${schema}"`
@@ -581,14 +605,18 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new table.
+     * @param table
+     * @param ifNotExists
+     * @param createForeignKeys
+     * @param createIndices
      */
     async createTable(
         table: Table,
-        ifNotExist: boolean = false,
+        ifNotExists: boolean = false,
         createForeignKeys: boolean = true,
         createIndices: boolean = true,
     ): Promise<void> {
-        if (ifNotExist) {
+        if (ifNotExists) {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
@@ -698,16 +726,20 @@ export class CockroachQueryRunner
 
     /**
      * Drops the table.
+     * @param target
+     * @param ifExists
+     * @param dropForeignKeys
+     * @param dropIndices
      */
     async dropTable(
         target: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys: boolean = true,
         dropIndices: boolean = true,
     ): Promise<void> {
         // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
         // to perform drop queries for foreign keys and indices.
-        if (ifExist) {
+        if (ifExists) {
             const isTableExist = await this.hasTable(target)
             if (!isTableExist) return Promise.resolve()
         }
@@ -794,6 +826,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new view.
+     * @param view
+     * @param syncWithMetadata
      */
     async createView(
         view: View,
@@ -812,22 +846,31 @@ export class CockroachQueryRunner
 
     /**
      * Drops the view.
+     * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
         const view = await this.getCachedView(viewName)
 
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        upQueries.push(await this.deleteViewDefinitionSql(view))
-        upQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.insertViewDefinitionSql(view))
-        downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeQueries(
+            [
+                await this.deleteViewDefinitionSql(view),
+                ifExists
+                    ? new Query(`DROP VIEW IF EXISTS ${this.escapePath(view)}`)
+                    : this.dropViewSql(view),
+            ],
+            [
+                await this.insertViewDefinitionSql(view),
+                this.createViewSql(view),
+            ],
+        )
     }
 
     /**
      * Renames the given table.
+     * @param oldTableOrName
+     * @param newTableName
      */
     async renameTable(
         oldTableOrName: Table | string,
@@ -1055,6 +1098,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new column from the column in the table.
+     * @param tableOrName
+     * @param column
      */
     async addColumn(
         tableOrName: Table | string,
@@ -1247,6 +1292,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new columns from the column in the table.
+     * @param tableOrName
+     * @param columns
      */
     async addColumns(
         tableOrName: Table | string,
@@ -1259,6 +1306,9 @@ export class CockroachQueryRunner
 
     /**
      * Renames column in the given table.
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newTableColumnOrName
      */
     async renameColumn(
         tableOrName: Table | string,
@@ -1289,6 +1339,9 @@ export class CockroachQueryRunner
 
     /**
      * Changes a column in the table.
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newColumn
      */
     async changeColumn(
         tableOrName: Table | string,
@@ -2087,6 +2140,8 @@ export class CockroachQueryRunner
 
     /**
      * Changes a column in the table.
+     * @param tableOrName
+     * @param changedColumns
      */
     async changeColumns(
         tableOrName: Table | string,
@@ -2099,10 +2154,14 @@ export class CockroachQueryRunner
 
     /**
      * Drops column in the table.
+     * @param tableOrName
+     * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2110,10 +2169,12 @@ export class CockroachQueryRunner
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
@@ -2234,9 +2295,9 @@ export class CockroachQueryRunner
 
         upQueries.push(
             new Query(
-                `ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${
-                    column.name
-                }"`,
+                `ALTER TABLE ${this.escapePath(table)} DROP COLUMN ${
+                    ifExists ? "IF EXISTS " : ""
+                }"${column.name}"`,
             ),
         )
         downQueries.push(
@@ -2314,18 +2375,25 @@ export class CockroachQueryRunner
 
     /**
      * Drops the columns in the table.
+     * @param tableOrName
+     * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const column of [...columns]) {
-            await this.dropColumn(tableOrName, column)
+            await this.dropColumn(tableOrName, column, ifExists)
         }
     }
 
     /**
      * Creates a new primary key.
+     * @param tableOrName
+     * @param columnNames
+     * @param constraintName
      */
     async createPrimaryKey(
         tableOrName: Table | string,
@@ -2352,6 +2420,8 @@ export class CockroachQueryRunner
 
     /**
      * Updates composite primary keys.
+     * @param tableOrName
+     * @param columns
      */
     async updatePrimaryKeys(
         tableOrName: Table | string,
@@ -2398,7 +2468,9 @@ export class CockroachQueryRunner
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
         const pkName = primaryColumns[0].primaryKeyConstraintName
             ? primaryColumns[0].primaryKeyConstraintName
@@ -2431,15 +2503,19 @@ export class CockroachQueryRunner
 
     /**
      * Drops a primary key.
+     * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      */
     async dropPrimaryKey(
         tableOrName: Table | string,
         constraintName?: string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
-        const up = this.dropPrimaryKeySql(table)
+        const up = this.dropPrimaryKeySql(table, ifExists)
         const down = this.createPrimaryKeySql(
             table,
             table.primaryColumns.map((column) => column.name),
@@ -2453,6 +2529,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates new unique constraint.
+     * @param tableOrName
+     * @param uniqueConstraint
      */
     async createUniqueConstraint(
         tableOrName: Table | string,
@@ -2480,6 +2558,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates new unique constraints.
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async createUniqueConstraints(
         tableOrName: Table | string,
@@ -2492,10 +2572,14 @@ export class CockroachQueryRunner
 
     /**
      * Drops unique constraint.
+     * @param tableOrName
+     * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2503,14 +2587,16 @@ export class CockroachQueryRunner
         const uniqueConstraint = InstanceChecker.isTableUnique(uniqueOrName)
             ? uniqueOrName
             : table.uniques.find((u) => u.name === uniqueOrName)
-        if (!uniqueConstraint)
+        if (!uniqueConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        }
 
         // CockroachDB creates index for UNIQUE constraint.
         // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
-        const up = this.dropIndexSql(table, uniqueConstraint)
+        const up = this.dropIndexSql(table, uniqueConstraint, ifExists)
         const down = this.createUniqueConstraintSql(table, uniqueConstraint)
         await this.executeQueries(up, down)
         table.removeUniqueConstraint(uniqueConstraint)
@@ -2518,18 +2604,28 @@ export class CockroachQueryRunner
 
     /**
      * Drops unique constraints.
+     * @param tableOrName
+     * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const uniqueConstraint of [...uniqueConstraints]) {
-            await this.dropUniqueConstraint(tableOrName, uniqueConstraint)
+            await this.dropUniqueConstraint(
+                tableOrName,
+                uniqueConstraint,
+                ifExists,
+            )
         }
     }
 
     /**
      * Creates new check constraint.
+     * @param tableOrName
+     * @param checkConstraint
      */
     async createCheckConstraint(
         tableOrName: Table | string,
@@ -2555,6 +2651,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates new check constraints.
+     * @param tableOrName
+     * @param checkConstraints
      */
     async createCheckConstraints(
         tableOrName: Table | string,
@@ -2568,10 +2666,14 @@ export class CockroachQueryRunner
 
     /**
      * Drops check constraint.
+     * @param tableOrName
+     * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2579,12 +2681,14 @@ export class CockroachQueryRunner
         const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName
             : table.checks.find((c) => c.name === checkOrName)
-        if (!checkConstraint)
+        if (!checkConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied check constraint was not found in table ${table.name}`,
             )
+        }
 
-        const up = this.dropCheckConstraintSql(table, checkConstraint)
+        const up = this.dropCheckConstraintSql(table, checkConstraint, ifExists)
         const down = this.createCheckConstraintSql(table, checkConstraint)
         await this.executeQueries(up, down)
         table.removeCheckConstraint(checkConstraint)
@@ -2592,19 +2696,25 @@ export class CockroachQueryRunner
 
     /**
      * Drops check constraints.
+     * @param tableOrName
+     * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = checkConstraints.map((checkConstraint) =>
-            this.dropCheckConstraint(tableOrName, checkConstraint),
+            this.dropCheckConstraint(tableOrName, checkConstraint, ifExists),
         )
         await Promise.all(promises)
     }
 
     /**
      * Creates new exclusion constraint.
+     * @param tableOrName
+     * @param exclusionConstraint
      */
     async createExclusionConstraint(
         tableOrName: Table | string,
@@ -2617,6 +2727,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates new exclusion constraints.
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async createExclusionConstraints(
         tableOrName: Table | string,
@@ -2629,10 +2741,14 @@ export class CockroachQueryRunner
 
     /**
      * Drops exclusion constraint.
+     * @param tableOrName
+     * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `CockroachDB does not support exclusion constraints.`,
@@ -2641,10 +2757,14 @@ export class CockroachQueryRunner
 
     /**
      * Drops exclusion constraints.
+     * @param tableOrName
+     * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `CockroachDB does not support exclusion constraints.`,
@@ -2653,6 +2773,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new foreign key.
+     * @param tableOrName
+     * @param foreignKey
      */
     async createForeignKey(
         tableOrName: Table | string,
@@ -2679,6 +2801,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new foreign keys.
+     * @param tableOrName
+     * @param foreignKeys
      */
     async createForeignKeys(
         tableOrName: Table | string,
@@ -2691,10 +2815,14 @@ export class CockroachQueryRunner
 
     /**
      * Drops a foreign key from the table.
+     * @param tableOrName
+     * @param foreignKeyOrName
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2702,10 +2830,12 @@ export class CockroachQueryRunner
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
 
         if (!foreignKey.name) {
             foreignKey.name = this.connection.namingStrategy.foreignKeyName(
@@ -2716,7 +2846,7 @@ export class CockroachQueryRunner
             )
         }
 
-        const up = this.dropForeignKeySql(table, foreignKey)
+        const up = this.dropForeignKeySql(table, foreignKey, ifExists)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
         table.removeForeignKey(foreignKey)
@@ -2724,18 +2854,24 @@ export class CockroachQueryRunner
 
     /**
      * Drops a foreign keys from the table.
+     * @param tableOrName
+     * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const foreignKey of [...foreignKeys]) {
-            await this.dropForeignKey(tableOrName, foreignKey)
+            await this.dropForeignKey(tableOrName, foreignKey, ifExists)
         }
     }
 
     /**
      * Creates a new index.
+     * @param tableOrName
+     * @param index
      */
     async createIndex(
         tableOrName: Table | string,
@@ -2770,6 +2906,8 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new indices
+     * @param tableOrName
+     * @param indices
      */
     async createIndices(
         tableOrName: Table | string,
@@ -2782,10 +2920,14 @@ export class CockroachQueryRunner
 
     /**
      * Drops an index from the table.
+     * @param tableOrName
+     * @param indexOrName
+     * @param ifExists
      */
     async dropIndex(
         tableOrName: Table | string,
         indexOrName: TableIndex | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2793,15 +2935,17 @@ export class CockroachQueryRunner
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
 
         // old index may be passed without name. In this case we generate index name manually.
         if (!index.name) index.name = this.generateIndexName(table, index)
 
-        const up = this.dropIndexSql(table, index)
+        const up = this.dropIndexSql(table, index, ifExists)
         const down = this.createIndexSql(table, index)
         await this.executeQueries(up, down)
         table.removeIndex(index)
@@ -2809,22 +2953,35 @@ export class CockroachQueryRunner
 
     /**
      * Drops an indices from the table.
+     * @param tableOrName
+     * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const index of [...indices]) {
-            await this.dropIndex(tableOrName, index)
+            await this.dropIndex(tableOrName, index, ifExists)
         }
     }
 
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     * @param tableName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`)
+    async clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        const cascade = options?.cascade ? " CASCADE" : ""
+        await this.query(
+            `TRUNCATE TABLE ${this.escapePath(tableName)}${cascade}`,
+        )
     }
 
     /**
@@ -2840,42 +2997,63 @@ export class CockroachQueryRunner
                 )
                 if (!isSchemaExist) schemas.push(metadata.schema!)
             })
-        schemas.push(this.driver.options.schema || "current_schema()")
-        const schemaNamesString = schemas
-            .map((name) => {
-                return name === "current_schema()" ? name : "'" + name + "'"
-            })
-            .join(", ")
+        if (this.driver.options.schema) {
+            schemas.push(this.driver.options.schema)
+        } else {
+            const [{ currentSchema }] = await this.query(
+                `SELECT current_schema() AS "currentSchema"`,
+            )
+            schemas.push(currentSchema)
+        }
 
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
+
         try {
             const version = await this.getVersion()
-            const selectViewDropsQuery =
-                `SELECT 'DROP VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(viewname) || ' CASCADE;' as "query" ` +
-                `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`
-            const dropViewQueries: ObjectLiteral[] =
-                await this.query(selectViewDropsQuery)
-            await Promise.all(
-                dropViewQueries.map((q) => this.query(q["query"])),
+
+            // drop views
+            const views: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(schemaname) || '.' || quote_ident(viewname) as "name" ` +
+                    `FROM "pg_views" WHERE "schemaname"::STRING = ANY($1::STRING[])`,
+                [schemas],
             )
 
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(table_schema) || '.' || quote_ident(table_name) || ' CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
-            const dropQueries: ObjectLiteral[] =
-                await this.query(selectDropsQuery)
-            await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+            if (views.length > 0) {
+                await this.query(
+                    `DROP VIEW IF EXISTS ${views.map(({ name }) => name).join(", ")} CASCADE`,
+                )
+            }
 
-            const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE ' || quote_ident(sequence_schema) || '.' || quote_ident(sequence_name) || ';' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`
-            const sequenceDropQueries: ObjectLiteral[] = await this.query(
-                selectSequenceDropsQuery,
+            // drop tables
+            const tables: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(table_schema) || '.' || quote_ident(table_name) as "name" ` +
+                    `FROM "information_schema"."tables" WHERE "table_schema"::STRING = ANY($1::STRING[]) AND "table_type" = 'BASE TABLE'`,
+                [schemas],
             )
-            await Promise.all(
-                sequenceDropQueries.map((q) => this.query(q["query"])),
+
+            if (tables.length > 0) {
+                await this.query(
+                    `DROP TABLE IF EXISTS ${tables.map(({ name }) => name).join(", ")} CASCADE`,
+                )
+            }
+
+            // drop sequences
+            const sequences: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(sequence_schema) || '.' || quote_ident(sequence_name) as "name" ` +
+                    `FROM "information_schema"."sequences" WHERE "sequence_schema"::STRING = ANY($1::STRING[])`,
+                [schemas],
             )
+
+            if (sequences.length > 0) {
+                await this.query(
+                    `DROP SEQUENCE IF EXISTS ${sequences.map(({ name }) => name).join(", ")}`,
+                )
+            }
 
             // drop enum types. Supported starting from v20.2.19.
             if (VersionUtils.isGreaterOrEqual(version, "20.2.19")) {
-                await this.dropEnumTypes(schemaNamesString)
+                await this.dropEnumTypes(schemas)
             }
 
             if (!isAnotherTransactionActive) await this.commitTransaction()
@@ -2944,6 +3122,7 @@ export class CockroachQueryRunner
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
@@ -3056,19 +3235,11 @@ export class CockroachQueryRunner
             `WHERE "n"."nspname" IN (${tableSchemas}) ` +
             `GROUP BY "t"."typname"`
 
-        const [
-            dbColumns,
-            dbConstraints,
-            dbIndices,
-            dbForeignKeys,
-            dbEnums,
-        ]: ObjectLiteral[][] = await Promise.all([
-            this.query(columnsSql),
-            this.query(constraintsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql),
-            this.query(enumsSql),
-        ])
+        const dbColumns: ObjectLiteral[] = await this.query(columnsSql)
+        const dbConstraints: ObjectLiteral[] = await this.query(constraintsSql)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
+        const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
+        const dbEnums: ObjectLiteral[] = await this.query(enumsSql)
 
         // create tables for loaded tables
         return Promise.all(
@@ -3610,6 +3781,8 @@ export class CockroachQueryRunner
 
     /**
      * Builds create table sql.
+     * @param table
+     * @param createForeignKeys
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns
@@ -3739,12 +3912,11 @@ export class CockroachQueryRunner
 
         table.columns
             .filter((it) => it.comment)
-            .forEach(
-                (it) =>
-                    (sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${
-                        it.name
-                    }" IS ${this.escapeComment(it.comment)}`),
-            )
+            .forEach((it) => {
+                sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${
+                    it.name
+                }" IS ${this.escapeComment(it.comment)}`
+            })
 
         return new Query(sql)
     }
@@ -3763,6 +3935,7 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop table sql.
+     * @param tableOrPath
      */
     protected dropTableSql(tableOrPath: Table | string): Query {
         return new Query(`DROP TABLE ${this.escapePath(tableOrPath)}`)
@@ -3803,6 +3976,7 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop view sql.
+     * @param viewOrPath
      */
     protected dropViewSql(viewOrPath: View | string): Query {
         return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
@@ -3810,6 +3984,7 @@ export class CockroachQueryRunner
 
     /**
      * Builds remove view sql.
+     * @param viewOrPath
      */
     protected async deleteViewDefinitionSql(
         viewOrPath: View | string,
@@ -3831,19 +4006,28 @@ export class CockroachQueryRunner
 
     /**
      * Drops ENUM type from given schemas.
+     * @param schemaNames
      */
-    protected async dropEnumTypes(schemaNames: string): Promise<void> {
-        const selectDropsQuery =
-            `SELECT 'DROP TYPE IF EXISTS "' || n.nspname || '"."' || t.typname || '";' as "query" FROM "pg_type" "t" ` +
-            `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-            `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery)
-        await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+    protected async dropEnumTypes(schemaNames: string[]): Promise<void> {
+        const enums: ObjectLiteral[] = await this.query(
+            `SELECT quote_ident(n.nspname) || '.' || quote_ident(t.typname) as "name" FROM "pg_type" "t" ` +
+                `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
+                `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+                `WHERE "n"."nspname"::STRING = ANY($1::STRING[]) GROUP BY "n"."nspname", "t"."typname"`,
+            [schemaNames],
+        )
+
+        if (enums.length > 0) {
+            await this.query(
+                `DROP TYPE IF EXISTS ${enums.map(({ name }) => name).join(", ")}`,
+            )
+        }
     }
 
     /**
      * Checks if enum with the given name exist in the database.
+     * @param table
+     * @param column
      */
     protected async hasEnumType(
         table: Table,
@@ -3866,6 +4050,9 @@ export class CockroachQueryRunner
 
     /**
      * Builds create ENUM type sql.
+     * @param table
+     * @param column
+     * @param enumName
      */
     protected createEnumTypeSql(
         table: Table,
@@ -3881,6 +4068,9 @@ export class CockroachQueryRunner
 
     /**
      * Builds create ENUM type sql.
+     * @param table
+     * @param column
+     * @param enumName
      */
     protected dropEnumTypeSql(
         table: Table,
@@ -3894,6 +4084,8 @@ export class CockroachQueryRunner
     /**
      * Builds create index sql.
      * UNIQUE indices creates as UNIQUE constraints.
+     * @param table
+     * @param index
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
@@ -3910,10 +4102,14 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop index sql.
+     * @param table
+     * @param indexOrName
+     * @param ifExists
      */
     protected dropIndexSql(
         table: Table,
         indexOrName: TableIndex | TableUnique | string,
+        ifExists?: boolean,
     ): Query {
         const indexName =
             InstanceChecker.isTableIndex(indexOrName) ||
@@ -3921,12 +4117,15 @@ export class CockroachQueryRunner
                 ? indexOrName.name
                 : indexOrName
         return new Query(
-            `DROP INDEX ${this.escapePath(table)}@"${indexName}" CASCADE`,
+            `DROP INDEX ${ifExists ? "IF EXISTS " : ""}${this.escapePath(table)}@"${indexName}" CASCADE`,
         )
     }
 
     /**
      * Builds create primary key sql.
+     * @param table
+     * @param columnNames
+     * @param constraintName
      */
     protected createPrimaryKeySql(
         table: Table,
@@ -3948,8 +4147,10 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop primary key sql.
+     * @param table
+     * @param ifExists
      */
-    protected dropPrimaryKeySql(table: Table): Query {
+    protected dropPrimaryKeySql(table: Table, ifExists?: boolean): Query {
         if (!table.primaryColumns.length)
             throw new TypeORMError(`Table ${table} has no primary keys.`)
 
@@ -3961,12 +4162,14 @@ export class CockroachQueryRunner
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${primaryKeyName}"`,
+            )} DROP CONSTRAINT ${ifExists ? "IF EXISTS " : ""}"${primaryKeyName}"`,
         )
     }
 
     /**
      * Builds create unique constraint sql.
+     * @param table
+     * @param uniqueConstraint
      */
     protected createUniqueConstraintSql(
         table: Table,
@@ -3984,6 +4187,8 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop unique constraint sql.
+     * @param table
+     * @param uniqueOrName
      */
     protected dropUniqueConstraintSql(
         table: Table,
@@ -4001,6 +4206,8 @@ export class CockroachQueryRunner
 
     /**
      * Builds create check constraint sql.
+     * @param table
+     * @param checkConstraint
      */
     protected createCheckConstraintSql(
         table: Table,
@@ -4015,10 +4222,14 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop check constraint sql.
+     * @param table
+     * @param checkOrName
+     * @param ifExists
      */
     protected dropCheckConstraintSql(
         table: Table,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Query {
         const checkName = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName.name
@@ -4026,12 +4237,14 @@ export class CockroachQueryRunner
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${checkName}"`,
+            )} DROP CONSTRAINT ${ifExists ? "IF EXISTS " : ""}"${checkName}"`,
         )
     }
 
     /**
      * Builds create foreign key sql.
+     * @param table
+     * @param foreignKey
      */
     protected createForeignKeySql(
         table: Table,
@@ -4058,10 +4271,14 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop foreign key sql.
+     * @param table
+     * @param foreignKeyOrName
+     * @param ifExists
      */
     protected dropForeignKeySql(
         table: Table,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Query {
         const foreignKeyName = InstanceChecker.isTableForeignKey(
             foreignKeyOrName,
@@ -4071,12 +4288,14 @@ export class CockroachQueryRunner
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${foreignKeyName}"`,
+            )} DROP CONSTRAINT ${ifExists ? "IF EXISTS " : ""}"${foreignKeyName}"`,
         )
     }
 
     /**
      * Builds sequence name from given table and column.
+     * @param table
+     * @param columnOrName
      */
     protected buildSequenceName(
         table: Table,
@@ -4104,6 +4323,11 @@ export class CockroachQueryRunner
 
     /**
      * Builds ENUM type name from given table and column.
+     * @param table
+     * @param column
+     * @param withSchema
+     * @param disableEscape
+     * @param toOld
      */
     protected buildEnumName(
         table: Table,
@@ -4155,6 +4379,7 @@ export class CockroachQueryRunner
 
     /**
      * Escapes a given comment so it's safe to include in a query.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (comment === undefined || comment.length === 0) {
@@ -4168,6 +4393,7 @@ export class CockroachQueryRunner
 
     /**
      * Escapes given table or view path.
+     * @param target
      */
     protected escapePath(target: Table | View | string): string {
         const { schema, tableName } = this.driver.parseTableName(target)
@@ -4181,6 +4407,8 @@ export class CockroachQueryRunner
 
     /**
      * Builds a query for create column.
+     * @param table
+     * @param column
      */
     protected buildCreateColumnSql(table: Table, column: TableColumn) {
         let c = '"' + column.name + '"'
@@ -4225,6 +4453,8 @@ export class CockroachQueryRunner
     }
     /**
      * Change table comment.
+     * @param tableOrName
+     * @param comment
      */
     changeTableComment(
         tableOrName: Table | string,

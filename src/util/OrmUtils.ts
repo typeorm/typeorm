@@ -1,9 +1,13 @@
-import { DeepPartial } from "../common/DeepPartial"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import {
+import type { DeepPartial } from "../common/DeepPartial"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type {
     PrimitiveCriteria,
     SinglePrimitiveCriteria,
 } from "../common/PrimitiveCriteria"
+import { areUint8ArraysEqual, isUint8Array } from "./Uint8ArrayUtils"
+import { InstanceChecker } from "./InstanceChecker"
+import { TypeORMError } from "../error"
+import { IsNull } from "../find-options/operator/IsNull"
 
 export class OrmUtils {
     // -------------------------------------------------------------------------
@@ -12,6 +16,8 @@ export class OrmUtils {
 
     /**
      * Chunks array into pieces.
+     * @param array
+     * @param size
      */
     public static chunk<T>(array: T[], size: number): T[][] {
         return Array.from(Array(Math.ceil(array.length / size)), (_, i) => {
@@ -58,7 +64,7 @@ export class OrmUtils {
         criteriaOrProperty?: ((item: T) => unknown) | K,
     ): T[] {
         return array.reduce((uniqueArray, item) => {
-            let found: boolean = false
+            let found: boolean
             if (typeof criteriaOrProperty === "function") {
                 const itemValue = criteriaOrProperty(item)
                 found = !!uniqueArray.find(
@@ -83,6 +89,8 @@ export class OrmUtils {
 
     /**
      * Deep Object.assign.
+     * @param target
+     * @param sources
      */
     public static mergeDeep<T>(
         target: T,
@@ -101,6 +109,7 @@ export class OrmUtils {
 
     /**
      * Creates a shallow copy of the object, without invoking the constructor
+     * @param object
      */
     public static cloneObject<T extends object>(object: T): T {
         if (object === null || object === undefined) {
@@ -115,7 +124,7 @@ export class OrmUtils {
 
     /**
      * Deep compare objects.
-     *
+     * @param args
      * @see http://stackoverflow.com/a/1144249
      */
     public static deepCompare<T>(...args: T[]): boolean {
@@ -147,6 +156,8 @@ export class OrmUtils {
 
     /**
      * Gets deeper value of object.
+     * @param obj
+     * @param path
      */
     public static deepValue(obj: ObjectLiteral, path: string): any {
         const segments = path.split(".")
@@ -198,6 +209,8 @@ export class OrmUtils {
 
     /**
      * Check if two entity-id-maps are the same
+     * @param firstId
+     * @param secondId
      */
     public static compareIds(
         firstId: ObjectLiteral | undefined,
@@ -228,6 +241,7 @@ export class OrmUtils {
 
     /**
      * Transforms given value into boolean value.
+     * @param value
      */
     public static toBoolean(value: any): boolean {
         if (typeof value === "boolean") return value
@@ -241,6 +255,8 @@ export class OrmUtils {
 
     /**
      * Checks if two arrays of unique values contain the same values
+     * @param arr1
+     * @param arr2
      */
     public static isArraysEqual<T>(arr1: T[], arr2: T[]): boolean {
         if (arr1.length !== arr2.length) {
@@ -252,6 +268,8 @@ export class OrmUtils {
 
     /**
      * Returns items that are missing/extraneous in the second array
+     * @param arr1
+     * @param arr2
      */
     public static getArraysDiff<T>(
         arr1: T[],
@@ -280,6 +298,8 @@ export class OrmUtils {
      * Parses the CHECK constraint on the specified column and returns
      * all values allowed by the constraint or undefined if the constraint
      * is not present.
+     * @param sql
+     * @param columnName
      */
     public static parseSqlCheckExpression(
         sql: string,
@@ -301,8 +321,8 @@ export class OrmUtils {
             const chars = afterMatch
 
             /**
-             * * When outside quotes: empty string
-             * * When inside single quotes: `'`
+             * When outside quotes: empty string
+             * When inside single quotes: `'`
              */
             let currentQuotes = ""
             let nextValue = ""
@@ -353,6 +373,7 @@ export class OrmUtils {
 
     /**
      * Checks if given criteria is null or empty.
+     * @param criteria
      */
     public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
         return (
@@ -368,6 +389,7 @@ export class OrmUtils {
     /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
+     * @param criteria
      */
     public static isSinglePrimitiveCriteria(
         criteria: unknown,
@@ -381,6 +403,7 @@ export class OrmUtils {
 
     /**
      * Checks if given criteria is a primitive value or an array of primitive values.
+     * @param criteria
      */
     public static isPrimitiveCriteria(
         criteria: unknown,
@@ -422,12 +445,13 @@ export class OrmUtils {
 
         // Fix the buffer compare bug.
         // See: https://github.com/typeorm/typeorm/issues/3654
-        if (
-            (typeof x.equals === "function" ||
-                typeof x.equals === "function") &&
-            x.equals(y)
-        )
-            return true
+        if (typeof x.equals === "function" && typeof y.equals === "function") {
+            return x.equals(y)
+        }
+
+        if (isUint8Array(x) && isUint8Array(y)) {
+            return areUint8ArraysEqual(x, y)
+        }
 
         // Works in case when functions are created in constructor.
         // Comparing dates is a common scenario. Another built-ins?
@@ -614,5 +638,72 @@ export class OrmUtils {
                 OrmUtils.mergeArrayKey(target, key, source[key], memo)
             }
         }
+    }
+
+    /**
+     * Recursively validates an object where clause, throwing for null/undefined
+     * based on the provided invalidWhereValuesBehavior config.
+     * @param criteria
+     * @param options
+     * @param options.null
+     * @param options.undefined
+     * @param path
+     */
+    static normalizeWhereCriteria(
+        criteria: ObjectLiteral,
+        options?: {
+            null?: "ignore" | "sql-null" | "throw"
+            undefined?: "ignore" | "throw"
+        },
+        path?: string,
+    ): ObjectLiteral {
+        if (!options) return criteria
+
+        const result: ObjectLiteral = {}
+
+        for (const [key, value] of Object.entries(criteria)) {
+            const propertyPath = path ? `${path}.${key}` : key
+
+            if (value === undefined) {
+                const behavior = options?.undefined || "throw"
+                if (behavior === "throw") {
+                    throw new TypeORMError(
+                        `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
+                            `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                    )
+                }
+                // "ignore" — skip this key
+            } else if (value === null) {
+                const behavior = options?.null || "throw"
+                if (behavior === "throw") {
+                    throw new TypeORMError(
+                        `Null value encountered in property '${propertyPath}' of a where condition. ` +
+                            `To match with SQL NULL, the IsNull() operator must be used. ` +
+                            `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                    )
+                } else if (behavior === "sql-null") {
+                    result[key] = IsNull()
+                }
+                // "ignore" — skip this key
+            } else if (
+                typeof value === "object" &&
+                !Array.isArray(value) &&
+                !(value instanceof Date) &&
+                !InstanceChecker.isFindOperator(value)
+            ) {
+                const nested = OrmUtils.normalizeWhereCriteria(
+                    value,
+                    options,
+                    propertyPath,
+                )
+                if (Object.keys(nested).length > 0) {
+                    result[key] = nested
+                }
+            } else {
+                result[key] = value
+            }
+        }
+
+        return result
     }
 }

@@ -1,6 +1,10 @@
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../../src/decorator/columns/Column"
+import {
+    Column,
+    Entity,
+    OneToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../../src"
+import { Photo } from "./Photo"
 
 @Entity()
 export class User {
@@ -9,4 +13,7 @@ export class User {
 
     @Column()
     name: string
+
+    @OneToMany(() => Photo, (photo) => photo.user)
+    photos: Photo[]
 }

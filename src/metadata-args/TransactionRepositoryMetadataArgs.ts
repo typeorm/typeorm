@@ -1,5 +1,5 @@
 /**
- * Used to inject transaction's repository into the method wrapped with @Transaction decorator.
+ * Used to inject transaction's repository into the method wrapped with `@Transaction` decorator.
  */
 export interface TransactionRepositoryMetadataArgs {
     /**

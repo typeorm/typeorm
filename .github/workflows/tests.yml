@@ -1,12 +1,18 @@
 name: Tests
 on:
   push:
+    branches:
+      - master
   pull_request:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.fork) }}
     outputs:
       changes: ${{ steps.detect-changes.outputs.changes }}
     steps:
@@ -20,45 +26,34 @@ jobs:
               - package.json
               - package-lock.json
 
+            ci: &ci
+              - .github/**/*
+              - .pr_agent.toml
+              - pr_compliance_checklist.yaml
+
             docs: &docs
               - docs/**/*
 
             src: &src
+              - *package-json
               - extra/**/*.js
               - src/**/*.ts
               - gulpfile.js
               - tsconfig.json
-              - *package-json
 
             src-or-tests: &src-or-tests
               - *src
+              - .github/workflows/test*.yml
+              - docker-compose.yml
+              - docker/**/*
               - test/**/*
               - .c8rc.json
-              - .github/workflows/test/**/*
-              - .github/workflows/test*.yml
               - .mocharc.json
-              - .nvmrc
+              - ormconfig.sample.json
 
-            lint: &lint
+            lint:
               - *src-or-tests
-              - .prettierrc.json
               - eslint.config.mjs
-
-  formatting:
-    if: contains(needs.detect-changes.outputs.changes, 'lint')
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
-      - run: pnpm run lint
-      - run: pnpm run format:ci
 
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
@@ -93,11 +88,39 @@ jobs:
       - run: pnpm install
       - run: pnpm run compile
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: build
           path: build/
           retention-days: 1
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run format:ci
+
+  lint:
+    if: contains(needs.detect-changes.outputs.changes, 'lint')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run lint
 
   tests-linux:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
@@ -132,8 +155,10 @@ jobs:
     needs:
       - build
       - coverage
+      - detect-changes
       - docs
-      - formatting
+      - format
+      - lint
       - tests-linux
       - tests-windows
     steps:

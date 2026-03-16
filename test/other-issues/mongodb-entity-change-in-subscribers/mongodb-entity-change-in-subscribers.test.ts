@@ -1,38 +1,35 @@
-import "reflect-metadata"
+import { expect } from "chai"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
 
 describe("other issues > mongodb entity change in subscribers should affect persistence", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+            enabledDrivers: ["mongodb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("if entity was changed, subscriber should be take updated columns", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const post = new Post()
                 post.title = "hello world"
                 await connection.manager.save(post)
 
                 // check if it was inserted correctly
-                const loadedPost = await connection.manager.findOneById(
-                    Post,
-                    post.id,
-                )
+                const loadedPost = await connection.manager.findOneBy(Post, {
+                    id: post.id,
+                })
                 expect(loadedPost).not.to.be.null
                 loadedPost!.active.should.be.equal(false)
 
@@ -42,9 +39,11 @@ describe("other issues > mongodb entity change in subscribers should affect pers
                 await connection.manager.save(loadedPost!)
 
                 // check if subscriber was triggered and entity was really taken changed columns in the subscriber
-                const loadedUpdatedPost = await connection.manager.findOneById(
+                const loadedUpdatedPost = await connection.manager.findOneBy(
                     Post,
-                    post.id,
+                    {
+                        id: post.id,
+                    },
                 )
                 expect(loadedUpdatedPost).not.to.be.null
                 expect(loadedUpdatedPost!.title).to.equals("hello world!")
@@ -56,7 +55,7 @@ describe("other issues > mongodb entity change in subscribers should affect pers
 
     it("if entity was loaded, loaded property should be changed", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const post = new Post()
                 post.title = "hello world"
                 await connection.manager.save(post)

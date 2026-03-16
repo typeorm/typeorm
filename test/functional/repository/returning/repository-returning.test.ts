@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,26 +10,25 @@ import {
 import { User } from "./entity/User"
 
 describe("repository > returning", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "mysql", "mssql", "spanner"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres", "mysql", "mssql", "spanner"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("allows specifying RETURNING via repository.update options", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (!connection.driver.isReturningSqlSupported("update")) {
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("update")) {
                     return
                 }
 
-                const repo = connection.getRepository(User)
+                const repo = dataSource.getRepository(User)
                 const created = await repo.save({ name: "before" })
 
                 const result = await repo.update(
@@ -48,12 +47,12 @@ describe("repository > returning", () => {
 
     it("allows specifying RETURNING via repository.upsert options", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (!connection.driver.isReturningSqlSupported("insert")) {
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("insert")) {
                     return
                 }
 
-                const repo = connection.getRepository(User)
+                const repo = dataSource.getRepository(User)
                 const created = await repo.save({ name: "seed" })
 
                 const result = await repo.upsert(
@@ -74,12 +73,12 @@ describe("repository > returning", () => {
 
     it("allows specifying RETURNING via repository.updateAll options", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (!connection.driver.isReturningSqlSupported("update")) {
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("update")) {
                     return
                 }
 
-                const repo = connection.getRepository(User)
+                const repo = dataSource.getRepository(User)
                 const user1 = await repo.save({ name: "user1" })
                 const user2 = await repo.save({ name: "user2" })
 

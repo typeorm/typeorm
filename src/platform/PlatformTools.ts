@@ -1,5 +1,4 @@
 import ansi from "ansis"
-import dotenv from "dotenv"
 import fs from "fs"
 import path from "path"
 import { highlight } from "sql-highlight"
@@ -38,6 +37,7 @@ export class PlatformTools {
         } catch (err) {
             throw new TypeError(
                 `Failed to read package.json for "${name}": ${err.message}`,
+                { cause: err },
             )
         }
     }
@@ -119,12 +119,6 @@ export class PlatformTools {
                     return require("better-sqlite3")
 
                 /**
-                 * sqlite
-                 */
-                case "sqlite3":
-                    return require("sqlite3")
-
-                /**
                  * sql.js
                  */
                 case "sql.js":
@@ -190,7 +184,7 @@ export class PlatformTools {
         return fs.existsSync(pathStr)
     }
 
-    static readFileSync(filename: string): Buffer {
+    static readFileSync(filename: string): Uint8Array {
         return fs.readFileSync(filename)
     }
 
@@ -200,23 +194,6 @@ export class PlatformTools {
 
     static async writeFile(path: string, data: any): Promise<void> {
         return fs.promises.writeFile(path, data)
-    }
-
-    /**
-     * Loads a dotenv file into the environment variables.
-     * @param path The file to load as a dotenv configuration
-     * @param pathStr
-     */
-    static dotenv(pathStr: string): void {
-        dotenv.config({ path: pathStr })
-    }
-
-    /**
-     * Gets environment variable.
-     * @param name
-     */
-    static getEnvVariable(name: string): any {
-        return process.env[name]
     }
 
     /**

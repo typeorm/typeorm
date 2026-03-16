@@ -1,4 +1,4 @@
-import { ObjectId } from "../driver/mongodb/typings"
+import type { ObjectId } from "../driver/mongodb/typings"
 
 /**
  * A single property handler for FindOptionsRelations.
@@ -16,7 +16,7 @@ export type FindOptionsRelationsProperty<Property> =
                 ? never
                 : Property extends Function
                   ? never
-                  : Property extends Buffer
+                  : Property extends Uint8Array
                     ? never
                     : Property extends Date
                       ? never
@@ -38,7 +38,6 @@ export type FindOptionsRelations<Entity> = {
 /**
  * Relation names to be selected by "relation" defined as string.
  * Old relation mechanism in TypeORM.
- *
  * @deprecated will be removed in the next version, use FindOptionsRelation type notation instead
  */
 export type FindOptionsRelationByString = string[]

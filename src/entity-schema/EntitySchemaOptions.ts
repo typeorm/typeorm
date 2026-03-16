@@ -1,20 +1,18 @@
-import {
-    DataSource,
-    EntitySchemaEmbeddedColumnOptions,
-    SelectQueryBuilder,
-} from ".."
-import { EntitySchemaIndexOptions } from "./EntitySchemaIndexOptions"
-import { EntitySchemaColumnOptions } from "./EntitySchemaColumnOptions"
-import { EntitySchemaRelationOptions } from "./EntitySchemaRelationOptions"
-import { OrderByCondition } from "../find-options/OrderByCondition"
-import { TableType } from "../metadata/types/TableTypes"
-import { EntitySchemaUniqueOptions } from "./EntitySchemaUniqueOptions"
-import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
-import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
-import { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
-import { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
-import { EntitySchemaForeignKeyOptions } from "./EntitySchemaForeignKeyOptions"
-import { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
+import type { DataSource } from "../data-source"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
+import type { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
+import type { TableType } from "../metadata/types/TableTypes"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
+import type { EntitySchemaColumnOptions } from "./EntitySchemaColumnOptions"
+import type { EntitySchemaEmbeddedColumnOptions } from "./EntitySchemaEmbeddedColumnOptions"
+import type { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
+import type { EntitySchemaForeignKeyOptions } from "./EntitySchemaForeignKeyOptions"
+import type { EntitySchemaIndexOptions } from "./EntitySchemaIndexOptions"
+import type { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
+import type { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
+import type { EntitySchemaRelationOptions } from "./EntitySchemaRelationOptions"
+import type { EntitySchemaUniqueOptions } from "./EntitySchemaUniqueOptions"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -125,7 +123,7 @@ export class EntitySchemaOptions<T> {
     /**
      * View expression.
      */
-    expression?: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression?: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     /**
      * Inheritance options.

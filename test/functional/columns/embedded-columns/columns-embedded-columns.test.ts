@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,22 +10,24 @@ import { SimplePost } from "./entity/SimplePost"
 import { SimpleCounters } from "./entity/SimpleCounters"
 import { Information } from "./entity/Information"
 import { Post } from "./entity/Post"
+import { Parent } from "./entity/Parent"
+import { Account } from "./entity/Account"
+import { Department } from "./entity/Department"
 
 describe("columns > embedded columns", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert / update / remove entity with embedded correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(SimplePost)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(SimplePost)
 
                 // save few posts
                 const post = new SimplePost()
@@ -101,8 +103,8 @@ describe("columns > embedded columns", () => {
 
     it("should properly generate column names", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const columns = postRepository.metadata.columns
                 const databaseColumns = columns.map((c) => c.databaseName)
 
@@ -157,6 +159,54 @@ describe("columns > embedded columns", () => {
                     // Post.countersWithoutPrefix('').dataWithoutPrefix('').description
                     "descr",
                 ])
+            }),
+        ))
+
+    // GitHub issue #10578 - updating embedded columns with relations doesn't work
+    it("should update embedded columns when saving entity with relations", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const parentRepository = dataSource.getRepository("Parent")
+                const accountRepository = dataSource.getRepository("Account")
+
+                const account = new Account()
+                account.name = "Account #1"
+                await accountRepository.save(account)
+
+                const parent = new Parent()
+                parent.department = new Department()
+                parent.department.account = account
+                await parentRepository.save(parent)
+                const loadedParent = await parentRepository.findOne({
+                    where: { id: parent.id },
+                })
+
+                loadedParent!.should.be.eql({
+                    id: parent.id,
+                    department: {
+                        account: {
+                            id: account.id,
+                            name: "Account #1",
+                        },
+                    },
+                })
+
+                parent.department.account.name = "Updated Account #1"
+                await parentRepository.save(parent)
+
+                const loadedParent1 = await parentRepository.findOne({
+                    where: { id: parent.id },
+                })
+
+                loadedParent1!.should.be.eql({
+                    id: parent.id,
+                    department: {
+                        account: {
+                            id: account.id,
+                            name: "Updated Account #1",
+                        },
+                    },
+                })
             }),
         ))
 })

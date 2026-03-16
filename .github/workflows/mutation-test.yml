@@ -8,34 +8,34 @@ on:
 jobs:
   mutation-testing:
     runs-on: ubuntu-latest
-    
+
     services:
       mysql:
-        image: mysql:5.7.37
+        image: mysql:5.7.44
         ports:
           - "3306:3306"
         env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: typeorm
       mariadb:
-        image: mariadb:10.10.3
+        image: mariadb:10.11.16
         ports:
           - "3307:3306"
         env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: typeorm
       postgres:
-        image: ghcr.io/naorpeled/typeorm-postgres:pg17-postgis3-pgvectorv0.8.0
+        image: ghcr.io/typeorm/docker:postgres-17.9-postgis-3.6.2-pgvector-0.8.2
         ports:
           - "5432:5432"
         env:
-          POSTGRES_USERNAME: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
+          POSTGRES_USER: username
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: typeorm
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -43,20 +43,28 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: "pnpm"
       - run: pnpm install
-      - run: cp .github/workflows/test/mutation-testing.ormconfig.json ormconfig.json
+      - run: |
+          jq 'map(select(.type | IN($ARGS.positional[])))' \
+            ormconfig.sample.json \
+            --args \
+              "better-sqlite3" \
+              "mariadb" \
+              "mysql" \
+              "postgres" \
+              "sqljs" \
+            > ormconfig.json
       - run: pnpm exec stryker run
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: mutation-testing
           path: ./reports/mutation/mutation.html
-

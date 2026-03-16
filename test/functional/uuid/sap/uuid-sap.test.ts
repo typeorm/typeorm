@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,22 +10,22 @@ import { Post } from "./entity/Post"
 import { Question } from "./entity/Question"
 
 describe("uuid-sap", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sap"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist uuid correctly when it is generated non primary column", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const questionRepository = connection.getRepository(Question)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const questionRepository = dataSource.getRepository(Question)
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 const questionTable = await queryRunner.getTable("question")
                 await queryRunner.release()
@@ -102,10 +102,10 @@ describe("uuid-sap", () => {
 
     it("should set generated uuid in the model after save", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const question = new Question()
                 question.uuid2 = "fd357b8f-8838-42f6-b7a2-ae027444e895"
-                await connection.manager.save(question)
+                await dataSource.manager.save(question)
                 expect(question!.id).to.exist
                 expect(question!.uuid).to.exist
                 expect(question!.uuid2).to.exist

@@ -1,26 +1,26 @@
-import { Driver } from "../Driver"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { DateUtils } from "../../util/DateUtils"
-import { DataSource } from "../../data-source/DataSource"
-import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
-import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType"
-import { ReactNativeConnectionOptions } from "./ReactNativeConnectionOptions"
+import { OrmUtils } from "../../util/OrmUtils"
+import type { Driver } from "../Driver"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
+import type { ReactNativeDataSourceOptions } from "./ReactNativeDataSourceOptions"
 import { ReactNativeQueryRunner } from "./ReactNativeQueryRunner"
 
 type DatabasesMap = Record<
@@ -62,7 +62,7 @@ export class ReactNativeDriver implements Driver {
     /**
      * Connection options.
      */
-    options: ReactNativeConnectionOptions
+    options: ReactNativeDataSourceOptions
 
     /**
      * Master database used to perform all write queries.
@@ -91,7 +91,6 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://www.tutorialspoint.com/sqlite/sqlite_data_types.htm
      * @see https://sqlite.org/datatype3.html
      */
@@ -245,7 +244,7 @@ export class ReactNativeDriver implements Driver {
 
     constructor(connection: DataSource) {
         this.connection = connection
-        this.options = connection.options as ReactNativeConnectionOptions
+        this.options = connection.options as ReactNativeDataSourceOptions
         // this.database = DriverUtils.buildDriverOptions(this.options).database
         this.database = this.options.database
 
@@ -258,6 +257,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner)
@@ -319,6 +319,8 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -360,6 +362,8 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Prepares given value to a value to be hydrated, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -437,28 +441,14 @@ export class ReactNativeDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => {
-                // Mapping boolean values to their numeric representation
-                if (typeof nativeParameters[key] === "boolean") {
-                    return nativeParameters[key] === true ? 1 : 0
-                }
-
-                if (nativeParameters[key] instanceof Date) {
-                    return DateUtils.mixedDateToUtcDatetimeString(
-                        nativeParameters[key],
-                    )
-                }
-
-                return nativeParameters[key]
-            },
-        )
+        const escapedParameters: any[] = []
 
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
@@ -519,6 +509,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return '"' + columnName + '"'
@@ -529,6 +520,9 @@ export class ReactNativeDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      *
      * Returns only simple table name because all inherited drivers does not supports schema and database.
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -540,6 +534,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -613,6 +608,11 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type?: ColumnType
@@ -643,6 +643,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -672,6 +673,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.uniques.some(
@@ -681,6 +683,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Calculates column length taking into account the default length values.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
         return column.length ? column.length.toString() : ""
@@ -688,6 +691,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -735,6 +739,10 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
+     * @param entityIndex
+     * @param entityNum
      */
     createGeneratedMap(
         metadata: EntityMetadata,
@@ -771,6 +779,8 @@ export class ReactNativeDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -901,11 +911,30 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         // return "$" + (index + 1);
         return "?"
         // return "$" + parameterName;
+    }
+
+    /**
+     * Wraps key with json/jsonb function.
+     * @param value
+     * @param column
+     * @param jsonb
+     */
+    wrapWithJsonFunction(
+        value: string,
+        column: ColumnMetadata,
+        jsonb: boolean = false,
+    ): string {
+        if (column.type === "jsonb") {
+            return jsonb ? `jsonb(${value})` : `json(${value})`
+        }
+        return value
     }
 
     // -------------------------------------------------------------------------
@@ -922,6 +951,7 @@ export class ReactNativeDriver implements Driver {
                 {
                     name: this.options.database,
                     location: this.options.location,
+                    encryptionKey: this.options.encryptionKey,
                 },
                 this.options.extra || {},
             )

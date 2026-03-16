@@ -1,0 +1,24 @@
+pr_compliances:
+    - title: "Docs updated for user-facing changes"
+      compliance_label: true
+      objective: "Docs reflect public API or usage changes."
+      success_criteria: "Docs or samples update with user-facing changes."
+      failure_criteria: "User-facing changes without doc updates."
+
+    - title: "Prefer functional tests over per-issue tests"
+      compliance_label: true
+      objective: "Issue fixes stay in the functional test suite."
+      success_criteria: "Issue fixes add or update tests in test/functional, with an issue reference in the test comment when applicable."
+      failure_criteria: "Issue fixes only add tests under test/github-issues without a clear reason."
+
+    - title: "Consistent Naming Conventions"
+      compliance_label: true
+      objective: "All new variables, functions, and classes must follow the project's established naming standards"
+      success_criteria: "All identifiers follow the established naming patterns (camelCase, PascalCase, snake_case, etc.)"
+      failure_criteria: "Inconsistent or non-standard naming that deviates from project conventions"
+
+    - title: "Remove AI-generated noise"
+      compliance_label: true
+      objective: "Changes should not introduce AI-generated slop."
+      success_criteria: "No extra comments, abnormal defensive checks/try-catch blocks, any-casts to bypass types, or style inconsistent with the file."
+      failure_criteria: "Added AI-like comments, abnormal defensive code, any-casts to bypass type issues, or inconsistent style."

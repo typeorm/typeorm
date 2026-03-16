@@ -4,28 +4,27 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import { Author } from "./entity/Author"
 import { Employee } from "./entity/Employee"
 import { PostItNote } from "./entity/PostItNote"
 import { StickyNote } from "./entity/StickyNote"
 
 describe("table-inheritance > single-table > no-type-column", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return subclass in relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postItRepo = connection.getRepository(PostItNote)
-                const stickyRepo = connection.getRepository(StickyNote)
+            dataSources.map(async (dataSource) => {
+                const postItRepo = dataSource.getRepository(PostItNote)
+                const stickyRepo = dataSource.getRepository(StickyNote)
 
                 // -------------------------------------------------------------------------
                 // Create
@@ -34,12 +33,12 @@ describe("table-inheritance > single-table > no-type-column", () => {
                 const employee = new Employee()
                 employee.name = "alicefoo"
                 employee.employeeName = "Alice Foo"
-                await connection.getRepository(Employee).save(employee)
+                await dataSource.getRepository(Employee).save(employee)
 
                 const author = new Author()
                 author.name = "bobbar"
                 author.authorName = "Bob Bar"
-                await connection.getRepository(Author).save(author)
+                await dataSource.getRepository(Author).save(author)
 
                 await postItRepo.insert({
                     postItNoteLabel: "A post-it note",

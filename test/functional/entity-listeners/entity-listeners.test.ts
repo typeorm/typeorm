@@ -1,4 +1,4 @@
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -6,32 +6,31 @@ import {
 import { Post } from "./entity/Post"
 
 describe("entity-listeners", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                dropSchema: true,
-                schemaCreate: true,
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("beforeUpdate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.title = "post title"
                 post.text = "post text"
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                let loadedPost = await connection
+                let loadedPost = await dataSource
                     .getRepository(Post)
                     .findOneBy({ id: post.id })
                 loadedPost!.title = "post title   "
-                await connection.manager.save(loadedPost)
+                await dataSource.manager.save(loadedPost)
 
-                loadedPost = await connection
+                loadedPost = await dataSource
                     .getRepository(Post)
                     .findOneBy({ id: post.id })
                 loadedPost!.title.should.be.equal("post title")

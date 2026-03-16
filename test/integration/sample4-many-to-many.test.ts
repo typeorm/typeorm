@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../src/data-source/DataSource"
-import { Repository } from "../../src/repository/Repository"
+import type { Repository } from "../../src/repository/Repository"
 import { PostDetails } from "../../sample/sample4-many-to-many/entity/PostDetails"
 import { Post } from "../../sample/sample4-many-to-many/entity/Post"
 import { PostCategory } from "../../sample/sample4-many-to-many/entity/PostCategory"
@@ -72,9 +72,9 @@ describe("many-to-many", function () {
             newPost.details = []
             newPost.details.push(details)
 
-            return postRepository
-                .save(newPost)
-                .then((post) => (savedPost = post as Post))
+            return postRepository.save(newPost).then((post) => {
+                savedPost = post as Post
+            })
         })
 
         it("should return the same post instance after its created", function () {
@@ -206,9 +206,9 @@ describe("many-to-many", function () {
             newPost.categories = []
             newPost.categories.push(category)
 
-            return postRepository
-                .save(newPost)
-                .then((post) => (savedPost = post as Post))
+            return postRepository.save(newPost).then((post) => {
+                savedPost = post as Post
+            })
         })
 
         it("should return the same post instance after its created", function () {
@@ -484,9 +484,9 @@ describe("many-to-many", function () {
             details.posts = []
             details.posts.push(newPost)
 
-            return postDetailsRepository
-                .save(details)
-                .then((details) => (savedDetails = details as PostDetails))
+            return postDetailsRepository.save(details).then((details) => {
+                savedDetails = details as PostDetails
+            })
         })
 
         it("should return the same post instance after its created", function () {

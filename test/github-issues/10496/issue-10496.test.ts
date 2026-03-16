@@ -7,32 +7,30 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 
 import { Base, A, B, C } from "./entity"
 
 describe("github issues > #10496 User-defined index name for Single Table Inheritance discriminator columns", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Base, A, B, C],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: [
-                    "better-sqlite3",
-                    "cockroachdb",
-                    "mariadb",
-                    "mssql",
-                    "mysql",
-                    "oracle",
-                    "postgres",
-                    "spanner",
-                    "sqlite",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Base, A, B, C],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: [
+                "better-sqlite3",
+                "cockroachdb",
+                "mariadb",
+                "mssql",
+                "mysql",
+                "oracle",
+                "postgres",
+                "spanner",
+            ],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
