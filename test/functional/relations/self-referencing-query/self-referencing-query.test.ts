@@ -37,9 +37,9 @@ describe("relations > self-referencing query", () => {
                     relations: { parent: true },
                 })
 
-                expect(loaded).not.to.be.null
-                expect(loaded!.parent).not.to.be.null
-                expect(loaded!.parent!.id).to.equal(parent.id)
+                expect(loaded).to.not.be.null
+                expect(loaded?.parent).to.not.be.null
+                expect(loaded?.parent?.id).to.equal(parent.id)
             }),
         ))
 
@@ -64,11 +64,11 @@ describe("relations > self-referencing query", () => {
                     relations: { parent: { parent: true } },
                 })
 
-                expect(loadedChild).not.to.be.null
-                expect(loadedChild!.parent).not.to.be.null
-                expect(loadedChild!.parent!.id).to.equal(parent.id)
-                expect(loadedChild!.parent!.parent).not.to.be.null
-                expect(loadedChild!.parent!.parent!.id).to.equal(grandparent.id)
+                expect(loadedChild).to.not.be.null
+                expect(loadedChild?.parent).to.not.be.null
+                expect(loadedChild?.parent?.id).to.equal(parent.id)
+                expect(loadedChild?.parent?.parent).to.not.be.null
+                expect(loadedChild?.parent?.parent?.id).to.equal(grandparent.id)
             }),
         ))
 })
