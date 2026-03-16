@@ -3462,9 +3462,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         comment = comment
-            .replace(/\\/g, "\\\\") // MySQL allows escaping characters via backslashes
-            .replace(/'/g, "''")
-            .replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+            .replaceAll("\\", "\\\\") // MySQL allows escaping characters via backslashes
+            .replaceAll("'", "''")
+            .replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return `'${comment}'`
     }
@@ -3516,7 +3516,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
         if (column.enum)
             c += ` (${column.enum
-                .map((value) => "'" + value.replace(/'/g, "''") + "'")
+                .map((value) => "'" + value.replaceAll("'", "''") + "'")
                 .join(", ")})`
 
         const isMariaDb = this.driver.options.type === "mariadb"

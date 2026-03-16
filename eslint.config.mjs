@@ -1,6 +1,7 @@
 import js from "@eslint/js"
 import chaiFriendly from "eslint-plugin-chai-friendly"
 import { jsdoc } from "eslint-plugin-jsdoc"
+import unicorn from "eslint-plugin-unicorn"
 import { defineConfig, globalIgnores } from "eslint/config"
 import globals from "globals"
 import ts from "typescript-eslint"
@@ -30,6 +31,7 @@ export default defineConfig([
         plugins: {
             js,
             ts,
+            unicorn,
         },
         extends: [js.configs.recommended, ...ts.configs.recommendedTypeChecked],
         rules: {
@@ -91,6 +93,9 @@ export default defineConfig([
             "no-regex-spaces": "warn",
             "no-return-assign": ["error", "always"],
             "preserve-caught-error": "warn",
+
+            // unicorn
+            "unicorn/prefer-string-replace-all": "error",
         },
     },
     jsdoc({

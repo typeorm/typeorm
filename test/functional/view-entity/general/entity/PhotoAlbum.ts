@@ -16,7 +16,7 @@ export const lowercase: ValueTransformer = {
 
 export const removeWhitespace: ValueTransformer = {
     to: () => {},
-    from: (databaseValue: string) => databaseValue.replace(/\s/g, ""),
+    from: (databaseValue: string) => databaseValue.replaceAll(/\s/g, ""),
 }
 @ViewEntity({
     expression: (dataSource: DataSource) =>

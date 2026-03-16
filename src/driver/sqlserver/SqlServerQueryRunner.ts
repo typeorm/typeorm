@@ -481,7 +481,7 @@ export class SqlServerQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const escapedDatabase = parsedTableName.database.replace(/"/g, '""')
+        const escapedDatabase = parsedTableName.database.replaceAll('"', '""')
         const sql = `SELECT * FROM "${escapedDatabase}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1`
         const result = await this.query(sql, [
             parsedTableName.tableName,
@@ -509,7 +509,7 @@ export class SqlServerQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const escapedDatabase = parsedTableName.database.replace(/"/g, '""')
+        const escapedDatabase = parsedTableName.database.replaceAll('"', '""')
         const sql = `SELECT * FROM "${escapedDatabase}"."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1 AND "COLUMN_NAME" = @2`
         const result = await this.query(sql, [
             parsedTableName.tableName,
