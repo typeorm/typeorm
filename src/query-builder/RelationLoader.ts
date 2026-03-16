@@ -2,6 +2,7 @@ import type { DataSource } from "../data-source/DataSource"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { RelationMetadata } from "../metadata/RelationMetadata"
+import { DriverUtils } from "../driver/DriverUtils"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 
@@ -101,12 +102,21 @@ export class RelationLoader {
         // For self-referencing relations the entity name already exists
         // as an alias, so we need to generate a unique join alias name.
         const baseName = relation.entityMetadata.name
-        let joinAliasName = baseName
+        let joinAliasName = DriverUtils.buildAlias(
+            this.dataSource.driver,
+            { shorten: true },
+            baseName,
+        )
         let suffix = 1
         while (
             qb.expressionMap.aliases.some(({ name }) => name === joinAliasName)
         ) {
-            joinAliasName = `${baseName}_${suffix++}`
+            joinAliasName = DriverUtils.buildAlias(
+                this.dataSource.driver,
+                { shorten: true },
+                baseName,
+                String(suffix++),
+            )
         }
 
         const columns = relation.entityMetadata.primaryColumns
