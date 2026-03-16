@@ -8,6 +8,8 @@ on:
       - "gulpfile.ts"
       - "package.json"
       - "tsconfig.json"
+      - "tsconfig.browser.json"
+      - "tsconfig.package.json"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

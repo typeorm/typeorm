@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "lib": ["es2023", "dom"],
+    "outDir": "build/package/browser"
+  },
+  "exclude": ["node_modules"],
+  "extends": "./tsconfig.json",
+  "include": ["build/browser/src"]
+}
