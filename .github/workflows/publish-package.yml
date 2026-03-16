@@ -60,7 +60,7 @@ jobs:
               echo 'matrix=[{"target":"release"}]' >> $GITHUB_OUTPUT
               ;;
             schedule)
-              echo 'matrix=[{"ref":"master","tag":"dev"},{"ref":"v0.3","tag":"nightly"}]' >> $GITHUB_OUTPUT
+              echo 'matrix=[{"ref":"master","tag":"dev","node":"24"},{"ref":"v0.3","tag":"nightly","node":"20"}]' >> $GITHUB_OUTPUT
               ;;
             workflow_dispatch)
               TARGET="${{ inputs.target }}"
@@ -69,10 +69,12 @@ jobs:
               else
                 if [ "$TARGET" == "master" ]; then
                   TAG="dev"
+                  NODE="24"
                 else
                   TAG="nightly"
+                  NODE="20"
                 fi
-                echo "matrix=[{\"ref\":\"$TARGET\",\"tag\":\"$TAG\"}]" >> $GITHUB_OUTPUT
+                echo "matrix=[{\"ref\":\"$TARGET\",\"tag\":\"$TAG\",\"node\":\"$NODE\"}]" >> $GITHUB_OUTPUT
               fi
               ;;
           esac
@@ -141,7 +143,7 @@ jobs:
       - uses: actions/setup-node@v6
         if: steps.publishable.outputs.should_publish == 'true'
         with:
-          node-version: 24
+          node-version: ${{ matrix.node || '24' }}
           cache: "pnpm"
 
       - run: npm install -g npm@latest
