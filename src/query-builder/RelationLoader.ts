@@ -93,22 +93,22 @@ export class RelationLoader {
             ? queryBuilder
             : this.dataSource
                   .createQueryBuilder(queryRunner)
-                  .select(relation.propertyName) // category
+                  .select(relation.propertyName)
                   .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
-        let joinAliasName = relation.entityMetadata.name
-        for (let i = 1; ; ++i) {
-            if (
-                qb.expressionMap.aliases.some(
-                    ({ name }) => name === joinAliasName,
-                )
-            ) {
-                joinAliasName = relation.entityMetadata.name + i
-            } else {
-                break
-            }
+
+        // For self-referencing relations the entity name already exists
+        // as an alias, so we need to generate a unique join alias name.
+        const baseName = relation.entityMetadata.name
+        let joinAliasName = baseName
+        let suffix = 1
+        while (
+            qb.expressionMap.aliases.some(({ name }) => name === joinAliasName)
+        ) {
+            joinAliasName = `${baseName}_${suffix++}`
         }
+
         const columns = relation.entityMetadata.primaryColumns
         const joinColumns = relation.isOwning
             ? relation.joinColumns
