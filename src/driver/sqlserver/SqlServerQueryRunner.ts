@@ -481,8 +481,7 @@ export class SqlServerQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const escapedDatabase = parsedTableName.database.replace(/"/g, '""')
-        const sql = `SELECT * FROM "${escapedDatabase}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1`
+        const sql = `SELECT * FROM ${this.driver.escape(parsedTableName.database)}."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1`
         const result = await this.query(sql, [
             parsedTableName.tableName,
             parsedTableName.schema,
@@ -509,8 +508,7 @@ export class SqlServerQueryRunner
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const escapedDatabase = parsedTableName.database.replace(/"/g, '""')
-        const sql = `SELECT * FROM "${escapedDatabase}"."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1 AND "COLUMN_NAME" = @2`
+        const sql = `SELECT * FROM ${this.driver.escape(parsedTableName.database)}."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1 AND "COLUMN_NAME" = @2`
         const result = await this.query(sql, [
             parsedTableName.tableName,
             parsedTableName.schema,
@@ -528,12 +526,11 @@ export class SqlServerQueryRunner
         database: string,
         ifNotExists?: boolean,
     ): Promise<void> {
-        const escapedQuote = database.replace(/'/g, "''")
-        const escapedIdent = database.replace(/"/g, '""')
+        const escapedQuote = database.replaceAll("'", "''")
         const up = ifNotExists
-            ? `IF DB_ID('${escapedQuote}') IS NULL CREATE DATABASE "${escapedIdent}"`
-            : `CREATE DATABASE "${escapedIdent}"`
-        const down = `DROP DATABASE "${escapedIdent}"`
+            ? `IF DB_ID('${escapedQuote}') IS NULL CREATE DATABASE ${this.driver.escape(database)}`
+            : `CREATE DATABASE ${this.driver.escape(database)}`
+        const down = `DROP DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -543,12 +540,11 @@ export class SqlServerQueryRunner
      * @param ifExists
      */
     async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
-        const escapedQuote = database.replace(/'/g, "''")
-        const escapedIdent = database.replace(/"/g, '""')
+        const escapedQuote = database.replaceAll("'", "''")
         const up = ifExists
-            ? `IF DB_ID('${escapedQuote}') IS NOT NULL DROP DATABASE "${escapedIdent}"`
-            : `DROP DATABASE "${escapedIdent}"`
-        const down = `CREATE DATABASE "${escapedIdent}"`
+            ? `IF DB_ID('${escapedQuote}') IS NOT NULL DROP DATABASE ${this.driver.escape(database)}`
+            : `DROP DATABASE ${this.driver.escape(database)}`
+        const down = `CREATE DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -566,34 +562,38 @@ export class SqlServerQueryRunner
         const downQueries: Query[] = []
 
         if (schemaPath.indexOf(".") === -1) {
-            const escapedQuote = schemaPath.replace(/'/g, "''")
-            const escapedIdent = schemaPath.replace(/"/g, '""')
-            const escapedExec = escapedIdent.replace(/'/g, "''")
+            const escapedQuote = schemaPath.replaceAll("'", "''")
+            const escapedExec = this.driver
+                .escape(schemaPath)
+                .replaceAll("'", "''")
             const upQuery = ifNotExists
-                ? `IF SCHEMA_ID('${escapedQuote}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${escapedExec}"') END`
-                : `CREATE SCHEMA "${escapedIdent}"`
+                ? `IF SCHEMA_ID('${escapedQuote}') IS NULL BEGIN EXEC ('CREATE SCHEMA ${escapedExec}') END`
+                : `CREATE SCHEMA ${this.driver.escape(schemaPath)}`
             upQueries.push(new Query(upQuery))
-            downQueries.push(new Query(`DROP SCHEMA "${escapedIdent}"`))
+            downQueries.push(
+                new Query(`DROP SCHEMA ${this.driver.escape(schemaPath)}`),
+            )
         } else {
             const dbName = schemaPath.split(".")[0]
             const schema = schemaPath.split(".")[1]
-            const escapedDbIdent = dbName.replace(/"/g, '""')
-            const escapedSchemaQuote = schema.replace(/'/g, "''")
-            const escapedSchemaIdent = schema.replace(/"/g, '""')
-            const escapedSchemaExec = escapedSchemaIdent.replace(/'/g, "''")
+            const escapedSchemaQuote = schema.replaceAll("'", "''")
+            const escapedSchemaExec = this.driver
+                .escape(schema)
+                .replaceAll("'", "''")
             const currentDB = await this.getCurrentDatabase()
-            const escapedCurrentDB = currentDB.replace(/"/g, '""')
-            upQueries.push(new Query(`USE "${escapedDbIdent}"`))
-            downQueries.push(new Query(`USE "${escapedCurrentDB}"`))
+            upQueries.push(new Query(`USE ${this.driver.escape(dbName)}`))
+            downQueries.push(new Query(`USE ${this.driver.escape(currentDB)}`))
 
             const upQuery = ifNotExists
-                ? `IF SCHEMA_ID('${escapedSchemaQuote}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${escapedSchemaExec}"') END`
-                : `CREATE SCHEMA "${escapedSchemaIdent}"`
+                ? `IF SCHEMA_ID('${escapedSchemaQuote}') IS NULL BEGIN EXEC ('CREATE SCHEMA ${escapedSchemaExec}') END`
+                : `CREATE SCHEMA ${this.driver.escape(schema)}`
             upQueries.push(new Query(upQuery))
-            downQueries.push(new Query(`DROP SCHEMA "${escapedSchemaIdent}"`))
+            downQueries.push(
+                new Query(`DROP SCHEMA ${this.driver.escape(schema)}`),
+            )
 
-            upQueries.push(new Query(`USE "${escapedCurrentDB}"`))
-            downQueries.push(new Query(`USE "${escapedDbIdent}"`))
+            upQueries.push(new Query(`USE ${this.driver.escape(currentDB)}`))
+            downQueries.push(new Query(`USE ${this.driver.escape(dbName)}`))
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -610,34 +610,38 @@ export class SqlServerQueryRunner
         const downQueries: Query[] = []
 
         if (schemaPath.indexOf(".") === -1) {
-            const escapedQuote = schemaPath.replace(/'/g, "''")
-            const escapedIdent = schemaPath.replace(/"/g, '""')
-            const escapedExec = escapedIdent.replace(/'/g, "''")
+            const escapedQuote = schemaPath.replaceAll("'", "''")
+            const escapedExec = this.driver
+                .escape(schemaPath)
+                .replaceAll("'", "''")
             const upQuery = ifExists
-                ? `IF SCHEMA_ID('${escapedQuote}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA "${escapedExec}"') END`
-                : `DROP SCHEMA "${escapedIdent}"`
+                ? `IF SCHEMA_ID('${escapedQuote}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA ${escapedExec}') END`
+                : `DROP SCHEMA ${this.driver.escape(schemaPath)}`
             upQueries.push(new Query(upQuery))
-            downQueries.push(new Query(`CREATE SCHEMA "${escapedIdent}"`))
+            downQueries.push(
+                new Query(`CREATE SCHEMA ${this.driver.escape(schemaPath)}`),
+            )
         } else {
             const dbName = schemaPath.split(".")[0]
             const schema = schemaPath.split(".")[1]
-            const escapedDbIdent = dbName.replace(/"/g, '""')
-            const escapedSchemaQuote = schema.replace(/'/g, "''")
-            const escapedSchemaIdent = schema.replace(/"/g, '""')
-            const escapedSchemaExec = escapedSchemaIdent.replace(/'/g, "''")
+            const escapedSchemaQuote = schema.replaceAll("'", "''")
+            const escapedSchemaExec = this.driver
+                .escape(schema)
+                .replaceAll("'", "''")
             const currentDB = await this.getCurrentDatabase()
-            const escapedCurrentDB = currentDB.replace(/"/g, '""')
-            upQueries.push(new Query(`USE "${escapedDbIdent}"`))
-            downQueries.push(new Query(`USE "${escapedCurrentDB}"`))
+            upQueries.push(new Query(`USE ${this.driver.escape(dbName)}`))
+            downQueries.push(new Query(`USE ${this.driver.escape(currentDB)}`))
 
             const upQuery = ifExists
-                ? `IF SCHEMA_ID('${escapedSchemaQuote}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA "${escapedSchemaExec}"') END`
-                : `DROP SCHEMA "${escapedSchemaIdent}"`
+                ? `IF SCHEMA_ID('${escapedSchemaQuote}') IS NOT NULL BEGIN EXEC ('DROP SCHEMA ${escapedSchemaExec}') END`
+                : `DROP SCHEMA ${this.driver.escape(schema)}`
             upQueries.push(new Query(upQuery))
-            downQueries.push(new Query(`CREATE SCHEMA "${escapedSchemaIdent}"`))
+            downQueries.push(
+                new Query(`CREATE SCHEMA ${this.driver.escape(schema)}`),
+            )
 
-            upQueries.push(new Query(`USE "${escapedCurrentDB}"`))
-            downQueries.push(new Query(`USE "${escapedDbIdent}"`))
+            upQueries.push(new Query(`USE ${this.driver.escape(currentDB)}`))
+            downQueries.push(new Query(`USE ${this.driver.escape(dbName)}`))
         }
 
         await this.executeQueries(upQueries, downQueries)

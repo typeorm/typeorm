@@ -420,11 +420,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         database: string,
         ifNotExists?: boolean,
     ): Promise<void> {
-        const escaped = database.replace(/`/g, "``")
         const up = ifNotExists
-            ? `CREATE DATABASE IF NOT EXISTS \`${escaped}\``
-            : `CREATE DATABASE \`${escaped}\``
-        const down = `DROP DATABASE \`${escaped}\``
+            ? `CREATE DATABASE IF NOT EXISTS ${this.driver.escape(database)}`
+            : `CREATE DATABASE ${this.driver.escape(database)}`
+        const down = `DROP DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -434,11 +433,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param ifExists
      */
     async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
-        const escaped = database.replace(/`/g, "``")
         const up = ifExists
-            ? `DROP DATABASE IF EXISTS \`${escaped}\``
-            : `DROP DATABASE \`${escaped}\``
-        const down = `CREATE DATABASE \`${escaped}\``
+            ? `DROP DATABASE IF EXISTS ${this.driver.escape(database)}`
+            : `DROP DATABASE ${this.driver.escape(database)}`
+        const down = `CREATE DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 

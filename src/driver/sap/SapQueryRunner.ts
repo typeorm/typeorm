@@ -564,7 +564,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
-        const escaped = schema.replace(/"/g, '""')
+        const escapedSchema = this.driver.escape(schema)
 
         let exist = false
         if (ifNotExists) {
@@ -575,8 +575,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             exist = !!result.length
         }
         if (!ifNotExists || (ifNotExists && !exist)) {
-            const up = `CREATE SCHEMA "${escaped}"`
-            const down = `DROP SCHEMA "${escaped}" CASCADE`
+            const up = `CREATE SCHEMA ${escapedSchema}`
+            const down = `DROP SCHEMA ${escapedSchema} CASCADE`
             await this.executeQueries(new Query(up), new Query(down))
         }
     }
@@ -596,7 +596,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
-        const escaped = schema.replace(/"/g, '""')
+        const escapedSchema = this.driver.escape(schema)
         let exist = false
         if (ifExists) {
             const result = await this.query(
@@ -606,8 +606,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             exist = !!result.length
         }
         if (!ifExists || (ifExists && exist)) {
-            const up = `DROP SCHEMA "${escaped}" ${isCascade ? "CASCADE" : ""}`
-            const down = `CREATE SCHEMA "${escaped}"`
+            const up = `DROP SCHEMA ${escapedSchema} ${isCascade ? "CASCADE" : ""}`
+            const down = `CREATE SCHEMA ${escapedSchema}`
             await this.executeQueries(new Query(up), new Query(down))
         }
     }

@@ -550,11 +550,10 @@ export class CockroachQueryRunner
         database: string,
         ifNotExists?: boolean,
     ): Promise<void> {
-        const escaped = database.replace(/"/g, '""')
         const up = `CREATE DATABASE ${
             ifNotExists ? "IF NOT EXISTS " : ""
-        } "${escaped}"`
-        const down = `DROP DATABASE "${escaped}"`
+        } ${this.driver.escape(database)}`
+        const down = `DROP DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -564,9 +563,8 @@ export class CockroachQueryRunner
      * @param ifExists
      */
     async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
-        const escaped = database.replace(/"/g, '""')
-        const up = `DROP DATABASE ${ifExists ? "IF EXISTS " : ""} "${escaped}"`
-        const down = `CREATE DATABASE "${escaped}"`
+        const up = `DROP DATABASE ${ifExists ? "IF EXISTS " : ""} ${this.driver.escape(database)}`
+        const down = `CREATE DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -583,12 +581,12 @@ export class CockroachQueryRunner
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
-        const escaped = schema.replace(/"/g, '""')
+        const escapedSchema = this.driver.escape(schema)
 
         const up = ifNotExists
-            ? `CREATE SCHEMA IF NOT EXISTS "${escaped}"`
-            : `CREATE SCHEMA "${escaped}"`
-        const down = `DROP SCHEMA "${escaped}" CASCADE`
+            ? `CREATE SCHEMA IF NOT EXISTS ${escapedSchema}`
+            : `CREATE SCHEMA ${escapedSchema}`
+        const down = `DROP SCHEMA ${escapedSchema} CASCADE`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -607,12 +605,12 @@ export class CockroachQueryRunner
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
-        const escaped = schema.replace(/"/g, '""')
+        const escapedSchema = this.driver.escape(schema)
 
         const up = ifExists
-            ? `DROP SCHEMA IF EXISTS "${escaped}" ${isCascade ? "CASCADE" : ""}`
-            : `DROP SCHEMA "${escaped}" ${isCascade ? "CASCADE" : ""}`
-        const down = `CREATE SCHEMA "${escaped}"`
+            ? `DROP SCHEMA IF EXISTS ${escapedSchema} ${isCascade ? "CASCADE" : ""}`
+            : `DROP SCHEMA ${escapedSchema} ${isCascade ? "CASCADE" : ""}`
+        const down = `CREATE SCHEMA ${escapedSchema}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 

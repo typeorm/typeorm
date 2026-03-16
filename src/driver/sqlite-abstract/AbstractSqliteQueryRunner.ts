@@ -2420,7 +2420,7 @@ export abstract class AbstractSqliteQueryRunner
         return tableName
             .replace(/^\.+|\.+$/g, "")
             .split(".")
-            .map((i) => (disableEscape ? i : `"${i.replace(/"/g, '""')}"`))
+            .map((i) => (disableEscape ? i : this.driver.escape(i)))
             .join(".")
     }
 
