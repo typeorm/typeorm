@@ -4,6 +4,7 @@ import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQuer
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import type { BetterSqlite3Driver } from "./BetterSqlite3Driver"
 import { QueryResult } from "../../query-runner/QueryResult"
+import type { QueryOptions } from "../../query-runner/QueryOptions"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
@@ -79,12 +80,17 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
      * @param query
      * @param parameters
      * @param useStructuredResult
+     * @param optionsOrUseStructuredResult
      */
     async query(
         query: string,
         parameters: any[] = [],
-        useStructuredResult = false,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<any> {
+        const useStructuredResult =
+            typeof optionsOrUseStructuredResult === "boolean"
+                ? optionsOrUseStructuredResult
+                : optionsOrUseStructuredResult?.useStructuredResult === true
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const connection = this.driver.connection

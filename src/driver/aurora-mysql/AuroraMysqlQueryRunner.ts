@@ -5,6 +5,7 @@ import { TransactionNotStartedError } from "../../error/TransactionNotStartedErr
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
+import type { QueryOptions } from "../../query-runner/QueryOptions"
 import type { QueryRunner } from "../../query-runner/QueryRunner"
 import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -158,12 +159,17 @@ export class AuroraMysqlQueryRunner
      * @param query
      * @param parameters
      * @param useStructuredResult
+     * @param optionsOrUseStructuredResult
      */
     async query(
         query: string,
         parameters?: any[],
-        useStructuredResult = false,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<any> {
+        const useStructuredResult =
+            typeof optionsOrUseStructuredResult === "boolean"
+                ? optionsOrUseStructuredResult
+                : optionsOrUseStructuredResult?.useStructuredResult === true
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const raw = await this.client.query(query, parameters)

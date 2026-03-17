@@ -36,6 +36,7 @@ import type { RelationMetadata } from "../metadata/RelationMetadata"
 import type { FindOptionsOrder } from "../find-options/FindOptionsOrder"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
+import type { QueryOptions } from "../query-runner/QueryOptions"
 import type { FindOptionsRelations } from "../find-options/FindOptionsRelations"
 import { OrmUtils } from "../util/OrmUtils"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
@@ -1639,8 +1640,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Gets all raw results returned by execution of generated query builder sql.
+     * @param options
      */
-    async getRawMany<T = any>(): Promise<T[]> {
+    async getRawMany<T = any>(options?: QueryOptions): Promise<T[]> {
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError()
 
@@ -1657,14 +1659,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 transactionStartedByUs = true
             }
 
-            const results = await this.loadRawResults(queryRunner)
+            const results = await this.loadRawResults(
+                queryRunner,
+                options?.useStructuredResult === true,
+            )
 
             // close transaction if we started it
             if (transactionStartedByUs) {
                 await queryRunner.commitTransaction()
             }
 
-            return results
+            if (options?.useStructuredResult) {
+                return results // QueryResult
+            }
+            return results.records
         } catch (error) {
             // rollback transaction if we started it
             if (transactionStartedByUs) {
@@ -3129,7 +3137,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .take(undefined)
             .select(countSql, "cnt")
             .setOption("disable-global-order")
-            .loadRawResults(queryRunner)
+            .loadRawResults(queryRunner, false)
 
         if (!results || !results[0] || !results[0]["cnt"]) return 0
 
@@ -3145,7 +3153,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .select("1", "row_exists")
             .whereExists(this)
             .limit(1)
-            .loadRawResults(queryRunner)
+            .loadRawResults(queryRunner, false)
 
         return results.length > 0
     }
@@ -3625,10 +3633,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     .setParameters(parameters)
                 secondQuery.expressionMap.limit = undefined
                 secondQuery.expressionMap.offset = undefined
-                rawResults = await secondQuery.loadRawResults(queryRunner)
+                rawResults = await secondQuery.loadRawResults(
+                    queryRunner,
+                    false,
+                )
             }
         } else {
-            rawResults = await this.loadRawResults(queryRunner)
+            rawResults = await this.loadRawResults(queryRunner, false)
         }
 
         if (rawResults.length > 0) {
@@ -3835,8 +3846,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Loads raw results from the database.
      * @param queryRunner
+     * @param useStructuredResult
      */
-    protected async loadRawResults(queryRunner: QueryRunner) {
+    protected async loadRawResults(
+        queryRunner: QueryRunner,
+        useStructuredResult: boolean,
+    ) {
         const [sql, parameters] = this.getQueryAndParameters()
         const queryId =
             sql +
@@ -3916,7 +3931,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         }
 
-        return results.records
+        return useStructuredResult ? results : results.records
     }
 
     /**

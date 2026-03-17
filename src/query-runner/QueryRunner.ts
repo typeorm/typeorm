@@ -15,6 +15,7 @@ import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import type { TableExclusion } from "../schema-builder/table/TableExclusion"
 import type { QueryResult } from "./QueryResult"
 import type { ReplicationMode } from "../driver/types/ReplicationMode"
+import type { QueryOptions } from "./QueryOptions"
 
 /**
  * Runs queries on a single database connection.
@@ -103,17 +104,29 @@ export interface QueryRunner extends AsyncDisposable {
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    query(
+    query<T = any>(
         query: string,
         parameters: any[] | undefined,
-        useStructuredResult: true,
-    ): Promise<QueryResult>
+        options: QueryOptions & { useStructuredResult: true },
+    ): Promise<QueryResult<T>>
 
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    query(query: string, parameters?: any[]): Promise<any>
+    query<T = any>(
+        query: string,
+        parameters?: any[],
+        options?: QueryOptions,
+    ): Promise<T>
 
+    /**
+     * @deprecated Pass a QueryOptions object instead: query(sql, params, { useStructuredResult: true })
+     */
+    query<T = any>(
+        query: string,
+        parameters: any[] | undefined,
+        useStructuredResult: true,
+    ): Promise<QueryResult<T>>
     /**
      * Tagged template function that executes raw SQL query and returns raw database results.
      * Template expressions are automatically transformed into database parameters.

@@ -28,6 +28,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { PostgresDriver } from "./PostgresDriver"
+import type { QueryOptions } from "../../query-runner/QueryOptions"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -240,12 +241,17 @@ export class PostgresQueryRunner
      * @param query
      * @param parameters
      * @param useStructuredResult
+     * @param optionsOrUseStructuredResult
      */
     async query(
         query: string,
         parameters?: any[],
-        useStructuredResult: boolean = false,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<any> {
+        const useStructuredResult =
+            typeof optionsOrUseStructuredResult === "boolean"
+                ? optionsOrUseStructuredResult
+                : optionsOrUseStructuredResult?.useStructuredResult === true
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()

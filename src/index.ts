@@ -158,6 +158,7 @@ export type {
 export type { ReturningOption } from "./query-builder/ReturningOption"
 export { QueryResult } from "./query-runner/QueryResult"
 export type { QueryRunner } from "./query-runner/QueryRunner"
+export type { QueryOptions } from "./query-runner/QueryOptions"
 export { MongoEntityManager } from "./entity-manager/MongoEntityManager"
 export { Migration } from "./migration/Migration"
 export { MigrationExecutor } from "./migration/MigrationExecutor"

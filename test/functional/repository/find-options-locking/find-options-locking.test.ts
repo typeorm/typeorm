@@ -130,7 +130,7 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (
+                    ;(entityManager.queryRunner!.query as any) = (
                         ...args: Parameters<QueryRunner["query"]>
                     ) => {
                         executedSql.push(args[0])
@@ -182,7 +182,7 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (
+                    ;(entityManager.queryRunner!.query as any) = (
                         ...args: Parameters<QueryRunner["query"]>
                     ) => {
                         executedSql.push(args[0])
@@ -214,7 +214,7 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (
+                    ;(entityManager.queryRunner!.query as any) = (
                         ...args: Parameters<QueryRunner["query"]>
                     ) => {
                         executedSql.push(args[0])
@@ -256,7 +256,7 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (
+                    ;(entityManager.queryRunner!.query as any) = (
                         ...args: Parameters<QueryRunner["query"]>
                     ) => {
                         executedSql.push(args[0])
@@ -309,7 +309,7 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (
+                    ;(entityManager.queryRunner!.query as any) = (
                         ...args: Parameters<QueryRunner["query"]>
                     ) => {
                         executedSql.push(args[0])
@@ -347,7 +347,7 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (
+                    ;(entityManager.queryRunner!.query as any) = (
                         ...args: Parameters<QueryRunner["query"]>
                     ) => {
                         executedSql.push(args[0])
@@ -380,7 +380,7 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (
+                    ;(entityManager.queryRunner!.query as any) = (
                         ...args: Parameters<QueryRunner["query"]>
                     ) => {
                         executedSql.push(args[0])

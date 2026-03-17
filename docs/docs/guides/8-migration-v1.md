@@ -196,6 +196,22 @@ new DataSource({
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
 
+## MS SQL Server
+
+### `useStructuredResult` boolean replaced with `QueryOptions` object
+
+The `.query()` method now accepts a `QueryOptions` object instead of a plain boolean for structured results:
+
+```typescript
+// Before
+const result = await dataSource.query("SELECT 1", [], undefined, true)
+
+// After
+const result = await dataSource.query("SELECT 1", [], undefined, {
+    useStructuredResult: true,
+})
+```
+
 ## Hashing
 
 Historically TypeORM used a non-standard SHA-1 implementation for hashing. This has been changed to use the built-in `crypto` module from Node.js.

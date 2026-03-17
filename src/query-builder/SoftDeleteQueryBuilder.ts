@@ -104,7 +104,9 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
             // execute update query
             const [sql, parameters] = this.getQueryAndParameters()
 
-            const queryResult = await queryRunner.query(sql, parameters, true)
+            const queryResult = await queryRunner.query(sql, parameters, {
+                useStructuredResult: true,
+            })
             const updateResult = UpdateResult.from(queryResult)
 
             // if we are updating entities and entity updation is enabled we must update some of entity columns (like version, update date, etc.)

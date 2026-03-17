@@ -41,6 +41,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import type { QueryOptions } from "../query-runner/QueryOptions"
 
 registerQueryBuilders()
 
@@ -483,16 +484,41 @@ export class DataSource {
      * @param query
      * @param parameters
      * @param queryRunner
+     * @param queryRunnerOrOptions
+     * @param queryOptions
      * @returns a raw response from the database client
      * @see {@link https://typeorm.io/data-source-api | Official docs} for examples.
      */
     async query<T = any>(
         query: string,
         parameters?: any[],
-        queryRunner?: QueryRunner,
+        queryRunnerOrOptions?: QueryRunner | QueryOptions | boolean,
+        queryOptions?: QueryOptions | boolean,
     ): Promise<T> {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Queries aren't supported by MongoDB.`)
+
+        let queryRunner: QueryRunner | undefined
+        let options: QueryOptions | undefined
+
+        if (queryRunnerOrOptions) {
+            if (typeof queryRunnerOrOptions === "boolean") {
+                options = { useStructuredResult: queryRunnerOrOptions }
+            } else if (
+                (queryRunnerOrOptions as QueryRunner).query !== undefined
+            ) {
+                queryRunner = queryRunnerOrOptions as QueryRunner
+            } else {
+                options = queryRunnerOrOptions as QueryOptions
+            }
+        }
+        if (queryOptions) {
+            if (typeof queryOptions === "boolean") {
+                options = { useStructuredResult: queryOptions }
+            } else {
+                options = queryOptions as QueryOptions
+            }
+        }
 
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
@@ -500,7 +526,11 @@ export class DataSource {
         const usedQueryRunner = queryRunner || this.createQueryRunner()
 
         try {
-            return await usedQueryRunner.query(query, parameters) // await is needed here because we are using finally
+            return (await usedQueryRunner.query(
+                query,
+                parameters,
+                options,
+            )) as T
         } finally {
             if (!queryRunner) await usedQueryRunner.release()
         }

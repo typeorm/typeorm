@@ -65,6 +65,26 @@ const rawData = await manager.query(
 )
 ```
 
+Getting structured results using **QueryOptions**
+
+By default the third argument is omitted and the driver returns a raw value (usually an array of rows for a SELECT, or a primitive / driver object for writes). If you need a normalized `QueryResult` with metadata (affected row count, both raw and normalized records) pass a `QueryOptions` object:
+
+`QueryOptions` object:
+
+```typescript
+interface QueryOptions {
+    useStructuredResult?: boolean
+}
+```
+
+```typescript
+const result = await manager.query(
+    "SELECT * FROM USERS WHERE name = ? and age = ?",
+    ["John", 24],
+    { useStructuredResult: true },
+)
+```
+
 - `sql` - Executes a raw SQL query using template literals.
 
 ```typescript
