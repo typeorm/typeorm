@@ -24,6 +24,7 @@ import { Raw } from "../../../../src/find-options/operator/Raw"
 import { PersonAR } from "./entity/PersonAR"
 import { expect } from "chai"
 import { Comment } from "./entity/Comment"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("repository > find options > operators", () => {
     let dataSources: DataSource[]
@@ -899,7 +900,12 @@ describe("repository > find options > operators", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Comment],
-                enabledDrivers: ["postgres", "cockroachdb"],
+                enabledDrivers: [
+                    "postgres",
+                    "cockroachdb",
+                    "better-sqlite3",
+                    "sqljs",
+                ],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
@@ -908,6 +914,8 @@ describe("repository > find options > operators", () => {
         it("should work with @> (contains) operator", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
+                    // SQLite does not support @> operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -973,6 +981,9 @@ describe("repository > find options > operators", () => {
         it("should work with <@ (contained by) operator", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
+                    // SQLite does not support <@ operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -1037,6 +1048,9 @@ describe("repository > find options > operators", () => {
         it("should work with ?| (any keys exist) operator", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
+                    // SQLite does not support ?| operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -1069,6 +1083,9 @@ describe("repository > find options > operators", () => {
         it("should work with ?& (all keys exist) operator", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
+                    // SQLite does not support ?& operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -1220,6 +1237,9 @@ describe("repository > find options > operators", () => {
         it("should work with #> (get object field as JSON) operator", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
+                    // SQLite does not support #> operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -1264,6 +1284,9 @@ describe("repository > find options > operators", () => {
         it("should work with #>> (get object field as text) operator", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
+                    // SQLite does not support #>> operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = { likesDislikes: [300, 20] }

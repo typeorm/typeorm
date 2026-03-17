@@ -350,7 +350,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\` WHERE \`SCHEMA_NAME\` = '${database}'`,
+            `SELECT * FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\` WHERE \`SCHEMA_NAME\` = ?`,
+            [database],
         )
         return result.length ? true : false
     }
@@ -385,8 +386,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = ? AND \`TABLE_NAME\` = ?`
+        const result = await this.query(sql, [
+            parsedTableName.database,
+            parsedTableName.tableName,
+        ])
         return result.length ? true : false
     }
 
@@ -403,8 +407,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const columnName = InstanceChecker.isTableColumn(column)
             ? column.name
             : column
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}' AND \`COLUMN_NAME\` = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = ? AND \`TABLE_NAME\` = ? AND \`COLUMN_NAME\` = ?`
+        const result = await this.query(sql, [
+            parsedTableName.database,
+            parsedTableName.tableName,
+            columnName,
+        ])
         return result.length ? true : false
     }
 
@@ -2493,20 +2501,24 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
-            const dropViewQueries: ObjectLiteral[] =
-                await this.query(selectViewDropsQuery)
+            const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = ?`
+            const dropViewQueries: ObjectLiteral[] = await this.query(
+                selectViewDropsQuery,
+                [dbName],
+            )
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
 
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = ?`
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
 
             await this.query(disableForeignKeysCheckQuery)
-            const dropQueries: ObjectLiteral[] =
-                await this.query(dropTablesQuery)
+            const dropQueries: ObjectLiteral[] = await this.query(
+                dropTablesQuery,
+                [dbName],
+            )
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
             )

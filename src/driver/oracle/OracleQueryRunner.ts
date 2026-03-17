@@ -429,8 +429,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const { tableName } = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = '${tableName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = :1`
+        const result = await this.query(sql, [tableName])
         return result.length ? true : false
     }
 
@@ -444,8 +444,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         columnName: string,
     ): Promise<boolean> {
         const { tableName } = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = '${tableName}' AND "COLUMN_NAME" = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = :1 AND "COLUMN_NAME" = :2`
+        const result = await this.query(sql, [tableName, columnName])
         return result.length ? true : false
     }
 
