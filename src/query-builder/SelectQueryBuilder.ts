@@ -2366,10 +2366,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             mappedTrees: Record<string, JoinAttributeTree> // flattened lookup join attribute table
         }>(
             ({ trees, mappedTrees }, joinAttribute) => {
-                const parentAlias = joinAttribute.parentAlias || "parentless"
                 const destinationTableAlias = joinAttribute.alias.name
 
-                const existingTree = mappedTrees[parentAlias]
+                const existingTree = joinAttribute.parentAlias
+                    ? mappedTrees[joinAttribute.parentAlias]
+                    : undefined
                 const joinAttributeTree: JoinAttributeTree = {
                     children: [],
                     joinAttribute,
