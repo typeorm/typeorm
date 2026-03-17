@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "inlineSources": true,
     "outDir": "build/package"
   },
   "extends": "./tsconfig.json",

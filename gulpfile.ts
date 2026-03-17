@@ -37,15 +37,24 @@ async function browserCompile() {
     await execAsync("tsc -p tsconfig.browser.json")
 }
 
+function browserCopyShims() {
+    return gulp
+        .src([
+            "./extra/typeorm-model-shim.js",
+            "./extra/typeorm-class-transformer-shim.js",
+        ])
+        .pipe(gulp.dest("./build/package"))
+}
+
 // -------------------------------------------------------------------------
 // Packaging for Node.js
 // -------------------------------------------------------------------------
 
-async function packageCompile() {
-    await execAsync("tsc -p tsconfig.package.json")
+async function nodeCompile() {
+    await execAsync("tsc -p tsconfig.node.json")
 }
 
-async function packageCreateEsmIndex() {
+async function nodeCreateEsmIndex() {
     const buildDir = "./build/package"
     const cjsIndex = require(`${buildDir}/index.js`)
     const cjsKeys = Object.keys(cjsIndex).filter(
@@ -65,7 +74,7 @@ async function packageCreateEsmIndex() {
 // Packaging
 // -------------------------------------------------------------------------
 
-async function packageCopyPackageFile() {
+async function copyPackageFile() {
     const pkg = JSON.parse(await fs.readFile("./package.json", "utf8"))
 
     delete pkg.devDependencies
@@ -80,13 +89,8 @@ async function packageCopyPackageFile() {
     )
 }
 
-function packageCopyShims() {
-    return gulp
-        .src([
-            "./extra/typeorm-model-shim.js",
-            "./extra/typeorm-class-transformer-shim.js",
-        ])
-        .pipe(gulp.dest("./build/package"))
+function copyReadme() {
+    return gulp.src("./README.md").pipe(gulp.dest("./build/package"))
 }
 
 // -------------------------------------------------------------------------
@@ -98,9 +102,13 @@ gulp.task(
     gulp.series(
         () => fs.rm("./build", { recursive: true, force: true }),
         gulp.parallel(browserCopySources, browserCopyTemplates),
-        gulp.parallel(packageCompile, browserCompile),
-        packageCreateEsmIndex,
-        gulp.parallel(packageCopyPackageFile, packageCopyShims),
+        gulp.parallel(nodeCompile, browserCompile),
+        gulp.parallel(
+            nodeCreateEsmIndex,
+            copyPackageFile,
+            copyReadme,
+            browserCopyShims,
+        ),
     ),
 )
 
