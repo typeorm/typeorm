@@ -1,17 +1,12 @@
 #!/usr/bin/env node
 
-import { colors } from "./cli/colors"
+import { fail } from "./cli/error"
 import { parseArgs } from "./cli/parse-args"
 import { printUsage } from "./cli/print-usage"
 import { listTransforms } from "./cli/list-transforms"
 import { resolveTransforms } from "./cli/resolve-transforms"
 import { runTransforms } from "./cli/run"
 import { versions } from "./transforms"
-
-const fail = (message: string): never => {
-    console.error(colors.red(`Error: ${message}\n`))
-    process.exit(1)
-}
 
 const main = async () => {
     const args = process.argv.slice(2)
@@ -24,15 +19,11 @@ const main = async () => {
     const options = parseArgs(args)
 
     if (!options.version) {
-        fail("no version specified")
+        fail("no version specified", printUsage)
     }
 
     if (!versions[options.version]) {
-        console.error(
-            colors.red(`Error: unknown version "${options.version}"\n`),
-        )
-        printUsage()
-        process.exit(1)
+        fail(`unknown version "${options.version}"`, printUsage)
     }
 
     if (options.list) {
@@ -41,9 +32,7 @@ const main = async () => {
     }
 
     if (options.paths.length === 0) {
-        console.error(colors.red("Error: no paths specified\n"))
-        printUsage()
-        process.exit(1)
+        fail("no paths specified", printUsage)
     }
 
     const transforms = resolveTransforms(options.version, options.transform)
