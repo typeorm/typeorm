@@ -20,7 +20,7 @@ export const description = "Migrate from v0.3.x to v1.0"
  * Ordered list of v1 transforms. Order matters — connection renames
  * must run first so subsequent transforms see DataSource, not Connection.
  */
-export const transforms = [
+const transforms = [
     renameConnectionToDataSource,
     replaceGlobalFunctions,
     renameFindByIds,
