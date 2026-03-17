@@ -2,8 +2,15 @@ import { expect } from "chai"
 import fs from "fs"
 import path from "path"
 import { applyTransform } from "jscodeshift/src/testUtils"
+import prettier from "prettier"
 
 const fixturesDir = path.join(__dirname, "__testfixtures__")
+
+const format = async (source: string) =>
+    prettier.format(source, {
+        parser: "typescript",
+        ...(await prettier.resolveConfig(fixturesDir)),
+    })
 
 function getFixturePairs(): { name: string; input: string; output: string }[] {
     const files = fs.readdirSync(fixturesDir)
@@ -24,7 +31,7 @@ describe("v1 transforms", () => {
     const pairs = getFixturePairs()
 
     for (const { name, input, output } of pairs) {
-        it(`${name}`, () => {
+        it(`${name}`, async () => {
             const transformPath = path.join(
                 __dirname,
                 "../../../src/transforms/v1",
@@ -42,10 +49,8 @@ describe("v1 transforms", () => {
                 { parser: "tsx" },
             )
 
-            const normalize = (s: string) =>
-                s.trim().replace(/\s+/g, " ").replace(/,\s*}/g, " }")
-
-            expect(normalize(result)).to.equal(normalize(output))
+            const formatted = await format(result)
+            expect(formatted.trim()).to.equal(output.trim())
         })
     }
 })
