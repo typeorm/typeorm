@@ -879,10 +879,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         if (
+            // Cloud Spanner does not support RENAME COLUMN; name changes require recreation
             oldColumn.name !== newColumn.name ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -894,9 +892,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable = table.clone()
         } else {
             if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                oldColumn.isArray !== newColumn.isArray ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
+                // Use ALTER COLUMN ... TYPE to preserve data instead of DROP + ADD.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${

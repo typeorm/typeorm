@@ -1299,21 +1299,84 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // Stored generated column changes require full recreation
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                newColumn.isArray !== oldColumn.isArray
+            ) {
+                // Use ALTER COLUMN ... TYPE to preserve data instead of DROP + ADD.
+                // Drop the default first if type is changing to avoid cast failures.
+                if (
+                    oldColumn.type !== newColumn.type &&
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${oldColumn.default}`,
+                        ),
+                    )
+                }
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${oldColumn.name}"::${this.driver.createFullType(newColumn)}`
+                                : ""
+                        }`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${oldColumn.name}"::${this.driver.createFullType(oldColumn)}`
+                                : ""
+                        }`,
+                    ),
+                )
+
+                // Restore default after type change
+                if (
+                    oldColumn.type !== newColumn.type &&
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                }
+            }
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(

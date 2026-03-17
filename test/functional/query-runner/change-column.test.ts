@@ -268,4 +268,138 @@ describe("query runner > change column", () => {
                 )
             }),
         ))
+
+    it("should preserve data when changing column type or length (issue #3357)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Spanner does not support column type changes in place
+                if (dataSource.driver.options.type === "spanner") return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                // Create a fresh test table with a varchar column
+                await queryRunner.createTable(
+                    {
+                        name: "issue_3357",
+                        columns: [
+                            {
+                                name: "id",
+                                type: "int",
+                                isPrimary: true,
+                            },
+                            {
+                                name: "description",
+                                type: "varchar",
+                                length: "50",
+                                isNullable: false,
+                            },
+                        ],
+                    } as any,
+                    true,
+                )
+
+                // Insert a row to verify data is preserved after type change
+                await queryRunner.query(
+                    `INSERT INTO "issue_3357" ("id", "description") VALUES (1, 'hello')`,
+                )
+
+                let table = await queryRunner.getTable("issue_3357")
+                const originalColumn = table!.findColumnByName("description")!
+
+                // Change the column length: varchar(50) → varchar(100)
+                const widenedColumn = originalColumn.clone()
+                widenedColumn.length = "100"
+                await queryRunner.changeColumn(
+                    table!,
+                    originalColumn,
+                    widenedColumn,
+                )
+
+                // Schema should reflect the new length
+                table = await queryRunner.getTable("issue_3357")
+                if (!DriverUtils.isSQLiteFamily(dataSource.driver)) {
+                    table!
+                        .findColumnByName("description")!
+                        .length!.should.be.equal("100")
+                }
+
+                // Data must be preserved — the ALTER must not have dropped the column
+                const rows = await queryRunner.query(
+                    `SELECT * FROM "issue_3357" WHERE "id" = 1`,
+                )
+                rows.length.should.be.equal(1)
+                rows[0].description.should.be.equal("hello")
+
+                await queryRunner.dropTable("issue_3357")
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should preserve data when renaming a column and changing its type simultaneously (issue #3357)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Only MySQL-family supports atomic rename+type in one CHANGE statement;
+                // other drivers handle them as sequential safe operations.
+                // Spanner cannot rename columns without recreation.
+                if (dataSource.driver.options.type === "spanner") return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                await queryRunner.createTable(
+                    {
+                        name: "issue_3357_rename",
+                        columns: [
+                            {
+                                name: "id",
+                                type: "int",
+                                isPrimary: true,
+                            },
+                            {
+                                name: "old_col",
+                                type: "varchar",
+                                length: "50",
+                                isNullable: false,
+                            },
+                        ],
+                    } as any,
+                    true,
+                )
+
+                await queryRunner.query(
+                    `INSERT INTO "issue_3357_rename" ("id", "old_col") VALUES (1, 'world')`,
+                )
+
+                let table = await queryRunner.getTable("issue_3357_rename")
+                const originalColumn = table!.findColumnByName("old_col")!
+
+                // Rename AND widen in one operation
+                const renamedColumn = originalColumn.clone()
+                renamedColumn.name = "new_col"
+                renamedColumn.length = "200"
+                await queryRunner.changeColumn(
+                    table!,
+                    originalColumn,
+                    renamedColumn,
+                )
+
+                table = await queryRunner.getTable("issue_3357_rename")
+                expect(table!.findColumnByName("old_col")).to.be.undefined
+                expect(table!.findColumnByName("new_col")).to.not.be.undefined
+                if (!DriverUtils.isSQLiteFamily(dataSource.driver)) {
+                    table!
+                        .findColumnByName("new_col")!
+                        .length!.should.be.equal("200")
+                }
+
+                // Data must be preserved
+                const rows = await queryRunner.query(
+                    `SELECT * FROM "issue_3357_rename" WHERE "id" = 1`,
+                )
+                rows.length.should.be.equal(1)
+                rows[0].new_col.should.be.equal("world")
+
+                await queryRunner.dropTable("issue_3357_rename")
+                await queryRunner.release()
+            }),
+        ))
 })

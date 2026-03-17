@@ -1110,8 +1110,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1125,14 +1123,48 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            const typeOrLengthChanged =
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+
+            if (typeOrLengthChanged && newColumn.name === oldColumn.name) {
+                // Type or length changed without rename: use CHANGE to preserve data.
+                // Using CHANGE col col new_def is equivalent to MODIFY and handles all
+                // column attributes in a single statement.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            newColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            oldColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+            }
+
             if (newColumn.name !== oldColumn.name) {
-                // We don't change any column properties, just rename it.
+                // Column rename, possibly combined with a type/length change.
+                // A single CHANGE statement handles both atomically, avoiding the
+                // revert bug that occurs when two separate statements are used.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
                             oldColumn.name
                         }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
-                            oldColumn,
+                            newColumn,
                             true,
                             true,
                         )}`,

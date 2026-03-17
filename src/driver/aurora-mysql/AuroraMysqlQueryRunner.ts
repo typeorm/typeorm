@@ -851,8 +851,6 @@ export class AuroraMysqlQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType
         ) {
             await this.dropColumn(table, oldColumn)
@@ -861,14 +859,45 @@ export class AuroraMysqlQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
+            const typeOrLengthChanged =
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+
+            if (typeOrLengthChanged && newColumn.name === oldColumn.name) {
+                // Type or length changed without rename: use CHANGE to preserve data.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            newColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            oldColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+            }
+
             if (newColumn.name !== oldColumn.name) {
-                // We don't change any column properties, just rename it.
+                // Column rename, possibly combined with a type/length change.
+                // A single CHANGE handles both atomically.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
                             oldColumn.name
                         }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
-                            oldColumn,
+                            newColumn,
                             true,
                             true,
                         )}`,
