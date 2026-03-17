@@ -92,25 +92,24 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 - `options.camelCaseColumns` - A boolean, controlling whether the column names returned will have the first letter
   converted to lower case (`true`) or not. This value is ignored if you provide a `columnNameReplacer`. (default: `false`).
 
-- `options.isolationLevel` - The default isolation level that transactions will be run with. The isolation levels are
-  available from `require('tedious').ISOLATION_LEVEL`.
-    - `READ_UNCOMMITTED`
-    - `READ_COMMITTED`
-    - `REPEATABLE_READ`
+- `options.isolationLevel` - The default isolation level that transactions will be run with.
+    - `READ UNCOMMITTED`
+    - `READ COMMITTED`
+    - `REPEATABLE READ`
     - `SERIALIZABLE`
     - `SNAPSHOT`
 
-    (default: `READ_COMMITTED`)
+    (default: `READ COMMITTED`)
 
 - `options.connectionIsolationLevel` - The default isolation level for new connections. All out-of-transaction queries
-  are executed with this setting. The isolation levels are available from `require('tedious').ISOLATION_LEVEL`.
-    - `READ_UNCOMMITTED`
-    - `READ_COMMITTED`
-    - `REPEATABLE_READ`
+  are executed with this setting.
+    - `READ UNCOMMITTED`
+    - `READ COMMITTED`
+    - `REPEATABLE READ`
     - `SERIALIZABLE`
     - `SNAPSHOT`
 
-    (default: `READ_COMMITTED`)
+    (default: `READ COMMITTED`)
 
 - `options.readOnlyIntent` - A boolean, determining whether the connection will request read-only access from a
   SQL Server Availability Group. For more information, see here. (default: `false`).
