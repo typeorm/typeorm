@@ -2414,10 +2414,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .join(" ")
 
         const resolvedChildJoinAttributesPrefix = resolvedChildJoinAttributes
-            ? "( "
+            ? "("
             : ""
         const resolvedChildJoinAttributesPostfix = resolvedChildJoinAttributes
-            ? " )"
+            ? ")"
             : ""
 
         // if join was build without relation (e.g. without "post.category") then it means that we have direct
