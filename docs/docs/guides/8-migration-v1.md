@@ -198,14 +198,18 @@ Support for the legacy Expo SQLite driver has been removed. The legacy API was r
 
 ## MS SQL Server
 
-The .query() method now enables access to the full result returned from the underlying driver using an options object.
+### `useStructuredResult` boolean replaced with `QueryOptions` object
 
-If you've been using .query('SELECT ...', [myArg], true) to get the full result, you will need to change your code, replacing the third parameter with an options object:
+The `.query()` method now accepts a `QueryOptions` object instead of a plain boolean for structured results:
 
 ```typescript
-{
-    useStructuredResult: true
-}
+// Before
+const result = await dataSource.query("SELECT 1", [], undefined, true)
+
+// After
+const result = await dataSource.query("SELECT 1", [], undefined, {
+    useStructuredResult: true,
+})
 ```
 
 ## Hashing
