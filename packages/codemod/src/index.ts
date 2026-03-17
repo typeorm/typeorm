@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { colors } from "./cli/colors"
 import { parseArgs } from "./cli/parse-args"
 import { printUsage } from "./cli/print-usage"
 import { listTransforms } from "./cli/list-transforms"
@@ -7,10 +8,9 @@ import { resolveTransforms } from "./cli/resolve-transforms"
 import { runTransforms } from "./cli/run"
 import { versions } from "./transforms"
 
-const error = (message: string): never => {
-    console.error(`\x1b[31mError: ${message}\x1b[0m\n`)
+const error = (message: string): undefined => {
+    console.error(colors.red(`Error: ${message}\n`))
     process.exitCode = 1
-    return undefined as never
 }
 
 const main = async () => {

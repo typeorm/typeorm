@@ -1,31 +1,28 @@
+import { colors } from "./colors"
 import { versions } from "../transforms"
-
-const bold = (s: string) => `\x1b[1m${s}\x1b[0m`
-const dim = (s: string) => `\x1b[2m${s}\x1b[0m`
-const blue = (s: string) => `\x1b[94m${s}\x1b[0m`
 
 export const printUsage = (): void => {
     const versionList = Object.entries(versions)
         .map(
             ([name, { description }]) =>
-                `  ${blue(name.padEnd(6))}${description}`,
+                `  ${colors.blue(name.padEnd(6))}${description}`,
         )
         .join("\n")
 
-    console.log(`${bold("Usage:")} @typeorm/codemod ${blue("<version>")} [options] <paths...>
+    console.log(`${colors.bold("Usage:")} @typeorm/codemod ${colors.blue("<version>")} [options] <paths...>
 
-${bold("Versions:")}
+${colors.bold("Versions:")}
 ${versionList}
 
-${bold("Options:")}
-  ${blue("--transform, -t")} <name>  Run a specific transform only
-  ${blue("--dry, -d")}               Dry run ${dim("(show changes without writing)")}
-  ${blue("--list, -l")}              List available transforms
-  ${blue("--help, -h")}              Show this help
+${colors.bold("Options:")}
+  ${colors.blue("--transform, -t")} <name>  Run a specific transform only
+  ${colors.blue("--dry, -d")}               Dry run ${colors.dim("(show changes without writing)")}
+  ${colors.blue("--list, -l")}              List available transforms
+  ${colors.blue("--help, -h")}              Show this help
 
-${bold("Examples:")}
-  ${dim("@typeorm/codemod v1 src/")}
-  ${dim("@typeorm/codemod v1 --transform rename-find-by-ids src/")}
-  ${dim("@typeorm/codemod v1 --dry src/")}
-  ${dim("@typeorm/codemod v1 --list")}`)
+${colors.bold("Examples:")}
+  ${colors.dim("@typeorm/codemod v1 src/")}
+  ${colors.dim("@typeorm/codemod v1 --transform rename-find-by-ids src/")}
+  ${colors.dim("@typeorm/codemod v1 --dry src/")}
+  ${colors.dim("@typeorm/codemod v1 --list")}`)
 }

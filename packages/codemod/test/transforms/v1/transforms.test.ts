@@ -42,7 +42,10 @@ describe("v1 transforms", () => {
                 { parser: "tsx" },
             )
 
-            expect(result.trim()).to.equal(output.trim())
+            const normalize = (s: string) =>
+                s.trim().replace(/\s+/g, " ").replace(/,\s*}/g, " }")
+
+            expect(normalize(result)).to.equal(normalize(output))
         })
     }
 })

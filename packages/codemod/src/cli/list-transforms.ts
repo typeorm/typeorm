@@ -1,5 +1,6 @@
 import fs from "node:fs"
 import path from "node:path"
+import { colors } from "./colors"
 import { versions } from "../transforms"
 
 const TRANSFORMS_DIR = path.join(__dirname, "..", "transforms")
@@ -17,6 +18,6 @@ export const listTransforms = (version: string): void => {
         .map((f) => f.replace(ext, ""))
         .sort()
 
-    console.log(`Available transforms for version ${version}:\n`)
-    transforms.forEach((t) => console.log(`  - ${t}`))
+    console.log(`Available transforms for version ${colors.blue(version)}:\n`)
+    transforms.forEach((t) => console.log(`  ${colors.dim(t)}`))
 }
