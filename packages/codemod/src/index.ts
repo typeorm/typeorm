@@ -8,7 +8,7 @@ import { runTransforms } from "./cli/run"
 import { versions } from "./transforms"
 
 const error = (message: string): never => {
-    console.error(`\x1b[31mError: ${message}\x1b[0m`)
+    console.error(`\x1b[31mError: ${message}\x1b[0m\n`)
     process.exitCode = 1
     return undefined as never
 }
@@ -30,9 +30,8 @@ const main = async () => {
     }
 
     if (!versions[options.version]) {
-        error(
-            `unknown version "${options.version}". Available: ${Object.keys(versions).join(", ")}`,
-        )
+        error(`unknown version "${options.version}"`)
+        printUsage()
         return
     }
 
