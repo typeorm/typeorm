@@ -2,3 +2,5 @@ This is a dummy file to test Qodo's new review settings.
 It can be safely deleted after testing.
 
 Additional change to trigger another review cycle.
+
+One more change to verify incremental review behavior.
