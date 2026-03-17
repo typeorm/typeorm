@@ -395,7 +395,7 @@ This setting guards all high-level APIs — find operations, repository/manager 
 
 ### Hashing
 
-TypeORM previously used the `sha.js` npm package for SHA-1 hashing (an non-standard implementation). This has been replaced with the built-in `crypto` module from Node.js, and the `uuid` package has been replaced with `crypto.randomUUID()`.
+TypeORM previously used the `sha.js` npm package for SHA-1 hashing (a non-standard implementation). This has been replaced with the built-in `crypto` module from Node.js, and the `uuid` package has been replaced with `crypto.randomUUID()`.
 
 For browser environments, `RandomGenerator.sha1` was fixed to the standard implementation.
 
@@ -636,14 +636,18 @@ The same applies to find options:
 
 ## Migrations
 
-### `getAllMigrations` renamed to `getMigrations`
+### `getAllMigrations` removed
+
+The deprecated `getAllMigrations()` method has been removed from `MigrationExecutor`. Use `getPendingMigrations()` or `getExecutedMigrations()` instead, or access `dataSource.migrations` directly for the list of registered migration classes:
 
 ```typescript
 // Before
 const migrations = await migrationExecutor.getAllMigrations()
 
-// After
-const migrations = migrationExecutor.getMigrations()
+// After — depending on what you need
+const pending = await migrationExecutor.getPendingMigrations()
+const executed = await migrationExecutor.getExecutedMigrations()
+const registered = dataSource.migrations
 ```
 
 ### `QueryRunner.loadedTables` and `loadedViews` removed
@@ -740,7 +744,7 @@ The following internal APIs have been removed. These only affect you if you were
 
 | Removed                                        | Replacement                                       |
 | ---------------------------------------------- | ------------------------------------------------- |
-| `EntityMetadata.createPropertyPath()` (static) | Use the instance method on `EntityMetadataUtils`  |
+| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                |
 | `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                    |
 | `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers |
 | `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`               |
