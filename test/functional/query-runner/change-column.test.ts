@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
-import { TableColumn } from "../../../src"
+import { Table, TableColumn } from "../../../src"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
@@ -279,22 +279,22 @@ describe("query runner > change column", () => {
 
                 // Create a fresh test table with a varchar column
                 await queryRunner.createTable(
-                    {
+                    new Table({
                         name: "issue_3357",
                         columns: [
-                            {
+                            new TableColumn({
                                 name: "id",
                                 type: "int",
                                 isPrimary: true,
-                            },
-                            {
+                            }),
+                            new TableColumn({
                                 name: "description",
                                 type: "varchar",
                                 length: "50",
                                 isNullable: false,
-                            },
+                            }),
                         ],
-                    } as any,
+                    }),
                     true,
                 )
 
@@ -346,22 +346,22 @@ describe("query runner > change column", () => {
                 const queryRunner = dataSource.createQueryRunner()
 
                 await queryRunner.createTable(
-                    {
+                    new Table({
                         name: "issue_3357_rename",
                         columns: [
-                            {
+                            new TableColumn({
                                 name: "id",
                                 type: "int",
                                 isPrimary: true,
-                            },
-                            {
+                            }),
+                            new TableColumn({
                                 name: "old_col",
                                 type: "varchar",
                                 length: "50",
                                 isNullable: false,
-                            },
+                            }),
                         ],
-                    } as any,
+                    }),
                     true,
                 )
 

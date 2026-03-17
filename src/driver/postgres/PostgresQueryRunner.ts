@@ -1358,7 +1358,9 @@ export class PostgresQueryRunner
                     ),
                 )
 
-                // Restore default after type change
+                // Restore default after type change.
+                // Use oldColumn.name here because RENAME COLUMN (if any) happens
+                // after this block; the default persists through the rename.
                 if (
                     oldColumn.type !== newColumn.type &&
                     newColumn.default !== null &&
@@ -1366,7 +1368,7 @@ export class PostgresQueryRunner
                 ) {
                     upQueries.push(
                         new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`,
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${newColumn.default}`,
                         ),
                     )
                     downQueries.push(
