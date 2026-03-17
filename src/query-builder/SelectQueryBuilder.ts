@@ -2407,18 +2407,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             : ""
         const parentAlias = joinAttr.parentAlias
 
-        const resolvedChildJoinAttributes = (children || [])
+        const childJoins = (children || [])
             .map((joinTreeChild) => {
                 return this.createJoinTreeRecursively(joinTreeChild)
             })
             .join(" ")
-
-        const resolvedChildJoinAttributesPrefix = resolvedChildJoinAttributes
-            ? "("
-            : ""
-        const resolvedChildJoinAttributesPostfix = resolvedChildJoinAttributes
-            ? ")"
-            : ""
 
         // if join was build without relation (e.g. without "post.category") then it means that we have direct
         // table to join, without junction table involved. This means we simply join direct table.
@@ -2426,18 +2419,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const destinationJoin = joinAttr.alias.subQuery
                 ? joinAttr.alias.subQuery
                 : this.getTableName(destinationTableName)
-            return (
-                " " +
-                joinAttr.direction +
-                " JOIN " +
-                resolvedChildJoinAttributesPrefix +
-                destinationJoin +
-                " " +
-                this.escape(destinationTableAlias) +
-                resolvedChildJoinAttributes +
-                resolvedChildJoinAttributesPostfix +
-                this.createTableLockExpression() +
-                (joinAttr.condition ? " ON " + joinAttr.condition : "")
+            return this.buildJoinClause(
+                joinAttr.direction,
+                destinationJoin,
+                destinationTableAlias,
+                joinAttr.condition || "",
+                childJoins,
             )
         }
 
@@ -2460,20 +2447,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 })
                 .join(" AND ")
 
-            return (
-                " " +
-                joinAttr.direction +
-                " JOIN " +
-                resolvedChildJoinAttributesPrefix +
-                this.getTableName(destinationTableName) +
-                " " +
-                this.escape(destinationTableAlias) +
-                resolvedChildJoinAttributes +
-                resolvedChildJoinAttributesPostfix +
-                this.createTableLockExpression() +
-                " ON " +
-                condition +
-                appendedCondition
+            return this.buildJoinClause(
+                joinAttr.direction,
+                this.getTableName(destinationTableName),
+                destinationTableAlias,
+                condition + appendedCondition,
+                childJoins,
             )
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
             // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
@@ -2514,20 +2493,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     `Relation ${relation.entityMetadata.name}.${relation.propertyName} does not have join columns.`,
                 )
 
-            return (
-                " " +
-                joinAttr.direction +
-                " JOIN " +
-                resolvedChildJoinAttributesPrefix +
-                this.getTableName(destinationTableName) +
-                " " +
-                this.escape(destinationTableAlias) +
-                resolvedChildJoinAttributes +
-                resolvedChildJoinAttributesPostfix +
-                this.createTableLockExpression() +
-                " ON " +
-                condition +
-                appendedCondition
+            return this.buildJoinClause(
+                joinAttr.direction,
+                this.getTableName(destinationTableName),
+                destinationTableAlias,
+                condition + appendedCondition,
+                childJoins,
             )
         } else {
             // means many-to-many
@@ -2600,30 +2571,45 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             return (
-                " " +
-                joinAttr.direction +
-                " JOIN " +
-                this.getTableName(junctionTableName) +
-                " " +
-                this.escape(junctionAlias) +
-                this.createTableLockExpression() +
-                " ON " +
-                junctionCondition +
-                " " +
-                joinAttr.direction +
-                " JOIN " +
-                resolvedChildJoinAttributesPrefix +
-                this.getTableName(destinationTableName) +
-                " " +
-                this.escape(destinationTableAlias) +
-                resolvedChildJoinAttributes +
-                resolvedChildJoinAttributesPostfix +
-                this.createTableLockExpression() +
-                " ON " +
-                destinationCondition +
-                appendedCondition
+                this.buildJoinClause(
+                    joinAttr.direction,
+                    this.getTableName(junctionTableName),
+                    junctionAlias,
+                    junctionCondition,
+                ) +
+                this.buildJoinClause(
+                    joinAttr.direction,
+                    this.getTableName(destinationTableName),
+                    destinationTableAlias,
+                    destinationCondition + appendedCondition,
+                    childJoins,
+                )
             )
         }
+    }
+
+    private buildJoinClause(
+        direction: string,
+        tableName: string,
+        alias: string,
+        condition: string,
+        childJoins = "",
+    ): string {
+        const prefix = childJoins ? "(" : ""
+        const postfix = childJoins ? ")" : ""
+        return (
+            " " +
+            direction +
+            " JOIN " +
+            prefix +
+            tableName +
+            " " +
+            this.escape(alias) +
+            childJoins +
+            postfix +
+            this.createTableLockExpression() +
+            (condition ? " ON " + condition : "")
+        )
     }
 
     /**
