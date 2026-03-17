@@ -29,8 +29,7 @@ export const resolveTransforms = (
                 ),
             )
             listTransforms(version)
-            process.exitCode = 1
-            return []
+            process.exit(1)
         }
 
         return [transformPath]

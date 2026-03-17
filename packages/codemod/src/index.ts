@@ -8,9 +8,9 @@ import { resolveTransforms } from "./cli/resolve-transforms"
 import { runTransforms } from "./cli/run"
 import { versions } from "./transforms"
 
-const error = (message: string): undefined => {
+const fail = (message: string): never => {
     console.error(colors.red(`Error: ${message}\n`))
-    process.exitCode = 1
+    process.exit(1)
 }
 
 const main = async () => {
@@ -24,15 +24,15 @@ const main = async () => {
     const options = parseArgs(args)
 
     if (!options.version) {
-        error("no version specified")
-        printUsage()
-        return
+        fail("no version specified")
     }
 
     if (!versions[options.version]) {
-        error(`unknown version "${options.version}"`)
+        console.error(
+            colors.red(`Error: unknown version "${options.version}"\n`),
+        )
         printUsage()
-        return
+        process.exit(1)
     }
 
     if (options.list) {
@@ -41,9 +41,9 @@ const main = async () => {
     }
 
     if (options.paths.length === 0) {
-        error("no paths specified")
+        console.error(colors.red("Error: no paths specified\n"))
         printUsage()
-        return
+        process.exit(1)
     }
 
     const transforms = resolveTransforms(options.version, options.transform)
@@ -52,5 +52,5 @@ const main = async () => {
 
 main().catch((err) => {
     console.error(err)
-    process.exitCode = 1
+    process.exit(1)
 })
