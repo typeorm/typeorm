@@ -563,7 +563,7 @@ export class CockroachDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return '"' + columnName + '"'
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
