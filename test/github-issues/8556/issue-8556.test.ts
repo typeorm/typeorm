@@ -3,31 +3,28 @@ import {
     createTestingConnections,
     closeTestingConnections,
     reloadTestingDatabases,
-    generateRandomText,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Category } from "./entity/category.entity"
-import { TreeRepository } from "../../../src"
+import type { TreeRepository } from "../../../src"
 
 describe("github issues > #8556 TreeRepository.findDescendants/Tree should return empty if tree parent entity does not exist", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                dropSchema: true,
-                schemaCreate: true,
-                name: generateRandomText(10), // Use a different name to avoid a random failure in build pipeline
-            })),
-    )
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load descendants when findDescendants is called for a tree entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo: TreeRepository<Category> =
                     connection.getTreeRepository(Category)
                 const root: Category = await repo.save({
@@ -52,7 +49,7 @@ describe("github issues > #8556 TreeRepository.findDescendants/Tree should retur
 
     it("should return empty when findDescendants is called for a non existing tree entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo: TreeRepository<Category> =
                     connection.getTreeRepository(Category)
                 const root: Category = await repo.save({

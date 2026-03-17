@@ -1,10 +1,10 @@
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
-import { EntityMetadata } from "./EntityMetadata"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { ColumnMetadata } from "./ColumnMetadata"
-import { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs"
 import { TypeORMError } from "../error"
-import { DeferrableType } from "./types/DeferrableType"
+import type { DeferrableType } from "./types/DeferrableType"
 
 /**
  * Unique metadata contains all information about table's unique constraints.
@@ -93,13 +93,14 @@ export class UniqueMetadata {
     /**
      * Builds some depend unique constraint properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
         const map: { [key: string]: number } = {}
 
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {
-            let columnPropertyPaths: string[] = []
+            let columnPropertyPaths: string[]
             if (Array.isArray(this.givenColumnNames)) {
                 columnPropertyPaths = this.givenColumnNames.map(
                     (columnName) => {
@@ -113,9 +114,9 @@ export class UniqueMetadata {
                         return columnName.trim()
                     },
                 )
-                columnPropertyPaths.forEach(
-                    (propertyPath) => (map[propertyPath] = 1),
-                )
+                columnPropertyPaths.forEach((propertyPath) => {
+                    map[propertyPath] = 1
+                })
             } else {
                 // if columns is a function that returns array of field names then execute it and get columns names from it
                 const columnsFnResult = this.givenColumnNames(
@@ -125,15 +126,16 @@ export class UniqueMetadata {
                     columnPropertyPaths = columnsFnResult.map((i: any) =>
                         String(i),
                     )
-                    columnPropertyPaths.forEach((name) => (map[name] = 1))
+                    columnPropertyPaths.forEach((name) => {
+                        map[name] = 1
+                    })
                 } else {
                     columnPropertyPaths = Object.keys(columnsFnResult).map(
                         (i: any) => String(i),
                     )
-                    Object.keys(columnsFnResult).forEach(
-                        (columnName) =>
-                            (map[columnName] = columnsFnResult[columnName]),
-                    )
+                    Object.keys(columnsFnResult).forEach((columnName) => {
+                        map[columnName] = columnsFnResult[columnName]
+                    })
                 }
             }
 

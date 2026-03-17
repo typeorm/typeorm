@@ -1,21 +1,19 @@
-import {
+import type {
     DatabaseType,
-    DataSource,
     DataSourceOptions,
     Driver,
     EntitySchema,
     EntitySubscriberInterface,
-    getMetadataArgsStorage,
     InsertEvent,
     Logger,
     NamingStrategyInterface,
     QueryRunner,
-    Table,
 } from "../../src"
-import { QueryResultCache } from "../../src/cache/QueryResultCache"
+import { DataSource, getMetadataArgsStorage, Table } from "../../src"
+import type { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
-import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
+import type { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -41,12 +39,6 @@ export interface TestingOptions {
      * If specified, entities will be loaded from that directory.
      */
     __dirname?: string
-
-    /**
-     * Connection name to be overridden.
-     * This can be used to create multiple connections with single connection configuration.
-     */
-    name?: string
 
     /**
      * List of enabled drivers for the given test suite.
@@ -176,7 +168,6 @@ export function setupSingleTestingConnection(
     options: TestingOptions,
 ): DataSourceOptions | undefined {
     const testingConnections = setupTestingConnections({
-        name: options.name ? options.name : undefined,
         entities: options.entities ? options.entities : [],
         subscribers: options.subscribers ? options.subscribers : [],
         dropSchema: options.dropSchema ? options.dropSchema : false,
@@ -257,10 +248,6 @@ export function setupTestingConnections(
                 {},
                 connectionOptions as DataSourceOptions,
                 {
-                    name:
-                        options && options.name
-                            ? options.name
-                            : connectionOptions.name,
                     entities:
                         options && options.entities ? options.entities : [],
                     migrations:

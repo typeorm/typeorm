@@ -1,21 +1,20 @@
-import { Alias } from "./Alias"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { OrderByCondition } from "../find-options/OrderByCondition"
-import { JoinAttribute } from "./JoinAttribute"
-import { QueryBuilder } from "./QueryBuilder"
-import { QueryBuilderCteOptions } from "./QueryBuilderCte"
-import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
-import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
-import { DataSource } from "../data-source/DataSource"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { SelectQuery } from "./SelectQuery"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { RelationMetadata } from "../metadata/RelationMetadata"
-import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { DataSource } from "../data-source/DataSource"
+import type { CockroachDataSourceOptions } from "../driver/cockroachdb/CockroachDataSourceOptions"
+import type { UpsertType } from "../driver/types/UpsertType"
 import { TypeORMError } from "../error"
-import { WhereClause } from "./WhereClause"
-import { UpsertType } from "../driver/types/UpsertType"
-import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConnectionOptions"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
+import { Alias } from "./Alias"
+import { JoinAttribute } from "./JoinAttribute"
+import type { QueryBuilder } from "./QueryBuilder"
+import type { QueryBuilderCteOptions } from "./QueryBuilderCte"
+import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
+import type { SelectQuery } from "./SelectQuery"
+import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
+import type { WhereClause } from "./WhereClause"
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -99,11 +98,6 @@ export class QueryExpressionMap {
     extraReturningColumns: ColumnMetadata[] = []
 
     /**
-     * Optional on conflict statement used in insertion query in postgres.
-     */
-    onConflict: string = ""
-
-    /**
      * Optional on ignore statement used in insertion query in databases.
      */
     onIgnore: boolean = false
@@ -130,11 +124,6 @@ export class QueryExpressionMap {
      * RelationId queries.
      */
     relationIdAttributes: RelationIdAttribute[] = []
-
-    /**
-     * Relation count queries.
-     */
-    relationCountAttributes: RelationCountAttribute[] = []
 
     /**
      * WHERE queries.
@@ -191,14 +180,6 @@ export class QueryExpressionMap {
         | "pessimistic_read"
         | "pessimistic_write"
         | "dirty_read"
-        /*
-            "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
-            will be removed in a future version.
-
-            Use onLocked instead.
-         */
-        | "pessimistic_partial_write"
-        | "pessimistic_write_or_fail"
         | "for_no_key_update"
         | "for_key_share"
 
@@ -334,13 +315,6 @@ export class QueryExpressionMap {
     timeTravel?: boolean | string
 
     /**
-     * Extra parameters.
-     *
-     * @deprecated Use standard parameters instead
-     */
-    nativeParameters: ObjectLiteral = {}
-
-    /**
      * Query Comment to include extra information for debugging or other purposes.
      */
     comment?: string
@@ -362,13 +336,13 @@ export class QueryExpressionMap {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {
-        if (connection.options.relationLoadStrategy) {
-            this.relationLoadStrategy = connection.options.relationLoadStrategy
+    constructor(protected dataSource: DataSource) {
+        if (dataSource.options.relationLoadStrategy) {
+            this.relationLoadStrategy = dataSource.options.relationLoadStrategy
         }
 
         this.timeTravel =
-            (connection.options as CockroachConnectionOptions)
+            (dataSource.options as CockroachDataSourceOptions)
                 ?.timeTravelQueries || false
     }
 
@@ -402,6 +376,7 @@ export class QueryExpressionMap {
 
     /**
      * Creates a main alias and adds it to the current expression map.
+     * @param alias
      */
     setMainAlias(alias: Alias): Alias {
         // if main alias is already set then remove it from the array
@@ -416,6 +391,13 @@ export class QueryExpressionMap {
 
     /**
      * Creates a new alias and adds it to the current expression map.
+     * @param options
+     * @param options.type
+     * @param options.name
+     * @param options.target
+     * @param options.tablePath
+     * @param options.subQuery
+     * @param options.metadata
      */
     createAlias(options: {
         type: "from" | "select" | "join" | "other"
@@ -437,7 +419,7 @@ export class QueryExpressionMap {
         if (aliasName) alias.name = aliasName
         if (options.metadata) alias.metadata = options.metadata
         if (options.target && !alias.hasMetadata)
-            alias.metadata = this.connection.getMetadata(options.target)
+            alias.metadata = this.dataSource.getMetadata(options.target)
         if (options.tablePath) alias.tablePath = options.tablePath
         if (options.subQuery) alias.subQuery = options.subQuery
 
@@ -448,6 +430,7 @@ export class QueryExpressionMap {
     /**
      * Finds alias with the given name.
      * If alias was not found it throw an exception.
+     * @param aliasName
      */
     findAliasByName(aliasName: string): Alias {
         const alias = this.aliases.find((alias) => alias.name === aliasName)
@@ -493,7 +476,7 @@ export class QueryExpressionMap {
      * Useful when QueryBuilder needs to create a copy of itself.
      */
     clone(): QueryExpressionMap {
-        const map = new QueryExpressionMap(this.connection)
+        const map = new QueryExpressionMap(this.dataSource)
         map.queryType = this.queryType
         map.selects = this.selects.map((select) => select)
         map.maxExecutionTime = this.maxExecutionTime
@@ -504,17 +487,13 @@ export class QueryExpressionMap {
         map.mainAlias = this.mainAlias
         map.valuesSet = this.valuesSet
         map.returning = this.returning
-        map.onConflict = this.onConflict
         map.onIgnore = this.onIgnore
         map.onUpdate = this.onUpdate
         map.joinAttributes = this.joinAttributes.map(
-            (join) => new JoinAttribute(this.connection, this, join),
+            (join) => new JoinAttribute(this.dataSource, this, join),
         )
         map.relationIdAttributes = this.relationIdAttributes.map(
             (relationId) => new RelationIdAttribute(this, relationId),
-        )
-        map.relationCountAttributes = this.relationCountAttributes.map(
-            (relationCount) => new RelationCountAttribute(this, relationCount),
         )
         map.wheres = this.wheres.map((where) => ({ ...where }))
         map.havings = this.havings.map((having) => ({ ...having }))
@@ -550,7 +529,6 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
         map.timeTravel = this.timeTravel
-        map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
         map.commonTableExpressions = this.commonTableExpressions.map(
             (cteOptions) => ({

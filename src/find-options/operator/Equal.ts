@@ -1,4 +1,4 @@
-import { FindOperator } from "../FindOperator"
+import type { FindOperator } from "../FindOperator"
 import { EqualOperator } from "../EqualOperator"
 
 /**
@@ -8,6 +8,7 @@ import { EqualOperator } from "../EqualOperator"
  * Examples:
  *      { someField: Equal("value") }
  *      { uuid: Equal(new UUID()) }
+ * @param value
  */
 export function Equal<T>(value: T | FindOperator<T>) {
     return new EqualOperator(value)

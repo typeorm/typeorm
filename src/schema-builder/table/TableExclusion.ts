@@ -1,5 +1,5 @@
-import { TableExclusionOptions } from "../options/TableExclusionOptions"
-import { ExclusionMetadata } from "../../metadata/ExclusionMetadata"
+import type { TableExclusionOptions } from "../options/TableExclusionOptions"
+import type { ExclusionMetadata } from "../../metadata/ExclusionMetadata"
 
 /**
  * Database's table exclusion constraint stored in this class.
@@ -58,6 +58,7 @@ export class TableExclusion {
 
     /**
      * Creates exclusions from the exclusion metadata object.
+     * @param exclusionMetadata
      */
     static create(exclusionMetadata: ExclusionMetadata): TableExclusion {
         return new TableExclusion(<TableExclusionOptions>{

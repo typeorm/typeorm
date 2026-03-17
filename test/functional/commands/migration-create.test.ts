@@ -1,10 +1,7 @@
 import "../../utils/test-setup"
 import sinon from "sinon"
-import {
-    ConnectionOptionsReader,
-    DatabaseType,
-    DataSourceOptions,
-} from "../../../src"
+import type { DatabaseType, DataSourceOptions } from "../../../src"
+import { ConnectionOptionsReader } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -23,7 +20,7 @@ describe("commands - migration create", () => {
     let getConnectionOptionsStub: sinon.SinonStub
     let migrationCreateCommand: MigrationCreateCommand
     let connectionOptionsReader: ConnectionOptionsReader
-    let baseConnectionOptions: DataSourceOptions
+    let baseConnectionOptions: DataSourceOptions[]
 
     const enabledDrivers: DatabaseType[] = [
         "better-sqlite3",
@@ -33,7 +30,6 @@ describe("commands - migration create", () => {
         "mysql",
         "oracle",
         "postgres",
-        "sqlite",
     ]
 
     // simulate args: `npm run typeorm migration:run -- -n test-migration -d test-directory`
@@ -77,19 +73,19 @@ describe("commands - migration create", () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
+            baseConnectionOptions = await connectionOptionsReader.get()
             getConnectionOptionsStub = sinon
                 .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
 
             await migrationCreateCommand.handler(
                 testHandlerArgs({
-                    connection: connectionOption.name,
+                    connection: connectionOption.type,
                 }),
             )
 
@@ -108,19 +104,19 @@ describe("commands - migration create", () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
+            baseConnectionOptions = await connectionOptionsReader.get()
             getConnectionOptionsStub = sinon
                 .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
 
             await migrationCreateCommand.handler(
                 testHandlerArgs({
-                    connection: connectionOption.name,
+                    connection: connectionOption.type,
                     outputJs: true,
                 }),
             )
@@ -140,19 +136,19 @@ describe("commands - migration create", () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
+            baseConnectionOptions = await connectionOptionsReader.get()
             getConnectionOptionsStub = sinon
                 .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
 
             await migrationCreateCommand.handler(
                 testHandlerArgs({
-                    connection: connectionOption.name,
+                    connection: connectionOption.type,
                     timestamp: "1641163894670",
                 }),
             )

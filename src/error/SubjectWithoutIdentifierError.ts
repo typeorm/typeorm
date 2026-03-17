@@ -1,4 +1,4 @@
-import { Subject } from "../persistence/Subject"
+import type { Subject } from "../persistence/Subject"
 import { TypeORMError } from "./TypeORMError"
 
 /**

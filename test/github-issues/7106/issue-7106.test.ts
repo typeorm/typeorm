@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -18,20 +18,19 @@ import { QueryFailedError } from "../../../src/error/QueryFailedError"
  * by changing the NAMEDATALEN constant in src/include/pg_config_manual.h."
  */
 describe("github issues > #7106 shorten sequence names (for RDBMS with a limit) when they are longer than 63 characters", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be able to work with long sequence name with short table name", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const short = new ShortTableName()
                 short.Name = "Dharawal"
                 short.Value = 2500
@@ -44,7 +43,7 @@ describe("github issues > #7106 shorten sequence names (for RDBMS with a limit) 
 
     it("should be able to work with long sequence name with long table name", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const long = new ReallyReallyVeryVeryVeryLongTableName()
                 long.Name = "Eora"
                 await connection

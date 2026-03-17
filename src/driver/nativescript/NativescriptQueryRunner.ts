@@ -1,10 +1,10 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { NativescriptDriver } from "./NativescriptDriver"
+import type { NativescriptDriver } from "./NativescriptDriver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -42,6 +42,9 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -118,6 +121,8 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     * @param objectLiteral
+     * @param startIndex
      */
     protected parametrize(
         objectLiteral: ObjectLiteral,

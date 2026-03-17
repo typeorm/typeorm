@@ -4,46 +4,45 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 import { PostInformation } from "./entity/PostInformation"
 import { PostCounter } from "./entity/PostCounter"
 
 describe("other issues > entity listeners must work in optional embeddeds as well", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("getters and setters should work correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.title = "First title"
                 post1.text = "About this post"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "Second title"
                 post2.text = "About this post"
                 post2.information = new PostInformation()
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "Third title"
                 post3.text = "About this post"
                 post3.information = new PostInformation()
                 post3.information.counters = new PostCounter()
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.id")
                     .getMany()

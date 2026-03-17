@@ -197,11 +197,6 @@ exports.OneToMany = OneToMany;
 }
 exports.OneToOne = OneToOne;
 
-/* export */ function RelationCount() {
-    return noop
-}
-exports.RelationCount = RelationCount;
-
 /* export */ function RelationId() {
     return noop
 }
@@ -291,11 +286,6 @@ exports.Exclusion = Exclusion;
     return noop
 }
 exports.Generated = Generated;
-
-/* export */ function EntityRepository() {
-    return noop
-}
-exports.EntityRepository = EntityRepository;
 
 /* export */ function VirtualColumn() {
     return noop

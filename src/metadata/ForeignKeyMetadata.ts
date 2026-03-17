@@ -1,9 +1,9 @@
-import { ColumnMetadata } from "./ColumnMetadata"
-import { EntityMetadata } from "./EntityMetadata"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { DeferrableType } from "./types/DeferrableType"
-import { OnDeleteType } from "./types/OnDeleteType"
-import { OnUpdateType } from "./types/OnUpdateType"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { DeferrableType } from "./types/DeferrableType"
+import type { OnDeleteType } from "./types/OnDeleteType"
+import type { OnUpdateType } from "./types/OnUpdateType"
 
 /**
  * Contains all information about entity's foreign key.
@@ -108,6 +108,7 @@ export class ForeignKeyMetadata {
     /**
      * Builds some depend foreign key properties.
      * Must be called after all entity metadatas and their columns are built.
+     * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface) {
         this.columnNames = this.columns.map((column) => column.databaseName)

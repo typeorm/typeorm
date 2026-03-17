@@ -1,27 +1,27 @@
-import { Driver } from "../Driver"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { DateUtils } from "../../util/DateUtils"
-import { DataSource } from "../../data-source/DataSource"
-import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
-import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { DriverUtils } from "../DriverUtils"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType"
+import { OrmUtils } from "../../util/OrmUtils"
+import type { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
 
 type DatabasesMap = Record<
     string,
@@ -91,7 +91,6 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://www.tutorialspoint.com/sqlite/sqlite_data_types.htm
      * @see https://sqlite.org/datatype3.html
      */
@@ -128,6 +127,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "time",
         "datetime",
         "json",
+        "jsonb",
     ]
 
     /**
@@ -315,6 +315,8 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -345,6 +347,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             return DateUtils.mixedDateToUtcDatetimeString(value)
         } else if (
             columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb" ||
             columnMetadata.type === "simple-json"
         ) {
             return DateUtils.simpleJsonToString(value)
@@ -359,6 +362,8 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Prepares given value to a value to be hydrated, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -415,6 +420,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.mixedTimeToString(value)
         } else if (
             columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb" ||
             columnMetadata.type === "simple-json"
         ) {
             value = DateUtils.stringToSimpleJson(value)
@@ -439,28 +445,14 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => {
-                // Mapping boolean values to their numeric representation
-                if (typeof nativeParameters[key] === "boolean") {
-                    return nativeParameters[key] === true ? 1 : 0
-                }
-
-                if (nativeParameters[key] instanceof Date) {
-                    return DateUtils.mixedDateToUtcDatetimeString(
-                        nativeParameters[key],
-                    )
-                }
-
-                return nativeParameters[key]
-            },
-        )
+        const escapedParameters: any[] = []
 
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
@@ -521,6 +513,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return '"' + columnName + '"'
@@ -531,6 +524,9 @@ export abstract class AbstractSqliteDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      *
      * Returns only simple table name because all inherited drivers does not supports schema and database.
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -542,6 +538,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -615,6 +612,11 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type?: ColumnType
@@ -645,9 +647,14 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
+
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined
+        }
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue
@@ -665,10 +672,6 @@ export abstract class AbstractSqliteDriver implements Driver {
             return `'${defaultValue}'`
         }
 
-        if (defaultValue === null || defaultValue === undefined) {
-            return undefined
-        }
-
         if (
             Array.isArray(defaultValue) &&
             columnMetadata.type === "simple-enum"
@@ -676,11 +679,23 @@ export abstract class AbstractSqliteDriver implements Driver {
             return `'${defaultValue.join(",")}'`
         }
 
+        if (typeof defaultValue === "object") {
+            const jsonString = JSON.stringify(defaultValue).replaceAll(
+                "'",
+                "''",
+            )
+            if (columnMetadata.type === "jsonb") {
+                return `jsonb('${jsonString}')`
+            }
+            return `'${jsonString}'`
+        }
+
         return `${defaultValue}`
     }
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.uniques.some(
@@ -690,6 +705,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Calculates column length taking into account the default length values.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
         return column.length ? column.length.toString() : ""
@@ -697,6 +713,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -744,6 +761,10 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
+     * @param entityIndex
+     * @param entityNum
      */
     createGeneratedMap(
         metadata: EntityMetadata,
@@ -778,8 +799,95 @@ export abstract class AbstractSqliteDriver implements Driver {
     }
 
     /**
+     * Compares json/jsonb default values of the column.
+     * @param columnMetadata
+     * @param tableColumn
+     */
+    private compareJsonDefaults(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        let processedDefault = tableColumn.default
+        if (typeof processedDefault === "string") {
+            processedDefault = processedDefault.trim()
+            if (
+                processedDefault.startsWith("(") &&
+                processedDefault.endsWith(")")
+            ) {
+                processedDefault = processedDefault.slice(1, -1)
+            }
+
+            const fnWrapped = processedDefault.match(
+                /^(jsonb|json)\s*\(\s*'((?:''|[^'])*)'\s*\)\s*$/i,
+            )
+            if (fnWrapped) {
+                processedDefault = fnWrapped[2]
+            } else if (
+                processedDefault.startsWith("'") &&
+                processedDefault.endsWith("'")
+            ) {
+                processedDefault = processedDefault.slice(1, -1)
+            }
+        }
+
+        if (typeof processedDefault === "string") {
+            try {
+                const tableDefaultObj = JSON.parse(
+                    processedDefault.replaceAll("''", "'"),
+                )
+                return OrmUtils.deepCompare(
+                    columnMetadata.default,
+                    tableDefaultObj,
+                )
+            } catch (err) {
+                if (!(err instanceof SyntaxError)) {
+                    throw new TypeORMError(
+                        `Failed to compare default values of ${columnMetadata.propertyName} column`,
+                    )
+                }
+            }
+        } else {
+            return OrmUtils.deepCompare(
+                columnMetadata.default,
+                processedDefault,
+            )
+        }
+
+        return false
+    }
+
+    /**
+     * Compares "default" value of the column.
+     * @param columnMetadata
+     * @param tableColumn
+     */
+    private defaultEqual(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
+        if (
+            ["json", "jsonb"].includes(columnMetadata.type as string) &&
+            !["function", "undefined"].includes(typeof columnMetadata.default)
+        ) {
+            return this.compareJsonDefaults(columnMetadata, tableColumn)
+        }
+
+        return this.normalizeDefault(columnMetadata) === tableColumn.default
+    }
+
+    /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -797,7 +905,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                this.normalizeDefault(columnMetadata) !== tableColumn.default ||
+                !this.defaultEqual(columnMetadata, tableColumn) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
@@ -910,11 +1018,30 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         // return "$" + (index + 1);
         return "?"
         // return "$" + parameterName;
+    }
+
+    /**
+     * Wraps key with json/jsonb function if required.
+     * @param value
+     * @param column
+     * @param jsonb
+     */
+    wrapWithJsonFunction(
+        value: string,
+        column: ColumnMetadata,
+        jsonb: boolean = false,
+    ): string {
+        if (column.type === "jsonb") {
+            return jsonb ? `jsonb(${value})` : `json(${value})`
+        }
+        return value
     }
 
     // -------------------------------------------------------------------------

@@ -1,10 +1,11 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { ColumnOptions } from "../options/ColumnOptions"
+import type { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import type { ColumnOptions } from "../options/ColumnOptions"
 
 /**
  * This column will store an update date of the updated object.
  * This date is being updated each time you persist the object.
+ * @param options
  */
 export function UpdateDateColumn(options?: ColumnOptions): PropertyDecorator {
     return function (object: Object, propertyName: string) {

@@ -1,9 +1,9 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 
 const options: DataSourceOptions = {
-    name: "sap",
     type: "sap",
     host: "192.168.56.102",
     port: 39015,

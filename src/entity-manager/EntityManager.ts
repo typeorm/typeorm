@@ -1,13 +1,12 @@
-import { DataSource } from "../data-source/DataSource"
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { EntityTarget } from "../common/EntityTarget"
-import { ObjectType } from "../common/ObjectType"
+import type { DataSource } from "../data-source/DataSource"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { EntityTarget } from "../common/EntityTarget"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
 import { QueryRunnerProviderAlreadyReleasedError } from "../error/QueryRunnerProviderAlreadyReleasedError"
-import { FindOneOptions } from "../find-options/FindOneOptions"
-import { DeepPartial } from "../common/DeepPartial"
-import { RemoveOptions } from "../repository/RemoveOptions"
-import { SaveOptions } from "../repository/SaveOptions"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
+import type { DeepPartial } from "../common/DeepPartial"
+import type { RemoveOptions } from "../repository/RemoveOptions"
+import type { SaveOptions } from "../repository/SaveOptions"
 import { NoNeedToReleaseEntityManagerError } from "../error/NoNeedToReleaseEntityManagerError"
 import { MongoRepository } from "../repository/MongoRepository"
 import { TreeRepository } from "../repository/TreeRepository"
@@ -15,30 +14,23 @@ import { Repository } from "../repository/Repository"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import { PlainObjectToNewEntityTransformer } from "../query-builder/transformer/PlainObjectToNewEntityTransformer"
 import { PlainObjectToDatabaseEntityTransformer } from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer"
-import {
-    CustomRepositoryCannotInheritRepositoryError,
-    CustomRepositoryNotFoundError,
-    TreeRepositoryNotSupportedError,
-    TypeORMError,
-} from "../error"
-import { AbstractRepository } from "../repository/AbstractRepository"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import { TreeRepositoryNotSupportedError, TypeORMError } from "../error"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { EntityPersistExecutor } from "../persistence/EntityPersistExecutor"
-import { ObjectId } from "../driver/mongodb/typings"
-import { InsertResult } from "../query-builder/result/InsertResult"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { ObjectId } from "../driver/mongodb/typings"
+import type { InsertResult } from "../query-builder/result/InsertResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { getMetadataArgsStorage } from "../globals"
-import { UpsertOptions } from "../repository/UpsertOptions"
-import { UpdateOptions } from "../repository/UpdateOptions"
+import type { UpsertOptions } from "../repository/UpsertOptions"
+import type { UpdateOptions } from "../repository/UpdateOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { PickKeysByType } from "../common/PickKeysByType"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
 import { OrmUtils } from "../util/OrmUtils"
 
@@ -768,11 +760,16 @@ export class EntityManager {
         const overwriteColumns = metadata.columns.filter(
             (col) =>
                 !conflictColumns.includes(col) &&
+                col.isUpdate !== false &&
+                !col.generatedType &&
                 entities.some(
                     (entity) =>
                         typeof col.getEntityValue(entity) !== "undefined",
                 ),
         )
+
+        const upsertType =
+            options.upsertType || this.connection.driver.supportedUpsertTypes[0]
 
         const qb = this.createQueryBuilder()
             .insert()
@@ -787,9 +784,7 @@ export class EntityManager {
                     skipUpdateIfNoValuesChanged:
                         options.skipUpdateIfNoValuesChanged,
                     indexPredicate: options.indexPredicate,
-                    upsertType:
-                        options.upsertType ||
-                        this.connection.driver.supportedUpsertTypes[0],
+                    upsertType,
                 },
             )
 
@@ -809,6 +804,7 @@ export class EntityManager {
      * @param target
      * @param criteria
      * @param partialEntity
+     * @param options
      */
     update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -846,10 +842,14 @@ export class EntityManager {
 
             return qb.execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
 
             if (options?.returning !== undefined) {
                 qb.returning(options.returning)
@@ -867,6 +867,7 @@ export class EntityManager {
      * WARNING! This method updates ALL rows in the target table.
      * @param target
      * @param partialEntity
+     * @param options
      */
     updateAll<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -920,10 +921,14 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
@@ -980,10 +985,14 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
@@ -1026,10 +1035,14 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.connection.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
@@ -1188,6 +1201,7 @@ export class EntityManager {
                 )}.${this.connection.driver.escape(column.databaseName)})`,
                 fnName,
             )
+            .setOption("disable-global-order")
             .getRawOne()
         return result[fnName] === null ? null : parseFloat(result[fnName])
     }
@@ -1268,33 +1282,6 @@ export class EntityManager {
         )
             .setFindOptions({ where })
             .getManyAndCount()
-    }
-
-    /**
-     * Finds entities with ids.
-     * Optionally find options or conditions can be applied.
-     * @param entityClass
-     * @param ids
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    async findByIds<Entity extends ObjectLiteral>(
-        entityClass: EntityTarget<Entity>,
-        ids: any[],
-    ): Promise<Entity[]> {
-        // if no ids passed, no need to execute a query - just return an empty array of values
-        if (!ids.length) return Promise.resolve([])
-
-        const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder<Entity>(
-            entityClass as any,
-            metadata.name,
-        )
-            .andWhereInIds(ids)
-            .getMany()
     }
 
     /**
@@ -1426,14 +1413,20 @@ export class EntityManager {
      *
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
      * @param entityClass
+     * @param options
+     * @param options.cascade
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    async clear<Entity>(entityClass: EntityTarget<Entity>): Promise<void> {
+    async clear<Entity>(
+        entityClass: EntityTarget<Entity>,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass)
+
         const queryRunner =
             this.queryRunner || this.connection.createQueryRunner()
         try {
-            return await queryRunner.clearTable(metadata.tablePath) // await is needed here because we are using finally
+            return await queryRunner.clearTable(metadata.tablePath, options)
         } finally {
             if (!this.queryRunner) await queryRunner.release()
         }
@@ -1610,50 +1603,6 @@ export class EntityManager {
                 ...otherRepositoryProperties,
             },
         )
-    }
-
-    /**
-     * Gets custom entity repository marked with @EntityRepository decorator.
-     * @param customRepository
-     * @deprecated use Repository.extend to create custom repositories
-     */
-    getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        const entityRepositoryMetadataArgs =
-            getMetadataArgsStorage().entityRepositories.find((repository) => {
-                return (
-                    repository.target ===
-                    (typeof customRepository === "function"
-                        ? customRepository
-                        : (customRepository as any).constructor)
-                )
-            })
-        if (!entityRepositoryMetadataArgs)
-            throw new CustomRepositoryNotFoundError(customRepository)
-
-        const entityMetadata = entityRepositoryMetadataArgs.entity
-            ? this.connection.getMetadata(entityRepositoryMetadataArgs.entity)
-            : undefined
-        const entityRepositoryInstance =
-            new (entityRepositoryMetadataArgs.target as any)(
-                this,
-                entityMetadata,
-            )
-
-        // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-        // however we need these properties for internal work of the class
-        if (entityRepositoryInstance instanceof AbstractRepository) {
-            if (!(entityRepositoryInstance as any)["manager"])
-                (entityRepositoryInstance as any)["manager"] = this
-        } else {
-            if (!entityMetadata)
-                throw new CustomRepositoryCannotInheritRepositoryError(
-                    customRepository,
-                )
-            ;(entityRepositoryInstance as any)["manager"] = this
-            ;(entityRepositoryInstance as any)["metadata"] = entityMetadata
-        }
-
-        return entityRepositoryInstance
     }
 
     /**

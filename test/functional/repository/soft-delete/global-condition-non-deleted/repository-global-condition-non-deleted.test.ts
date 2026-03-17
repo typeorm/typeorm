@@ -5,23 +5,22 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe(`repository > the global condtion of "non-deleted"`, () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it(`The global condition of "non-deleted" should be set for the entity with delete date columns`, () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.title = "title#1"
                 const post2 = new Post()
@@ -29,13 +28,13 @@ describe(`repository > the global condtion of "non-deleted"`, () => {
                 const post3 = new Post()
                 post3.title = "title#3"
 
-                await connection.manager.save(post1)
-                await connection.manager.save(post2)
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post1)
+                await dataSource.manager.save(post2)
+                await dataSource.manager.save(post3)
 
-                await connection.manager.softRemove(post1)
+                await dataSource.manager.softRemove(post1)
 
-                const loadedPosts = await connection.getRepository(Post).find()
+                const loadedPosts = await dataSource.getRepository(Post).find()
                 loadedPosts!.length.should.be.equal(2)
                 const loadedPost2 = loadedPosts.find((p) => p.id === 2)
                 expect(loadedPost2).to.exist
@@ -50,7 +49,7 @@ describe(`repository > the global condtion of "non-deleted"`, () => {
 
     it(`The global condition of "non-deleted" should not be set when the option "withDeleted" is set to true`, () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.title = "title#1"
                 const post2 = new Post()
@@ -58,13 +57,13 @@ describe(`repository > the global condtion of "non-deleted"`, () => {
                 const post3 = new Post()
                 post3.title = "title#3"
 
-                await connection.manager.save(post1)
-                await connection.manager.save(post2)
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post1)
+                await dataSource.manager.save(post2)
+                await dataSource.manager.save(post3)
 
-                await connection.manager.softRemove(post1)
+                await dataSource.manager.softRemove(post1)
 
-                const loadedPosts = await connection.getRepository(Post).find({
+                const loadedPosts = await dataSource.getRepository(Post).find({
                     withDeleted: true,
                 })
 
@@ -82,7 +81,7 @@ describe(`repository > the global condtion of "non-deleted"`, () => {
                 expect(loadedPost3!.deletedAt).to.equals(null)
                 expect(loadedPost3!.title).to.equals("title#3")
 
-                const loadedPost = await connection
+                const loadedPost = await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {

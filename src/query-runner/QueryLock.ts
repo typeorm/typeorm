@@ -3,7 +3,9 @@ export class QueryLock {
 
     async acquire(): Promise<() => void> {
         let release: () => void
-        const waitingPromise = new Promise<void>((ok) => (release = ok))
+        const waitingPromise = new Promise<void>((ok) => {
+            release = ok
+        })
 
         // Get track of everyone we need to wait on..
         const otherWaitingPromises = [...this.queue]

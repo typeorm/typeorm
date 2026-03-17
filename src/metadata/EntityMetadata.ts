@@ -1,28 +1,28 @@
-import { QueryRunner, SelectQueryBuilder } from ".."
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { DataSource } from "../data-source/DataSource"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { DataSource } from "../data-source/DataSource"
 import { CannotCreateEntityIdMapError } from "../error/CannotCreateEntityIdMapError"
-import { OrderByCondition } from "../find-options/OrderByCondition"
-import { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
-import { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
+import type { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
+import type { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
 import { OrmUtils } from "../util/OrmUtils"
-import { CheckMetadata } from "./CheckMetadata"
-import { ColumnMetadata } from "./ColumnMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
-import { EntityListenerMetadata } from "./EntityListenerMetadata"
-import { ExclusionMetadata } from "./ExclusionMetadata"
-import { ForeignKeyMetadata } from "./ForeignKeyMetadata"
-import { IndexMetadata } from "./IndexMetadata"
-import { RelationCountMetadata } from "./RelationCountMetadata"
-import { RelationIdMetadata } from "./RelationIdMetadata"
-import { RelationMetadata } from "./RelationMetadata"
-import { TableType } from "./types/TableTypes"
-import { TreeType } from "./types/TreeTypes"
-import { UniqueMetadata } from "./UniqueMetadata"
-import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
+import type { CheckMetadata } from "./CheckMetadata"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { EntityListenerMetadata } from "./EntityListenerMetadata"
+import type { ExclusionMetadata } from "./ExclusionMetadata"
+import type { ForeignKeyMetadata } from "./ForeignKeyMetadata"
+import type { IndexMetadata } from "./IndexMetadata"
+import type { RelationIdMetadata } from "./RelationIdMetadata"
+import type { RelationMetadata } from "./RelationMetadata"
+import type { TableType } from "./types/TableTypes"
+import type { TreeType } from "./types/TreeTypes"
+import type { UniqueMetadata } from "./UniqueMetadata"
+import type { ClosureTreeOptions } from "./types/ClosureTreeOptions"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { shorten } from "../util/StringUtils"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Contains all entity metadata.
@@ -99,7 +99,7 @@ export class EntityMetadata {
      * View's expression.
      * Used in views
      */
-    expression?: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression?: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     /**
      * View's dependencies.
@@ -391,11 +391,6 @@ export class EntityMetadata {
      * Entity's relation id metadatas.
      */
     relationIds: RelationIdMetadata[] = []
-
-    /**
-     * Entity's relation id metadatas.
-     */
-    relationCounts: RelationCountMetadata[] = []
 
     /**
      * Entity's foreign key metadatas.
@@ -923,38 +918,6 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Creates a property paths for a given entity.
-     * @param metadata
-     * @param entity
-     * @param prefix
-     * @deprecated
-     */
-    static createPropertyPath(
-        metadata: EntityMetadata,
-        entity: ObjectLiteral,
-        prefix: string = "",
-    ) {
-        const paths: string[] = []
-        Object.keys(entity).forEach((key) => {
-            // check for function is needed in the cases when createPropertyPath used on values contain a function as a value
-            // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
-            const parentPath = prefix ? prefix + "." + key : key
-            if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {
-                const subPaths = this.createPropertyPath(
-                    metadata,
-                    entity[key],
-                    parentPath,
-                )
-                paths.push(...subPaths)
-            } else {
-                const path = prefix ? prefix + "." + key : key
-                paths.push(path)
-            }
-        })
-        return paths
-    }
 
     /**
      * Finds difference between two entity id maps.

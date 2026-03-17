@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,20 +7,20 @@ import {
 import { expect } from "chai"
 
 describe("schema builder > drop column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly drop column", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const studentMetadata = connection.getMetadata("student")
+            dataSources.map(async (dataSource) => {
+                const studentMetadata = dataSource.getMetadata("student")
                 const removedColumns = studentMetadata.columns.filter(
                     (column) =>
                         ["name", "faculty"].indexOf(column.propertyName) !== -1,
@@ -56,9 +56,9 @@ describe("schema builder > drop column", () => {
                     1,
                 )
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const studentTable = await queryRunner.getTable("student")
                 await queryRunner.release()
 
@@ -67,7 +67,7 @@ describe("schema builder > drop column", () => {
                     .undefined
 
                 // CockroachDB creates indices for foreign keys
-                if (connection.driver.options.type === "cockroachdb") {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     studentTable!.indices.length.should.be.equal(1)
                 } else {
                     studentTable!.indices.length.should.be.equal(0)

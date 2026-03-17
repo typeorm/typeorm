@@ -1,4 +1,5 @@
-import { JsonContains, DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
+import { JsonContains } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

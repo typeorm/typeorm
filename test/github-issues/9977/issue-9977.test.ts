@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource, LessThanOrEqual, MoreThanOrEqual } from "../../../src"
+import type { DataSource } from "../../../src"
+import { LessThanOrEqual, MoreThanOrEqual } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,19 +13,18 @@ import { Tag } from "./entity/Tag"
 import { prepareData } from "./find-options-test-utils"
 
 describe("github issues > #9977", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                __dirname,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("where relations with (More|Less)ThanOrEqual operators", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts1 = await connection

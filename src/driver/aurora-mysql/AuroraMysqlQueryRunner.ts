@@ -1,16 +1,16 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ReadStream } from "../../platform/PlatformTools"
+import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
+import type { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -19,10 +19,10 @@ import { Broadcaster } from "../../subscriber/Broadcaster"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
-import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
+import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -237,7 +237,8 @@ export class AuroraMysqlQueryRunner
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\` WHERE \`SCHEMA_NAME\` = '${database}'`,
+            `SELECT * FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\` WHERE \`SCHEMA_NAME\` = ?`,
+            [database],
         )
         return result.length ? true : false
     }
@@ -272,8 +273,11 @@ export class AuroraMysqlQueryRunner
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = ? AND \`TABLE_NAME\` = ?`
+        const result = await this.query(sql, [
+            parsedTableName.database,
+            parsedTableName.tableName,
+        ])
         return result.length ? true : false
     }
 
@@ -290,21 +294,25 @@ export class AuroraMysqlQueryRunner
         const columnName = InstanceChecker.isTableColumn(column)
             ? column.name
             : column
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}' AND \`COLUMN_NAME\` = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = ? AND \`TABLE_NAME\` = ? AND \`COLUMN_NAME\` = ?`
+        const result = await this.query(sql, [
+            parsedTableName.database,
+            parsedTableName.tableName,
+            columnName,
+        ])
         return result.length ? true : false
     }
 
     /**
      * Creates a new database.
      * @param database
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createDatabase(
         database: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
-        const up = ifNotExist
+        const up = ifNotExists
             ? `CREATE DATABASE IF NOT EXISTS \`${database}\``
             : `CREATE DATABASE \`${database}\``
         const down = `DROP DATABASE \`${database}\``
@@ -314,10 +322,10 @@ export class AuroraMysqlQueryRunner
     /**
      * Drops database.
      * @param database
-     * @param ifExist
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        const up = ifExist
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
+        const up = ifExists
             ? `DROP DATABASE IF EXISTS \`${database}\``
             : `DROP DATABASE \`${database}\``
         const down = `CREATE DATABASE \`${database}\``
@@ -327,11 +335,11 @@ export class AuroraMysqlQueryRunner
     /**
      * Creates a new table schema.
      * @param schemaPath
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema create queries are not supported by MySql driver.`,
@@ -341,9 +349,9 @@ export class AuroraMysqlQueryRunner
     /**
      * Drops table schema.
      * @param schemaPath
-     * @param ifExist
+     * @param ifExists
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    async dropSchema(schemaPath: string, ifExists?: boolean): Promise<void> {
         throw new TypeORMError(
             `Schema drop queries are not supported by MySql driver.`,
         )
@@ -352,15 +360,15 @@ export class AuroraMysqlQueryRunner
     /**
      * Creates a new table.
      * @param table
-     * @param ifNotExist
+     * @param ifNotExists
      * @param createForeignKeys
      */
     async createTable(
         table: Table,
-        ifNotExist: boolean = false,
+        ifNotExists: boolean = false,
         createForeignKeys: boolean = true,
     ): Promise<void> {
-        if (ifNotExist) {
+        if (ifNotExists) {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
@@ -392,17 +400,17 @@ export class AuroraMysqlQueryRunner
     /**
      * Drop the table.
      * @param target
-     * @param ifExist
+     * @param ifExists
      * @param dropForeignKeys
      */
     async dropTable(
         target: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys: boolean = true,
     ): Promise<void> {
         // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
         // to perform drop queries for foreign keys and indices.
-        if (ifExist) {
+        if (ifExists) {
             const isTableExist = await this.hasTable(target)
             if (!isTableExist) return Promise.resolve()
         }
@@ -452,18 +460,22 @@ export class AuroraMysqlQueryRunner
     /**
      * Drops the view.
      * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
         const view = await this.getCachedView(viewName)
 
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        upQueries.push(await this.deleteViewDefinitionSql(view))
-        upQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.insertViewDefinitionSql(view))
-        downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeQueries(
+            [
+                await this.deleteViewDefinitionSql(view),
+                this.dropViewSql(view, ifExists),
+            ],
+            [
+                await this.insertViewDefinitionSql(view),
+                this.createViewSql(view),
+            ],
+        )
     }
 
     /**
@@ -799,7 +811,7 @@ export class AuroraMysqlQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        let newColumn: TableColumn | undefined = undefined
+        let newColumn: TableColumn
         if (InstanceChecker.isTableColumn(newTableColumnOrName)) {
             newColumn = newTableColumnOrName
         } else {
@@ -1249,10 +1261,12 @@ export class AuroraMysqlQueryRunner
      * Drops column in the table.
      * @param tableOrName
      * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1260,10 +1274,12 @@ export class AuroraMysqlQueryRunner
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
@@ -1458,13 +1474,15 @@ export class AuroraMysqlQueryRunner
      * Drops the columns in the table.
      * @param tableOrName
      * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const column of [...columns]) {
-            await this.dropColumn(tableOrName, column)
+            await this.dropColumn(tableOrName, column, ifExists)
         }
     }
 
@@ -1559,7 +1577,9 @@ export class AuroraMysqlQueryRunner
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
         const columnNamesString = columnNames
             .map((columnName) => `\`${columnName}\``)
@@ -1621,11 +1641,21 @@ export class AuroraMysqlQueryRunner
     /**
      * Drops a primary key.
      * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
+
+        if (ifExists && table.primaryColumns.length === 0)
+            return Promise.resolve()
+
         const up = this.dropPrimaryKeySql(table)
         const down = this.createPrimaryKeySql(
             table,
@@ -1669,10 +1699,12 @@ export class AuroraMysqlQueryRunner
      * Drops a unique constraint.
      * @param tableOrName
      * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `MySql does not support unique constraints. Use unique index instead.`,
@@ -1683,10 +1715,12 @@ export class AuroraMysqlQueryRunner
      * Drops a unique constraints.
      * @param tableOrName
      * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `MySql does not support unique constraints. Use unique index instead.`,
@@ -1721,10 +1755,12 @@ export class AuroraMysqlQueryRunner
      * Drops check constraint.
      * @param tableOrName
      * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`MySql does not support check constraints.`)
     }
@@ -1733,10 +1769,12 @@ export class AuroraMysqlQueryRunner
      * Drops check constraints.
      * @param tableOrName
      * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`MySql does not support check constraints.`)
     }
@@ -1769,10 +1807,12 @@ export class AuroraMysqlQueryRunner
      * Drops exclusion constraint.
      * @param tableOrName
      * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`MySql does not support exclusion constraints.`)
     }
@@ -1781,10 +1821,12 @@ export class AuroraMysqlQueryRunner
      * Drops exclusion constraints.
      * @param tableOrName
      * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`MySql does not support exclusion constraints.`)
     }
@@ -1834,10 +1876,12 @@ export class AuroraMysqlQueryRunner
      * Drops a foreign key.
      * @param tableOrName
      * @param foreignKeyOrName
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1845,10 +1889,12 @@ export class AuroraMysqlQueryRunner
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
 
         if (!foreignKey.name) {
             foreignKey.name = this.connection.namingStrategy.foreignKeyName(
@@ -1867,13 +1913,15 @@ export class AuroraMysqlQueryRunner
      * Drops a foreign keys from the table.
      * @param tableOrName
      * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = foreignKeys.map((foreignKey) =>
-            this.dropForeignKey(tableOrName, foreignKey),
+            this.dropForeignKey(tableOrName, foreignKey, ifExists),
         )
         await Promise.all(promises)
     }
@@ -1919,10 +1967,12 @@ export class AuroraMysqlQueryRunner
      * Drops an index.
      * @param tableOrName
      * @param indexOrName
+     * @param ifExists
      */
     async dropIndex(
         tableOrName: Table | string,
         indexOrName: TableIndex | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1930,10 +1980,12 @@ export class AuroraMysqlQueryRunner
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
 
         // old index may be passed without name. In this case we generate index name manually.
         if (!index.name) index.name = this.generateIndexName(table, index)
@@ -1948,13 +2000,15 @@ export class AuroraMysqlQueryRunner
      * Drops an indices from the table.
      * @param tableOrName
      * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = indices.map((index) =>
-            this.dropIndex(tableOrName, index),
+            this.dropIndex(tableOrName, index, ifExists),
         )
         await Promise.all(promises)
     }
@@ -1963,8 +2017,17 @@ export class AuroraMysqlQueryRunner
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      * @param tableOrName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tableOrName: Table | string): Promise<void> {
+    async clearTable(
+        tableOrName: Table | string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        if (options?.cascade)
+            throw new TypeORMError(
+                `MySql does not support clearing table with cascade option`,
+            )
         await this.query(`TRUNCATE TABLE ${this.escapePath(tableOrName)}`)
     }
 
@@ -1988,20 +2051,24 @@ export class AuroraMysqlQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
-            const dropViewQueries: ObjectLiteral[] =
-                await this.query(selectViewDropsQuery)
+            const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = ?`
+            const dropViewQueries: ObjectLiteral[] = await this.query(
+                selectViewDropsQuery,
+                [dbName],
+            )
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
 
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = ?`
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
 
             await this.query(disableForeignKeysCheckQuery)
-            const dropQueries: ObjectLiteral[] =
-                await this.query(dropTablesQuery)
+            const dropQueries: ObjectLiteral[] = await this.query(
+                dropTablesQuery,
+                [dbName],
+            )
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
             )
@@ -2237,33 +2304,8 @@ export class AuroraMysqlQueryRunner
                     tableColumn.name = dbColumn["COLUMN_NAME"]
                     tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
 
-                    // Unsigned columns are handled differently when it comes to width.
-                    // Hence, we need to set the unsigned attribute before we check the width.
-                    tableColumn.zerofill =
-                        dbColumn["COLUMN_TYPE"].includes("zerofill")
                     tableColumn.unsigned =
-                        tableColumn.zerofill ||
                         dbColumn["COLUMN_TYPE"].includes("unsigned")
-
-                    if (
-                        this.driver.unsignedColumnTypes.includes(
-                            tableColumn.type as UnsignedColumnType,
-                        )
-                    ) {
-                        const width = dbColumn["COLUMN_TYPE"].substring(
-                            dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
-                            dbColumn["COLUMN_TYPE"].indexOf(")"),
-                        )
-                        tableColumn.width =
-                            width &&
-                            !this.isDefaultColumnWidth(
-                                table,
-                                tableColumn,
-                                parseInt(width),
-                            )
-                                ? parseInt(width)
-                                : undefined
-                    }
 
                     if (
                         dbColumn["COLUMN_DEFAULT"] === null ||
@@ -2309,8 +2351,6 @@ export class AuroraMysqlQueryRunner
                             )
                         },
                     )
-                    tableColumn.zerofill =
-                        dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1
                     tableColumn.isGenerated =
                         dbColumn["EXTRA"].indexOf("auto_increment") !== -1
                     if (tableColumn.isGenerated)
@@ -2666,9 +2706,16 @@ export class AuroraMysqlQueryRunner
     /**
      * Builds drop view sql.
      * @param viewOrPath
+     * @param ifExists
      */
-    protected dropViewSql(viewOrPath: View | string): Query {
-        return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
+    protected dropViewSql(
+        viewOrPath: View | string,
+        ifExists?: boolean,
+    ): Query {
+        const ifExistsClause = ifExists ? "IF EXISTS " : ""
+        return new Query(
+            `DROP VIEW ${ifExistsClause}${this.escapePath(viewOrPath)}`,
+        )
     }
 
     /**
@@ -2843,7 +2890,7 @@ export class AuroraMysqlQueryRunner
         skipPrimary: boolean,
         skipName: boolean = false,
     ) {
-        let c = ""
+        let c: string
         if (skipName) {
             c = this.connection.driver.createFullType(column)
         } else {
@@ -2851,17 +2898,16 @@ export class AuroraMysqlQueryRunner
                 column,
             )}`
         }
+
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${
                 column.generatedType ? column.generatedType : "VIRTUAL"
             }`
 
-        // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to that column.
-        if (column.zerofill) {
-            c += " ZEROFILL"
-        } else if (column.unsigned) {
+        if (column.unsigned) {
             c += " UNSIGNED"
         }
+
         if (column.enum)
             c += ` (${column.enum
                 .map((value) => "'" + value + "'")
@@ -2881,53 +2927,6 @@ export class AuroraMysqlQueryRunner
         if (column.onUpdate) c += ` ON UPDATE ${column.onUpdate}`
 
         return c
-    }
-
-    /**
-     * Checks if column display width is by default.
-     * @param table
-     * @param column
-     * @param width
-     */
-    protected isDefaultColumnWidth(
-        table: Table,
-        column: TableColumn,
-        width: number,
-    ): boolean {
-        // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
-            const columnMetadata = metadata.findColumnWithDatabaseName(
-                column.name,
-            )
-            if (columnMetadata && columnMetadata.width) return false
-        }
-
-        const defaultWidthForType =
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].width
-
-        if (defaultWidthForType) {
-            // In MariaDB & MySQL 5.7, the default widths of certain numeric types are 1 less than
-            // the usual defaults when the column is unsigned.
-            // This also applies to Aurora MySQL.
-            const typesWithReducedUnsignedDefault = [
-                "int",
-                "tinyint",
-                "smallint",
-                "mediumint",
-            ]
-            const needsAdjustment =
-                typesWithReducedUnsignedDefault.indexOf(column.type) !== -1
-            if (column.unsigned && needsAdjustment) {
-                return defaultWidthForType - 1 === width
-            } else {
-                return defaultWidthForType === width
-            }
-        }
-
-        return false
     }
 
     /**
