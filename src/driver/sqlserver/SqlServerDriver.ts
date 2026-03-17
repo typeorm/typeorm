@@ -21,6 +21,7 @@ import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
@@ -1180,6 +1181,19 @@ export class SqlServerDriver implements Driver {
             DriverUtils.buildDriverOptions(credentials),
         ) // todo: do it better way
 
+        let isolationLevel: IsolationLevel | "SNAPSHOT" | undefined
+        if (options.options?.isolationLevel) {
+            isolationLevel = this.convertIsolationLevel(
+                options.options.isolationLevel,
+            )
+        }
+        let connectionIsolationLevel: IsolationLevel | "SNAPSHOT" | undefined
+        if (options.options?.connectionIsolationLevel) {
+            connectionIsolationLevel = this.convertIsolationLevel(
+                options.options.connectionIsolationLevel,
+            )
+        }
+
         // build connection options for the driver
         const connectionOptions = Object.assign(
             {},
@@ -1188,7 +1202,11 @@ export class SqlServerDriver implements Driver {
                 requestTimeout: this.options.requestTimeout,
                 stream: this.options.stream,
                 pool: this.options.pool,
-                options: this.options.options,
+                options: {
+                    ...this.options.options,
+                    isolationLevel: isolationLevel,
+                    connectionIsolationLevel: connectionIsolationLevel,
+                },
             },
             {
                 server: credentials.host,
@@ -1234,5 +1252,28 @@ export class SqlServerDriver implements Driver {
                 ok(connection)
             })
         })
+    }
+
+    /**
+     * Converts string literal of isolation level to enum.
+     * The underlying mssql driver requires an enum for the isolation level.
+     * @param isolation
+     */
+    convertIsolationLevel(isolation: IsolationLevel | "SNAPSHOT") {
+        const ISOLATION_LEVEL = this.mssql.ISOLATION_LEVEL
+        switch (isolation) {
+            case "READ UNCOMMITTED":
+                return ISOLATION_LEVEL.READ_UNCOMMITTED
+            case "REPEATABLE READ":
+                return ISOLATION_LEVEL.REPEATABLE_READ
+            case "SERIALIZABLE":
+                return ISOLATION_LEVEL.SERIALIZABLE
+            case "SNAPSHOT":
+                return ISOLATION_LEVEL.SNAPSHOT
+
+            case "READ COMMITTED":
+            default:
+                return ISOLATION_LEVEL.READ_COMMITTED
+        }
     }
 }

@@ -115,7 +115,7 @@ export class SqlServerQueryRunner
                 this.dataSource.logger.logQuery("BEGIN TRANSACTION")
                 if (isolationLevel) {
                     this.databaseConnection.begin(
-                        this.convertIsolationLevel(isolationLevel),
+                        this.driver.convertIsolationLevel(isolationLevel),
                         transactionCallback,
                     )
                     this.dataSource.logger.logQuery(
@@ -4395,27 +4395,6 @@ export class SqlServerQueryRunner
                 return this.driver.mssql.RowVersion
             case "vector":
                 return this.driver.mssql.Ntext
-        }
-    }
-
-    /**
-     * Converts string literal of isolation level to enum.
-     * The underlying mssql driver requires an enum for the isolation level.
-     * @param isolation
-     */
-    convertIsolationLevel(isolation: IsolationLevel) {
-        const ISOLATION_LEVEL = this.driver.mssql.ISOLATION_LEVEL
-        switch (isolation) {
-            case "READ UNCOMMITTED":
-                return ISOLATION_LEVEL.READ_UNCOMMITTED
-            case "REPEATABLE READ":
-                return ISOLATION_LEVEL.REPEATABLE_READ
-            case "SERIALIZABLE":
-                return ISOLATION_LEVEL.SERIALIZABLE
-
-            case "READ COMMITTED":
-            default:
-                return ISOLATION_LEVEL.READ_COMMITTED
         }
     }
 
