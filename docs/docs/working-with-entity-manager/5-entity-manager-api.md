@@ -85,8 +85,6 @@ const result = await manager.query(
 )
 ```
 
-Deprecated boolean overload: older code may use `manager.query(sql, params, true)`. Replace it with the options form shown above. The boolean overload will be removed in a future major release.
-
 - `sql` - Executes a raw SQL query using template literals.
 
 ```typescript

@@ -103,8 +103,8 @@ The low-level `query` method available on `DataSource`, `EntityManager`, and `Qu
 
 ```ts
 interface QueryOptions {
-  /** When true, the call returns a QueryResult object instead of the raw driver return. */
-  useStructuredResult?: boolean
+    /** When true, the call returns a QueryResult object instead of the raw driver return. */
+    useStructuredResult?: boolean
 }
 ```
 
@@ -115,11 +115,9 @@ interface QueryOptions {
 const rows = await dataSource.query("SELECT * FROM users WHERE id = ?", [1])
 
 // Structured result
-const result = await dataSource.query(
-  "SELECT * FROM users WHERE id = ?",
-  [1],
-  { useStructuredResult: true }
-)
+const result = await dataSource.query("SELECT * FROM users WHERE id = ?", [1], {
+    useStructuredResult: true,
+})
 console.log(result.records) // same rows
 console.log(result.affected) // undefined for a SELECT
 ```
@@ -130,7 +128,7 @@ console.log(result.affected) // undefined for a SELECT
 const update = await manager.query(
     "UPDATE user SET active = ? WHERE last_login < ?",
     [false, cutoffDate],
-    { useStructuredResult: true }
+    { useStructuredResult: true },
 )
 console.log(update.affected)
 ```
@@ -144,28 +142,12 @@ try {
     const del = await qr.query(
         "DELETE FROM session WHERE expires_at < ?",
         [new Date()],
-        { useStructuredResult: true }
+        { useStructuredResult: true },
     )
     console.log(del.affected)
 } finally {
-  await qr.release()
+    await qr.release()
 }
-```
-
-
-
-### Migration note (deprecated boolean overload)
-
-Older versions allowed `query(sql, params, true)` to return a `QueryResult`. That boolean overload is deprecated. Replace:
-
-```ts
-await queryRunner.query(sql, params, true)
-```
-
-with:
-
-```ts
-await queryRunner.query(sql, params, { useStructuredResult: true })
 ```
 
 ### When to request structured results
