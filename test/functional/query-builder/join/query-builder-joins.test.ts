@@ -310,9 +310,9 @@ describe("query builder > joins", () => {
                         .where("post.id = :id", { id: post.id })
                         .getOne()
 
-                    expect(loadedPost!).to.not.be.null
-                    expect(loadedPost!.categories).to.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(0)
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.categories).to.be.eql([])
+                    expect(loadedPost?.categories.length).to.be.equal(0)
                 }),
             ))
 
@@ -335,9 +335,9 @@ describe("query builder > joins", () => {
                         .where("post.id = :id", { id: post.id })
                         .getOne()
 
-                    expect(loadedPost!).to.not.be.null
-                    expect(loadedPost!.categories).to.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(0)
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.categories).to.be.eql([])
+                    expect(loadedPost?.categories.length).to.be.equal(0)
                 }),
             ))
 
@@ -365,16 +365,16 @@ describe("query builder > joins", () => {
                         .where("post.id = :id", { id: post.id })
                         .getOne()
 
-                    expect(loadedPost!).to.not.be.null
-                    expect(loadedPost!.categories.length).to.be.equal(1)
-                    expect(loadedPost!.categories[0].name).to.be.equal(
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.categories.length).to.be.equal(1)
+                    expect(loadedPost?.categories[0].name).to.be.equal(
                         "animals",
                     )
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost?.categories[0].images.length).to.be.equal(
                         1,
                     )
                     expect(
-                        loadedPost!.categories[0].images[0].name,
+                        loadedPost?.categories[0].images[0].name,
                     ).to.be.equal("cat-image")
                 }),
             ))
@@ -392,9 +392,9 @@ describe("query builder > joins", () => {
                         .where("post.id = :id", { id: post.id })
                         .getOne()
 
-                    expect(loadedPost!).to.not.be.null
-                    expect(loadedPost!.title).to.be.equal("about dogs")
-                    expect(loadedPost!.tag).to.be.null
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.title).to.be.equal("about dogs")
+                    expect(loadedPost?.tag).to.be.null
                 }),
             ))
 
