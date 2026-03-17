@@ -90,7 +90,7 @@ export abstract class AbstractSqliteQueryRunner
             isolationLevel !== "SERIALIZABLE"
         )
             throw new TypeORMError(
-                `SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`,
+                `SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation levels`,
             )
 
         this.isTransactionActive = true

@@ -14,7 +14,7 @@ describe("transaction > transaction with oracle dataSource partial isolation sup
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["oracle"], // todo: for some reasons mariadb tests are not passing here
+            enabledDrivers: ["oracle"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))

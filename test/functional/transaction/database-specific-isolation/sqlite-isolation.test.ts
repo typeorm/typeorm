@@ -14,93 +14,58 @@ describe("transaction > transaction with sqlite dataSource partial isolation sup
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["better-sqlite3"], // todo: for some reasons mariadb tests are not passing here
+            enabledDrivers: ["better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should execute all operations in a single transaction with READ UNCOMMITTED isolation level", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                let postId: number | undefined = undefined,
-                    categoryId: number | undefined = undefined
+    const isolationLevels = ["READ UNCOMMITTED", "SERIALIZABLE"] as const
 
-                await dataSource.manager.transaction(
-                    "READ UNCOMMITTED",
-                    async (entityManager) => {
-                        const post = new Post()
-                        post.title = "Post #1"
-                        await entityManager.save(post)
+    for (const isolationLevel of isolationLevels) {
+        it(`should execute all operations in a single transaction with ${isolationLevel} isolation level`, () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    let postId: number | undefined = undefined,
+                        categoryId: number | undefined = undefined
 
-                        const category = new Category()
-                        category.name = "Category #1"
-                        await entityManager.save(category)
+                    await dataSource.manager.transaction(
+                        isolationLevel,
+                        async (entityManager) => {
+                            const post = new Post()
+                            post.title = "Post #1"
+                            await entityManager.save(post)
 
-                        postId = post.id
-                        categoryId = category.id
-                    },
-                )
+                            const category = new Category()
+                            category.name = "Category #1"
+                            await entityManager.save(category)
 
-                const post = await dataSource.manager.findOne(Post, {
-                    where: { title: "Post #1" },
-                })
-                expect(post).not.to.be.null
-                post!.should.be.eql({
-                    id: postId,
-                    title: "Post #1",
-                })
+                            postId = post.id
+                            categoryId = category.id
+                        },
+                    )
 
-                const category = await dataSource.manager.findOne(Category, {
-                    where: { name: "Category #1" },
-                })
-                expect(category).not.to.be.null
-                category!.should.be.eql({
-                    id: categoryId,
-                    name: "Category #1",
-                })
-            }),
-        ))
+                    const post = await dataSource.manager.findOne(Post, {
+                        where: { title: "Post #1" },
+                    })
+                    expect(post).not.to.be.null
+                    post!.should.be.eql({
+                        id: postId,
+                        title: "Post #1",
+                    })
 
-    it("should execute all operations in a single transaction with SERIALIZABLE isolation level", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                let postId: number | undefined = undefined,
-                    categoryId: number | undefined = undefined
-
-                await dataSource.manager.transaction(
-                    "SERIALIZABLE",
-                    async (entityManager) => {
-                        const post = new Post()
-                        post.title = "Post #1"
-                        await entityManager.save(post)
-
-                        const category = new Category()
-                        category.name = "Category #1"
-                        await entityManager.save(category)
-
-                        postId = post.id
-                        categoryId = category.id
-                    },
-                )
-
-                const post = await dataSource.manager.findOne(Post, {
-                    where: { title: "Post #1" },
-                })
-                expect(post).not.to.be.null
-                post!.should.be.eql({
-                    id: postId,
-                    title: "Post #1",
-                })
-
-                const category = await dataSource.manager.findOne(Category, {
-                    where: { name: "Category #1" },
-                })
-                expect(category).not.to.be.null
-                category!.should.be.eql({
-                    id: categoryId,
-                    name: "Category #1",
-                })
-            }),
-        ))
+                    const category = await dataSource.manager.findOne(
+                        Category,
+                        {
+                            where: { name: "Category #1" },
+                        },
+                    )
+                    expect(category).not.to.be.null
+                    category!.should.be.eql({
+                        id: categoryId,
+                        name: "Category #1",
+                    })
+                }),
+            ))
+    }
 })

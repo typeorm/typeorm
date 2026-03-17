@@ -1181,13 +1181,13 @@ export class SqlServerDriver implements Driver {
             DriverUtils.buildDriverOptions(credentials),
         ) // todo: do it better way
 
-        let isolationLevel: IsolationLevel | "SNAPSHOT" | undefined
+        let isolationLevel: IsolationLevel | undefined
         if (options.options?.isolationLevel) {
             isolationLevel = this.convertIsolationLevel(
                 options.options.isolationLevel,
             )
         }
-        let connectionIsolationLevel: IsolationLevel | "SNAPSHOT" | undefined
+        let connectionIsolationLevel: IsolationLevel | undefined
         if (options.options?.connectionIsolationLevel) {
             connectionIsolationLevel = this.convertIsolationLevel(
                 options.options.connectionIsolationLevel,
@@ -1259,7 +1259,7 @@ export class SqlServerDriver implements Driver {
      * The underlying mssql driver requires an enum for the isolation level.
      * @param isolation
      */
-    convertIsolationLevel(isolation: IsolationLevel | "SNAPSHOT") {
+    convertIsolationLevel(isolation: IsolationLevel) {
         const ISOLATION_LEVEL = this.mssql.ISOLATION_LEVEL
         switch (isolation) {
             case "READ UNCOMMITTED":

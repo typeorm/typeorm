@@ -124,7 +124,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             isolationLevel !== "READ COMMITTED"
         ) {
             throw new TypeORMError(
-                `Oracle only supports SERIALIZABLE and READ COMMITTED isolation`,
+                `Oracle only supports SERIALIZABLE and READ COMMITTED isolation levels`,
             )
         }
 

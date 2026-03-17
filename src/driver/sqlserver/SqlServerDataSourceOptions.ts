@@ -216,16 +216,15 @@ export interface SqlServerDataSourceOptions
         }
 
         /**
-         * The default isolation level that transactions will be run with. The isolation levels are available
-         * from require('tedious').ISOLATION_LEVEL. (default: READ_COMMITTED).
+         * The default isolation level that transactions will be run with. (default: `READ COMMITTED`).
          */
-        readonly isolationLevel?: IsolationLevel | "SNAPSHOT"
+        readonly isolationLevel?: IsolationLevel
 
         /**
          * The default isolation level for new connections. All out-of-transaction queries are executed with this
-         * setting. The isolation levels are available from require('tedious').ISOLATION_LEVEL .
+         * setting.
          */
-        readonly connectionIsolationLevel?: IsolationLevel | "SNAPSHOT"
+        readonly connectionIsolationLevel?: IsolationLevel
 
         /**
          * A boolean, determining whether the connection will request read only access from a SQL Server

@@ -107,6 +107,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (
+            isolationLevel === "SNAPSHOT" ||
+            isolationLevel === "READ UNCOMMITTED"
+        ) {
+            throw new TypeORMError(
+                "SAP HANA does not support SNAPSHOT or READ UNCOMMITTED isolation levels",
+            )
+        }
 
         if (
             this.isTransactionActive &&
