@@ -1,0 +1,38 @@
+{
+  "name": "@typeorm/codemod",
+  "version": "1.0.0",
+  "description": "Codemods for migrating between TypeORM versions",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/typeorm/typeorm.git",
+    "directory": "packages/codemod"
+  },
+  "license": "MIT",
+  "bin": {
+    "typeorm-codemod": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint",
+    "start": "ts-node src/index.ts",
+    "test": "mocha"
+  },
+  "dependencies": {
+    "jscodeshift": "^17.1.2"
+  },
+  "devDependencies": {
+    "@types/jscodeshift": "^0.12.0",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^20.0.0",
+    "chai": "^4.5.0",
+    "mocha": "^11.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
