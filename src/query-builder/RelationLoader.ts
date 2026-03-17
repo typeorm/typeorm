@@ -2,6 +2,7 @@ import type { DataSource } from "../data-source/DataSource"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { RelationMetadata } from "../metadata/RelationMetadata"
+import { DriverUtils } from "../driver/DriverUtils"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 
@@ -89,22 +90,42 @@ export class RelationLoader {
             ? entityOrEntities
             : [entityOrEntities]
 
-        const joinAliasName = relation.entityMetadata.name
         const qb = queryBuilder
             ? queryBuilder
             : this.dataSource
                   .createQueryBuilder(queryRunner)
-                  .select(relation.propertyName) // category
+                  .select(relation.propertyName)
                   .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
+
+        // For self-referencing relations the entity name already exists
+        // as an alias, so we need to generate a unique join alias name.
+        const baseName = relation.entityMetadata.name
+        let joinAliasName = DriverUtils.buildAlias(
+            this.dataSource.driver,
+            { shorten: true },
+            baseName,
+        )
+        let suffix = 1
+        while (
+            qb.expressionMap.aliases.some(({ name }) => name === joinAliasName)
+        ) {
+            joinAliasName = DriverUtils.buildAlias(
+                this.dataSource.driver,
+                { shorten: true },
+                baseName,
+                String(suffix++),
+            )
+        }
+
         const columns = relation.entityMetadata.primaryColumns
         const joinColumns = relation.isOwning
             ? relation.joinColumns
             : relation.inverseRelation!.joinColumns
         const conditions = joinColumns
             .map((joinColumn) => {
-                return `${relation.entityMetadata.name}.${
+                return `${joinAliasName}.${
                     joinColumn.propertyName
                 } = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`
             })
