@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,20 +11,19 @@ import { Site } from "./entity/Site"
 import { Member } from "./entity/Member"
 
 describe("github issues > #8076 Add relation options to all tree queries (missing ones)", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Category, Site, Member],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category, Site, Member],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(async () => {
-        await reloadTestingDatabases(connections)
-        for (const connection of connections) {
+        await reloadTestingDatabases(dataSources)
+        for (const connection of dataSources) {
             const categoryRepo = connection.getRepository(Category)
             const siteRepo = connection.getRepository(Site)
             const memberRepo = connection.getRepository(Member)
@@ -104,11 +103,11 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
         }
     })
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return tree without sites relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .getTreeRepository(Category)
                     .findTrees()
@@ -128,7 +127,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return tree with sites relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .getTreeRepository(Category)
                     .findTrees({ relations: ["sites"] })
@@ -154,7 +153,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return roots without member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .getTreeRepository(Category)
                     .findRoots()
@@ -168,7 +167,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return roots with member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .getTreeRepository(Category)
                     .findRoots({ relations: ["members"] })
@@ -185,7 +184,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return descendants without member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const c1 = await connection
                     .getRepository(Category)
                     .findOneBy({ title: "Category 1" })
@@ -212,7 +211,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return descendants with member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const c1 = await connection
                     .getRepository(Category)
                     .findOneBy({ title: "Category 1" })
@@ -242,7 +241,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return descendants tree without member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const c1 = await connection
                     .getRepository(Category)
                     .findOneBy({ title: "Category 1" })
@@ -265,7 +264,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return descendants tree with member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const c1 = await connection
                     .getRepository(Category)
                     .findOneBy({ title: "Category 1" })
@@ -293,7 +292,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return ancestors without member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const c3 = await connection
                     .getRepository(Category)
                     .findOneBy({ title: "Category 1.1.1" })
@@ -320,7 +319,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return ancestors with member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const c3 = await connection
                     .getRepository(Category)
                     .findOneBy({ title: "Category 1.1.1" })
@@ -348,7 +347,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return ancestors tree without member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const c3 = await connection
                     .getRepository(Category)
                     .findOneBy({ title: "Category 1.1.1" })
@@ -371,7 +370,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     it("should return ancestors tree with member relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const c3 = await connection
                     .getRepository(Category)
                     .findOneBy({ title: "Category 1.1.1" })

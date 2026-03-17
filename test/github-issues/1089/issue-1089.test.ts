@@ -3,24 +3,23 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Group } from "./entity/Group"
 
 describe("github issues > #1089 UUID in ClosureEntity", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: false,
-                dropSchema: true,
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: false,
+            dropSchema: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly work with primary UUID column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.synchronize()
 
                 const queryRunner = connection.createQueryRunner()

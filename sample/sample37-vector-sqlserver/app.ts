@@ -20,13 +20,13 @@ const AppDataSource = new DataSource({
 })
 
 AppDataSource.initialize()
-    .then(async (connection) => {
+    .then(async (dataSource) => {
         console.log("Inserting documents and chunks with vector embeddings...")
 
         // Create a document
         const document = new Document()
         document.fileName = "sample-document.txt"
-        await connection.manager.save(document)
+        await dataSource.manager.save(document)
 
         // Generate sample embeddings (in a real app, these would come from an ML model)
         const generateEmbedding = (dimension: number): number[] => {
@@ -52,7 +52,7 @@ AppDataSource.initialize()
         chunk3.embedding = generateEmbedding(1998)
         chunk3.document = document
 
-        await connection.manager.save([chunk1, chunk2, chunk3])
+        await dataSource.manager.save([chunk1, chunk2, chunk3])
 
         console.log("Documents and chunks have been saved!")
 
@@ -64,7 +64,7 @@ AppDataSource.initialize()
         const documentIds = [document.id]
 
         const docIdParams = documentIds.map((_, i) => `@${i + 1}`).join(", ")
-        const results = await connection.query(
+        const results = await dataSource.query(
             `
             DECLARE @question AS VECTOR (1998) = @0;
             SELECT TOP (3) dc.*, VECTOR_DISTANCE('cosine', @question, embedding) AS distance, d.fileName as "documentName"
@@ -83,6 +83,6 @@ AppDataSource.initialize()
             console.log(`   Document: ${result.documentName}`)
         })
 
-        await connection.destroy()
+        await dataSource.destroy()
     })
     .catch((error) => console.log(error))

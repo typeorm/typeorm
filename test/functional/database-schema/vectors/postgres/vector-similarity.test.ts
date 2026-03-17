@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,9 +9,9 @@ import {
 import { Post } from "./entity/Post"
 
 describe("columns > vector type > similarity operations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["postgres"],
             schemaCreate: true,
@@ -19,11 +19,11 @@ describe("columns > vector type > similarity operations", () => {
         })
     })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
-    async function setupTestData(connection: DataSource) {
-        const postRepository = connection.getRepository(Post)
+    async function setupTestData(dataSource: DataSource) {
+        const postRepository = dataSource.getRepository(Post)
         await postRepository.clear() // Clear existing data
 
         // Create test posts with known vectors
@@ -40,11 +40,11 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should perform similarity search using L2 distance", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await setupTestData(connection)
+            dataSources.map(async (dataSource) => {
+                await setupTestData(dataSource)
                 const queryVector = "[1,1,1.6]" // Search vector
 
-                const results = await connection.query(
+                const results = await dataSource.query(
                     `SELECT id, embedding FROM "post" ORDER BY embedding <-> $1 LIMIT 2`,
                     [queryVector],
                 )
@@ -58,11 +58,11 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should perform similarity search using cosine distance", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await setupTestData(connection)
+            dataSources.map(async (dataSource) => {
+                await setupTestData(dataSource)
                 const queryVector = "[1,1,1]" // Search vector
 
-                const results = await connection.query(
+                const results = await dataSource.query(
                     `SELECT id, embedding FROM "post" ORDER BY embedding <=> $1 LIMIT 3`,
                     [queryVector],
                 )
@@ -83,8 +83,8 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should perform similarity search using inner product", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 await postRepository.clear()
 
                 // Create vectors with known inner products
@@ -96,7 +96,7 @@ describe("columns > vector type > similarity operations", () => {
 
                 const queryVector = "[1,1,1]" // Search vector
 
-                const results = await connection.query(
+                const results = await dataSource.query(
                     `SELECT id, embedding FROM "post" ORDER BY embedding <#> $1 ASC LIMIT 2`, // The <#> operator returns negative inner product, so ASC ordering gives highest positive inner product first (most similar vectors)
                     [queryVector],
                 )
@@ -110,8 +110,8 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should prevent persistence of Post with incorrect vector dimensions due to DB constraints", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const post = new Post()
                 post.embedding_three_dimensions = [1, 1] // Wrong dimensions (2 instead of 3)
 
@@ -126,7 +126,7 @@ describe("columns > vector type > similarity operations", () => {
                 expect(saveThrewError).to.be.true
                 expect(post.id).to.be.undefined
 
-                const foundPostWithMalformedEmbedding = await connection
+                const foundPostWithMalformedEmbedding = await dataSource
                     .getRepository(Post)
                     .createQueryBuilder("p")
                     .where(
@@ -142,8 +142,8 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should perform halfvec similarity search using L2 distance", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 await postRepository.clear()
 
                 // Create test posts with known halfvec values
@@ -156,7 +156,7 @@ describe("columns > vector type > similarity operations", () => {
 
                 const queryVector = "[1,1,1.8,1.8]" // Search vector
 
-                const results = await connection.query(
+                const results = await dataSource.query(
                     `SELECT id, halfvec_four_dimensions FROM "post" ORDER BY halfvec_four_dimensions <-> $1 LIMIT 2`,
                     [queryVector],
                 )
@@ -174,8 +174,8 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should prevent persistence of Post with incorrect halfvec dimensions due to DB constraints", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const post = new Post()
                 post.halfvec_four_dimensions = [1, 1, 1] // Wrong dimensions (3 instead of 4)
 
@@ -190,7 +190,7 @@ describe("columns > vector type > similarity operations", () => {
                 expect(saveThrewError).to.be.true
                 expect(post.id).to.be.undefined
 
-                const foundPostWithMalformedHalfvec = await connection
+                const foundPostWithMalformedHalfvec = await dataSource
                     .getRepository(Post)
                     .createQueryBuilder("p")
                     .where("p.halfvec_four_dimensions::text = :embeddingText", {

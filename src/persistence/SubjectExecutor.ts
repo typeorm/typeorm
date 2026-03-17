@@ -1,19 +1,19 @@
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { Subject } from "./Subject"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { Subject } from "./Subject"
 import { SubjectTopologicalSorter } from "./SubjectTopologicalSorter"
 import { SubjectChangedColumnsComputer } from "./SubjectChangedColumnsComputer"
 import { SubjectWithoutIdentifierError } from "../error/SubjectWithoutIdentifierError"
 import { SubjectRemovedAndUpdatedError } from "../error/SubjectRemovedAndUpdatedError"
-import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { SaveOptions } from "../repository/SaveOptions"
-import { RemoveOptions } from "../repository/RemoveOptions"
+import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { SaveOptions } from "../repository/SaveOptions"
+import type { RemoveOptions } from "../repository/RemoveOptions"
 import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { NestedSetSubjectExecutor } from "./tree/NestedSetSubjectExecutor"
 import { ClosureSubjectExecutor } from "./tree/ClosureSubjectExecutor"
 import { MaterializedPathSubjectExecutor } from "./tree/MaterializedPathSubjectExecutor"
 import { OrmUtils } from "../util/OrmUtils"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 
@@ -1053,6 +1053,7 @@ export class SubjectExecutor {
     /**
      * Updates all special columns of the saving entities (create date, update date, version, etc.).
      * Also updates nullable columns and columns with default values.
+     * @param subjects
      */
     protected updateSpecialColumnsInInsertedAndUpdatedEntities(
         subjects: Subject[],
@@ -1082,6 +1083,19 @@ export class SubjectExecutor {
                     const columnValue = column.getEntityValue(subject.entity!)
                     if (columnValue === undefined)
                         column.setEntityValue(subject.entity!, null)
+                }
+
+                if (!column.isSelect) {
+                    const target = column.embeddedMetadata
+                        ? OrmUtils.deepValue(
+                              subject.entity!,
+                              column.embeddedMetadata.propertyPath,
+                          )
+                        : subject.entity
+
+                    if (target) {
+                        delete target[column.propertyName]
+                    }
                 }
 
                 // update relational columns
@@ -1129,6 +1143,8 @@ export class SubjectExecutor {
      *
      * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
      * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
+     * @param subjects
+     * @param type
      */
     protected groupBulkSubjects(
         subjects: Subject[],

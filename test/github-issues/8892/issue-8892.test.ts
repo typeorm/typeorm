@@ -7,23 +7,23 @@ import { expect } from "chai"
 import { City } from "./entity/city"
 import { Zip } from "./entity/zip"
 import { Country } from "./entity/country"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe('github issues > #8892 ManyToMany relations save throws "Violation of PRIMARY KEY constraint"', () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     beforeEach(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    afterEach(() => closeTestingConnections(connections))
+    afterEach(() => closeTestingConnections(dataSources))
 
     it("should work perfectly with with many to many relation with primary key from related object is a primary key from an many to one relation", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const cityRepository = connection.getRepository(City)
                 const countryRepository = connection.getRepository(Country)
 

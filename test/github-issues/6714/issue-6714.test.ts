@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Session as baseEntity } from "./entity/session"
 import { Session as changedEntity } from "./entity/sessionchanged"
@@ -42,7 +42,6 @@ describe("github issues > #6714 Migration:generate issue with onUpdate using mar
             schemaCreate: false, // don't change the entity
             dropSchema: false,
             enabledDrivers: ["mariadb"],
-            name: "test",
         })
         await Promise.all(
             connections.map(async (connection) => {

@@ -1,4 +1,4 @@
-import { ReturningOption } from "../query-builder/ReturningOption"
+import type { ReturningOption } from "../query-builder/ReturningOption"
 
 /**
  * Special options passed to Repository#update and updateAll.

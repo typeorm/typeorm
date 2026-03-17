@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,21 +7,21 @@ import {
 import { expect } from "chai"
 
 describe("indices > conditional index", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "postgres", "sqlite", "better-sqlite3"], // only these drivers supports conditional indices
+            enabledDrivers: ["mssql", "postgres", "better-sqlite3"], // only these drivers supports conditional indices
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create conditional indices with WHERE condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
 
                 table!.indices.length.should.be.equal(2)
@@ -34,8 +34,8 @@ describe("indices > conditional index", () => {
 
     it("should correctly drop conditional indices and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 table!.indices.length.should.be.equal(2)
                 expect(table!.indices[0].where).to.be.not.empty

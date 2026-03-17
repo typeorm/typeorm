@@ -1,4 +1,4 @@
-import { ObjectId } from "../driver/mongodb/typings"
+import type { ObjectId } from "../driver/mongodb/typings"
 
 /**
  * A single property handler for FindOptionsSelect.
@@ -16,7 +16,7 @@ export type FindOptionsSelectProperty<Property> =
                 ? boolean
                 : Property extends Function
                   ? never
-                  : Property extends Buffer
+                  : Property extends Uint8Array
                     ? boolean
                     : Property extends Date
                       ? boolean
@@ -38,7 +38,6 @@ export type FindOptionsSelect<Entity> = {
 /**
  * Property paths (column names) to be selected by "find" defined as string.
  * Old selection mechanism in TypeORM.
- *
  * @deprecated will be removed in the next version, use FindOptionsSelect type notation instead
  */
 export type FindOptionsSelectByString<Entity> = (keyof Entity)[]

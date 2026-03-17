@@ -3,7 +3,7 @@ import { writeFile, unlink } from "fs/promises"
 import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptionsReader"
 import { importClassesFromDirectories } from "../../../src/util/DirectoryExportedClassesLoader"
 import { LoggerFactory } from "../../../src/logger/LoggerFactory"
-import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
+import type { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 
 describe("github issues > #6284 cli support for cjs extension", () => {
     it("will load a cjs file", async () => {
@@ -15,7 +15,7 @@ describe("github issues > #6284 cli support for cjs extension", () => {
         await writeFile(cjsConfigPath, config)
         try {
             const reader = new ConnectionOptionsReader({ root: __dirname })
-            results = await reader.all()
+            results = await reader.get()
         } finally {
             await unlink(cjsConfigPath)
         }

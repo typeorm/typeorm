@@ -2,9 +2,9 @@
 
 ## MongoDB support
 
-TypeORM has basic MongoDB support.
-Most of TypeORM functionality is RDBMS-specific,
-this page contains all MongoDB-specific functionality documentation.
+TypeORM has basic MongoDB support (Node.js driver **v7 or later**).
+
+Most of TypeORM functionality is RDBMS-specific, this page contains all MongoDB-specific functionality.
 
 ## Installation
 
@@ -14,78 +14,104 @@ npm install mongodb
 
 ## Data Source Options
 
--   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
+- `appName` - The name of the application that created this MongoClient instance. MongoDB will print this value in the server log upon establishing each connection. It is also recorded in the slow query log and profile collections.
 
--   `host` - Database host.
+- `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
 
--   `port` - Database host port. Default mongodb port is `27017`.
+- `authSource` - Specify the database name associated with the user's credentials.
 
--   `username` - Database username (replacement for `auth.user`).
+- `autoEncryption` - Optionally enable in-use auto encryption.
 
--   `password` - Database password (replacement for `auth.password`).
+- `checkServerIdentity` - Verifies the certificate `cert` is issued to `hostname`.
 
--   `database` - Database name.
+- `compressors` - An array or comma-delimited string of compressors to enable network compression for communication between this client and a mongod/mongos instance.
 
--   `poolSize` - Set the maximum pool size for each server or proxy connection.
+- `connectTimeoutMS` - The time in milliseconds to attempt a connection before timing out. Default: `30000`.
 
--   `tls` - Use a TLS/SSL connection (needs a mongod server with ssl support, 2.4 or higher). Default: `false`.
+- `database` - Database name.
 
--   `tlsAllowInvalidCertificates` - Specifies whether the driver generates an error when the server's TLS certificate is invalid. Default: `false`.
+- `directConnection` - Allow a driver to force a Single topology type with a connection string containing one host.
 
--   `tlsCAFile` - Specifies the location of a local .pem file that contains the root certificate chain from the Certificate Authority.
+- `driver` - The driver object. Defaults to `require("mongodb")`.
 
--   `tlsCertificateKeyFile` - Specifies the location of a local .pem file that contains the client's TLS/SSL certificate and key.
+- `family` - IP family.
 
--   `tlsCertificateKeyFilePassword` - Specifies the password to decrypt the `tlsCertificateKeyFile`.
+- `forceServerObjectId` - Force server to assign \_id values instead of driver. Default: `false`.
 
--   `keepAlive` - The number of milliseconds to wait before initiating keepAlive on the TCP socket. Default: `30000`.
+- `host` - Database host.
 
--   `connectTimeoutMS` - TCP Connection timeout setting. Default: `30000`.
+- `hostReplicaSet` - Database host replica set.
 
--   `socketTimeoutMS` - TCP Socket timeout setting. Default: `360000`.
+- `ignoreUndefined` - Specify if the BSON serializer should ignore undefined fields. Default: `false`.
 
--   `replicaSet` - The name of the replica set to connect to.
+- `localThresholdMS` - The size (in milliseconds) of the latency window for selecting among multiple suitable MongoDB instances.
 
--   `authSource` - If the database authentication is dependent on another databaseName.
+- `maxStalenessSeconds` - Specifies, in seconds, how stale a secondary can be before the client stops using it for read operations. Minimum is 90 seconds.
 
--   `writeConcern` - The write concern.
+- `minPoolSize` - The minimum number of connections in the connection pool.
 
--   `forceServerObjectId` - Force server to assign \_id values instead of driver. Default: `false`.
+- `monitorCommands` - Enable command monitoring for this client.
 
--   `serializeFunctions` - Serialize functions on any object. Default: `false`.
+- `noDelay` - TCP Connection no delay.
 
--   `ignoreUndefined` - Specify if the BSON serializer should ignore undefined fields. Default: `false`.
+- `password` - Database password.
 
--   `raw` - Return document results as raw BSON buffers. Default: `false`.
+- `pkFactory` - A primary key factory object for generation of custom \_id keys.
 
--   `promoteLongs` - Promotes Long values to number if they fit inside the 53-bit resolution. Default: `true`.
+- `poolSize` - Maximum number of connections in the connection pool. Mapped to the MongoDB driver's `maxPoolSize` option.
 
--   `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
+- `port` - Database host port. Default mongodb port is `27017`.
 
--   `promoteValues` - Promotes BSON values to native types where possible, set to false to only receive wrapper types.
-    Default: `true`.
+- `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
 
--   `readPreference` - The preferred read preference.
+- `promoteLongs` - Promotes Long values to number if they fit inside the 53-bit resolution. Default: `true`.
 
-    -   `ReadPreference.PRIMARY`
-    -   `ReadPreference.PRIMARY_PREFERRED`
-    -   `ReadPreference.SECONDARY`
-    -   `ReadPreference.SECONDARY_PREFERRED`
-    -   `ReadPreference.NEAREST`
+- `promoteValues` - Promotes BSON values to native types where possible, set to false to only receive wrapper types. Default: `true`.
 
--   `pkFactory` - A primary key factory object for generation of custom \_id keys.
+- `proxyHost` - Configures a Socks5 proxy host used for creating TCP connections.
 
--   `readConcern` - Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
+- `proxyPassword` - Configures a Socks5 proxy password when the proxy requires username/password authentication.
 
--   `maxStalenessSeconds` - Specify a maxStalenessSeconds value for secondary reads, minimum is 90 seconds.
+- `proxyPort` - Configures a Socks5 proxy port used for creating TCP connections.
 
--   `appName` - The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this
-    value in the server log upon establishing each connection. It is also recorded in the slow query log and profile
-    collections
+- `proxyUsername` - Configures a Socks5 proxy username when the proxy requires username/password authentication.
 
--   `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
+- `raw` - Return document results as raw BSON buffers. Default: `false`.
 
--   `directConnection` - Specifies whether to force-dispatch all operations to the specified host.
+- `readConcern` - Specify a read concern for the collection.
+
+- `readPreference` - The preferred read preference.
+    - `ReadPreference.PRIMARY`
+    - `ReadPreference.PRIMARY_PREFERRED`
+    - `ReadPreference.SECONDARY`
+    - `ReadPreference.SECONDARY_PREFERRED`
+    - `ReadPreference.NEAREST`
+
+- `readPreferenceTags` - Specifies the tags document as a comma-separated list of colon-separated key-value pairs.
+
+- `replicaSet` - Specifies the name of the replica set, if the mongod is a member of a replica set.
+
+- `retryWrites` - Enable retryable writes.
+
+- `serializeFunctions` - Serialize functions on any object. Default: `false`.
+
+- `socketTimeoutMS` - The time in milliseconds to attempt a send or receive on a socket before the attempt times out. Default: `360000`.
+
+- `tls` - Enables or disables TLS/SSL for the connection. Default: `false`.
+
+- `tlsAllowInvalidCertificates` - Bypasses validation of the certificates presented by the mongod/mongos instance. Default: `false`.
+
+- `tlsCAFile` - Specifies the location of a local .pem file that contains the root certificate chain from the Certificate Authority.
+
+- `tlsCertificateKeyFile` - Specifies the location of a local .pem file that contains the client's TLS/SSL certificate and key.
+
+- `tlsCertificateKeyFilePassword` - Specifies the password to decrypt the `tlsCertificateKeyFile`.
+
+- `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
+
+- `username` - Database username.
+
+- `writeConcern` - A MongoDB WriteConcern, which describes the level of acknowledgement requested from MongoDB for write operations.
 
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `mongodb`'s documentation for [Connection Options](https://mongodb-node.netlify.app/docs/drivers/node/current/connect/connection-options/).
 
@@ -98,7 +124,8 @@ instead of `@PrimaryColumn` or `@PrimaryGeneratedColumn`.
 Simple entity example:
 
 ```typescript
-import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
+import { ObjectId } from "mongodb"
+import { Entity, ObjectIdColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
@@ -131,7 +158,8 @@ const myDataSource = new DataSource({
 Since MongoDB stores objects and objects inside objects (or documents inside documents), you can do the same in TypeORM:
 
 ```typescript
-import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
+import { ObjectId } from "mongodb"
+import { Entity, ObjectIdColumn, Column } from "typeorm"
 
 export class Profile {
     @Column()
@@ -146,7 +174,8 @@ export class Profile {
 ```
 
 ```typescript
-import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
+import { ObjectId } from "mongodb"
+import { Entity, ObjectIdColumn, Column } from "typeorm"
 
 export class Photo {
     @Column()
@@ -191,8 +220,6 @@ export class User {
 If you save this entity:
 
 ```typescript
-import { getMongoManager } from "typeorm"
-
 const user = new User()
 user.firstName = "Timber"
 user.lastName = "Saw"
@@ -205,8 +232,7 @@ user.photos = [
     new Photo("me-and-chakram.jpg", "Me and Chakram", 200),
 ]
 
-const manager = getMongoManager()
-await manager.save(user)
+await myDataSource.manager.save(user)
 ```
 
 The following document will be saved in the database:
@@ -371,7 +397,7 @@ Create an index on the db and collection.
 
 ### `createCollectionIndexes`
 
-Create multiple indexes in the collection, this method is only supported in MongoDB 2.6 or higher. Earlier versions of MongoDB will throw a "command not supported" error. Index specifications are defined at [createIndexes](http://docs.mongodb.org/manual/reference/command/createIndexes/).
+Create multiple indexes in the collection. Index specifications are defined at [createIndexes](http://docs.mongodb.org/manual/reference/command/createIndexes/).
 
 ### `deleteMany`
 
@@ -468,10 +494,6 @@ Change the name of an existing collection.
 ### `replaceOne`
 
 Replace a document on MongoDB.
-
-### `stats`
-
-Get all the collection statistics.
 
 ### `updateMany`
 

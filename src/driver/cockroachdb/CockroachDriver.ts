@@ -1,32 +1,32 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source/DataSource"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { View } from "../../schema-builder/view/View"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { ObjectUtils } from "../../util/ObjectUtils"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver, ReturningType } from "../Driver"
+import type { Driver, ReturningType } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import { ColumnType } from "../types/ColumnTypes"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { UpsertType } from "../types/UpsertType"
-import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
-import { CockroachConnectionOptions } from "./CockroachConnectionOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
+import type { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
+import type { CockroachDataSourceOptions } from "./CockroachDataSourceOptions"
 import { CockroachQueryRunner } from "./CockroachQueryRunner"
 
 /**
@@ -70,7 +70,7 @@ export class CockroachDriver implements Driver {
     /**
      * Connection options.
      */
-    options: CockroachConnectionOptions
+    options: CockroachDataSourceOptions
 
     /**
      * Database name used to perform all write queries.
@@ -109,7 +109,6 @@ export class CockroachDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://www.cockroachlabs.com/docs/stable/data-types.html
      */
     supportedDataTypes: ColumnType[] = [
@@ -256,7 +255,7 @@ export class CockroachDriver implements Driver {
 
     constructor(connection: DataSource) {
         this.connection = connection
-        this.options = connection.options as CockroachConnectionOptions
+        this.options = connection.options as CockroachDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
 
         // load postgres package
@@ -365,6 +364,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new CockroachQueryRunner(this, mode)
@@ -372,6 +372,8 @@ export class CockroachDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -416,6 +418,8 @@ export class CockroachDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -505,15 +509,14 @@ export class CockroachDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -557,6 +560,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return '"' + columnName + '"'
@@ -565,6 +569,8 @@ export class CockroachDriver implements Driver {
     /**
      * Build full table name with schema name and table name.
      * E.g. myDB.mySchema.myTable
+     * @param tableName
+     * @param schema
      */
     buildTableName(tableName: string, schema?: string): string {
         const tablePath = [tableName]
@@ -578,6 +584,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -632,6 +639,14 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
+     * @param column.isArray
+     * @param column.isGenerated
+     * @param column.generationStrategy
      */
     normalizeType(column: {
         type?: ColumnType
@@ -699,6 +714,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -757,14 +773,90 @@ export class CockroachDriver implements Driver {
         }
 
         if (ObjectUtils.isObject(defaultValue) && defaultValue !== null) {
-            return `'${JSON.stringify(defaultValue)}'`
+            return `'${JSON.stringify(defaultValue).replaceAll("'", "''")}'`
         }
 
         return `${defaultValue}`
     }
 
     /**
+     * Compares "default" value of the column.
+     * @param columnMetadata
+     * @param tableColumn
+     */
+    private defaultEqual(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
+        if (
+            ["json", "jsonb"].includes(columnMetadata.type as string) &&
+            !["function", "undefined"].includes(typeof columnMetadata.default)
+        ) {
+            return this.compareJsonDefaults(columnMetadata, tableColumn)
+        }
+
+        const columnDefault = this.lowerDefaultValueIfNecessary(
+            this.normalizeDefault(columnMetadata),
+        )
+        return columnDefault === tableColumn.default
+    }
+
+    /**
+     * Compares json/jsonb default values of the column.
+     * @param columnMetadata
+     * @param tableColumn
+     */
+    private compareJsonDefaults(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        let jsonString = tableColumn.default
+        if (typeof jsonString === "string") {
+            jsonString = jsonString.trim()
+            if (
+                jsonString.startsWith("e'") && // CockroachDB might escape JSON/JSONB default values with e'...'
+                jsonString.endsWith("'")
+            ) {
+                jsonString = jsonString
+                    .slice(2, -1)
+                    .replaceAll(String.raw`\'`, "'")
+            } else if (jsonString.startsWith("'") && jsonString.endsWith("'")) {
+                jsonString = jsonString.slice(1, -1).replaceAll("''", "'")
+            }
+        }
+
+        if (typeof jsonString === "string") {
+            try {
+                const tableColumnDefaultParsed = JSON.parse(jsonString)
+                return OrmUtils.deepCompare(
+                    columnMetadata.default,
+                    tableColumnDefaultParsed,
+                )
+            } catch (err) {
+                if (!(err instanceof SyntaxError)) {
+                    throw new TypeORMError(
+                        `Failed to compare default values of ${columnMetadata.propertyName} column`,
+                    )
+                }
+            }
+        } else {
+            return OrmUtils.deepCompare(columnMetadata.default, jsonString)
+        }
+
+        return false
+    }
+
+    /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.uniques.some(
@@ -774,6 +866,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
         return column.length ? column.length.toString() : ""
@@ -781,6 +874,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -862,6 +956,8 @@ export class CockroachDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      *
      * todo: slow. optimize Object.keys(), OrmUtils.mergeDeep and column.createValueMap parts
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
         if (!insertResult) return undefined
@@ -883,6 +979,8 @@ export class CockroachDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -893,34 +991,6 @@ export class CockroachDriver implements Driver {
                 (c) => c.name === columnMetadata.databaseName,
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
-
-            // console.log("table:", columnMetadata.entityMetadata.tableName)
-            // console.log("name:", {
-            //     tableColumn: tableColumn.name,
-            //     columnMetadata: columnMetadata.databaseName,
-            // })
-            // console.log("type:", {
-            //     tableColumn: tableColumn.type,
-            //     columnMetadata: this.normalizeType(columnMetadata),
-            // })
-            // console.log("length:", {
-            //     tableColumn: tableColumn.length,
-            //     columnMetadata: columnMetadata.length,
-            // })
-            // console.log("width:", tableColumn.width, columnMetadata.width);
-            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
-            // console.log("default:", tableColumn.default, columnMetadata.default);
-            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
-            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("asExpression:", {
-            //     tableColumn: (tableColumn.asExpression || "").trim(),
-            //     columnMetadata: (columnMetadata.asExpression || "").trim(),
-            // })
-            // console.log("==========================================");
 
             return (
                 tableColumn.name !== columnMetadata.databaseName ||
@@ -933,9 +1003,7 @@ export class CockroachDriver implements Driver {
                 tableColumn.comment !==
                     this.escapeComment(columnMetadata.comment) ||
                 (!tableColumn.isGenerated &&
-                    this.lowerDefaultValueIfNecessary(
-                        this.normalizeDefault(columnMetadata),
-                    ) !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
+                    !this.defaultEqual(columnMetadata, tableColumn)) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
@@ -971,6 +1039,7 @@ export class CockroachDriver implements Driver {
     }
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     * @param _returningType
      */
     isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
@@ -992,6 +1061,8 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return this.parametersPrefix + (index + 1)
@@ -1040,9 +1111,11 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     * @param options
+     * @param credentials
      */
     protected async createPool(
-        options: CockroachConnectionOptions,
+        options: CockroachDataSourceOptions,
         credentials: CockroachConnectionCredentialsOptions,
     ): Promise<any> {
         credentials = Object.assign(
@@ -1093,6 +1166,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Closes connection pool.
+     * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
         await Promise.all(
@@ -1107,6 +1181,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment
@@ -1118,6 +1193,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Builds ENUM type name from given table and column.
+     * @param column
      */
     protected buildEnumName(column: ColumnMetadata): string {
         const { schema, tableName } = this.parseTableName(column.entityMetadata)

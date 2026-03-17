@@ -1,12 +1,12 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryOptions } from "../../query-runner/QueryOptions"
+import type { QueryOptions } from "../../query-runner/QueryOptions"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { ReactNativeDriver } from "./ReactNativeDriver"
+import type { ReactNativeDriver } from "./ReactNativeDriver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -45,6 +45,10 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
+     * @param optionsOrUseStructuredResult
      */
     async query(
         query: string,
@@ -162,6 +166,8 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     * @param objectLiteral
+     * @param startIndex
      */
     protected parametrize(
         objectLiteral: ObjectLiteral,

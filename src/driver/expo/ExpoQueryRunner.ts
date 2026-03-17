@@ -1,11 +1,11 @@
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryOptions } from "../../query-runner/QueryOptions"
+import type { QueryOptions } from "../../query-runner/QueryOptions"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { ExpoDriver } from "./ExpoDriver"
+import type { ExpoDriver } from "./ExpoDriver"
 
 export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     driver: ExpoDriver

@@ -1,8 +1,8 @@
-import { Subject } from "./Subject"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { MongoRepository } from "../repository/MongoRepository"
+import type { Subject } from "./Subject"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { MongoRepository } from "../repository/MongoRepository"
 import { OrmUtils } from "../util/OrmUtils"
 
 /**
@@ -30,6 +30,7 @@ export class SubjectDatabaseEntityLoader {
      *
      * loadAllRelations flag is used to load all relation ids of the object, no matter if they present in subject entity or not.
      * This option is used for deletion.
+     * @param operationType
      */
     async load(
         operationType: "save" | "remove" | "soft-remove" | "recover",
@@ -105,7 +106,7 @@ export class SubjectDatabaseEntityLoader {
                 }
 
                 // load database entities for all given ids
-                let entities: any[] = []
+                let entities: any[]
                 if (
                     this.queryRunner.connection.driver.options.type ===
                     "mongodb"

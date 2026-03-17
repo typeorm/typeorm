@@ -1,13 +1,13 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryOptions } from "../../query-runner/QueryOptions"
+import type { QueryOptions } from "../../query-runner/QueryOptions"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { CordovaDriver } from "./CordovaDriver"
+import type { CordovaDriver } from "./CordovaDriver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -45,6 +45,10 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
+     * @param optionsOrUseStructuredResult
      */
     async query(
         query: string,
@@ -157,7 +161,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         const generatedColumns = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName).generatedColumns : [];
         const sql = columns.length > 0 ? (`INSERT INTO "${tableName}"(${columns}) VALUES (${values})`) : `INSERT INTO "${tableName}" DEFAULT VALUES`;
         const parameters = keys.map(key => keyValues[key]);
-
+     
         return new Promise<InsertResult>(async (ok, fail) => {
             this.driver.connection.logger.logQuery(sql, parameters, this);
             const __this = this;
@@ -168,7 +172,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                     if (!value) return map;
                     return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
                 }, {} as ObjectLiteral);
-
+     
                 ok({
                     result: undefined,
                     generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
@@ -178,7 +182,8 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 fail(err);
             });
         });
-    }*/
+    }
+     */
 
     /**
      * Would start a transaction but this driver does not support transactions.
@@ -241,6 +246,8 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     * @param objectLiteral
+     * @param startIndex
      */
     protected parametrize(
         objectLiteral: ObjectLiteral,

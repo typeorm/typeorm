@@ -1,5 +1,5 @@
 /**
- * Used to inject transaction's entity managed into the method wrapped with @Transaction decorator.
+ * Used to inject transaction's entity managed into the method wrapped with `@Transaction` decorator.
  */
 export interface TransactionEntityMetadataArgs {
     /**

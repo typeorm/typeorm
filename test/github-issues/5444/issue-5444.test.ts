@@ -3,7 +3,8 @@ import { EntitySchemaTransformer } from "../../../src/entity-schema/EntitySchema
 import { expect } from "chai"
 
 import { Post, PostSchema } from "./entity/Post"
-import { Author, AuthorSchema } from "./entity/Author"
+import type { Author } from "./entity/Author"
+import { AuthorSchema } from "./entity/Author"
 import { EntitySchema } from "../../../src"
 
 describe("github issues > #5444 EntitySchema missing support for multiple joinColumns in relations", () => {

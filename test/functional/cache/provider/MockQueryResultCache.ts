@@ -1,12 +1,12 @@
-import { ObjectLiteral } from "../../../../src/common/ObjectLiteral"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import { PostgresConnectionOptions } from "../../../../src/driver/postgres/PostgresConnectionOptions"
+import type { ObjectLiteral } from "../../../../src/common/ObjectLiteral"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import type { PostgresDataSourceOptions } from "../../../../src/driver/postgres/PostgresDataSourceOptions"
 import { MssqlParameter } from "../../../../src/driver/sqlserver/MssqlParameter"
-import { SqlServerConnectionOptions } from "../../../../src/driver/sqlserver/SqlServerConnectionOptions"
-import { QueryRunner } from "../../../../src/query-runner/QueryRunner"
+import type { SqlServerDataSourceOptions } from "../../../../src/driver/sqlserver/SqlServerDataSourceOptions"
+import type { QueryRunner } from "../../../../src/query-runner/QueryRunner"
 import { Table } from "../../../../src/schema-builder/table/Table"
-import { QueryResultCache } from "../../../../src/cache/QueryResultCache"
-import { QueryResultCacheOptions } from "../../../../src/cache/QueryResultCacheOptions"
+import type { QueryResultCache } from "../../../../src/cache/QueryResultCache"
+import type { QueryResultCacheOptions } from "../../../../src/cache/QueryResultCacheOptions"
 
 /**
  * Caches query result into current database, into separate table called "mock-query-result-cache".
@@ -24,7 +24,7 @@ export class MockQueryResultCache implements QueryResultCache {
 
     constructor(protected connection: DataSource) {
         const options = <
-            SqlServerConnectionOptions | PostgresConnectionOptions
+            SqlServerDataSourceOptions | PostgresDataSourceOptions
         >this.connection.driver.options
         const cacheOptions =
             typeof this.connection.options.cache === "object"

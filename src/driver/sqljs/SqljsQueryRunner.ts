@@ -1,11 +1,11 @@
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryOptions } from "../../query-runner/QueryOptions"
+import type { QueryOptions } from "../../query-runner/QueryOptions"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { SqljsDriver } from "./SqljsDriver"
+import type { SqljsDriver } from "./SqljsDriver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -74,6 +74,10 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
+     * @param optionsOrUseStructuredResult
      */
     async query(
         query: string,

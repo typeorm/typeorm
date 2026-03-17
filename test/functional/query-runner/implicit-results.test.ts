@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,24 +7,24 @@ import {
 import { expect } from "chai"
 
 describe("query runner > implicit results", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/view/*{.js,.ts}"],
             enabledDrivers: ["oracle"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return results for Oracle Stored Procedure with Implicit Results", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 // Create sample procedure with implicit results
-                await connection.query(`
+                await dataSource.query(`
           CREATE OR REPLACE PROCEDURE TEST_IMPLICIT_RESULTS
           AS
             test_array dbms_sql.varchar2_table;

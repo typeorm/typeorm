@@ -4,24 +4,23 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { User } from "./entity/User"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #1780 Support for insertion ignore on duplicate error", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [User],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mysql", "mariadb", "postgres", "cockroachdb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mysql", "mariadb", "postgres", "cockroachdb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
     const user1 = new User()
     user1.first_name = "John"
     user1.last_name = "Lenon"
@@ -35,7 +34,7 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
     // https://doxygen.postgresql.org/nodeModifyTable_8c_source.html : Line 1356
     it("should save one row without duplicate error in MySQL/MariaDB", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 try {
                     if (DriverUtils.isMySQLFamily(connection.driver)) {
                         const UserRepository =
@@ -83,13 +82,13 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                         })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))
     it("should save one row without duplicate error in PostgreSQL/CockroachDB", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 try {
                     if (DriverUtils.isPostgresFamily(connection.driver)) {
                         const UserRepository =
@@ -186,7 +185,7 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                         })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))

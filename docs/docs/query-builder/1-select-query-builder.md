@@ -69,7 +69,7 @@ Note that we uniquely named `:sheepId` and `:cowId` instead of using `:id` twice
 
 There are several ways how you can create a `Query Builder`:
 
--   Using DataSource:
+- Using DataSource:
 
     ```typescript
     const user = await dataSource
@@ -80,7 +80,7 @@ There are several ways how you can create a `Query Builder`:
         .getOne()
     ```
 
--   Using entity manager:
+- Using entity manager:
 
     ```typescript
     const user = await dataSource.manager
@@ -89,7 +89,7 @@ There are several ways how you can create a `Query Builder`:
         .getOne()
     ```
 
--   Using repository:
+- Using repository:
 
     ```typescript
     const user = await dataSource
@@ -101,7 +101,7 @@ There are several ways how you can create a `Query Builder`:
 
 There are 5 different `QueryBuilder` types available:
 
--   `SelectQueryBuilder` - used to build and execute `SELECT` queries. Example:
+- `SelectQueryBuilder` - used to build and execute `SELECT` queries. Example:
 
     ```typescript
     const user = await dataSource
@@ -112,7 +112,7 @@ There are 5 different `QueryBuilder` types available:
         .getOne()
     ```
 
--   `InsertQueryBuilder` - used to build and execute `INSERT` queries. Example:
+- `InsertQueryBuilder` - used to build and execute `INSERT` queries. Example:
 
     ```typescript
     await dataSource
@@ -126,7 +126,7 @@ There are 5 different `QueryBuilder` types available:
         .execute()
     ```
 
--   `UpdateQueryBuilder` - used to build and execute `UPDATE` queries. Example:
+- `UpdateQueryBuilder` - used to build and execute `UPDATE` queries. Example:
 
     ```typescript
     await dataSource
@@ -137,7 +137,7 @@ There are 5 different `QueryBuilder` types available:
         .execute()
     ```
 
--   `DeleteQueryBuilder` - used to build and execute `DELETE` queries. Example:
+- `DeleteQueryBuilder` - used to build and execute `DELETE` queries. Example:
 
     ```typescript
     await dataSource
@@ -148,8 +148,8 @@ There are 5 different `QueryBuilder` types available:
         .execute()
     ```
 
--   `RelationQueryBuilder` - used to build and execute relation-specific operations [TBD].
-    Example:
+- `RelationQueryBuilder` - used to build and execute relation-specific operations [TBD].
+  Example:
 
     ```typescript
     await dataSource
@@ -630,7 +630,8 @@ export class Photo {
 Now let's say you want to load user "Timber" with all of his photos:
 
 ```typescript
-const user = await createQueryBuilder("user")
+const user = await dataSource
+    .createQueryBuilder("user")
     .leftJoinAndSelect("user.photos", "photo")
     .where("user.name = :name", { name: "Timber" })
     .getOne()
@@ -658,7 +659,8 @@ You can use this alias anywhere in query builder.
 For example, let's take all Timber's photos which aren't removed.
 
 ```typescript
-const user = await createQueryBuilder("user")
+const user = await dataSource
+    .createQueryBuilder("user")
     .leftJoinAndSelect("user.photos", "photo")
     .where("user.name = :name", { name: "Timber" })
     .andWhere("photo.isRemoved = :isRemoved", { isRemoved: false })
@@ -676,7 +678,8 @@ SELECT user.*, photo.* FROM users user
 You can also add conditions to the join expression instead of using "where":
 
 ```typescript
-const user = await createQueryBuilder("user")
+const user = await dataSource
+    .createQueryBuilder("user")
     .leftJoinAndSelect("user.photos", "photo", "photo.isRemoved = :isRemoved", {
         isRemoved: false,
     })
@@ -697,7 +700,8 @@ SELECT user.*, photo.* FROM users user
 If you want to use `INNER JOIN` instead of `LEFT JOIN` just use `innerJoinAndSelect` instead:
 
 ```typescript
-const user = await createQueryBuilder("user")
+const user = await dataSource
+    .createQueryBuilder("user")
     .innerJoinAndSelect(
         "user.photos",
         "photo",
@@ -726,7 +730,8 @@ You can join data without its selection.
 To do that, use `leftJoin` or `innerJoin`:
 
 ```typescript
-const user = await createQueryBuilder("user")
+const user = await dataSource
+    .createQueryBuilder("user")
     .innerJoin("user.photos", "photo")
     .where("user.name = :name", { name: "Timber" })
     .getOne()
@@ -748,13 +753,15 @@ You can join not only relations, but also other unrelated entities or tables.
 Examples:
 
 ```typescript
-const user = await createQueryBuilder("user")
+const user = await dataSource
+    .createQueryBuilder("user")
     .leftJoinAndSelect(Photo, "photo", "photo.userId = user.id")
     .getMany()
 ```
 
 ```typescript
-const user = await createQueryBuilder("user")
+const user = await dataSource
+    .createQueryBuilder("user")
     .leftJoinAndSelect("photos", "photo", "photo.userId = user.id")
     .getMany()
 ```
@@ -771,7 +778,8 @@ export class User {
 ```
 
 ```typescript
-const user = await createQueryBuilder("user")
+const user = await dataSource
+    .createQueryBuilder("user")
     .leftJoinAndMapOne(
         "user.profilePhoto",
         "user.photos",
@@ -792,23 +800,25 @@ Sometimes you may want to get the SQL query generated by `QueryBuilder`.
 To do so, use `getSql`:
 
 ```typescript
-const sql = createQueryBuilder("user")
+const sql = dataSource
+    .createQueryBuilder("user")
     .where("user.firstName = :firstName", { firstName: "Timber" })
     .orWhere("user.lastName = :lastName", { lastName: "Saw" })
     .getSql()
 ```
 
-For debugging purposes you can use `printSql`:
+For debugging purposes you can use `logQuery`:
 
 ```typescript
-const users = await createQueryBuilder("user")
+const users = await dataSource
+    .createQueryBuilder("user")
     .where("user.firstName = :firstName", { firstName: "Timber" })
     .orWhere("user.lastName = :lastName", { lastName: "Saw" })
-    .printSql()
+    .logQuery()
     .getMany()
 ```
 
-This query will return users and print the used sql statement to the console.
+This query will return users and log the used sql statement through the configured logger.
 
 ## Getting raw results
 
@@ -906,17 +916,13 @@ QueryBuilder supports both optimistic and pessimistic locking.
 
 Support of lock modes, and SQL statements they translate to, are listed in the table below (blank cell denotes unsupported). When specified lock mode is not supported, a `LockNotSupportedOnGivenDriverError` error will be thrown.
 
-```text
-|                 | pessimistic_read                  | pessimistic_write       | dirty_read    | pessimistic_partial_write (Deprecated, use onLocked instead)   | pessimistic_write_or_fail (Deprecated, use onLocked instead)   | for_no_key_update   | for_key_share |
-| --------------- | --------------------------------- | ----------------------- | ------------- | -------------------------------------------------------------- | -------------------------------------------------------------- | ------------------- | ------------- |
-| MySQL           | FOR SHARE (8+)/LOCK IN SHARE MODE | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED                                         | FOR UPDATE NOWAIT                                              |                     |               |
-| Postgres        | FOR SHARE                         | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED                                         | FOR UPDATE NOWAIT                                              | FOR NO KEY UPDATE   | FOR KEY SHARE |
-| Oracle          | FOR UPDATE                        | FOR UPDATE              | (nothing)     |                                                                |                                                                |                     |               |
-| SQL Server      | WITH (HOLDLOCK, ROWLOCK)          | WITH (UPDLOCK, ROWLOCK) | WITH (NOLOCK) |                                                                |                                                                |                     |               |
-| AuroraDataApi   | LOCK IN SHARE MODE                | FOR UPDATE              | (nothing)     |                                                                |                                                                |                     |               |
-| CockroachDB     |                                   | FOR UPDATE              | (nothing)     |                                                                | FOR UPDATE NOWAIT                                              | FOR NO KEY UPDATE   |               |
-
-```
+|                       | pessimistic_read                             | pessimistic_write         | dirty_read      | for_no_key_update   | for_key_share   |
+| --------------------- | -------------------------------------------- | ------------------------- | --------------- | ------------------- | --------------- |
+| MySQL, MariaDB        | `FOR SHARE` (MySQL 8+), `LOCK IN SHARE MODE` | `FOR UPDATE`              | (nothing)       |                     |                 |
+| Oracle                | `FOR UPDATE`                                 | `FOR UPDATE`              | (nothing)       |                     |                 |
+| Postgres, CockroachDB | `FOR SHARE`                                  | `FOR UPDATE`              | (nothing)       | `FOR NO KEY UPDATE` | `FOR KEY SHARE` |
+| SAP HANA              | `FOR SHARE LOCK`                             | `FOR UPDATE`              | (nothing)       |                     |                 |
+| SQL Server            | `WITH (HOLDLOCK, ROWLOCK)`                   | `WITH (UPDLOCK, ROWLOCK)` | `WITH (NOLOCK)` |                     |                 |
 
 To use pessimistic read locking use the following method:
 
@@ -973,7 +979,7 @@ const users = await dataSource
     .getMany()
 ```
 
-If the Lock Tables argument is provided, only the table that is locked in the FOR UPDATE OF clause is specified.
+If the Lock Tables argument is provided, only the table that is locked in the `FOR UPDATE OF` clause is specified. Lock tables are supported in PostgreSQL / CockroachDB only.
 
 ### setOnLocked
 
@@ -1004,10 +1010,11 @@ const users = await dataSource
 
 Database support for `setOnLocked` based on [lock mode](#lock-modes):
 
--   Postgres: `pessimistic_read`, `pessimistic_write`, `for_no_key_update`, `for_key_share`
--   MySQL 8+: `pessimistic_read`, `pessimistic_write`
--   MySQL < 8, Maria DB: `pessimistic_write`
--   Cockroach: `pessimistic_write` (`nowait` only)
+- MySQL < 8, Maria DB: `pessimistic_write`
+- MySQL 8+: `pessimistic_read`, `pessimistic_write`
+- Oracle: `pessimistic_write`
+- Postgres, Cockroach: `pessimistic_read`, `pessimistic_write`, `for_no_key_update`, `for_key_share`
+- SAP HANA: `pessimistic_read`, `pessimistic_write`
 
 ## Use custom index
 
@@ -1234,7 +1241,7 @@ support [common table expressions](https://en.wikipedia.org/wiki/Hierarchical_an
 , if minimal supported version of your database supports them. Common table expressions aren't supported for Oracle yet.
 
 ```typescript
-const users = await connection
+const users = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .select("user.id", "id")
@@ -1251,7 +1258,7 @@ const users = await connection
 Result values of `InsertQueryBuilder` or `UpdateQueryBuilder` can be used in Postgres:
 
 ```typescript
-const insertQueryBuilder = connection
+const insertQueryBuilder = dataSource
     .getRepository(User)
     .createQueryBuilder()
     .insert({
@@ -1259,7 +1266,7 @@ const insertQueryBuilder = connection
     })
     .returning(["id"])
 
-const users = await connection
+const users = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .addCommonTableExpression(insertQueryBuilder, "insert_results")
@@ -1273,7 +1280,7 @@ const users = await connection
 currently supported only in `CockroachDB` database.
 
 ```typescript
-const repository = connection.getRepository(Account)
+const repository = dataSource.getRepository(Account)
 
 // create a new account
 const account = new Account()

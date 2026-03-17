@@ -6,29 +6,28 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe("sql tag parameters (mysql)", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [MysqlExample],
-                enabledDrivers: ["mysql", "mariadb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [MysqlExample],
+            enabledDrivers: ["mysql", "mariadb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should handle basic SQL tag parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(MysqlExample)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(MysqlExample)
 
                 await repo.save({ id: "basic" })
 
                 const [example] =
-                    await connection.sql`SELECT * FROM example WHERE id = ${"basic"}`
+                    await dataSource.sql`SELECT * FROM example WHERE id = ${"basic"}`
 
                 expect(example?.id).to.be.equal("basic")
             }),
@@ -36,15 +35,15 @@ describe("sql tag parameters (mysql)", () => {
 
     it("should handle multiple parameters in a single query", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(MysqlExample)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(MysqlExample)
 
                 await repo.save([
                     { id: "first", name: "test1", value: 10 },
                     { id: "second", name: "test2", value: 20 },
                 ])
 
-                const examples = await connection.sql`
+                const examples = await dataSource.sql`
                     SELECT * FROM example
                     WHERE id IN (${() => ["first", "second"]})
                     AND name LIKE ${"test%"}
@@ -59,8 +58,8 @@ describe("sql tag parameters (mysql)", () => {
 
     it("should handle SQL tag parameters with complex conditions and ordering", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(MysqlExample)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(MysqlExample)
 
                 await repo.save([
                     { id: "test1", value: 10, name: "a" },
@@ -71,7 +70,7 @@ describe("sql tag parameters (mysql)", () => {
                 const minValue = 15
                 const maxValue = 25
                 const namePattern = "b"
-                const [example] = await connection.sql`SELECT * FROM example
+                const [example] = await dataSource.sql`SELECT * FROM example
                     WHERE value > ${minValue}
                     AND value < ${maxValue}
                     AND name LIKE ${namePattern}
@@ -84,15 +83,15 @@ describe("sql tag parameters (mysql)", () => {
 
     it("should handle SQL tag parameters with NULL values", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(MysqlExample)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(MysqlExample)
 
                 await repo.save([
                     { id: "null1", value: null },
                     { id: "null2", value: 10 },
                 ])
 
-                const examples = await connection.sql`
+                const examples = await dataSource.sql`
                     SELECT * FROM example WHERE value IS ${null}
                 `
 
@@ -105,8 +104,8 @@ describe("sql tag parameters (mysql)", () => {
 
     it("should handle SQL tag parameters with boolean values", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(MysqlExample)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(MysqlExample)
 
                 await repo.save([
                     { id: "true1", active: true },
@@ -115,7 +114,7 @@ describe("sql tag parameters (mysql)", () => {
 
                 const value = true
 
-                const examples = await connection.sql`
+                const examples = await dataSource.sql`
                     SELECT * FROM example WHERE active = ${value}
                 `
 
@@ -128,8 +127,8 @@ describe("sql tag parameters (mysql)", () => {
 
     it("should handle SQL tag parameters with array values", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(MysqlExample)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(MysqlExample)
 
                 await repo.save([
                     { id: "array1", tags: "tag1,tag2" },
@@ -137,7 +136,7 @@ describe("sql tag parameters (mysql)", () => {
                     { id: "array3", tags: "tag5,tag6" },
                 ])
 
-                const examples = await connection.sql`
+                const examples = await dataSource.sql`
                     SELECT tags FROM example
                     WHERE id IN (${() => ["array1", "array2"]})
                 `

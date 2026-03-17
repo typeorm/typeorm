@@ -13,8 +13,8 @@ their [user guide](https://node-oracledb.readthedocs.io/en/latest/user_guide/ins
 
 See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options.
 
--   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
--   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
+- `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
+- `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
 
 ## Column Types
 
