@@ -1,5 +1,7 @@
 import path from "node:path"
 import fs from "node:fs"
+import { colors } from "./colors"
+import { listTransforms } from "./list-transforms"
 import { versions } from "../transforms"
 
 const TRANSFORMS_DIR = path.join(__dirname, "..", "transforms")
@@ -21,9 +23,14 @@ export const resolveTransforms = (
         const transformPath = path.join(versionDir, `${transform}${ext}`)
 
         if (!fs.existsSync(transformPath)) {
-            throw new Error(
-                `Transform "${transform}" not found for version "${version}"`,
+            console.error(
+                colors.red(
+                    `Error: transform "${transform}" not found for version "${version}"\n`,
+                ),
             )
+            listTransforms(version)
+            process.exitCode = 1
+            return []
         }
 
         return [transformPath]
