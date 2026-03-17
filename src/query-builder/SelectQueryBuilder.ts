@@ -2388,13 +2388,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         )
 
         const joinStatements = joinAttributeTrees.trees.map((joinTree) => {
-            return this.createJoinTreeRecursivly(joinTree)
+            return this.createJoinTreeRecursively(joinTree)
         })
 
         return joinStatements.join(" ")
     }
 
-    protected createJoinTreeRecursivly({
+    protected createJoinTreeRecursively({
         children,
         joinAttribute: joinAttr,
     }: JoinAttributeTree): string {
@@ -2408,7 +2408,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const resolvedChildJoinAttributes = (children || [])
             .map((joinTreeChild) => {
-                return this.createJoinTreeRecursivly(joinTreeChild)
+                return this.createJoinTreeRecursively(joinTreeChild)
             })
             .join(" ")
 
@@ -2436,9 +2436,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 resolvedChildJoinAttributes +
                 resolvedChildJoinAttributesPostfix +
                 this.createTableLockExpression() +
-                (joinAttr.condition
-                    ? " ON " + this.replacePropertyNames(joinAttr.condition)
-                    : "")
+                (joinAttr.condition ? " ON " + joinAttr.condition : "")
             )
         }
 
@@ -2473,7 +2471,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 resolvedChildJoinAttributesPostfix +
                 this.createTableLockExpression() +
                 " ON " +
-                this.replacePropertyNames(condition + appendedCondition)
+                condition +
+                appendedCondition
             )
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
             // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
@@ -2526,7 +2525,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 resolvedChildJoinAttributesPostfix +
                 this.createTableLockExpression() +
                 " ON " +
-                this.replacePropertyNames(condition + appendedCondition)
+                condition +
+                appendedCondition
             )
         } else {
             // means many-to-many
@@ -2607,7 +2607,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.escape(junctionAlias) +
                 this.createTableLockExpression() +
                 " ON " +
-                this.replacePropertyNames(junctionCondition) +
+                junctionCondition +
                 " " +
                 joinAttr.direction +
                 " JOIN " +
@@ -2619,9 +2619,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 resolvedChildJoinAttributesPostfix +
                 this.createTableLockExpression() +
                 " ON " +
-                this.replacePropertyNames(
-                    destinationCondition + appendedCondition,
-                )
+                destinationCondition +
+                appendedCondition
             )
         }
     }
