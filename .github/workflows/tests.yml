@@ -41,7 +41,7 @@ jobs:
               - gulpfile.ts
               - tsconfig.json
               - tsconfig.browser.json
-              - tsconfig.package.json
+              - tsconfig.node.json
 
             src-or-tests: &src-or-tests
               - *src

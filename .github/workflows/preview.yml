@@ -3,13 +3,13 @@ name: PR preview release
 on:
   pull_request:
     paths:
-      - ".github/workflows/preview.yml"
-      - "src/**"
-      - "gulpfile.ts"
-      - "package.json"
-      - "tsconfig.json"
-      - "tsconfig.browser.json"
-      - "tsconfig.package.json"
+      - .github/workflows/preview.yml
+      - src/**
+      - gulpfile.ts
+      - package.json
+      - tsconfig.json
+      - tsconfig.browser.json
+      - tsconfig.node.json
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
