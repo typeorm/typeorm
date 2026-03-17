@@ -732,7 +732,7 @@ Container.set("UserRepository", dataSource.getRepository(User))
 
 ### NestJS
 
-NestJS users are not affected — the `@nestjs/typeorm` package has its own integration that does not depend on TypeORM's removed container system. However, make sure you are using **`@nestjs/typeorm` v11 or later**, as v10 attempts to register the removed `Connection` class and will crash at startup.
+NestJS users are not affected — the `@nestjs/typeorm` package has its own integration that does not depend on TypeORM's removed container system. However, `@nestjs/typeorm` v10 and the current v11.0.0 attempt to register the removed `Connection` class and will crash at startup. Make sure you are using a version of `@nestjs/typeorm` that includes the fix for TypeORM v1 compatibility.
 
 ## Other internal removals
 
