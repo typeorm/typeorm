@@ -2350,16 +2350,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Creates "JOIN" part of SQL query.
+     * @example
+     * // select from owning side
+     * qb.select("post")
+     *      .leftJoinAndSelect("post.category", "category")
+     * @example
+     * // select from non-owning side
+     * qb.select("category")
+     *     .leftJoinAndSelect("category.post", "post")
      */
     protected createJoinExpression(): string {
-        // examples:
-        // select from owning side
-        // qb.select("post")
-        //     .leftJoinAndSelect("post.category", "category");
-        // select from non-owning side
-        // qb.select("category")
-        //     .leftJoinAndSelect("category.post", "post");
-
         // preprocess join attributes by nesting them when necessary
         const joinAttributeTrees = this.expressionMap.joinAttributes.reduce<{
             trees: Array<JoinAttributeTree> // recursive join attribute trees
