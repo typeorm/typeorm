@@ -14,7 +14,7 @@ export const removeWidthZerofill = (file: FileInfo, api: API) => {
         const props = path.node.properties
         const filtered = props.filter((prop) => {
             if (
-                prop.type === "Property" &&
+                (prop.type === "Property" || prop.type === "ObjectProperty") &&
                 prop.key.type === "Identifier" &&
                 propsToRemove.has(prop.key.name)
             ) {

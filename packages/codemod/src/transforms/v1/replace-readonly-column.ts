@@ -10,19 +10,6 @@ export const replaceReadonlyColumn = (file: FileInfo, api: API) => {
     root.find(j.ObjectProperty, {
         key: { name: "readonly" },
     }).forEach((path) => {
-        // Only transform if it's inside a decorator-like options object
-        // Check if parent is an ObjectExpression that's an argument to a call
-        const parent = path.parent
-        if (parent.node.type !== "ObjectExpression") return
-
-        const grandparent = parent.parent
-        if (
-            grandparent.node.type !== "CallExpression" &&
-            grandparent.node.type !== "ArrayExpression"
-        ) {
-            return
-        }
-
         if (path.node.key.type === "Identifier") {
             // readonly: true → update: false
             // readonly: false → update: true
