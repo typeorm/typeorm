@@ -1,5 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
-import { reportTodo } from "../todo"
+import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "replace removed `loadedTables` and `loadedViews` with TODO"
@@ -28,18 +28,16 @@ export const renameLoadedTablesViews = (file: FileInfo, api: API) => {
                 current.parent.node.type === "ReturnStatement"
             ) {
                 const stmt = current.parent.node
-                const comment = j.commentLine(
-                    ` TODO: \`${propName}\` was removed in TypeORM v1. Use async \`loadTables()\` / \`loadViews()\` methods instead. See migration guide: https://typeorm.io/docs/guides/migration-v1`,
-                )
-                stmt.comments = stmt.comments || []
+                const message = `\`${propName}\` was removed in TypeORM v1. Use async \`loadTables()\` / \`loadViews()\` methods instead. See migration guide: https://typeorm.io/docs/guides/migration-v1`
 
                 // Avoid duplicate comments
-                const hasSameComment = stmt.comments.some(
-                    (c: any) => c.value === comment.value,
+                const commentValue = ` TODO: ${message}`
+                const comments = (stmt.comments = stmt.comments || [])
+                const hasSameComment = comments.some(
+                    (c: any) => c.value === commentValue,
                 )
                 if (!hasSameComment) {
-                    stmt.comments.push(comment)
-                    comment.leading = true
+                    addTodoComment(stmt, message, j)
                     hasTodos = true
                 }
                 hasChanges = true

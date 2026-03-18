@@ -1,5 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
-import { reportTodo } from "../todo"
+import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "flag removed `replacePropertyNames` override with TODO"
@@ -12,15 +12,13 @@ export const removeReplacePropertyNames = (file: FileInfo, api: API) => {
     let hasTodos = false
 
     // Find method declarations named replacePropertyNames in classes
+    const message =
+        "`replacePropertyNames` was removed in TypeORM v1. This method override is no longer called. See migration guide: https://typeorm.io/docs/guides/migration-v1"
+
     root.find(j.ClassMethod, {
         key: { type: "Identifier", name: "replacePropertyNames" },
     }).forEach((path) => {
-        const comment = j.commentLine(
-            " TODO: `replacePropertyNames` was removed in TypeORM v1. This method override is no longer called. See migration guide: https://typeorm.io/docs/guides/migration-v1",
-        )
-        const comments = ((path.node as any).comments ??= [])
-        comments.push(comment)
-        comment.leading = true
+        addTodoComment(path.node, message, j)
         hasChanges = true
         hasTodos = true
     })
@@ -29,12 +27,7 @@ export const removeReplacePropertyNames = (file: FileInfo, api: API) => {
     root.find(j.MethodDefinition, {
         key: { type: "Identifier", name: "replacePropertyNames" },
     }).forEach((path) => {
-        const comment = j.commentLine(
-            " TODO: `replacePropertyNames` was removed in TypeORM v1. This method override is no longer called. See migration guide: https://typeorm.io/docs/guides/migration-v1",
-        )
-        const comments = ((path.node as any).comments ??= [])
-        comments.push(comment)
-        comment.leading = true
+        addTodoComment(path.node, message, j)
         hasChanges = true
         hasTodos = true
     })

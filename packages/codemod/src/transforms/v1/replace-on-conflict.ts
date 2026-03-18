@@ -1,5 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
-import { reportTodo } from "../todo"
+import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "replace removed `onConflict()` with `orIgnore()` or TODO"
@@ -33,21 +33,13 @@ export const replaceOnConflict = (file: FileInfo, api: API) => {
             }
         } else {
             // Add a TODO comment
+            const message =
+                "`onConflict()` was removed in TypeORM v1. Use `orIgnore()` or `orUpdate()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1"
             const parent = path.parent
             if (parent.node.type === "ExpressionStatement") {
-                const comment = j.commentLine(
-                    " TODO: `onConflict()` was removed in TypeORM v1. Use `orIgnore()` or `orUpdate()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1",
-                )
-                parent.node.comments = parent.node.comments || []
-                parent.node.comments.push(comment)
-                comment.leading = true
+                addTodoComment(parent.node, message, j)
             } else {
-                const comment = j.commentLine(
-                    " TODO: `onConflict()` was removed in TypeORM v1. Use `orIgnore()` or `orUpdate()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1",
-                )
-                const comments = ((path.node as any).comments ??= [])
-                comments.push(comment)
-                comment.leading = true
+                addTodoComment(path.node, message, j)
             }
             hasChanges = true
             hasTodos = true

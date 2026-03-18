@@ -1,5 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
-import { reportTodo } from "../todo"
+import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "replace removed `domain` option in MSSQL config with TODO"
@@ -14,12 +14,11 @@ export const replaceMssqlDomain = (file: FileInfo, api: API) => {
     root.find(j.ObjectProperty, {
         key: { type: "Identifier", name: "domain" },
     }).forEach((path) => {
-        const comment = j.commentLine(
-            ' TODO: `domain` was removed in TypeORM v1. Restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`. See migration guide: https://typeorm.io/docs/guides/migration-v1',
+        addTodoComment(
+            path.node,
+            '`domain` was removed in TypeORM v1. Restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`. See migration guide: https://typeorm.io/docs/guides/migration-v1',
+            j,
         )
-        const comments = ((path.node as any).comments ??= [])
-        comments.push(comment)
-        comment.leading = true
         hasChanges = true
         hasTodos = true
     })

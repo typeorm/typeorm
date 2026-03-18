@@ -1,15 +1,9 @@
 import type { API, FileInfo } from "jscodeshift"
-import { reportTodo } from "../todo"
+import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "replace removed `@EntityRepository` and `AbstractRepository` with TODO"
 export const manual = true
-
-const addTodoComment = (node: any, comment: any) => {
-    const comments = ((node as any).comments ??= [])
-    comments.push(comment)
-    comment.leading = true
-}
 
 export const removeAbstractRepository = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -24,10 +18,11 @@ export const removeAbstractRepository = (file: FileInfo, api: API) => {
             callee: { type: "Identifier", name: "EntityRepository" },
         },
     }).forEach((path) => {
-        const comment = j.commentLine(
-            " TODO: `@EntityRepository` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+        addTodoComment(
+            path.node,
+            "`@EntityRepository` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+            j,
         )
-        addTodoComment(path.node, comment)
         hasChanges = true
         hasTodos = true
     })
@@ -49,24 +44,24 @@ export const removeAbstractRepository = (file: FileInfo, api: API) => {
 
         if (name !== "AbstractRepository") return
 
-        const comment = j.commentLine(
-            " TODO: `AbstractRepository` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+        addTodoComment(
+            path.node,
+            "`AbstractRepository` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+            j,
         )
-        addTodoComment(path.node, comment)
         hasChanges = true
         hasTodos = true
     })
 
     // Find getCustomRepository() calls and add TODO
     const addGetCustomRepoTodo = (path: any) => {
-        const comment = j.commentLine(
-            " TODO: `getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
-        )
+        const message =
+            "`getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1"
         const parent = path.parent
         if (parent.node.type === "ExpressionStatement") {
-            addTodoComment(parent.node, comment)
+            addTodoComment(parent.node, message, j)
         } else {
-            addTodoComment(path.node, comment)
+            addTodoComment(path.node, message, j)
         }
         hasChanges = true
         hasTodos = true

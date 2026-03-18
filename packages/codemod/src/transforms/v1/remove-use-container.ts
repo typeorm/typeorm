@@ -1,5 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
-import { reportTodo } from "../todo"
+import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "remove `useContainer()` and `getFromContainer()` calls"
@@ -22,13 +22,13 @@ export const removeUseContainer = (file: FileInfo, api: API) => {
             },
         }).forEach((path) => {
             // Replace with a comment
-            const comment = j.expressionStatement(j.identifier("undefined"))
-            comment.comments = [
-                j.commentLine(
-                    ` TODO: ${funcName}() was removed in TypeORM v1. See migration guide: https://typeorm.io/docs/guides/migration-v1#container-system`,
-                ),
-            ]
-            j(path).replaceWith(comment)
+            const replacement = j.expressionStatement(j.identifier("undefined"))
+            addTodoComment(
+                replacement,
+                `${funcName}() was removed in TypeORM v1. See migration guide: https://typeorm.io/docs/guides/migration-v1#container-system`,
+                j,
+            )
+            j(path).replaceWith(replacement)
             hasChanges = true
             hasTodos = true
         })

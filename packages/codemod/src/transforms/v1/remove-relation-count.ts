@@ -1,5 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
-import { reportTodo } from "../todo"
+import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "replace removed `@RelationCount` decorator with TODO"
@@ -18,12 +18,11 @@ export const removeRelationCount = (file: FileInfo, api: API) => {
             callee: { type: "Identifier", name: "RelationCount" },
         },
     }).forEach((path) => {
-        const comment = j.commentLine(
-            " TODO: `@RelationCount` was removed in TypeORM v1. Use `QueryBuilder` with `loadRelationCountAndMap()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+        addTodoComment(
+            path.node,
+            "`@RelationCount` was removed in TypeORM v1. Use `QueryBuilder` with `loadRelationCountAndMap()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+            j,
         )
-        const comments = ((path.node as any).comments ??= [])
-        comments.push(comment)
-        comment.leading = true
         hasChanges = true
         hasTodos = true
     })

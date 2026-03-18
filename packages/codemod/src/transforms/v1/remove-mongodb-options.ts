@@ -1,5 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
-import { reportTodo } from "../todo"
+import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "remove and rename deprecated MongoDB connection options"
@@ -75,12 +75,11 @@ export const removeMongodbOptions = (file: FileInfo, api: API) => {
                 path.node.key.value = "tlsAllowInvalidCertificates"
             }
             // Add TODO comment about inverted boolean
-            const comment = j.commentLine(
-                " TODO: `sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value.",
+            addTodoComment(
+                path.node,
+                "`sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value.",
+                j,
             )
-            const sslComments = ((path.node as any).comments ??= [])
-            sslComments.push(comment)
-            comment.leading = true
             hasChanges = true
             hasTodos = true
             return
@@ -88,12 +87,11 @@ export const removeMongodbOptions = (file: FileInfo, api: API) => {
 
         // writeConcern-related props → add TODO
         if (writeConcernProps.has(name)) {
-            const comment = j.commentLine(
-                ` TODO: \`${name}\` was removed in TypeORM v1. Migrate to \`writeConcern: { ... }\`. See migration guide: https://typeorm.io/docs/guides/migration-v1`,
+            addTodoComment(
+                path.node,
+                `\`${name}\` was removed in TypeORM v1. Migrate to \`writeConcern: { ... }\`. See migration guide: https://typeorm.io/docs/guides/migration-v1`,
+                j,
             )
-            const wcComments = ((path.node as any).comments ??= [])
-            wcComments.push(comment)
-            comment.leading = true
             hasChanges = true
             hasTodos = true
         }

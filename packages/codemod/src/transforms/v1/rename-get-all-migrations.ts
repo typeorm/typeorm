@@ -1,5 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
-import { reportTodo } from "../todo"
+import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "replace removed `getAllMigrations()` with TODO comment"
@@ -20,12 +20,10 @@ export const renameGetAllMigrations = (file: FileInfo, api: API) => {
         const statement = j(path).closest(j.ExpressionStatement)
         if (statement.length > 0) {
             statement.forEach((stmtPath) => {
-                stmtPath.node.comments = stmtPath.node.comments || []
-                stmtPath.node.comments.push(
-                    j.commentLine(
-                        " TODO: getAllMigrations() was removed in TypeORM v1. Use getPendingMigrations(), getExecutedMigrations(), or dataSource.migrations instead.",
-                        true,
-                    ),
+                addTodoComment(
+                    stmtPath.node,
+                    "getAllMigrations() was removed in TypeORM v1. Use getPendingMigrations(), getExecutedMigrations(), or dataSource.migrations instead.",
+                    j,
                 )
             })
         }
