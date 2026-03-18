@@ -4,7 +4,7 @@ import { fail } from "./cli/error"
 import { parseArgs } from "./cli/parse-args"
 import { printUsage } from "./cli/print-usage"
 import { listTransforms } from "./cli/list-transforms"
-import { resolveTransforms } from "./cli/resolve-transforms"
+import { resolveTransforms } from "./transforms/resolve"
 import { runTransforms } from "./cli/run"
 import { versions } from "./transforms"
 

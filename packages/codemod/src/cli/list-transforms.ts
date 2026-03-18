@@ -1,27 +1,21 @@
-import fs from "node:fs"
 import path from "node:path"
 import { colors } from "./colors"
 import { versions } from "../transforms"
-
-const TRANSFORMS_DIR = path.join(__dirname, "..", "transforms")
+import { getTransformDir, getTransformNames } from "../transforms/scan"
 
 export const listTransforms = (version: string): void => {
     if (!versions[version]) {
         throw new Error(`No transforms found for version "${version}"`)
     }
 
-    const versionDir = path.join(TRANSFORMS_DIR, version)
-    const ext = __filename.endsWith(".ts") ? ".ts" : ".js"
-    const files = fs
-        .readdirSync(versionDir)
-        .filter((f) => f.endsWith(ext) && f !== `index${ext}`)
-        .sort()
+    const versionDir = getTransformDir(version)
+    const names = getTransformNames(version)
 
     let hasManual = false
 
-    const entries = files.map((file) => {
-        const mod = require(path.join(versionDir, file))
-        const name = file.replace(ext, "")
+    const entries = names.map((name) => {
+        const ext = __filename.endsWith(".ts") ? ".ts" : ".js"
+        const mod = require(path.join(versionDir, `${name}${ext}`))
         const isManual = !!mod.manual
         if (isManual) hasManual = true
         return { name, description: mod.description || "", isManual }
