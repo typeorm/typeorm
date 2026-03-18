@@ -495,6 +495,96 @@ categoryCount: number
 categoryCount: number
 ```
 
+## Find Options
+
+### `join` option removed
+
+The deprecated `join` property on `FindOneOptions` and `FindManyOptions` has been removed, along with the `JoinOptions` interface.
+
+#### `leftJoinAndSelect` → `relations`
+
+If you were using `leftJoinAndSelect`, replace it with the `relations` object syntax — `relations` always performs LEFT JOINs with selection, which is equivalent:
+
+```typescript
+// Before
+const posts = await repository.find({
+    join: {
+        alias: "post",
+        leftJoinAndSelect: {
+            categories: "post.categories",
+            author: "post.author",
+        },
+    },
+})
+
+// After
+const posts = await repository.find({
+    relations: { categories: true, author: true },
+})
+```
+
+#### All other join types → QueryBuilder
+
+The `relations` option only supports LEFT JOINs with selection. If you were using `innerJoinAndSelect`, `innerJoin`, or `leftJoin` (without select), switch to the QueryBuilder API:
+
+```typescript
+// Before — innerJoinAndSelect
+const posts = await repository.find({
+    join: {
+        alias: "post",
+        innerJoinAndSelect: {
+            categories: "post.categories",
+        },
+    },
+})
+
+// After — QueryBuilder with innerJoinAndSelect
+const posts = await repository
+    .createQueryBuilder("post")
+    .innerJoinAndSelect("post.categories", "categories")
+    .getMany()
+
+// Before — leftJoin (without select)
+const posts = await repository.find({
+    join: {
+        alias: "post",
+        leftJoin: {
+            categories: "post.categories",
+        },
+    },
+    where: { categories: { isRemoved: false } },
+})
+
+// After — QueryBuilder with leftJoin
+const posts = await repository
+    .createQueryBuilder("post")
+    .leftJoin("post.categories", "categories")
+    .where("categories.isRemoved = :isRemoved", { isRemoved: false })
+    .getMany()
+```
+
+This distinction matters in practice. For example, PostgreSQL does not allow `FOR UPDATE` on the nullable side of an outer join, so queries that combine locking with joined relations may need INNER JOINs:
+
+```typescript
+// Before — innerJoinAndSelect + lock
+const post = await repository.findOne({
+    join: {
+        alias: "post",
+        innerJoinAndSelect: {
+            categories: "post.categories",
+        },
+    },
+    lock: { mode: "pessimistic_write", tables: ["category"] },
+})
+
+// After — QueryBuilder with innerJoinAndSelect + lock
+const post = await repository
+    .createQueryBuilder("post")
+    .innerJoinAndSelect("post.categories", "categories")
+    .setLock("pessimistic_write", undefined, ["categories"])
+    .getOne()
+```
+
 ## QueryBuilder
 
 ### `printSql` renamed to `logQuery`

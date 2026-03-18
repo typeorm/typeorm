@@ -7,7 +7,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 import type { FindTreeOptions } from "./FindTreeOptions"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { RelationMetadata } from "../metadata/RelationMetadata"
-import { EntityPropertyNotFoundError } from "../error"
+import { EntityPropertyNotFoundError, TypeORMError } from "../error"
 
 /**
  * Utilities to work with FindOptions.
@@ -16,6 +16,25 @@ export class FindOptionsUtils {
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Throws if the removed `join` option is present on a find-options object.
+     * This catches untyped/JS callers still passing `join` after its removal in v1.0.
+     * @param options
+     */
+    static rejectJoinOption(options: unknown): void {
+        if (
+            options &&
+            typeof options === "object" &&
+            "join" in options &&
+            options.join != null
+        ) {
+            throw new TypeORMError(
+                `"join" option has been removed. Use "relations" for left joins ` +
+                    `or QueryBuilder for other join types. See the v1 migration guide for details.`,
+            )
+        }
+    }
 
     /**
      * Checks if given object is really instance of FindOneOptions interface.
@@ -32,8 +51,6 @@ export class FindOptionsUtils {
                 typeof possibleOptions.select === "object" ||
                 typeof possibleOptions.relations === "object" ||
                 typeof possibleOptions.where === "object" ||
-                // typeof possibleOptions.where === "string" ||
-                typeof possibleOptions.join === "object" ||
                 typeof possibleOptions.order === "object" ||
                 typeof possibleOptions.cache === "object" ||
                 typeof possibleOptions.cache === "boolean" ||
@@ -69,17 +86,6 @@ export class FindOptionsUtils {
                 typeof (possibleOptions as FindManyOptions<any>).take ===
                     "string")
         )
-    }
-
-    /**
-     * Checks if given object is really instance of FindOptions interface.
-     * @param object
-     */
-    static extractFindManyOptionsAlias(object: any): string | undefined {
-        if (this.isFindManyOptions(object) && object.join)
-            return object.join.alias
-
-        return undefined
     }
 
     static applyOptionsToTreeQueryBuilder<T extends ObjectLiteral>(
