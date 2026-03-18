@@ -3,6 +3,7 @@ import type { DataSource } from "../data-source/DataSource"
 import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { QueryBuilderUtils } from "./QueryBuilderUtils"
 import type { QueryExpressionMap } from "./QueryExpressionMap"
+import type { SelectQuery } from "./SelectQuery"
 import type { Alias } from "./Alias"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { TypeORMError } from "../error"
@@ -50,6 +51,13 @@ export class JoinAttribute {
      * Useful when the joined expression is a custom query to support mapping.
      */
     mapAsEntity?: Function | string
+
+    /**
+     * Selected columns from subquery's .select() call.
+     * When set, only these columns are included in the outer SELECT
+     * instead of using alias.*.
+     */
+    subQuerySelects?: SelectQuery[]
 
     // -------------------------------------------------------------------------
     // Constructor
