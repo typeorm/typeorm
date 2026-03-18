@@ -1,5 +1,3 @@
-import type { API, FileInfo } from "jscodeshift"
-
 import { renameConnectionToDataSource } from "./rename-connection-to-datasource"
 import { replaceGlobalFunctions } from "./replace-global-functions"
 import { renameFindByIds } from "./rename-find-by-ids"
@@ -13,6 +11,7 @@ import { removeWidthZerofill } from "./remove-width-zerofill"
 import { replaceSqliteType } from "./replace-sqlite-type"
 import { replaceLockModes } from "./replace-lock-modes"
 import { removeUseContainer } from "./remove-use-container"
+import { transformer } from "../transformer"
 
 export const description = "Migrate from v0.3.x to v1.0"
 
@@ -36,24 +35,4 @@ const transforms = [
     removeUseContainer,
 ]
 
-/**
- * Composite transform that runs all v1 transforms in sequence.
- * This is the entry point used by jscodeshift when running all transforms.
- */
-const transformer = (file: FileInfo, api: API): string | undefined => {
-    let source = file.source
-    let hasChanges = false
-
-    for (const transform of transforms) {
-        const result = transform({ ...file, source }, api)
-
-        if (result !== undefined) {
-            source = result
-            hasChanges = true
-        }
-    }
-
-    return hasChanges ? source : undefined
-}
-
-export default transformer
+export default transformer(transforms)
