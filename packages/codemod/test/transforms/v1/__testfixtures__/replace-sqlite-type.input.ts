@@ -1,4 +1,4 @@
-new DataSource({
+const dataSource = new DataSource({
     type: "sqlite",
     database: "db.sqlite",
 })

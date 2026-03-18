@@ -32,15 +32,15 @@ export const removeAbstractRepository = (file: FileInfo, api: API) => {
         const superClass = path.node.superClass
         if (!superClass) return
 
-        const isMemberExpr =
+        let name: string | null = null
+        if (superClass.type === "Identifier") {
+            name = superClass.name
+        } else if (
             superClass.type === "MemberExpression" &&
             superClass.property.type === "Identifier"
-        const name =
-            superClass.type === "Identifier"
-                ? superClass.name
-                : isMemberExpr
-                  ? (superClass as any).property.name
-                  : null
+        ) {
+            name = superClass.property.name
+        }
 
         if (name !== "AbstractRepository") return
 

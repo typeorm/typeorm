@@ -20,6 +20,7 @@ export const renameLoadedTablesViews = (file: FileInfo, api: API) => {
         const propName = path.node.property.name
 
         // Find the containing statement to add a comment
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let current = path as any
         while (current.parent && current.parent.node.type !== "Program") {
             if (

@@ -38,5 +38,6 @@ export const addTodoComment = (
     j: JSCodeshift,
 ): void => {
     const n = node as ASTNode & { comments?: unknown[] }
-    ;(n.comments ??= []).push(j.commentLine(` TODO: ${message}`))
+    if (!n.comments) n.comments = []
+    n.comments.push(j.commentLine(` TODO: ${message}`))
 }
