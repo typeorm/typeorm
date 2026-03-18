@@ -2148,6 +2148,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )((this as any as SelectQueryBuilder<any>).subQuery())
                 this.setParameters(subQueryBuilder.getParameters())
                 subQuery = subQueryBuilder.getQuery()
+                joinAttribute.subQuerySelects =
+                    subQueryBuilder.expressionMap.selects
+
+                // Rewrite ON condition to use aliased column names
+                // e.g. "respond.eventId = event.id" →
+                //       "respond"."respond_eventId" = "event"."id"
+                if (joinAttribute.condition) {
+                    joinAttribute.condition = this.rewriteSubqueryJoinCondition(
+                        joinAttribute.condition,
+                        aliasName,
+                        subQueryBuilder.expressionMap.selects,
+                        subQueryBuilder.expressionMap.mainAlias?.metadata,
+                    )
+                }
             }
         }
 
@@ -2224,7 +2238,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         // add selects from joins
         this.expressionMap.joinAttributes.forEach((join) => {
-            if (join.metadata) {
+            if (join.subQuerySelects && join.subQuerySelects.length > 0) {
+                this.buildSubqueryJoinSelects(join, allSelects, excludedSelects)
+            } else if (join.metadata) {
                 allSelects.push(
                     ...this.buildEscapedEntityColumnSelects(
                         join.alias.name!,
@@ -2863,6 +2879,163 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (!conditions.length) return ""
         return " HAVING " + conditions
+    }
+
+    /**
+     * Builds SELECT expressions for a subquery join, using aliased column
+     * names that match the subquery output.
+     * @param join
+     * @param allSelects
+     * @param excludedSelects
+     */
+    protected buildSubqueryJoinSelects(
+        join: JoinAttribute,
+        allSelects: SelectQuery[],
+        excludedSelects: SelectQuery[],
+    ): void {
+        const aliasName = join.alias.name!
+        const hasMainAlias = this.expressionMap.selects.some(
+            (select) => select.selection === aliasName,
+        )
+        if (!hasMainAlias) return
+
+        const aliasMap = this.buildSubqueryAliasMap(
+            aliasName,
+            join.subQuerySelects!,
+            join.metadata,
+        )
+
+        if (aliasMap.size > 0) {
+            for (const aliasedCol of aliasMap.values()) {
+                allSelects.push({
+                    selection:
+                        this.escape(aliasName) + "." + this.escape(aliasedCol),
+                })
+            }
+        } else {
+            allSelects.push({
+                selection: this.escape(aliasName) + ".*",
+            })
+        }
+
+        this.excludeSubquerySelects(
+            aliasName,
+            join.subQuerySelects!,
+            excludedSelects,
+        )
+    }
+
+    private excludeSubquerySelects(
+        aliasName: string,
+        subQuerySelects: SelectQuery[],
+        excludedSelects: SelectQuery[],
+    ): void {
+        const mainSelect = this.expressionMap.selects.find(
+            (select) => select.selection === aliasName,
+        )
+        if (mainSelect) excludedSelects.push(mainSelect)
+
+        for (const sel of subQuerySelects) {
+            const found = this.expressionMap.selects.find(
+                (select) => select.selection === sel.selection,
+            )
+            if (found) excludedSelects.push(found)
+        }
+    }
+
+    /**
+     * Rewrites a subquery join ON condition to use properly escaped
+     * aliased column names. Converts references like "respond.eventId"
+     * to "respond"."respond_eventId" to match the subquery output.
+     * @param condition
+     * @param subqueryAlias
+     * @param selects
+     * @param metadata
+     */
+    protected rewriteSubqueryJoinCondition(
+        condition: string,
+        subqueryAlias: string,
+        selects: SelectQuery[],
+        metadata?: EntityMetadata,
+    ): string {
+        const aliasMap = this.buildSubqueryAliasMap(
+            subqueryAlias,
+            selects,
+            metadata,
+        )
+        if (aliasMap.size === 0) return condition
+
+        const escapedAlias = this.escape(subqueryAlias)
+        const regex = new RegExp(
+            `(?<!["\`\\[])\\b${subqueryAlias}\\.(\\w+)\\b`,
+            "g",
+        )
+        return condition.replace(regex, (_match, columnName) => {
+            const aliasedName = aliasMap.get(columnName)
+            if (aliasedName) {
+                return `${escapedAlias}.${this.escape(aliasedName)}`
+            }
+            return `${escapedAlias}.${this.escape(columnName)}`
+        })
+    }
+
+    /**
+     * Builds a map from property paths to aliased column names
+     * for a subquery join.
+     * @param subqueryAlias
+     * @param selects
+     * @param metadata
+     */
+    private buildSubqueryAliasMap(
+        subqueryAlias: string,
+        selects: SelectQuery[],
+        metadata?: EntityMetadata,
+    ): Map<string, string> {
+        const aliasMap = new Map<string, string>()
+
+        const isFullAlias = selects.some(
+            (sel) => sel.selection === subqueryAlias,
+        )
+
+        if (isFullAlias && metadata) {
+            for (const column of metadata.columns) {
+                aliasMap.set(
+                    column.propertyPath,
+                    DriverUtils.buildAlias(
+                        this.connection.driver,
+                        undefined,
+                        subqueryAlias,
+                        column.databaseName,
+                    ),
+                )
+            }
+            return aliasMap
+        }
+
+        const prefix = subqueryAlias + "."
+        for (const sel of selects) {
+            if (!sel.selection.startsWith(prefix)) continue
+
+            const propertyPath = sel.selection.substring(prefix.length)
+            let dbName = propertyPath
+            if (metadata) {
+                const column = metadata.columns.find(
+                    (col) => col.propertyPath === propertyPath,
+                )
+                if (column) dbName = column.databaseName
+            }
+            aliasMap.set(
+                propertyPath,
+                DriverUtils.buildAlias(
+                    this.connection.driver,
+                    undefined,
+                    subqueryAlias,
+                    dbName,
+                ),
+            )
+        }
+
+        return aliasMap
     }
 
     protected buildEscapedEntityColumnSelects(
