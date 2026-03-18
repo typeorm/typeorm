@@ -19,13 +19,11 @@ export const removeUnsignedNumeric = (file: FileInfo, api: API) => {
 
         // First arg must be a string literal with a numeric type
         const firstArg = args[0]
+        const isStringLiteral = firstArg.type === "StringLiteral"
+        const isLiteralString =
+            firstArg.type === "Literal" && typeof firstArg.value === "string"
         const typeName =
-            firstArg.type === "StringLiteral"
-                ? firstArg.value
-                : firstArg.type === "Literal" &&
-                    typeof firstArg.value === "string"
-                  ? firstArg.value
-                  : null
+            isStringLiteral || isLiteralString ? (firstArg as any).value : null
 
         if (!typeName || !numericTypes.has(typeName)) return
 
@@ -68,15 +66,16 @@ export const removeUnsignedNumeric = (file: FileInfo, api: API) => {
                 p.key.name === "type",
         )
 
-        if (!typeProp || typeProp.type !== "ObjectProperty") return
+        if (typeProp?.type !== "ObjectProperty") return
 
+        const isTypeStringLiteral = typeProp.value.type === "StringLiteral"
+        const isTypeLiteralString =
+            typeProp.value.type === "Literal" &&
+            typeof typeProp.value.value === "string"
         const typeValue =
-            typeProp.value.type === "StringLiteral"
-                ? typeProp.value.value
-                : typeProp.value.type === "Literal" &&
-                    typeof typeProp.value.value === "string"
-                  ? typeProp.value.value
-                  : null
+            isTypeStringLiteral || isTypeLiteralString
+                ? (typeProp.value as any).value
+                : null
 
         if (!typeValue || !numericTypes.has(typeValue)) return
 

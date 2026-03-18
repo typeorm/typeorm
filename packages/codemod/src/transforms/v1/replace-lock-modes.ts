@@ -28,21 +28,18 @@ export const replaceLockModes = (file: FileInfo, api: API) => {
         const arg = path.node.arguments[0]
         if (!arg) return
 
+        const isStringLiteral = arg.type === "StringLiteral"
+        const isLiteralString =
+            arg.type === "Literal" && typeof arg.value === "string"
         const value =
-            arg.type === "StringLiteral"
-                ? arg.value
-                : arg.type === "Literal" && typeof arg.value === "string"
-                  ? arg.value
-                  : null
+            isStringLiteral || isLiteralString ? (arg as any).value : null
 
         if (!value || !lockModeMap[value]) return
 
         const replacement = lockModeMap[value]
 
         // Change the lock mode argument
-        if (arg.type === "StringLiteral") {
-            arg.value = replacement.mode
-        } else if (arg.type === "Literal") {
+        if (arg.type === "StringLiteral" || arg.type === "Literal") {
             arg.value = replacement.mode
         }
 
@@ -61,13 +58,14 @@ export const replaceLockModes = (file: FileInfo, api: API) => {
     root.find(j.ObjectProperty, {
         key: { name: "mode" },
     }).forEach((path) => {
+        const isValStringLiteral = path.node.value.type === "StringLiteral"
+        const isValLiteralString =
+            path.node.value.type === "Literal" &&
+            typeof path.node.value.value === "string"
         const value =
-            path.node.value.type === "StringLiteral"
-                ? path.node.value.value
-                : path.node.value.type === "Literal" &&
-                    typeof path.node.value.value === "string"
-                  ? path.node.value.value
-                  : null
+            isValStringLiteral || isValLiteralString
+                ? (path.node.value as any).value
+                : null
 
         if (!value || !lockModeMap[value]) return
 
@@ -87,9 +85,10 @@ export const replaceLockModes = (file: FileInfo, api: API) => {
         const replacement = lockModeMap[value]
 
         // Update mode value
-        if (path.node.value.type === "StringLiteral") {
-            path.node.value.value = replacement.mode
-        } else if (path.node.value.type === "Literal") {
+        if (
+            path.node.value.type === "StringLiteral" ||
+            path.node.value.type === "Literal"
+        ) {
             path.node.value.value = replacement.mode
         }
 

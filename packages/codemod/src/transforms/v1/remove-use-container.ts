@@ -59,7 +59,7 @@ export const removeUseContainer = (file: FileInfo, api: API) => {
             return true
         })
 
-        if (remaining && remaining.length === 0) {
+        if (remaining?.length === 0) {
             j(importPath).remove()
         } else if (remaining) {
             importPath.node.specifiers = remaining

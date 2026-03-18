@@ -44,8 +44,8 @@ export const replaceMongodbStats = (file: FileInfo, api: API) => {
                 const comment = j.commentLine(
                     " TODO: `stats()` was removed in TypeORM v1. Use the MongoDB driver directly. See migration guide: https://typeorm.io/docs/guides/migration-v1",
                 )
-                ;(path.node as any).comments = (path.node as any).comments || []
-                ;(path.node as any).comments.push(comment)
+                const comments = ((path.node as any).comments ??= [])
+                comments.push(comment)
                 comment.leading = true
                 hasChanges = true
                 hasTodos = true
@@ -55,8 +55,8 @@ export const replaceMongodbStats = (file: FileInfo, api: API) => {
             const comment = j.commentLine(
                 " TODO: `stats()` was removed in TypeORM v1. Use the MongoDB driver directly. See migration guide: https://typeorm.io/docs/guides/migration-v1",
             )
-            ;(path.node as any).comments = (path.node as any).comments || []
-            ;(path.node as any).comments.push(comment)
+            const comments = ((path.node as any).comments ??= [])
+            comments.push(comment)
             comment.leading = true
             hasChanges = true
             hasTodos = true

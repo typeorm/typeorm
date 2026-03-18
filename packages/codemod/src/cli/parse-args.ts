@@ -21,10 +21,10 @@ export const parseArgs = (args: string[]): CliOptions => {
             options.list = true
         } else if (arg === "--transform" || arg === "-t") {
             options.transform = args[++i]
-        } else if (!options.version) {
-            options.version = arg
-        } else {
+        } else if (options.version) {
             options.paths.push(arg)
+        } else {
+            options.version = arg
         }
         i++
     }

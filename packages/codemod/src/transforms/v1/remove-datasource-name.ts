@@ -14,7 +14,7 @@ export const removeDatasourceName = (file: FileInfo, api: API) => {
         callee: { type: "Identifier", name: "DataSource" },
     }).forEach((path) => {
         const arg = path.node.arguments[0]
-        if (!arg || arg.type !== "ObjectExpression") return
+        if (arg?.type !== "ObjectExpression") return
 
         const filtered = arg.properties.filter((prop) => {
             if (

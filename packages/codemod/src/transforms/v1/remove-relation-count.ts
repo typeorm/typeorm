@@ -21,8 +21,8 @@ export const removeRelationCount = (file: FileInfo, api: API) => {
         const comment = j.commentLine(
             " TODO: `@RelationCount` was removed in TypeORM v1. Use `QueryBuilder` with `loadRelationCountAndMap()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1",
         )
-        ;(path.node as any).comments = (path.node as any).comments || []
-        ;(path.node as any).comments.push(comment)
+        const comments = ((path.node as any).comments ??= [])
+        comments.push(comment)
         comment.leading = true
         hasChanges = true
         hasTodos = true
@@ -44,7 +44,7 @@ export const removeRelationCount = (file: FileInfo, api: API) => {
             return true
         })
 
-        if (remaining && remaining.length === 0) {
+        if (remaining?.length === 0) {
             j(importPath).remove()
         } else if (remaining) {
             importPath.node.specifiers = remaining

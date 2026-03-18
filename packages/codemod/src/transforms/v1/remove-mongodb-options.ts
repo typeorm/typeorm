@@ -78,8 +78,8 @@ export const removeMongodbOptions = (file: FileInfo, api: API) => {
             const comment = j.commentLine(
                 " TODO: `sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value.",
             )
-            ;(path.node as any).comments = (path.node as any).comments || []
-            ;(path.node as any).comments.push(comment)
+            const sslComments = ((path.node as any).comments ??= [])
+            sslComments.push(comment)
             comment.leading = true
             hasChanges = true
             hasTodos = true
@@ -91,8 +91,8 @@ export const removeMongodbOptions = (file: FileInfo, api: API) => {
             const comment = j.commentLine(
                 ` TODO: \`${name}\` was removed in TypeORM v1. Migrate to \`writeConcern: { ... }\`. See migration guide: https://typeorm.io/docs/guides/migration-v1`,
             )
-            ;(path.node as any).comments = (path.node as any).comments || []
-            ;(path.node as any).comments.push(comment)
+            const wcComments = ((path.node as any).comments ??= [])
+            wcComments.push(comment)
             comment.leading = true
             hasChanges = true
             hasTodos = true

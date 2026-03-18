@@ -27,11 +27,10 @@ export const replaceReadonlyColumn = (file: FileInfo, api: API) => {
             // readonly: true → update: false
             // readonly: false → update: true
             path.node.key.name = "update"
-            if (path.node.value.type === "BooleanLiteral") {
-                path.node.value.value = !path.node.value.value
-            } else if (
-                path.node.value.type === "Literal" &&
-                typeof path.node.value.value === "boolean"
+            if (
+                path.node.value.type === "BooleanLiteral" ||
+                (path.node.value.type === "Literal" &&
+                    typeof path.node.value.value === "boolean")
             ) {
                 path.node.value.value = !path.node.value.value
             }

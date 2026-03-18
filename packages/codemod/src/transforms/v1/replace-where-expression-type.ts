@@ -14,9 +14,8 @@ export const replaceWhereExpressionType = (file: FileInfo, api: API) => {
     }).forEach((path) => {
         path.node.imported.name = "WhereExpressionBuilder"
         if (
-            path.node.local &&
-            path.node.local.type === "Identifier" &&
-            path.node.local.name === "WhereExpression"
+            path.node.local?.type === "Identifier" &&
+            path.node.local?.name === "WhereExpression"
         ) {
             path.node.local.name = "WhereExpressionBuilder"
         }

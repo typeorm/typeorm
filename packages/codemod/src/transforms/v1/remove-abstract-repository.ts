@@ -5,6 +5,12 @@ export const description =
     "replace removed `@EntityRepository` and `AbstractRepository` with TODO"
 export const manual = true
 
+const addTodoComment = (node: any, comment: any) => {
+    const comments = ((node as any).comments ??= [])
+    comments.push(comment)
+    comment.leading = true
+}
+
 export const removeAbstractRepository = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
@@ -21,9 +27,7 @@ export const removeAbstractRepository = (file: FileInfo, api: API) => {
         const comment = j.commentLine(
             " TODO: `@EntityRepository` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
         )
-        ;(path.node as any).comments = (path.node as any).comments || []
-        ;(path.node as any).comments.push(comment)
-        comment.leading = true
+        addTodoComment(path.node, comment)
         hasChanges = true
         hasTodos = true
     })
@@ -33,12 +37,14 @@ export const removeAbstractRepository = (file: FileInfo, api: API) => {
         const superClass = path.node.superClass
         if (!superClass) return
 
+        const isMemberExpr =
+            superClass.type === "MemberExpression" &&
+            superClass.property.type === "Identifier"
         const name =
             superClass.type === "Identifier"
                 ? superClass.name
-                : superClass.type === "MemberExpression" &&
-                    superClass.property.type === "Identifier"
-                  ? superClass.property.name
+                : isMemberExpr
+                  ? (superClass as any).property.name
                   : null
 
         if (name !== "AbstractRepository") return
@@ -46,63 +52,37 @@ export const removeAbstractRepository = (file: FileInfo, api: API) => {
         const comment = j.commentLine(
             " TODO: `AbstractRepository` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
         )
-        ;(path.node as any).comments = (path.node as any).comments || []
-        ;(path.node as any).comments.push(comment)
-        comment.leading = true
+        addTodoComment(path.node, comment)
         hasChanges = true
         hasTodos = true
     })
 
     // Find getCustomRepository() calls and add TODO
+    const addGetCustomRepoTodo = (path: any) => {
+        const comment = j.commentLine(
+            " TODO: `getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+        )
+        const parent = path.parent
+        if (parent.node.type === "ExpressionStatement") {
+            addTodoComment(parent.node, comment)
+        } else {
+            addTodoComment(path.node, comment)
+        }
+        hasChanges = true
+        hasTodos = true
+    }
+
     root.find(j.CallExpression, {
         callee: {
             type: "MemberExpression",
             property: { type: "Identifier", name: "getCustomRepository" },
         },
-    }).forEach((path) => {
-        const parent = path.parent
-        if (parent.node.type === "ExpressionStatement") {
-            const comment = j.commentLine(
-                " TODO: `getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
-            )
-            parent.node.comments = parent.node.comments || []
-            parent.node.comments.push(comment)
-            comment.leading = true
-        } else {
-            const comment = j.commentLine(
-                " TODO: `getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
-            )
-            ;(path.node as any).comments = (path.node as any).comments || []
-            ;(path.node as any).comments.push(comment)
-            comment.leading = true
-        }
-        hasChanges = true
-        hasTodos = true
-    })
+    }).forEach(addGetCustomRepoTodo)
 
     // Also find standalone getCustomRepository() calls
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "getCustomRepository" },
-    }).forEach((path) => {
-        const parent = path.parent
-        if (parent.node.type === "ExpressionStatement") {
-            const comment = j.commentLine(
-                " TODO: `getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
-            )
-            parent.node.comments = parent.node.comments || []
-            parent.node.comments.push(comment)
-            comment.leading = true
-        } else {
-            const comment = j.commentLine(
-                " TODO: `getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
-            )
-            ;(path.node as any).comments = (path.node as any).comments || []
-            ;(path.node as any).comments.push(comment)
-            comment.leading = true
-        }
-        hasChanges = true
-        hasTodos = true
-    })
+    }).forEach(addGetCustomRepoTodo)
 
     // Remove imports
     const removedImports = new Set(["EntityRepository", "AbstractRepository"])
@@ -123,7 +103,7 @@ export const removeAbstractRepository = (file: FileInfo, api: API) => {
             return true
         })
 
-        if (remaining && remaining.length === 0) {
+        if (remaining?.length === 0) {
             j(importPath).remove()
         } else if (remaining) {
             importPath.node.specifiers = remaining

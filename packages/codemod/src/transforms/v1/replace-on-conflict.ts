@@ -18,12 +18,11 @@ export const replaceOnConflict = (file: FileInfo, api: API) => {
         },
     }).forEach((path) => {
         const arg = path.node.arguments[0]
+        const isStringLiteral = arg?.type === "StringLiteral"
+        const isLiteralString =
+            arg?.type === "Literal" && typeof arg.value === "string"
         const argValue =
-            arg?.type === "StringLiteral"
-                ? arg.value
-                : arg?.type === "Literal" && typeof arg.value === "string"
-                  ? arg.value
-                  : null
+            isStringLiteral || isLiteralString ? (arg as any).value : null
 
         if (argValue && /DO\s+NOTHING/i.test(argValue)) {
             // Replace .onConflict("DO NOTHING") with .orIgnore()
@@ -46,8 +45,8 @@ export const replaceOnConflict = (file: FileInfo, api: API) => {
                 const comment = j.commentLine(
                     " TODO: `onConflict()` was removed in TypeORM v1. Use `orIgnore()` or `orUpdate()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1",
                 )
-                ;(path.node as any).comments = (path.node as any).comments || []
-                ;(path.node as any).comments.push(comment)
+                const comments = ((path.node as any).comments ??= [])
+                comments.push(comment)
                 comment.leading = true
             }
             hasChanges = true
