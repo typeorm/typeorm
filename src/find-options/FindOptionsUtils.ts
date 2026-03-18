@@ -7,7 +7,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 import type { FindTreeOptions } from "./FindTreeOptions"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { RelationMetadata } from "../metadata/RelationMetadata"
-import { EntityPropertyNotFoundError } from "../error"
+import { EntityPropertyNotFoundError, TypeORMError } from "../error"
 
 /**
  * Utilities to work with FindOptions.
@@ -16,6 +16,20 @@ export class FindOptionsUtils {
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Throws if the removed `join` option is present on a find-options object.
+     * This catches untyped/JS callers still passing `join` after its removal in v1.0.
+     * @param options
+     */
+    static rejectJoinOption(options: any): void {
+        if (options && typeof options === "object" && options.join != null) {
+            throw new TypeORMError(
+                `"join" option has been removed. Use "relations" for left joins ` +
+                    `or QueryBuilder for other join types. See the v1 migration guide for details.`,
+            )
+        }
+    }
 
     /**
      * Checks if given object is really instance of FindOneOptions interface.

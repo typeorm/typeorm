@@ -1111,6 +1111,8 @@ export class MongoEntityManager extends EntityManager {
     ): ObjectLiteral | undefined {
         if (!optionsOrConditions) return undefined
 
+        FindOptionsUtils.rejectJoinOption(optionsOrConditions)
+
         if (FindOptionsUtils.isFindManyOptions<Entity>(optionsOrConditions))
             // If where condition is passed as a string which contains sql we have to ignore
             // as mongo is not a sql database
@@ -1132,6 +1134,8 @@ export class MongoEntityManager extends EntityManager {
             | undefined,
     ): ObjectLiteral | undefined {
         if (!optionsOrConditions) return undefined
+
+        FindOptionsUtils.rejectJoinOption(optionsOrConditions)
 
         if (FindOptionsUtils.isFindOneOptions<Entity>(optionsOrConditions))
             // If where condition is passed as a string which contains sql we have to ignore

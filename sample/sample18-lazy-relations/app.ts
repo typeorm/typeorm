@@ -93,22 +93,23 @@ dataSource.initialize().then(
 
                 return postRepository.save(post)
             })
-            .then(() => {
+            .then((savedPost) => {
                 console.log("Post has been saved with its categories. ")
                 console.log("Lets find it now. ")
-                return postRepository.find({
+                return postRepository.findOne({
+                    where: { id: savedPost.id },
                     relations: {
                         categories: true,
                     },
                 })
             })
-            .then((posts) => {
-                console.log("Post with categories are loaded: ", posts)
+            .then((post) => {
+                console.log("Post with categories is loaded: ", post)
                 console.log("Lets remove one of the categories: ")
-                return posts[0].categories.then((categories) => {
+                return post!.categories.then((categories) => {
                     // temporary
                     categories!.splice(0, 1)
-                    return postRepository.save(posts[0])
+                    return postRepository.save(post!)
                 })
             })
             .then(() => {
