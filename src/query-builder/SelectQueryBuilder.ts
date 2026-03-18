@@ -100,6 +100,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     // -------------------------------------------------------------------------
 
     setFindOptions(findOptions: FindManyOptions<Entity>) {
+        FindOptionsUtils.rejectJoinOption(findOptions)
         this.findOptions = findOptions
         this.applyFindOptions()
         return this
@@ -3330,48 +3331,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.cache.id,
                     this.findOptions.cache.milliseconds,
                 )
-            }
-
-            if (this.findOptions.join) {
-                if (this.findOptions.join.leftJoin)
-                    Object.keys(this.findOptions.join.leftJoin).forEach(
-                        (key) => {
-                            this.leftJoin(
-                                this.findOptions.join!.leftJoin![key],
-                                key,
-                            )
-                        },
-                    )
-
-                if (this.findOptions.join.innerJoin)
-                    Object.keys(this.findOptions.join.innerJoin).forEach(
-                        (key) => {
-                            this.innerJoin(
-                                this.findOptions.join!.innerJoin![key],
-                                key,
-                            )
-                        },
-                    )
-
-                if (this.findOptions.join.leftJoinAndSelect)
-                    Object.keys(
-                        this.findOptions.join.leftJoinAndSelect,
-                    ).forEach((key) => {
-                        this.leftJoinAndSelect(
-                            this.findOptions.join!.leftJoinAndSelect![key],
-                            key,
-                        )
-                    })
-
-                if (this.findOptions.join.innerJoinAndSelect)
-                    Object.keys(
-                        this.findOptions.join.innerJoinAndSelect,
-                    ).forEach((key) => {
-                        this.innerJoinAndSelect(
-                            this.findOptions.join!.innerJoinAndSelect![key],
-                            key,
-                        )
-                    })
             }
 
             if (this.findOptions.lock) {

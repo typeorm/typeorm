@@ -42,12 +42,9 @@ dataSource.initialize().then(
             .then(() => {
                 console.log("Post has been saved. Lets load it now.")
                 return postRepository.find({
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            categories: "post.categories",
-                            author: "post.user", // note that table column is used, not object property
-                        },
+                    relations: {
+                        categories: true,
+                        author: true,
                     },
                 })
             })
