@@ -512,7 +512,7 @@ export class ReactNativeDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return '"' + columnName + '"'
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
@@ -918,6 +918,23 @@ export class ReactNativeDriver implements Driver {
         // return "$" + (index + 1);
         return "?"
         // return "$" + parameterName;
+    }
+
+    /**
+     * Wraps key with json/jsonb function.
+     * @param value
+     * @param column
+     * @param jsonb
+     */
+    wrapWithJsonFunction(
+        value: string,
+        column: ColumnMetadata,
+        jsonb: boolean = false,
+    ): string {
+        if (column.type === "jsonb") {
+            return jsonb ? `jsonb(${value})` : `json(${value})`
+        }
+        return value
     }
 
     // -------------------------------------------------------------------------

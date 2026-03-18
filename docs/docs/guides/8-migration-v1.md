@@ -2,21 +2,25 @@
 
 This is the migration guide for upgrading from version `0.3.x` to `1.0`.
 
-## JavaScript and Node.js versions
+## Platform requirements
 
-The lowest JavaScript version supported is now `ES2023`, which means Node 20 and later is supported. If you are using a platform that does not support `ES2023`, please upgrade.
+### Node.js 20+
 
-## Client libraries
+The minimum JavaScript target is now `ES2023`, which requires **Node.js 20 or later**. If you are using an older Node.js version, upgrade before updating TypeORM.
 
-TypeORM requires newer versions of the database client libraries.
+### `Buffer` replaced with `Uint8Array` on non-Node platforms
 
-## MySQL / MariaDB
+The browser `Buffer` polyfill has been removed. On non-Node platforms (browser, Deno, Bun), binary data is now represented as `Uint8Array`. Node.js users are not affected — Node's `Buffer` extends `Uint8Array` and continues to work as before.
 
-### `connectorPackage`
+## Driver changes
+
+### MySQL / MariaDB
+
+#### `connectorPackage` option removed
 
 The `connectorPackage` option was removed, together with the support for the old `mysql` client. The only database client supported is now `mysql2`, which TypeORM will try to load by default. If you were using `mysql` in your project, simply replace it with `mysql2`.
 
-### `legacySpatialSupport` default changed to `false`
+#### `legacySpatialSupport` default changed to `false`
 
 The `legacySpatialSupport` option now defaults to `false`, meaning TypeORM uses the standard-compliant `ST_GeomFromText` and `ST_AsText` spatial functions introduced in MySQL 5.7 and required by MySQL 8.0+. The legacy `GeomFromText` and `AsText` functions were removed in MySQL 8.0.
 
@@ -30,7 +34,7 @@ new DataSource({
 })
 ```
 
-### `width` and `zerofill` column options removed
+#### `width` and `zerofill` column options removed
 
 MySQL 8.0.17 deprecated display width for integer types and the `ZEROFILL` attribute, and MySQL 8.4 removed them entirely. TypeORM no longer supports the `width` and `zerofill` column options. If you were using these options, remove them from your column definitions:
 
@@ -44,58 +48,58 @@ postCode: number
 postCode: number
 ```
 
-If you need zero-padded display formatting, handle it in your application layer using `String.prototype.padStart()` or the MySQL `LPAD()` function in a raw query. The `unsigned` option for integer types is **not** affected by this change and continues to work as before.
+If you need zero-padded display formatting, handle it in your application layer using `String.prototype.padStart()` or the MySQL `LPAD()` function in a raw query. The `unsigned` option for integer types is **not** affected by this change.
 
-## SAP HANA
+### SQLite
 
-Several deprecated SAP HANA connection aliases were removed.
-
-- `hanaClientDriver` was removed. Use `driver`.
-- `pool.max` was removed. Use `pool.maxConnectedOrPooled`.
-- `pool.requestTimeout` was removed. Use `pool.maxWaitTimeoutIfPoolExhausted`.
-- `pool.idleTimeout` was removed. Use `pool.maxPooledIdleTime` (seconds).
-- `pool.min`, `pool.maxWaitingRequests`, and `pool.checkInterval` were removed with no replacement.
-
-Also note the default behavior changes in pool configuration:
-
-- `pool.maxPooledIdleTime` now defaults to `30` seconds and no longer falls back to `pool.idleTimeout`.
-- `pool.maxWaitTimeoutIfPoolExhausted` now defaults to `0` and no longer falls back to `pool.requestTimeout`.
-
-## SQLite
-
-Drop support to `sqlite3` in favour of `better-sqlite3` as the primary driver for `sqlite` databases:
+The `sqlite3` package has been dropped. Use `better-sqlite3` instead:
 
 ```typescript
+// Before
 new DataSource({
-    type: "better-sqlite3", // was "sqlite"
+    type: "sqlite",
+    database: "db.sqlite",
+})
+
+// After
+new DataSource({
+    type: "better-sqlite3",
     database: "db.sqlite",
 })
 ```
 
-### `flags` option removed
+#### `flags` option removed
 
 The `sqlite3` package accepted C-level open flags (`OPEN_URI`, `OPEN_SHAREDCACHE`, etc.). `better-sqlite3` does not support this — use the dedicated options instead:
 
 - `readonly` for read-only mode
 - `enableWAL` for WAL journal mode
 
-### `busyTimeout` option renamed to `timeout`
+#### `busyTimeout` option renamed to `timeout`
 
-The `sqlite3` package used `busyTimeout` to configure SQLite's busy timeout. `better-sqlite3` uses `timeout` instead (default: 5000ms). Update your DataSource options accordingly:
+The `sqlite3` package used `busyTimeout` to configure SQLite's busy timeout. `better-sqlite3` uses `timeout` instead (default: 5000ms):
 
 ```typescript
+// Before
+new DataSource({
+    type: "sqlite",
+    database: "db.sqlite",
+    busyTimeout: 2000,
+})
+
+// After
 new DataSource({
     type: "better-sqlite3",
     database: "db.sqlite",
-    timeout: 2000, // was `busyTimeout` in sqlite3
+    timeout: 2000,
 })
 ```
 
-## MongoDB
+### MongoDB
 
 TypeORM now requires the **`mongodb` Node.js driver v7 or later** (`^7.0.0`). Support for the `mongodb` driver v5/v6 has been dropped.
 
-### Deprecated connection options removed
+#### Deprecated connection options removed
 
 The following MongoDB connection options have been removed:
 
@@ -119,7 +123,7 @@ The following MongoDB connection options have been removed:
 | `wtimeout`              | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
 | `wtimeoutMS`            | Use `writeConcern: { wtimeoutMS: 2500 }` instead     |
 
-### `stats()` method removed
+#### `stats()` method removed
 
 The `stats()` method has been removed from `MongoQueryRunner`, `MongoEntityManager`, and `MongoRepository`. The underlying `collStats` command was deprecated in MongoDB server 6.2 and the `Collection.stats()` method was removed in MongoDB Driver v7.
 
@@ -141,7 +145,7 @@ console.log(stats.storageStats.size)
 console.log(stats.storageStats.totalIndexSize)
 ```
 
-### `getMongoRepository` and `getMongoManager` globals
+#### `getMongoRepository` and `getMongoManager` globals removed
 
 The deprecated global functions `getMongoRepository()` and `getMongoManager()` have been removed. Use the corresponding instance methods on `DataSource` or `EntityManager` instead:
 
@@ -157,13 +161,21 @@ const manager = dataSource.mongoManager
 const repository = dataSource.getMongoRepository(User)
 ```
 
-### Types
+#### Types
 
-The internal MongoDB types are no longer exported. You can import `ObjectId` from `mongodb` instead of `typeorm`.
+The internal MongoDB types (`ObjectId`, etc.) are no longer re-exported from `typeorm`. Import them directly from `mongodb`:
 
-## MS SQL Server
+```typescript
+// Before
+import { ObjectId } from "typeorm"
 
-### `domain` connection option removed
+// After
+import { ObjectId } from "mongodb"
+```
+
+### MS SQL Server
+
+#### `domain` connection option removed
 
 The deprecated `domain` option on `SqlServerConnectionCredentialsOptions` has been removed. Use the `authentication` option with NTLM type instead:
 
@@ -192,27 +204,113 @@ new DataSource({
 })
 ```
 
-## Expo
+### SAP HANA
 
-Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
+Several deprecated SAP HANA connection aliases were removed.
 
-## Hashing
+- `hanaClientDriver` was removed. Use `driver`.
+- `pool.max` was removed. Use `pool.maxConnectedOrPooled`.
+- `pool.requestTimeout` was removed. Use `pool.maxWaitTimeoutIfPoolExhausted`.
+- `pool.idleTimeout` was removed. Use `pool.maxPooledIdleTime` (seconds).
+- `pool.min`, `pool.maxWaitingRequests`, and `pool.checkInterval` were removed with no replacement.
 
-Historically TypeORM used a non-standard SHA-1 implementation for hashing. This has been changed to use the built-in `crypto` module from Node.js.
+Also note the default behavior changes in pool configuration:
 
-For browser environments `RandomGenerator.sha1` was fixed to the standard implementation.
+- `pool.maxPooledIdleTime` now defaults to `30` seconds and no longer falls back to `pool.idleTimeout`.
+- `pool.maxWaitTimeoutIfPoolExhausted` now defaults to `0` and no longer falls back to `pool.requestTimeout`.
 
-## Glob patterns
+### Expo
 
-Glob patterns are now handled by `tinyglobby` instead of `glob`. While `tinyglobby` is almost a drop-in replacement for `glob`, there might be certain cases in which the behavior is different.
+Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52. Upgrade to **Expo SDK v52 or later** and use the modern async SQLite API:
 
-## Removed deprecations
+```typescript
+// Before
+new DataSource({
+    type: "expo",
+    database: "db.sqlite",
+})
 
-### Redis
+// After — use Expo SDK v52+ with the modern async API
+new DataSource({
+    type: "expo",
+    database: "db.sqlite",
+    driver: require("expo-sqlite"),
+})
+```
 
-Removed support for legacy (v3/v4) Redis clients in `RedisQueryResultCache`.
+### Redis (cache)
 
-### Global convenience functions
+Removed support for legacy (v3) Redis clients in `RedisQueryResultCache`. Upgrade to **Redis client v4 or later** (`redis`, `ioredis`):
+
+```typescript
+// Before — redis v3
+import { createClient } from "redis"
+const client = createClient()
+
+// After — redis v4+
+import { createClient } from "redis"
+const client = createClient()
+await client.connect()
+```
+
+## Data Source
+
+### `Connection` → `DataSource`
+
+`DataSource` replaced `Connection` in v0.3. The backward-compatible alias has now been removed:
+
+```typescript
+// Before
+import { Connection, ConnectionOptions } from "typeorm"
+
+const connection = await createConnection(options)
+await connection.close()
+
+// After
+import { DataSource, DataSourceOptions } from "typeorm"
+
+const dataSource = new DataSource(options)
+await dataSource.initialize()
+await dataSource.destroy()
+```
+
+The following renames apply throughout:
+
+| Before                           | After                      |
+| -------------------------------- | -------------------------- |
+| `Connection`                     | `DataSource`               |
+| `ConnectionOptions`              | `DataSourceOptions`        |
+| `BaseConnectionOptions`          | `BaseDataSourceOptions`    |
+| `MysqlConnectionOptions`         | `MysqlDataSourceOptions`   |
+| _(same pattern for all drivers)_ |                            |
+| `connection.connect()`           | `dataSource.initialize()`  |
+| `connection.close()`             | `dataSource.destroy()`     |
+| `connection.isConnected`         | `dataSource.isInitialized` |
+
+### `ConnectionManager`
+
+The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
+
+### `name` property removed
+
+The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
+
+Note: code that reads `dataSource.name` will now receive `undefined` instead of `"default"`. If you use this value in logging or multi-tenancy logic, update accordingly.
+
+`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
+
+```typescript
+const reader = new ConnectionOptionsReader()
+
+// when your ormconfig has a single data source
+const [options] = await reader.get()
+
+// when you need a specific config from multiple data sources
+const allOptions = await reader.get()
+const postgresOptions = allOptions.find((o) => o.type === "postgres")
+```
+
+### Global convenience functions removed
 
 The following deprecated global functions have been removed:
 
@@ -226,7 +324,7 @@ The following deprecated global functions have been removed:
 - `getTreeRepository`
 - `createQueryBuilder`
 
-Use the equivalent methods on your `DataSource` instance instead. For example:
+Use the equivalent methods on your `DataSource` instance:
 
 ```typescript
 // Before
@@ -238,21 +336,78 @@ const repo = dataSource.getRepository(User)
 const qb = dataSource.createQueryBuilder("user")
 ```
 
-## Data Source
+### Configuration via environment variables removed
 
-### `Connection` vs `DataSource`
+The deprecated `ConnectionOptionsEnvReader` class and the ability to configure connections via `TYPEORM_CONNECTION`, `TYPEORM_URL`, and other `TYPEORM_*` environment variables has been removed. The `ormconfig.env` file format is also no longer supported. TypeORM no longer auto-loads `.env` files or depends on `dotenv`.
 
-`DataSource` replaced `Connection` in v0.3 to provide a better meaning to the abstract concept represented by this class. For backwards compatibility, `Connection` was kept as an alias to `DataSource`, now this alias was removed. Similarly, `ConnectionOptions` is now `DataSourceOptions`.
+Use a TypeScript or JavaScript configuration file instead:
 
-In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
+```typescript
+// ormconfig.ts
+export default {
+    type: process.env.DB_TYPE,
+    url: process.env.DB_URL,
+    // ...
+}
+```
 
-### `ConnectionManager`
+## Behavioral changes
 
-The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
+### `invalidWhereValuesBehavior` default changed to `throw`
+
+**This is a significant behavioral change that may break existing applications at runtime.**
+
+The default behavior for null and undefined values in where conditions has changed. Previously, null and undefined values were silently ignored (the property was skipped). Now, both **throw an error by default**.
+
+This change prevents subtle bugs where queries like `findBy({ id: undefined })` would silently return all rows instead of failing.
+
+```typescript
+// v0.3: silently returns all posts (null is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: null } })
+
+// v0.3: silently returns all posts (undefined is ignored)
+// v1.0: throws TypeORMError
+await repository.find({ where: { text: undefined } })
+```
+
+To match null values, use the `IsNull()` operator:
+
+```typescript
+import { IsNull } from "typeorm"
+
+await repository.find({ where: { text: IsNull() } })
+```
+
+To restore the previous behavior, set `invalidWhereValuesBehavior` in your data source options:
+
+```typescript
+new DataSource({
+    // ...
+    invalidWhereValuesBehavior: {
+        null: "ignore",
+        undefined: "ignore",
+    },
+})
+```
+
+This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The rest of the QueryBuilder methods (`.where()`, `.andWhere()`, `.orWhere()`) are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
+
+### Hashing
+
+TypeORM previously used the `sha.js` npm package for SHA-1 hashing (a non-standard implementation). This has been replaced with the built-in `crypto` module from Node.js, and the `uuid` package has been replaced with `crypto.randomUUID()`.
+
+For browser environments, `RandomGenerator.sha1` was fixed to the standard implementation.
+
+**Impact:** If you use TypeORM's query result cache, existing cached entries will be invalidated after upgrading because the hash function produces different output. This is harmless — caches will be rebuilt automatically — but you may see a brief increase in cache misses.
+
+### Glob patterns
+
+Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is mostly a drop-in replacement, but edge cases with brace expansion or platform-specific path separators may behave differently.
 
 ## Columns
 
-### `readonly`
+### `readonly` option removed
 
 The deprecated `readonly` column option has been removed. Use the `update` option instead — note that it takes the **opposite** value:
 
@@ -266,13 +421,13 @@ authorName: string
 authorName: string
 ```
 
-### `unsigned`
+### `unsigned` on `ColumnNumericOptions` removed
 
-The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected and continues to work.
+The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected.
 
 ## Repository
 
-### `findByIds`
+### `findByIds` removed
 
 The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, and `BaseEntity`. Use `findBy` with the `In` operator instead:
 
@@ -286,7 +441,7 @@ import { In } from "typeorm"
 const users = await repository.findBy({ id: In([1, 2, 3]) })
 ```
 
-### `exist`
+### `exist` renamed to `exists`
 
 The deprecated `Repository.exist()` method has been removed. Use `exists()` instead — the behavior is identical:
 
@@ -298,27 +453,21 @@ const hasUsers = await userRepository.exist({ where: { isActive: true } })
 const hasUsers = await userRepository.exists({ where: { isActive: true } })
 ```
 
-### `AbstractRepository`, `@EntityRepository`, and `getCustomRepository`
+### `AbstractRepository`, `@EntityRepository`, and `getCustomRepository` removed
 
-The `AbstractRepository` class, `@EntityRepository` decorator, and `getCustomRepository()` method have been removed. These were deprecated in v0.3 in favor of `Repository.extend()`.
-
-Before:
+The `AbstractRepository` class, `@EntityRepository` decorator, and `getCustomRepository()` method have been removed. These were deprecated in v0.3 in favor of `Repository.extend()`:
 
 ```typescript
+// Before
 @EntityRepository(User)
 class UserRepository extends AbstractRepository<User> {
     findByName(name: string) {
         return this.repository.findOneBy({ name })
     }
 }
-
-// Usage
 const userRepo = dataSource.getCustomRepository(UserRepository)
-```
 
-After:
-
-```typescript
+// After
 const UserRepository = dataSource.getRepository(User).extend({
     findByName(name: string) {
         return this.findOneBy({ name })
@@ -328,7 +477,7 @@ const UserRepository = dataSource.getRepository(User).extend({
 
 The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
 
-### `@RelationCount` decorator and `loadRelationCountAndMap`
+### `@RelationCount` decorator and `loadRelationCountAndMap` removed
 
 The `@RelationCount` decorator and `SelectQueryBuilder.loadRelationCountAndMap()` method have been removed. Use `@VirtualColumn` or a sub-query in your query builder instead:
 
@@ -460,9 +609,9 @@ const users = await dataSource
     .getMany()
 ```
 
-### `onConflict`
+### `onConflict` removed
 
-The `onConflict()` method on `InsertQueryBuilder` has been removed. Use `orIgnore()` or `orUpdate()` instead:
+The `onConflict()` method on `InsertQueryBuilder` has been removed. It accepted raw SQL strings which were driver-specific and error-prone. Use `orIgnore()` or `orUpdate()` instead:
 
 ```typescript
 // Before
@@ -503,7 +652,7 @@ await dataSource
     .execute()
 ```
 
-### `orUpdate`
+### `orUpdate` object overload removed
 
 The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, conflict_target? }` has been removed. Use the array-based signature instead:
 
@@ -515,21 +664,33 @@ The object-based `orUpdate()` overload accepting `{ columns?, overwrite?, confli
 .orUpdate(["title"], ["date"])
 ```
 
-### `replacePropertyNames`
+### `setNativeParameters` removed
+
+```typescript
+// Before
+qb.setNativeParameters({ key: "value" })
+
+// After
+qb.setParameters({ key: "value" })
+```
+
+The internal `QueryExpressionMap.nativeParameters` property has also been removed. If you have a custom QueryBuilder subclass that accesses `expressionMap.nativeParameters`, switch to `expressionMap.parameters`.
+
+### `WhereExpression` type alias removed
+
+```typescript
+// Before
+import { WhereExpression } from "typeorm"
+
+// After
+import { WhereExpressionBuilder } from "typeorm"
+```
+
+### `replacePropertyNames` removed
 
 The deprecated `replacePropertyNames()` protected method has been removed. It was a no-op since property name replacement was moved to end-of-query processing via `replacePropertyNamesForTheWholeQuery()`. If you were overriding this method in a custom QueryBuilder subclass, the override is no longer called.
 
-### `setNativeParameters`
-
-The `setNativeParameters()` method has been removed. Use `setParameters()` instead.
-
-### `WhereExpression` type alias
-
-The deprecated `WhereExpression` type alias has been removed. Use `WhereExpressionBuilder` instead.
-
-### Deprecated lock modes
-
-The `pessimistic_partial_write` and `pessimistic_write_or_fail` lock modes have been removed. Use `pessimistic_write` with the `onLocked` option instead:
+### Deprecated lock modes removed
 
 ```typescript
 // Before
@@ -565,21 +726,21 @@ The same applies to find options:
 
 ## Migrations
 
-### `getAllMigrations`
+### `getAllMigrations` removed
 
-The deprecated `getAllMigrations()` method has been removed. Use `getMigrations()` instead — the behavior is identical:
+The deprecated `getAllMigrations()` method has been removed from `MigrationExecutor`. Use `getPendingMigrations()` or `getExecutedMigrations()` instead, or access `dataSource.migrations` directly for the list of registered migration classes:
 
 ```typescript
 // Before
 const migrations = await migrationExecutor.getAllMigrations()
 
-// After
-const migrations = migrationExecutor.getMigrations()
+// After — depending on what you need
+const pending = await migrationExecutor.getPendingMigrations()
+const executed = await migrationExecutor.getExecutedMigrations()
+const registered = dataSource.migrations
 ```
 
-### `QueryRunner.loadedTables` and `loadedViews`
-
-The deprecated `loadedTables` and `loadedViews` properties have been removed from the `QueryRunner` interface. Use `getTables()` and `getViews()` instead:
+### `QueryRunner.loadedTables` and `loadedViews` removed
 
 ```typescript
 // Before
@@ -591,77 +752,7 @@ const tables = await queryRunner.getTables()
 const views = await queryRunner.getViews()
 ```
 
-## Configuration
-
-### `invalidWhereValuesBehavior` default changed to `throw`
-
-The default behavior for null and undefined values in where conditions has changed. Previously, null and undefined values were silently ignored (the property was skipped). Now, both **throw an error by default**.
-
-This change prevents subtle bugs where queries like `findBy({ id: undefined })` would silently return the first row instead of failing.
-
-```typescript
-// v0.3: silently returns all posts (null is ignored)
-// v1.0: throws TypeORMError
-await repository.find({ where: { text: null } })
-
-// v0.3: silently returns all posts (undefined is ignored)
-// v1.0: throws TypeORMError
-await repository.find({ where: { text: undefined } })
-```
-
-To match null values, use the `IsNull()` operator:
-
-```typescript
-import { IsNull } from "typeorm"
-
-await repository.find({ where: { text: IsNull() } })
-```
-
-To restore the previous behavior, set `invalidWhereValuesBehavior` in your data source options:
-
-```typescript
-new DataSource({
-    // ...
-    invalidWhereValuesBehavior: {
-        null: "ignore",
-        undefined: "ignore",
-    },
-})
-```
-
-This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The rest of the QueryBuilder methods (`.where()`, `.andWhere()`, `.orWhere()`) are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
-
-### Drop support for configuration via environment variables
-
-The deprecated `ConnectionOptionsEnvReader` class and the ability to configure connections via `TYPEORM_CONNECTION`, `TYPEORM_URL`, and other `TYPEORM_*` environment variables has been removed. The `ormconfig.env` file format is also no longer supported. TypeORM no longer auto-loads `.env` files or depends on `dotenv`.
-
-Use a TypeScript or JavaScript configuration file (`ormconfig.ts`, `ormconfig.js`) instead, referencing environment variables directly:
-
-```typescript
-// ormconfig.ts
-export default {
-    type: process.env.DB_TYPE,
-    url: process.env.DB_URL,
-    // ...
-}
-```
-
-### `name`
-
-The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
-
-`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
-
-```typescript
-const reader = new ConnectionOptionsReader()
-
-// when your ormconfig has a single data source
-const [options] = await reader.get()
-
-// when you need a specific config from multiple data sources
-const allOptions = await reader.get()
-const postgresOptions = allOptions.find((o) => o.type === "postgres")
-```
+Note: the replacements are async methods, not synchronous properties.
 
 ## Container system
 
@@ -735,4 +826,15 @@ Container.set("UserRepository", dataSource.getRepository(User))
 
 ### NestJS
 
-NestJS users are not affected — the `@nestjs/typeorm` package has its own integration that does not depend on TypeORM's removed container system. No changes are needed.
+NestJS users are not affected — the `@nestjs/typeorm` package has its own integration that does not depend on TypeORM's removed container system. However, `@nestjs/typeorm` v10 and the current v11.0.0 attempt to register the removed `Connection` class and will crash at startup. Make sure you are using a version of `@nestjs/typeorm` that includes the fix for TypeORM v1 compatibility.
+
+## Other internal removals
+
+The following internal APIs have been removed. These only affect you if you were building custom drivers, extending QueryBuilder, or using low-level metadata APIs:
+
+| Removed                                        | Replacement                                       |
+| ---------------------------------------------- | ------------------------------------------------- |
+| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                |
+| `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                    |
+| `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers |
+| `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`               |
