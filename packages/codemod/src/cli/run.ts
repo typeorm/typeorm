@@ -28,10 +28,6 @@ export const runTransforms = async (
             existing.push(...files)
             allTodos.set(transform, existing)
         }
-
-        console.log(
-            `  ${result.ok} ok, ${result.skip} skipped, ${result.error} errors, ${result.nochange} unchanged`,
-        )
     }
 
     if (!dry && allTodos.size > 0) {
