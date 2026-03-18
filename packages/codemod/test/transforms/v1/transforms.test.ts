@@ -4,7 +4,7 @@ import path from "node:path"
 import { applyTransform } from "jscodeshift/src/testUtils"
 import prettier from "prettier"
 
-const fixturesDir = path.join(__dirname, "__testfixtures__")
+const fixturesDir = path.join(__dirname, "fixtures")
 
 const format = async (source: string) =>
     prettier.format(source, {
