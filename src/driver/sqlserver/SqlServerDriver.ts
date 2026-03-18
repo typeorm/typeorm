@@ -1,32 +1,32 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source/DataSource"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { FindOperator } from "../../find-options/FindOperator"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { Table } from "../../schema-builder/table/Table"
+import type { Table } from "../../schema-builder/table/Table"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { View } from "../../schema-builder/view/View"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver, ReturningType } from "../Driver"
+import type { Driver, ReturningType } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import { ColumnType } from "../types/ColumnTypes"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { UpsertType } from "../types/UpsertType"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
 import { MssqlParameter } from "./MssqlParameter"
-import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
-import { SqlServerDataSourceOptions } from "./SqlServerDataSourceOptions"
+import type { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
+import type { SqlServerDataSourceOptions } from "./SqlServerDataSourceOptions"
 import { SqlServerQueryRunner } from "./SqlServerQueryRunner"
 
 /**
@@ -371,16 +371,12 @@ export class SqlServerDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -427,7 +423,7 @@ export class SqlServerDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return `"${columnName}"`
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
@@ -654,7 +650,10 @@ export class SqlServerDriver implements Driver {
             return "datetime"
         } else if (column.type === Boolean) {
             return "bit"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "binary"
         } else if (column.type === "uuid") {
             return "uniqueidentifier"
@@ -1172,17 +1171,6 @@ export class SqlServerDriver implements Driver {
             DriverUtils.buildDriverOptions(credentials),
         ) // todo: do it better way
 
-        // todo: credentials.domain is deprecation. remove it in future
-        const authentication = !credentials.domain
-            ? credentials.authentication
-            : {
-                  type: "ntlm",
-                  options: {
-                      domain: credentials.domain,
-                      userName: credentials.username,
-                      password: credentials.password,
-                  },
-              }
         // build connection options for the driver
         const connectionOptions = Object.assign(
             {},
@@ -1199,7 +1187,7 @@ export class SqlServerDriver implements Driver {
                 port: credentials.port,
                 user: credentials.username,
                 password: credentials.password,
-                authentication: authentication,
+                authentication: credentials.authentication,
             },
             options.extra || {},
         )

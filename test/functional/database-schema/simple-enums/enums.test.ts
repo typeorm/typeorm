@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -14,9 +14,9 @@ import {
 } from "./entity/SimpleEnumEntity"
 
 describe("database schema > simple-enums", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: [
                 "mysql",
@@ -27,14 +27,14 @@ describe("database schema > simple-enums", () => {
             ],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly use default values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(SimpleEnumEntity)
+                    dataSource.getRepository(SimpleEnumEntity)
 
                 const enumEntity = new SimpleEnumEntity()
                 enumEntity.id = 1
@@ -61,9 +61,9 @@ describe("database schema > simple-enums", () => {
 
     it("should correctly save and retrieve", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(SimpleEnumEntity)
+                    dataSource.getRepository(SimpleEnumEntity)
 
                 const enumEntity = new SimpleEnumEntity()
                 enumEntity.id = 1

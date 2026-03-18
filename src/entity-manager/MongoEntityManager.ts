@@ -1,20 +1,20 @@
 import { EntityManager } from "./EntityManager"
-import { EntityTarget } from "../common/EntityTarget"
+import type { EntityTarget } from "../common/EntityTarget"
 
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
-import { MongoDriver } from "../driver/mongodb/MongoDriver"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
+import type { MongoDriver } from "../driver/mongodb/MongoDriver"
 import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
-import { FindManyOptions } from "../find-options/FindManyOptions"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import { PlatformTools } from "../platform/PlatformTools"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 
-import {
+import type {
     AggregateOptions,
     AggregationCursor,
     AnyBulkWriteOperation,
@@ -23,8 +23,6 @@ import {
     ChangeStream,
     ChangeStreamOptions,
     Collection,
-    CollStats,
-    CollStatsOptions,
     CommandOperationOptions,
     CountDocumentsOptions,
     CountOptions,
@@ -56,15 +54,15 @@ import {
     UpdateOptions,
     UpdateResult as UpdateResultMongoDb,
 } from "../driver/mongodb/typings"
-import { DataSource } from "../data-source/DataSource"
-import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
-import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
-import {
+import type { DataSource } from "../data-source/DataSource"
+import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
+import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
+import type {
     FindOptionsSelect,
     FindOptionsSelectByString,
 } from "../find-options/FindOptionsSelect"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -107,16 +105,18 @@ export class MongoEntityManager extends EntityManager {
             | Partial<Entity>
             | FilterOperators<Entity>,
     ): Promise<Entity[]> {
-        const query =
+        const metadata = this.connection.getMetadata(entityClassOrName)
+        const query = this.replaceObjectIdProperty(
+            metadata,
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
-            )
+            ),
+        )
         const cursor = this.createEntityCursor<Entity>(
             entityClassOrName,
             query as Filter<Entity>,
         )
-        const deleteDateColumn =
-            this.connection.getMetadata(entityClassOrName).deleteDateColumn
+        const deleteDateColumn = metadata.deleteDateColumn
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
                 cursor.project(
@@ -185,7 +185,6 @@ export class MongoEntityManager extends EntityManager {
      * @param entityClassOrName
      * @param ids
      * @param optionsOrConditions
-     * @deprecated use `findBy` method instead.
      */
     async findByIds<Entity>(
         entityClassOrName: EntityTarget<Entity>,
@@ -197,21 +196,21 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             ) || {}
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
         query["_id"] = {
             $in: ids.map((id) => {
                 if (typeof id === "string") {
-                    return new objectIdInstance(id)
+                    return new objectIdClass(id)
                 }
 
                 if (typeof id === "object") {
-                    if (id instanceof objectIdInstance) {
+                    if (id instanceof objectIdClass) {
                         return id
                     }
 
                     const propertyName = metadata.objectIdColumn!.propertyName
 
-                    if (id[propertyName] instanceof objectIdInstance) {
+                    if (id[propertyName] instanceof objectIdClass) {
                         return id[propertyName]
                     }
                 }
@@ -946,19 +945,6 @@ export class MongoEntityManager extends EntityManager {
         )
     }
 
-    /**
-     * Get all the collection statistics.
-     * @param entityClassOrName
-     * @param options
-     */
-    stats<Entity>(
-        entityClassOrName: EntityTarget<Entity>,
-        options?: CollStatsOptions,
-    ): Promise<CollStats> {
-        const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.stats(metadata.tableName, options)
-    }
-
     watch<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         pipeline?: Document[],
@@ -1019,6 +1005,97 @@ export class MongoEntityManager extends EntityManager {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Replaces the entity's ObjectId property name (e.g. "id") with "_id" in a
+     * query object so that `findOneBy({ id: value })` works as expected.
+     * @param metadata
+     * @param query
+     */
+    protected replaceObjectIdProperty(
+        metadata: EntityMetadata,
+        query: ObjectLiteral | undefined,
+    ): ObjectLiteral | undefined {
+        if (!query) return query
+
+        const objectIdColumn = metadata.objectIdColumn
+        if (!objectIdColumn) return query
+
+        const propertyName = objectIdColumn.propertyName
+        if (propertyName === "_id") return query
+
+        if (!(propertyName in query)) {
+            const hasNested =
+                ("$or" in query && Array.isArray(query.$or)) ||
+                ("$and" in query && Array.isArray(query.$and))
+            if (!hasNested) return query
+        }
+
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
+        return this.rewriteObjectIdQuery(query, propertyName, objectIdClass)
+    }
+
+    /**
+     * Recursively rewrites a query object, renaming the given property to
+     * "_id" and converting values to ObjectId instances. Walks into $or/$and.
+     * @param obj
+     * @param propertyName
+     * @param objectIdClass
+     */
+    private rewriteObjectIdQuery(
+        obj: ObjectLiteral,
+        propertyName: string,
+        objectIdClass: any,
+    ): ObjectLiteral {
+        const result: ObjectLiteral = {}
+        for (const [key, value] of Object.entries(obj)) {
+            if (key === propertyName) {
+                result["_id"] = this.convertToObjectId(value, objectIdClass)
+            } else if (
+                (key === "$or" || key === "$and") &&
+                Array.isArray(value)
+            ) {
+                result[key] = value.map((item: any) =>
+                    typeof item === "object" && item !== null
+                        ? this.rewriteObjectIdQuery(
+                              item,
+                              propertyName,
+                              objectIdClass,
+                          )
+                        : item,
+                )
+            } else {
+                result[key] = value
+            }
+        }
+        return result
+    }
+
+    /**
+     * Converts a query value to ObjectId, handling scalars, arrays, and
+     * MongoDB operator objects (e.g. { $in: [...] }, { $ne: ... }).
+     * @param value
+     * @param objectIdClass
+     */
+    private convertToObjectId(value: any, objectIdClass: any): any {
+        if (value instanceof objectIdClass) return value
+        if (typeof value === "string" || typeof value === "number")
+            return new objectIdClass(value)
+        if (Array.isArray(value))
+            return value.map((v) => this.convertToObjectId(v, objectIdClass))
+        if (
+            value !== null &&
+            typeof value === "object" &&
+            Object.keys(value).some((k) => k.startsWith("$"))
+        ) {
+            const result: ObjectLiteral = {}
+            for (const [k, v] of Object.entries(value)) {
+                result[k] = this.convertToObjectId(v, objectIdClass)
+            }
+            return result
+        }
+        return value
+    }
 
     /**
      * Converts FindManyOptions to mongodb query.
@@ -1212,22 +1289,26 @@ export class MongoEntityManager extends EntityManager {
         optionsOrConditions?: any,
         maybeOptions?: MongoFindOneOptions<Entity>,
     ): Promise<Entity | null> {
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
         const id =
-            optionsOrConditions instanceof objectIdInstance ||
+            optionsOrConditions instanceof objectIdClass ||
             typeof optionsOrConditions === "string"
                 ? optionsOrConditions
                 : undefined
         const findOneOptionsOrConditions = (
             id ? maybeOptions : optionsOrConditions
         ) as any
+        const metadata = this.connection.getMetadata(entityClassOrName)
         const query =
-            this.convertFindOneOptionsOrConditionsToMongodbQuery(
-                findOneOptionsOrConditions,
+            this.replaceObjectIdProperty(
+                metadata,
+                this.convertFindOneOptionsOrConditionsToMongodbQuery(
+                    findOneOptionsOrConditions,
+                ),
             ) || {}
         if (id) {
             query["_id"] =
-                id instanceof objectIdInstance ? id : new objectIdInstance(id)
+                id instanceof objectIdClass ? id : new objectIdClass(id)
         }
         const cursor = this.createEntityCursor<Entity>(entityClassOrName, query)
         const deleteDateColumn =
@@ -1264,13 +1345,15 @@ export class MongoEntityManager extends EntityManager {
             | Partial<Entity>
             | any[],
     ): Promise<Entity[]> {
-        const query =
+        const metadata = this.connection.getMetadata(entityClassOrName)
+        const query = this.replaceObjectIdProperty(
+            metadata,
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
-            )
+            ),
+        )
         const cursor = this.createEntityCursor<Entity>(entityClassOrName, query)
-        const deleteDateColumn =
-            this.connection.getMetadata(entityClassOrName).deleteDateColumn
+        const deleteDateColumn = metadata.deleteDateColumn
 
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
@@ -1305,13 +1388,15 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         optionsOrConditions?: MongoFindManyOptions<Entity> | Partial<Entity>,
     ): Promise<[Entity[], number]> {
-        const query =
+        const metadata = this.connection.getMetadata(entityClassOrName)
+        const query = this.replaceObjectIdProperty(
+            metadata,
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
-            )
+            ),
+        )
         const cursor = this.createEntityCursor(entityClassOrName, query)
-        const deleteDateColumn =
-            this.connection.getMetadata(entityClassOrName).deleteDateColumn
+        const deleteDateColumn = metadata.deleteDateColumn
 
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)

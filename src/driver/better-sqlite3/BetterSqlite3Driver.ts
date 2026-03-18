@@ -1,14 +1,14 @@
 import fs from "fs/promises"
 import path from "path"
-import { DataSource } from "../../data-source"
+import type { DataSource } from "../../data-source"
 import { DriverPackageNotInstalledError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { filepathToName, isAbsolute } from "../../util/PathUtils"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ColumnType } from "../types/ColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { BetterSqlite3DataSourceOptions } from "./BetterSqlite3DataSourceOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { BetterSqlite3DataSourceOptions } from "./BetterSqlite3DataSourceOptions"
 import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner"
 
 /**
@@ -68,7 +68,10 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         precision?: number | null
         scale?: number
     }): string {
-        if ((column.type as any) === Buffer) {
+        if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         }
 

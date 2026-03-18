@@ -1,23 +1,26 @@
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { QueryBuilder } from "./QueryBuilder"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { DataSource } from "../data-source/DataSource"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { WhereExpressionBuilder } from "./WhereExpressionBuilder"
-import { Brackets } from "./Brackets"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { DataSource } from "../data-source/DataSource"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { WhereExpressionBuilder } from "./WhereExpressionBuilder"
+import type { Brackets } from "./Brackets"
 import { UpdateResult } from "./result/UpdateResult"
 import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
 import { ReturningResultsEntityUpdator } from "./ReturningResultsEntityUpdator"
-import { MysqlDriver } from "../driver/mysql/MysqlDriver"
-import { OrderByCondition } from "../find-options/OrderByCondition"
+import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
 import { LimitOnUpdateNotSupportedError } from "../error/LimitOnUpdateNotSupportedError"
 import { UpdateValuesMissingError } from "../error/UpdateValuesMissingError"
-import { QueryDeepPartialEntity } from "./QueryPartialEntity"
-import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
+import type { QueryDeepPartialEntity } from "./QueryPartialEntity"
+import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
-import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
+import { isUint8Array } from "../util/Uint8ArrayUtils"
+import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
+import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -541,7 +544,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             typeof value === "object" &&
                             !(value instanceof Date) &&
                             value !== null &&
-                            !Buffer.isBuffer(value)
+                            !isUint8Array(value)
                         ) {
                             value =
                                 column.referencedColumn.getEntityValue(value)
@@ -581,7 +584,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
                             const paramName = this.createParameter(value)
 
-                            let expression = null
+                            let expression: string
                             if (
                                 (DriverUtils.isMySQLFamily(
                                     this.connection.driver,
@@ -632,6 +635,16 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     ", " +
                                     (column.srid || "0") +
                                     ")"
+                            } else if (
+                                DriverUtils.isSQLiteFamily(
+                                    this.connection.driver,
+                                )
+                            ) {
+                                expression = (
+                                    this.connection.driver as
+                                        | AbstractSqliteDriver
+                                        | ReactNativeDriver
+                                ).wrapWithJsonFunction(paramName, column, true)
                             } else {
                                 expression = paramName
                             }
@@ -744,14 +757,10 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 Object.keys(orderBys)
                     .map((columnName) => {
                         if (typeof orderBys[columnName] === "string") {
-                            return (
-                                this.replacePropertyNames(columnName) +
-                                " " +
-                                orderBys[columnName]
-                            )
+                            return columnName + " " + orderBys[columnName]
                         } else {
                             return (
-                                this.replacePropertyNames(columnName) +
+                                columnName +
                                 " " +
                                 (orderBys[columnName] as any).order +
                                 " " +

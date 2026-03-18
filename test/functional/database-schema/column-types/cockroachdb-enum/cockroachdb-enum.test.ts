@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -10,21 +10,21 @@ import { Post } from "./entity/Post"
 import { Table, TableColumn } from "../../../../../src"
 
 describe("database schema > column types > cockroachdb-enum", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create table with ENUM column and save data to it", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -60,8 +60,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should create ENUM column and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.addColumn(
                     "post",
                     new TableColumn({
@@ -85,8 +85,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should drop ENUM column and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 const enumColumn = table!.findColumnByName("enum")!
 
@@ -104,8 +104,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should create table with ENUM column and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "question",
@@ -135,8 +135,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should drop table with ENUM column and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.dropTable("post")
 
                 let table = await queryRunner.getTable("post")
@@ -153,8 +153,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should change non-enum column in to ENUM and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 let nameColumn = table!.findColumnByName("name")!
                 let changedColumn = nameColumn.clone()
@@ -185,8 +185,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should change ENUM column in to non-enum and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 let enumColumn = table!.findColumnByName("enum")!
                 let changedColumn = enumColumn.clone()
@@ -217,8 +217,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should change ENUM array column in to non-array and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 let enumColumn = table!.findColumnByName("enumArray")!
                 let changedColumn = enumColumn.clone()
@@ -246,8 +246,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should change ENUM value and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 const enumColumn = table!.findColumnByName("enum")!
                 const changedColumn = enumColumn.clone()
@@ -277,8 +277,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should change `enumName` and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 // add `enumName`
                 let table = await queryRunner.getTable("post")
@@ -308,8 +308,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should not create new type if same `enumName` is used more than once", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 const table = new Table({
                     name: "my_table",
@@ -345,8 +345,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should change both ENUM value and ENUM name and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 const enumColumn = table!.findColumnByName("enum")!
                 const changedColumn = enumColumn.clone()
@@ -377,8 +377,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should rename ENUM when column renamed and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const currentSchemaQuery = await queryRunner.query(
                     `SELECT * FROM current_schema()`,
                 )
@@ -416,8 +416,8 @@ describe("database schema > column types > cockroachdb-enum", () => {
 
     it("should rename ENUM when table renamed and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const currentSchemaQuery = await queryRunner.query(
                     `SELECT * FROM current_schema()`,
                 )

@@ -1,6 +1,6 @@
-import { UpsertType } from "../driver/types/UpsertType"
-import { Brackets } from "./Brackets"
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { UpsertType } from "../driver/types/UpsertType"
+import type { Brackets } from "./Brackets"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 
 export type InsertOrUpdateOptions = {
     /**

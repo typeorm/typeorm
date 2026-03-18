@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../src/data-source/DataSource"
-import { Repository } from "../../src/repository/Repository"
+import type { Repository } from "../../src/repository/Repository"
 import { PostDetails } from "../../sample/sample3-many-to-one/entity/PostDetails"
 import { Post } from "../../sample/sample3-many-to-one/entity/Post"
 import { PostCategory } from "../../sample/sample3-many-to-one/entity/PostCategory"
@@ -78,9 +78,9 @@ describe("many-to-one", function () {
             newPost.text = "Hello post"
             newPost.title = "this is post title"
             newPost.details = details
-            return postRepository
-                .save(newPost)
-                .then((post) => (savedPost = post as Post))
+            return postRepository.save(newPost).then((post) => {
+                savedPost = post as Post
+            })
         })
 
         it("should return the same post instance after its created", function () {
@@ -259,9 +259,9 @@ describe("many-to-one", function () {
             newPost.title = "this is post title"
             newPost.category = category
 
-            return postRepository
-                .save(newPost)
-                .then((post) => (savedPost = post as Post))
+            return postRepository.save(newPost).then((post) => {
+                savedPost = post as Post
+            })
         })
 
         it("should return the same post instance after its created", function () {
@@ -525,9 +525,9 @@ describe("many-to-one", function () {
             details.posts = []
             details.posts.push(newPost)
 
-            return postDetailsRepository
-                .save(details)
-                .then((details) => (savedDetails = details as PostDetails))
+            return postDetailsRepository.save(details).then((details) => {
+                savedDetails = details as PostDetails
+            })
         })
 
         it("should return the same post instance after its created", function () {

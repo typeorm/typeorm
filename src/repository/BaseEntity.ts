@@ -1,22 +1,22 @@
-import { Repository } from "./Repository"
-import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { DeepPartial } from "../common/DeepPartial"
-import { SaveOptions } from "./SaveOptions"
-import { FindOneOptions } from "../find-options/FindOneOptions"
-import { RemoveOptions } from "./RemoveOptions"
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { DataSource } from "../data-source"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { InsertResult } from "../query-builder/result/InsertResult"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { ObjectId } from "../driver/mongodb/typings"
+import type { Repository } from "./Repository"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { DeepPartial } from "../common/DeepPartial"
+import type { SaveOptions } from "./SaveOptions"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
+import type { RemoveOptions } from "./RemoveOptions"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { DataSource } from "../data-source"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { InsertResult } from "../query-builder/result/InsertResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type { ObjectId } from "../driver/mongodb/typings"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
-import { UpsertOptions } from "./UpsertOptions"
-import { UpdateOptions } from "./UpdateOptions"
-import { EntityTarget } from "../common/EntityTarget"
-import { PickKeysByType } from "../common/PickKeysByType"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import type { UpsertOptions } from "./UpsertOptions"
+import type { UpdateOptions } from "./UpdateOptions"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { PickKeysByType } from "../common/PickKeysByType"
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -558,23 +558,6 @@ export class BaseEntity {
         where: FindOptionsWhere<T>,
     ): Promise<[T[], number]> {
         return this.getRepository<T>().findAndCountBy(where)
-    }
-
-    /**
-     * Finds entities by ids.
-     * Optionally find options can be applied.
-     * @param ids
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    static findByIds<T extends BaseEntity>(
-        this: { new (): T } & typeof BaseEntity,
-        ids: any[],
-    ): Promise<T[]> {
-        return this.getRepository<T>().findByIds(ids)
     }
 
     /**

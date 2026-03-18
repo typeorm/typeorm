@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,21 +9,20 @@ import { Category } from "./entity/Category"
 import { Product } from "./entity/Product"
 
 describe("tree tables > materialized-path", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Product, Category],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Product, Category],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("attach should work properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -68,9 +67,9 @@ describe("tree tables > materialized-path", () => {
 
     it("categories should be attached via children and saved properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -108,9 +107,9 @@ describe("tree tables > materialized-path", () => {
 
     it("categories should be attached via children and saved properly and everything must be saved in cascades", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -157,9 +156,9 @@ describe("tree tables > materialized-path", () => {
 
     it("findTrees() tests > findTrees should load all category roots and attached children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -221,9 +220,9 @@ describe("tree tables > materialized-path", () => {
 
     it("findTrees() testsfindTrees should load multiple category roots if they exist", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -317,9 +316,9 @@ describe("tree tables > materialized-path", () => {
 
     it("findTrees() testsfindTrees should filter by depth if optionally provided", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -456,9 +455,9 @@ describe("tree tables > materialized-path", () => {
 
     it("findDescendantsTree() tests > findDescendantsTree should load all category descendents and nested children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -520,9 +519,9 @@ describe("tree tables > materialized-path", () => {
 
     it("findDescendantsTree should filter by depth if optionally provided", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const categoryRepository =
-                    connection.getTreeRepository(Category)
+                    dataSource.getTreeRepository(Category)
 
                 const a1 = new Category()
                 a1.name = "a1"
@@ -654,9 +653,9 @@ describe("tree tables > materialized-path", () => {
 
     it("should compute path correctly when tree is implicitly saved (cascade: true) through related entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const categoryRepository = connection.getRepository(Category)
-                const productRepository = connection.getRepository(Product)
+            dataSources.map(async (dataSource) => {
+                const categoryRepository = dataSource.getRepository(Category)
+                const productRepository = dataSource.getRepository(Product)
 
                 // first increment the category primary id once by saving and removing an item
                 // this is necessary to reproduce the bug behaviour
@@ -677,7 +676,7 @@ describe("tree tables > materialized-path", () => {
 
                 // save it alongside its categories ( cascade )
                 const savedProduct = await productRepository.save(product)
-                const pathResult = await connection
+                const pathResult = await dataSource
                     .createQueryBuilder()
                     .select("category.mpath", "mpath")
                     .from("categories", "category")

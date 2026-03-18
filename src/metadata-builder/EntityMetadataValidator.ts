@@ -1,10 +1,10 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { MissingPrimaryColumnError } from "../error/MissingPrimaryColumnError"
 import { CircularRelationsError } from "../error/CircularRelationsError"
 import { DepGraph } from "../util/DepGraph"
-import { Driver } from "../driver/Driver"
+import type { Driver } from "../driver/Driver"
 import { DataTypeNotSupportedError } from "../error/DataTypeNotSupportedError"
-import { ColumnType } from "../driver/types/ColumnTypes"
+import type { ColumnType } from "../driver/types/ColumnTypes"
 import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
@@ -116,16 +116,6 @@ export class EntityMetadataValidator {
                     `Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`,
                 )
         }
-
-        entityMetadata.relationCounts.forEach((relationCount) => {
-            if (
-                relationCount.relation.isManyToOne ||
-                relationCount.relation.isOneToOne
-            )
-                throw new TypeORMError(
-                    `Relation count can not be implemented on ManyToOne or OneToOne relations.`,
-                )
-        })
 
         if (!(driver.options.type === "mongodb")) {
             entityMetadata.columns

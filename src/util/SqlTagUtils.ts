@@ -1,4 +1,4 @@
-import { Driver } from "../driver/Driver"
+import type { Driver } from "../driver/Driver"
 import dedent from "dedent"
 
 interface BuildSqlTagParams {

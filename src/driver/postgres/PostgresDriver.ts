@@ -1,35 +1,35 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source/DataSource"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { IndexMetadata } from "../../metadata/IndexMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { IndexMetadata } from "../../metadata/IndexMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { View } from "../../schema-builder/view/View"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { TableIndex } from "../../schema-builder/table/TableIndex"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
-import { Driver, ReturningType } from "../Driver"
+import type { Driver, ReturningType } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import { ColumnType } from "../types/ColumnTypes"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { UpsertType } from "../types/UpsertType"
-import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
-import { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { UpsertType } from "../types/UpsertType"
+import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
+import type { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
 import { PostgresQueryRunner } from "./PostgresQueryRunner"
 
 /**
@@ -913,7 +913,7 @@ export class PostgresDriver implements Driver {
                 const unparsedArrayString = value
 
                 value = []
-                let cube: RegExpExecArray | null = null
+                let cube: RegExpExecArray | null
                 // Iterate through all regexp matches for cubes/null in array
                 while ((cube = regexp.exec(unparsedArrayString)) !== null) {
                     if (cube[1] !== undefined) {
@@ -979,16 +979,12 @@ export class PostgresDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      * @param sql
      * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -1035,7 +1031,7 @@ export class PostgresDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return '"' + columnName + '"'
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
@@ -1202,7 +1198,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (typeof defaultValue === "object") {
-            return `'${JSON.stringify(defaultValue)}'`
+            return `'${JSON.stringify(defaultValue).replaceAll("'", "''")}'`
         }
 
         return `${defaultValue}`
@@ -1210,7 +1206,6 @@ export class PostgresDriver implements Driver {
 
     /**
      * Compares "default" value of the column.
-     * Postgres sorts json values before it is saved, so in that case a deep comparison has to be performed to see if has changed.
      * @param columnMetadata
      * @param tableColumn
      */
@@ -1218,30 +1213,62 @@ export class PostgresDriver implements Driver {
         columnMetadata: ColumnMetadata,
         tableColumn: TableColumn,
     ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
         if (
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
-            const tableColumnDefault =
-                typeof tableColumn.default === "string"
-                    ? JSON.parse(
-                          tableColumn.default.substring(
-                              1,
-                              tableColumn.default.length - 1,
-                          ),
-                      )
-                    : tableColumn.default
-
-            return OrmUtils.deepCompare(
-                columnMetadata.default,
-                tableColumnDefault,
-            )
+            return this.compareJsonDefaults(columnMetadata, tableColumn)
         }
 
         const columnDefault = this.lowerDefaultValueIfNecessary(
             this.normalizeDefault(columnMetadata),
         )
         return columnDefault === tableColumn.default
+    }
+
+    /**
+     * Compares json/jsonb default values of the column.
+     * @param columnMetadata
+     * @param tableColumn
+     */
+    private compareJsonDefaults(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        let jsonString = tableColumn.default
+        if (typeof jsonString === "string") {
+            jsonString = jsonString.trim()
+            if (jsonString.startsWith("'") && jsonString.endsWith("'")) {
+                jsonString = jsonString.slice(1, -1).replaceAll("''", "'")
+            }
+        }
+
+        if (typeof jsonString === "string") {
+            try {
+                const tableColumnDefault = JSON.parse(jsonString)
+                return OrmUtils.deepCompare(
+                    columnMetadata.default,
+                    tableColumnDefault,
+                )
+            } catch (err) {
+                if (!(err instanceof SyntaxError)) {
+                    throw new TypeORMError(
+                        `Failed to compare default values of ${columnMetadata.propertyName} column`,
+                    )
+                }
+            }
+        } else {
+            return OrmUtils.deepCompare(columnMetadata.default, jsonString)
+        }
+        return false
     }
 
     /**

@@ -5,25 +5,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
 describe("relations > relation with primary key", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("many-to-one with primary key in relation", function () {
         it("should work perfectly", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // create first category and post and save them
                     const category1 = new Category()
                     category1.name = "Category saved by cascades #1"
@@ -32,7 +31,7 @@ describe("relations > relation with primary key", () => {
                     post1.title = "Hello Post #1"
                     post1.category = category1
 
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     // create second category and post and save them
                     const category2 = new Category()
@@ -42,10 +41,10 @@ describe("relations > relation with primary key", () => {
                     post2.title = "Hello Post #2"
                     post2.category = category2
 
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
                     // now check
-                    const posts = await connection.manager.find(Post, {
+                    const posts = await dataSource.manager.find(Post, {
                         join: {
                             alias: "post",
                             innerJoinAndSelect: {

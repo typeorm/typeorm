@@ -2,19 +2,19 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
-import { Post } from "./entity/Post-Succeed"
+import type { DataSource } from "../../../src"
+import type { Post } from "./entity/Post-Succeed"
 
 describe("mssql -> add column to existing table", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     beforeEach(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["mssql"],
             entities: [__dirname + "/entity/Post{.js,.ts}"],
         })
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.synchronize(true)
                 await connection
                     .getRepository<Post>("Post")
@@ -25,16 +25,16 @@ describe("mssql -> add column to existing table", () => {
     })
 
     afterEach(async () => {
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
     })
 
     it("should fail to add column", async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["mssql"],
             entities: [__dirname + "/entity/Post-Fail{.js,.ts}"],
         })
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .synchronize()
                     .should.eventually.rejectedWith(
@@ -45,13 +45,13 @@ describe("mssql -> add column to existing table", () => {
     })
 
     it("should succeed to add column", async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["mssql"],
             entities: [__dirname + "/entity/Post-Succeed{.js,.ts}"],
         })
 
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.synchronize().should.eventually.eq(undefined)
                 const post = await connection
                     .getRepository<Post>("Post")

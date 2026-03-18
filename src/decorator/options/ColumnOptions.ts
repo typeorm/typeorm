@@ -1,6 +1,6 @@
-import { ColumnType } from "../../driver/types/ColumnTypes"
-import { ValueTransformer } from "./ValueTransformer"
-import { ColumnCommonOptions } from "./ColumnCommonOptions"
+import type { ColumnType } from "../../driver/types/ColumnTypes"
+import type { ValueTransformer } from "./ValueTransformer"
+import type { ColumnCommonOptions } from "./ColumnCommonOptions"
 
 /**
  * Describes all column's options.
@@ -23,28 +23,10 @@ export interface ColumnOptions extends ColumnCommonOptions {
     length?: string | number
 
     /**
-     * Column type's display width. Used only on some column types in MySQL.
-     * For example, INT(4) specifies an INT with a display width of four digits.
-     * @deprecated No longer supported in newer MySQL versions, will be removed
-     * from TypeORM in an upcoming version. Use a character column and the
-     * `LPAD` function as suggested by MySQL
-     */
-    width?: number
-
-    /**
      * Indicates if column's value can be set to NULL.
      * Default value is "false".
      */
     nullable?: boolean
-
-    /**
-     * Indicates if column value is not updated by "save" operation.
-     * It means you'll be able to write this value only when you first time insert the object.
-     * Default value is "false".
-     * @deprecated Please use the `update` option instead.  Careful, it takes
-     * the opposite value to readonly.
-     */
-    readonly?: boolean
 
     /**
      * Indicates if column value is updated by "save" operation.
@@ -102,15 +84,6 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * of digits to the right of the decimal point and must not be greater than precision.
      */
     scale?: number
-
-    /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to this column
-     * @deprecated No longer supported in newer MySQL versions, will be removed
-     * from TypeORM in an upcoming version. Use a character column and the
-     * `LPAD` function as suggested by MySQL
-     */
-    zerofill?: boolean
 
     /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.

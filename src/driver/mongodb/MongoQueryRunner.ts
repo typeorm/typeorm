@@ -1,20 +1,20 @@
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { Table } from "../../schema-builder/table/Table"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { View } from "../../schema-builder/view/View"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { TableIndex } from "../../schema-builder/table/TableIndex"
+import type { View } from "../../schema-builder/view/View"
 // import {Connection} from "../../connection/Connection";
-import { ReadStream } from "../../platform/PlatformTools"
-import { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
-import { SqlInMemory } from "../SqlInMemory"
-import { TableUnique } from "../../schema-builder/table/TableUnique"
+import type { ReadStream } from "../../platform/PlatformTools"
+import type { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
+import type { SqlInMemory } from "../SqlInMemory"
+import type { TableUnique } from "../../schema-builder/table/TableUnique"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import type { TableCheck } from "../../schema-builder/table/TableCheck"
+import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TypeORMError } from "../../error"
 
-import {
+import type {
     BulkWriteResult,
     AggregationCursor,
     MongoClient,
@@ -40,8 +40,6 @@ import {
     RenameOptions,
     ReplaceOptions,
     UpdateResult,
-    CollStats,
-    CollStatsOptions,
     ChangeStreamOptions,
     ChangeStream,
     UpdateOptions,
@@ -55,8 +53,8 @@ import {
     OrderedBulkOperation,
     IndexInformationOptions,
 } from "../../driver/mongodb/typings"
-import { DataSource } from "../../data-source/DataSource"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { DataSource } from "../../data-source/DataSource"
+import type { ReplicationMode } from "../types/ReplicationMode"
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -99,16 +97,6 @@ export class MongoQueryRunner implements QueryRunner {
      * Useful for sharing data with subscribers.
      */
     data = {}
-
-    /**
-     * All synchronized tables in the database.
-     */
-    loadedTables: Table[]
-
-    /**
-     * All synchronized views in the database.
-     */
-    loadedViews: View[]
 
     /**
      * Real database connection from a connection pool used to perform queries.
@@ -238,8 +226,8 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates multiple indexes in the collection, this method is only supported for MongoDB 2.6 or higher.
-     * Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+     * Creates multiple indexes in the collection.
+     * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      * @param collectionName
      * @param indexSpecs
      */
@@ -325,7 +313,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops all indexes from the collection.
      * @param collectionName
      */
-    async dropCollectionIndexes(collectionName: string): Promise<Document> {
+    async dropCollectionIndexes(collectionName: string): Promise<boolean> {
         return this.getCollection(collectionName).dropIndexes()
     }
 
@@ -531,18 +519,6 @@ export class MongoQueryRunner implements QueryRunner {
             replacement,
             options || {},
         )
-    }
-
-    /**
-     * Get all the collection statistics.
-     * @param collectionName
-     * @param options
-     */
-    async stats(
-        collectionName: string,
-        options?: CollStatsOptions,
-    ): Promise<CollStats> {
-        return this.getCollection(collectionName).stats(options || {})
     }
 
     /**
@@ -872,9 +848,9 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops database.
      * @param database
-     * @param ifExist
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
         throw new TypeORMError(
             `Database drop queries are not supported by MongoDB driver.`,
         )
@@ -883,11 +859,11 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a new table schema.
      * @param schemaPath
-     * @param ifNotExist
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema create queries are not supported by MongoDB driver.`,
@@ -897,9 +873,9 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops table schema.
      * @param schemaPath
-     * @param ifExist
+     * @param ifExists
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    async dropSchema(schemaPath: string, ifExists?: boolean): Promise<void> {
         throw new TypeORMError(
             `Schema drop queries are not supported by MongoDB driver.`,
         )
@@ -938,8 +914,9 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops the view.
      * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
         )
@@ -1037,10 +1014,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops column in the table.
      * @param tableOrName
      * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1051,10 +1030,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops the columns in the table.
      * @param tableOrName
      * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1092,8 +1073,14 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops a primary key.
      * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
         )
@@ -1131,10 +1118,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops a unique constraint.
      * @param tableOrName
      * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1145,10 +1134,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops unique constraints.
      * @param tableOrName
      * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1187,10 +1178,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops check constraint.
      * @param tableOrName
      * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1201,10 +1194,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops check constraints.
      * @param tableOrName
      * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1243,10 +1238,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops exclusion constraint.
      * @param tableOrName
      * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1257,10 +1254,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops exclusion constraints.
      * @param tableOrName
      * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1299,10 +1298,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops a foreign key from the table.
      * @param tableOrName
      * @param foreignKey
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKey: TableForeignKey,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1313,10 +1314,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops a foreign keys from the table.
      * @param tableOrName
      * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1355,8 +1358,13 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops an index from the table.
      * @param collectionName
      * @param indexName
+     * @param ifExists
      */
-    async dropIndex(collectionName: string, indexName: string): Promise<void> {
+    async dropIndex(
+        collectionName: string,
+        indexName: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
         )
@@ -1366,10 +1374,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops an indices from the table.
      * @param tableOrName
      * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,

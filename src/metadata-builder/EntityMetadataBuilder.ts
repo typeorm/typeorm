@@ -3,17 +3,16 @@ import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { IndexMetadata } from "../metadata/IndexMetadata"
 import { RelationMetadata } from "../metadata/RelationMetadata"
 import { EmbeddedMetadata } from "../metadata/EmbeddedMetadata"
-import { MetadataArgsStorage } from "../metadata-args/MetadataArgsStorage"
-import { EmbeddedMetadataArgs } from "../metadata-args/EmbeddedMetadataArgs"
+import type { MetadataArgsStorage } from "../metadata-args/MetadataArgsStorage"
+import type { EmbeddedMetadataArgs } from "../metadata-args/EmbeddedMetadataArgs"
 import { RelationIdMetadata } from "../metadata/RelationIdMetadata"
-import { RelationCountMetadata } from "../metadata/RelationCountMetadata"
 import { EventListenerTypes } from "../metadata/types/EventListenerTypes"
 import { MetadataUtils } from "./MetadataUtils"
-import { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
+import type { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
 import { JunctionEntityMetadataBuilder } from "./JunctionEntityMetadataBuilder"
 import { ClosureJunctionEntityMetadataBuilder } from "./ClosureJunctionEntityMetadataBuilder"
 import { RelationJoinColumnBuilder } from "./RelationJoinColumnBuilder"
-import { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source/DataSource"
 import { EntityListenerMetadata } from "../metadata/EntityListenerMetadata"
 import { UniqueMetadata } from "../metadata/UniqueMetadata"
 import { CheckMetadata } from "../metadata/CheckMetadata"
@@ -749,18 +748,6 @@ export class EntityMetadataBuilder {
 
                 return new RelationIdMetadata({ entityMetadata, args })
             })
-        entityMetadata.relationCounts = this.metadataArgsStorage
-            .filterRelationCounts(entityMetadata.inheritanceTree)
-            .map((args) => {
-                // for single table children we reuse relation counts created for their parents
-                if (entityMetadata.tableType === "entity-child")
-                    return entityMetadata.parentEntityMetadata.relationCounts.find(
-                        (relationCount) =>
-                            relationCount.propertyName === args.propertyName,
-                    )!
-
-                return new RelationCountMetadata({ entityMetadata, args })
-            })
         entityMetadata.ownListeners = this.metadataArgsStorage
             .filterListeners(entityMetadata.inheritanceTree)
             .map((args) => {
@@ -917,19 +904,13 @@ export class EntityMetadataBuilder {
                 .map((args) => {
                     return new RelationIdMetadata({ entityMetadata, args })
                 })
-            embeddedMetadata.relationCounts = this.metadataArgsStorage
-                .filterRelationCounts(targets)
-                .map((args) => {
-                    return new RelationCountMetadata({ entityMetadata, args })
-                })
             embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(
                 entityMetadata,
                 this.metadataArgsStorage.filterEmbeddeds(targets),
             )
-            embeddedMetadata.embeddeds.forEach(
-                (subEmbedded) =>
-                    (subEmbedded.parentEmbeddedMetadata = embeddedMetadata),
-            )
+            embeddedMetadata.embeddeds.forEach((subEmbedded) => {
+                subEmbedded.parentEmbeddedMetadata = embeddedMetadata
+            })
             entityMetadata.allEmbeddeds.push(embeddedMetadata)
             return embeddedMetadata
         })
@@ -1100,15 +1081,9 @@ export class EntityMetadataBuilder {
         )
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap()
         entityMetadata.relationIds.forEach((relationId) => relationId.build())
-        entityMetadata.relationCounts.forEach((relationCount) =>
-            relationCount.build(),
-        )
         entityMetadata.embeddeds.forEach((embedded) => {
             embedded.relationIdsFromTree.forEach((relationId) =>
                 relationId.build(),
-            )
-            embedded.relationCountsFromTree.forEach((relationCount) =>
-                relationCount.build(),
             )
         })
     }

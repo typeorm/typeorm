@@ -1,7 +1,8 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource, QueryRunner, Table } from "../../../src"
+import type { DataSource, QueryRunner } from "../../../src"
+import { Table } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

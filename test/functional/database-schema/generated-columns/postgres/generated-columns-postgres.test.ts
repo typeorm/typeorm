@@ -1,12 +1,13 @@
 import "reflect-metadata"
-import { DataSource, TableColumn } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
+import { TableColumn } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
-import { PostgresDriver } from "../../../../../src/driver/postgres/PostgresDriver"
+import type { PostgresDriver } from "../../../../../src/driver/postgres/PostgresDriver"
 
 describe("database schema > generated columns > postgres", () => {
     let dataSources: DataSource[]

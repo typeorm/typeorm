@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
@@ -11,20 +11,20 @@ import {
 import { Post } from "./entity/Post"
 
 describe("cube-postgres", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create correct schema with Postgres' cube type", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
                 expect(schema).not.to.be.undefined
@@ -47,9 +47,9 @@ describe("cube-postgres", () => {
 
     it("should persist cube correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const color = [255, 0, 0]
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.mainColor = color
                 const persistedPost = await postRepo.save(post)
@@ -63,10 +63,10 @@ describe("cube-postgres", () => {
 
     it("should update cube correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const color = [255, 0, 0]
                 const color2 = [0, 255, 0]
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.mainColor = color
                 const persistedPost = await postRepo.save(post)
@@ -86,10 +86,10 @@ describe("cube-postgres", () => {
 
     it("should re-save cube correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const color = [255, 0, 0]
                 const color2 = [0, 255, 0]
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.mainColor = color
                 const persistedPost = await postRepo.save(post)
@@ -107,13 +107,13 @@ describe("cube-postgres", () => {
 
     it("should persist cube of arity 0 correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Get Postgres version because zero-length cubes are not legal
                 // on all Postgres versions. Zero-length cubes are only tested
                 // to be working on Postgres version >=10.6.
                 if (
                     !DriverUtils.isReleaseVersionOrGreater(
-                        connection.driver,
+                        dataSource.driver,
                         "10.6",
                     )
                 ) {
@@ -121,7 +121,7 @@ describe("cube-postgres", () => {
                 }
 
                 const color: number[] = []
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.mainColor = color
                 const persistedPost = await postRepo.save(post)
@@ -135,7 +135,7 @@ describe("cube-postgres", () => {
 
     it("should be able to order cube by euclidean distance", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const color1 = [255, 0, 0]
                 const color2 = [255, 255, 0]
                 const color3 = [255, 255, 255]
@@ -146,9 +146,9 @@ describe("cube-postgres", () => {
                 post2.mainColor = color2
                 const post3 = new Post()
                 post3.mainColor = color3
-                await connection.manager.save([post1, post2, post3])
+                await dataSource.manager.save([post1, post2, post3])
 
-                const posts = await connection.manager
+                const posts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("\"mainColor\" <-> '(0, 255, 0)'", "DESC")
                     .getMany()
@@ -160,12 +160,12 @@ describe("cube-postgres", () => {
 
     it("should persist cube array correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const colors = [
                     [255, 0, 0],
                     [255, 255, 0],
                 ]
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.colors = colors
                 const persistedPost = await postRepo.save(post)
