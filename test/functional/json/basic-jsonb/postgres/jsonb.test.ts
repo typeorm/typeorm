@@ -1,25 +1,24 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../../src"
-import "../../../utils/test-setup"
+import type { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { Record } from "./entity/Record"
 
 describe("jsonb type", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Record],
-            enabledDrivers: ["postgres"], // because only postgres supports jsonb type
+            entities: [__dirname + "/entity/*{.ts,.js}"],
+            enabledDrivers: ["postgres", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should make correct schema with Postgres' jsonb type", () =>
+    it("should make correct schema with jsonb type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await dataSource.synchronize(true)
@@ -31,7 +30,7 @@ describe("jsonb type", () => {
                     schema!.columns.find(
                         (tableColumn) =>
                             tableColumn.name === "config" &&
-                            tableColumn.type === "json",
+                            ["json", "jsonb"].includes(tableColumn.type), // cockroachdb normalizes json type to jsonb
                     ),
                 ).to.be.not.empty
                 expect(
@@ -73,7 +72,7 @@ describe("jsonb type", () => {
                 expect(foundRecord!.data.foo).to.eq("bar")
                 expect(foundRecord!.dataWithDefaultNull).to.be.null
                 expect(foundRecord!.dataWithDefaultObject).to.eql({
-                    hello: "world",
+                    hello: "world'O",
                     foo: "bar",
                 })
             }),
@@ -134,7 +133,7 @@ describe("jsonb type", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await dataSource.query(
-                    `ALTER TABLE record ALTER COLUMN "dataWithDefaultObject" SET DEFAULT '{"foo":"bar", "hello": "world"}';`,
+                    `ALTER TABLE record ALTER COLUMN "dataWithDefaultObject" SET DEFAULT '{"foo":"bar", "hello": "world''O"}';`,
                 )
 
                 const sqlInMemory = await dataSource.driver
@@ -143,6 +142,49 @@ describe("jsonb type", () => {
 
                 expect(sqlInMemory.upQueries).to.eql([])
                 expect(sqlInMemory.downQueries).to.eql([])
+            }),
+        ))
+
+    it("should persist json and jsonb arrays of complex objects correctly", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const recordRepo = dataSource.getRepository(Record)
+                const record = new Record()
+                record.data = [
+                    {
+                        data1: "hello1",
+                        data2: "hello2",
+                        isActive: true,
+                        extra: { nested: "value1", count: 42 },
+                    },
+                    {
+                        data1: "hi1",
+                        data2: "hi2",
+                        isActive: false,
+                        extra: { nested: "value2", count: 99 },
+                    },
+                ]
+                record.config = [
+                    {
+                        id: 1,
+                        option1: "1",
+                        isActive: true,
+                        extra: { data1: "one", data2: "two" },
+                    },
+                    {
+                        id: 2,
+                        option1: "2",
+                        isActive: false,
+                        extra: { data1: "one", data2: "two" },
+                    },
+                ]
+                const persistedRecord = await recordRepo.save(record)
+                const foundRecord = await recordRepo.findOneBy({
+                    id: persistedRecord.id,
+                })
+                expect(foundRecord).to.be.not.undefined
+                expect(foundRecord!.data).to.eql(record.data)
+                expect(foundRecord!.config).to.eql(record.config)
             }),
         ))
 
@@ -155,6 +197,27 @@ describe("jsonb type", () => {
 
                 expect(sqlInMemory.upQueries).to.eql([])
                 expect(sqlInMemory.downQueries).to.eql([])
+            }),
+        ))
+
+    it("should handle JSONB with quotes correctly", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const recordRepo = dataSource.getRepository(Record)
+                const record = new Record()
+                record.data = { qoute: "He said, O'Brian" }
+                const savedRecord = await recordRepo.save(record)
+
+                const foundRecord = await recordRepo.findOneBy({
+                    id: savedRecord.id,
+                })
+                expect(foundRecord).to.be.not.undefined
+                expect(foundRecord!).to.deep.include({
+                    data: {
+                        qoute: "He said, O'Brian",
+                    },
+                    dataWithDefaultObject: { hello: "world'O", foo: "bar" },
+                })
             }),
         ))
 })

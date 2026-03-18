@@ -443,7 +443,7 @@ export class SapDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return `"${columnName}"`
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
