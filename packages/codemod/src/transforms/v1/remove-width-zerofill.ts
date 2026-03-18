@@ -1,8 +1,8 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Removes `width` and `zerofill` properties from @Column options.
- */
+export const description =
+    "remove `width` and `zerofill` from `@Column` options"
+
 export const removeWidthZerofill = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

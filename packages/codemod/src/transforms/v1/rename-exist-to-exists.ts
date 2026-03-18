@@ -1,8 +1,7 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Renames .exist() to .exists() on Repository/EntityManager.
- */
+export const description = "rename `Repository.exist()` to `exists()`"
+
 export const renameExistToExists = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

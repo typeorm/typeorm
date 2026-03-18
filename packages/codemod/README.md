@@ -18,29 +18,14 @@ npx @typeorm/codemod v1 --transform rename-find-by-ids src/
 npx @typeorm/codemod v1 --list
 ```
 
-## v0.3.x → v1.0 transforms
-
-| Transform                         | Description                                                                                                                                                          |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rename-connection-to-datasource` | `Connection` → `DataSource`, `ConnectionOptions` → `DataSourceOptions`, `.connect()` → `.initialize()`, `.close()` → `.destroy()`, `.isConnected` → `.isInitialized` |
-| `replace-global-functions`        | `getRepository()`, `createConnection()`, `getManager()`, etc. → `dataSource.*` equivalents                                                                           |
-| `rename-find-by-ids`              | `.findByIds([1, 2])` → `.findBy({ id: In([1, 2]) })` (adds `In` import)                                                                                              |
-| `rename-exist-to-exists`          | `.exist()` → `.exists()`                                                                                                                                             |
-| `rename-print-sql-to-log-query`   | `.printSql()` → `.logQuery()`                                                                                                                                        |
-| `rename-get-all-migrations`       | `.getAllMigrations()` → `.getMigrations()`                                                                                                                           |
-| `replace-set-native-parameters`   | `.setNativeParameters()` → `.setParameters()`                                                                                                                        |
-| `replace-where-expression-type`   | `WhereExpression` → `WhereExpressionBuilder`                                                                                                                         |
-| `replace-readonly-column`         | `@Column({ readonly: true })` → `@Column({ update: false })`                                                                                                         |
-| `remove-width-zerofill`           | Removes `width` and `zerofill` from `@Column` options                                                                                                                |
-| `replace-sqlite-type`             | `type: "sqlite"` → `type: "better-sqlite3"`                                                                                                                          |
-| `replace-lock-modes`              | `"pessimistic_partial_write"` → `"pessimistic_write"` + `setOnLocked("skip_locked")`                                                                                 |
-| `remove-use-container`            | Removes `useContainer()`/`getFromContainer()` calls and related imports (adds TODO comment)                                                                          |
-
 ## After running
 
-Review the changes and look for `TODO` comments — some transforms require manual follow-up:
+Some transforms leave `TODO` comments in your code where manual changes are needed. After the codemod completes, it will list all files that require manual review.
 
-- `replace-global-functions`: assumes your DataSource variable is named `dataSource`
-- `remove-use-container`: leaves TODO comments where manual migration is needed
+If you use an auto-formatter like Prettier, run it after the codemod to restore your code style.
 
-See the full [Migration Guide](https://typeorm.io/docs/guides/migration-v1) for details on all breaking changes.
+## Docmentation
+
+See the full migration guides for details on all breaking changes:
+
+- [v1](https://typeorm.io/docs/guides/migration-v1)

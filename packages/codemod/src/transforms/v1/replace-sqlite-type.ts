@@ -1,8 +1,7 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Replaces type: "sqlite" with type: "better-sqlite3" in DataSource options.
- */
+export const description = "replace `sqlite` driver with `better-sqlite3`"
+
 export const replaceSqliteType = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

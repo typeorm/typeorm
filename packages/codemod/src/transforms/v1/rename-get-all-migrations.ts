@@ -1,8 +1,7 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Renames .getAllMigrations() to .getMigrations().
- */
+export const description = "rename `getAllMigrations()` to `getMigrations()`"
+
 export const renameGetAllMigrations = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

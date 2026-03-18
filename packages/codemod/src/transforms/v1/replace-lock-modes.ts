@@ -1,12 +1,7 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Replaces deprecated lock modes:
- * - "pessimistic_partial_write" → "pessimistic_write" + setOnLocked("skip_locked")
- * - "pessimistic_write_or_fail" → "pessimistic_write" + setOnLocked("nowait")
- *
- * Handles both QueryBuilder .setLock() and find options { lock: { mode: ... } }.
- */
+export const description = "replace deprecated pessimistic lock modes"
+
 export const replaceLockModes = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

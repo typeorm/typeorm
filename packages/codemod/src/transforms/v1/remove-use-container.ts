@@ -1,13 +1,15 @@
 import type { API, FileInfo } from "jscodeshift"
+import { reportTodo } from "../todo"
 
-/**
- * Removes useContainer() and getFromContainer() calls and their imports.
- * Adds a TODO comment at each removal site.
- */
+export const description =
+    "remove `useContainer()` and `getFromContainer()` calls"
+export const manual = true
+
 export const removeUseContainer = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
     let hasChanges = false
+    let hasTodos = false
 
     const removedFunctions = new Set(["useContainer", "getFromContainer"])
 
@@ -28,6 +30,7 @@ export const removeUseContainer = (file: FileInfo, api: API) => {
             ]
             j(path).replaceWith(comment)
             hasChanges = true
+            hasTodos = true
         })
     }
 
@@ -62,6 +65,8 @@ export const removeUseContainer = (file: FileInfo, api: API) => {
             importPath.node.specifiers = remaining
         }
     })
+
+    if (hasTodos) reportTodo("remove-use-container", file, api)
 
     return hasChanges ? root.toSource() : undefined
 }

@@ -1,8 +1,7 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Renames .setNativeParameters() to .setParameters().
- */
+export const description = "rename `setNativeParameters()` to `setParameters()`"
+
 export const replaceSetNativeParameters = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

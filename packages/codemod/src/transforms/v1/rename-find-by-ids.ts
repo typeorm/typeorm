@@ -1,9 +1,8 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Replaces .findByIds([1, 2, 3]) with .findBy({ id: In([1, 2, 3]) })
- * and adds the In import from "typeorm" if not already present.
- */
+export const description =
+    "replace `findByIds()` with `findBy()` and `In` operator"
+
 export const renameFindByIds = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

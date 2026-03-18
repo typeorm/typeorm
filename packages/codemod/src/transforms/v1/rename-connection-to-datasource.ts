@@ -1,9 +1,7 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Renames Connection → DataSource, ConnectionOptions → DataSourceOptions,
- * and related method/property renames throughout.
- */
+export const description = "migrate from `Connection` to `DataSource`"
+
 export const renameConnectionToDataSource = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

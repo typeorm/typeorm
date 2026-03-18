@@ -1,8 +1,7 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Replaces @Column({ readonly: true }) with @Column({ update: false }).
- */
+export const description = "replace `readonly` column option with `update`"
+
 export const replaceReadonlyColumn = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

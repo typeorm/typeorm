@@ -1,8 +1,7 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Renames .printSql() to .logQuery() on QueryBuilder.
- */
+export const description = "rename `printSql()` to `logQuery()`"
+
 export const renamePrintSqlToLogQuery = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)

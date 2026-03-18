@@ -1,18 +1,10 @@
 import type { API, FileInfo } from "jscodeshift"
+import { reportTodo } from "../todo"
 
-/**
- * Replaces deprecated global functions with DataSource instance methods.
- * Adds a TODO comment where the dataSource variable cannot be determined.
- *
- * createConnection(opts) → new DataSource(opts); await ds.initialize()
- * getConnection() → dataSource
- * getManager() → dataSource.manager
- * getRepository(Entity) → dataSource.getRepository(Entity)
- * getTreeRepository(Entity) → dataSource.getTreeRepository(Entity)
- * createQueryBuilder("alias") → dataSource.createQueryBuilder("alias")
- * getMongoManager() → dataSource.mongoManager
- * getMongoRepository(Entity) → dataSource.getMongoRepository(Entity)
- */
+export const description =
+    "replace deprecated global functions with `DataSource` methods"
+export const manual = true
+
 export const replaceGlobalFunctions = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
@@ -115,6 +107,8 @@ export const replaceGlobalFunctions = (file: FileInfo, api: API) => {
             }
         }
     })
+
+    if (hasChanges) reportTodo("replace-global-functions", file, api)
 
     return hasChanges ? root.toSource() : undefined
 }

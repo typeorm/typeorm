@@ -1,8 +1,8 @@
 import type { API, FileInfo } from "jscodeshift"
 
-/**
- * Renames WhereExpression → WhereExpressionBuilder in imports and type references.
- */
+export const description =
+    "rename `WhereExpression` to `WhereExpressionBuilder`"
+
 export const replaceWhereExpressionType = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
