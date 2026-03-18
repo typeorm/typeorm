@@ -11,6 +11,21 @@ import { removeWidthZerofill } from "./remove-width-zerofill"
 import { replaceSqliteType } from "./replace-sqlite-type"
 import { replaceLockModes } from "./replace-lock-modes"
 import { removeUseContainer } from "./remove-use-container"
+import { removeConnectorPackage } from "./remove-connector-package"
+import { replaceSqliteOptions } from "./replace-sqlite-options"
+import { removeMongodbOptions } from "./remove-mongodb-options"
+import { replaceMongodbStats } from "./replace-mongodb-stats"
+import { replaceMongodbTypes } from "./replace-mongodb-types"
+import { replaceMssqlDomain } from "./replace-mssql-domain"
+import { removeSapOptions } from "./remove-sap-options"
+import { removeDatasourceName } from "./remove-datasource-name"
+import { removeUnsignedNumeric } from "./remove-unsigned-numeric"
+import { removeAbstractRepository } from "./remove-abstract-repository"
+import { removeRelationCount } from "./remove-relation-count"
+import { replaceOnConflict } from "./replace-on-conflict"
+import { renameOrUpdateOverload } from "./rename-or-update-overload"
+import { renameLoadedTablesViews } from "./rename-loaded-tables-views"
+import { removeReplacePropertyNames } from "./remove-replace-property-names"
 import { transformer } from "../transformer"
 
 export const description = "Migrate from v0.3.x to v1.0"
@@ -33,6 +48,21 @@ const transforms = [
     replaceSqliteType,
     replaceLockModes,
     removeUseContainer,
+    removeConnectorPackage,
+    replaceSqliteOptions,
+    removeMongodbOptions,
+    replaceMongodbStats,
+    replaceMongodbTypes,
+    replaceMssqlDomain,
+    removeSapOptions,
+    removeDatasourceName,
+    removeUnsignedNumeric,
+    removeAbstractRepository,
+    removeRelationCount,
+    replaceOnConflict,
+    renameOrUpdateOverload,
+    renameLoadedTablesViews,
+    removeReplacePropertyNames,
 ]
 
 export default transformer(transforms)
