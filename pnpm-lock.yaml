@@ -84,9 +84,6 @@ importers:
       '@types/gulp-rename':
         specifier: ^2.0.7
         version: 2.0.7
-      '@types/mocha':
-        specifier: ^10.0.10
-        version: 10.0.10
       '@types/node':
         specifier: ^20.19.33
         version: 20.19.33
@@ -109,11 +106,11 @@ importers:
         specifier: ^10.1.3
         version: 10.1.3
       chai:
-        specifier: ^6.2.2
-        version: 6.2.2
+        specifier: 6.2.1
+        version: 6.2.1
       chai-as-promised:
         specifier: ^8.0.2
-        version: 8.0.2(chai@6.2.2)
+        version: 8.0.2(chai@6.2.1)
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -179,7 +176,7 @@ importers:
         version: 21.0.1
       sinon-chai:
         specifier: ^4.0.1
-        version: 4.0.1(chai@6.2.2)(sinon@21.0.1)
+        version: 4.0.1(chai@6.2.1)(sinon@21.0.1)
       sort-package-json:
         specifier: ^3.6.1
         version: 3.6.1
@@ -1503,9 +1500,6 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/mocha@10.0.10':
-    resolution: {integrity: sha512-xPyYSz1cMPnJQhl0CLMH68j3gprKZaTjG3s5Vi+fDgx+uhG9NOXwbVt52eFS8ECyXhyKcjDLCBEqBExKuiZb7Q==}
-
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
@@ -1983,6 +1977,10 @@ packages:
     resolution: {integrity: sha512-1GadL+sEJVLzDjcawPM4kjfnL+p/9vrxiEUonowKOAzvVg0PixJUdtuDzdkDeQhK3zfOE76GqGkZIQ7/Adcrqw==}
     peerDependencies:
       chai: '>= 2.1.2 < 7'
+
+  chai@6.2.1:
+    resolution: {integrity: sha512-p4Z49OGG5W/WBCPSS/dH3jQ73kD6tiMmUM+bckNK6Jr5JHMG3k9bg/BvKR8lKmtVBKmOiuVaV2ws8s9oSbwysg==}
+    engines: {node: '>=18'}
 
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
@@ -6332,8 +6330,6 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/mocha@10.0.10': {}
-
   '@types/ms@2.1.0': {}
 
   '@types/node@18.19.130':
@@ -6864,10 +6860,12 @@ snapshots:
 
   caniuse-lite@1.0.30001770: {}
 
-  chai-as-promised@8.0.2(chai@6.2.2):
+  chai-as-promised@8.0.2(chai@6.2.1):
     dependencies:
-      chai: 6.2.2
+      chai: 6.2.1
       check-error: 2.1.3
+
+  chai@6.2.1: {}
 
   chai@6.2.2: {}
 
@@ -8718,9 +8716,9 @@ snapshots:
       once: 1.4.0
       simple-concat: 1.0.1
 
-  sinon-chai@4.0.1(chai@6.2.2)(sinon@21.0.1):
+  sinon-chai@4.0.1(chai@6.2.1)(sinon@21.0.1):
     dependencies:
-      chai: 6.2.2
+      chai: 6.2.1
       sinon: 21.0.1
 
   sinon@21.0.1:

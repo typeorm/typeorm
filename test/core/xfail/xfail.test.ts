@@ -7,7 +7,7 @@ describe("xfail", () => {
             expect(1).to.equal(0)
         })
 
-        xfail.it("standard mocha", () => {
+        xfail.it("standard vitest", () => {
             const foo = 1
             foo.should.be.equal(0)
         })

@@ -20,7 +20,7 @@ export default defineConfig([
         languageOptions: {
             parser: ts.parser,
             parserOptions: {
-                project: "tsconfig.json",
+                project: ["tsconfig.json", "tsconfig.test.json"],
             },
             globals: {
                 ...globals.browser,

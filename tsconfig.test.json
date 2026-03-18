@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "es2020",
+    "types": ["vitest/globals"],
+    "moduleResolution": "node",
+    "target": "es2020"
+  },
+  "exclude": ["build", "node_modules", "temp", "sample/playground"],
+  "include": ["test", "**/*.ts"],
+  "extends": "./tsconfig.json"
+}

@@ -42,6 +42,7 @@ jobs:
               - tsconfig.json
               - tsconfig.browser.json
               - tsconfig.node.json
+              - tsconfig.test.json
 
             src-or-tests: &src-or-tests
               - *src
@@ -50,7 +51,7 @@ jobs:
               - docker/**/*
               - test/**/*
               - .c8rc.json
-              - .mocharc.json
+              - .vitest.config.ts
               - ormconfig.sample.json
 
             lint:

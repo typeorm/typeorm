@@ -21,7 +21,7 @@
     "useDefineForClassFields": false,
     "useUnknownInCatchVariables": false
   },
-  "exclude": ["build", "node_modules", "temp", "sample/playground"],
+  "exclude": ["build", "node_modules", "temp", "sample/playground", "test"],
   "extends": "@tsconfig/node20/tsconfig.json",
-  "include": ["sample", "src", "test", "*.ts"]
+  "include": ["sample", "src", "*.ts"]
 }
