@@ -60,7 +60,7 @@ jobs:
               echo 'matrix=[{"target":"release"}]' >> $GITHUB_OUTPUT
               ;;
             schedule)
-              echo 'matrix=[{"ref":"master","tag":"dev"},{"ref":"v0.3","tag":"nightly"}]' >> $GITHUB_OUTPUT
+              echo 'matrix=[{"ref":"master","tag":"dev","node":"24"},{"ref":"v0.3","tag":"nightly","node":"20"}]' >> $GITHUB_OUTPUT
               ;;
             workflow_dispatch)
               TARGET="${{ inputs.target }}"
@@ -69,10 +69,12 @@ jobs:
               else
                 if [ "$TARGET" == "master" ]; then
                   TAG="dev"
+                  NODE="24"
                 else
                   TAG="nightly"
+                  NODE="20"
                 fi
-                echo "matrix=[{\"ref\":\"$TARGET\",\"tag\":\"$TAG\"}]" >> $GITHUB_OUTPUT
+                echo "matrix=[{\"ref\":\"$TARGET\",\"tag\":\"$TAG\",\"node\":\"$NODE\"}]" >> $GITHUB_OUTPUT
               fi
               ;;
           esac
@@ -87,6 +89,7 @@ jobs:
       id-token: write
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
@@ -141,7 +144,7 @@ jobs:
       - uses: actions/setup-node@v6
         if: steps.publishable.outputs.should_publish == 'true'
         with:
-          node-version: 24
+          node-version: ${{ matrix.node || '24' }}
           cache: "pnpm"
 
       - run: npm install -g npm@latest
@@ -152,21 +155,6 @@ jobs:
 
       - run: pnpm run package
         if: steps.publishable.outputs.should_publish == 'true'
-
-      # The gulp package task copies the root package.json into build/package.
-      # Dev-only fields like "prepare" (husky), "scripts", and "devEngines"
-      # cause publish to fail since their dependencies aren't installed there.
-      - name: Clean built package.json
-        if: steps.publishable.outputs.should_publish == 'true'
-        run: |
-          node -e "
-            const pkg = require('./build/package/package.json');
-            delete pkg.scripts;
-            delete pkg.devDependencies;
-            delete pkg.devEngines;
-            delete pkg.private;
-            require('fs').writeFileSync('./build/package/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
 
       - name: Set nightly version
         if: steps.publishable.outputs.should_publish == 'true' && matrix.target != 'release'
