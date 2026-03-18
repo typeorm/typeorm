@@ -166,7 +166,7 @@ export class TreeRepository<
 
             return this.createQueryBuilder(alias)
                 .innerJoin(
-                    this.metadata.closureJunctionTable.tableName,
+                    this.metadata.closureJunctionTable.tablePath,
                     closureTableAlias,
                     joinCondition,
                 )
@@ -337,7 +337,7 @@ export class TreeRepository<
 
             return this.createQueryBuilder(alias)
                 .innerJoin(
-                    this.metadata.closureJunctionTable.tableName,
+                    this.metadata.closureJunctionTable.tablePath,
                     closureTableAlias,
                     joinCondition,
                 )
