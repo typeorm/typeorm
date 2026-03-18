@@ -1,4 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
+import { getStringValue } from "../ast-helpers"
 
 export const description =
     "remove deprecated `unsigned` from decimal/float column options"
@@ -19,11 +20,7 @@ export const removeUnsignedNumeric = (file: FileInfo, api: API) => {
 
         // First arg must be a string literal with a numeric type
         const firstArg = args[0]
-        const isStringLiteral = firstArg.type === "StringLiteral"
-        const isLiteralString =
-            firstArg.type === "Literal" && typeof firstArg.value === "string"
-        const typeName =
-            isStringLiteral || isLiteralString ? (firstArg as any).value : null
+        const typeName = getStringValue(firstArg)
 
         if (!typeName || !numericTypes.has(typeName)) return
 
@@ -68,14 +65,7 @@ export const removeUnsignedNumeric = (file: FileInfo, api: API) => {
 
         if (typeProp?.type !== "ObjectProperty") return
 
-        const isTypeStringLiteral = typeProp.value.type === "StringLiteral"
-        const isTypeLiteralString =
-            typeProp.value.type === "Literal" &&
-            typeof typeProp.value.value === "string"
-        const typeValue =
-            isTypeStringLiteral || isTypeLiteralString
-                ? (typeProp.value as any).value
-                : null
+        const typeValue = getStringValue(typeProp.value)
 
         if (!typeValue || !numericTypes.has(typeValue)) return
 

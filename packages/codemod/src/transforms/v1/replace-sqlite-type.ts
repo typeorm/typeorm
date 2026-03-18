@@ -1,4 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
+import { setStringValue } from "../ast-helpers"
 
 export const description = "replace `sqlite` driver with `better-sqlite3`"
 
@@ -12,10 +13,8 @@ export const replaceSqliteType = (file: FileInfo, api: API) => {
         key: { type: "Identifier", name: "type" },
         value: { type: "StringLiteral", value: "sqlite" },
     }).forEach((path) => {
-        if (path.node.value.type === "StringLiteral") {
-            path.node.value.value = "better-sqlite3"
-            hasChanges = true
-        }
+        setStringValue(path.node.value, "better-sqlite3")
+        hasChanges = true
     })
 
     return hasChanges ? root.toSource() : undefined

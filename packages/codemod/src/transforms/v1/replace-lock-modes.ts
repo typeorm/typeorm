@@ -1,4 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
+import { getStringValue, setStringValue } from "../ast-helpers"
 
 export const description = "replace deprecated pessimistic lock modes"
 
@@ -28,20 +29,13 @@ export const replaceLockModes = (file: FileInfo, api: API) => {
         const arg = path.node.arguments[0]
         if (!arg) return
 
-        const isStringLiteral = arg.type === "StringLiteral"
-        const isLiteralString =
-            arg.type === "Literal" && typeof arg.value === "string"
-        const value =
-            isStringLiteral || isLiteralString ? (arg as any).value : null
-
+        const value = getStringValue(arg)
         if (!value || !lockModeMap[value]) return
 
         const replacement = lockModeMap[value]
 
         // Change the lock mode argument
-        if (arg.type === "StringLiteral" || arg.type === "Literal") {
-            arg.value = replacement.mode
-        }
+        setStringValue(arg, replacement.mode)
 
         // Wrap in .setOnLocked() call
         const setOnLocked = j.callExpression(
@@ -58,15 +52,7 @@ export const replaceLockModes = (file: FileInfo, api: API) => {
     root.find(j.ObjectProperty, {
         key: { name: "mode" },
     }).forEach((path) => {
-        const isValStringLiteral = path.node.value.type === "StringLiteral"
-        const isValLiteralString =
-            path.node.value.type === "Literal" &&
-            typeof path.node.value.value === "string"
-        const value =
-            isValStringLiteral || isValLiteralString
-                ? (path.node.value as any).value
-                : null
-
+        const value = getStringValue(path.node.value)
         if (!value || !lockModeMap[value]) return
 
         // Check parent is a lock options object
@@ -85,12 +71,7 @@ export const replaceLockModes = (file: FileInfo, api: API) => {
         const replacement = lockModeMap[value]
 
         // Update mode value
-        if (
-            path.node.value.type === "StringLiteral" ||
-            path.node.value.type === "Literal"
-        ) {
-            path.node.value.value = replacement.mode
-        }
+        setStringValue(path.node.value, replacement.mode)
 
         // Add onLocked property to the lock object
         const hasOnLocked = parent.node.properties.some(

@@ -1,4 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
+import { getStringValue } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
@@ -18,11 +19,7 @@ export const replaceOnConflict = (file: FileInfo, api: API) => {
         },
     }).forEach((path) => {
         const arg = path.node.arguments[0]
-        const isStringLiteral = arg?.type === "StringLiteral"
-        const isLiteralString =
-            arg?.type === "Literal" && typeof arg.value === "string"
-        const argValue =
-            isStringLiteral || isLiteralString ? (arg as any).value : null
+        const argValue = arg ? getStringValue(arg) : null
 
         if (argValue && /DO\s+NOTHING/i.test(argValue)) {
             // Replace .onConflict("DO NOTHING") with .orIgnore()
