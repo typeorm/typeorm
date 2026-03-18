@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("github issues > #7415 Tree entities with embedded primary columns are not built correctly", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #7415 Tree entities with embedded primary columns are 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should build tree entities with embedded primary columns correctly", () =>
         Promise.all(

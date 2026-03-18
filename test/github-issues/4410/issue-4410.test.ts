@@ -22,7 +22,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         dropSchema: true,
     }
 
-    before(() => {
+    beforeAll(() => {
         sandbox = sinon.createSandbox()
         stub = sandbox.stub(PlatformTools, "appendFileSync")
     })
@@ -34,7 +34,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     })
 
     describe("when no option is passed", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 ...testingOptions,
                 createLogger: () => new FileLogger("all"),
@@ -58,7 +58,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     })
 
     describe("when logPath option is passed as a file", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 ...testingOptions,
                 createLogger: () =>
@@ -85,7 +85,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     })
 
     describe("when logPath option is passed as a nested path", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 ...testingOptions,
                 createLogger: () =>

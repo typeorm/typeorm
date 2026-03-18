@@ -10,7 +10,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #9910 Incorrect behaivor of 'alwaysEnabled: true' after change from issue #9023", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             cache: {
@@ -19,7 +19,7 @@ describe("github issues > #9910 Incorrect behaivor of 'alwaysEnabled: true' afte
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should automatically cache if alwaysEnabled", () =>
         Promise.all(

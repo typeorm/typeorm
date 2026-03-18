@@ -8,7 +8,7 @@ import { ExampleEntity } from "./entity/ExampleEntity"
 
 describe("github issues > #9829 Incorrect default value with concat value of function", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [ExampleEntity],
             schemaCreate: true,
@@ -16,7 +16,7 @@ describe("github issues > #9829 Incorrect default value with concat value of fun
             enabledDrivers: ["postgres"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
     it("should get default concat value", () =>
         Promise.all(
             dataSources.map(async (connection) => {

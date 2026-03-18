@@ -11,7 +11,7 @@ import { Address, LatLong, User } from "./entity/User"
 
 describe("github issues > #9272 Fix select on deeply nested embedded entities, using Repository API", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -29,7 +29,7 @@ describe("github issues > #9272 Fix select on deeply nested embedded entities, u
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to pass select options for deeply nested embedded entities", () =>
         Promise.all(

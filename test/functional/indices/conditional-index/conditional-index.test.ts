@@ -8,7 +8,7 @@ import { expect } from "chai"
 
 describe("indices > conditional index", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql", "postgres", "better-sqlite3"], // only these drivers supports conditional indices
@@ -16,7 +16,7 @@ describe("indices > conditional index", () => {
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create conditional indices with WHERE condition", () =>
         Promise.all(

@@ -10,7 +10,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #4277 Using cache in findAndCount and getManyAndCount returns 0 as count", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -36,7 +36,7 @@ describe("github issues > #4277 Using cache in findAndCount and getManyAndCount 
             }),
         )
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("getManyAndCount and findAndCount should count correctly when using cacheId", () =>
         Promise.all(

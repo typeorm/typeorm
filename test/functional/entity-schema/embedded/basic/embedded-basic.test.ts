@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("entity-schema > embedded - class-instance", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [UserEntitySchema],
         })
@@ -17,7 +17,7 @@ describe("entity-schema > embedded - class-instance", () => {
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create an table", () =>
         Promise.all(

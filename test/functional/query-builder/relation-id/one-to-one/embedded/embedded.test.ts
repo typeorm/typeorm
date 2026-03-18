@@ -14,13 +14,13 @@ import { Subcounters } from "./entity/Subcounters"
 
 describe("query builder > relation-id > one-to-one > embedded", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should load ids when loadRelationIdAndMap used on embedded and nested embedded tables", () =>
         Promise.all(

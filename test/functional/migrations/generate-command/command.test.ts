@@ -8,7 +8,7 @@ import { Category, Post } from "./entity"
 
 describe("migrations > generate command", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             migrations: [],
             schemaCreate: false,
@@ -16,7 +16,7 @@ describe("migrations > generate command", () => {
             entities: [Post, Category],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("can recognize model changes", () =>
         Promise.all(

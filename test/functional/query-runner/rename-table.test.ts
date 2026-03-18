@@ -12,7 +12,7 @@ import {
 
 describe("query runner > rename table", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("query runner > rename table", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly rename table and revert rename", () =>
         Promise.all(

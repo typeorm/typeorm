@@ -11,7 +11,7 @@ import { TestCreate } from "./entity/TestCreate"
 describe("entity-metadata > create", () => {
     describe("without entitySkipConstructor", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["better-sqlite3"],
                 entities: [TestCreate],
@@ -19,7 +19,7 @@ describe("entity-metadata > create", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should call the constructor when creating an object", () =>
             Promise.all(
@@ -55,7 +55,7 @@ describe("entity-metadata > create", () => {
 
     describe("with entitySkipConstructor", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["better-sqlite3"],
                 entities: [TestCreate],
@@ -66,7 +66,7 @@ describe("entity-metadata > create", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should call the constructor when creating an object", () =>
             Promise.all(

@@ -13,7 +13,7 @@ describe.skip("github issues > #838 Time zones for timestamp columns are incorre
     let postgresConnection: DataSource
     const testDateString = "1989-08-16T10:00:00+03:00"
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -25,7 +25,7 @@ describe.skip("github issues > #838 Time zones for timestamp columns are incorre
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return date & time stored in PostgreSQL database correctly", async () => {
         // await postgresConnection.query(`INSERT INTO "flight" ("id", "date") VALUES (1, '1989-08-16 14:00:00.000000 +03:00');`);

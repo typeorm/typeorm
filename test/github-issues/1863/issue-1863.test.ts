@@ -8,13 +8,13 @@ import { Table } from "../../../src"
 
 describe("github issues > #1863 createTable.uniques doesn't work when the columnNames only has one item", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["mysql"],
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create table with unique constraint", () =>
         Promise.all(

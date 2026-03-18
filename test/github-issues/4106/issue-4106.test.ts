@@ -12,7 +12,7 @@ import { expect } from "chai"
 
 describe("github issues > #4106 Specify enum type name in postgres", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Human, Animal],
             dropSchema: true,
@@ -20,7 +20,7 @@ describe("github issues > #4106 Specify enum type name in postgres", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const human = new Human()

@@ -11,7 +11,7 @@ describe("spatial > mysql", () => {
     describe("when legacySpatialSupport: true", () => {
         let dataSources: DataSource[]
 
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
@@ -22,7 +22,7 @@ describe("spatial > mysql", () => {
                 },
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should use GeomFromText", () =>
             Promise.all(
@@ -106,7 +106,7 @@ describe("spatial > mysql", () => {
     describe("when legacySpatialSupport: false", () => {
         let dataSources: DataSource[]
 
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
@@ -117,7 +117,7 @@ describe("spatial > mysql", () => {
                 },
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should use ST_GeomFromText", () =>
             Promise.all(

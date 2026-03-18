@@ -9,13 +9,13 @@ import { Tournament } from "./entity/Tournament"
 
 describe("github issues > #807 Error in persisting dates", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to save dates as objects", () =>
         Promise.all(

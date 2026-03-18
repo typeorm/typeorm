@@ -11,7 +11,7 @@ import { Example } from "./entity/Example"
 describe("github issues > #8011 Enum values with multiple apostrophes not properly escaped in MySQL", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["mysql"],
             entities: [Example],
@@ -20,7 +20,7 @@ describe("github issues > #8011 Enum values with multiple apostrophes not proper
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should properly escape all apostrophes", () =>
         Promise.all(

@@ -11,14 +11,14 @@ import { SuperLongRelatedEntityNameDontAskWhy } from "./entity/SuperLongRelatedE
 
 describe("github issues > #11227 RelationIdLoader is not consistently respecting maxAliasLength", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should fetch related entities properly", async () => {
         for (const connection of dataSources) {

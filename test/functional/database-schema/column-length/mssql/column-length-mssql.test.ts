@@ -10,14 +10,14 @@ import {
 
 describe("database schema > column length > mssql", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["mssql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("all types should create with correct size", () =>
         Promise.all(

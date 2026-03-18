@@ -9,13 +9,13 @@ import {
 
 describe("github issues > #8443 QueryFailedError when tree entity with JoinColumn > materialized-path", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Category],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("attach should work properly", () =>
         Promise.all(

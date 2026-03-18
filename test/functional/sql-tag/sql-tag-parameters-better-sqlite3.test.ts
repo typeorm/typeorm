@@ -10,14 +10,14 @@ import type { DataSource } from "../../../src"
 
 describe("sql tag parameters (better-sqlite3)", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Example],
             enabledDrivers: ["better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should handle basic SQL tag parameters", () =>
         Promise.all(

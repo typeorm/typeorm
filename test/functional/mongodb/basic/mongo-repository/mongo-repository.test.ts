@@ -11,14 +11,14 @@ import { MongoRepository } from "../../../../../src/repository/MongoRepository"
 
 describe("mongodb > MongoRepository", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, PostWithDeleted],
             enabledDrivers: ["mongodb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("dataSource should return mongo repository when requested", () =>
         Promise.all(

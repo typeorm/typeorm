@@ -10,14 +10,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #2651 set shouldn't have update statements twice when UpdateDate is in use", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should add and remove relations of an entity if given a mix of ids and objects", () =>
         Promise.all(

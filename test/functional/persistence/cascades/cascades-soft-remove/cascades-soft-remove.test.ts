@@ -12,14 +12,14 @@ import { IsNull } from "../../../../../src"
 // todo: fix later
 describe.skip("persistence > cascades > remove", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
             enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should soft-remove everything by cascades properly", () =>
         Promise.all(

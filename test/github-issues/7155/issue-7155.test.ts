@@ -30,11 +30,11 @@ import {
 
 describe("github issues > #7155", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await generateConnections()
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     /**
      * ------------------ SINGLE ID ------------------
@@ -2038,14 +2038,14 @@ describe("github issues > #7155", () => {
 
 describe("github issues > #7155 > tree relations", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/RelationEntities{.js,.ts}"],
             enabledDrivers: ["mysql", "postgres", "mssql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("(Closure) Validate relations", () =>
         Promise.all(

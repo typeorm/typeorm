@@ -9,13 +9,13 @@ import { PostWithNullTransformer } from "./entity/PostWithNullTransformer"
 
 describe("columns > value-transformer > null transform", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [PostWithNullTransformer],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should run transform from if column is null", () =>
         Promise.all(

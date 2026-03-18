@@ -8,14 +8,14 @@ import { Roles } from "./entity/Roles"
 
 describe("github issues > #3536 Sync only works once for enums on entities with capital letters in entity name", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Roles],
             enabledDrivers: ["postgres"],
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should run without throw error", () =>
         Promise.all(

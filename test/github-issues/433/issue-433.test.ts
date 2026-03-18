@@ -9,14 +9,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #433 default value (json) is not getting set in postgreSQL", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should successfully set default value in to JSON type column", () =>
         Promise.all(

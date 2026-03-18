@@ -11,7 +11,7 @@ import { expect } from "chai"
 describe("github issues > #10054 Nested 'Or' Condition/Operation Support in Repository Where condition", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Person],
             enabledDrivers: ["postgres", "mysql"],
@@ -21,7 +21,7 @@ describe("github issues > #10054 Nested 'Or' Condition/Operation Support in Repo
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should find person where name starts with foo or equal to jane", async () => {
         await Promise.all(

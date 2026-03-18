@@ -8,7 +8,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #1733 Postgresql driver does not detect/support varying without length specified", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -16,7 +16,7 @@ describe("github issues > #1733 Postgresql driver does not detect/support varyin
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly synchronize schema when varchar column length is not specified", () =>
         Promise.all(

@@ -11,13 +11,13 @@ import { PolicyGroup } from "./entity/PolicyGroup"
 
 describe("other issues > composite keys doesn't work as expected in 0.3 compared to 0.2", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should properly save new relation items", () =>
         Promise.all(

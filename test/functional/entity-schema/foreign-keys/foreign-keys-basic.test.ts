@@ -12,13 +12,13 @@ import { UserEntity } from "./entity/user"
 describe("entity-schema > foreign-keys", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("basic functionality", () => {
         it("should create a foreign keys", () =>

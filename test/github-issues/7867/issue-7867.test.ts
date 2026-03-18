@@ -11,7 +11,7 @@ import { expect } from "chai"
 describe("github issues > #7867 Column not renamed when schema/database is set", () => {
     describe("schema is set", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Example],
                 schemaCreate: true,
@@ -23,7 +23,7 @@ describe("github issues > #7867 Column not renamed when schema/database is set",
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should correctly change column name", () =>
             Promise.all(
@@ -52,7 +52,7 @@ describe("github issues > #7867 Column not renamed when schema/database is set",
 
     describe("database is set", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Example],
                 schemaCreate: true,
@@ -64,7 +64,7 @@ describe("github issues > #7867 Column not renamed when schema/database is set",
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should correctly change column name", () =>
             Promise.all(

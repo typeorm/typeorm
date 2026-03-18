@@ -14,7 +14,7 @@ import { Base, A, B, C } from "./entity"
 describe("github issues > #10496 User-defined index name for Single Table Inheritance discriminator columns", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Base, A, B, C],
             schemaCreate: true,
@@ -34,7 +34,7 @@ describe("github issues > #10496 User-defined index name for Single Table Inheri
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create a single index for the discriminator column, with the specified column name", () =>
         Promise.all(

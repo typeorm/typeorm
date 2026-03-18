@@ -11,7 +11,7 @@ import { User } from "./entity/User"
 
 describe("query builder > cache", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             cache: true,
@@ -24,7 +24,7 @@ describe("query builder > cache", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should cache results properly", () =>
         Promise.all(

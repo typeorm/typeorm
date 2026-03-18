@@ -11,7 +11,7 @@ describe("create comment", () => {
     // GitHub issue #10621 - Table comments not supported by typeorm for SAP HANA
     describe("table comment", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Company],
                 enabledDrivers: ["sap", "postgres", "mysql", "mariadb"],
@@ -20,7 +20,7 @@ describe("create comment", () => {
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         async function loadCommentFromDB(
             dataSource: DataSource,

@@ -9,13 +9,13 @@ import {
 
 describe("github issues > #6948 TreeRepository's findRoots query incorrectly when using a custom primary key", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Category],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("entity parent column should work with custom primary column names ", () =>
         Promise.all(

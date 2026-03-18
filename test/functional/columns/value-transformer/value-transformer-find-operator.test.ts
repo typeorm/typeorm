@@ -12,7 +12,7 @@ import { ApplyValueTransformers } from "../../../../src/util/ApplyValueTransform
 describe("columns > value-transformer > find-operator", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             schemaCreate: true,
@@ -21,7 +21,7 @@ describe("columns > value-transformer > find-operator", () => {
         })
     })
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not throw an error from the transformer", async () =>
         Promise.all(

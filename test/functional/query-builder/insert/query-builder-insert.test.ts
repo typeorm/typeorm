@@ -12,14 +12,14 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > insert", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should perform insertion correctly", () =>
         Promise.all(

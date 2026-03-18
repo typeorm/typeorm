@@ -11,13 +11,13 @@ import { Fruit } from "./entity/Fruit"
 
 describe("github issues > #363 Can't save 2 unrelated entity types in a single persist call", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("entityManager should allow you to save unrelated entities with one persist call", () =>
         Promise.all(

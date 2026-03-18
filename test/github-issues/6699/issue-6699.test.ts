@@ -8,14 +8,14 @@ import { expect } from "chai"
 
 describe("github issues > #6699 MaxListenersExceededWarning occurs on Postgres", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("queries in a transaction do not cause an EventEmitter memory leak", () =>
         Promise.all(

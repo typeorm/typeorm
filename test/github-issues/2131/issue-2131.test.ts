@@ -29,14 +29,14 @@ describe("github issues > #2131 InsertResult return the same primary key", () =>
         },
     ]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3", "mysql", "aurora-mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should get correct insert ids for multiple entities inserted", () =>
         Promise.all(

@@ -18,13 +18,13 @@ describe("persistence > orphanage > disable", () => {
     // connect to db
     let dataSources: DataSource[] = []
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -35,9 +35,9 @@ describe("persistence > orphanage > disable", () => {
         let settingRepo: Repository<Setting>
         let userId: number
 
-        beforeEach(async function () {
+        beforeEach(async function (context) {
             if (dataSources.length === 0) {
-                this.skip()
+                context.skip()
             }
 
             await Promise.all(

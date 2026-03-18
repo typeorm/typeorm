@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #4185 afterLoad() subscriber interface missing additional info available on other events", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #4185 afterLoad() subscriber interface missing additio
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should invoke afterLoad() with LoadEvent", () =>
         Promise.all(

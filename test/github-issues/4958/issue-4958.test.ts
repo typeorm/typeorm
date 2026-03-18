@@ -10,14 +10,14 @@ import Second from "./entity/second"
 
 describe("github issues > #4958 getRepository returns results from another Repo", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [First, Second],
             enabledDrivers: ["better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("sql generated is for correct model", () => {
         for (const connection of dataSources) {

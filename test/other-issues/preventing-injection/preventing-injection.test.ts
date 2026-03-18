@@ -11,13 +11,13 @@ import { EntityPropertyNotFoundError } from "../../../src/error/EntityPropertyNo
 
 describe("other issues > preventing-injection", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not allow selection of non-exist columns via FindOptions", () =>
         Promise.all(

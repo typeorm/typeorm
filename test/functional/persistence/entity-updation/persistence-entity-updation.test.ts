@@ -16,11 +16,11 @@ import { PostEmbedded } from "./entity/PostEmbedded"
 
 describe("persistence > entity updation", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({ __dirname })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should update generated auto-increment id after saving", () =>
         Promise.all(

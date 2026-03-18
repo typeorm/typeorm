@@ -11,7 +11,7 @@ import { Item, NEW_COLLATION } from "./entity/item.entity"
 describe("github issues > #8647 Collation changes are not synced to RDBMS", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             driverSpecific: {
@@ -23,7 +23,7 @@ describe("github issues > #8647 Collation changes are not synced to RDBMS", () =
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     const COLUMN_NAME = "name"
 

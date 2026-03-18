@@ -12,13 +12,13 @@ import { Researcher } from "./entity/Researcher"
 
 describe("table-inheritance > single-table > relations > one-to-many-cascade-save", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work correctly with OneToMany relations", () =>
         Promise.all(

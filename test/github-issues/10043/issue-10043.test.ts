@@ -7,7 +7,7 @@ import type { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #10043 Numeric array column type creates migration repeatedly", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/*{.js,.ts}"],
@@ -16,7 +16,7 @@ describe("github issues > #10043 Numeric array column type creates migration rep
             enabledDrivers: ["postgres"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not generate migration for synchronized sized-numeric array column", () =>
         Promise.all(

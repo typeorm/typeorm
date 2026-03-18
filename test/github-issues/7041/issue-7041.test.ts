@@ -10,7 +10,7 @@ import { Organization, Admin, User, OrganizationMembership } from "./entity"
 
 describe("github issues > #7041 When requesting nested relations on foreign key primary entities, relation becomes empty entity rather than null", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Organization, Admin, User, OrganizationMembership],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #7041 When requesting nested relations on foreign key 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return null when requested nested relations are empty on OneToOne relation", () =>
         Promise.all(

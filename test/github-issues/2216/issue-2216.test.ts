@@ -16,24 +16,24 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
     let manager: EntityManager
     let logInfoStub: sinon.SinonStub
 
-    before(() => {
+    beforeAll(() => {
         logInfoStub = sinon.stub(SimpleConsoleLogger.prototype, "log")
     })
     beforeEach(async () => {
         await reloadTestingDatabases(dataSources)
     })
     afterEach(() => logInfoStub.resetHistory())
-    after(() => logInfoStub.restore())
+    afterAll(() => logInfoStub.restore())
 
     describe("when logNotifications option is NOT enabled", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [Foo],
                 createLogger: () => new SimpleConsoleLogger(),
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should NOT pass extension setup notices to client", () => {
             dataSources.forEach((_connection) => {
@@ -83,7 +83,7 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
     })
 
     describe("when logNotifications option is enabled", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [Foo],
@@ -91,7 +91,7 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
                 driverSpecific: { logNotifications: true },
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should pass extension setup notices to client", () => {
             dataSources.forEach((_connection) => {

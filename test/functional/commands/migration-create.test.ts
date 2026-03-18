@@ -40,7 +40,7 @@ describe("commands - migration create", () => {
         ...options,
     })
 
-    before(async () => {
+    beforeAll(async () => {
         // clean out db from any prior tests in case previous state impacts the generated migrations
         const connections = await createTestingConnections({
             entities: [],
@@ -60,12 +60,12 @@ describe("commands - migration create", () => {
         timerStub = sinon.useFakeTimers(1610975184784)
     })
 
-    after(async () => {
+    afterAll(() => {
         timerStub.restore()
         createFileStub.restore()
     })
 
-    afterEach(async () => {
+    afterEach(() => {
         getConnectionOptionsStub?.restore()
     })
 

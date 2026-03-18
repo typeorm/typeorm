@@ -11,7 +11,7 @@ import { Test } from "./entity/Test"
 describe("github issues > #2943 Inappropriate migration generated", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["mariadb", "mysql"],
             entities: [Test],
@@ -20,7 +20,7 @@ describe("github issues > #2943 Inappropriate migration generated", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not create migrations for unsigned numeric types with no specified width", () =>
         Promise.all(

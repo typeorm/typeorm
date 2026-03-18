@@ -11,13 +11,13 @@ import { Category } from "./entity/Category"
 
 describe("cascades > cascade remove one-to-many", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should remove related entities via onDelete CASCADE when parent is removed", () =>
         Promise.all(

@@ -51,7 +51,7 @@ jobs:
               - docker/**/*
               - test/**/*
               - .c8rc.json
-              - .vitest.config.ts
+              - vitest.config.ts
               - ormconfig.sample.json
 
             lint:

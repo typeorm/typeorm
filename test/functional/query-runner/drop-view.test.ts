@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("query runner > drop view", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/view/*{.js,.ts}"],
             enabledDrivers: ["postgres", "oracle"],
@@ -18,7 +18,7 @@ describe("query runner > drop view", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly drop VIEW and revert dropping", () =>
         Promise.all(

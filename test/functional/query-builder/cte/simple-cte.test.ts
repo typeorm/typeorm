@@ -12,7 +12,7 @@ import { filterByCteCapabilities } from "./helpers"
 
 describe("query builder > cte > simple", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("query builder > cte > simple", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("show allow select from CTE", () =>
         Promise.all(

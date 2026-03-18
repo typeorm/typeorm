@@ -10,7 +10,7 @@ import { Test } from "./entity/Test"
 
 describe("columns > comments", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Test],
             // Only supported on cockroachdb, mysql, postgres, and sap
@@ -18,7 +18,7 @@ describe("columns > comments", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should persist comments of different types to the database", () =>
         Promise.all(

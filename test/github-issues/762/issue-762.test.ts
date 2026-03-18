@@ -11,13 +11,13 @@ import { FooChildMetadata } from "./entity/FooChildMetadata"
 
 describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work perfectly with all data set", () =>
         Promise.all(

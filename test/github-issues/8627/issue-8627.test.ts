@@ -10,7 +10,7 @@ import { ThisIsARealLongNameForAnEntityBecauseThisIsNecessary } from "./entity/l
 
 describe("github issues > #8627 junction aliases are not unique", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
@@ -19,7 +19,7 @@ describe("github issues > #8627 junction aliases are not unique", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not fail querying many-to-many-relation", () =>
         Promise.all(

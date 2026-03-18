@@ -15,7 +15,7 @@ import { SettingSubscriber } from "./entity/SettingSubscriber"
 describe("github issues > #8221", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User, Setting],
             subscribers: [SettingSubscriber],
@@ -24,7 +24,7 @@ describe("github issues > #8221", () => {
         })
     })
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     function insertSimpleTestData(connection: DataSource) {
         const userRepo = connection.getRepository(User)

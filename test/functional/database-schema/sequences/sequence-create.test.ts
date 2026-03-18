@@ -11,14 +11,14 @@ import { Person } from "./entity/Person"
 
 describe("sequences > creating a sequence and marking the column as generated", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Person],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("create table and check that primary key column is marked as generated", function () {
         it("should check that the primary key column is generated automatically", () =>

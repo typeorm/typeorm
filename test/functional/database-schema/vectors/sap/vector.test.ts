@@ -11,7 +11,7 @@ import { BufferEmbedding } from "./entity/BufferEmbedding"
 describe("database-schema > vectors > sap", () => {
     describe("with vector output type Array", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [ArrayEmbedding],
                 enabledDrivers: ["sap"],
@@ -23,7 +23,7 @@ describe("database-schema > vectors > sap", () => {
                 },
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should work correctly - create, persist and hydrate", () =>
             Promise.all(
@@ -108,7 +108,7 @@ describe("database-schema > vectors > sap", () => {
 
     describe("with vector output type Buffer", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [BufferEmbedding],
                 enabledDrivers: ["sap"],
@@ -117,7 +117,7 @@ describe("database-schema > vectors > sap", () => {
                 },
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should work correctly - persist and hydrate ", () =>
             Promise.all(

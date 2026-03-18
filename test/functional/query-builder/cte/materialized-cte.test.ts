@@ -12,7 +12,7 @@ import type { DataSource } from "../../../../src"
 
 describe("query builder > cte > materialized", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -21,7 +21,7 @@ describe("query builder > cte > materialized", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should allow MATERIALIZED hint", () =>
         Promise.all(

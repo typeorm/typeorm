@@ -9,7 +9,7 @@ import {
 
 describe("sqlite driver > busy-timeout", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [],
             enabledDrivers: ["better-sqlite3"],
@@ -19,7 +19,7 @@ describe("sqlite driver > busy-timeout", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should set the busy_timeout as expected", () =>
         Promise.all(

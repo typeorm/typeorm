@@ -11,7 +11,7 @@ import { DummyJSONBEntity } from "./entity/jsonb-entity"
 
 describe("other issues > correctly compute change for transformed json / jsonb columns", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("other issues > correctly compute change for transformed json / jsonb c
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not update entity if transformed JSON column did not change", () =>
         Promise.all(

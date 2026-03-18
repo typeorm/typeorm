@@ -10,7 +10,7 @@ import { ClusterCluster as ClusterClusterMssql } from "./entity/TestMssql"
 describe("github issues > #7276 Schema sync not able to find diff correctly and executes same queries on every run", () => {
     describe("postgres", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 schemaCreate: false,
@@ -18,7 +18,7 @@ describe("github issues > #7276 Schema sync not able to find diff correctly and 
                 entities: [ClusterClusterPg],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -46,7 +46,7 @@ describe("github issues > #7276 Schema sync not able to find diff correctly and 
 
     describe("mssql", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["mssql"],
                 schemaCreate: false,
@@ -54,7 +54,7 @@ describe("github issues > #7276 Schema sync not able to find diff correctly and 
                 entities: [ClusterClusterMssql],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(

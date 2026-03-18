@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("driver > postgres > DataSource options", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             driverSpecific: {
@@ -18,7 +18,7 @@ describe("driver > postgres > DataSource options", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should set session variable application_name", () =>
         Promise.all(
@@ -44,7 +44,7 @@ describe("driver > postgres > DataSource options", () => {
 
 describe("driver > postgres > DataSource options > custom extension installation", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             driverSpecific: {
@@ -53,7 +53,7 @@ describe("driver > postgres > DataSource options > custom extension installation
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should install specified extensions after connection", () =>
         Promise.all(

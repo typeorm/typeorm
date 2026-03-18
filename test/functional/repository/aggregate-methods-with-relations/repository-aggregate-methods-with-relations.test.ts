@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("repository > aggregate methods with relations", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("repository > aggregate methods with relations", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("sum with relation filter", () => {
         it("should return the aggregate sum when filtering by relation", () =>

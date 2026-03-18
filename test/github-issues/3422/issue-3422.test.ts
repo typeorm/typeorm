@@ -8,14 +8,14 @@ import { User } from "./entity/User"
 
 describe("github issues > #3422 cannot save to nested-tree table if schema is used in postgres", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not fail when using schema and nested-tree", () =>
         Promise.all(

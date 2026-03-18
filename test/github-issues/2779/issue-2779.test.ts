@@ -10,7 +10,7 @@ import { Role } from "./set"
 
 describe("github issues > #2779 Could we add support for the MySQL/MariaDB SET data type?", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mariadb", "mysql"],
@@ -18,7 +18,7 @@ describe("github issues > #2779 Could we add support for the MySQL/MariaDB SET d
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create column with SET datatype", () =>
         Promise.all(

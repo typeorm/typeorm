@@ -13,7 +13,7 @@ import { TestEntity } from "./entity/Test"
 // TODO: Implement topological sorting for view dependencies https://github.com/typeorm/typeorm/issues/8240
 describe.skip("views dependencies", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             schemaCreate: true,
@@ -22,7 +22,7 @@ describe.skip("views dependencies", () => {
             entities: [TestEntity, ViewA, ViewB, ViewC],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should generate drop and create queries in correct order", () =>
         Promise.all(

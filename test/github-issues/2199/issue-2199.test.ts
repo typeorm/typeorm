@@ -10,7 +10,7 @@ import { Bar } from "./entity/Bar"
 
 describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() for mysql, sqlite and mssql", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql", "mariadb", "better-sqlite3", "mssql"],
@@ -20,7 +20,7 @@ describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() 
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should allow to explicitly insert primary key value", () =>
         Promise.all(

@@ -9,14 +9,14 @@ import { MeetingSchema } from "./entity/Meeting"
 
 describe("entity-schema > exclusions", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [<any>MeetingSchema],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create an exclusion constraint", () =>
         Promise.all(

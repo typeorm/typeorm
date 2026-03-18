@@ -10,13 +10,13 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #3379 Migration will keep create and drop indexes if index name is the same across tables", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not recreate indices", () =>
         Promise.all(

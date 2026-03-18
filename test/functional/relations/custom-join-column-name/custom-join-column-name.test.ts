@@ -11,13 +11,13 @@ import { Kollektion } from "./entity/Kollektion"
 
 describe("relations > custom-join-column-name", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should persist entity with many-to-one relation using custom join column name", () =>
         Promise.all(

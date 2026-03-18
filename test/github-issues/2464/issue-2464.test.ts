@@ -13,14 +13,14 @@ import { expect } from "chai"
 
 describe("github issues > #2464 - ManyToMany onDelete option not working", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not delete when onDelete is 'NO ACTION'", () =>
         Promise.all(

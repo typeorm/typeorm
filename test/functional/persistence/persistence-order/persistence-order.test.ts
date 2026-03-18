@@ -42,13 +42,13 @@ describe("persistence > order of persistence execution operations", () => {
 
     describe.skip("should persist all entities in correct order", function () {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
         it("", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {

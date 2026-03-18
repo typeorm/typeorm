@@ -12,14 +12,14 @@ import { User } from "./entity/User"
 describe("database schema > custom constraint names > primary key", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres", "cockroachdb", "mssql", "oracle"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should set custom constraint names", () =>
         Promise.all(

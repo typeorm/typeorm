@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("github issues > #9173 missing typeorm_metadata", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #9173 missing typeorm_metadata", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create a view without view entity", async () => {
         for (const connection of dataSources) {

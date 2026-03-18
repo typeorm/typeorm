@@ -13,20 +13,20 @@ import { Warn } from "./entity/Warn"
 
 describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given database, creates new database "test" instead', () => {
     let options: MongoDataSourceOptions
+    let optionsArray: DataSourceOptions[]
     const connections: DataSource[] = []
 
-    before(function () {
-        const optionsArray = setupTestingConnections({
+    beforeAll(function () {
+        optionsArray = setupTestingConnections({
             enabledDrivers: ["mongodb"],
         })
-
+    })
+    beforeEach((context) => {
         if (optionsArray.length === 0) {
-            this.skip() // Skip if we can't grab the mongodb
+            context.skip() // Skip if we can't grab the mongodb
         }
-
         options = optionsArray[0] as MongoDataSourceOptions
     })
-
     afterEach(async () => {
         await closeTestingConnections(connections)
         connections.length = 0

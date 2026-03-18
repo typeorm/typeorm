@@ -58,7 +58,7 @@ describe("github issues > #5691 RelationId is too slow", () => {
     }
 
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Root, Child1, Child2, Shared],
             schemaCreate: true,
@@ -66,7 +66,7 @@ describe("github issues > #5691 RelationId is too slow", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be as fast as separate queries", () =>
         Promise.all(

@@ -13,13 +13,13 @@ import { expect } from "chai"
 
 describe("find options > order", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("order by id DESC", () =>
         Promise.all(

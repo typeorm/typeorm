@@ -14,7 +14,7 @@ import { Rule } from "./entity/Rule"
 
 describe("github issues > #9673 TreeRepository not loading relations on findDescendants() method using QUERY method (relationLoadStrategy)", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -24,7 +24,7 @@ describe("github issues > #9673 TreeRepository not loading relations on findDesc
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should generate multiple queries per relation", () =>
         Promise.all(

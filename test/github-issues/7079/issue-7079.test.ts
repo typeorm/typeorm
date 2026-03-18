@@ -10,7 +10,7 @@ import { Post, User } from "./entities"
 
 describe("github issues > #7079 Error when sorting by an embedded entity while using join and skip/take", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, User],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #7079 Error when sorting by an embedded entity while u
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to getMany with join and sorting by an embedded entity column while user take and skip", () =>
         Promise.all(

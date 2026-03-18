@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("other issues > mongodb entity change in subscribers should affect persistence", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("other issues > mongodb entity change in subscribers should affect pers
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("if entity was changed, subscriber should be take updated columns", () =>
         Promise.all(

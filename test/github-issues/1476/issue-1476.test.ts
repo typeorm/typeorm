@@ -13,14 +13,14 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #1476 subqueries", () => {
     let dataSources: DataSource[] = []
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql", "mariadb", "better-sqlite3", "sqljs"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should", () =>
         Promise.all(

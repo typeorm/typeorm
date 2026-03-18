@@ -10,14 +10,14 @@ import { expect } from "chai"
 
 describe("github issues > #3587 do not generate change queries for number based enum types every time", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [EquipmentModel],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should NOT generate change queries in case enum is not changed", () =>
         Promise.all(

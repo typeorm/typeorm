@@ -10,7 +10,7 @@ import { Table } from "../../../src/schema-builder/table/Table"
 
 describe("github issues > #2259 Missing type for generated columns", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #2259 Missing type for generated columns", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("Should create table with generated column", () =>
         Promise.all(

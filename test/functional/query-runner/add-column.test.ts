@@ -12,14 +12,14 @@ import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver
 
 describe("query runner > add column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly add column and revert add", () =>
         Promise.all(

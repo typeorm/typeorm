@@ -10,13 +10,13 @@ import type { DataSource } from "../../../src"
 
 describe("entity-model", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should save successfully and use static methods successfully", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class

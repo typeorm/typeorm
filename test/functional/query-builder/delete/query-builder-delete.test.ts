@@ -12,13 +12,13 @@ import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropert
 
 describe("query builder > delete", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should perform deletion correctly", () =>
         Promise.all(

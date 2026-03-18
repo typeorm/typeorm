@@ -11,14 +11,14 @@ import { Person } from "./entity/person"
 
 describe("schema-builder > drop column with index", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: false,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should drop the column and its referenced index during synchronize", () =>
         Promise.all(

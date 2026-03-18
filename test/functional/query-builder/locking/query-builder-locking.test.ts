@@ -21,13 +21,13 @@ import { PostWithVersionAndUpdatedDate } from "./entity/PostWithVersionAndUpdate
 
 describe("query builder > locking", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not attach pessimistic read lock statement on query if locking is not used", () => {
         for (const dataSource of dataSources) {

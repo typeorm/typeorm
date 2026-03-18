@@ -9,14 +9,14 @@ import { Post } from "./entity/Post"
 
 describe("query-builder > take > sqlite high take limit", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3"], // this issue only related to sqlite
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not fail with too many SQL variables when take is 1000", () =>
         Promise.all(

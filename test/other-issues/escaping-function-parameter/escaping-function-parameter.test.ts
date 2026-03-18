@@ -10,13 +10,13 @@ import { expect } from "chai"
 
 describe("other issues > escaping function parameter", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("select query builder should ignore function-based parameters", () =>
         Promise.all(

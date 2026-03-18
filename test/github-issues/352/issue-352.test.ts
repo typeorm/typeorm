@@ -11,14 +11,14 @@ import { MssqlParameter } from "../../../src/driver/sqlserver/MssqlParameter"
 
 describe("github issues > #352 double precision round to int in mssql", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("real number should be successfully stored and loaded from db including value in parameters", () =>
         Promise.all(

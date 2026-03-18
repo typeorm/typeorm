@@ -10,13 +10,13 @@ import { expect } from "chai"
 
 describe("other issues > entity change in listeners should affect persistence", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("if entity was changed in the listener, changed property should be updated in the db", () =>
         Promise.all(

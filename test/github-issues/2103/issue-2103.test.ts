@@ -10,7 +10,7 @@ import { Complex } from "./entity/Complex"
 
 describe("github issues > #2103 query builder regression", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #2103 query builder regression", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("whereInIds should respect logical operator precedence > single simple primary key (in is used)", () =>
         Promise.all(

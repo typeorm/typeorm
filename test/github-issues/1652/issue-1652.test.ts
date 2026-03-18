@@ -7,7 +7,7 @@ import {
 
 describe("github issues > #1652 Multiple primary key defined", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -15,7 +15,7 @@ describe("github issues > #1652 Multiple primary key defined", () => {
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create table when multiple primary keys defined and one of them is generated", () =>
         Promise.all(

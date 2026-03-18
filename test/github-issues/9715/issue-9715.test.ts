@@ -7,7 +7,7 @@ import type { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #9715 Database schema is not updated by sync/migration when 'simple-enum' is changed.", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/*{.js,.ts}"],
@@ -16,7 +16,7 @@ describe("github issues > #9715 Database schema is not updated by sync/migration
             enabledDrivers: ["better-sqlite3"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should update 'CHECK' constraint to match enum values", () =>
         Promise.all(

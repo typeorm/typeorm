@@ -10,7 +10,7 @@ import { User } from "./entity/user"
 
 describe("github issues > #10678 useIndex is not preserved when cloning a QueryExpressionMap (or a QueryBuilder) instance", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #10678 useIndex is not preserved when cloning a QueryE
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should preserve the useIndex property when a QueryBuilder instance is cloned", () =>
         Promise.all(

@@ -13,7 +13,7 @@ import { Thing } from "./entity/thing.entity"
 describe("github issues > #8681 DeepPartial simplification breaks the .create() and .save() method in certain cases.", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -21,7 +21,7 @@ describe("github issues > #8681 DeepPartial simplification breaks the .create() 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should .save() and .create() complex deep partial entities", () =>
         Promise.all(

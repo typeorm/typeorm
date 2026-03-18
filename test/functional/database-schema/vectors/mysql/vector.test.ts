@@ -10,7 +10,7 @@ import { Embedding } from "./entity/Embedding"
 describe("database-schema > vectors > mysql", () => {
     describe("with vector output type Array", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Embedding],
                 enabledDrivers: ["mariadb", "mysql"],
@@ -19,7 +19,7 @@ describe("database-schema > vectors > mysql", () => {
                 },
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should work correctly - create, persist and hydrate", () =>
             Promise.all(

@@ -11,14 +11,14 @@ import { expect } from "chai"
 
 describe("github issue > #1326 Wrong behavior w/ the same table names in different databases", () => {
     let dataSources: DataSource[] = []
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not confuse equivalent table names in different databases", () =>
         Promise.all(

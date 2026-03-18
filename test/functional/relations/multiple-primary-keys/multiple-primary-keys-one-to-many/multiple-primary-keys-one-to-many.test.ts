@@ -14,7 +14,7 @@ import { Setting } from "./entity/Setting"
 describe("relations > multiple-primary-keys > one-to-many", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User, Setting],
             schemaCreate: true,
@@ -22,7 +22,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
         })
     })
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     function insertSimpleTestData(dataSource: DataSource) {
         const userRepo = dataSource.getRepository(User)

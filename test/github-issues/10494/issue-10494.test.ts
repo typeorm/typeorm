@@ -16,7 +16,7 @@ import { BaseSchema, ASchema, BSchema, CSchema } from "./schema"
 describe("github issues > #10494 Custom discriminator values when using Single Table Inheritance with Entity Schemas", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [BaseSchema, ASchema, BSchema, CSchema],
             schemaCreate: true,
@@ -36,7 +36,7 @@ describe("github issues > #10494 Custom discriminator values when using Single T
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should use custom discriminator values, when specified", () =>
         Promise.all(

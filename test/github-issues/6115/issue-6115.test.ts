@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #6115 Down migration for enums with defaults are wrong", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             entities: [__dirname + "/entity/v1/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #6115 Down migration for enums with defaults are wrong
             schemaCreate: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should change schema when enum definition changes", () =>
         Promise.all(

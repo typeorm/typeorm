@@ -12,7 +12,7 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > change check constraint", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("schema builder > change check constraint", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly add new check constraint", () =>
         Promise.all(

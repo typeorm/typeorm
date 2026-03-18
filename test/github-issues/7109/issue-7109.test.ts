@@ -20,7 +20,7 @@ function ingestStream(stream: ReadStream): Promise<any[]> {
 
 describe("github issues > #7109 stream() bug from 0.2.25 to 0.2.26 with postgresql", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -35,7 +35,7 @@ describe("github issues > #7109 stream() bug from 0.2.25 to 0.2.26 with postgres
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should release the QueryRunner created by a SelectQueryBuilder", () =>
         Promise.all(

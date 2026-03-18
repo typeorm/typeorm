@@ -10,7 +10,7 @@ import { expect } from "chai"
 describe("github issues > #10612", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [ExampleEntity],
             enabledDrivers: ["postgres"],
@@ -18,7 +18,7 @@ describe("github issues > #10612", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("add table comment", async () => {
         await Promise.all(

@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("github issues > #3443 @JoinTable on entities without synchronization", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -17,7 +17,7 @@ describe("github issues > #3443 @JoinTable on entities without synchronization",
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("Should set synchronize: false for @JoinTable when passed to options", () => {
         dataSources.forEach((dataSource) => {

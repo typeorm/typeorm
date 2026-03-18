@@ -11,13 +11,13 @@ import { CategoryEntity } from "./entity/CategoryEntity"
 
 describe("entity schemas > basic functionality", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [PostEntity, CategoryEntity],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should perform basic operations with entity using repository", () =>
         Promise.all(

@@ -9,16 +9,16 @@ import type { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #4701 Duplicate migrations are executed.", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
-            migrations: [__dirname + "/migration/*.js"],
+            migrations: [__dirname + "/migration/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should throw error if there're duplicate migrations", () =>
         Promise.all(

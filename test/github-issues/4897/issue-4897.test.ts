@@ -8,7 +8,7 @@ import { SomeEntity } from "./entity/SomeEntity"
 
 describe("github issues > #4897 [MSSQL] Enum column definition removes and recreates constraint overwritting existing data", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             migrations: [],
             enabledDrivers: ["mssql", "better-sqlite3"],
@@ -17,7 +17,7 @@ describe("github issues > #4897 [MSSQL] Enum column definition removes and recre
             entities: [SomeEntity],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(

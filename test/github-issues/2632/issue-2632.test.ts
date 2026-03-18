@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("github issues > #2632 createQueryBuilder relation remove works only if using ID", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should add and remove relations of an entity if given a mix of ids and objects", () =>
         Promise.all(

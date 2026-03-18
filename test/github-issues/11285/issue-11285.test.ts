@@ -16,7 +16,7 @@ import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryR
 describe("github issues > #11285 Missing MSSQL input type", () => {
     describe("mssql connection", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [User],
                 enabledDrivers: ["mssql"],
@@ -26,7 +26,7 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
         afterEach(() => sinon.restore())
 
         it("should convert input parameter to MssqlParameter", () =>
@@ -196,7 +196,7 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
 
     describe("other connections", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [User],
                 enabledDrivers: ["postgres"],
@@ -206,7 +206,7 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
         afterEach(() => sinon.restore())
 
         it("should used the input parameter as it is", () =>

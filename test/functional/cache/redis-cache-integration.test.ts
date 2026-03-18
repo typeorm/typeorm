@@ -6,22 +6,19 @@ import { RedisQueryResultCache } from "../../../src/cache/RedisQueryResultCache"
 import type { DataSource } from "../../../src/data-source/DataSource"
 import type { QueryResultCacheOptions } from "../../../src/cache/QueryResultCacheOptions"
 
-describe("RedisQueryResultCache Integration", function () {
+const isWindows = process.platform === "win32"
+
+describe.skipIf(isWindows)("RedisQueryResultCache Integration", function () {
     let container: StartedTestContainer
     let caches: RedisQueryResultCache[] = []
 
-    before(async function () {
-        // testcontainers are not supported on Windows
-        if (process.platform === "win32") {
-            return this.skip()
-        }
-
+    beforeAll(async function () {
         container = await new GenericContainer("redis:8.6.1-alpine")
             .withExposedPorts(6379)
             .start()
     })
 
-    after(async () => {
+    afterAll(async () => {
         await container?.stop()
     })
 

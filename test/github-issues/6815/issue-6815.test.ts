@@ -12,7 +12,7 @@ import { ParentEntity } from "./entity/ParentEntity"
 describe("github issues > #6815 RelationId() on nullable relation returns 'null' string", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -28,7 +28,7 @@ describe("github issues > #6815 RelationId() on nullable relation returns 'null'
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return null as childId if child doesn't exist", () =>
         Promise.all(

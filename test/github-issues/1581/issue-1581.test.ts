@@ -13,14 +13,14 @@ import { OrderItem } from "./entity/OrderItem"
 
 describe.skip("github issues > #1581 Composite key breaks OneToMany relation", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("throws an error because there is no object id defined", () =>
         Promise.all(

@@ -11,7 +11,7 @@ import { expect } from "chai"
 describe("github issues > #9316 specify how should interpret null and undefined values in conditions ", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
             enabledDrivers: ["postgres", "mysql"],
@@ -21,7 +21,7 @@ describe("github issues > #9316 specify how should interpret null and undefined 
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should find users what money is not null and money is more than 10 and money is less than 100", async () => {
         await Promise.all(

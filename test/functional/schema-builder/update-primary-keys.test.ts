@@ -10,14 +10,14 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > update primary keys", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly update composite primary keys", () =>
         Promise.all(

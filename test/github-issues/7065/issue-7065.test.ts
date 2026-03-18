@@ -17,7 +17,7 @@ import { Contact, Email, Phone, User } from "./entity"
 
 describe("github issues > #7065 ChildEntity type relationship produces unexpected results", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Contact, Email, Phone, User],
             schemaCreate: true,
@@ -26,7 +26,7 @@ describe("github issues > #7065 ChildEntity type relationship produces unexpecte
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should join child entity with discriminator value condition", () =>
         Promise.all(

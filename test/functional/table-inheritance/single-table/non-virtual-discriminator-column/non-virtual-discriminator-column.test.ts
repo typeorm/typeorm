@@ -12,13 +12,13 @@ import { Person } from "./entity/Person"
 
 describe("table-inheritance > single-table > non-virtual-discriminator-column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return non virtual discriminator column as well", () =>
         Promise.all(

@@ -15,7 +15,7 @@ describe("find options > null and undefined handling", () => {
     let dataSources: DataSource[]
 
     describe("with default behavior (throw)", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
@@ -23,7 +23,7 @@ describe("find options > null and undefined handling", () => {
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         async function prepareData(dataSource: DataSource) {
             const category1 = new Category()
@@ -259,7 +259,7 @@ describe("find options > null and undefined handling", () => {
     })
 
     describe("with invalidWhereValuesBehavior.null set to 'sql-null'", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
@@ -273,7 +273,7 @@ describe("find options > null and undefined handling", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         async function prepareData(dataSource: DataSource) {
             const category1 = new Category()
@@ -396,7 +396,7 @@ describe("find options > null and undefined handling", () => {
     })
 
     describe("with invalidWhereValuesBehavior.undefined set to 'throw'", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
@@ -410,7 +410,7 @@ describe("find options > null and undefined handling", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should throw an error when undefined is encountered and invalidWhereValuesBehavior.undefined is 'throw'", async () => {
             for (const dataSource of dataSources) {
@@ -587,7 +587,7 @@ describe("find options > null and undefined handling", () => {
     })
 
     describe("with both invalidWhereValuesBehavior options enabled", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
@@ -602,7 +602,7 @@ describe("find options > null and undefined handling", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         async function prepareData(dataSource: DataSource) {
             const category1 = new Category()
@@ -714,7 +714,7 @@ describe("find options > null and undefined handling", () => {
     })
 
     describe("with ignore behavior", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
@@ -729,7 +729,7 @@ describe("find options > null and undefined handling", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         async function prepareData(dataSource: DataSource) {
             const category1 = new Category()
@@ -908,7 +908,7 @@ describe("find options > null and undefined handling", () => {
     })
 
     describe("with invalidWhereValuesBehavior.null set to 'throw'", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
@@ -922,7 +922,7 @@ describe("find options > null and undefined handling", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should throw an error when null is encountered and invalidWhereValuesBehavior.null is 'throw'", async () => {
             for (const dataSource of dataSources) {

@@ -11,7 +11,7 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > create foreign key", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("query runner > create foreign key", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create foreign key and revert creation", () =>
         Promise.all(

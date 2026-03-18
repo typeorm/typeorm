@@ -10,14 +10,14 @@ import { ArrayContainedBy } from "../../../../src/find-options/operator/ArrayCon
 
 describe("find options > find operators > ArrayContainedBy", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
             enabledDrivers: ["postgres", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     async function prepareData(manager: EntityManager) {
         const post1 = new Post()

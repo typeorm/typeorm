@@ -13,7 +13,7 @@ import { expect } from "chai"
 describe("github issues > #3105 Error with cascading saves using EntityManager in a transaction", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -21,7 +21,7 @@ describe("github issues > #3105 Error with cascading saves using EntityManager i
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     xfail
         .unless(() => dataSources.length > 0)

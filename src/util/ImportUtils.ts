@@ -10,6 +10,9 @@ export async function importOrRequireFile(
     filePath: string,
 ): Promise<[any, "esm" | "commonjs"]> {
     const tryToImport = async (): Promise<[any, "esm"]> => {
+        if (process.env.VITEST) {
+            return [await import(filePath), "esm"]
+        }
         // `Function` is required to make sure the `import` statement wil stay `import` after
         // transpilation and won't be converted to `require`
         return [
@@ -24,6 +27,10 @@ export async function importOrRequireFile(
     }
     const tryToRequire = (): [any, "commonjs"] => {
         return [require(filePath), "commonjs"]
+    }
+
+    if (process.env.VITEST) {
+        return tryToImport()
     }
 
     const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)

@@ -10,7 +10,7 @@ import { User } from "./entity/user"
 
 describe("github issues > #3685 Brackets syntax failed when use where with object literal", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
@@ -18,7 +18,7 @@ describe("github issues > #3685 Brackets syntax failed when use where with objec
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => dataSources && closeTestingConnections(dataSources))
+    afterAll(() => dataSources && closeTestingConnections(dataSources))
 
     it("should accept objects in .where method (github issue #3685)", () =>
         Promise.all(

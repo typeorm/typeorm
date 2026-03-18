@@ -9,7 +9,7 @@ import { UserEntity } from "./entity/UserEntity"
 
 describe("github issues > #5478 Setting enumName doesn't change how migrations get generated", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             migrations: [],
             enabledDrivers: ["postgres"],
@@ -18,7 +18,7 @@ describe("github issues > #5478 Setting enumName doesn't change how migrations g
             entities: [UserEntity],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly rename enum", () =>
         Promise.all(

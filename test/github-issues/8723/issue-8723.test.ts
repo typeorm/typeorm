@@ -9,7 +9,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #8723 Fail on Update when reference exists together with FK: multiple assignments to same column ", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -17,7 +17,7 @@ describe("github issues > #8723 Fail on Update when reference exists together wi
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should able to update when both reference and the id exist in the update object", () =>
         Promise.all(

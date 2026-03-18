@@ -8,7 +8,7 @@ import { TaskNotification } from "./entity/TaskNotification"
 
 describe("github issues > #7647 Duplicate migrations when using 'enumName' ColumnOption in an 'enum' type Postgres", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             schemaCreate: false,
@@ -16,7 +16,7 @@ describe("github issues > #7647 Duplicate migrations when using 'enumName' Colum
             entities: [TaskNotification],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(

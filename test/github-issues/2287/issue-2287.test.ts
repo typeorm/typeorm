@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #2287 - QueryBuilder IN and ANY Fail with .where - Postgres", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -17,7 +17,7 @@ describe("github issues > #2287 - QueryBuilder IN and ANY Fail with .where - Pos
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should allow to explicitly insert primary key value", () =>
         Promise.all(

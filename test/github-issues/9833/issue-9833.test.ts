@@ -16,7 +16,7 @@ import { BaseSchema, ASchema, BSchema, CSchema } from "./schema"
 describe("github issues > #9833 Add support for Single Table Inheritance when using Entity Schemas", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [BaseSchema, ASchema, BSchema, CSchema],
             schemaCreate: true,
@@ -36,7 +36,7 @@ describe("github issues > #9833 Add support for Single Table Inheritance when us
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should instantiate concrete entities when using EntitySchema", () =>
         Promise.all(

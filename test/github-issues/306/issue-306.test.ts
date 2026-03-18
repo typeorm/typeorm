@@ -11,13 +11,13 @@ import { Duration } from "./entity/Duration"
 
 describe("github issues > #306 embeddeds with custom column name don't work", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("embedded with custom column name should persist and load without errors", () =>
         Promise.all(

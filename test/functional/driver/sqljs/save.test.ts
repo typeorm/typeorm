@@ -13,7 +13,7 @@ import { Post } from "./entity/Post"
 describe("sqljs driver > save", () => {
     const pathToSqlite = path.resolve(__dirname, "export.sqlite")
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
@@ -22,7 +22,7 @@ describe("sqljs driver > save", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should save to file", () =>
         Promise.all(

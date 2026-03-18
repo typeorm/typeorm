@@ -10,13 +10,13 @@ import { Post } from "./entity/Post"
 
 describe("other issues > using limit in conjunction with order by", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("clears the title when provided with a null value", () =>
         Promise.all(

@@ -9,7 +9,7 @@ import { filterByCteCapabilities } from "./helpers"
 
 describe("query builder > cte > recursive", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -17,7 +17,7 @@ describe("query builder > cte > recursive", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work with simple recursive query", () =>
         Promise.all(

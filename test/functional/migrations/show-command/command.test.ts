@@ -8,16 +8,16 @@ import type { DataSource } from "../../../../src/data-source/DataSource"
 
 describe("migrations > show command", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
-            migrations: [__dirname + "/migration/*.js"],
+            migrations: [__dirname + "/migration/*{.js,.ts}"],
             enabledDrivers: ["postgres", "better-sqlite3"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("can recognise pending migrations", () =>
         Promise.all(

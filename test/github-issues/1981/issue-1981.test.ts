@@ -8,14 +8,14 @@ import { Product } from "./entity/Product"
 
 describe("github issues > #1981 Boolean values not casted properly when used in .find() condition", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to find by boolean find", () =>
         Promise.all(

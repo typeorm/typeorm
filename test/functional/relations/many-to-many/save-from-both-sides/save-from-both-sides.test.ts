@@ -11,13 +11,13 @@ import { expect } from "chai"
 
 describe("relations > many-to-many > save from both sides", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should save many-to-many relation from both owning and inverse sides", () =>
         Promise.all(

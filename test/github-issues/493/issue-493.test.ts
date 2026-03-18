@@ -9,13 +9,13 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #493 pagination should work with string primary keys", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work perfectly with string primary keys", () =>
         Promise.all(

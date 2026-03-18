@@ -9,7 +9,7 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop check constraint", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -17,7 +17,7 @@ describe("query runner > drop check constraint", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly drop check constraint and revert drop", () =>
         Promise.all(

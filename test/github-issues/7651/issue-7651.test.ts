@@ -11,7 +11,7 @@ import { OrderTestEntity } from "./entity/order-test.entity"
 describe("github issues > #7651 Enum that contains functions is not accordingly translated to SQL", () => {
     describe("entity", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #7651 Enum that contains functions is not accordingly 
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should correctly save and retrieve enum fields when declaration merging technique is used and enum contains functions", () =>
             Promise.all(
@@ -70,7 +70,7 @@ describe("github issues > #7651 Enum that contains functions is not accordingly 
 
     describe("schema", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: false,
@@ -79,7 +79,7 @@ describe("github issues > #7651 Enum that contains functions is not accordingly 
                 migrations: [],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should contain SQL for enum type without function", () =>
             Promise.all(

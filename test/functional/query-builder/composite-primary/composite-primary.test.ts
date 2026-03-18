@@ -11,14 +11,14 @@ import { expect } from "chai"
 
 describe("query builder > composite primary", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Foo, Bar],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should find entity by another entity with a composite key", () =>
         Promise.all(

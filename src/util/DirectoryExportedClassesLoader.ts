@@ -41,9 +41,11 @@ export async function importClassesFromDirectories(
         return allLoaded
     }
 
-    const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(globSync(PlatformTools.pathNormalize(dir)))
-    }, [] as string[])
+    const allFiles = directories
+        .reduce((allDirs, dir) => {
+            return allDirs.concat(globSync(PlatformTools.pathNormalize(dir)))
+        }, [] as string[])
+        .sort()
 
     if (directories.length > 0 && allFiles.length === 0) {
         logger.log(logLevel, `${classesNotFoundMessage} "${directories}"`)
@@ -53,22 +55,21 @@ export async function importClassesFromDirectories(
             `${classesFoundMessage} "${directories}" : "${allFiles}"`,
         )
     }
-    const dirPromises = allFiles
-        .filter((file) => {
-            const dtsExtension = file.substring(file.length - 5, file.length)
-            return (
-                formats.indexOf(PlatformTools.pathExtname(file)) !== -1 &&
-                dtsExtension !== ".d.ts"
-            )
-        })
-        .map(async (file) => {
-            const [importOrRequireResult] = await importOrRequireFile(
-                PlatformTools.pathResolve(file),
-            )
-            return importOrRequireResult
-        })
+    const filteredFiles = allFiles.filter((file) => {
+        const dtsExtension = file.substring(file.length - 5, file.length)
+        return (
+            formats.indexOf(PlatformTools.pathExtname(file)) !== -1 &&
+            dtsExtension !== ".d.ts"
+        )
+    })
 
-    const dirs = await Promise.all(dirPromises)
+    const dirs: any[] = []
+    for (const file of filteredFiles) {
+        const [importOrRequireResult] = await importOrRequireFile(
+            PlatformTools.pathResolve(file),
+        )
+        dirs.push(importOrRequireResult)
+    }
 
     return loadFileClasses(dirs, [])
 }

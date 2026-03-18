@@ -14,7 +14,7 @@ import { User } from "./entity/user"
 
 describe("github issues > #10569 Fix type inferencing of EntityManager#create", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -22,7 +22,7 @@ describe("github issues > #10569 Fix type inferencing of EntityManager#create", 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly inference entity type", () => {
         dataSources.forEach((dataSource) => {

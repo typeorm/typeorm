@@ -13,7 +13,7 @@ describe("github issues > #3847 FEATURE REQUEST - Naming strategy foreign key ov
     let dataSources: DataSource[]
     const namingStrategy = new NamingStrategyUnderTest()
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             namingStrategy,
@@ -22,7 +22,7 @@ describe("github issues > #3847 FEATURE REQUEST - Naming strategy foreign key ov
     beforeEach(() => {
         return reloadTestingDatabases(dataSources)
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("NamingStrategyUnderTest#", () =>
         Promise.all(

@@ -11,7 +11,7 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #1780 Support for insertion ignore on duplicate error", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
     const user1 = new User()
     user1.first_name = "John"
     user1.last_name = "Lenon"

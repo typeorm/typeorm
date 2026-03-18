@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe.skip("github issues > #1147 FindOptions should be able to accept custom where condition", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -17,7 +17,7 @@ describe.skip("github issues > #1147 FindOptions should be able to accept custom
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should properly query using custom sql", () =>
         Promise.all(

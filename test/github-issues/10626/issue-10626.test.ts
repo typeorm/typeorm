@@ -9,7 +9,7 @@ import {
 describe("github issues > #10626 Postgres CREATE INDEX CONCURRENTLY bug", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: false,
@@ -18,7 +18,7 @@ describe("github issues > #10626 Postgres CREATE INDEX CONCURRENTLY bug", () => 
         })
     })
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("has to create INDEX CONCURRENTLY", () =>
         Promise.all(

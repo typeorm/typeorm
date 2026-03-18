@@ -14,13 +14,13 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > create table", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create table from simple object and revert creation", () =>
         Promise.all(

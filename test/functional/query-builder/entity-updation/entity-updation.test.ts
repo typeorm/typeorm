@@ -10,11 +10,11 @@ import { expect } from "chai"
 
 describe("query builder > entity updation", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({ __dirname })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should update entity model after insertion if updateEntity is set to true", () =>
         Promise.all(

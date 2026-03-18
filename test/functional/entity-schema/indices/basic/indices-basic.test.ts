@@ -12,13 +12,13 @@ import { PersonSchema } from "./entity/Person"
 
 describe("entity-schema > indices > basic", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [<any>PersonSchema],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create a non unique index with 2 columns", () =>
         Promise.all(

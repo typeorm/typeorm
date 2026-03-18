@@ -10,7 +10,7 @@ import { Plane } from "./entity/Plane"
 describe("github issues > #2800 - Can't override embedded entities in STI implementation", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #2800 - Can't override embedded entities in STI implem
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to save entity with embedded entities overriding", () =>
         Promise.all(

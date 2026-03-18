@@ -12,7 +12,7 @@ import { Foo } from "./entity/Foo"
 //  due to complexity of cascades, it was skipped fow now
 describe.skip("github issues > #7002 cascade save fails if the child entity has CreateDateColumn and PK as JoinColumn", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -21,7 +21,7 @@ describe.skip("github issues > #7002 cascade save fails if the child entity has 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("save an entity having a child entity with shared PK and CreatedDateColumn by cascade", () =>
         Promise.all(

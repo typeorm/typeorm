@@ -10,14 +10,14 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > rename column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly rename column and revert rename", () =>
         Promise.all(

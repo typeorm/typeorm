@@ -11,13 +11,13 @@ import { Abbreviation } from "./entity/Abbreviation"
 
 describe("github issues > #215 invalid replacements of join conditions", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not do invalid replacements of join conditions", () =>
         Promise.all(

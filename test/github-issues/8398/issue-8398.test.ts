@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #8398 Separate update event into the update, soft remove and restore events", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #8398 Separate update event into the update, soft remo
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should trigger different events for update, soft remove, and recover", () =>
         Promise.all(

@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("json > defaults", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: [
@@ -21,7 +21,7 @@ describe("json > defaults", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should insert default values properly", () =>
         Promise.all(

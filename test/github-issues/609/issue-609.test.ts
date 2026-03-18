@@ -7,7 +7,7 @@ import {
 
 describe("github issues > #609 Custom precision on CreateDateColumn and UpdateDateColumn", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -15,7 +15,7 @@ describe("github issues > #609 Custom precision on CreateDateColumn and UpdateDa
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create `CreateDateColumn` and `UpdateDateColumn` column with custom default", () =>
         Promise.all(

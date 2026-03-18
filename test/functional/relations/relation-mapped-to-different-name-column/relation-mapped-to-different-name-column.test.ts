@@ -12,13 +12,13 @@ describe.skip("relations > relation mapped to relation with different name (#56)
     // skipped because of CI error. todo: needs investigation
 
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work perfectly", () =>
         Promise.all(

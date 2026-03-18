@@ -10,14 +10,14 @@ import { Item, EmbeddedItem } from "./entity/Item"
 
 describe("github issue > #1569 updateById generates wrong SQL with arrays inside embeddeds", () => {
     let dataSources: DataSource[] = []
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should properly updateById arrays inside embeddeds", () =>
         Promise.all(

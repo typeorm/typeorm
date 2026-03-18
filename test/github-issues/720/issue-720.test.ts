@@ -13,14 +13,14 @@ import { Locale } from "./entity/Locale"
 
 describe("github issues > #720 `.save()` not updating composite key with Postgres", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not insert new entity when entity already exist with same primary keys", () =>
         Promise.all(

@@ -13,14 +13,14 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > insert > on conflict", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Category, Post],
             enabledDrivers: ["cockroachdb", "postgres", "better-sqlite3"], // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should perform insertion correctly using orIgnore", () =>
         Promise.all(

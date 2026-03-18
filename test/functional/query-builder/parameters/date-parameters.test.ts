@@ -10,7 +10,7 @@ import { Product } from "./entity/Product"
 
 describe("query builder > parameters > date parameters", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Product],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("query builder > parameters > date parameters", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be escaped correctly", () =>
         Promise.all(

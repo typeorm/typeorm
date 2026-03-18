@@ -80,14 +80,14 @@ describe("multi-database > basic-functionality", () => {
             "./subdir/relative-subdir-sqlite.attach.db",
         )
 
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Answer, Category, Post, User],
                 enabledDrivers: ["better-sqlite3"],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(async () => {
+        afterAll(async () => {
             await closeTestingConnections(dataSources)
             const files = await glob(`${tempPath}/**/*.attach.db`)
             await Promise.all(files.map((file) => fs.rm(file, { force: true })))

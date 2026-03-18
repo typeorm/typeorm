@@ -15,14 +15,14 @@ describe("persistence > one-to-one", function () {
     // -------------------------------------------------------------------------
 
     let dataSources: DataSource[]
-    before(() => {
+    beforeAll(() => {
         return createTestingConnections({
             entities: [User, AccessToken],
         }).then((all) => {
             dataSources = all
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
     beforeEach(() => reloadTestingDatabases(dataSources))
 
     // -------------------------------------------------------------------------

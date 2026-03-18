@@ -23,7 +23,7 @@ describe("github issues > #1716 send timestamp to database without converting it
     describe("postgres", () => {
         let dataSources: DataSource[]
 
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [PgEntity],
                 schemaCreate: true,
@@ -40,7 +40,7 @@ describe("github issues > #1716 send timestamp to database without converting it
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should persist dates and times correctly", async () =>
             Promise.all(
@@ -119,7 +119,7 @@ describe("github issues > #1716 send timestamp to database without converting it
     describe("mysql/mariadb", () => {
         let dataSources: DataSource[]
 
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [MysqlEntity],
                 schemaCreate: true,
@@ -129,7 +129,7 @@ describe("github issues > #1716 send timestamp to database without converting it
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should persist dates and times correctly", () =>
             Promise.all(
@@ -186,7 +186,7 @@ describe("github issues > #1716 send timestamp to database without converting it
     describe("mssql", () => {
         let dataSources: DataSource[]
 
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [MssqlEntity],
                 schemaCreate: true,
@@ -196,7 +196,7 @@ describe("github issues > #1716 send timestamp to database without converting it
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should persist dates and times correctly", () =>
             Promise.all(

@@ -11,7 +11,7 @@ import { SquadBilliardsTournament } from "./entity/SquadBilliardsTournament"
 describe("other issues > using nested child entities", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -20,7 +20,7 @@ describe("other issues > using nested child entities", () => {
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should insert without error", () =>
         Promise.all(

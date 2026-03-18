@@ -10,7 +10,7 @@ import { Test } from "./entity/Test"
 
 describe("github issues > #9477 Unsigned Integers Columns constantly dropped and recreated", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Test],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #9477 Unsigned Integers Columns constantly dropped and
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not create migrations for unsigned indices", () =>
         Promise.all(

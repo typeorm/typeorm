@@ -11,7 +11,7 @@ import { Point } from "./entity/Point"
 
 describe("columns > vector type > sqlserver", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [DocumentChunk, Point],
             enabledDrivers: ["mssql"],
@@ -21,7 +21,7 @@ describe("columns > vector type > sqlserver", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create vector column with specified dimensions", () =>
         Promise.all(

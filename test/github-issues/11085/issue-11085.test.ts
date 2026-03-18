@@ -11,7 +11,7 @@ import { User } from "./entity/User"
 describe("github issues > #11085 BeforeQuery promises are not awaited before query execution", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             entities: [__dirname + "/entity/*{.js,.ts}"],

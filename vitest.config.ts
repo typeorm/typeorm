@@ -4,22 +4,16 @@ export default defineConfig({
     test: {
         include: ["test/**/*.test.ts"],
         setupFiles: ["test/utils/test-setup.ts"],
-        reporters: "tree",
         testTimeout: 90000,
-        detectAsyncLeaks: true,
+        hookTimeout: 0,
         pool: "threads",
-        fileParallelism: true,
+        fileParallelism: false,
         globals: true,
-        maxWorkers: 4,
-        watch: false,
-        silent: "passed-only",
-        passWithNoTests: true,
-        typecheck: {
-            include: ["test/**/*.ts"],
-            tsconfig: "test/tsconfig.json",
-        },
         chaiConfig: {
             includeStack: true,
+            showDiff: true,
         },
+        watch: false,
+        reporters: "tree",
     },
 })

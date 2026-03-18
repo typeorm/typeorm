@@ -8,7 +8,7 @@ import { Foo } from "./entity/Foo"
 
 describe("github issues > #9690 Incorrect SQL expression if `where` parameter is empty array", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             entities: [Foo],
@@ -16,7 +16,7 @@ describe("github issues > #9690 Incorrect SQL expression if `where` parameter is
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should run without throw error", () =>
         Promise.all(

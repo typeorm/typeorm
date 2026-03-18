@@ -10,13 +10,13 @@ import { User, UserInfo } from "./entity/user"
 
 describe("github issues > #966 Inheritance in embeddables", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should save and load Superclass fields in embeddable", () =>
         Promise.all(

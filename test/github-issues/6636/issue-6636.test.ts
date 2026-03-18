@@ -9,14 +9,14 @@ import { expect } from "chai"
 
 describe("github issues > #6636 migration issues with scale & precision", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Test],
             enabledDrivers: ["sqljs", "better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not create migrations columns with precision", async () => {
         await Promise.all(

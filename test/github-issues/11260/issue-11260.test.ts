@@ -15,14 +15,14 @@ import { User } from "./entity/User"
 
 describe("github issues > #10626 Regression in transactionDepth handling", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3", "postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("transactionDepth should be updated correctly when commit fails", () =>
         Promise.all(

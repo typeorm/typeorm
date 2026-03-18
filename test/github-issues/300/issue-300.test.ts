@@ -10,13 +10,13 @@ import { Race } from "./entity/Race"
 
 describe("github issues > #300 support of embeddeds that are not set", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("embedded with custom column name should persist and load without errors", () =>
         Promise.all(

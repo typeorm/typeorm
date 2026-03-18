@@ -10,7 +10,7 @@ import { ForeignKeyMetadata } from "../../../src/metadata/ForeignKeyMetadata"
 
 describe("schema builder > create foreign key", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("schema builder > create foreign key", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create foreign key", () =>
         Promise.all(

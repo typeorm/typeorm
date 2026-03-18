@@ -10,14 +10,14 @@ import { Record } from "./entity/Record"
 
 describe("github issues > #1314 UPDATE on json column stores string type", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"], // because only postgres supports jsonb type
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not store json type as string on update", () =>
         Promise.all(

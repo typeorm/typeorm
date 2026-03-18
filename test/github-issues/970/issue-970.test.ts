@@ -9,14 +9,14 @@ import {
 
 describe("github issues > #970 Mongo Bad Sort Specification", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["mongodb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should order properly without errors", () =>
         Promise.all(

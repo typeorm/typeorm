@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 describe("github issues > #7030", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #7030", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should insert and fetch from the expected column", () =>
         Promise.all(

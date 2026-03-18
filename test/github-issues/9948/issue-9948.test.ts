@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #9948 Subscribers with both 'beforeUpdate' and 'afterUpdate' methods defined cause duplicate 'updatedColumn' entries", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #9948 Subscribers with both 'beforeUpdate' and 'afterU
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not duplicate update column", () =>
         Promise.all(

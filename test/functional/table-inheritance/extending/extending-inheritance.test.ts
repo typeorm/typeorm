@@ -10,13 +10,13 @@ import { Post } from "./entity/Post"
 
 describe("table inheritance > regular inheritance using extends keyword", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work correctly", () =>
         Promise.all(

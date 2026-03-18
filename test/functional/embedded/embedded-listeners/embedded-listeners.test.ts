@@ -10,13 +10,13 @@ import { expect } from "chai"
 
 describe("other issues > entity listeners must work in embeddeds as well", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("getters and setters should work correctly", () =>
         Promise.all(

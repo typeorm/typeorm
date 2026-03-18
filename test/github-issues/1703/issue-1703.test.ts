@@ -11,14 +11,14 @@ import { OrganizationEntity } from "./entity/OrganizationEntity"
 
 describe("github issues > #1703 Many to Many with association table returns odd values.", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work as expected", () =>
         Promise.all(

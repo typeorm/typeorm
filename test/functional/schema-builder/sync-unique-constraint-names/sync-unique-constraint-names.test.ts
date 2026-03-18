@@ -8,7 +8,7 @@ import { expect } from "chai"
 
 describe("schema-builder > sync-unique-constraint-names", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -16,7 +16,7 @@ describe("schema-builder > sync-unique-constraint-names", () => {
             driverSpecific: { synchronize: false },
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should sync when multiple entities have unique constraints on similarly named columns", () =>
         Promise.all(

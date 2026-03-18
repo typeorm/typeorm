@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("spatial-cockroachdb", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
@@ -24,7 +24,7 @@ describe("spatial-cockroachdb", () => {
             throw err
         }
     })
-    after(async () => {
+    afterAll(async () => {
         try {
             await closeTestingConnections(dataSources)
         } catch (err) {

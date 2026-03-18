@@ -10,14 +10,14 @@ import { DeviceInstance } from "./entity/DeviceInstance"
 
 describe("github issues > #695 Join columns are not using correct length", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should set correct length on to join columns", () =>
         Promise.all(

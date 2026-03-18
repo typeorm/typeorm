@@ -10,7 +10,7 @@ import { expect } from "chai"
 describe("github issues > #9960", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [ExampleEntity],
             enabledDrivers: ["postgres"],
@@ -18,7 +18,7 @@ describe("github issues > #9960", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("select + order by must work without issues", async () => {
         await Promise.all(

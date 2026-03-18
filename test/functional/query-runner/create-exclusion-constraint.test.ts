@@ -10,7 +10,7 @@ import { TableExclusion } from "../../../src/schema-builder/table/TableExclusion
 
 describe("query runner > create exclusion constraint", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"], // Only PostgreSQL supports exclusion constraints.
@@ -19,7 +19,7 @@ describe("query runner > create exclusion constraint", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create exclusion constraint and revert creation", () =>
         Promise.all(

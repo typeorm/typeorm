@@ -10,7 +10,7 @@ import { ForbiddenTransactionModeOverrideError } from "../../../src/error/Forbid
 
 describe("github issues > #7087 Allow to specify transaction property for individual migrations", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
             schemaCreate: false,
@@ -19,7 +19,7 @@ describe("github issues > #7087 Allow to specify transaction property for indivi
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should fail to run all necessary migrations when transaction is all and there are transaction overrides", () =>
         Promise.all(

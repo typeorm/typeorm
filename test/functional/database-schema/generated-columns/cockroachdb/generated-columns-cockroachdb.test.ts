@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("database schema > generated columns > cockroachdb", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
@@ -19,7 +19,7 @@ describe("database schema > generated columns > cockroachdb", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not generate queries when no model changes", () =>
         Promise.all(

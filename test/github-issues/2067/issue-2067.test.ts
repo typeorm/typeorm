@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #2067 Unhandled promise rejection warning on postgres connection issues", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #2067 Unhandled promise rejection warning on postgres 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return a catchable error on connection errors in queries", () =>
         Promise.all(

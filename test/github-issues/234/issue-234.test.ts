@@ -12,14 +12,14 @@ import { Tag } from "./entity/Tag"
 
 describe("github issues > #234 and #223 lazy loading does not work correctly from one-to-many and many-to-many sides", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"], // we can properly test lazy-relations only on one platform
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly load from one-to-many and many-to-one sides", () =>
         Promise.all(

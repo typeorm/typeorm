@@ -10,13 +10,13 @@ import { PostWithRelation } from "./entity/PostWithRelation"
 // This test is neccessary because finding with eager relation will be run in the different way
 describe(`query builder > find with the global condition of "non-deleted" and eager relation`, () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it(`The global condition of "non-deleted" should be set for the entity with delete date columns and eager relation`, () =>
         Promise.all(

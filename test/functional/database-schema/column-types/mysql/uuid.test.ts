@@ -10,7 +10,7 @@ import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("database schema > column types > mysql > uuid", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [UuidEntity],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("database schema > column types > mysql > uuid", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create table with appropriate UUID column type based on database version", () =>
         Promise.all(

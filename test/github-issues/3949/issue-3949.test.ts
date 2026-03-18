@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #3949 sqlite date hydration is susceptible to corruption", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #3949 sqlite date hydration is susceptible to corrupti
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     const testDateString =
         (sqlDateString: string, jsDateString: string) =>

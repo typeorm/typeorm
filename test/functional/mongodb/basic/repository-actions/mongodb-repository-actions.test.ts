@@ -12,14 +12,14 @@ import { User } from "./entity/User"
 
 describe("mongodb > basic repository actions", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["mongodb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("create should create instance of same entity", () =>
         Promise.all(

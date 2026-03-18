@@ -10,7 +10,7 @@ import { AmbigiousPrimaryKey } from "./entity/AmbigiousPrimaryKey"
 
 describe("query builder > count", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Test, AmbigiousPrimaryKey],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("query builder > count", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("Count query should of empty table should be 0", () =>
         Promise.all(

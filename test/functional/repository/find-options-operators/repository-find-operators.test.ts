@@ -28,13 +28,13 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("repository > find options > operators", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [PersonAR, Post],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("not", () =>
         Promise.all(
@@ -897,7 +897,7 @@ describe("repository > find options > operators", () => {
 
     describe("raw with jsonb columns", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Comment],
                 enabledDrivers: [
@@ -909,7 +909,7 @@ describe("repository > find options > operators", () => {
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should work with @> (contains) operator", () =>
             Promise.all(

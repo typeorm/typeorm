@@ -13,7 +13,7 @@ import type { FindManyOptions } from "../../../src"
 describe("github issues > #9988 RelationIdLoader reuses the same queryplanner within a transaction", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingDatasources({
             entities: [Product, Category],
             enabledDrivers: ["postgres"],
@@ -23,7 +23,7 @@ describe("github issues > #9988 RelationIdLoader reuses the same queryplanner wi
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("custom repository querybuilders within transactions returns relations for getOne() and getMany", async () => {
         await Promise.all(

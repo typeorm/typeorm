@@ -11,14 +11,14 @@ import { expect } from "chai"
 
 describe("relations > lazy relations > setter with promises", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"], // we are using lazy relations that's why we are using a single driver
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should set members in circle", () =>
         Promise.all(

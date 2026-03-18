@@ -11,13 +11,13 @@ import { Person } from "./entity/person"
 
 describe("github issues > #2965 Reuse preloaded lazy relations", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should resuse preloaded lazy relations", () =>
         Promise.all(

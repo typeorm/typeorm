@@ -7,7 +7,7 @@ import {
 
 describe("github issues > #1113 CreateDateColumn's type is incorrect when using decorator @CreateDateColumn({type: 'timestamp'})", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -15,7 +15,7 @@ describe("github issues > #1113 CreateDateColumn's type is incorrect when using 
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create date column from @CreateDateColumn decorator and with custom column type", () =>
         Promise.all(

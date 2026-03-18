@@ -10,13 +10,13 @@ import { Post } from "./model/Post"
 
 describe("entity schemas > target option", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [PostEntity],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create instance of the target", () =>
         Promise.all(

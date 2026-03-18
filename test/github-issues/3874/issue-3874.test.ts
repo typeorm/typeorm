@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #3874 Using an (empty string) enum as the type of a primary key column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Settings],
             enabledDrivers: ["mysql", "mariadb"],
@@ -19,7 +19,7 @@ describe("github issues > #3874 Using an (empty string) enum as the type of a pr
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should reload entity", () =>
         Promise.all(

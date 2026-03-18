@@ -15,13 +15,13 @@ import { WrongCity } from "./wrong-city"
 describe("decorators > foreign-key", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("basic functionality", () => {
         it("should create a foreign keys", () =>
@@ -335,13 +335,15 @@ describe("decorators > foreign-key", () => {
                 }),
             ))
 
-        it("should throw an error if referenced entity metadata is not found", async () => {
+        it("should throw an error if referenced entity metadata is not found", async ({
+            skip,
+        }) => {
             const options = setupSingleTestingConnection("mysql", {
                 entities: [City],
             })
-            if (!options) return
+            if (!options) skip()
 
-            await new DataSource(options)
+            await new DataSource(options!)
                 .initialize()
                 .should.be.rejectedWith(
                     TypeORMError,
@@ -349,13 +351,15 @@ describe("decorators > foreign-key", () => {
                 )
         })
 
-        it("should throw an error if a column in the foreign key is missing", async () => {
+        it("should throw an error if a column in the foreign key is missing", async ({
+            skip,
+        }) => {
             const options = setupSingleTestingConnection("mysql", {
                 entities: [WrongCity, Country],
             })
-            if (!options) return
+            if (!options) skip()
 
-            await new DataSource(options)
+            await new DataSource(options!)
                 .initialize()
                 .should.be.rejectedWith(
                     TypeORMError,

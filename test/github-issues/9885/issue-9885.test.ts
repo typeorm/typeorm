@@ -8,13 +8,13 @@ import {
 describe("github issues > #9885", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [],
             enabledDrivers: ["mongodb"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be connected", () => {
         dataSources.forEach((dataSource) => {

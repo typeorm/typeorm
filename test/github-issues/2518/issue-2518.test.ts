@@ -11,7 +11,7 @@ import type { TreeRepository } from "../../../src"
 
 describe("github issues > #2518 TreeRepository.findDescendantsTree does not load descendants when relationship id property exist", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             // data type text isn't compatible with oracle
@@ -28,7 +28,7 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should load descendants when findDescendantsTree is called for a tree entity", () =>
         Promise.all(

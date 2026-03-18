@@ -12,13 +12,13 @@ import { Tag } from "./entity/Tag"
 
 describe("find options > select", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     async function prepareData(dataSource: DataSource) {
         const tag = new Tag()

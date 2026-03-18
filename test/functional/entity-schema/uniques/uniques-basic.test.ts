@@ -11,13 +11,13 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("entity-schema > uniques", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [<any>PersonSchema],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create a unique constraint with 2 columns", () =>
         Promise.all(

@@ -11,14 +11,14 @@ import { AccountActivationToken } from "./entity/AccountActivationToken"
 
 describe("github issues > #1465 save child and parent entity", () => {
     let dataSources: DataSource[] = []
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql", "mariadb", "better-sqlite3", "sqljs"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("account property in accountActivationToken should not be null", () =>
         Promise.all(

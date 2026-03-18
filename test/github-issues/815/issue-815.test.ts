@@ -11,13 +11,13 @@ import { expect } from "chai"
 
 describe("github issues > #815 @RelationId properties are not updated after entity saving", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work perfectly with many-to-one relation", () =>
         Promise.all(

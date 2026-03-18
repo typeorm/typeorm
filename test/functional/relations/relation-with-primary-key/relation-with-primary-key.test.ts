@@ -11,13 +11,13 @@ import { Category } from "./entity/Category"
 
 describe("relations > relation with primary key", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("many-to-one with primary key in relation", function () {
         it("should work perfectly", () =>

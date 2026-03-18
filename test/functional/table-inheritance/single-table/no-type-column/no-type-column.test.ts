@@ -12,13 +12,13 @@ import { StickyNote } from "./entity/StickyNote"
 
 describe("table-inheritance > single-table > no-type-column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return subclass in relations", () =>
         Promise.all(

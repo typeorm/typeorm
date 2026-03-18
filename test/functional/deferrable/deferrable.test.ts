@@ -14,14 +14,14 @@ import { User } from "./entity/User"
 
 describe("deferrable foreign key constraint", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3", "postgres", "sap"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("initially deferred fk should be validated at the end of transaction", () =>
         Promise.all(

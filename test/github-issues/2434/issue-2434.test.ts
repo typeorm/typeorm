@@ -11,14 +11,14 @@ import { expect } from "chai"
 
 describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
     let dataSources: DataSource[] = []
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["oracle"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should insert multiple rows with QueryBuilder", () =>
         Promise.all(

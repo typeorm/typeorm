@@ -23,7 +23,7 @@ describe("github issues > #8796 New find select object api should support false 
         firstName: "Christian",
     }
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -31,7 +31,7 @@ describe("github issues > #8796 New find select object api should support false 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should suport false value when selecting fields", () =>
         Promise.all(

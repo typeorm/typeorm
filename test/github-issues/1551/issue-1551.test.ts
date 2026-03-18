@@ -12,13 +12,13 @@ import { Chat } from "./entity/Chat"
 
 describe("github issues > #1551 complex example of cascades + multiple primary keys = persistence order", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("throws an error because there is no object id defined", () =>
         Promise.all(

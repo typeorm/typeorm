@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("github issues > #1901 The correct way of adding `ON UPDATE CURRENT_TIMESTAMP` clause to timestamp column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -17,7 +17,7 @@ describe("github issues > #1901 The correct way of adding `ON UPDATE CURRENT_TIM
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create and change column with ON UPDATE expression", () =>
         Promise.all(

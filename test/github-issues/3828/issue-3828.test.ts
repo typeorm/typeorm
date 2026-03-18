@@ -10,7 +10,7 @@ import { MyEntity } from "./entity/Entity"
 describe("github issues > #3828 Conflicting PR to fix postgres schema:log with uppercase table names and enums", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [MyEntity],
             enabledDrivers: ["postgres"],
@@ -20,7 +20,7 @@ describe("github issues > #3828 Conflicting PR to fix postgres schema:log with u
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("schema sync should work when enum type name was changed", () =>
         Promise.all(

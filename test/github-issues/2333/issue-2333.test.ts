@@ -7,7 +7,7 @@ import { Test } from "./entity/Test"
 
 describe("github issues > #2333 datetime column showing changed on every schema:sync run", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["mysql", "mariadb"],
             schemaCreate: false,
@@ -15,7 +15,7 @@ describe("github issues > #2333 datetime column showing changed on every schema:
             entities: [Test],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(

@@ -13,7 +13,11 @@ describe("xfail", () => {
         })
 
         xfail.it("async chai", async () => {
-            expect(1).to.equal(0)
+            await new Promise((resolve) => setTimeout(resolve, 100)).then(
+                () => {
+                    expect(1).to.equal(0)
+                },
+            )
         })
     })
 })

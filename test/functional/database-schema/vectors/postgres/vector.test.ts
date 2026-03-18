@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("columns > vector type", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["postgres"],
@@ -20,7 +20,7 @@ describe("columns > vector type", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create vector column", () =>
         Promise.all(

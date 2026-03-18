@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of 'null'", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const savedPost = new Post()

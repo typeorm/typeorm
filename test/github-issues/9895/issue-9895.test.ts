@@ -9,7 +9,7 @@ import { ExampleEntity } from "./entity/ExampleEntity"
 describe("github issues > #9895", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [ExampleEntity],
             enabledDrivers: ["postgres"],
@@ -17,7 +17,7 @@ describe("github issues > #9895", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should allow find order on object property", async () => {
         await Promise.all(

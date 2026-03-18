@@ -10,7 +10,7 @@ import { Configuration } from "./entity/Configuration"
 
 describe("github issues > #7113 Soft deleted docs still being pulled in Mongodb", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #7113 Soft deleted docs still being pulled in Mongodb"
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not pull soft deleted docs with find", () =>
         Promise.all(

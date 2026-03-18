@@ -9,14 +9,14 @@ import { expect } from "chai"
 
 describe("github issues > #8430 sqlite temporary tables do not honor withoutRowid", () => {
     let dataSources: DataSource[] = []
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications

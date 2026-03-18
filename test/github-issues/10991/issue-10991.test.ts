@@ -10,7 +10,7 @@ import { expect } from "chai"
 describe("github issues > #10991", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             migrations: [__dirname + "/migration/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb", "postgres"],
@@ -18,7 +18,7 @@ describe("github issues > #10991", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to load tables with names containing quotes", () =>
         Promise.all(

@@ -12,14 +12,14 @@ import { DateUtils } from "../../../src/util/DateUtils"
 
 describe("github issues > #513 Incorrect time/datetime types for SQLite", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create datetime column type for datetime in sqlite", () =>
         Promise.all(

@@ -11,7 +11,7 @@ import { CustomerContact } from "./entity/CustomerContact"
 
 describe("github issues > #8346 MySQL: Regression when using take, orderBy, and getMany on a joined relation", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #8346 MySQL: Regression when using take, orderBy, and 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return customers ordered by contacts", () =>
         Promise.all(

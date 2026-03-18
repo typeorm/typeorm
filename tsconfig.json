@@ -19,9 +19,10 @@
     "strictPropertyInitialization": false,
     "stripInternal": true,
     "useDefineForClassFields": false,
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
+    "types": ["vitest/globals"]
   },
-  "exclude": ["build", "node_modules", "temp", "sample/playground", "test"],
+  "exclude": ["build", "node_modules", "temp", "sample/playground"],
   "extends": "@tsconfig/node20/tsconfig.json",
-  "include": ["sample", "src", "*.ts"]
+  "include": ["sample", "src", "test", "*.ts"]
 }

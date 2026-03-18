@@ -10,13 +10,13 @@ import { expect } from "chai"
 
 describe("query builder > comment", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Test],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should scrub end comment pattern from string", () =>
         Promise.all(

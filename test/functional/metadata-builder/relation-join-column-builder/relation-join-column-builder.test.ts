@@ -17,13 +17,13 @@ import { Participant } from "./entity/Participant"
 describe("metadata builder > RelationJoinColumnBuilder", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not throw error when loading entities with composite FK with shared columns", () =>
         Promise.all(

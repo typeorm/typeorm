@@ -12,13 +12,13 @@ import { Image } from "./entity/Image"
 
 describe("query builder > relation-id > one-to-one > multiple-pk", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("owner side", () => {
         it("should load ids when both entities have multiple primary keys", () =>

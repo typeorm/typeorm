@@ -12,7 +12,7 @@ import { C } from "./entity/C"
 
 describe("github issues > #9944 Alias Issue With Nested Entity And Relations", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -22,7 +22,7 @@ describe("github issues > #9944 Alias Issue With Nested Entity And Relations", (
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("Validate correct loading of eager, nested relations", () =>
         Promise.all(

@@ -12,7 +12,7 @@ import { Between } from "../../../src"
 
 describe("github issues > #2286 find operators like MoreThan and LessThan doesn't work properly for date fields", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Example],
             schemaCreate: true,
@@ -23,7 +23,7 @@ describe("github issues > #2286 find operators like MoreThan and LessThan doesn'
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should find a record by its datetime value with find options", () =>
         Promise.all(

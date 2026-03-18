@@ -10,7 +10,7 @@ import { QueryFailedError } from "../../../src/error/QueryFailedError"
 
 describe("github issues > #2693 Option to run migrations in 1-transaction-per-migration mode", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
             schemaCreate: false,
@@ -19,7 +19,7 @@ describe("github issues > #2693 Option to run migrations in 1-transaction-per-mi
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should fail to run all necessary migrations when transaction is all", () =>
         Promise.all(

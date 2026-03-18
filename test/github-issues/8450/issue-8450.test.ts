@@ -11,14 +11,14 @@ import type { DataSource } from "../../../src"
 describe("github issues > #8450 Generated column not in RETURNING clause on save", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres", "mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should populate an object with generated column values after saving", () =>
         Promise.all(

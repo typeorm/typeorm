@@ -10,7 +10,7 @@ import { User } from "./entity/User"
 
 describe("query builder > isolated-where", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
             enabledDrivers: ["better-sqlite3"],
@@ -18,7 +18,7 @@ describe("query builder > isolated-where", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly apply brackets when where statement isolation is enabled", () =>
         Promise.all(

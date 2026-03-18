@@ -27,14 +27,14 @@ describe("github issues > #6266 Many identical selects after insert bunch of ite
         },
     ]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should execute a single SELECT to get inserted default and generated values of multiple entities", () =>
         Promise.all(

@@ -10,7 +10,7 @@ import { UserEntity } from "./entity/UserEntity"
 
 describe("other issues > redundant cascade schema queries in many-to-many relation", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [TeamEntity, UserEntity],
             dropSchema: true,
@@ -18,7 +18,7 @@ describe("other issues > redundant cascade schema queries in many-to-many relati
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work correctly", () =>
         Promise.all(

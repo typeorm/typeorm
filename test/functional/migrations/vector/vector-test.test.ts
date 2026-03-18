@@ -10,7 +10,7 @@ import { CreatePost0000000000001 } from "./0000000000001-CreatePost"
 describe("migrations > vector type", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             schemaCreate: false,
@@ -20,7 +20,7 @@ describe("migrations > vector type", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should run vector migration and create table with vector columns", () =>
         Promise.all(

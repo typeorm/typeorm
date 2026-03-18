@@ -9,14 +9,14 @@ import {
 
 describe("github issues > #9266 queryRunner.getTable() fails if Foreign Key is set in target table", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             migrations: [__dirname + "/migration/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to load tables", () =>
         Promise.all(

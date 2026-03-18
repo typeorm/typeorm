@@ -9,7 +9,7 @@ import {
 
 describe("sqlite driver > enable wal", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [],
             enabledDrivers: ["better-sqlite3"],
@@ -19,7 +19,7 @@ describe("sqlite driver > enable wal", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should set the journal mode as expected", () =>
         Promise.all(

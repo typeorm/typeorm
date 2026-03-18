@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #8370 Add support for Postgres GENERATED ALWAYS AS IDENTITY", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
             schemaCreate: false,
@@ -18,7 +18,7 @@ describe("github issues > #8370 Add support for Postgres GENERATED ALWAYS AS IDE
             enabledDrivers: ["postgres"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should produce proper SQL for creating a column with `BY DEFAULT` identity column", () =>
         Promise.all(

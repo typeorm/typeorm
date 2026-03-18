@@ -16,7 +16,7 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
     const beforeQueryLogPath = appRootPath + "/before-query.log"
     const afterQueryLogPath = appRootPath + "/after-query.log"
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],

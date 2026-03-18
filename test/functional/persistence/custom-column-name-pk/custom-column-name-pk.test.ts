@@ -10,13 +10,13 @@ import { Category } from "./entity/Category"
 
 describe("persistence > cascade operations with custom name", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("cascade update", function () {
         it("should remove relation", () =>

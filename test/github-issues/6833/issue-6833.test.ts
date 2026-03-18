@@ -10,7 +10,7 @@ import { JSONBKeyTest } from "./entity/test"
 
 describe("github issues > #6833 Entities with JSON key columns are incorrectly grouped", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [JSONBKeyTest],
             dropSchema: true,
@@ -19,7 +19,7 @@ describe("github issues > #6833 Entities with JSON key columns are incorrectly g
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("jsonB keys are correctly resolved", () =>
         Promise.all(

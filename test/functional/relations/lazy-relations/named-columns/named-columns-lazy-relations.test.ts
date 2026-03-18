@@ -10,14 +10,14 @@ import { Category } from "./entity/Category"
 
 describe("relations > lazy relations > named columns", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Category],
             enabledDrivers: ["mysql", "postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should persist and hydrate successfully on a relation without inverse side", () =>
         Promise.all(

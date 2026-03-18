@@ -11,13 +11,13 @@ import type { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational with many > add and remove many to many inverse", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should add entity relation of a given entity by entity objects", () =>
         Promise.all(

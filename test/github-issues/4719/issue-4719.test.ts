@@ -9,14 +9,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #4719 HStore with empty string values", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should handle HStore with empty string keys or values", () =>
         Promise.all(

@@ -12,14 +12,14 @@ import { User } from "./entity/User"
 
 describe("query builder > insert/update/delete returning", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql", "postgres", "spanner"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create and perform an INSERT statement, including RETURNING or OUTPUT clause", () =>
         Promise.all(

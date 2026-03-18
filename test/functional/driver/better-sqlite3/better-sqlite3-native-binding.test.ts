@@ -16,7 +16,7 @@ const pathToBetterSqliteNode = join(
 
 describe("option nativeBinding for better-sqlite3", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [],
             enabledDrivers: ["better-sqlite3"],
@@ -26,7 +26,7 @@ describe("option nativeBinding for better-sqlite3", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should use a the path set in nativeBindings to the node file", () =>
         Promise.all(

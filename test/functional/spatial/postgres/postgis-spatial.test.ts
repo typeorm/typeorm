@@ -11,7 +11,7 @@ import { Post } from "./entity/Post"
 // Tests for PostGIS geometry types
 describe("postgis spatial types", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
@@ -27,7 +27,7 @@ describe("postgis spatial types", () => {
             throw err
         }
     })
-    after(async () => {
+    afterAll(async () => {
         try {
             await closeTestingConnections(dataSources)
         } catch (err) {

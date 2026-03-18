@@ -11,13 +11,13 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #151 joinAndSelect can't find entity from inverse side of relation", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should cascade persist successfully", () =>
         Promise.all(

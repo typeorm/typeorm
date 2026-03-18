@@ -10,7 +10,7 @@ import { TestEntity } from "./entity/TestEntity"
 describe("github issues > #8527 cannot clear database inside a transaction.", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [TestEntity],
             enabledDrivers: ["postgres", "better-sqlite3", "mysql"],
@@ -19,7 +19,7 @@ describe("github issues > #8527 cannot clear database inside a transaction.", ()
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not fail when clearing a database inside a transaction", () =>
         Promise.all(

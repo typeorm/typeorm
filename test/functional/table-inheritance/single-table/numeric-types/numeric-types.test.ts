@@ -12,13 +12,13 @@ import { Person } from "./entity/Person"
 
 describe("table-inheritance > single-table > numeric types", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Person, Student, Teacher],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should allow numeric types for the discriminator, including 0", () =>
         Promise.all(

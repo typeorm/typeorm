@@ -10,14 +10,14 @@ import { Record } from "./entity/Record"
 // GitHub issue #11930 - TypeORM does not allow jsonb on sqlite
 describe("jsonb type > sqlite", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.ts,.js}"],
             enabledDrivers: ["sqljs", "better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
     it("should make correct schema with Sqlite's jsonb type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

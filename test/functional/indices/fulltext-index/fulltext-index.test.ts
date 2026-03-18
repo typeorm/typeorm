@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("indices > fulltext index", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -19,7 +19,7 @@ describe("indices > fulltext index", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create fulltext indices", () =>
         Promise.all(

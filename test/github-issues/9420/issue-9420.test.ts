@@ -9,7 +9,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #9420 Get error 'Cannot get metadata of given alias' when order column from subquery.", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             entities: [User],
@@ -18,7 +18,7 @@ describe("github issues > #9420 Get error 'Cannot get metadata of given alias' w
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return the user with the given name", async () =>
         await Promise.all(

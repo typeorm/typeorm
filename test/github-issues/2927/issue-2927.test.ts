@@ -13,7 +13,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #2927 When using base class' custom repository, the discriminator is ignored", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -22,7 +22,7 @@ describe("github issues > #2927 When using base class' custom repository, the di
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should use the correct subclass for inheritance when saving and retrieving concrete instance", () =>
         Promise.all(

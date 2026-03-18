@@ -11,7 +11,7 @@ import type { TreeRepository } from "../../../src"
 
 describe("github issues > #8556 TreeRepository.findDescendants/Tree should return empty if tree parent entity does not exist", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
@@ -20,7 +20,7 @@ describe("github issues > #8556 TreeRepository.findDescendants/Tree should retur
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should load descendants when findDescendants is called for a tree entity", () =>
         Promise.all(

@@ -8,7 +8,7 @@ import {
 
 describe("query runner > create and drop database", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql", "mssql", "cockroachdb", "postgres"],
@@ -16,7 +16,7 @@ describe("query runner > create and drop database", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create and drop database and revert it", () =>
         Promise.all(

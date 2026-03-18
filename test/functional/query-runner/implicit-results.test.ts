@@ -8,7 +8,7 @@ import { expect } from "chai"
 
 describe("query runner > implicit results", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/view/*{.js,.ts}"],
             enabledDrivers: ["oracle"],
@@ -16,7 +16,7 @@ describe("query runner > implicit results", () => {
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return results for Oracle Stored Procedure with Implicit Results", () =>
         Promise.all(

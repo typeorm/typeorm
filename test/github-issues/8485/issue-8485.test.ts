@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("github issues > #8485 second migration is generated for a combination of PrimaryColumn and JoinColumn", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User, UserProfile],
             enabledDrivers: ["mariadb", "mysql", "oracle", "postgres", "sap"],
@@ -17,7 +17,7 @@ describe("github issues > #8485 second migration is generated for a combination 
             schemaCreate: false,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not create second migration", () =>
         Promise.all(

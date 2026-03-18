@@ -10,14 +10,14 @@ import { Photo } from "./entity/Photo"
 
 describe("github issues > #2031 Advanced find options with FKs", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("find operators should work with relational columns as well", () =>
         Promise.all(

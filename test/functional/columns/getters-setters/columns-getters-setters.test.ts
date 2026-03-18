@@ -10,13 +10,13 @@ import { Post } from "./entity/Post"
 
 describe("columns > getters and setters", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not update columns marked with readonly property", () =>
         Promise.all(

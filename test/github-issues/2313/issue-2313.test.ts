@@ -11,14 +11,14 @@ import { EntityNotFoundError } from "../../../src/error/EntityNotFoundError"
 
 describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should find the appropriate record when one exists", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class

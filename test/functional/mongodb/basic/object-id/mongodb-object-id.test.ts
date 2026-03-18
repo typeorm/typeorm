@@ -11,14 +11,14 @@ import { expect } from "chai"
 
 describe("mongodb > object id columns", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, PostWithUnderscoreId],
             enabledDrivers: ["mongodb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should persist ObjectIdColumn property as _id to DB", () =>
         Promise.all(

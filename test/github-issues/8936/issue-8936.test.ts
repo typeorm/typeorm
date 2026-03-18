@@ -16,7 +16,7 @@ describe("github issues > #8936 DropIndex with a TableIndex without name is not 
         isUnique: true,
     })
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -24,7 +24,7 @@ describe("github issues > #8936 DropIndex with a TableIndex without name is not 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should drop the index as expected", () => {
         // Create a clone because the createIndex will set the name

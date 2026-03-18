@@ -12,14 +12,14 @@ import { expect } from "chai"
 
 describe("github issues > #1042 property path resolution does not work properly with objects inside entities (date, json, etc.)", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should update object columns fine, at the same time embedded should work properly", () =>
         Promise.all(

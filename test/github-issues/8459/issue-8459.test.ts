@@ -18,7 +18,7 @@ describe("github issues > #8459 Can not create indexes of materialized views", (
     })
 
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -26,7 +26,7 @@ describe("github issues > #8459 Can not create indexes of materialized views", (
             enabledDrivers: ["postgres"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create a materialized view index at runtime", () =>
         Promise.all(

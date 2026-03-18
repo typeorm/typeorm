@@ -13,13 +13,13 @@ import { UserPostSummary } from "./entity/UserPostSummary"
 
 describe("query builder > insert from select", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should insert from select using a SelectQueryBuilder directly", () =>
         Promise.all(

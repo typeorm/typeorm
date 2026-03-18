@@ -10,8 +10,8 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
 
     const path = `${__dirname}/tmp/sqlitedb.db`
 
-    before(() => rm(dirname(path), { recursive: true, force: true }))
-    after(() => rm(dirname(path), { recursive: true, force: true }))
+    beforeAll(() => rm(dirname(path), { recursive: true, force: true }))
+    afterAll(() => rm(dirname(path), { recursive: true, force: true }))
 
     afterEach(async () => {
         if (dataSource?.isInitialized) {

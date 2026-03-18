@@ -11,14 +11,14 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #1576 Entities with null as `id` are merged [@next]", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should successfully create object", () => {
         dataSources.forEach((connection) => {

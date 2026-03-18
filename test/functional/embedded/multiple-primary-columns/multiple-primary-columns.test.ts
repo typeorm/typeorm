@@ -11,13 +11,13 @@ import {
 
 describe("embedded > multiple-primary-column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should insert, load, update and remove entities with embeddeds when primary column defined in main and in embedded entities", () =>
         Promise.all(

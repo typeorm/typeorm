@@ -14,7 +14,7 @@ import { CreateTableWithSpecialCharsMissingValues1719925118383 } from "./migrati
 describe("github issues > #10955 Use ADD VALUE when adding a new enum value", () => {
     let dataSources: DataSource[]
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should generate migration with add value when value is added", async () => {
         dataSources = await createTestingConnections({

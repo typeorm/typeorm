@@ -18,7 +18,7 @@ describe("github issues > #10131 optional to disable ascii to unicode parameter 
     describe("when disableAsciiToUnicodeParamConversion is true", () => {
         let driver: SqlServerDriver
 
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Example],
                 enabledDrivers: ["mssql"],
@@ -31,7 +31,7 @@ describe("github issues > #10131 optional to disable ascii to unicode parameter 
                 },
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should disable ascii to unicode parameter conversion", () =>
             Promise.all(
@@ -64,7 +64,7 @@ describe("github issues > #10131 optional to disable ascii to unicode parameter 
     describe("when disableAsciiToUnicodeParamConversion is false", () => {
         let driver: SqlServerDriver
 
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Example],
                 enabledDrivers: ["mssql"],
@@ -77,7 +77,7 @@ describe("github issues > #10131 optional to disable ascii to unicode parameter 
                 },
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should not disable ascii to unicode parameter conversion", () =>
             Promise.all(

@@ -11,7 +11,7 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > parameters > reused parameters", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Person],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("query builder > parameters > reused parameters", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should generate a valid query", () =>
         Promise.all(

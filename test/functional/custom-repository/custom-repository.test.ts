@@ -10,13 +10,13 @@ import { expect } from "chai"
 
 describe("custom repository", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("withRepository must work properly in transactions", () =>
         Promise.all(

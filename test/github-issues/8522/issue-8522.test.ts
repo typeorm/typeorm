@@ -16,11 +16,11 @@ import { User } from "./entity/User"
 describe("github issues > #8522 Single table inheritance returns the same discriminator value error for unrelated tables where their parents extend from the same entity", () => {
     let dataSources: DataSource[]
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
     afterEach(() => closeTestingConnections(dataSources))
 
     describe("Unrelated tables", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [BaseEntity, InternalUser, InternalRole, Role, User],
                 schemaCreate: true,

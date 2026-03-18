@@ -13,13 +13,13 @@ import { One } from "./entity/One"
  */
 describe("benchmark > QueryBuilder > wide join", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
             enabledDrivers: ["postgres"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("testing query builder with join to 10 relations with 10 columns each", () => {
         for (let i = 1; i <= 10_000; i++) {

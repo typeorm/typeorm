@@ -9,14 +9,14 @@ import { PersonSchema } from "./entity/Person"
 
 describe("entity-schema > indices > mysql", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [<any>PersonSchema],
             enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create SPATIAL and FULLTEXT indices", () =>
         Promise.all(

@@ -7,7 +7,7 @@ import {
 
 describe("github issues > #1427 precision and scale column types with errant behavior", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -15,7 +15,7 @@ describe("github issues > #1427 precision and scale column types with errant beh
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create column with precision and scale", () =>
         Promise.all(

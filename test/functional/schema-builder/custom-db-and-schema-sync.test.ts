@@ -14,7 +14,7 @@ import { Photo } from "./entity/Photo"
 describe("schema builder > custom-db-and-schema-sync", () => {
     describe("custom database", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Album, Photo],
                 enabledDrivers: ["mysql"],
@@ -22,7 +22,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should correctly sync tables with custom schema and database", () =>
             Promise.all(
@@ -106,7 +106,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
     describe("custom schema", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres", "sap"],
                 entities: [Album, Photo],
@@ -114,7 +114,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should correctly sync tables with custom schema", () =>
             Promise.all(
@@ -276,7 +276,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
     describe("custom database and schema", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Album, Photo],
                 enabledDrivers: ["mssql"],
@@ -284,7 +284,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should correctly sync tables with custom schema and database", () =>
             Promise.all(

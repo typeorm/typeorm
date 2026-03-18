@@ -9,7 +9,7 @@ import { Example } from "./entity/Example"
 
 describe("entity subscriber > query data", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Example],
             subscribers: [MockSubscriber],
@@ -21,7 +21,7 @@ describe("entity subscriber > query data", () => {
         if (!dataSources.length) return
         ;(dataSources[0].subscribers[0] as MockSubscriber).calledData.length = 0
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("passes query data to subscriber", async () => {
         if (!dataSources.length) return

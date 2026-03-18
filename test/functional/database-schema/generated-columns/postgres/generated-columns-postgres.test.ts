@@ -10,27 +10,34 @@ import { expect } from "chai"
 import type { PostgresDriver } from "../../../../../src/driver/postgres/PostgresDriver"
 
 describe("database schema > generated columns > postgres", () => {
-    let dataSources: DataSource[]
-    before(async function () {
+    let dataSources: DataSource[] = []
+
+    const isGeneratedColumnsSupported = (): boolean => {
+        const dataSource = dataSources[0]
+        return Boolean(
+            dataSource &&
+            (dataSource.driver as PostgresDriver).isGeneratedColumnsSupported,
+        )
+    }
+
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             schemaCreate: false,
             dropSchema: true,
         })
-
-        // generated columns supported from Postgres 12
-        if (
-            dataSources[0] &&
-            !(dataSources[0].driver as PostgresDriver)
-                .isGeneratedColumnsSupported
-        ) {
-            this.skip()
+    })
+    beforeEach(async (context) => {
+        // generated columns are supported from Postgres 12
+        if (!isGeneratedColumnsSupported()) {
+            context.skip()
             return
         }
+
+        await reloadTestingDatabases(dataSources)
     })
-    beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not generate queries when no model changes", () =>
         Promise.all(

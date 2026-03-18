@@ -14,7 +14,7 @@ import { Question } from "./entity/Question"
 
 describe("github issues > #4190 Relation decorators: allow to pass string instead of typeFunction", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -22,7 +22,7 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work with one-to-one relations", () =>
         Promise.all(

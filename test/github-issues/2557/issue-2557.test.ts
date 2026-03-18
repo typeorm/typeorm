@@ -11,7 +11,7 @@ import { transformer, WrappedNumber } from "./transformer"
 
 describe("github issues > #2557 object looses its prototype before transformer.to()", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #2557 object looses its prototype before transformer.t
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should give correct object in transformer.to", () =>
         Promise.all(

@@ -11,7 +11,7 @@ import { In } from "../../../src"
 
 describe("github issues > #1245 `findBy` with `In` ignores `FindManyOptions`", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #1245 `findBy` with `In` ignores `FindManyOptions`", (
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should filter correctly using findBy with In", () =>
         Promise.all(

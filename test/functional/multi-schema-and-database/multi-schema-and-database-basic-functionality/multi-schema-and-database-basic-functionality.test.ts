@@ -17,7 +17,7 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 describe("multi-schema-and-database > basic-functionality", () => {
     describe("custom-table-schema", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, User, Category],
                 enabledDrivers: ["mssql", "postgres"],
@@ -25,7 +25,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should set the table database / schema", () =>
             Promise.all(
@@ -209,14 +209,14 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
     describe("custom-table-schema-and-database", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Question, Answer],
                 enabledDrivers: ["mssql"],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should set the table database / schema", () =>
             Promise.all(
@@ -325,14 +325,14 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
     describe("custom-database", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Person],
                 enabledDrivers: ["mssql", "mysql"],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should correctly create tables when custom database used in Entity decorator", () =>
             Promise.all(

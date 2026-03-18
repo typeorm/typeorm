@@ -13,7 +13,7 @@ import { AnimalEntity } from "./entity/Animal"
 describe("github issues > #9033 Cannot manually insert type in discriminator column of parent entity class when\
 using single table inheritance when creating instance of parent entity", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -21,7 +21,7 @@ using single table inheritance when creating instance of parent entity", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("is possible to set the discriminator column manually on the base entity", () =>
         Promise.all(

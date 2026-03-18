@@ -10,7 +10,7 @@ import { Post, PostSchema } from "./entity/Post"
 
 describe("github issues > #1123 load relation eagerly by setting isEager property", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [
                 new EntitySchema<Author>(AuthorSchema),
@@ -20,7 +20,7 @@ describe("github issues > #1123 load relation eagerly by setting isEager propert
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const author = new Author()

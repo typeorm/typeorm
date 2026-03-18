@@ -32,15 +32,14 @@ import { Site } from "./entity/Site"
 describe("DataSource", () => {
     describe("before connection is established", () => {
         let dataSource: DataSource
-        before(() => {
-            const options = setupSingleTestingConnection("mysql", {
-                entities: [],
-            })
-            if (!options) return
-
-            dataSource = new DataSource(options)
+        const options = setupSingleTestingConnection("mysql", {
+            entities: [],
         })
-        after(() => {
+
+        beforeAll(() => {
+            dataSource = new DataSource(options!)
+        })
+        afterAll(() => {
             if (dataSource?.isInitialized) {
                 return dataSource.destroy()
             }
@@ -48,7 +47,7 @@ describe("DataSource", () => {
             return Promise.resolve()
         })
 
-        it("dataSource.isInitialized should be false", () => {
+        it.skipIf(!options)("dataSource.isInitialized should be false", () => {
             if (!dataSource) return
 
             expect(dataSource.isInitialized).to.equal(false)
@@ -60,25 +59,19 @@ describe("DataSource", () => {
             )
         })
 
-        it("should not be able to close", async () => {
-            if (!dataSource) return
-
+        it.skipIf(!options)("should not be able to close", async () => {
             await expect(dataSource.destroy()).to.eventually.be.rejectedWith(
                 CannotExecuteNotConnectedError,
             )
         })
 
-        it("should not be able to sync a schema", async () => {
-            if (!dataSource) return
-
+        it.skipIf(!options)("should not be able to sync a schema", async () => {
             await expect(
                 dataSource.synchronize(),
             ).to.eventually.be.rejectedWith(CannotExecuteNotConnectedError) // CannotCloseNotConnectedError
         })
 
         it.skip("should not be able to use repositories", () => {
-            if (!dataSource) return
-
             expect(() => dataSource.getRepository(Post)).to.throw(
                 NoConnectionForRepositoryError,
             )
@@ -89,9 +82,7 @@ describe("DataSource", () => {
             // expect(() => dataSource.getReactiveTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
         })
 
-        it("should be able to connect", async () => {
-            if (!dataSource) return
-
+        it.skipIf(!options)("should be able to connect", async () => {
             await expect(dataSource.initialize()).to.eventually.be.fulfilled
         })
     })
@@ -161,7 +152,7 @@ describe("DataSource", () => {
                 dropSchema: true,
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should be able to get simple entity repository", () =>
             dataSources.forEach((dataSource) => {
@@ -194,14 +185,14 @@ describe("DataSource", () => {
 
     describe("generate a schema when dataSource.synchronize is called", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post],
                 schemaCreate: true,
                 dropSchema: true,
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("database should be empty after schema is synced with dropDatabase flag", () =>
             Promise.all(
@@ -225,12 +216,12 @@ describe("DataSource", () => {
 
     describe("log a schema when dataSource.logSyncSchema is called", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should return sql log properly", () =>
             Promise.all(
@@ -244,7 +235,7 @@ describe("DataSource", () => {
     describe("after connection is closed successfully", () => {
         // open and close connections
         let dataSources: DataSource[] = []
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post],
                 schemaCreate: true,
@@ -312,7 +303,7 @@ describe("DataSource", () => {
             })
             dataSources = [...dataSources1, ...dataSources2]
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should not interfere with each other", async () => {
             await Promise.all(dataSources.map((c) => c.synchronize()))

@@ -12,7 +12,7 @@ import { URL } from "url"
 describe("github issues > #5762 `Using URL as a rich column type breaks", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #5762 `Using URL as a rich column type breaks", () => 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should allow assigning URL as a field value", () =>
         Promise.all(

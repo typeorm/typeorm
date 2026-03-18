@@ -10,7 +10,7 @@ import { User, Photo } from "./entity/entities"
 
 describe("github issues > #8690 Relations do not render primary key column values correctly when transformers present", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #8690 Relations do not render primary key column value
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should load relations correctly when primary columns have transformers", () =>
         Promise.all(

@@ -10,7 +10,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #4630 Enum string not escaping resulting in broken migrations.", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #4630 Enum string not escaping resulting in broken mig
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should support enums of strings with apostrophes in them", () =>
         Promise.all(

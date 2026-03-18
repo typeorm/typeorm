@@ -10,14 +10,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #7907 add support for mongodb driver v5", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["mongodb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should find the Post without throw error: Cannot read property 'prototype' of undefined", () =>
         Promise.all(

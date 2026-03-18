@@ -8,7 +8,7 @@ import type { DataSource } from "../../../src/index.js"
 describe("github issues > #10567 Postgres: Gist index on daterange column recreated every migration", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: false,
@@ -17,7 +17,7 @@ describe("github issues > #10567 Postgres: Gist index on daterange column recrea
         })
     })
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("can recognize model changes", () =>
         Promise.all(

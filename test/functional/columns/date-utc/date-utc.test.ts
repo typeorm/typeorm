@@ -12,7 +12,7 @@ describe("columns > date utc flag", () => {
     let originalTZ: string | undefined
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         originalTZ = process.env.TZ
         process.env.TZ = "America/New_York"
         dataSources = await createTestingConnections({
@@ -20,7 +20,7 @@ describe("columns > date utc flag", () => {
         })
     })
 
-    after(async () => {
+    afterAll(async () => {
         process.env.TZ = originalTZ
         await closeTestingConnections(dataSources)
     })

@@ -8,7 +8,7 @@ import { SomeEntity } from "./entity/SomeEntity"
 
 describe("github issues > #6471 Postgres enum is recreated in every new generated migration", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             migrations: [],
             enabledDrivers: ["postgres"],
@@ -17,7 +17,7 @@ describe("github issues > #6471 Postgres enum is recreated in every new generate
             entities: [SomeEntity],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(

@@ -9,7 +9,7 @@ import { OrderProduct } from "./entity/order-product.entity.ts"
 
 describe("github issues > #6540 Enum not resolved if it is from an external file", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["mysql", "mariadb"],
             schemaCreate: false,
@@ -17,7 +17,7 @@ describe("github issues > #6540 Enum not resolved if it is from an external file
             entities: [Order, OrderProduct],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(

@@ -9,13 +9,13 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #9534 materialized-path", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Category],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("attach should work properly", () =>
         Promise.all(

@@ -17,13 +17,13 @@ import { User } from "./entity/User"
 
 describe("repository > find options", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should load relations", () =>
         Promise.all(
@@ -241,7 +241,7 @@ describe("repository > find options > comment", () => {
     let dataSources: DataSource[]
     const logPath = "find_comment_test.log"
 
-    before(async () => {
+    beforeAll(async () => {
         // TODO: would be nice to be able to do this in memory with some kind of
         // test logger that buffers messages.
         const logger = new FileLogger(["query"], { logPath })
@@ -251,7 +251,7 @@ describe("repository > find options > comment", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(async () => {
+    afterAll(async () => {
         await closeTestingConnections(dataSources)
         try {
             await fs.unlink(logPath)
@@ -277,14 +277,14 @@ describe("repository > find options > comment", () => {
 
 describe("repository > find options > cache", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             cache: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("repository should cache results properly", () =>
         Promise.all(

@@ -10,7 +10,7 @@ import { Book } from "./entity/Book"
 
 describe("query runner > stream", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Book],
             enabledDrivers: [
@@ -25,7 +25,7 @@ describe("query runner > stream", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should stream data", () =>
         Promise.all(

@@ -10,13 +10,13 @@ import { expect } from "chai"
 
 describe("github issues > #867 result of `findAndCount` is wrong when apply `skip` and `take` option", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work perfectly", () =>
         Promise.all(

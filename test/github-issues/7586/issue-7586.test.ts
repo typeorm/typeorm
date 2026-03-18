@@ -11,7 +11,7 @@ import { ViewC } from "./entity/ViewC"
 
 describe("github issues > #7586 Oddly indexed views are not dropped in migration", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #7586 Oddly indexed views are not dropped in migration
             entities: [TestEntity, ViewA, ViewB, ViewC],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should generate drop queries for all views", () =>
         Promise.all(

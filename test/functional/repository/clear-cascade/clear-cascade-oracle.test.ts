@@ -13,7 +13,7 @@ import { ChildNoDelete } from "./entity/ChildNoDelete"
 describe("repository > clear cascade > oracle", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
@@ -21,7 +21,7 @@ describe("repository > clear cascade > oracle", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("clear with cascade true", () => {
         it("truncates dependent tables with onDelete: CASCADE", () =>

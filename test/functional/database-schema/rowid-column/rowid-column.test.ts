@@ -7,7 +7,7 @@ import type { DataSource } from "../../../../src/data-source/DataSource"
 
 describe("database-schema > rowid-column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
@@ -15,7 +15,7 @@ describe("database-schema > rowid-column", () => {
             schemaCreate: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create `rowid` generated column", () =>
         Promise.all(

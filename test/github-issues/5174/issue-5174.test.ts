@@ -12,7 +12,7 @@ import {
 describe("github issues > #5174 `selectQueryBuilder.take` messes up the query when using the `ids` parameter", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User, Role],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #5174 `selectQueryBuilder.take` messes up the query wh
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should allow the 'ids' parameter without messing up the query when using .take", () =>
         Promise.all(

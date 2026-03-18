@@ -14,13 +14,13 @@ import { Subcounters } from "./entity/Subcounters"
 
 describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("owner side", () => {
         it("should load ids when loadRelationIdAndMap used on embedded table and each table have primary key", () =>

@@ -11,14 +11,14 @@ import { MoreThan } from "../../../../src"
 
 describe("query builder > insert > merge into", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["oracle", "mssql", "sap"], // since on merge into statement is only supported in oracle, mssql and sap hana
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should perform insertion correctly using orIgnore", () =>
         Promise.all(

@@ -11,7 +11,7 @@ import { expect } from "chai"
 describe("query builder order nulls first/last", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres", "better-sqlite3"],
@@ -20,7 +20,7 @@ describe("query builder order nulls first/last", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     const runTest = async (
         dataSource: DataSource,

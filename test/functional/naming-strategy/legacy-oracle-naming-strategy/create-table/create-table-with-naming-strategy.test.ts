@@ -10,7 +10,7 @@ import { LegacyOracleNamingStrategy } from "../../../../../src/naming-strategy/L
 
 describe("LegacyOracleNamingStrategy > create table using this naming strategy", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["oracle"],
@@ -18,7 +18,7 @@ describe("LegacyOracleNamingStrategy > create table using this naming strategy",
         })
     })
     // without reloadTestingDatabases(dataSources) -> tables should be created later
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create the table", () =>
         Promise.all(

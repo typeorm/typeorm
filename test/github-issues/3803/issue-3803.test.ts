@@ -12,13 +12,13 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #3803 column option unique sqlite error", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [new EntitySchema<Post>(PostSchema)],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create unique constraints defined in EntitySchema", () =>
         Promise.all(

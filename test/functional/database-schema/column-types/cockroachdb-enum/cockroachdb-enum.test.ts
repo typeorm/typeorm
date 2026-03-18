@@ -11,14 +11,14 @@ import { Table, TableColumn } from "../../../../../src"
 
 describe("database schema > column types > cockroachdb-enum", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create table with ENUM column and save data to it", () =>
         Promise.all(

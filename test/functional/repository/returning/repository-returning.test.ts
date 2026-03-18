@@ -12,14 +12,14 @@ import { User } from "./entity/User"
 describe("repository > returning", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres", "mysql", "mssql", "spanner"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("allows specifying RETURNING via repository.update options", () =>
         Promise.all(

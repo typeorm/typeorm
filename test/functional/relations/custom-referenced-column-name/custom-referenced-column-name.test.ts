@@ -12,13 +12,13 @@ import { Tag } from "./entity/Tag"
 
 describe("relations > custom-referenced-column-name", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("many-to-one", () => {
         it("should load related entity when relation use custom referenced column name", () =>

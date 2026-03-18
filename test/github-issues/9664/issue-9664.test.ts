@@ -11,7 +11,7 @@ import { expect } from "chai"
 describe("github issues > #9664 add JsonContains operator ", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Address],
             enabledDrivers: ["postgres"],
@@ -21,7 +21,7 @@ describe("github issues > #9664 add JsonContains operator ", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should find addresses in json field by name", async () => {
         await Promise.all(

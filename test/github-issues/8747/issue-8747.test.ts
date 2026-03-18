@@ -11,7 +11,7 @@ import { Record } from "./entity/Record"
 
 describe("github issues > #8747 QueryBuilder update handles Date objects wrong on a ManyToOne relationship.", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["mysql", "postgres", "mariadb"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe("github issues > #8747 QueryBuilder update handles Date objects wrong o
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly update the datetime field", async () => {
         for (const dataSource of dataSources) {

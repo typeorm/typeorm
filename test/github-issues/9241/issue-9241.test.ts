@@ -12,7 +12,7 @@ import { Photo } from "./entity/Photo"
 
 describe("github issues > #9241 Incorrect insert order when cascade inserting parent inherited relations", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3"],
@@ -21,7 +21,7 @@ describe("github issues > #9241 Incorrect insert order when cascade inserting pa
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should save entities properly", async () => {
         for (const connection of dataSources) {

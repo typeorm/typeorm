@@ -10,7 +10,7 @@ import { MemoryLogger } from "./memory-logger"
 
 describe("github issues > #5967 @afterUpdate always says array/json field updated", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -21,7 +21,7 @@ describe("github issues > #5967 @afterUpdate always says array/json field update
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not update an array column if there was no change", () =>
         Promise.all(

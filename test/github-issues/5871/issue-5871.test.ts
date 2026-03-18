@@ -8,7 +8,7 @@ import { SomeEntity } from "./entity/SomeEntity"
 
 describe("github issues > #5871 Migration generate does not play well with mysql enum with parentheses in the enum value", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             migrations: [],
             enabledDrivers: ["mysql"],
@@ -17,7 +17,7 @@ describe("github issues > #5871 Migration generate does not play well with mysql
             entities: [SomeEntity],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(

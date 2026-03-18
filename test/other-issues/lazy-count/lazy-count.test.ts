@@ -12,7 +12,7 @@ import { Comment } from "./entity/Comment"
 
 describe("other issues > lazy count", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [AfterQuerySubscriber],
@@ -21,7 +21,7 @@ describe("other issues > lazy count", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("skip count query when fewer entities are returned than the limit", () =>
         Promise.all(

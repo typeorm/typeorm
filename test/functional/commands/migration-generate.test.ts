@@ -39,7 +39,7 @@ describe("commands - migration generate", () => {
         ...options,
     })
 
-    before(async () => {
+    beforeAll(async () => {
         // clean out db from any prior tests in case previous state impacts the generated migrations
         const connections = await createTestingConnections({
             entities: [],
@@ -58,7 +58,7 @@ describe("commands - migration generate", () => {
         loadDataSourceStub = sinon.stub(CommandUtils, "loadDataSource")
     })
 
-    after(async () => {
+    afterAll(() => {
         createFileStub.restore()
         loadDataSourceStub.restore()
     })

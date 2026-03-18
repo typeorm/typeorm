@@ -10,7 +10,7 @@ import {
 describe("database schema > column types > postgres > jsonpath", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -18,7 +18,7 @@ describe("database schema > column types > postgres > jsonpath", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     // Based on:
     // * https://www.postgresql.org/docs/current/datatype-json.html#DATATYPE-JSONPATH

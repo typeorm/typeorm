@@ -9,14 +9,14 @@ import { Post } from "./entity/Post"
 
 describe("benchmark > bulk-sql-build", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     /**
      * Before optimization (<0.3.12) execution time for 10.000 sqls was ~1.8s

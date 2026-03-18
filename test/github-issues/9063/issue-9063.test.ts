@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("github issues > #9063 Support postgres column with varchar datatype and uuid_generate_v4() default", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -18,7 +18,7 @@ describe("github issues > #9063 Support postgres column with varchar datatype an
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("it should be able to set special keyword as column name for simple-enum types", () =>
         Promise.all(

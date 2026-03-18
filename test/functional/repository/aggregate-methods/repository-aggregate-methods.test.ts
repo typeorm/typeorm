@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("repository > aggregate methods", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
@@ -29,7 +29,7 @@ describe("repository > aggregate methods", () => {
         )
     })
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("sum", () => {
         it("should return the aggregate sum", () =>

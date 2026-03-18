@@ -9,7 +9,7 @@ import {
 
 describe("better-sqlite3 driver > enable wal", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [],
             enabledDrivers: ["better-sqlite3"],
@@ -19,7 +19,7 @@ describe("better-sqlite3 driver > enable wal", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("github issues > #9410 The better-sqlite3 driver should support the enableWal flag", () =>
         Promise.all(

@@ -12,14 +12,14 @@ import { Post as Post2 } from "./entity/post_with_null_2.entity"
 describe("github issues > #6950 postgres: Inappropiate migration generated for `default: null`", () => {
     describe("null default", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 schemaCreate: false,
                 dropSchema: true,
                 entities: [Post1],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("can recognize model changes", () =>
             Promise.all(
@@ -49,14 +49,14 @@ describe("github issues > #6950 postgres: Inappropiate migration generated for `
 
     describe("null default and nullable", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 schemaCreate: false,
                 dropSchema: true,
                 entities: [Post2],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("can recognize model changes", () =>
             Promise.all(

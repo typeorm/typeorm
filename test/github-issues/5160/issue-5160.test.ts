@@ -11,7 +11,7 @@ import {
 describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled triggers if the statement contains an OUTPUT clause without INTO clause", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
@@ -38,7 +38,7 @@ describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled tr
             }),
         )
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should update entity model after insertion to MSSQL table with trigger", () =>
         Promise.all(

@@ -11,11 +11,11 @@ import { prepareData } from "./find-options-test-utils"
 
 describe("find options > select", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({ __dirname })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("select id", () =>
         Promise.all(

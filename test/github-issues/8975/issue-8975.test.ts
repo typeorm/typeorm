@@ -1,9 +1,13 @@
 import { expect } from "chai"
 import { exec } from "child_process"
-import { readFile, rm, unlink, writeFile } from "fs/promises"
+import { readFile, rm, writeFile } from "fs/promises"
+import path from "path"
+import { promisify } from "util"
+
+const execAsync = promisify(exec)
 
 describe("cli init command", () => {
-    const cliPath = `${__dirname}/../../../src/cli.js`
+    const cliPath = path.resolve(process.cwd(), "build/compiled/src/cli.js")
     const databaseOptions = [
         "mysql",
         "mariadb",
@@ -17,7 +21,7 @@ describe("cli init command", () => {
     const testProjectPath = `temp/${Date.now()}TestProject`
     const builtSrcDirectory = "build/compiled/src"
 
-    before(async () => {
+    beforeAll(async () => {
         // load package.json from the root of the project
         const packageJson = JSON.parse(await readFile("./package.json", "utf8"))
 
@@ -32,26 +36,18 @@ describe("cli init command", () => {
         )
     })
 
-    after(async () => {
-        await unlink(`./${builtSrcDirectory}/package.json`)
-    })
+    afterAll(() => rm(`./${builtSrcDirectory}/package.json`, { force: true }))
 
-    afterEach(async () => {
-        await rm(`./${testProjectPath}`, { recursive: true, force: true })
-    })
+    afterEach(() =>
+        rm(`./${testProjectPath}`, { recursive: true, force: true }),
+    )
 
     for (const databaseOption of databaseOptions) {
-        it(`should work with ${databaseOption} option`, (done) => {
-            exec(
-                `node ${cliPath} init --name ${testProjectPath} --database ${databaseOption}`,
-                (error, _stdout, stderr) => {
-                    if (error) console.log(error)
-                    expect(error).to.not.exist
-                    expect(stderr).to.be.empty
-
-                    done()
-                },
+        it(`should work with ${databaseOption} option`, async () => {
+            const { stderr } = await execAsync(
+                `node "${cliPath}" init --name ${testProjectPath} --database ${databaseOption}`,
             )
-        }).timeout(120000)
+            expect(stderr).to.be.empty
+        }, 120000)
     }
 })

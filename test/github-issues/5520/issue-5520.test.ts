@@ -13,7 +13,7 @@ import { TestParent } from "./entity/TestParent"
 
 describe("github issues > #5520 save does not return generated id if object to save contains a many to one relationship with an undefined id", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -21,7 +21,7 @@ describe("github issues > #5520 save does not return generated id if object to s
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should generate parents and childs uuid and return them", () =>
         Promise.all(

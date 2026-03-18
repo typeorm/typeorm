@@ -9,7 +9,7 @@ import { Person } from "./entity/Person"
 
 describe("query builder > parameters > spread IN parameters", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Person],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("query builder > parameters > spread IN parameters", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should handle WHERE IN with spread parameter syntax", () =>
         Promise.all(

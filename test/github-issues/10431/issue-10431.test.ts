@@ -12,7 +12,7 @@ import { Category, Product } from "./entity"
 describe("github issues > #10431 When requesting nested relations on foreign key primary entities, relation becomes empty entity rather than null", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Category, Product],
             schemaCreate: true,
@@ -35,7 +35,7 @@ describe("github issues > #10431 When requesting nested relations on foreign key
             }
         }
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return [] when requested nested relations are empty on ManyToMany relation with @VirtualColumn definitions", () =>
         Promise.all(

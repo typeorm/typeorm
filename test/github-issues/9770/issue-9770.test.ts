@@ -14,7 +14,7 @@ import { Foo } from "./entity/Foo"
 
 describe("github issues > #9770 check for referencing foreign keys when altering a table using sqlite", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/*{.js,.ts}"],
@@ -24,7 +24,7 @@ describe("github issues > #9770 check for referencing foreign keys when altering
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("shouldn't loose dependant table data", () =>
         Promise.all(

@@ -12,7 +12,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #5684 eager relation skips children relations", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User, Company],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #5684 eager relation skips children relations", () => 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should select children of an eager relation", () =>
         Promise.all(

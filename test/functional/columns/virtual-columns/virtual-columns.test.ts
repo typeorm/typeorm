@@ -19,7 +19,7 @@ import { TimeSheet } from "./entity/TimeSheet"
 
 describe("column > virtual columns", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             schemaCreate: true,
             dropSchema: true,
@@ -65,7 +65,7 @@ describe("column > virtual columns", () => {
             }
         }
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should generate expected sub-select & select statement", () =>
         dataSources.map((dataSource) => {

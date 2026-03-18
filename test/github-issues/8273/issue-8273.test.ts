@@ -20,7 +20,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
         const res = await queryRunner.query(query)
         return res.length ? res[0]["column_default"] : null
     }
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             schemaCreate: true,
@@ -28,7 +28,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
             entities: [User],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should add DEFAULT value when @Generated('increment') is added", () =>
         Promise.all(

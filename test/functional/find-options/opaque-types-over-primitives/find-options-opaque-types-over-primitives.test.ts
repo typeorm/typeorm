@@ -11,13 +11,13 @@ import { Post } from "./entity/Post"
 
 describe("find options > opaque-types-over-primitives", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             __dirname,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     async function prepareData(dataSource: DataSource) {
         const post1 = new Post()

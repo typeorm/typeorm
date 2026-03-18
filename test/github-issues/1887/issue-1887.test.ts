@@ -8,7 +8,7 @@ import { Error } from "./entity/Error"
 
 describe("github issues > #1887 Having problems with UNIQUEIDENTIFIERS", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
@@ -16,7 +16,7 @@ describe("github issues > #1887 Having problems with UNIQUEIDENTIFIERS", () => {
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly insert data", () =>
         Promise.all(

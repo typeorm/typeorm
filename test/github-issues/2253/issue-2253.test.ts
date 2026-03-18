@@ -10,7 +10,7 @@ import { expect } from "chai"
 describe("github issues > #2253 - inserting multiple child entities fails", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #2253 - inserting multiple child entities fails", () =
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to save multiple child entities", () =>
         Promise.all(

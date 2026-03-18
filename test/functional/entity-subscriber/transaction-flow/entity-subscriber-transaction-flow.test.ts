@@ -54,7 +54,7 @@ describe("entity subscriber > transaction flow", () => {
     }
 
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Example],
             subscribers: [PostSubscriber],
@@ -62,7 +62,7 @@ describe("entity subscriber > transaction flow", () => {
             schemaCreate: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("transactionStart", async () => {
         for (const connection of dataSources) {

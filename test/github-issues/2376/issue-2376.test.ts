@@ -10,14 +10,14 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #2376 Naming single column unique constraint with decorator not working as expected", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             schemaCreate: true,
             dropSchema: true,
             entities: [User],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should keep user-specified Unique constraint name", () =>
         Promise.all(

@@ -12,7 +12,7 @@ import type { ConnectionPool } from "@sap/hana-client"
 
 describe("driver > sap > connection pool", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["sap"],
             driverSpecific: {
@@ -23,7 +23,7 @@ describe("driver > sap > connection pool", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be managed correctly", () =>
         Promise.all(

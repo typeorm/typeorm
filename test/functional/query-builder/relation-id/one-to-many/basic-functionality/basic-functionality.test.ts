@@ -12,13 +12,13 @@ import { Image } from "./entity/Image"
 
 describe("query builder > relation-id > one-to-many > basic-functionality", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should load id when loadRelationIdAndMap used with OneToMany relation", () =>
         Promise.all(

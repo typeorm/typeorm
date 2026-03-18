@@ -18,7 +18,7 @@ import { Photo } from "./entity/Photo"
 
 describe("github issues > #7558 Child entities' wrong discriminator value when embedded in parent entity", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -26,7 +26,7 @@ describe("github issues > #7558 Child entities' wrong discriminator value when e
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should use the correct subclass for inheritance when saving & retrieving a single STI entity (one-to-one)", () =>
         Promise.all(

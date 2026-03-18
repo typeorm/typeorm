@@ -8,7 +8,7 @@ import {
 
 describe("github issues > #10999 Migration: migration:generate Can't Generate a Drop SQL Command", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #10999 Migration: migration:generate Can't Generate a 
             enabledDrivers: ["postgres"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should generate drop removed column SQL command", () =>
         Promise.all(

@@ -10,7 +10,7 @@ import { TableUnique } from "../../../src/schema-builder/table/TableUnique"
 
 describe("query runner > create unique constraint", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: [
@@ -25,7 +25,7 @@ describe("query runner > create unique constraint", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly create unique constraint and revert creation", () =>
         Promise.all(

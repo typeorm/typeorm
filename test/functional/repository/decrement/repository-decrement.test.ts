@@ -13,13 +13,13 @@ import { UserWithEmbededEntity } from "./entity/UserWithEmbededEntity"
 describe("repository > decrement method", () => {
     describe("basic", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should decrement value", () =>
             Promise.all(
@@ -175,14 +175,14 @@ describe("repository > decrement method", () => {
 
     describe("bigint", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [PostBigInt],
                 enabledDrivers: ["mysql", "mariadb", "postgres"],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should decrement value", () =>
             Promise.all(
@@ -237,13 +237,13 @@ describe("repository > decrement method", () => {
 
     describe("embeded entities", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 entities: [UserWithEmbededEntity],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should decrement value", () =>
             Promise.all(

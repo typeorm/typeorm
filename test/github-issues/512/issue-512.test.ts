@@ -10,13 +10,13 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #512 Table name escaping in UPDATE in QueryBuilder", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should escape table name using driver's escape function in UPDATE", () => {
         dataSources.forEach((connection) => {

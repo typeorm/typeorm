@@ -10,14 +10,14 @@ import { FeatureWithoutSRID, FeatureWithSRID } from "./entity/Feature"
 
 describe("column kinds > geometry column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("geometry column with SRID defined should be saved without error for valid WKT input", () =>
         Promise.all(

@@ -9,7 +9,7 @@ import { Space } from "./entity/Space"
 describe("github issues > #10263 closure table should inherit entity schema", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Space],
             enabledDrivers: ["postgres"],
@@ -18,7 +18,7 @@ describe("github issues > #10263 closure table should inherit entity schema", ()
         })
     })
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should set the same schema on the closure junction table as the parent entity", () => {
         dataSources.forEach((dataSource) => {

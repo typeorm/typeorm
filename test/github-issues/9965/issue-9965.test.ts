@@ -13,7 +13,7 @@ import { expect } from "chai"
 describe("github issues > #9965", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Book, User],
             subscribers: [BorrowedSubscriber],
@@ -24,7 +24,7 @@ describe("github issues > #9965", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should pass entityId to afterInsert method", () =>
         Promise.all(

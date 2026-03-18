@@ -11,7 +11,7 @@ import { GeometryEntity } from "./entity/GeometryEntity"
 // Tests for standard geometric types
 describe("standard geometric types", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [GeometryEntity],
             schemaCreate: true,
@@ -27,7 +27,7 @@ describe("standard geometric types", () => {
             throw err
         }
     })
-    after(async () => {
+    afterAll(async () => {
         try {
             await closeTestingConnections(dataSources)
         } catch (err) {

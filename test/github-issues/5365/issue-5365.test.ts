@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #5365 Generated Identity for Postgres 10+", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
             schemaCreate: false,
@@ -18,7 +18,7 @@ describe("github issues > #5365 Generated Identity for Postgres 10+", () => {
             enabledDrivers: ["postgres"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
     it("should produce proper SQL for creating a table with identity column", () =>
         Promise.all(
             dataSources.map(async (connection) => {

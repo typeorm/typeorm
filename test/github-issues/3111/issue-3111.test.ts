@@ -11,7 +11,7 @@ import { Test, DEFAULT_VALUE } from "./entity/Test"
 
 describe("github issues > #3111 Inserting with query builder attempts to insert a default row when values is empty array", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #3111 Inserting with query builder attempts to insert 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not insert with default values on .values([])", () =>
         Promise.all(

@@ -10,7 +10,7 @@ import { Test } from "./entity/Test"
 
 describe("github issues > #6633 Fulltext indices continually dropped & re-created", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Test],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #6633 Fulltext indices continually dropped & re-create
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not create migrations for fulltext indices", () =>
         Promise.all(

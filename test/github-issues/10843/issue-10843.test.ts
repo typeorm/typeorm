@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #10843 TreeRepository does not update mpath if parentId was soft-deleted", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #10843 TreeRepository does not update mpath if parentI
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("Should update mpath even if parent was soft deleted", () =>
         Promise.all(

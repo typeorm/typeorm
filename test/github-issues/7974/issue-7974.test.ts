@@ -12,7 +12,7 @@ import { Site } from "./entity/Site"
 describe("github issues > #7974 Adding relations option to findTrees()", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Category, Site],
             schemaCreate: true,
@@ -95,7 +95,7 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
         }
     })
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return tree without sites relations", async () =>
         await Promise.all(

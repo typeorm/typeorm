@@ -12,7 +12,7 @@ import { MemoryLogger } from "./memory-logger"
 describe("github issues > #2703 Column with transformer is not normalized for update", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [`${__dirname}/entity/*{.js,.ts}`],
             schemaCreate: true,
@@ -21,7 +21,7 @@ describe("github issues > #2703 Column with transformer is not normalized for up
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
     afterEach(() =>
         dataSources.forEach((connection) => {
             const logger = connection.logger as MemoryLogger

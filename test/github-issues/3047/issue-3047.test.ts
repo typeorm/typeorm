@@ -12,7 +12,7 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 describe("github issues > #3047 Mysqsl on duplicate key update use current values", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
             schemaCreate: true,
@@ -22,7 +22,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     const user1 = new User()
     user1.first_name = "John"

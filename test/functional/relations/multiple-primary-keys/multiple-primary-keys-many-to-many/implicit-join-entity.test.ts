@@ -12,13 +12,13 @@ import { Tag } from "./entity/implicit-join-entity/Tag"
 
 describe("relations > multiple-primary-keys > many-to-many > implicit join entity", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/implicit-join-entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("owning side", () => {
         it("should load related entity when JoinTable used without options", () =>

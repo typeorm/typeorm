@@ -8,14 +8,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #3496 jsonb comparison doesn't work", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("the entity should not be updated a second time", () =>
         Promise.all(

@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("relations > lazy relations > loading via base entity finders", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Category],
             enabledDrivers: ["mysql", "postgres"],
@@ -19,7 +19,7 @@ describe("relations > lazy relations > loading via base entity finders", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("works", async () => {
         for (const connection of dataSources) {

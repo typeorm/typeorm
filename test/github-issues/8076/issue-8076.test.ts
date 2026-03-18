@@ -13,7 +13,7 @@ import { Member } from "./entity/Member"
 describe("github issues > #8076 Add relation options to all tree queries (missing ones)", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Category, Site, Member],
             schemaCreate: true,
@@ -103,7 +103,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
         }
     })
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return tree without sites relations", async () =>
         await Promise.all(

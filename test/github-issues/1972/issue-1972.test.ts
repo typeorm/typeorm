@@ -12,7 +12,7 @@ import { TournamentSquadParticipant } from "./entity/TournamentSquadParticipant"
 describe("github issues > #1972 STI problem - empty columns", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -21,7 +21,7 @@ describe("github issues > #1972 STI problem - empty columns", () => {
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should insert with userId", () =>
         Promise.all(

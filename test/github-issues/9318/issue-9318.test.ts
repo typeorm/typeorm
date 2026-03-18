@@ -12,7 +12,7 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #9318 Change version query from SHOW server_version to SELECT version", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [],
             schemaCreate: false,
@@ -21,7 +21,7 @@ describe("github issues > #9318 Change version query from SHOW server_version to
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should have proper isGeneratedColumnsSupported value for postgres version", () => {
         dataSources.forEach((connection) => {

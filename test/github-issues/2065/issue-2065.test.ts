@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #2065 TypeError: Cannot convert object to primitive value", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -17,7 +17,7 @@ describe("github issues > #2065 TypeError: Cannot convert object to primitive va
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should save an entity created with Object.create(null)", () =>
         Promise.all(

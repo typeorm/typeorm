@@ -11,7 +11,7 @@ import { PostSchema } from "./entity/Post"
 
 describe("github issues > #1308 Raw Postgresql Update query result is always an empty array", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [
                 new EntitySchema<Author>(AuthorSchema),
@@ -22,7 +22,7 @@ describe("github issues > #1308 Raw Postgresql Update query result is always an 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const author = new Author()

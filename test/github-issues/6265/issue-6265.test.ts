@@ -12,7 +12,7 @@ import {
 describe("github issues > #6265 `fix: resolve issue with find with relations returns soft-deleted entities", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User, Role],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #6265 `fix: resolve issue with find with relations ret
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should soft delete one record in relation table", () =>
         Promise.all(

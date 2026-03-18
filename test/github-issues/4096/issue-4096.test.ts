@@ -11,7 +11,7 @@ import { User } from "./entity/User"
 describe("github issues > #4096 SQLite support for orUpdate", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
             enabledDrivers: ["better-sqlite3"],
@@ -22,7 +22,7 @@ describe("github issues > #4096 SQLite support for orUpdate", () => {
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should overwrite using current value in SQLite", () =>
         Promise.all(

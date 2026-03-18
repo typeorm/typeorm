@@ -9,7 +9,7 @@ import { Test } from "./entity/Test"
 
 describe("query builder > exists", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Test],
             schemaCreate: true,
@@ -17,7 +17,7 @@ describe("query builder > exists", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("Exists query of empty table should be false", () =>
         Promise.all(

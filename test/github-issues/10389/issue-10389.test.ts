@@ -11,7 +11,7 @@ import { scheduler } from "node:timers/promises"
 
 describe("github issues > #10389 softDelete should not update already deleted rows", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("github issues > #10389 softDelete should not update already deleted ro
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should only soft delete rows that are not soft deleted previously", () =>
         Promise.all(

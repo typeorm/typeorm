@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("query runner > sql injection", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -37,7 +37,7 @@ describe("query runner > sql injection", () => {
             }),
         )
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     const maliciousInputs = [
         "'; DROP TABLE post; --",

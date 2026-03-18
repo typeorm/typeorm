@@ -12,7 +12,7 @@ import {
 describe("columns > value-transformer > change-detection", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [PostWithLuxonDate],
             enabledDrivers: ["postgres", "mysql"],
@@ -20,7 +20,7 @@ describe("columns > value-transformer > change-detection", () => {
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not update entity if value not changed", async () => {
         await Promise.all(

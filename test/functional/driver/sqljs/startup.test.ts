@@ -14,7 +14,7 @@ describe("sqljs driver > startup", () => {
     let dataSources: DataSource[]
     const pathToSqlite = path.resolve(__dirname, "startup.sqlite")
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
@@ -27,7 +27,7 @@ describe("sqljs driver > startup", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should startup even if the file doesn't exist", () =>
         Promise.all(

@@ -21,7 +21,7 @@ describe("driver > mysql > DataSource options > enableQueryTimeout", () => {
     const shortQueryTimeSec = 0.005
 
     describe("when enableQueryTimeout is true", () => {
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 ...commonConnectionOptions,
                 driverSpecific: {
@@ -32,7 +32,7 @@ describe("driver > mysql > DataSource options > enableQueryTimeout", () => {
         })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should throw a query execution timeout error for the query when it exceeds the maxQueryExecutionTime", () =>
             Promise.all(
@@ -62,14 +62,14 @@ describe("driver > mysql > DataSource options > enableQueryTimeout", () => {
     describe("when enableQueryTimeout is not provided", () => {
         let datasources: DataSource[]
 
-        before(async () => {
+        beforeAll(async () => {
             datasources = await createTestingConnections({
                 ...commonConnectionOptions,
                 driverSpecific: { maxQueryExecutionTime: timeoutMs },
             })
         })
 
-        after(() => closeTestingConnections(datasources))
+        afterAll(() => closeTestingConnections(datasources))
 
         it("should not throw a query execution timeout error", () =>
             Promise.all(

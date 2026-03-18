@@ -8,7 +8,7 @@ import { expect } from "chai"
 
 describe("github issues > #9457 No changes in database schema were found, when simple-enum is changed.", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #9457 No changes in database schema were found, when s
             enabledDrivers: ["mssql"],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should drop and recreate 'CHECK' constraint to match enum values", () =>
         Promise.all(

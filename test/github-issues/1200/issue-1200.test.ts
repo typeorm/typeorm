@@ -10,13 +10,13 @@ import type { DataSource } from "../../../src/data-source"
 
 describe("github issues > #1200 Update multiple nested embeddeds", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should update all embedded entities including the nested ones", () =>
         Promise.all(

@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #1140 timestamp column and value transformer causes TypeError", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -18,7 +18,7 @@ describe("github issues > #1140 timestamp column and value transformer causes Ty
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("correctly store/load timestamp columns", () =>
         Promise.all(

@@ -11,14 +11,14 @@ import { NotBrackets } from "../../../../src/query-builder/NotBrackets"
 
 describe("query builder > not", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should put negation in the SQL with one condition", () =>
         Promise.all(

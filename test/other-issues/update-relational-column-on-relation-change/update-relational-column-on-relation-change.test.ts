@@ -10,13 +10,13 @@ import { Category } from "./entity/Category"
 
 describe("other issues > update relational column on relation change", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should update relational column when relation is inserted", () =>
         Promise.all(

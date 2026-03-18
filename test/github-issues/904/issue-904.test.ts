@@ -9,13 +9,13 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #904 Using closure tables without @TreeLevelColumn will always fail on insert", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work correctly when saving using parent category", () =>
         Promise.all(

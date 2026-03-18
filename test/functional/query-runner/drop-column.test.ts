@@ -10,14 +10,14 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop column", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("when columns are instances of TableColumn", () => {
         it("should correctly drop column and revert drop", () =>

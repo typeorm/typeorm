@@ -9,17 +9,17 @@ import type { Migration } from "../../../src/migration/Migration"
 
 describe("github issues > #2875 runMigrations() function is not returning a list of migrated files", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            migrations: [__dirname + "/migration/*.js"],
+            migrations: [__dirname + "/migration/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to run all necessary migrations", () =>
         Promise.all(

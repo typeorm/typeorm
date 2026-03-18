@@ -13,7 +13,7 @@ import { Foo } from "./entity/Foo"
 
 describe("github issues > #2251 - Unexpected behavior when passing duplicate entities to repository.save()", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -22,7 +22,7 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should update all entities", () =>
         Promise.all(

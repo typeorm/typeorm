@@ -11,7 +11,7 @@ import { Test } from "./entity/Test"
 describe("github issues > #7650 Inappropriate migration generated", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             entities: [Test],
@@ -20,7 +20,7 @@ describe("github issues > #7650 Inappropriate migration generated", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not create migrations for json default which are equivalent", () =>
         Promise.all(

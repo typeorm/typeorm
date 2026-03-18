@@ -13,14 +13,14 @@ import { Employee } from "./entity/Employee"
 
 describe("query runner > async dispose", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Employee, Company],
             enabledDrivers: ["postgres"], // this is rather a unit test, so a single driver is enough
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should release query runner", () =>
         Promise.all(

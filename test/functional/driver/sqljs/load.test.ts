@@ -11,7 +11,7 @@ import { Post } from "./entity/Post"
 
 describe("sqljs driver > load", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("sqljs driver > load", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should load from a file", () =>
         Promise.all(

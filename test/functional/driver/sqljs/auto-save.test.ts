@@ -11,7 +11,7 @@ describe("sqljs driver > autosave", () => {
         saves++
     }
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
@@ -84,7 +84,7 @@ describe("sqljs driver > autosave off", () => {
         saves++
     }
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,

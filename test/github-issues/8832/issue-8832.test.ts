@@ -16,7 +16,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Address, User],
             enabledDrivers: ["mariadb"],
@@ -49,7 +49,7 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
             (connection) => connection.isInitialized,
         )
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should create table with uuid, inet4, and inet6 type set to column for relevant mariadb versions", () =>
         Promise.all(

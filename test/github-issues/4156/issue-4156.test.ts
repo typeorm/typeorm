@@ -10,7 +10,7 @@ import { Post, PostSchema } from "./entity/Post"
 
 describe("github issues > #4156 QueryExpressionMap doesn't clone all values correctly", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [
                 new EntitySchema<Author>(AuthorSchema),
@@ -21,7 +21,7 @@ describe("github issues > #4156 QueryExpressionMap doesn't clone all values corr
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const author = new Author()

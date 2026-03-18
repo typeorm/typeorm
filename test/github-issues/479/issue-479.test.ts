@@ -10,13 +10,13 @@ import { Car } from "./entity/Car"
 
 describe("github issues > #479 orWhere breaks skip / take", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("where expression of the skip/take should not break original where query", () =>
         Promise.all(

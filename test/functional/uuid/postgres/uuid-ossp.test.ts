@@ -12,7 +12,7 @@ import { Question } from "./entity/Question"
 
 describe("uuid-ossp", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -22,7 +22,7 @@ describe("uuid-ossp", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should make correct schema with Postgres' uuid type", () =>
         Promise.all(

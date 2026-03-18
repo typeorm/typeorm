@@ -11,13 +11,13 @@ import { Contact } from "./entity/Contact"
 
 describe("embedded > order by with duplicate column name", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should order organisations correctly when properties are duplicate in its embeddable", () =>
         Promise.all(

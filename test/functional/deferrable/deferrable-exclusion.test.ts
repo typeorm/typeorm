@@ -14,14 +14,14 @@ import { Schedule } from "./entity/Schedule"
 describe("deferrable exclusion constraints", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("initially deferred exclusion should be validated at the end of transaction", () =>
         Promise.all(

@@ -10,14 +10,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #4947 beforeUpdate subscriber entity argument is undefined", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("if entity has been updated via repository update(), subscriber should get passed entity to change", () =>
         Promise.all(

@@ -16,7 +16,7 @@ import { SoftDeletedEditor } from "./entity/SoftDeletedEditor"
 
 describe("relations > join strategy", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -24,7 +24,7 @@ describe("relations > join strategy", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     /**
      * Creates two posts:

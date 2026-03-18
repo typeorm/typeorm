@@ -9,11 +9,11 @@ import { Post } from "./entity/Post"
 
 describe("query builder > enabling transaction", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({ __dirname })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should execute query in a transaction", () =>
         Promise.all(

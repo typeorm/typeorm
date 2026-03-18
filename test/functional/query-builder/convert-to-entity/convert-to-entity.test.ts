@@ -10,13 +10,13 @@ import { Post } from "./entity/Post"
 
 describe("query builder > convert raw results to entity", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return null value in entity property when record column is null", () =>
         Promise.all(

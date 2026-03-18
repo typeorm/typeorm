@@ -14,7 +14,7 @@ import { expect } from "chai"
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
@@ -28,7 +28,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const category = new Category()
@@ -242,7 +242,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
 describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
@@ -255,7 +255,7 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should transform null to IS NULL in EntityManager.update()", async () => {
         for (const connection of dataSources) {
@@ -310,7 +310,7 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
 describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
@@ -324,7 +324,7 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should strip null criteria in EntityManager.delete() with ignore", async () => {
         for (const connection of dataSources) {
@@ -417,7 +417,7 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where()", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
@@ -431,7 +431,7 @@ describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where(
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should NOT throw when QB .where() is used with null", async () => {
         for (const connection of dataSources) {

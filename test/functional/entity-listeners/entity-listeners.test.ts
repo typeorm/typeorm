@@ -11,7 +11,7 @@ import { Post } from "./entity/Post"
 
 describe("entity-listeners", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
@@ -19,7 +19,7 @@ describe("entity-listeners", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("beforeUpdate", () =>
         Promise.all(

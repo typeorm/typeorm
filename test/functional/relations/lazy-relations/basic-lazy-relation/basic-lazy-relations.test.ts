@@ -14,7 +14,7 @@ import ProfileSchema from "./schema/profile.json"
 
 describe("relations > lazy relations > basic-lazy-relations", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [
                 Post,
@@ -26,7 +26,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should persist and hydrate successfully on a relation without inverse side", () =>
         Promise.all(

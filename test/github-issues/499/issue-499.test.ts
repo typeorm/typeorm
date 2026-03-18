@@ -10,13 +10,13 @@ import { expect } from "chai"
 
 describe("github issues > #499 postgres DATE hydrated as DATETIME object", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return date in a string format", () =>
         Promise.all(

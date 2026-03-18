@@ -16,14 +16,14 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > select", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Category, Post, Tag, HeroImage, ExternalPost],
             enabledDrivers: ["better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should append all entity mapped columns from main selection to select statement", () =>
         Promise.all(

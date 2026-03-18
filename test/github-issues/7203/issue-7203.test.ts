@@ -8,14 +8,14 @@ import { expect } from "chai"
 
 describe("github issues > #7203 QueryExpressionMap doesn't clone comment field", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             dropSchema: true,
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should be able to clone comment field", () => {
         for (const connection of dataSources) {

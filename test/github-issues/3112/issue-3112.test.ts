@@ -10,7 +10,7 @@ import { User } from "./entity/User"
 describe("github issues > #3112 default:null should inserts nulls to database", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #3112 default:null should inserts nulls to database", 
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should insert null when no value specified", () =>
         Promise.all(

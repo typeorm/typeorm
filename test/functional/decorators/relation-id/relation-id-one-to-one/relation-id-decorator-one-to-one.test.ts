@@ -11,13 +11,13 @@ import { Post } from "./entity/Post"
 
 describe("decorators > relation-id > one-to-one", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should load ids when loadRelationIdAndMap used on owner side", () =>
         Promise.all(

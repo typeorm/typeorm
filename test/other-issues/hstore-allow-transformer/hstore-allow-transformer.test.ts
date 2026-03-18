@@ -10,7 +10,7 @@ import { DummyHSTOREEntity } from "./entity/hstore-entity"
 
 describe("other issues > allow HSTORE column type to use transformers", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -19,7 +19,7 @@ describe("other issues > allow HSTORE column type to use transformers", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should use the transformer set in the column options", () =>
         Promise.all(

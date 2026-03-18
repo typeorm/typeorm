@@ -14,14 +14,14 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 describe("repository > clear cascade", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("clear with cascade true", () => {
         it("truncates dependent tables", () =>

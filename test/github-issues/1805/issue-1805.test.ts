@@ -8,7 +8,7 @@ import { Account } from "./entity/Account"
 
 describe("github issues > #1805 bigint PK incorrectly returning as a number (expecting a string)", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -16,7 +16,7 @@ describe("github issues > #1805 bigint PK incorrectly returning as a number (exp
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return `bigint` column as string", () =>
         Promise.all(

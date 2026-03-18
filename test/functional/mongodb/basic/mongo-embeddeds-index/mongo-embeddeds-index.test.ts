@@ -11,14 +11,14 @@ import { Information } from "./entity/Information"
 
 describe("mongodb > embeddeds indices", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["mongodb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should insert entity with embeddeds indices correctly", () =>
         Promise.all(

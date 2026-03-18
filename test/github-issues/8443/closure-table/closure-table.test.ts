@@ -9,13 +9,13 @@ import {
 
 describe("github issues > #8443 QueryFailedError when tree entity with JoinColumn > closure-table", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Category],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("categories should be attached via parent and saved properly", () =>
         Promise.all(

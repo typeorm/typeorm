@@ -8,7 +8,7 @@ import {
 
 describe("github issues > #11231 Error trying to revert last migration when there is none on Oracle", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [],
             enabledDrivers: ["oracle"],
@@ -17,7 +17,7 @@ describe("github issues > #11231 Error trying to revert last migration when ther
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not throw when migrations list is empty", () =>
         Promise.all(

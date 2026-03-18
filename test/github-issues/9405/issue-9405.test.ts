@@ -12,14 +12,14 @@ import { Log } from "./entity/Log"
 
 describe("github issues > #9405 Incorrect subject sorting with multi-inheritance entities", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly sort entities with multi-inheritances", () =>
         Promise.all(

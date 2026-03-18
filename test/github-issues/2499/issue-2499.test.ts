@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #2499 Postgres DELETE query result is useless", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -29,7 +29,7 @@ describe("github issues > #2499 Postgres DELETE query result is useless", () => 
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return correct number of affected rows for mysql, mariadb, postgres", () =>
         Promise.all(

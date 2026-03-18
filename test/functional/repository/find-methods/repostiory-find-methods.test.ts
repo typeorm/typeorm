@@ -13,13 +13,13 @@ import { UserEntity } from "./schema/UserEntity"
 
 describe("repository > find methods", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, UserEntity],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("count", function () {
         it("should return a full count when no criteria given", () =>

@@ -8,7 +8,7 @@ import type { DataSource } from "../../../../../src"
 
 describe("table-inheritance > single-table > database-option-inherited", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             // creating more databases isn't always possible(e.g oracle official docker images)
@@ -24,7 +24,7 @@ describe("table-inheritance > single-table > database-option-inherited", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly inherit database option", () => {
         dataSources.forEach((connection) => {

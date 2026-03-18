@@ -30,7 +30,7 @@ describe("repository > basic methods", () => {
     const QuestionEntity = new EntitySchema<any>(questionSchema as any)
 
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [
                 Post,
@@ -47,7 +47,7 @@ describe("repository > basic methods", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     describe("target", function () {
         it("should return instance of the object it manages", () =>

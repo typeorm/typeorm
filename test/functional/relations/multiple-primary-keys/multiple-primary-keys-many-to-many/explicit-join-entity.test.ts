@@ -12,13 +12,13 @@ import { expect } from "chai"
 
 describe("relations > multiple-primary-keys > many-to-many > explicit join entity", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/explicit-join-entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should persist and load join entity with extra columns", () =>
         Promise.all(

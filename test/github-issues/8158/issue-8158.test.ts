@@ -9,7 +9,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #8158 Typeorm creates migration that creates already existing unique constraint", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             migrations: [],
             schemaCreate: false,
@@ -17,7 +17,7 @@ describe("github issues > #8158 Typeorm creates migration that creates already e
             entities: [UserMeta, User],
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(

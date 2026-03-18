@@ -10,14 +10,14 @@ import { User } from "./entity/User"
 
 describe("github issues > #1623 NOT NULL constraint failed after a new column is added (SQLite)", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should correctly add new column", () =>
         Promise.all(

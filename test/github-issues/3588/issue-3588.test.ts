@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("github issues > #3588 Migration:generate issue with onUpdate using mysql 8.0", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -17,8 +17,8 @@ describe("github issues > #3588 Migration:generate issue with onUpdate using mys
             enabledDrivers: ["mysql"],
         })
     })
-    beforeEach(async () => await reloadTestingDatabases(dataSources))
-    after(async () => await closeTestingConnections(dataSources))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("can recognize model changes", () =>
         Promise.all(

@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #5734 insert([]) should not crash", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #5734 insert([]) should not crash", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not crash on insert([])", () =>
         Promise.all(

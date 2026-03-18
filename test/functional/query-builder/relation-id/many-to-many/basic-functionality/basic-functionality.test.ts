@@ -13,13 +13,13 @@ import { Image } from "./entity/Image"
 
 describe("query builder > relation-id > many-to-many > basic-functionality", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not load ids when RelationId decorator is not specified", () =>
         Promise.all(

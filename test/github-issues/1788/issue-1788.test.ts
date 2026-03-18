@@ -11,14 +11,14 @@ import { expect } from "chai"
 
 describe("github issues > #1788 One to One does not load relationships.", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should work as expected when using find* methods with relations explicitly provided", () =>
         Promise.all(

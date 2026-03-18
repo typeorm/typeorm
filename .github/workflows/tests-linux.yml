@@ -14,10 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
-
-    env:
-      TOTAL_SHARDS: 6
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
 
     services:
       cockroachdb:
@@ -47,28 +45,21 @@ jobs:
       - run: pnpm install
       - run: jq 'map(select(.type == "cockroachdb"))' ormconfig.sample.json > ormconfig.json
 
-      - name: Split test files for shard ${{ matrix.shard }}/${{ env.TOTAL_SHARDS }}
-        run: |
-          find build/compiled/test -name "*.test.js" | sort | awk "NR % $TOTAL_SHARDS == ${{ matrix.shard }} - 1" \
-            | jq -R -s 'split("\n") | map(select(length > 0))' \
-            | jq -s '.[0] as $files | .[1] | .spec = $files | .recursive = false' - .mocharc.json > .mocharc.${{ matrix.shard }}.json
-          echo "Shard ${{ matrix.shard }}/$TOTAL_SHARDS: $(jq '.spec | length' .mocharc.${{ matrix.shard }}.json) test files"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mocharc-shard-${{ matrix.shard }}
-          path: .mocharc.${{ matrix.shard }}.json
-
-      - run: pnpm exec c8 mocha --bail --config .mocharc.${{ matrix.shard }}.json
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: crdb-shard:${{ matrix.shard }}-node:${{ inputs.node-version }}
+          flag-name: crdb-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true
 
   mongodb:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
     services:
       mongodb:
         image: mongo:8.2.5
@@ -89,15 +80,20 @@ jobs:
 
       - run: pnpm install
       - run: jq 'map(select(.type == "mongodb"))' ormconfig.sample.json > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: mongodb-node:${{ inputs.node-version }}
+          flag-name: mongodb-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true
 
   mssql:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
     services:
       mssql:
         image: "mcr.microsoft.com/mssql/server:2025-latest"
@@ -122,15 +118,20 @@ jobs:
 
       - run: pnpm install
       - run: jq 'map(select(.type == "mssql"))' ormconfig.sample.json > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: mssql-node:${{ inputs.node-version }}
+          flag-name: mssql-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true
 
   mysql_mariadb:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
     services:
       mysql:
         image: mysql:5.7.44
@@ -171,14 +172,19 @@ jobs:
               "mariadb" \
               "mysql" \
             > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: mysql_mariadb-node:${{ inputs.node-version }}
+          flag-name: mysql_mariadb-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true
 
   mysql_mariadb_latest:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
     services:
       mysql:
         image: mysql:9.5.0
@@ -219,14 +225,19 @@ jobs:
               "mariadb" \
               "mysql" \
             > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: mysql_mariadb_latest-node:${{ inputs.node-version }}
+          flag-name: mysql_mariadb_latest-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true
 
   better-sqlite3:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
@@ -241,15 +252,20 @@ jobs:
 
       - run: pnpm install
       - run: jq 'map(select(.type == "better-sqlite3"))' ormconfig.sample.json > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: better-sqlite3-node:${{ inputs.node-version }}
+          flag-name: better-sqlite3-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true
 
   sqljs:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
@@ -264,11 +280,11 @@ jobs:
 
       - run: pnpm install
       - run: jq 'map(select(.type == "sqljs"))' ormconfig.sample.json > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: sqljs-node:${{ inputs.node-version }}
+          flag-name: sqljs-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true
 
   postgres:
@@ -277,6 +293,8 @@ jobs:
       fail-fast: false
       matrix:
         postgres-version: ["14.22", "17.9"]
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
 
     services:
       postgres:
@@ -306,15 +324,20 @@ jobs:
 
       - run: pnpm install
       - run: jq 'map(select(.type == "postgres"))' ormconfig.sample.json > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: postgres:${{ matrix.postgres-version }}-node:${{ inputs.node-version }}
+          flag-name: postgres:${{ matrix.postgres-version }}-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true
 
   oracle:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
     steps:
       - uses: actions/checkout@v6
 
@@ -334,15 +357,21 @@ jobs:
       - run: jq 'map(select(.type == "oracle"))' ormconfig.sample.json > ormconfig.json
       - run: docker compose up oracle --no-recreate --wait
       - run: sleep 3 # wait for oracle to be fully ready
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: oracle-node:${{ inputs.node-version }}
+          flag-name: oracle-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true
 
   sap:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
+
     steps:
       - uses: actions/checkout@v6
 
@@ -361,9 +390,9 @@ jobs:
       - run: pnpm install
       - run: jq 'map(select(.type == "sap"))' ormconfig.sample.json > ormconfig.json
       - run: docker compose up hanaexpress --no-recreate --wait
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: sap-node:${{ inputs.node-version }}
+          flag-name: sap-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}
           parallel: true

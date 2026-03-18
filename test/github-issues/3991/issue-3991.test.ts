@@ -14,7 +14,7 @@ import { Post as SqlitePost } from "./entity/sqlite/Post"
 describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@UpdateDateColumn timestamp column to same definition", () => {
     describe("postgres", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 schemaCreate: false,
@@ -22,7 +22,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                 entities: [PostgresPost],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -50,7 +50,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("cockroachdb", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["cockroachdb"],
                 schemaCreate: false,
@@ -58,7 +58,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                 entities: [CockroachPost],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -86,7 +86,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("oracle", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["oracle"],
                 schemaCreate: false,
@@ -94,7 +94,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                 entities: [OraclePost],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -122,7 +122,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("better-sqlite3", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["better-sqlite3"],
                 schemaCreate: false,
@@ -130,7 +130,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                 entities: [SqlitePost],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -158,7 +158,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("mysql, mariadb", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["mysql", "mariadb"],
                 schemaCreate: false,
@@ -166,7 +166,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                 entities: [MysqlPost],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -194,7 +194,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("mssql", () => {
         let dataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["mssql"],
                 schemaCreate: false,
@@ -202,7 +202,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                 entities: [MssqlPost],
             })
         })
-        after(() => closeTestingConnections(dataSources))
+        afterAll(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
