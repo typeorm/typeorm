@@ -22,8 +22,13 @@ export class FindOptionsUtils {
      * This catches untyped/JS callers still passing `join` after its removal in v1.0.
      * @param options
      */
-    static rejectJoinOption(options: any): void {
-        if (options && typeof options === "object" && options.join != null) {
+    static rejectJoinOption(options: unknown): void {
+        if (
+            options &&
+            typeof options === "object" &&
+            "join" in options &&
+            options.join != null
+        ) {
             throw new TypeORMError(
                 `"join" option has been removed. Use "relations" for left joins ` +
                     `or QueryBuilder for other join types. See the v1 migration guide for details.`,
