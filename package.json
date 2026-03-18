@@ -109,7 +109,7 @@
     "@google-cloud/spanner": "^8.6.0",
     "@sap/hana-client": "^2.27.23",
     "@stryker-mutator/core": "^9.6.0",
-    "@stryker-mutator/mocha-runner": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
     "@tsconfig/node20": "^20.1.9",
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
@@ -135,7 +135,6 @@
     "gulp-rename": "^2.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
-    "mocha": "^11.7.5",
     "mongodb": "^7.1.0",
     "mssql": "^12.2.0",
     "mysql2": "^3.17.4",
@@ -156,7 +155,8 @@
     "testcontainers": "^11.12.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1"
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^4.1.0"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^8.0.0",

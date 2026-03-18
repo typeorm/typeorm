@@ -10,8 +10,8 @@
   "dryRunTimeoutMinutes": 10,
   "ignoreStatic": true,
   "inPlace": true,
-  "plugins": ["@stryker-mutator/mocha-runner"],
+  "plugins": ["@stryker-mutator/vitest-runner"],
   "reporters": ["html", "dashboard", "progress", "json"],
-  "testRunner": "mocha",
+  "testRunner": "vitest",
   "timeoutFactor": 0.1
 }
