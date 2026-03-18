@@ -37,6 +37,8 @@ export class ClosureJunctionEntityMetadataBuilder {
                               .closureTableName
                         : parentClosureEntityMetadata.tableNameWithoutPrefix,
                 type: "closure-junction",
+                schema: parentClosureEntityMetadata.schema,
+                database: parentClosureEntityMetadata.database,
             },
         })
         entityMetadata.build()
