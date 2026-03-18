@@ -567,17 +567,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
+        const escapedSchema = this.driver.escape(schema)
 
         let exist = false
         if (ifNotExists) {
             const result = await this.query(
-                `SELECT * FROM "SYS"."SCHEMAS" WHERE "SCHEMA_NAME" = '${schema}'`,
+                `SELECT * FROM "SYS"."SCHEMAS" WHERE "SCHEMA_NAME" = ?`,
+                [schema],
             )
             exist = !!result.length
         }
         if (!ifNotExists || (ifNotExists && !exist)) {
-            const up = `CREATE SCHEMA "${schema}"`
-            const down = `DROP SCHEMA "${schema}" CASCADE`
+            const up = `CREATE SCHEMA ${escapedSchema}`
+            const down = `DROP SCHEMA ${escapedSchema} CASCADE`
             await this.executeQueries(new Query(up), new Query(down))
         }
     }
@@ -596,17 +598,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const schema =
             schemaPath.indexOf(".") === -1
                 ? schemaPath
-                : schemaPath.split(".")[0]
+                : schemaPath.split(".")[1]
+        const escapedSchema = this.driver.escape(schema)
         let exist = false
         if (ifExists) {
             const result = await this.query(
-                `SELECT * FROM "SYS"."SCHEMAS" WHERE "SCHEMA_NAME" = '${schema}'`,
+                `SELECT * FROM "SYS"."SCHEMAS" WHERE "SCHEMA_NAME" = ?`,
+                [schema],
             )
             exist = !!result.length
         }
         if (!ifExists || (ifExists && exist)) {
-            const up = `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`
-            const down = `CREATE SCHEMA "${schema}"`
+            const up = `DROP SCHEMA ${escapedSchema} ${isCascade ? "CASCADE" : ""}`
+            const down = `CREATE SCHEMA ${escapedSchema}`
             await this.executeQueries(new Query(up), new Query(down))
         }
     }

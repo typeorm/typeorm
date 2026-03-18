@@ -477,8 +477,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (databaseAlreadyExists) return Promise.resolve()
         }
 
-        const up = `CREATE DATABASE "${database}"`
-        const down = `DROP DATABASE "${database}"`
+        const escaped = this.driver.escape(database)
+        const up = `CREATE DATABASE ${escaped}`
+        const down = `DROP DATABASE ${escaped}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -494,8 +495,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (!databaseExists) return
         }
 
-        const up = `DROP DATABASE "${database}"`
-        const down = `CREATE DATABASE "${database}"`
+        const escaped = this.driver.escape(database)
+        const up = `DROP DATABASE ${escaped}`
+        const down = `CREATE DATABASE ${escaped}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 

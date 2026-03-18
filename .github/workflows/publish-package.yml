@@ -89,6 +89,7 @@ jobs:
       id-token: write
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
@@ -154,21 +155,6 @@ jobs:
 
       - run: pnpm run package
         if: steps.publishable.outputs.should_publish == 'true'
-
-      # The gulp package task copies the root package.json into build/package.
-      # Dev-only fields like "prepare" (husky), "scripts", and "devEngines"
-      # cause publish to fail since their dependencies aren't installed there.
-      - name: Clean built package.json
-        if: steps.publishable.outputs.should_publish == 'true'
-        run: |
-          node -e "
-            const pkg = require('./build/package/package.json');
-            delete pkg.scripts;
-            delete pkg.devDependencies;
-            delete pkg.devEngines;
-            delete pkg.private;
-            require('fs').writeFileSync('./build/package/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
 
       - name: Set nightly version
         if: steps.publishable.outputs.should_publish == 'true' && matrix.target != 'release'
