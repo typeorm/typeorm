@@ -14,6 +14,7 @@ import type { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
 import type { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
+import { DriverUtils } from "../../src/driver/DriverUtils"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -428,6 +429,22 @@ export async function createTestingConnections(
                 )
                 await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
+                )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING sql.txn.repeatable_read_isolation.enabled = 'true';`,
+                )
+            }
+
+            if (DriverUtils.isMySQLFamily(connection.driver)) {
+                await queryRunner.query(
+                    `UPDATE performance_schema.setup_instruments
+                        SET ENABLED = 'YES', TIMED = 'YES'
+                        WHERE NAME = 'transaction'`,
+                )
+                await queryRunner.query(
+                    `UPDATE performance_schema.setup_consumers
+                        SET ENABLED = 'YES'
+                        WHERE NAME LIKE 'events_transactions%'`,
                 )
             }
 

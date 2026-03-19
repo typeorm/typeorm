@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../../src"
+import type { DataSource, EntityManager } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,7 +8,18 @@ import {
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
-async function prepareDataAndTest(dataSource: DataSource) {
+const getCurrentTransactionLevelAndAssert = async (
+    entityManagerOrDataSource: EntityManager | DataSource,
+    expectedIsolationLevel: string,
+) => {
+    const query = `DBCC USEROPTIONS`
+    const actualIsolationLevel = await entityManagerOrDataSource.query(query)
+    actualIsolationLevel[actualIsolationLevel.length - 1].Value.should.be.equal(
+        expectedIsolationLevel.toLocaleLowerCase(),
+    )
+}
+
+const prepareDataAndTest = async (dataSource: DataSource) => {
     const post = new Post()
     post.title = "Post #1"
     await dataSource.manager.save(post)
@@ -37,7 +48,7 @@ async function prepareDataAndTest(dataSource: DataSource) {
     })
 }
 
-describe("transaction > transaction with mssql dataSource full isolation support", () => {
+describe("transaction > transaction with mssql dataSource isolation support", () => {
     const isolationLevels = [
         "READ UNCOMMITTED",
         "SERIALIZABLE",
@@ -67,6 +78,10 @@ describe("transaction > transaction with mssql dataSource full isolation support
             it(`should execute all operations with default ${isolationLevel} level for new connections`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
+                        await getCurrentTransactionLevelAndAssert(
+                            dataSource,
+                            isolationLevel,
+                        )
                         await prepareDataAndTest(dataSource)
                     }),
                 ))
@@ -92,6 +107,10 @@ describe("transaction > transaction with mssql dataSource full isolation support
             it(`should execute all operations with default ${isolationLevel} level`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
+                        await getCurrentTransactionLevelAndAssert(
+                            dataSource,
+                            isolationLevel,
+                        )
                         await prepareDataAndTest(dataSource)
                     }),
                 ))
@@ -124,6 +143,12 @@ describe("transaction > transaction with mssql dataSource full isolation support
                                         await transactionalEntityManager.save(
                                             post,
                                         )
+
+                                    await getCurrentTransactionLevelAndAssert(
+                                        transactionalEntityManager,
+                                        isolationLevel,
+                                    ) // per-transaction isolation level correctly set
+
                                     postId = savedPost.id
 
                                     const category = new Category()

@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
-describe("transaction > transaction with oracle dataSource partial isolation support", () => {
+describe("transaction > transaction with oracle dataSource isolation support", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

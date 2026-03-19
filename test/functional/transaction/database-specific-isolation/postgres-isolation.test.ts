@@ -1,41 +1,50 @@
-import "reflect-metadata"
+import { expect } from "chai"
+import type { DataSource, EntityManager } from "../../../../src"
 import {
-    closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
+    closeTestingConnections,
 } from "../../../utils/test-utils"
-import type { DataSource } from "../../../../src/data-source/DataSource"
-import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
-import type { EntityManager } from "../../../../src/entity-manager/EntityManager"
+import { Post } from "./entity/Post"
 
 const getCurrentTransactionLevelAndAssert = async (
     entityManager: EntityManager,
     expectedIsolationLevel: string,
 ) => {
-    const query = `PRAGMA read_uncommitted`
+    const query = `SHOW TRANSACTION ISOLATION LEVEL`
     const actualIsolationLevel = (await entityManager.query(query))[0]
-        .read_uncommitted
-    if (expectedIsolationLevel === "READ UNCOMMITTED") {
-        actualIsolationLevel.should.be.equal(1)
-    } else {
-        actualIsolationLevel.should.be.equal(0)
-    }
+        .transaction_isolation
+
+    if (
+        entityManager.connection.driver.options.type === "cockroachdb" &&
+        expectedIsolationLevel === "READ UNCOMMITTED"
+    ) {
+        // CockroachDB does not support READ UNCOMMITTED isolation level, it uses READ COMMITTED
+        actualIsolationLevel.should.be.equal("read committed")
+    } else
+        actualIsolationLevel.should.be.equal(
+            expectedIsolationLevel.toLowerCase(),
+        )
 }
 
-describe("transaction > transaction with sqlite dataSource isolation support", () => {
+describe("transaction > transaction with postgres/cockroachdb dataSource isolation support", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["better-sqlite3"],
+            enabledDrivers: ["postgres", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    const isolationLevels = ["READ UNCOMMITTED", "SERIALIZABLE"] as const
+    const isolationLevels = [
+        "READ UNCOMMITTED",
+        "SERIALIZABLE",
+        "REPEATABLE READ",
+        "READ COMMITTED",
+    ] as const
 
     for (const isolationLevel of isolationLevels) {
         it(`should execute all operations in a single transaction with ${isolationLevel} isolation level`, () =>
@@ -47,14 +56,14 @@ describe("transaction > transaction with sqlite dataSource isolation support", (
                     await dataSource.manager.transaction(
                         isolationLevel,
                         async (entityManager) => {
-                            const post = new Post()
-                            post.title = "Post #1"
-                            await entityManager.save(post)
-
                             await getCurrentTransactionLevelAndAssert(
                                 entityManager,
                                 isolationLevel,
                             )
+
+                            const post = new Post()
+                            post.title = "Post #1"
+                            await entityManager.save(post)
 
                             const category = new Category()
                             category.name = "Category #1"
