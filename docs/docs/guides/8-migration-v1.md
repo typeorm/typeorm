@@ -433,32 +433,17 @@ The deprecated `findOneById` method has been removed from `EntityManager`, `Repo
 
 ```typescript
 // Before
+const user = await manager.findOneById(User, 1)
 const user = await repository.findOneById(1)
+const user = await User.findOneById(1)
 
 // After
+const user = await manager.findOneBy(User, { id: 1 })
 const user = await repository.findOneBy({ id: 1 })
+const user = await User.findOneBy({ id: 1 })
 ```
 
-#### MongoDB
-
-For MongoDB entities with `@ObjectIdColumn()`, `findOneBy` works the same way — use your property name and TypeORM automatically translates it to `_id`:
-
-```typescript
-@Entity()
-class Post {
-    @ObjectIdColumn()
-    id: ObjectId
-
-    @Column()
-    title: string
-}
-
-// Before
-const post = await repository.findOneById(existingPost.id)
-
-// After
-const post = await repository.findOneBy({ id: existingPost.id })
-```
+For MongoDB entities with `@ObjectIdColumn()`, `findOneBy` works the same way — TypeORM automatically translates the property name to `_id`.
 
 ### `findByIds` removed
 
