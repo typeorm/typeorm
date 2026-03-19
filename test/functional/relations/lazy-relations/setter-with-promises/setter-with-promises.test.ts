@@ -3,13 +3,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { Circle } from "./entity/Circle"
 import { expect } from "chai"
 
-describe("github issues > #1034 Issue using setter with promises", () => {
+describe("relations > lazy relations > setter with promises", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -31,14 +31,14 @@ describe("github issues > #1034 Issue using setter with promises", () => {
                 const circle: Circle = new Circle()
                 circle.setId("1")
 
-                // Entities persistance
+                // Entities persistence
                 await connection.manager.save(user)
                 await connection.manager.save(circle)
 
                 users.push(user)
-                const circleFromDB = await connection.manager.findOneById(
+                const circleFromDB = await connection.manager.findOneBy(
                     Circle,
-                    circle.getId(),
+                    { id: circle.getId() } as any, // id is private
                 )
                 expect(circleFromDB).is.not.null
 

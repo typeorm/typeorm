@@ -1322,32 +1322,6 @@ export class EntityManager {
     }
 
     /**
-     * Finds first entity that matches given id.
-     * If entity was not found in the database - returns null.
-     * @param entityClass
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById<Entity extends ObjectLiteral>(
-        entityClass: EntityTarget<Entity>,
-        id: number | string | Date | ObjectId,
-    ): Promise<Entity | null> {
-        const metadata = this.connection.getMetadata(entityClass)
-
-        // create query builder and apply find options
-        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
-            .setFindOptions({
-                take: 1,
-            })
-            .whereInIds(metadata.ensureEntityIdMap(id))
-            .getOne()
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
      * @param entityClass
