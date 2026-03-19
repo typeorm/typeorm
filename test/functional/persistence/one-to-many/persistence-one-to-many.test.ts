@@ -124,11 +124,8 @@ describe("persistence > one-to-many", function () {
                     where: {
                         id: newPost.id,
                     },
-                    join: {
-                        alias: "post",
-                        innerJoinAndSelect: {
-                            categories: "post.categories",
-                        },
+                    relations: {
+                        categories: true,
                     },
                 })
                 expect(loadedPost).not.to.be.null
@@ -169,11 +166,8 @@ describe("persistence > one-to-many", function () {
                     where: {
                         id: newPost.id,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            categories: "post.categories",
-                        },
+                    relations: {
+                        categories: true,
                     },
                 })
                 expect(loadedPost).not.to.be.null
@@ -212,11 +206,8 @@ describe("persistence > one-to-many", function () {
                     where: {
                         id: newPost.id,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            categories: "post.categories",
-                        },
+                    relations: {
+                        categories: true,
                     },
                 }))!
                 expect(loadedPost).not.to.be.null

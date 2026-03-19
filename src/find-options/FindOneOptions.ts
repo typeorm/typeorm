@@ -1,9 +1,5 @@
-import type { JoinOptions } from "./JoinOptions"
 import type { FindOptionsWhere } from "./FindOptionsWhere"
-import type {
-    FindOptionsSelect,
-    FindOptionsSelectByString,
-} from "./FindOptionsSelect"
+import type { FindOptionsSelect } from "./FindOptionsSelect"
 import type {
     FindOptionsRelationByString,
     FindOptionsRelations,
@@ -24,7 +20,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Specifies what columns should be retrieved.
      */
-    select?: FindOptionsSelect<Entity> | FindOptionsSelectByString<Entity>
+    select?: FindOptionsSelect<Entity>
 
     /**
      * Simple condition that should be applied to match entities.
@@ -44,12 +40,6 @@ export interface FindOneOptions<Entity = any> {
      * Default strategy is "join", but default can be customized in connection options.
      */
     relationLoadStrategy?: "join" | "query"
-
-    /**
-     * Specifies what relations should be loaded.
-     * @deprecated
-     */
-    join?: JoinOptions
 
     /**
      * Order, in which entities should be ordered.
