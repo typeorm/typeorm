@@ -2,7 +2,7 @@ import { expect } from "chai"
 import "reflect-metadata"
 import sinon from "sinon"
 import { SelectQueryBuilder } from "../../../src"
-import { DataSource } from "../../../src/data-source/index"
+import type { DataSource } from "../../../src/data-source/index"
 import {
     closeTestingConnections,
     createTestingConnections,
