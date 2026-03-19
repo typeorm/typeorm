@@ -3932,6 +3932,31 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
+    /**
+     * Determines the join type for a relation based on nullability,
+     * join column ownership, and soft-delete configuration.
+     *
+     * Uses INNER JOIN only when:
+     * - The relation is non-nullable (nullable=false)
+     * - The relation owns the join column (ManyToOne or OneToOne owner)
+     * - The target entity has no soft-delete column, or withDeleted is enabled
+     *
+     * Otherwise, uses LEFT JOIN to preserve parent rows.
+     * @param relation
+     */
+    protected getRelationJoinType(
+        relation: RelationMetadata,
+    ): "inner" | "left" {
+        if (!relation.isNullable && relation.isWithJoinColumn) {
+            const hasSoftDelete =
+                relation.inverseEntityMetadata.deleteDateColumn
+            if (!hasSoftDelete || this.expressionMap.withDeleted) {
+                return "inner"
+            }
+        }
+        return "left"
+    }
+
     protected buildRelations(
         relations: FindOptionsRelations<any>,
         selection: FindOptionsSelect<any> | undefined,
@@ -3978,11 +4003,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     } else {
                         // join
                         this.joins.push({
-                            type:
-                                !relation.isNullable &&
-                                relation.isWithJoinColumn
-                                    ? "inner"
-                                    : "left",
+                            type: this.getRelationJoinType(relation),
                             select: true,
                             selection:
                                 selection &&
@@ -4092,11 +4113,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             )
                             if (!existJoin) {
                                 this.joins.push({
-                                    type:
-                                        !eagerRelation.isNullable &&
-                                        eagerRelation.isWithJoinColumn
-                                            ? "inner"
-                                            : "left",
+                                    type: this.getRelationJoinType(
+                                        eagerRelation,
+                                    ),
                                     select: true,
                                     alias: eagerRelationJoinAlias,
                                     parentAlias: joinAlias,
@@ -4227,10 +4246,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )
                 if (!existJoin) {
                     this.joins.push({
-                        type:
-                            !relation.isNullable && relation.isWithJoinColumn
-                                ? "inner"
-                                : "left",
+                        type: this.getRelationJoinType(relation),
                         select: false,
                         alias: joinAlias,
                         parentAlias: alias,
@@ -4561,11 +4577,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                         if (!existJoin) {
                             this.joins.push({
-                                type:
-                                    !relation.isNullable &&
-                                    relation.isWithJoinColumn
-                                        ? "inner"
-                                        : "left",
+                                type: this.getRelationJoinType(relation),
                                 select: false,
                                 selection: undefined,
                                 alias: joinAlias,

@@ -12,6 +12,7 @@ import { Profile } from "./entity/Profile"
 import { Category } from "./entity/Category"
 import { Comment } from "./entity/Comment"
 import { PostMeta } from "./entity/PostMeta"
+import { SoftDeleteAuthor } from "./entity/SoftDeleteAuthor"
 
 describe("relations > join strategy", () => {
     let dataSources: DataSource[]
@@ -63,6 +64,10 @@ describe("relations > join strategy", () => {
         category.name = "TypeScript"
         await dataSource.manager.save(category)
 
+        const softDeleteAuthor = new SoftDeleteAuthor()
+        softDeleteAuthor.name = "Soft Author"
+        await dataSource.manager.save(softDeleteAuthor)
+
         // Post 1: all relations set
         const fullPost = new Post()
         fullPost.title = "Full post"
@@ -73,6 +78,7 @@ describe("relations > join strategy", () => {
         fullPost.requiredProfile = requiredProfile
         fullPost.optionalProfile = optionalProfile
         fullPost.categories = [category]
+        fullPost.requiredSoftDeleteAuthor = softDeleteAuthor
         await dataSource.manager.save(fullPost)
 
         const comment = new Comment()
@@ -91,6 +97,7 @@ describe("relations > join strategy", () => {
         minimalPost.requiredAuthor = author
         minimalPost.eagerRequiredAuthor = author
         minimalPost.requiredProfile = requiredProfile2
+        minimalPost.requiredSoftDeleteAuthor = softDeleteAuthor
         // optionalAuthor, eagerOptionalAuthor, optionalProfile: NULL
         // no comments, no categories, no meta
         await dataSource.manager.save(minimalPost)
@@ -505,6 +512,117 @@ describe("relations > join strategy", () => {
                         )
                         expect(fullPost?.categories).to.have.length(1)
                         expect(minimalPost?.categories).to.have.length(0)
+                    }),
+                ))
+        })
+    })
+
+    describe("soft-delete interaction", () => {
+        describe("QueryBuilder", () => {
+            it("should use LEFT JOIN when nullable=false but target has @DeleteDateColumn", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        await prepareData(dataSource)
+
+                        const qb = dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            .setFindOptions({
+                                relations: {
+                                    requiredSoftDeleteAuthor: true,
+                                },
+                            })
+
+                        // Should be LEFT JOIN despite nullable=false, because target has soft-delete
+                        expect(qb.getQuery()).to.match(
+                            /LEFT JOIN .?soft_delete_author.? .?post__requiredSoftDeleteAuthor.?/,
+                        )
+
+                        const posts = await qb.getMany()
+                        expect(posts).to.have.length(2)
+                    }),
+                ))
+
+            it("should preserve parent rows when related soft-deleted entity is soft-deleted", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        await prepareData(dataSource)
+
+                        // Soft-delete the author
+                        await dataSource
+                            .getRepository(SoftDeleteAuthor)
+                            .softDelete({ name: "Soft Author" })
+
+                        // Parent posts should still be returned (LEFT JOIN preserves them)
+                        const posts = await dataSource
+                            .getRepository(Post)
+                            .find({
+                                relations: {
+                                    requiredSoftDeleteAuthor: true,
+                                },
+                            })
+
+                        expect(posts).to.have.length(2)
+                        // The soft-deleted author should be null (filtered by IS NULL condition)
+                        expect(
+                            posts.every(
+                                (p) => p.requiredSoftDeleteAuthor === null,
+                            ),
+                        ).to.be.true
+                    }),
+                ))
+
+            it("should use INNER JOIN when nullable=false with @DeleteDateColumn and withDeleted=true", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        await prepareData(dataSource)
+
+                        const qb = dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            .setFindOptions({
+                                withDeleted: true,
+                                relations: {
+                                    requiredSoftDeleteAuthor: true,
+                                },
+                            })
+
+                        // With withDeleted=true, soft-delete is ignored, so INNER JOIN is safe
+                        expect(qb.getQuery()).to.match(
+                            /INNER JOIN .?soft_delete_author.? .?post__requiredSoftDeleteAuthor.?/,
+                        )
+
+                        const posts = await qb.getMany()
+                        expect(posts).to.have.length(2)
+                    }),
+                ))
+        })
+
+        describe("find methods", () => {
+            it("should preserve parent rows when related entity is soft-deleted", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        await prepareData(dataSource)
+
+                        // Soft-delete the author
+                        await dataSource
+                            .getRepository(SoftDeleteAuthor)
+                            .softDelete({ name: "Soft Author" })
+
+                        const posts = await dataSource
+                            .getRepository(Post)
+                            .find({
+                                relations: {
+                                    requiredSoftDeleteAuthor: true,
+                                },
+                            })
+
+                        expect(posts).to.have.length(2)
+                        expect(
+                            posts.every(
+                                (p) => p.requiredSoftDeleteAuthor === null,
+                            ),
+                        ).to.be.true
                     }),
                 ))
         })

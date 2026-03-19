@@ -14,6 +14,7 @@ import { Category } from "./Category"
 import { Comment } from "./Comment"
 import { PostMeta } from "./PostMeta"
 import { Profile } from "./Profile"
+import { SoftDeleteAuthor } from "./SoftDeleteAuthor"
 
 @Entity()
 export class Post {
@@ -61,4 +62,8 @@ export class Post {
     // OneToOne inverse (non-owner) — should always use LEFT JOIN
     @OneToOne(() => PostMeta, (meta) => meta.post)
     meta: PostMeta
+
+    // ManyToOne, nullable: false, but target has @DeleteDateColumn — should use LEFT JOIN
+    @ManyToOne(() => SoftDeleteAuthor, { nullable: false })
+    requiredSoftDeleteAuthor: SoftDeleteAuthor
 }

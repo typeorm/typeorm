@@ -447,6 +447,8 @@ optionalEditor: User
 
 `OneToMany`, `ManyToMany`, and inverse `OneToOne` relations always use `LEFT JOIN` regardless of the `nullable` setting, since these relation types do not have a join column on the current table.
 
+**Soft-delete exception:** If the related entity has a `@DeleteDateColumn`, `LEFT JOIN` is used even for `nullable: false` relations (unless `withDeleted: true` is set). This prevents soft-deleted related entities from filtering out their parent rows.
+
 ## Repository
 
 ### `findOneById`

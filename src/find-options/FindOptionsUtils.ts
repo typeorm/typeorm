@@ -207,7 +207,12 @@ export class FindOptionsUtils {
             const selection = alias + "." + relation.propertyPath
             if (qb.expressionMap.relationLoadStrategy === "query") {
                 qb.concatRelationMetadata(relation)
-            } else if (!relation.isNullable && relation.isWithJoinColumn) {
+            } else if (
+                !relation.isNullable &&
+                relation.isWithJoinColumn &&
+                (!relation.inverseEntityMetadata.deleteDateColumn ||
+                    qb.expressionMap.withDeleted)
+            ) {
                 qb.innerJoinAndSelect(selection, relationAlias)
             } else {
                 qb.leftJoinAndSelect(selection, relationAlias)
@@ -313,7 +318,12 @@ export class FindOptionsUtils {
             )
 
             if (addJoin && !joinAlreadyAdded) {
-                if (!relation.isNullable && relation.isWithJoinColumn) {
+                if (
+                    !relation.isNullable &&
+                    relation.isWithJoinColumn &&
+                    (!relation.inverseEntityMetadata.deleteDateColumn ||
+                        qb.expressionMap.withDeleted)
+                ) {
                     qb.innerJoin(
                         alias + "." + relation.propertyPath,
                         relationAlias,
