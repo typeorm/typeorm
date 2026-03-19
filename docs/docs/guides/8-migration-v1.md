@@ -563,7 +563,7 @@ const posts = await repository
     .getMany()
 ```
 
-This distinction matters in practice. For example, PostgreSQL does not allow `FOR UPDATE` on the nullable side of an outer join, so queries that combine locking with joined relations may need INNER JOINs:
+This distinction matters in practice. For example, PostgreSQL and CockroachDB do not allow `FOR UPDATE` on the nullable side of an outer join, so queries that combine locking with joined relations may need INNER JOINs:
 
 ```typescript
 // Before — innerJoinAndSelect + lock
@@ -584,6 +584,54 @@ const post = await repository
     .setLock("pessimistic_write", undefined, ["categories"])
     .getOne()
 ```
+
+#### Locking with nested relations → QueryBuilder
+
+The `relations` option cannot be used with pessimistic locking on joined tables because `relations` always uses LEFT JOINs, and PostgreSQL/CockroachDB reject `FOR UPDATE` on the nullable side of outer joins. Use QueryBuilder with `innerJoinAndSelect` instead:
+
+```typescript
+// Before — nested relations + lock via find options
+const post = await repository.findOne({
+    where: { id: 1 },
+    join: {
+        alias: "post",
+        innerJoinAndSelect: {
+            categories: "post.categories",
+            images: "categories.images",
+        },
+    },
+    lock: { mode: "pessimistic_write", tables: ["images"] },
+})
+
+// After — QueryBuilder with innerJoinAndSelect + lock
+const post = await repository
+    .createQueryBuilder("post")
+    .innerJoinAndSelect("post.categories", "categories")
+    .innerJoinAndSelect("categories.images", "images")
+    .where("post.id = :id", { id: 1 })
+    .setLock("pessimistic_write", undefined, ["images"])
+    .getOne()
+```
+
+Note that locking the _main_ table still works with `relations` — only locking _joined_ tables requires QueryBuilder with inner joins.
+
+### String-based `select` removed
+
+The deprecated string-array syntax for `select` find options has been removed. Use the object syntax instead:
+
+```typescript
+// Before
+const users = await repository.find({
+    select: ["id", "name"],
+})
+
+// After
+const users = await repository.find({
+    select: { id: true, name: true },
+})
+```
+
+The removed type is `FindOptionsSelectByString`.
 
 ## QueryBuilder
 
