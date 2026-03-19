@@ -100,6 +100,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     // -------------------------------------------------------------------------
 
     setFindOptions(findOptions: FindManyOptions<Entity>) {
+        FindOptionsUtils.rejectJoinOption(findOptions)
+        FindOptionsUtils.rejectStringArraySelect(findOptions)
+        FindOptionsUtils.rejectStringArrayRelations(findOptions)
         this.findOptions = findOptions
         this.applyFindOptions()
         return this

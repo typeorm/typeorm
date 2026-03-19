@@ -7,7 +7,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 import type { FindTreeOptions } from "./FindTreeOptions"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { RelationMetadata } from "../metadata/RelationMetadata"
-import { EntityPropertyNotFoundError } from "../error"
+import { EntityPropertyNotFoundError, TypeORMError } from "../error"
 
 /**
  * Utilities to work with FindOptions.
@@ -16,6 +16,65 @@ export class FindOptionsUtils {
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Throws if the removed `join` option is present on a find-options object.
+     * This catches untyped/JS callers still passing `join` after its removal in v1.0.
+     * @param options
+     */
+    static rejectJoinOption(options: unknown): void {
+        if (
+            options &&
+            typeof options === "object" &&
+            "join" in options &&
+            options.join != null
+        ) {
+            throw new TypeORMError(
+                `"join" option has been removed. Use "relations" for left joins ` +
+                    `or QueryBuilder for other join types. See the v1 migration guide for details.`,
+            )
+        }
+    }
+
+    /**
+     * Throws if the removed string-array `select` syntax is used.
+     * This catches untyped/JS callers still passing `select: ["col"]` after its removal in v1.0.
+     * @param options
+     */
+    static rejectStringArraySelect(options: unknown): void {
+        if (
+            options &&
+            typeof options === "object" &&
+            "select" in options &&
+            Array.isArray(options.select)
+        ) {
+            throw new TypeORMError(
+                `String-array "select" syntax has been removed. ` +
+                    `Use object syntax instead, e.g. select: { id: true, name: true }. ` +
+                    `See the v1 migration guide for details.`,
+            )
+        }
+    }
+
+    /**
+     * Throws if the removed string-array `relations` syntax is used.
+     * This catches untyped/JS callers still passing `relations: ["rel"]` after its removal in v1.0.
+     * @param options
+     */
+    static rejectStringArrayRelations(options: unknown): void {
+        if (
+            options &&
+            typeof options === "object" &&
+            "relations" in options &&
+            Array.isArray(options.relations)
+        ) {
+            throw new TypeORMError(
+                `String-array "relations" syntax has been removed. ` +
+                    `Use object syntax instead, e.g. relations: { profile: true, posts: true }. ` +
+                    `See the v1 migration guide for details.`,
+            )
+        }
+    }
 
     /**
      * Checks if given object is really instance of FindOneOptions interface.
