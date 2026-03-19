@@ -1,7 +1,7 @@
-import { PrimaryColumn, Entity, Column } from "../../../../src"
+import { PrimaryColumn, Entity, Column } from "../../../../../src"
 
 @Entity()
-export class Post {
+export class PostWithNullTransformer {
     @PrimaryColumn()
     id: number
 

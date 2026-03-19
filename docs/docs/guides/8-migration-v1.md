@@ -427,6 +427,24 @@ The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/
 
 ## Repository
 
+### `findOneById`
+
+The deprecated `findOneById` method has been removed from `EntityManager`, `Repository`, `BaseEntity`, `MongoEntityManager`, and `MongoRepository`. Use `findOneBy` instead:
+
+```typescript
+// Before
+const user = await manager.findOneById(User, 1)
+const user = await repository.findOneById(1)
+const user = await User.findOneById(1)
+
+// After
+const user = await manager.findOneBy(User, { id: 1 })
+const user = await repository.findOneBy({ id: 1 })
+const user = await User.findOneBy({ id: 1 })
+```
+
+For MongoDB entities with `@ObjectIdColumn()`, `findOneBy` works the same way — TypeORM automatically translates the property name to `_id`.
+
 ### `findByIds` removed
 
 The deprecated `findByIds` method has been removed from `EntityManager`, `Repository`, and `BaseEntity`. Use `findBy` with the `In` operator instead:
@@ -632,6 +650,24 @@ const users = await repository.find({
 ```
 
 The removed type is `FindOptionsSelectByString`.
+
+### String-based `relations` removed
+
+The deprecated string-array syntax for `relations` find options has been removed. Use the object syntax instead:
+
+```typescript
+// Before
+const users = await repository.find({
+    relations: ["profile", "posts"],
+})
+
+// After
+const users = await repository.find({
+    relations: { profile: true, posts: true },
+})
+```
+
+The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
 
