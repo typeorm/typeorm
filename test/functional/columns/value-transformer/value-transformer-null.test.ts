@@ -3,15 +3,15 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
-import { Post } from "./entity/Post"
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import { PostWithNullTransformer } from "./entity/PostWithNullTransformer"
 
-describe("github issues > #3395 Transform.from does nothing when column is NULL", () => {
+describe("columns > value-transformer > null transform", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Post],
+            entities: [PostWithNullTransformer],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -20,12 +20,14 @@ describe("github issues > #3395 Transform.from does nothing when column is NULL"
     it("should run transform from if column is null", () =>
         Promise.all(
             dataSources.map(async function (connection) {
-                const post = new Post()
+                const post = new PostWithNullTransformer()
                 post.id = 1
-                await connection.getRepository(Post).save(post)
+                await connection
+                    .getRepository(PostWithNullTransformer)
+                    .save(post)
 
                 const loadedPost = await connection
-                    .getRepository(Post)
+                    .getRepository(PostWithNullTransformer)
                     .findOneBy({ id: 1 })
 
                 loadedPost!.text!.should.be.eq("This is null")

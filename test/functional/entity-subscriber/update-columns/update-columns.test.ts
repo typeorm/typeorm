@@ -3,11 +3,11 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
-describe("github issues > #3256 wrong subscriber methods being called", () => {
+describe("entity-subscriber > update columns", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
