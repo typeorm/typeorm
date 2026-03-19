@@ -102,6 +102,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     setFindOptions(findOptions: FindManyOptions<Entity>) {
         FindOptionsUtils.rejectJoinOption(findOptions)
         FindOptionsUtils.rejectStringArraySelect(findOptions)
+        FindOptionsUtils.rejectStringArrayRelations(findOptions)
         this.findOptions = findOptions
         this.applyFindOptions()
         return this
@@ -3185,14 +3186,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.selects = []
 
             if (this.findOptions.relations) {
-                const relations = Array.isArray(this.findOptions.relations)
-                    ? OrmUtils.propertyPathsToTruthyObject(
-                          this.findOptions.relations,
-                      )
-                    : this.findOptions.relations
-
                 this.buildRelations(
-                    relations,
+                    this.findOptions.relations,
                     this.findOptions.select,
                     this.expressionMap.mainAlias!.metadata,
                     this.expressionMap.mainAlias!.name,
@@ -3202,7 +3197,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.expressionMap.relationLoadStrategy === "join"
                 ) {
                     this.buildEagerRelations(
-                        relations,
+                        this.findOptions.relations,
                         this.findOptions.select,
                         this.expressionMap.mainAlias!.metadata,
                         this.expressionMap.mainAlias!.name,
@@ -3617,12 +3612,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const relationAlias =
                         relation.inverseEntityMetadata.targetName
 
-                    const relations = Array.isArray(this.findOptions.relations)
-                        ? OrmUtils.propertyPathsToTruthyObject(
-                              this.findOptions.relations,
-                          )
-                        : this.findOptions.relations
-
                     const queryBuilder = this.createQueryBuilder(queryRunner)
                         .select(relationAlias)
                         .from(relationTarget, relationAlias)
@@ -3639,9 +3628,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                       relation.propertyPath,
                                   )
                                 : undefined,
-                            relations: relations
+                            relations: this.findOptions.relations
                                 ? OrmUtils.deepValue(
-                                      relations,
+                                      this.findOptions.relations,
                                       relation.propertyPath,
                                   )
                                 : undefined,
