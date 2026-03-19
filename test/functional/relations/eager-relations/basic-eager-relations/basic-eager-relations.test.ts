@@ -257,20 +257,22 @@ describe("relations > eager relations > basic", () => {
                     .setFindOptions({ where: { id: 1 } })
                     .getQuery()
 
-                // nullable=false relation (requiredAuthor) should use INNER JOIN
-                expect(query).to.contain("INNER JOIN")
+                // nullable=false ManyToOne relation should use INNER JOIN
+                expect(query).to.match(
+                    /INNER JOIN .?user.? .?post__requiredAuthor.?/,
+                )
 
-                // nullable=true relation (author) should still use LEFT JOIN
-                expect(query).to.contain("LEFT JOIN")
+                // nullable=true ManyToOne relation should still use LEFT JOIN
+                expect(query).to.match(/LEFT JOIN .?user.? .?post__author.?/)
 
                 // also verify the data loads correctly
                 const loadedPost = await connection.manager.findOne(Post, {
                     where: { id: 1 },
                 })
 
-                expect(loadedPost!.requiredAuthor).to.not.be.undefined
-                expect(loadedPost!.requiredAuthor).to.not.be.null
-                expect(loadedPost!.requiredAuthor.firstName).to.equal("Timber")
+                expect(loadedPost).to.not.be.null
+                expect(loadedPost?.requiredAuthor).to.not.be.null
+                expect(loadedPost?.requiredAuthor.firstName).to.equal("Timber")
             }),
         ))
 })

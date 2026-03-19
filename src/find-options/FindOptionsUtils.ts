@@ -208,10 +208,10 @@ export class FindOptionsUtils {
             if (qb.expressionMap.relationLoadStrategy === "query") {
                 qb.concatRelationMetadata(relation)
             } else {
-                if (relation.isNullable) {
-                    qb.leftJoinAndSelect(selection, relationAlias)
-                } else {
+                if (!relation.isNullable && relation.isWithJoinColumn) {
                     qb.innerJoinAndSelect(selection, relationAlias)
+                } else {
+                    qb.leftJoinAndSelect(selection, relationAlias)
                 }
             }
 
@@ -315,13 +315,13 @@ export class FindOptionsUtils {
             )
 
             if (addJoin && !joinAlreadyAdded) {
-                if (relation.isNullable) {
-                    qb.leftJoin(
+                if (!relation.isNullable && relation.isWithJoinColumn) {
+                    qb.innerJoin(
                         alias + "." + relation.propertyPath,
                         relationAlias,
                     )
                 } else {
-                    qb.innerJoin(
+                    qb.leftJoin(
                         alias + "." + relation.propertyPath,
                         relationAlias,
                     )

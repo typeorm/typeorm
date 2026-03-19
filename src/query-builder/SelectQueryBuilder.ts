@@ -3978,7 +3978,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     } else {
                         // join
                         this.joins.push({
-                            type: relation.isNullable ? "left" : "inner",
+                            type:
+                                !relation.isNullable &&
+                                relation.isWithJoinColumn
+                                    ? "inner"
+                                    : "left",
                             select: true,
                             selection:
                                 selection &&
@@ -4088,9 +4092,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             )
                             if (!existJoin) {
                                 this.joins.push({
-                                    type: eagerRelation.isNullable
-                                        ? "left"
-                                        : "inner",
+                                    type:
+                                        !eagerRelation.isNullable &&
+                                        eagerRelation.isWithJoinColumn
+                                            ? "inner"
+                                            : "left",
                                     select: true,
                                     alias: eagerRelationJoinAlias,
                                     parentAlias: joinAlias,
@@ -4221,7 +4227,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )
                 if (!existJoin) {
                     this.joins.push({
-                        type: relation.isNullable ? "left" : "inner",
+                        type:
+                            !relation.isNullable && relation.isWithJoinColumn
+                                ? "inner"
+                                : "left",
                         select: false,
                         alias: joinAlias,
                         parentAlias: alias,
@@ -4552,7 +4561,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                         if (!existJoin) {
                             this.joins.push({
-                                type: relation.isNullable ? "left" : "inner",
+                                type:
+                                    !relation.isNullable &&
+                                    relation.isWithJoinColumn
+                                        ? "inner"
+                                        : "left",
                                 select: false,
                                 selection: undefined,
                                 alias: joinAlias,

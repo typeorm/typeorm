@@ -425,6 +425,28 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected.
 
+## Relations
+
+### `nullable: false` now uses INNER JOIN
+
+Relations marked with `nullable: false` now use `INNER JOIN` instead of `LEFT JOIN` when loaded via `relations`, eager loading, or find options. This applies only to relation types that own the join column (`ManyToOne` and owning-side `OneToOne`).
+
+This is semantically correct since a non-nullable foreign key guarantees the related entity exists, and allows the database optimizer to produce more efficient query plans.
+
+**Potentially breaking:** If your database contains rows that violate the `NOT NULL` constraint (e.g. orphaned foreign keys, or `nullable: false` was set but the column is actually nullable in the DB), those rows will be excluded from query results. Verify your data integrity or change the relation to `nullable: true` if needed.
+
+```typescript
+// INNER JOIN — related entity is guaranteed to exist
+@ManyToOne(() => User, { nullable: false })
+author: User
+
+// LEFT JOIN — related entity may not exist (default)
+@ManyToOne(() => User)
+optionalEditor: User
+```
+
+`OneToMany`, `ManyToMany`, and inverse `OneToOne` relations always use `LEFT JOIN` regardless of the `nullable` setting, since these relation types do not have a join column on the current table.
+
 ## Repository
 
 ### `findOneById`
