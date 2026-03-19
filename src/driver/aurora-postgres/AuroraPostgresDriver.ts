@@ -51,6 +51,7 @@ export class AuroraPostgresDriver extends PostgresWrapper {
 
     constructor(dataSource: DataSource) {
         super()
+        this.dataSource = dataSource
         this.options = dataSource.options as AuroraPostgresDataSourceOptions
         this.isReplicated = false
 
