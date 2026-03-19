@@ -2487,13 +2487,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     if (parts.length >= 3) {
                         const [, schema, name] = parts
-                        return `("OWNER" = '${schema}' AND "TABLE_NAME" = '${name}')`
+                        return `("OWNER" = '${schema.toUpperCase()}' AND "TABLE_NAME" = '${name.toUpperCase()}')`
                     } else if (parts.length === 2) {
                         const [schema, name] = parts
-                        return `("OWNER" = '${schema}' AND "TABLE_NAME" = '${name}')`
+                        return `("OWNER" = '${schema.toUpperCase()}' AND "TABLE_NAME" = '${name.toUpperCase()}')`
                     } else if (parts.length === 1) {
                         const [name] = parts
-                        return `("TABLE_NAME" = '${name}')`
+                        return `("TABLE_NAME" = '${name.toUpperCase()}')`
                     } else {
                         return `(1=0)`
                     }
