@@ -84,20 +84,20 @@ describe("embedded > outer-primary-column", () => {
                 loadedPost.counters.favorites += 1
                 await postRepository.save(loadedPost)
 
-                const loadedPost2 = (await postRepository.findOneBy({
+                const loadedPost2 = await postRepository.findOneBy({
                     counters: { code: 1 },
-                }))!
-                expect(loadedPost2.title).to.be.equal("About cars")
-                expect(
-                    loadedPost2.counters.should.be.eql({
-                        code: 1,
-                        comments: 1,
-                        favorites: 3,
-                        likes: 3,
-                    }),
-                )
+                })
 
-                await postRepository.remove(loadedPost2)
+                expect(loadedPost2).to.not.be.null
+                expect(loadedPost2?.title).to.be.equal("About cars")
+                expect(loadedPost2?.counters).to.be.eql({
+                    code: 1,
+                    comments: 1,
+                    favorites: 3,
+                    likes: 3,
+                })
+
+                await postRepository.remove(loadedPost2!)
 
                 const loadedPosts2 = (await postRepository.find())!
                 expect(loadedPosts2.length).to.be.equal(1)
