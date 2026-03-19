@@ -446,11 +446,13 @@ const user = await repository.findOneBy({ id: 1 })
 > ```typescript
 > import { ObjectId } from "mongodb"
 >
-> // If post.id is already an ObjectId:
-> const post = await repository.findOneBy({ _id: post.id } as any)
+> // If existingPost.id is already an ObjectId:
+> const loadedPost = await repository.findOneBy({
+>     _id: existingPost.id,
+> } as any)
 >
 > // If you have a string ID:
-> const post = await repository.findOneBy({
+> const loadedPost = await repository.findOneBy({
 >     _id: new ObjectId(stringId),
 > } as any)
 > ```
