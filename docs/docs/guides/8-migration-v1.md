@@ -633,6 +633,24 @@ const users = await repository.find({
 
 The removed type is `FindOptionsSelectByString`.
 
+### String-based `relations` removed
+
+The deprecated string-array syntax for `relations` find options has been removed. Use the object syntax instead:
+
+```typescript
+// Before
+const users = await repository.find({
+    relations: ["profile", "posts"],
+})
+
+// After
+const users = await repository.find({
+    relations: { profile: true, posts: true },
+})
+```
+
+The removed type is `FindOptionsRelationByString`.
+
 ## QueryBuilder
 
 ### `printSql` renamed to `logQuery`

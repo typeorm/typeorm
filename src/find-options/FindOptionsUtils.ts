@@ -57,6 +57,26 @@ export class FindOptionsUtils {
     }
 
     /**
+     * Throws if the removed string-array `relations` syntax is used.
+     * This catches untyped/JS callers still passing `relations: ["rel"]` after its removal in v1.0.
+     * @param options
+     */
+    static rejectStringArrayRelations(options: unknown): void {
+        if (
+            options &&
+            typeof options === "object" &&
+            "relations" in options &&
+            Array.isArray(options.relations)
+        ) {
+            throw new TypeORMError(
+                `String-array "relations" syntax has been removed. ` +
+                    `Use object syntax instead, e.g. relations: { profile: true, posts: true }. ` +
+                    `See the v1 migration guide for details.`,
+            )
+        }
+    }
+
+    /**
      * Checks if given object is really instance of FindOneOptions interface.
      * @param obj
      */
