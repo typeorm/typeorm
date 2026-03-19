@@ -1179,10 +1179,26 @@ export class MongoEntityManager extends EntityManager {
                 projectCriteria[key] = 1
                 return projectCriteria
             }, {} as any)
-        } else {
-            // todo: implement
-            return {}
         }
+
+        const projection: ObjectLiteral = {}
+        const flatten = (obj: ObjectLiteral, prefix: string) => {
+            for (const key of Object.keys(obj)) {
+                const value = obj[key]
+                const path = prefix ? `${prefix}.${key}` : key
+                if (value === true) {
+                    projection[path] = 1
+                } else if (
+                    value &&
+                    typeof value === "object" &&
+                    !Array.isArray(value)
+                ) {
+                    flatten(value, path)
+                }
+            }
+        }
+        flatten(selects, "")
+        return projection
     }
 
     /**
