@@ -79,9 +79,8 @@ describe("persistence > custom-column-names", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: { category: "post.category" },
+                    relations: {
+                        category: true,
                     },
                 })
                 .then((post) => {
@@ -124,9 +123,8 @@ describe("persistence > custom-column-names", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: { category: "post.category" },
+                    relations: {
+                        category: true,
                     },
                 })
                 .then((post) => {
@@ -164,9 +162,8 @@ describe("persistence > custom-column-names", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: { category: "post.category" },
+                    relations: {
+                        category: true,
                     },
                 })
                 .then((post) => {
@@ -225,11 +222,9 @@ describe("persistence > custom-column-names", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            category: "post.category",
-                            metadata: "category.metadata",
+                    relations: {
+                        category: {
+                            metadata: true,
                         },
                     },
                 })
@@ -286,11 +281,9 @@ describe("persistence > custom-column-names", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            category: "post.category",
-                            metadata: "category.metadata",
+                    relations: {
+                        category: {
+                            metadata: true,
                         },
                     },
                 })
