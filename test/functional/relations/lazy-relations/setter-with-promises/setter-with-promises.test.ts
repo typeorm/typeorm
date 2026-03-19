@@ -36,11 +36,10 @@ describe("relations > lazy relations > setter with promises", () => {
                 await connection.manager.save(circle)
 
                 users.push(user)
-                const circleFromDB = await connection.manager
-                    .getRepository(Circle)
-                    .createQueryBuilder("circle")
-                    .where("circle.id = :id", { id: circle.getId() })
-                    .getOne()
+                const circleFromDB = await connection.manager.findOneBy(
+                    Circle,
+                    { id: circle.getId() } as any, // id is private
+                )
                 expect(circleFromDB).is.not.null
 
                 // Setting users with setter
