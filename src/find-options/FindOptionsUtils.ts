@@ -207,12 +207,10 @@ export class FindOptionsUtils {
             const selection = alias + "." + relation.propertyPath
             if (qb.expressionMap.relationLoadStrategy === "query") {
                 qb.concatRelationMetadata(relation)
+            } else if (!relation.isNullable && relation.isWithJoinColumn) {
+                qb.innerJoinAndSelect(selection, relationAlias)
             } else {
-                if (!relation.isNullable && relation.isWithJoinColumn) {
-                    qb.innerJoinAndSelect(selection, relationAlias)
-                } else {
-                    qb.leftJoinAndSelect(selection, relationAlias)
-                }
+                qb.leftJoinAndSelect(selection, relationAlias)
             }
 
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end
