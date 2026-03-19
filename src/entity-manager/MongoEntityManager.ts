@@ -1109,6 +1109,7 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions) return undefined
 
         FindOptionsUtils.rejectJoinOption(optionsOrConditions)
+        FindOptionsUtils.rejectStringArraySelect(optionsOrConditions)
 
         if (FindOptionsUtils.isFindManyOptions<Entity>(optionsOrConditions))
             // If where condition is passed as a string which contains sql we have to ignore
@@ -1133,6 +1134,7 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions) return undefined
 
         FindOptionsUtils.rejectJoinOption(optionsOrConditions)
+        FindOptionsUtils.rejectStringArraySelect(optionsOrConditions)
 
         if (FindOptionsUtils.isFindOneOptions<Entity>(optionsOrConditions))
             // If where condition is passed as a string which contains sql we have to ignore
