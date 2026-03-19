@@ -12,7 +12,7 @@ import { Profile } from "./entity/Profile"
 import { Category } from "./entity/Category"
 import { Comment } from "./entity/Comment"
 import { PostMeta } from "./entity/PostMeta"
-import { SoftDeleteAuthor } from "./entity/SoftDeleteAuthor"
+import { SoftDeletedEditor } from "./entity/SoftDeletedEditor"
 
 describe("relations > join strategy", () => {
     let dataSources: DataSource[]
@@ -37,8 +37,13 @@ describe("relations > join strategy", () => {
      * - If join type were wrong (INNER on optional) → only "Full post" returned
      */
     async function prepareData(dataSource: DataSource) {
+        const authorProfile = new Profile()
+        authorProfile.bio = "Author profile"
+        await dataSource.manager.save(authorProfile)
+
         const author = new Author()
         author.name = "Timber"
+        author.requiredProfile = authorProfile
         await dataSource.manager.save(author)
 
         const requiredProfile = new Profile()
@@ -57,9 +62,9 @@ describe("relations > join strategy", () => {
         category.name = "TypeScript"
         await dataSource.manager.save(category)
 
-        const softDeleteAuthor = new SoftDeleteAuthor()
-        softDeleteAuthor.name = "Soft Author"
-        await dataSource.manager.save(softDeleteAuthor)
+        const softDeletedEditor = new SoftDeletedEditor()
+        softDeletedEditor.name = "Soft Editor"
+        await dataSource.manager.save(softDeletedEditor)
 
         // Post 1: all relations set
         const fullPost = new Post()
@@ -71,7 +76,7 @@ describe("relations > join strategy", () => {
         fullPost.requiredProfile = requiredProfile
         fullPost.optionalProfile = optionalProfile
         fullPost.categories = [category]
-        fullPost.requiredSoftDeleteAuthor = softDeleteAuthor
+        fullPost.softDeletedEditor = softDeletedEditor
         await dataSource.manager.save(fullPost)
 
         const comment = new Comment()
@@ -90,7 +95,7 @@ describe("relations > join strategy", () => {
         minimalPost.requiredAuthor = author
         minimalPost.eagerRequiredAuthor = author
         minimalPost.requiredProfile = requiredProfile2
-        minimalPost.requiredSoftDeleteAuthor = softDeleteAuthor
+        minimalPost.softDeletedEditor = softDeletedEditor
         // optionalAuthor, eagerOptionalAuthor, optionalProfile: NULL
         // no comments, no categories, no meta
         await dataSource.manager.save(minimalPost)
@@ -522,13 +527,13 @@ describe("relations > join strategy", () => {
                             .createQueryBuilder("post")
                             .setFindOptions({
                                 relations: {
-                                    requiredSoftDeleteAuthor: true,
+                                    softDeletedEditor: true,
                                 },
                             })
 
                         // Should be LEFT JOIN despite nullable=false, because target has soft-delete
                         expect(qb.getQuery()).to.match(
-                            /LEFT JOIN .?soft_delete_author.? .?post__post_requiredSoftDeleteAuthor.?/,
+                            /LEFT JOIN .?soft_deleted_editor.? .?post__post_softDeletedEditor.?/,
                         )
 
                         const posts = await qb.getMany()
@@ -543,25 +548,22 @@ describe("relations > join strategy", () => {
 
                         // Soft-delete the author
                         await dataSource
-                            .getRepository(SoftDeleteAuthor)
-                            .softDelete({ name: "Soft Author" })
+                            .getRepository(SoftDeletedEditor)
+                            .softDelete({ name: "Soft Editor" })
 
                         // Parent posts should still be returned (LEFT JOIN preserves them)
                         const posts = await dataSource
                             .getRepository(Post)
                             .find({
                                 relations: {
-                                    requiredSoftDeleteAuthor: true,
+                                    softDeletedEditor: true,
                                 },
                             })
 
                         expect(posts).to.have.length(2)
                         // The soft-deleted author should be null (filtered by IS NULL condition)
-                        expect(
-                            posts.every(
-                                (p) => p.requiredSoftDeleteAuthor === null,
-                            ),
-                        ).to.be.true
+                        expect(posts.every((p) => p.softDeletedEditor === null))
+                            .to.be.true
                     }),
                 ))
 
@@ -576,13 +578,13 @@ describe("relations > join strategy", () => {
                             .setFindOptions({
                                 withDeleted: true,
                                 relations: {
-                                    requiredSoftDeleteAuthor: true,
+                                    softDeletedEditor: true,
                                 },
                             })
 
                         // With withDeleted=true, soft-delete is ignored, so INNER JOIN is safe
                         expect(qb.getQuery()).to.match(
-                            /INNER JOIN .?soft_delete_author.? .?post__post_requiredSoftDeleteAuthor.?/,
+                            /INNER JOIN .?soft_deleted_editor.? .?post__post_softDeletedEditor.?/,
                         )
 
                         const posts = await qb.getMany()
@@ -599,23 +601,97 @@ describe("relations > join strategy", () => {
 
                         // Soft-delete the author
                         await dataSource
-                            .getRepository(SoftDeleteAuthor)
-                            .softDelete({ name: "Soft Author" })
+                            .getRepository(SoftDeletedEditor)
+                            .softDelete({ name: "Soft Editor" })
 
                         const posts = await dataSource
                             .getRepository(Post)
                             .find({
                                 relations: {
-                                    requiredSoftDeleteAuthor: true,
+                                    softDeletedEditor: true,
                                 },
                             })
 
                         expect(posts).to.have.length(2)
-                        expect(
-                            posts.every(
-                                (p) => p.requiredSoftDeleteAuthor === null,
-                            ),
-                        ).to.be.true
+                        expect(posts.every((p) => p.softDeletedEditor === null))
+                            .to.be.true
+                    }),
+                ))
+        })
+    })
+
+    describe("nested joins (parent LEFT → child must also be LEFT)", () => {
+        describe("QueryBuilder", () => {
+            it("should use LEFT JOIN for nullable=false child when parent is LEFT-joined", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        await prepareData(dataSource)
+
+                        // optionalAuthor is nullable (LEFT JOIN)
+                        // Author.requiredProfile is nullable=false
+                        // But since optionalAuthor is LEFT, requiredProfile must also be LEFT
+                        const qb = dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            .setFindOptions({
+                                relations: {
+                                    optionalAuthor: {
+                                        requiredProfile: true,
+                                    },
+                                },
+                            })
+
+                        const query = qb.getQuery()
+
+                        // Parent: optionalAuthor must be LEFT JOIN
+                        expect(query).to.match(
+                            /LEFT JOIN .?author.? .?post__post_optionalAuthor.?/,
+                        )
+
+                        // Child: requiredProfile must ALSO be LEFT JOIN
+                        // (even though nullable=false) because parent is LEFT-joined
+                        expect(query).to.not.match(/INNER JOIN .?profile.?/)
+
+                        // Minimal post has no optionalAuthor, must still be returned
+                        const posts = await qb.getMany()
+                        expect(posts).to.have.length(2)
+
+                        const minimalPost = posts.find(
+                            (p) => p.title === "Minimal post",
+                        )
+                        expect(minimalPost?.optionalAuthor).to.be.null
+                    }),
+                ))
+        })
+
+        describe("find methods", () => {
+            it("should not filter out parent rows when nested child is nullable=false", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        await prepareData(dataSource)
+
+                        const posts = await dataSource
+                            .getRepository(Post)
+                            .find({
+                                relations: {
+                                    optionalAuthor: {
+                                        requiredProfile: true,
+                                    },
+                                },
+                            })
+
+                        // Both posts must be returned despite requiredProfile being nullable=false
+                        expect(posts).to.have.length(2)
+
+                        const fullPost = posts.find(
+                            (p) => p.title === "Full post",
+                        )
+                        const minimalPost = posts.find(
+                            (p) => p.title === "Minimal post",
+                        )
+                        expect(fullPost?.optionalAuthor?.requiredProfile).to.not
+                            .be.null
+                        expect(minimalPost?.optionalAuthor).to.be.null
                     }),
                 ))
         })

@@ -6,7 +6,7 @@ import {
 } from "../../../../../src"
 
 @Entity()
-export class SoftDeleteAuthor {
+export class SoftDeletedEditor {
     @PrimaryGeneratedColumn()
     id: number
 

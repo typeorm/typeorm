@@ -86,11 +86,18 @@ export class FindOptionsUtils {
      * - The target entity has no soft-delete column, or withDeleted is enabled
      * @param relation
      * @param withDeleted
+     * @param parentJoinType
      */
     static getRelationJoinType(
         relation: RelationMetadata,
         withDeleted: boolean,
+        parentJoinType: "inner" | "left" = "inner",
     ): "inner" | "left" {
+        // If the parent was LEFT-joined, all descendants must also be LEFT
+        // to avoid filtering out rows where the parent alias is NULL
+        if (parentJoinType === "left") {
+            return "left"
+        }
         if (!relation.isNullable && relation.isWithJoinColumn) {
             const hasSoftDelete =
                 relation.inverseEntityMetadata.deleteDateColumn
@@ -307,6 +314,7 @@ export class FindOptionsUtils {
         qb: SelectQueryBuilder<any>,
         alias: string,
         metadata: EntityMetadata,
+        parentJoinType: "inner" | "left" = "inner",
     ) {
         metadata.eagerRelations.forEach((relation) => {
             // generate a relation alias
@@ -342,13 +350,14 @@ export class FindOptionsUtils {
                 ),
             )
 
+            let joinType: "inner" | "left" = "left"
             if (addJoin && !joinAlreadyAdded) {
-                if (
-                    this.getRelationJoinType(
-                        relation,
-                        qb.expressionMap.withDeleted,
-                    ) === "inner"
-                ) {
+                joinType = this.getRelationJoinType(
+                    relation,
+                    qb.expressionMap.withDeleted,
+                    parentJoinType,
+                )
+                if (joinType === "inner") {
                     qb.innerJoin(
                         alias + "." + relation.propertyPath,
                         relationAlias,
@@ -358,6 +367,15 @@ export class FindOptionsUtils {
                         alias + "." + relation.propertyPath,
                         relationAlias,
                     )
+                }
+            } else {
+                // Derive join type from existing join for propagation
+                const existingJoin = qb.expressionMap.joinAttributes.find(
+                    (j) => j.alias.name === relationAlias,
+                )
+                if (existingJoin) {
+                    joinType =
+                        existingJoin.direction === "INNER" ? "inner" : "left"
                 }
             }
 
@@ -385,6 +403,7 @@ export class FindOptionsUtils {
                 qb,
                 relationAlias,
                 relation.inverseEntityMetadata,
+                joinType,
             )
         })
     }

@@ -14,7 +14,7 @@ import { Category } from "./Category"
 import { Comment } from "./Comment"
 import { PostMeta } from "./PostMeta"
 import { Profile } from "./Profile"
-import { SoftDeleteAuthor } from "./SoftDeleteAuthor"
+import { SoftDeletedEditor } from "./SoftDeletedEditor"
 
 @Entity()
 export class Post {
@@ -64,6 +64,6 @@ export class Post {
     meta: PostMeta
 
     // ManyToOne, nullable: false, but target has @DeleteDateColumn — should use LEFT JOIN
-    @ManyToOne(() => SoftDeleteAuthor, { nullable: false })
-    requiredSoftDeleteAuthor: SoftDeleteAuthor
+    @ManyToOne(() => SoftDeletedEditor, { nullable: false })
+    softDeletedEditor: SoftDeletedEditor
 }
