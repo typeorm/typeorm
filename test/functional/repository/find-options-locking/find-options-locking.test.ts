@@ -695,18 +695,14 @@ describe("repository > find options > locking", () => {
                 }
 
                 await dataSource.manager.transaction((entityManager) =>
-                    entityManager.getRepository(Post).findOne({
-                        where: { id: 1 },
-                        relations: {
-                            categories: {
-                                images: true,
-                            },
-                        },
-                        lock: {
-                            mode: "pessimistic_write",
-                            tables: ["image"],
-                        },
-                    }),
+                    entityManager
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .innerJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: 1 })
+                        .setLock("pessimistic_write", undefined, ["images"])
+                        .getOne(),
                 )
             }),
         ))
