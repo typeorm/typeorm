@@ -21,13 +21,6 @@ describe("relations > join strategy", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-            enabledDrivers: [
-                "postgres",
-                "mysql",
-                "mariadb",
-                "better-sqlite3",
-                "sqljs",
-            ],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -118,7 +111,7 @@ describe("relations > join strategy", () => {
                             })
 
                         expect(qb.getQuery()).to.match(
-                            /INNER JOIN .?author.? .?post__requiredAuthor.?/,
+                            /INNER JOIN .?author.? .?post__post_requiredAuthor.?/,
                         )
 
                         const posts = await qb.getMany()
@@ -144,7 +137,7 @@ describe("relations > join strategy", () => {
                             })
 
                         expect(qb.getQuery()).to.match(
-                            /LEFT JOIN .?author.? .?post__optionalAuthor.?/,
+                            /LEFT JOIN .?author.? .?post__post_optionalAuthor.?/,
                         )
 
                         // LEFT JOIN returns both posts, even though minimal post has no optional author
@@ -262,7 +255,7 @@ describe("relations > join strategy", () => {
                             })
 
                         expect(qb.getQuery()).to.match(
-                            /INNER JOIN .?profile.? .?post__requiredProfile.?/,
+                            /INNER JOIN .?profile.? .?post__post_requiredProfile.?/,
                         )
 
                         const posts = await qb.getMany()
@@ -285,7 +278,7 @@ describe("relations > join strategy", () => {
                             })
 
                         expect(qb.getQuery()).to.match(
-                            /LEFT JOIN .?profile.? .?post__optionalProfile.?/,
+                            /LEFT JOIN .?profile.? .?post__post_optionalProfile.?/,
                         )
 
                         // LEFT JOIN returns both posts
@@ -351,7 +344,7 @@ describe("relations > join strategy", () => {
                             })
 
                         expect(qb.getQuery()).to.match(
-                            /LEFT JOIN .?post_meta.? .?post__meta.?/,
+                            /LEFT JOIN .?post_meta.? .?post__post_meta.?/,
                         )
                         expect(qb.getQuery()).to.not.match(
                             /INNER JOIN .?post_meta.?/,
@@ -411,7 +404,7 @@ describe("relations > join strategy", () => {
                             })
 
                         expect(qb.getQuery()).to.match(
-                            /LEFT JOIN .?comment.? .?post__comments.?/,
+                            /LEFT JOIN .?comment.? .?post__post_comments.?/,
                         )
                         expect(qb.getQuery()).to.not.match(
                             /INNER JOIN .?comment.?/,
@@ -535,7 +528,7 @@ describe("relations > join strategy", () => {
 
                         // Should be LEFT JOIN despite nullable=false, because target has soft-delete
                         expect(qb.getQuery()).to.match(
-                            /LEFT JOIN .?soft_delete_author.? .?post__requiredSoftDeleteAuthor.?/,
+                            /LEFT JOIN .?soft_delete_author.? .?post__post_requiredSoftDeleteAuthor.?/,
                         )
 
                         const posts = await qb.getMany()
@@ -589,7 +582,7 @@ describe("relations > join strategy", () => {
 
                         // With withDeleted=true, soft-delete is ignored, so INNER JOIN is safe
                         expect(qb.getQuery()).to.match(
-                            /INNER JOIN .?soft_delete_author.? .?post__requiredSoftDeleteAuthor.?/,
+                            /INNER JOIN .?soft_delete_author.? .?post__post_requiredSoftDeleteAuthor.?/,
                         )
 
                         const posts = await qb.getMany()
