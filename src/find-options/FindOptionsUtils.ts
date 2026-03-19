@@ -77,6 +77,31 @@ export class FindOptionsUtils {
     }
 
     /**
+     * Determines the join type for a relation based on nullability,
+     * join column ownership, and soft-delete configuration.
+     *
+     * Uses INNER JOIN only when:
+     * - The relation is non-nullable (nullable=false)
+     * - The relation owns the join column (ManyToOne or OneToOne owner)
+     * - The target entity has no soft-delete column, or withDeleted is enabled
+     * @param relation
+     * @param withDeleted
+     */
+    static getRelationJoinType(
+        relation: RelationMetadata,
+        withDeleted: boolean,
+    ): "inner" | "left" {
+        if (!relation.isNullable && relation.isWithJoinColumn) {
+            const hasSoftDelete =
+                relation.inverseEntityMetadata.deleteDateColumn
+            if (!hasSoftDelete || withDeleted) {
+                return "inner"
+            }
+        }
+        return "left"
+    }
+
+    /**
      * Checks if given object is really instance of FindOneOptions interface.
      * @param obj
      */
@@ -208,10 +233,10 @@ export class FindOptionsUtils {
             if (qb.expressionMap.relationLoadStrategy === "query") {
                 qb.concatRelationMetadata(relation)
             } else if (
-                !relation.isNullable &&
-                relation.isWithJoinColumn &&
-                (!relation.inverseEntityMetadata.deleteDateColumn ||
-                    qb.expressionMap.withDeleted)
+                this.getRelationJoinType(
+                    relation,
+                    qb.expressionMap.withDeleted,
+                ) === "inner"
             ) {
                 qb.innerJoinAndSelect(selection, relationAlias)
             } else {
@@ -319,10 +344,10 @@ export class FindOptionsUtils {
 
             if (addJoin && !joinAlreadyAdded) {
                 if (
-                    !relation.isNullable &&
-                    relation.isWithJoinColumn &&
-                    (!relation.inverseEntityMetadata.deleteDateColumn ||
-                        qb.expressionMap.withDeleted)
+                    this.getRelationJoinType(
+                        relation,
+                        qb.expressionMap.withDeleted,
+                    ) === "inner"
                 ) {
                     qb.innerJoin(
                         alias + "." + relation.propertyPath,

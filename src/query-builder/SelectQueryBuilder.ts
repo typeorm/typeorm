@@ -3932,29 +3932,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
-    /**
-     * Determines the join type for a relation based on nullability,
-     * join column ownership, and soft-delete configuration.
-     *
-     * Uses INNER JOIN only when:
-     * - The relation is non-nullable (nullable=false)
-     * - The relation owns the join column (ManyToOne or OneToOne owner)
-     * - The target entity has no soft-delete column, or withDeleted is enabled
-     *
-     * Otherwise, uses LEFT JOIN to preserve parent rows.
-     * @param relation
-     */
     protected getRelationJoinType(
         relation: RelationMetadata,
     ): "inner" | "left" {
-        if (!relation.isNullable && relation.isWithJoinColumn) {
-            const hasSoftDelete =
-                relation.inverseEntityMetadata.deleteDateColumn
-            if (!hasSoftDelete || this.expressionMap.withDeleted) {
-                return "inner"
-            }
-        }
-        return "left"
+        return FindOptionsUtils.getRelationJoinType(
+            relation,
+            this.expressionMap.withDeleted,
+        )
     }
 
     protected buildRelations(
