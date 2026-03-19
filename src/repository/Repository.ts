@@ -645,20 +645,6 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Finds entities with ids.
-     * Optionally find options or conditions can be applied.
-     * @param ids
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    async findByIds(ids: any[]): Promise<Entity[]> {
-        return this.manager.findByIds(this.metadata.target, ids)
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
      * @param options
@@ -676,22 +662,6 @@ export class Repository<Entity extends ObjectLiteral> {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity | null> {
         return this.manager.findOneBy(this.metadata.target, where)
-    }
-
-    /**
-     * Finds first entity that matches given id.
-     * If entity was not found in the database - returns null.
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById(
-        id: number | string | Date | ObjectId,
-    ): Promise<Entity | null> {
-        return this.manager.findOneById(this.metadata.target, id)
     }
 
     /**

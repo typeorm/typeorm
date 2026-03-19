@@ -10,7 +10,6 @@ import type { FindOneOptions } from "../find-options/FindOneOptions"
 
 import type {
     CreateIndexesOptions,
-    ObjectId,
     ReplaceOptions,
     //
     AggregateOptions,
@@ -19,8 +18,6 @@ import type {
     BulkWriteOptions,
     BulkWriteResult,
     Collection,
-    CollStats,
-    CollStatsOptions,
     CommandOperationOptions,
     CountOptions,
     DeleteOptions,
@@ -137,11 +134,6 @@ export class MongoRepository<
      * Optionally find options can be applied.
      * @param ids
      * @param options
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
      */
     findByIds(ids: any[], options?: any): Promise<Entity[]> {
         return this.manager.findByIds(this.metadata.target, ids, options)
@@ -163,21 +155,6 @@ export class MongoRepository<
      */
     async findOneBy(where: any): Promise<Entity | null> {
         return this.manager.findOneBy(this.metadata.target, where)
-    }
-
-    /**
-     * Finds entity that matches given id.
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById(
-        id: string | number | Date | ObjectId,
-    ): Promise<Entity | null> {
-        return this.manager.findOneById(this.metadata.target, id)
     }
 
     /**
@@ -568,14 +545,6 @@ export class MongoRepository<
             doc,
             options,
         )
-    }
-
-    /**
-     * Get all the collection statistics.
-     * @param options
-     */
-    stats(options?: CollStatsOptions): Promise<CollStats> {
-        return this.manager.stats(this.metadata.tableName, options)
     }
 
     /**

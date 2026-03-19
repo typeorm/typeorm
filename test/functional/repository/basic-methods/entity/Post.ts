@@ -26,6 +26,9 @@ export class Post {
     @Column({ nullable: true })
     subTitle: string
 
+    @Column({ type: "varchar", nullable: true, update: false })
+    readonlyField: string | null
+
     @Column({
         nullable: true,
         type: "date",

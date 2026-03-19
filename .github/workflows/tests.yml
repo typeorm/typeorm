@@ -26,6 +26,11 @@ jobs:
               - package.json
               - package-lock.json
 
+            ci: &ci
+              - .github/**/*
+              - .pr_agent.toml
+              - pr_compliance_checklist.yaml
+
             docs: &docs
               - docs/**/*
 
@@ -33,22 +38,20 @@ jobs:
               - *package-json
               - extra/**/*.js
               - src/**/*.ts
-              - gulpfile.js
+              - gulpfile.ts
               - tsconfig.json
+              - tsconfig.browser.json
+              - tsconfig.node.json
 
             src-or-tests: &src-or-tests
               - *src
-              - .github/workflows/test/**/*
               - .github/workflows/test*.yml
+              - docker-compose.yml
+              - docker/**/*
               - test/**/*
               - .c8rc.json
               - .mocharc.json
-
-            format:
-              - *src-or-tests
-              - .editorconfig
-              - .prettierignore
-              - .prettierrc.js
+              - ormconfig.sample.json
 
             lint:
               - *src-or-tests
@@ -87,15 +90,13 @@ jobs:
       - run: pnpm install
       - run: pnpm run compile
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: build
           path: build/
           retention-days: 1
 
   format:
-    if: contains(needs.detect-changes.outputs.changes, 'format')
-    needs: detect-changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

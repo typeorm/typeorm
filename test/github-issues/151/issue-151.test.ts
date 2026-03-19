@@ -35,11 +35,8 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        innerJoinAndSelect: {
-                            category: "post.category",
-                        },
+                    relations: {
+                        category: true,
                     },
                 })
 

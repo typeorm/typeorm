@@ -6,12 +6,9 @@ import { OptimisticLockVersionMismatchError } from "../error/OptimisticLockVersi
 import { OptimisticLockCanNotBeUsedError } from "../error/OptimisticLockCanNotBeUsedError"
 import { JoinAttribute } from "./JoinAttribute"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
-import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { RelationIdLoader } from "./relation-id/RelationIdLoader"
 import { RelationIdLoader as QueryStrategyRelationIdLoader } from "./RelationIdLoader"
 import { RelationIdMetadataToAttributeTransformer } from "./relation-id/RelationIdMetadataToAttributeTransformer"
-import { RelationCountLoader } from "./relation-count/RelationCountLoader"
-import { RelationCountMetadataToAttributeTransformer } from "./relation-count/RelationCountMetadataToAttributeTransformer"
 import { QueryBuilder } from "./QueryBuilder"
 import type { ReadStream } from "../platform/PlatformTools"
 import { LockNotSupportedOnGivenDriverError } from "../error/LockNotSupportedOnGivenDriverError"
@@ -30,6 +27,7 @@ import { OffsetWithoutLimitNotSupportedError } from "../error/OffsetWithoutLimit
 import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { DriverUtils } from "../driver/DriverUtils"
+import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
 import { TypeORMError } from "../error"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
@@ -43,9 +41,9 @@ import { OrmUtils } from "../util/OrmUtils"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -102,6 +100,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     // -------------------------------------------------------------------------
 
     setFindOptions(findOptions: FindManyOptions<Entity>) {
+        FindOptionsUtils.rejectJoinOption(findOptions)
+        FindOptionsUtils.rejectStringArraySelect(findOptions)
+        FindOptionsUtils.rejectStringArrayRelations(findOptions)
         this.findOptions = findOptions
         this.applyFindOptions()
         return this
@@ -1120,46 +1121,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 type: "other",
                 name: relationIdAttribute.junctionAlias,
                 metadata: relationIdAttribute.relation.junctionEntityMetadata,
-            })
-        }
-        return this
-    }
-
-    /**
-     * Counts number of entities of entity's relation and maps the value into some entity's property.
-     * Optionally, you can add condition and parameters used in condition.
-     * @param mapToProperty
-     * @param relationName
-     * @param aliasName
-     * @param queryBuilderFactory
-     */
-    loadRelationCountAndMap(
-        mapToProperty: string,
-        relationName: string,
-        aliasName?: string,
-        queryBuilderFactory?: (
-            qb: SelectQueryBuilder<any>,
-        ) => SelectQueryBuilder<any>,
-    ): this {
-        const relationCountAttribute = new RelationCountAttribute(
-            this.expressionMap,
-        )
-        relationCountAttribute.mapToProperty = mapToProperty
-        relationCountAttribute.relationName = relationName
-        relationCountAttribute.alias = aliasName
-        relationCountAttribute.queryBuilderFactory = queryBuilderFactory
-        this.expressionMap.relationCountAttributes.push(relationCountAttribute)
-
-        this.expressionMap.createAlias({
-            type: "other",
-            name: relationCountAttribute.junctionAlias,
-        })
-        if (relationCountAttribute.relation.junctionEntityMetadata) {
-            this.expressionMap.createAlias({
-                type: "other",
-                name: relationCountAttribute.junctionAlias,
-                metadata:
-                    relationCountAttribute.relation.junctionEntityMetadata,
             })
         }
         return this
@@ -2960,6 +2921,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 selectionPath = `(${column.query(escapedAliasName)})`
             }
 
+            if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
+                selectionPath = (
+                    this.connection.driver as
+                        | AbstractSqliteDriver
+                        | ReactNativeDriver
+                ).wrapWithJsonFunction(selectionPath, column, false)
+            }
+
             if (
                 this.connection.driver.spatialTypes.indexOf(column.type) !== -1
             ) {
@@ -3050,8 +3019,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // so we prevent poor query patterns in the most likely cases
         if (
             this.expressionMap.joinAttributes.length === 0 &&
-            this.expressionMap.relationIdAttributes.length === 0 &&
-            this.expressionMap.relationCountAttributes.length === 0
+            this.expressionMap.relationIdAttributes.length === 0
         ) {
             return "COUNT(1)"
         }
@@ -3204,14 +3172,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             if (this.findOptions.select) {
-                const select = Array.isArray(this.findOptions.select)
-                    ? OrmUtils.propertyPathsToTruthyObject(
-                          this.findOptions.select as string[],
-                      )
-                    : this.findOptions.select
-
                 this.buildSelect(
-                    select,
+                    this.findOptions.select,
                     this.expressionMap.mainAlias!.metadata,
                     this.expressionMap.mainAlias!.name,
                 )
@@ -3224,17 +3186,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.selects = []
 
             if (this.findOptions.relations) {
-                const relations = Array.isArray(this.findOptions.relations)
-                    ? OrmUtils.propertyPathsToTruthyObject(
-                          this.findOptions.relations,
-                      )
-                    : this.findOptions.relations
-
                 this.buildRelations(
-                    relations,
-                    typeof this.findOptions.select === "object"
-                        ? (this.findOptions.select as FindOptionsSelect<any>)
-                        : undefined,
+                    this.findOptions.relations,
+                    this.findOptions.select,
                     this.expressionMap.mainAlias!.metadata,
                     this.expressionMap.mainAlias!.name,
                 )
@@ -3243,11 +3197,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.expressionMap.relationLoadStrategy === "join"
                 ) {
                     this.buildEagerRelations(
-                        relations,
-                        typeof this.findOptions.select === "object"
-                            ? (this.findOptions
-                                  .select as FindOptionsSelect<any>)
-                            : undefined,
+                        this.findOptions.relations,
+                        this.findOptions.select,
                         this.expressionMap.mainAlias!.metadata,
                         this.expressionMap.mainAlias!.name,
                     )
@@ -3266,9 +3217,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 if (this.conditions.length)
                     this.andWhere(
-                        this.conditions.substr(0, 1) !== "("
-                            ? "(" + this.conditions + ")"
-                            : this.conditions,
+                        this.conditions.startsWith("(")
+                            ? this.conditions
+                            : `(${this.conditions})`,
                     ) // temporary and where and braces
             }
 
@@ -3357,48 +3308,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.cache.id,
                     this.findOptions.cache.milliseconds,
                 )
-            }
-
-            if (this.findOptions.join) {
-                if (this.findOptions.join.leftJoin)
-                    Object.keys(this.findOptions.join.leftJoin).forEach(
-                        (key) => {
-                            this.leftJoin(
-                                this.findOptions.join!.leftJoin![key],
-                                key,
-                            )
-                        },
-                    )
-
-                if (this.findOptions.join.innerJoin)
-                    Object.keys(this.findOptions.join.innerJoin).forEach(
-                        (key) => {
-                            this.innerJoin(
-                                this.findOptions.join!.innerJoin![key],
-                                key,
-                            )
-                        },
-                    )
-
-                if (this.findOptions.join.leftJoinAndSelect)
-                    Object.keys(
-                        this.findOptions.join.leftJoinAndSelect,
-                    ).forEach((key) => {
-                        this.leftJoinAndSelect(
-                            this.findOptions.join!.leftJoinAndSelect![key],
-                            key,
-                        )
-                    })
-
-                if (this.findOptions.join.innerJoinAndSelect)
-                    Object.keys(
-                        this.findOptions.join.innerJoinAndSelect,
-                    ).forEach((key) => {
-                        this.innerJoinAndSelect(
-                            this.findOptions.join!.innerJoinAndSelect![key],
-                            key,
-                        )
-                    })
             }
 
             if (this.findOptions.lock) {
@@ -3515,17 +3424,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             queryRunner,
             this.expressionMap.relationIdAttributes,
         )
-        const relationCountLoader = new RelationCountLoader(
-            this.connection,
-            queryRunner,
-            this.expressionMap.relationCountAttributes,
-        )
         const relationIdMetadataTransformer =
             new RelationIdMetadataToAttributeTransformer(this.expressionMap)
         relationIdMetadataTransformer.transform()
-        const relationCountMetadataTransformer =
-            new RelationCountMetadataToAttributeTransformer(this.expressionMap)
-        relationCountMetadataTransformer.transform()
 
         let rawResults: any[],
             entities: any[] = []
@@ -3677,13 +3578,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (rawResults.length > 0) {
             // transform raw results into entities
             const rawRelationIdResults = await relationIdLoader.load(rawResults)
-            const rawRelationCountResults =
-                await relationCountLoader.load(rawResults)
             const transformer = new RawSqlResultsToEntityTransformer(
                 this.expressionMap,
                 this.connection.driver,
                 rawRelationIdResults,
-                rawRelationCountResults,
                 this.queryRunner,
             )
             entities = transformer.transform(
@@ -3714,24 +3612,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const relationAlias =
                         relation.inverseEntityMetadata.targetName
 
-                    const select = Array.isArray(this.findOptions.select)
-                        ? OrmUtils.propertyPathsToTruthyObject(
-                              this.findOptions.select as string[],
-                          )
-                        : this.findOptions.select
-                    const relations = Array.isArray(this.findOptions.relations)
-                        ? OrmUtils.propertyPathsToTruthyObject(
-                              this.findOptions.relations,
-                          )
-                        : this.findOptions.relations
-
                     const queryBuilder = this.createQueryBuilder(queryRunner)
                         .select(relationAlias)
                         .from(relationTarget, relationAlias)
                         .setFindOptions({
-                            select: select
+                            select: this.findOptions.select
                                 ? OrmUtils.deepValue(
-                                      select,
+                                      this.findOptions.select,
                                       relation.propertyPath,
                                   )
                                 : undefined,
@@ -3741,9 +3628,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                       relation.propertyPath,
                                   )
                                 : undefined,
-                            relations: relations
+                            relations: this.findOptions.relations
                                 ? OrmUtils.deepValue(
-                                      relations,
+                                      this.findOptions.relations,
                                       relation.propertyPath,
                                   )
                                 : undefined,
@@ -4441,14 +4328,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
 
                     if (column.transformer) {
-                        if (parameterValue instanceof FindOperator) {
-                            parameterValue.transformValue(column.transformer)
-                        } else {
-                            parameterValue = ApplyValueTransformers.transformTo(
-                                column.transformer,
-                                parameterValue,
-                            )
-                        }
+                        parameterValue = ApplyValueTransformers.transformTo(
+                            column.transformer,
+                            parameterValue,
+                        )
                     }
 
                     // MSSQL requires parameters to carry extra type information

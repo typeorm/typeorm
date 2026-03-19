@@ -3,7 +3,6 @@ import type { RelationMetadata } from "./RelationMetadata"
 import type { EntityMetadata } from "./EntityMetadata"
 import type { EmbeddedMetadataArgs } from "../metadata-args/EmbeddedMetadataArgs"
 import type { RelationIdMetadata } from "./RelationIdMetadata"
-import type { RelationCountMetadata } from "./RelationCountMetadata"
 import type { DataSource as dataSource } from "../data-source/DataSource"
 import type { EntityListenerMetadata } from "./EntityListenerMetadata"
 import type { IndexMetadata } from "./IndexMetadata"
@@ -76,11 +75,6 @@ export class EmbeddedMetadata {
     relationIds: RelationIdMetadata[] = []
 
     /**
-     * Relation counts inside this embed.
-     */
-    relationCounts: RelationCountMetadata[] = []
-
-    /**
      * Nested embeddable in this embeddable (which has current embedded as parent embedded).
      */
     embeddeds: EmbeddedMetadata[] = []
@@ -148,7 +142,7 @@ export class EmbeddedMetadata {
     relationsFromTree: RelationMetadata[] = []
 
     /**
-     * Relations of this embed and all relations from its child embeds.
+     * Listeners of this embed and all listeners from its child embeds.
      */
     listenersFromTree: EntityListenerMetadata[] = []
 
@@ -166,11 +160,6 @@ export class EmbeddedMetadata {
      * Relation ids of this embed and all relation ids from its child embeds.
      */
     relationIdsFromTree: RelationIdMetadata[] = []
-
-    /**
-     * Relation counts of this embed and all relation counts from its child embeds.
-     */
-    relationCountsFromTree: RelationCountMetadata[] = []
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -225,8 +214,6 @@ export class EmbeddedMetadata {
         this.indicesFromTree = this.buildIndicesFromTree()
         this.uniquesFromTree = this.buildUniquesFromTree()
         this.relationIdsFromTree = this.buildRelationIdsFromTree()
-        this.relationCountsFromTree = this.buildRelationCountsFromTree()
-
         if (connection.options.entitySkipConstructor) {
             this.isAlwaysUsingConstructor =
                 !connection.options.entitySkipConstructor
@@ -342,14 +329,6 @@ export class EmbeddedMetadata {
             (relations, embedded) =>
                 relations.concat(embedded.buildRelationIdsFromTree()),
             this.relationIds,
-        )
-    }
-
-    protected buildRelationCountsFromTree(): RelationCountMetadata[] {
-        return this.embeddeds.reduce(
-            (relations, embedded) =>
-                relations.concat(embedded.buildRelationCountsFromTree()),
-            this.relationCounts,
         )
     }
 }

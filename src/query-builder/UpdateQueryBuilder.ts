@@ -18,6 +18,9 @@ import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
+import { isUint8Array } from "../util/Uint8ArrayUtils"
+import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
+import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -541,7 +544,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             typeof value === "object" &&
                             !(value instanceof Date) &&
                             value !== null &&
-                            !Buffer.isBuffer(value)
+                            !isUint8Array(value)
                         ) {
                             value =
                                 column.referencedColumn.getEntityValue(value)
@@ -632,6 +635,16 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     ", " +
                                     (column.srid || "0") +
                                     ")"
+                            } else if (
+                                DriverUtils.isSQLiteFamily(
+                                    this.connection.driver,
+                                )
+                            ) {
+                                expression = (
+                                    this.connection.driver as
+                                        | AbstractSqliteDriver
+                                        | ReactNativeDriver
+                                ).wrapWithJsonFunction(paramName, column, true)
                             } else {
                                 expression = paramName
                             }

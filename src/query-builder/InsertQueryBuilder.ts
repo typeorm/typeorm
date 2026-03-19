@@ -3,6 +3,8 @@ import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { DriverUtils } from "../driver/DriverUtils"
 import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
+import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { TypeORMError } from "../error"
 import { InsertValuesMissingError } from "../error/InsertValuesMissingError"
@@ -572,14 +574,38 @@ export class InsertQueryBuilder<
                         )
                     } else if (columns) {
                         updatePart.push(
-                            ...columns.map(
-                                (column) =>
-                                    `${this.escape(column)} = :${column}`,
-                            ),
+                            ...columns.map((column) => {
+                                let expression = `:${column}`
+                                if (
+                                    this.expressionMap.mainAlias!.hasMetadata &&
+                                    DriverUtils.isSQLiteFamily(
+                                        this.connection.driver,
+                                    )
+                                ) {
+                                    const col =
+                                        this.expressionMap.mainAlias?.metadata.findColumnWithDatabaseName(
+                                            column,
+                                        )
+                                    if (col) {
+                                        expression = (
+                                            this.connection.driver as
+                                                | AbstractSqliteDriver
+                                                | ReactNativeDriver
+                                        ).wrapWithJsonFunction(
+                                            expression,
+                                            col,
+                                            true,
+                                        )
+                                    }
+                                }
+                                return `${this.escape(column)} = ${expression}`
+                            }),
                         )
                     }
 
-                    if (updatePart.length > 0) {
+                    if (updatePart.length === 0) {
+                        query += ` ${conflictTarget} DO NOTHING `
+                    } else {
                         query += ` ${conflictTarget} DO UPDATE SET `
 
                         updatePart.push(
@@ -617,6 +643,7 @@ export class InsertQueryBuilder<
 
                     if (
                         Array.isArray(overwrite) &&
+                        overwrite.length > 0 &&
                         skipUpdateIfNoValuesChanged
                     ) {
                         this.expressionMap.onUpdate.overwriteCondition ??= []
@@ -650,7 +677,15 @@ export class InsertQueryBuilder<
                 if (this.expressionMap.onUpdate) {
                     const { overwrite, columns } = this.expressionMap.onUpdate
 
-                    if (Array.isArray(overwrite)) {
+                    if (Array.isArray(overwrite) && overwrite.length === 0) {
+                        // No columns to update — degrade to INSERT IGNORE
+                        // The IGNORE keyword was not added above, so we
+                        // rewrite the query to include it.
+                        query = query.replace(
+                            /^INSERT INTO/,
+                            "INSERT IGNORE INTO",
+                        )
+                    } else if (Array.isArray(overwrite)) {
                         query += " ON DUPLICATE KEY UPDATE "
                         query += overwrite
                             .map(
@@ -1628,6 +1663,10 @@ export class InsertQueryBuilder<
                     ", " +
                     (column.srid || "0") +
                     ")"
+            } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
+                expression = (
+                    this.connection.driver as AbstractSqliteDriver
+                ).wrapWithJsonFunction(paramName, column, true)
             } else {
                 expression += paramName
             }

@@ -11,7 +11,6 @@ import { NoNeedToReleaseEntityManagerError } from "../error/NoNeedToReleaseEntit
 import { MongoRepository } from "../repository/MongoRepository"
 import { TreeRepository } from "../repository/TreeRepository"
 import { Repository } from "../repository/Repository"
-import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import { PlainObjectToNewEntityTransformer } from "../query-builder/transformer/PlainObjectToNewEntityTransformer"
 import { PlainObjectToDatabaseEntityTransformer } from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer"
 import { TreeRepositoryNotSupportedError, TypeORMError } from "../error"
@@ -760,11 +759,16 @@ export class EntityManager {
         const overwriteColumns = metadata.columns.filter(
             (col) =>
                 !conflictColumns.includes(col) &&
+                col.isUpdate !== false &&
+                !col.generatedType &&
                 entities.some(
                     (entity) =>
                         typeof col.getEntityValue(entity) !== "undefined",
                 ),
         )
+
+        const upsertType =
+            options.upsertType || this.connection.driver.supportedUpsertTypes[0]
 
         const qb = this.createQueryBuilder()
             .insert()
@@ -779,9 +783,7 @@ export class EntityManager {
                     skipUpdateIfNoValuesChanged:
                         options.skipUpdateIfNoValuesChanged,
                     indexPredicate: options.indexPredicate,
-                    upsertType:
-                        options.upsertType ||
-                        this.connection.driver.supportedUpsertTypes[0],
+                    upsertType,
                 },
             )
 
@@ -1054,11 +1056,7 @@ export class EntityManager {
         options?: FindManyOptions<Entity>,
     ): Promise<boolean> {
         const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder(
-            entityClass,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
-        )
+        return this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions(options || {})
             .getExists()
     }
@@ -1089,11 +1087,7 @@ export class EntityManager {
         options?: FindManyOptions<Entity>,
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder(
-            entityClass,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
-        )
+        return this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions(options || {})
             .getCount()
     }
@@ -1215,8 +1209,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
+            metadata.name,
         )
             .setFindOptions(options || {})
             .getMany()
@@ -1254,8 +1247,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
+            metadata.name,
         )
             .setFindOptions(options || {})
             .getManyAndCount()
@@ -1282,33 +1274,6 @@ export class EntityManager {
     }
 
     /**
-     * Finds entities with ids.
-     * Optionally find options or conditions can be applied.
-     * @param entityClass
-     * @param ids
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    async findByIds<Entity extends ObjectLiteral>(
-        entityClass: EntityTarget<Entity>,
-        ids: any[],
-    ): Promise<Entity[]> {
-        // if no ids passed, no need to execute a query - just return an empty array of values
-        if (!ids.length) return Promise.resolve([])
-
-        const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder<Entity>(
-            entityClass as any,
-            metadata.name,
-        )
-            .andWhereInIds(ids)
-            .getMany()
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
      * @param entityClass
@@ -1320,12 +1285,6 @@ export class EntityManager {
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
-        // prepare alias for built query
-        let alias: string = metadata.name
-        if (options && options.join) {
-            alias = options.join.alias
-        }
-
         if (!options.where) {
             throw new Error(
                 `You must provide selection conditions in order to find a single row.`,
@@ -1333,7 +1292,7 @@ export class EntityManager {
         }
 
         // create query builder and apply find options
-        return this.createQueryBuilder<Entity>(entityClass, alias)
+        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({
                 ...options,
                 take: 1,
@@ -1359,32 +1318,6 @@ export class EntityManager {
                 where,
                 take: 1,
             })
-            .getOne()
-    }
-
-    /**
-     * Finds first entity that matches given id.
-     * If entity was not found in the database - returns null.
-     * @param entityClass
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById<Entity extends ObjectLiteral>(
-        entityClass: EntityTarget<Entity>,
-        id: number | string | Date | ObjectId,
-    ): Promise<Entity | null> {
-        const metadata = this.connection.getMetadata(entityClass)
-
-        // create query builder and apply find options
-        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
-            .setFindOptions({
-                take: 1,
-            })
-            .whereInIds(metadata.ensureEntityIdMap(id))
             .getOne()
     }
 

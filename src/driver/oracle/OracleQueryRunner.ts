@@ -381,7 +381,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     async hasDatabase(database: string): Promise<boolean> {
         try {
             const query = await this.query(
-                `SELECT 1 AS "exists" FROM global_name@"${database}"`,
+                `SELECT 1 AS "exists" FROM global_name@${this.driver.escape(database)}`,
             )
 
             return query.length > 0
@@ -424,8 +424,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const { tableName } = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = '${tableName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = :1`
+        const result = await this.query(sql, [tableName])
         return result.length ? true : false
     }
 
@@ -439,8 +439,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         columnName: string,
     ): Promise<boolean> {
         const { tableName } = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = '${tableName}' AND "COLUMN_NAME" = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = :1 AND "COLUMN_NAME" = :2`
+        const result = await this.query(sql, [tableName, columnName])
         return result.length ? true : false
     }
 
@@ -458,7 +458,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         //   ORA-01100: database already mounted
         if (ifNotExists) {
             try {
-                await this.query(`CREATE DATABASE IF NOT EXISTS "${database}";`)
+                await this.query(
+                    `CREATE DATABASE IF NOT EXISTS ${this.driver.escape(database)};`,
+                )
             } catch (e) {
                 // if (e instanceof QueryFailedError) {
                 if (e.message.includes("ORA-01100: database already mounted")) {
@@ -469,7 +471,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 throw e
             }
         } else {
-            await this.query(`CREATE DATABASE "${database}"`)
+            await this.query(`CREATE DATABASE ${this.driver.escape(database)}`)
         }
     }
 
