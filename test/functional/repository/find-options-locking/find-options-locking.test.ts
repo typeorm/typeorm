@@ -686,4 +686,24 @@ describe("repository > find options > locking", () => {
                 )
             }),
         ))
+
+    it("should allow locking a relation of a relation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    return
+                }
+
+                await dataSource.manager.transaction((entityManager) =>
+                    entityManager
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .innerJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: 1 })
+                        .setLock("pessimistic_write", undefined, ["images"])
+                        .getOne(),
+                )
+            }),
+        ))
 })
