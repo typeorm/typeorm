@@ -439,23 +439,26 @@ const user = await repository.findOneById(1)
 const user = await repository.findOneBy({ id: 1 })
 ```
 
-> **MongoDB note:** For entities using `@ObjectIdColumn()`, `findOneBy` does not
-> automatically translate the property name to `_id` or convert strings to `ObjectId`.
-> Use `_id` with an `ObjectId` value:
->
-> ```typescript
-> import { ObjectId } from "mongodb"
->
-> // If existingPost.id is already an ObjectId:
-> const loadedPost = await repository.findOneBy({
->     _id: existingPost.id,
-> } as any)
->
-> // If you have a string ID:
-> const loadedPost = await repository.findOneBy({
->     _id: new ObjectId(stringId),
-> } as any)
-> ```
+#### MongoDB
+
+For MongoDB entities with `@ObjectIdColumn()`, `findOneBy` works the same way — use your property name and TypeORM automatically translates it to `_id`:
+
+```typescript
+@Entity()
+class Post {
+    @ObjectIdColumn()
+    id: ObjectId
+
+    @Column()
+    title: string
+}
+
+// Before
+const post = await repository.findOneById(existingPost.id)
+
+// After
+const post = await repository.findOneBy({ id: existingPost.id })
+```
 
 ### `findByIds` removed
 
