@@ -29,9 +29,6 @@ export class Post {
     @ManyToOne(() => User, { eager: true })
     author: User
 
-    @ManyToOne(() => User, { eager: true, nullable: false })
-    requiredAuthor: User
-
     @OneToMany(() => Editor, (editor) => editor.post, { eager: true })
     editors: Editor[]
 }
