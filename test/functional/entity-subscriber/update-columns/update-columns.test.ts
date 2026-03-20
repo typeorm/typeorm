@@ -3,11 +3,11 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
-describe("github issues > #3256 wrong subscriber methods being called", () => {
+describe("entity-subscriber > update columns", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -31,7 +31,7 @@ describe("github issues > #3256 wrong subscriber methods being called", () => {
 
                 const loadedPost = await connection
                     .getRepository(Post)
-                    .findOneById(1)
+                    .findOneBy({ id: 1 })
                 loadedPost!.title = "updated world"
                 await connection.manager.save(loadedPost)
 

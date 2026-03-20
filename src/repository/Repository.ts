@@ -665,22 +665,6 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Finds first entity that matches given id.
-     * If entity was not found in the database - returns null.
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById(
-        id: number | string | Date | ObjectId,
-    ): Promise<Entity | null> {
-        return this.manager.findOneById(this.metadata.target, id)
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
      * @param options

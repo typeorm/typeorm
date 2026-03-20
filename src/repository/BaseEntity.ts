@@ -584,22 +584,6 @@ export class BaseEntity {
     }
 
     /**
-     * Finds first entity that matches given options.
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    static findOneById<T extends BaseEntity>(
-        this: { new (): T } & typeof BaseEntity,
-        id: string | number | Date | ObjectId,
-    ): Promise<T | null> {
-        return this.getRepository<T>().findOneById(id)
-    }
-
-    /**
      * Finds first entity that matches given conditions.
      * @param options
      */

@@ -100,6 +100,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     // -------------------------------------------------------------------------
 
     setFindOptions(findOptions: FindManyOptions<Entity>) {
+        FindOptionsUtils.rejectJoinOption(findOptions)
+        FindOptionsUtils.rejectStringArraySelect(findOptions)
+        FindOptionsUtils.rejectStringArrayRelations(findOptions)
         this.findOptions = findOptions
         this.applyFindOptions()
         return this
@@ -3169,14 +3172,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             if (this.findOptions.select) {
-                const select = Array.isArray(this.findOptions.select)
-                    ? OrmUtils.propertyPathsToTruthyObject(
-                          this.findOptions.select as string[],
-                      )
-                    : this.findOptions.select
-
                 this.buildSelect(
-                    select,
+                    this.findOptions.select,
                     this.expressionMap.mainAlias!.metadata,
                     this.expressionMap.mainAlias!.name,
                 )
@@ -3189,17 +3186,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.selects = []
 
             if (this.findOptions.relations) {
-                const relations = Array.isArray(this.findOptions.relations)
-                    ? OrmUtils.propertyPathsToTruthyObject(
-                          this.findOptions.relations,
-                      )
-                    : this.findOptions.relations
-
                 this.buildRelations(
-                    relations,
-                    typeof this.findOptions.select === "object"
-                        ? (this.findOptions.select as FindOptionsSelect<any>)
-                        : undefined,
+                    this.findOptions.relations,
+                    this.findOptions.select,
                     this.expressionMap.mainAlias!.metadata,
                     this.expressionMap.mainAlias!.name,
                 )
@@ -3208,11 +3197,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.expressionMap.relationLoadStrategy === "join"
                 ) {
                     this.buildEagerRelations(
-                        relations,
-                        typeof this.findOptions.select === "object"
-                            ? (this.findOptions
-                                  .select as FindOptionsSelect<any>)
-                            : undefined,
+                        this.findOptions.relations,
+                        this.findOptions.select,
                         this.expressionMap.mainAlias!.metadata,
                         this.expressionMap.mainAlias!.name,
                     )
@@ -3322,48 +3308,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.cache.id,
                     this.findOptions.cache.milliseconds,
                 )
-            }
-
-            if (this.findOptions.join) {
-                if (this.findOptions.join.leftJoin)
-                    Object.keys(this.findOptions.join.leftJoin).forEach(
-                        (key) => {
-                            this.leftJoin(
-                                this.findOptions.join!.leftJoin![key],
-                                key,
-                            )
-                        },
-                    )
-
-                if (this.findOptions.join.innerJoin)
-                    Object.keys(this.findOptions.join.innerJoin).forEach(
-                        (key) => {
-                            this.innerJoin(
-                                this.findOptions.join!.innerJoin![key],
-                                key,
-                            )
-                        },
-                    )
-
-                if (this.findOptions.join.leftJoinAndSelect)
-                    Object.keys(
-                        this.findOptions.join.leftJoinAndSelect,
-                    ).forEach((key) => {
-                        this.leftJoinAndSelect(
-                            this.findOptions.join!.leftJoinAndSelect![key],
-                            key,
-                        )
-                    })
-
-                if (this.findOptions.join.innerJoinAndSelect)
-                    Object.keys(
-                        this.findOptions.join.innerJoinAndSelect,
-                    ).forEach((key) => {
-                        this.innerJoinAndSelect(
-                            this.findOptions.join!.innerJoinAndSelect![key],
-                            key,
-                        )
-                    })
             }
 
             if (this.findOptions.lock) {
@@ -3668,24 +3612,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const relationAlias =
                         relation.inverseEntityMetadata.targetName
 
-                    const select = Array.isArray(this.findOptions.select)
-                        ? OrmUtils.propertyPathsToTruthyObject(
-                              this.findOptions.select as string[],
-                          )
-                        : this.findOptions.select
-                    const relations = Array.isArray(this.findOptions.relations)
-                        ? OrmUtils.propertyPathsToTruthyObject(
-                              this.findOptions.relations,
-                          )
-                        : this.findOptions.relations
-
                     const queryBuilder = this.createQueryBuilder(queryRunner)
                         .select(relationAlias)
                         .from(relationTarget, relationAlias)
                         .setFindOptions({
-                            select: select
+                            select: this.findOptions.select
                                 ? OrmUtils.deepValue(
-                                      select,
+                                      this.findOptions.select,
                                       relation.propertyPath,
                                   )
                                 : undefined,
@@ -3695,9 +3628,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                       relation.propertyPath,
                                   )
                                 : undefined,
-                            relations: relations
+                            relations: this.findOptions.relations
                                 ? OrmUtils.deepValue(
-                                      relations,
+                                      this.findOptions.relations,
                                       relation.propertyPath,
                                   )
                                 : undefined,
@@ -3999,12 +3932,24 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
+    protected getRelationJoinType(
+        relation: RelationMetadata,
+        parentJoinType: "inner" | "left" = "inner",
+    ): "inner" | "left" {
+        return FindOptionsUtils.getRelationJoinType(
+            relation,
+            this.expressionMap.withDeleted,
+            parentJoinType,
+        )
+    }
+
     protected buildRelations(
         relations: FindOptionsRelations<any>,
         selection: FindOptionsSelect<any> | undefined,
         metadata: EntityMetadata,
         alias: string,
         embedPrefix?: string,
+        parentJoinType: "inner" | "left" = "inner",
     ) {
         if (!relations) return
 
@@ -4036,6 +3981,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     alias,
                     joinAlias,
                 )
+                const joinType = this.getRelationJoinType(
+                    relation,
+                    parentJoinType,
+                )
                 if (
                     relationValue === true ||
                     typeof relationValue === "object"
@@ -4043,9 +3992,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (this.expressionMap.relationLoadStrategy === "query") {
                         this.concatRelationMetadata(relation)
                     } else {
-                        // join
                         this.joins.push({
-                            type: "left",
+                            type: joinType,
                             select: true,
                             selection:
                                 selection &&
@@ -4089,6 +4037,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         relation.inverseEntityMetadata,
                         joinAlias,
                         undefined,
+                        joinType,
                     )
                 }
             }
@@ -4137,6 +4086,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     relationValue === true ||
                     typeof relationValue === "object"
                 ) {
+                    // Determine this relation's join type to propagate to eager children
+                    const parentJoin = this.joins.find(
+                        (j) => j.alias === joinAlias,
+                    )
+                    const parentJoinType: "inner" | "left" =
+                        parentJoin?.type ?? "inner"
+
                     relation.inverseEntityMetadata.eagerRelations.forEach(
                         (eagerRelation) => {
                             let eagerRelationJoinAlias =
@@ -4155,7 +4111,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             )
                             if (!existJoin) {
                                 this.joins.push({
-                                    type: "left",
+                                    type: this.getRelationJoinType(
+                                        eagerRelation,
+                                        parentJoinType,
+                                    ),
                                     select: true,
                                     alias: eagerRelationJoinAlias,
                                     parentAlias: joinAlias,
@@ -4285,8 +4244,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     (join) => join.alias === joinAlias,
                 )
                 if (!existJoin) {
+                    const parentJoin = this.joins.find((j) => j.alias === alias)
                     this.joins.push({
-                        type: "left",
+                        type: this.getRelationJoinType(
+                            relation,
+                            parentJoin?.type ?? "inner",
+                        ),
                         select: false,
                         alias: joinAlias,
                         parentAlias: alias,
@@ -4616,8 +4579,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             (join) => join.alias === joinAlias,
                         )
                         if (!existJoin) {
+                            const parentJoin = this.joins.find(
+                                (j) => j.alias === alias,
+                            )
                             this.joins.push({
-                                type: "left",
+                                type: this.getRelationJoinType(
+                                    relation,
+                                    parentJoin?.type ?? "inner",
+                                ),
                                 select: false,
                                 selection: undefined,
                                 alias: joinAlias,
