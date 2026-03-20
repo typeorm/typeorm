@@ -1426,12 +1426,17 @@ export class CockroachQueryRunner
                 )
 
                 // Update clonedTable so replaceCachedTable() propagates the
-                // correct column definition.
+                // correct column definition.  Preserve oldColumn.name so that
+                // the rename block below can still locate this entry; it will
+                // update .name to newColumn.name when it runs.
                 const clonedColIdx = clonedTable.columns.findIndex(
                     (c) => c.name === oldColumn.name,
                 )
-                if (clonedColIdx !== -1)
-                    clonedTable.columns[clonedColIdx] = newColumn.clone()
+                if (clonedColIdx !== -1) {
+                    const updatedCol = newColumn.clone()
+                    updatedCol.name = oldColumn.name
+                    clonedTable.columns[clonedColIdx] = updatedCol
+                }
             }
 
             if (oldColumn.name !== newColumn.name) {
