@@ -591,6 +591,11 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * MongoDB does not use a metadata table — this is a no-op.
+     */
+    async createTypeormMetadataTable(): Promise<void> {}
+
+    /**
      * For MongoDB database we don't create a connection because its single connection already created by a driver.
      */
     async connect(): Promise<any> {}

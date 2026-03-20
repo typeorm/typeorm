@@ -590,6 +590,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             upQueries.push(insertQuery)
             downQueries.push(deleteQuery)
         }
+        for (const check of table.checks) {
+            upQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
+            downQueries.push(
+                await this.dropCheckConstraintMetadata(table, check),
+            )
+        }
 
         await this.executeQueries(upQueries, downQueries)
     }
@@ -657,6 +665,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             upQueries.push(deleteQuery)
             downQueries.push(insertQuery)
+        }
+        for (const check of table.checks) {
+            upQueries.push(await this.dropCheckConstraintMetadata(table, check))
+            downQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1260,8 +1274,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     checkConstraint.expression!,
                 )
 
-        const up = this.createCheckConstraintSql(table, checkConstraint)
-        const down = this.dropCheckConstraintSql(table, checkConstraint)
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
+        down.push(
+            this.dropCheckConstraintSql(table, checkConstraint),
+            await this.dropCheckConstraintMetadata(table, checkConstraint),
+        )
         await this.executeQueries(up, down)
         table.addCheckConstraint(checkConstraint)
     }
@@ -1306,9 +1328,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Supplied check constraint was not found in table ${table.name}`,
             )
         }
-
-        const up = this.dropCheckConstraintSql(table, checkConstraint)
-        const down = this.createCheckConstraintSql(table, checkConstraint)
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(
+            this.dropCheckConstraintSql(table, checkConstraint),
+            await this.dropCheckConstraintMetadata(table, checkConstraint),
+        )
+        down.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
         await this.executeQueries(up, down)
         table.removeCheckConstraint(checkConstraint)
     }
@@ -1831,6 +1860,19 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             this.query(foreignKeysSql),
         ])
 
+        let dbCheckMetadata: ObjectLiteral[] = []
+        const metadataTableName = this.getTypeormMetadataTableName()
+        if (await this.hasTable(metadataTableName)) {
+            const metadataCondition = dbTables
+                .map(({ TABLE_NAME }) => `("table" = '${TABLE_NAME}')`)
+                .join(" OR ")
+            if (metadataCondition) {
+                dbCheckMetadata = await this.query(
+                    `SELECT * FROM ${this.escapePath(metadataTableName)} WHERE "type" = '${MetadataTableType.CHECK_CONSTRAINT}' AND (${metadataCondition})`,
+                )
+            }
+        }
+
         // create tables for loaded tables
         return Promise.all(
             dbTables.map(async (dbTable) => {
@@ -2042,10 +2084,17 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                             dbC["CONSTRAINT_NAME"] ===
                             constraint["CONSTRAINT_NAME"],
                     )
+                    const metadataRow = dbCheckMetadata.find(
+                        (m) =>
+                            m["name"] === constraint["CONSTRAINT_NAME"] &&
+                            m["table"] === dbTable["TABLE_NAME"],
+                    )
                     return new TableCheck({
                         name: constraint["CONSTRAINT_NAME"],
                         columnNames: checks.map((c) => c["COLUMN_NAME"]),
-                        expression: constraint["CHECK_CLAUSE"],
+                        expression: metadataRow
+                            ? metadataRow["value"]
+                            : constraint["CHECK_CLAUSE"],
                     })
                 })
 
@@ -2117,13 +2166,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (table.checks.length > 0) {
             const checksSql = table.checks
                 .map((check) => {
-                    const checkName = check.name
-                        ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
-                              table,
-                              check.expression!,
-                          )
-                    return `CONSTRAINT \`${checkName}\` CHECK (${check.expression})`
+                    if (!check.name)
+                        check.name =
+                            this.connection.namingStrategy.checkConstraintName(
+                                table,
+                                check.expression!,
+                            )
+                    return `CONSTRAINT \`${check.name}\` CHECK (${check.expression})`
                 })
                 .join(", ")
 

@@ -732,6 +732,15 @@ export class CockroachQueryRunner
             downQueries.push(deleteQuery)
         }
 
+        for (const check of table.checks) {
+            upQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
+            downQueries.push(
+                await this.dropCheckConstraintMetadata(table, check),
+            )
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -830,6 +839,13 @@ export class CockroachQueryRunner
 
             upQueries.push(deleteQuery)
             downQueries.push(insertQuery)
+        }
+
+        for (const check of table.checks) {
+            upQueries.push(await this.dropCheckConstraintMetadata(table, check))
+            downQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -2654,8 +2670,16 @@ export class CockroachQueryRunner
                     checkConstraint.expression!,
                 )
 
-        const up = this.createCheckConstraintSql(table, checkConstraint)
-        const down = this.dropCheckConstraintSql(table, checkConstraint)
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
+        down.push(
+            this.dropCheckConstraintSql(table, checkConstraint),
+            await this.dropCheckConstraintMetadata(table, checkConstraint),
+        )
         await this.executeQueries(up, down)
         table.addCheckConstraint(checkConstraint)
     }
@@ -2698,9 +2722,16 @@ export class CockroachQueryRunner
                 `Supplied check constraint was not found in table ${table.name}`,
             )
         }
-
-        const up = this.dropCheckConstraintSql(table, checkConstraint, ifExists)
-        const down = this.createCheckConstraintSql(table, checkConstraint)
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(
+            this.dropCheckConstraintSql(table, checkConstraint, ifExists),
+            await this.dropCheckConstraintMetadata(table, checkConstraint),
+        )
+        down.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
         await this.executeQueries(up, down)
         table.removeCheckConstraint(checkConstraint)
     }
@@ -3251,6 +3282,23 @@ export class CockroachQueryRunner
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
         const dbEnums: ObjectLiteral[] = await this.query(enumsSql)
+        let dbCheckMetadata: ObjectLiteral[] = []
+
+        const metadataTableName = this.getTypeormMetadataTableName()
+        if (await this.hasTable(metadataTableName)) {
+            const metadataCondition = dbTables
+                .map(({ table_name, table_schema }) => {
+                    return `("schema" = '${table_schema}' AND "table" = '${table_name}')`
+                })
+                .join(" OR ")
+            if (metadataCondition) {
+                dbCheckMetadata = await this.query(
+                    `SELECT * FROM ${this.escapePath(metadataTableName)} WHERE "type" = '${
+                        MetadataTableType.CHECK_CONSTRAINT
+                    }' AND (${metadataCondition})`,
+                )
+            }
+        }
 
         // create tables for loaded tables
         return Promise.all(
@@ -3671,13 +3719,21 @@ export class CockroachQueryRunner
                             dbC["constraint_name"] ===
                             constraint["constraint_name"],
                     )
+                    const dbCheckExpression = constraint["expression"].replace(
+                        /^\s*CHECK\s*\((.*)\)\s*$/i,
+                        "$1",
+                    )
+                    const metadataRow = dbCheckMetadata.find(
+                        (m) =>
+                            m["name"] === constraint["constraint_name"] &&
+                            m["schema"] === dbTable["table_schema"],
+                    )
                     return new TableCheck({
                         name: constraint["constraint_name"],
                         columnNames: checks.map((c) => c["column_name"]),
-                        expression: constraint["expression"].replace(
-                            /^\s*CHECK\s*\((.*)\)\s*$/i,
-                            "$1",
-                        ),
+                        expression: metadataRow
+                            ? metadataRow["value"]
+                            : dbCheckExpression,
                     })
                 })
 
@@ -3857,13 +3913,13 @@ export class CockroachQueryRunner
         if (table.checks.length > 0) {
             const checksSql = table.checks
                 .map((check) => {
-                    const checkName = check.name
-                        ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
-                              table,
-                              check.expression!,
-                          )
-                    return `CONSTRAINT "${checkName}" CHECK (${check.expression})`
+                    if (!check.name)
+                        check.name =
+                            this.connection.namingStrategy.checkConstraintName(
+                                table,
+                                check.expression!,
+                            )
+                    return `CONSTRAINT "${check.name}" CHECK (${check.expression})`
                 })
                 .join(", ")
 

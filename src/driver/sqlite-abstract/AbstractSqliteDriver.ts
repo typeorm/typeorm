@@ -548,11 +548,8 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         if (InstanceChecker.isTable(target) || InstanceChecker.isView(target)) {
             const parsed = this.parseTableName(
-                target.schema
-                    ? `"${target.schema}"."${target.name}"`
-                    : target.name,
+                target.schema ? `${target.schema}.${target.name}` : target.name,
             )
-
             return {
                 database: target.database || parsed.database || driverDatabase,
                 schema: target.schema || parsed.schema || driverSchema,

@@ -720,3 +720,11 @@ executeMemoryDownSql(): Promise<void>
 Executes memorized down sql queries.
 
 ---
+
+```ts
+createTypeormMetadataTable(): Promise<void>
+```
+
+Creates a new table used by TypeORM to store metadata about migrations, generated columns, views, check constraints, etc.
+
+---
