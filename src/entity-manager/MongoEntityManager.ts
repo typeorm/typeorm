@@ -13,6 +13,7 @@ import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
+import { EntityPropertyNotFoundError } from "../error"
 
 import type {
     AggregateOptions,
@@ -1162,6 +1163,15 @@ export class MongoEntityManager extends EntityManager {
         selects: FindOptionsSelect<any>,
         metadata: EntityMetadata,
     ) {
+        // Validate top-level select keys against entity metadata
+        for (const key of Object.keys(selects)) {
+            const column = metadata.findColumnWithPropertyPathStrict(key)
+            const embed = metadata.findEmbeddedWithPropertyPath(key)
+            if (!column && !embed) {
+                throw new EntityPropertyNotFoundError(key, metadata)
+            }
+        }
+
         const projection: ObjectLiteral = {}
         const flatten = (obj: ObjectLiteral, prefix: string) => {
             for (const key of Object.keys(obj)) {

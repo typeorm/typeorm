@@ -115,4 +115,44 @@ describe("mongodb > select projection", () => {
                 expect(product!.price).to.be.undefined
             }),
         ))
+
+    it("should throw on unknown field name in select", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const productRepository = connection.getMongoRepository(Product)
+                await productRepository.save(new Product("test1", "label1", 10))
+
+                let error: Error | undefined
+                try {
+                    await productRepository.find({
+                        select: { nonExistentField: true } as any,
+                    })
+                } catch (e) {
+                    error = e as Error
+                }
+
+                expect(error).to.not.be.undefined
+                expect(error!.message).to.contain("nonExistentField")
+            }),
+        ))
+
+    it("should throw on typo in selected field name", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const productRepository = connection.getMongoRepository(Product)
+                await productRepository.save(new Product("test1", "label1", 10))
+
+                let error: Error | undefined
+                try {
+                    await productRepository.find({
+                        select: { nmae: true } as any,
+                    })
+                } catch (e) {
+                    error = e as Error
+                }
+
+                expect(error).to.not.be.undefined
+                expect(error!.message).to.contain("nmae")
+            }),
+        ))
 })
