@@ -297,7 +297,7 @@ Note: code that reads `dataSource.name` will now receive `undefined` instead of 
 
 The `connection` property in the `Driver` and `QueryRunner` classes was renamed to `dataSource`. To ease the transition, a deprecated getter was added that returns the same value as `dataSource`.
 
-### Miscelaneous
+### Miscellaneous
 
 The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
 
