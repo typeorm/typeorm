@@ -37,6 +37,78 @@ export class FindOptionsUtils {
     }
 
     /**
+     * Throws if the removed string-array `select` syntax is used.
+     * This catches untyped/JS callers still passing `select: ["col"]` after its removal in v1.0.
+     * @param options
+     */
+    static rejectStringArraySelect(options: unknown): void {
+        if (
+            options &&
+            typeof options === "object" &&
+            "select" in options &&
+            Array.isArray(options.select)
+        ) {
+            throw new TypeORMError(
+                `String-array "select" syntax has been removed. ` +
+                    `Use object syntax instead, e.g. select: { id: true, name: true }. ` +
+                    `See the v1 migration guide for details.`,
+            )
+        }
+    }
+
+    /**
+     * Throws if the removed string-array `relations` syntax is used.
+     * This catches untyped/JS callers still passing `relations: ["rel"]` after its removal in v1.0.
+     * @param options
+     */
+    static rejectStringArrayRelations(options: unknown): void {
+        if (
+            options &&
+            typeof options === "object" &&
+            "relations" in options &&
+            Array.isArray(options.relations)
+        ) {
+            throw new TypeORMError(
+                `String-array "relations" syntax has been removed. ` +
+                    `Use object syntax instead, e.g. relations: { profile: true, posts: true }. ` +
+                    `See the v1 migration guide for details.`,
+            )
+        }
+    }
+
+    /**
+     * Determines the join type for a relation based on nullability,
+     * join column ownership, and soft-delete configuration.
+     *
+     * Uses INNER JOIN only when:
+     * - The relation is non-nullable (nullable=false)
+     * - The relation owns the join column (ManyToOne or OneToOne owner)
+     * - The target entity has no soft-delete column, or withDeleted is enabled
+     * @param relation
+     * @param withDeleted
+     * @param parentJoinType
+     */
+    static getRelationJoinType(
+        relation: RelationMetadata,
+        withDeleted: boolean,
+        parentJoinType: "inner" | "left" = "inner",
+    ): "inner" | "left" {
+        // If the parent was LEFT-joined, all descendants must also be LEFT
+        // to avoid filtering out rows where the parent alias is NULL
+        if (parentJoinType === "left") {
+            return "left"
+        }
+        if (!relation.isNullable && relation.isWithJoinColumn) {
+            const hasSoftDelete =
+                relation.inverseEntityMetadata.deleteDateColumn
+            if (!hasSoftDelete || withDeleted) {
+                return "inner"
+            }
+        }
+        return "left"
+    }
+
+    /**
      * Checks if given object is really instance of FindOneOptions interface.
      * @param obj
      */
@@ -167,6 +239,13 @@ export class FindOptionsUtils {
             const selection = alias + "." + relation.propertyPath
             if (qb.expressionMap.relationLoadStrategy === "query") {
                 qb.concatRelationMetadata(relation)
+            } else if (
+                this.getRelationJoinType(
+                    relation,
+                    qb.expressionMap.withDeleted,
+                ) === "inner"
+            ) {
+                qb.innerJoinAndSelect(selection, relationAlias)
             } else {
                 qb.leftJoinAndSelect(selection, relationAlias)
             }
@@ -235,6 +314,7 @@ export class FindOptionsUtils {
         qb: SelectQueryBuilder<any>,
         alias: string,
         metadata: EntityMetadata,
+        parentJoinType: "inner" | "left" = "inner",
     ) {
         metadata.eagerRelations.forEach((relation) => {
             // generate a relation alias
@@ -252,7 +332,7 @@ export class FindOptionsUtils {
                 if (
                     join.mapToProperty !== undefined ||
                     join.isMappingMany !== undefined ||
-                    join.direction !== "LEFT" ||
+                    (join.direction !== "LEFT" && join.direction !== "INNER") ||
                     join.entityOrProperty !==
                         `${alias}.${relation.propertyPath}`
                 ) {
@@ -270,8 +350,33 @@ export class FindOptionsUtils {
                 ),
             )
 
+            let joinType: "inner" | "left" = "left"
             if (addJoin && !joinAlreadyAdded) {
-                qb.leftJoin(alias + "." + relation.propertyPath, relationAlias)
+                joinType = this.getRelationJoinType(
+                    relation,
+                    qb.expressionMap.withDeleted,
+                    parentJoinType,
+                )
+                if (joinType === "inner") {
+                    qb.innerJoin(
+                        alias + "." + relation.propertyPath,
+                        relationAlias,
+                    )
+                } else {
+                    qb.leftJoin(
+                        alias + "." + relation.propertyPath,
+                        relationAlias,
+                    )
+                }
+            } else {
+                // Derive join type from existing join for propagation
+                const existingJoin = qb.expressionMap.joinAttributes.find(
+                    (j) => j.alias.name === relationAlias,
+                )
+                if (existingJoin) {
+                    joinType =
+                        existingJoin.direction === "INNER" ? "inner" : "left"
+                }
             }
 
             // Checking whether the relation wasn't selected yet.
@@ -298,6 +403,7 @@ export class FindOptionsUtils {
                 qb,
                 relationAlias,
                 relation.inverseEntityMetadata,
+                joinType,
             )
         })
     }

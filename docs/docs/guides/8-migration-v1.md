@@ -425,7 +425,49 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected.
 
+## Relations
+
+### `nullable: false` now uses INNER JOIN
+
+Relations marked with `nullable: false` now use `INNER JOIN` instead of `LEFT JOIN` when loaded via `relations`, eager loading, or find options. This applies only to relation types that own the join column (`ManyToOne` and owning-side `OneToOne`).
+
+This is semantically correct since a non-nullable foreign key guarantees the related entity exists, and allows the database optimizer to produce more efficient query plans.
+
+**Potentially breaking:** If your database contains rows that violate the `NOT NULL` constraint (e.g. orphaned foreign keys, or `nullable: false` was set but the column is actually nullable in the DB), those rows will be excluded from query results. Verify your data integrity or change the relation to `nullable: true` if needed.
+
+```typescript
+// INNER JOIN — related entity is guaranteed to exist
+@ManyToOne(() => User, { nullable: false })
+author: User
+
+// LEFT JOIN — related entity may not exist (default)
+@ManyToOne(() => User)
+optionalEditor: User
+```
+
+`OneToMany`, `ManyToMany`, and inverse `OneToOne` relations always use `LEFT JOIN` regardless of the `nullable` setting, since these relation types do not have a join column on the current table.
+
+**Soft-delete exception:** If the related entity has a `@DeleteDateColumn`, `LEFT JOIN` is used even for `nullable: false` relations (unless `withDeleted: true` is set). This prevents soft-deleted related entities from filtering out their parent rows.
+
 ## Repository
+
+### `findOneById`
+
+The deprecated `findOneById` method has been removed from `EntityManager`, `Repository`, `BaseEntity`, `MongoEntityManager`, and `MongoRepository`. Use `findOneBy` instead:
+
+```typescript
+// Before
+const user = await manager.findOneById(User, 1)
+const user = await repository.findOneById(1)
+const user = await User.findOneById(1)
+
+// After
+const user = await manager.findOneBy(User, { id: 1 })
+const user = await repository.findOneBy({ id: 1 })
+const user = await User.findOneBy({ id: 1 })
+```
+
+For MongoDB entities with `@ObjectIdColumn()`, `findOneBy` works the same way — TypeORM automatically translates the property name to `_id`.
 
 ### `findByIds` removed
 
@@ -563,7 +605,7 @@ const posts = await repository
     .getMany()
 ```
 
-This distinction matters in practice. For example, PostgreSQL does not allow `FOR UPDATE` on the nullable side of an outer join, so queries that combine locking with joined relations may need INNER JOINs:
+This distinction matters in practice. For example, PostgreSQL and CockroachDB do not allow `FOR UPDATE` on the nullable side of an outer join, so queries that combine locking with joined relations may need INNER JOINs:
 
 ```typescript
 // Before — innerJoinAndSelect + lock
@@ -584,6 +626,72 @@ const post = await repository
     .setLock("pessimistic_write", undefined, ["categories"])
     .getOne()
 ```
+
+#### Locking with nested relations → QueryBuilder
+
+The `relations` option cannot be used with pessimistic locking on joined tables because `relations` always uses LEFT JOINs, and PostgreSQL/CockroachDB reject `FOR UPDATE` on the nullable side of outer joins. Use QueryBuilder with `innerJoinAndSelect` instead:
+
+```typescript
+// Before — nested relations + lock via find options
+const post = await repository.findOne({
+    where: { id: 1 },
+    join: {
+        alias: "post",
+        innerJoinAndSelect: {
+            categories: "post.categories",
+            images: "categories.images",
+        },
+    },
+    lock: { mode: "pessimistic_write", tables: ["images"] },
+})
+
+// After — QueryBuilder with innerJoinAndSelect + lock
+const post = await repository
+    .createQueryBuilder("post")
+    .innerJoinAndSelect("post.categories", "categories")
+    .innerJoinAndSelect("categories.images", "images")
+    .where("post.id = :id", { id: 1 })
+    .setLock("pessimistic_write", undefined, ["images"])
+    .getOne()
+```
+
+Note that locking the _main_ table still works with `relations` — only locking _joined_ tables requires QueryBuilder with inner joins.
+
+### String-based `select` removed
+
+The deprecated string-array syntax for `select` find options has been removed. Use the object syntax instead:
+
+```typescript
+// Before
+const users = await repository.find({
+    select: ["id", "name"],
+})
+
+// After
+const users = await repository.find({
+    select: { id: true, name: true },
+})
+```
+
+The removed type is `FindOptionsSelectByString`.
+
+### String-based `relations` removed
+
+The deprecated string-array syntax for `relations` find options has been removed. Use the object syntax instead:
+
+```typescript
+// Before
+const users = await repository.find({
+    relations: ["profile", "posts"],
+})
+
+// After
+const users = await repository.find({
+    relations: { profile: true, posts: true },
+})
+```
+
+The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
 
