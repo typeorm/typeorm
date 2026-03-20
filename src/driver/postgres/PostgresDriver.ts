@@ -1228,10 +1228,14 @@ export class PostgresDriver implements Driver {
             return this.compareJsonDefaults(columnMetadata, tableColumn)
         }
 
-        const columnDefault = this.lowerDefaultValueIfNecessary(
+        const columnDefault = this.normalizeDefaultForComparison(
             this.normalizeDefault(columnMetadata),
         )
-        return columnDefault === tableColumn.default
+        const tableDefault = this.normalizeDefaultForComparison(
+            tableColumn.default,
+        )
+
+        return columnDefault === tableDefault
     }
 
     /**
@@ -1579,7 +1583,7 @@ export class PostgresDriver implements Driver {
     private lowerDefaultValueIfNecessary(value: string | undefined) {
         // Postgres saves function calls in default value as lowercase #2733
         if (!value) {
-            return value
+            return value ?? ""
         }
         return value
             .split(`'`)
@@ -1587,6 +1591,58 @@ export class PostgresDriver implements Driver {
                 return i % 2 === 1 ? v : v.toLowerCase()
             })
             .join(`'`)
+    }
+
+    private normalizeDefaultForComparison(value: string | undefined) {
+        if (!value) {
+            return value
+        }
+
+        let normalizedValue = this.lowerDefaultValueIfNecessary(value).trim()
+
+        normalizedValue = normalizedValue.replace(/::[\w\s.[\]\-"]+/g, "")
+        normalizedValue = normalizedValue.replace(
+            /\((-?\d+(?:\.\d+)?)\)/g,
+            "$1",
+        )
+        normalizedValue = this.unwrapDefaultExpression(normalizedValue)
+        normalizedValue = normalizedValue.replace(/\s+/g, " ").trim()
+
+        return normalizedValue
+    }
+
+    private unwrapDefaultExpression(value: string) {
+        let normalizedValue = value
+
+        while (
+            normalizedValue.startsWith("(") &&
+            normalizedValue.endsWith(")") &&
+            this.hasMatchingOuterParens(normalizedValue)
+        ) {
+            normalizedValue = normalizedValue.slice(1, -1).trim()
+        }
+
+        return normalizedValue
+    }
+
+    private hasMatchingOuterParens(value: string) {
+        let depth = 0
+
+        for (let index = 0; index < value.length; index++) {
+            const char = value[index]
+
+            if (char === "(") {
+                depth += 1
+            } else if (char === ")") {
+                depth -= 1
+
+                if (depth === 0 && index < value.length - 1) {
+                    return false
+                }
+            }
+        }
+
+        return depth === 0
     }
 
     /**
