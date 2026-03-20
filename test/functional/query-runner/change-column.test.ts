@@ -274,13 +274,10 @@ describe("query runner > change column", () => {
             dataSources.map(async (dataSource) => {
                 // Spanner does not support column type changes in place
                 if (dataSource.driver.options.type === "spanner") return
-                // MSSQL and SAP cannot ADD a NOT NULL column to a non-empty table;
-                // their ALTER support is tracked separately.
-                if (
-                    dataSource.driver.options.type === "mssql" ||
-                    dataSource.driver.options.type === "sap"
-                )
-                    return
+                // MSSQL cannot ADD a NOT NULL column to a non-empty table.
+                if (dataSource.driver.options.type === "mssql") return
+                // SAP HANA uses NVARCHAR for length-only changes via ALTER TABLE … ALTER (…);
+                // the "varchar" column type is an alias for nvarchar there.
 
                 const queryRunner = dataSource.createQueryRunner()
 
@@ -353,13 +350,10 @@ describe("query runner > change column", () => {
                 // other drivers handle them as sequential safe operations.
                 // Spanner cannot rename columns without recreation.
                 if (dataSource.driver.options.type === "spanner") return
-                // MSSQL and SAP cannot ADD a NOT NULL column to a non-empty table;
-                // their ALTER support is tracked separately.
-                if (
-                    dataSource.driver.options.type === "mssql" ||
-                    dataSource.driver.options.type === "sap"
-                )
-                    return
+                // MSSQL cannot ADD a NOT NULL column to a non-empty table.
+                if (dataSource.driver.options.type === "mssql") return
+                // SAP HANA handles rename + length change as two sequential operations:
+                // RENAME COLUMN then ALTER TABLE … ALTER (…) — both are data-safe.
 
                 const queryRunner = dataSource.createQueryRunner()
 
