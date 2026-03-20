@@ -77,6 +77,26 @@ describe("mongodb > select projection", () => {
             }),
         ))
 
+    it("should return id when ObjectIdColumn is selected", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const productRepository = connection.getMongoRepository(Product)
+                const saved = await productRepository.save(
+                    new Product("test1", "label1", 10),
+                )
+
+                const products = await productRepository.find({
+                    select: { id: true, name: true },
+                })
+
+                expect(products).to.have.length(1)
+                expect(products[0].id).to.not.be.undefined
+                expect(products[0].id.toString()).to.equal(saved.id.toString())
+                expect(products[0].name).to.equal("test1")
+                expect(products[0].price).to.be.undefined
+            }),
+        ))
+
     it("should only return selected columns on findOne with where", () =>
         Promise.all(
             dataSources.map(async (connection) => {

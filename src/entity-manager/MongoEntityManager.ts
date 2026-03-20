@@ -119,6 +119,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
@@ -223,6 +224,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
@@ -1154,9 +1156,11 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Converts FindOptions into mongodb select by criteria.
      * @param selects
+     * @param metadata
      */
     protected convertFindOptionsSelectToProjectCriteria(
         selects: FindOptionsSelect<any>,
+        metadata: EntityMetadata,
     ) {
         const projection: ObjectLiteral = {}
         const flatten = (obj: ObjectLiteral, prefix: string) => {
@@ -1175,6 +1179,19 @@ export class MongoEntityManager extends EntityManager {
             }
         }
         flatten(selects, "")
+
+        // Translate ObjectIdColumn property name (e.g. "id") to "_id" for MongoDB
+        if (metadata.objectIdColumn) {
+            const propertyName = metadata.objectIdColumn.propertyName
+            if (
+                propertyName !== "_id" &&
+                projection[propertyName] !== undefined
+            ) {
+                projection["_id"] = projection[propertyName]
+                delete projection[propertyName]
+            }
+        }
+
         return projection
     }
 
@@ -1315,6 +1332,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         findOneOptionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (findOneOptionsOrConditions.order)
@@ -1357,6 +1375,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
@@ -1400,6 +1419,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
