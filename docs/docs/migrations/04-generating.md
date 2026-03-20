@@ -125,7 +125,8 @@ For example, after changing `length: "50"` to `length: "200"` on a `varchar` col
 | Driver | Generated SQL |
 |--------|---------------|
 | MySQL / Aurora MySQL | `ALTER TABLE \`post\` CHANGE \`description\` \`description\` varchar(200) NOT NULL` |
-| PostgreSQL / CockroachDB / Spanner | `ALTER TABLE "post" ALTER COLUMN "description" TYPE varchar(200)` |
+| PostgreSQL / CockroachDB | `ALTER TABLE "post" ALTER COLUMN "description" TYPE varchar(200)` |
+| Spanner | `ALTER TABLE \`post\` ALTER COLUMN "description" TYPE string(200)` |
 | Oracle | `ALTER TABLE "post" MODIFY "description" varchar2(200)` |
 
 Changes that require a full column recreation (e.g. switching between incompatible types, enum changes, or identity column type changes) still use the `DROP COLUMN` + `ADD COLUMN` approach.
