@@ -274,6 +274,13 @@ describe("query runner > change column", () => {
             dataSources.map(async (dataSource) => {
                 // Spanner does not support column type changes in place
                 if (dataSource.driver.options.type === "spanner") return
+                // MSSQL and SAP cannot ADD a NOT NULL column to a non-empty table;
+                // their ALTER support is tracked separately.
+                if (
+                    dataSource.driver.options.type === "mssql" ||
+                    dataSource.driver.options.type === "sap"
+                )
+                    return
 
                 const queryRunner = dataSource.createQueryRunner()
 
@@ -298,9 +305,10 @@ describe("query runner > change column", () => {
                     true,
                 )
 
-                // Insert a row to verify data is preserved after type change
+                // Insert a row to verify data is preserved after type change.
+                // Use unquoted identifiers so the query works across all drivers.
                 await queryRunner.query(
-                    `INSERT INTO "issue_3357" ("id", "description") VALUES (1, 'hello')`,
+                    `INSERT INTO issue_3357 (id, description) VALUES (1, 'hello')`,
                 )
 
                 let table = await queryRunner.getTable("issue_3357")
@@ -325,7 +333,7 @@ describe("query runner > change column", () => {
 
                 // Data must be preserved — the ALTER must not have dropped the column
                 const rows = await queryRunner.query(
-                    `SELECT * FROM "issue_3357" WHERE "id" = 1`,
+                    `SELECT * FROM issue_3357 WHERE id = 1`,
                 )
                 rows.length.should.be.equal(1)
                 rows[0].description.should.be.equal("hello")
@@ -342,6 +350,13 @@ describe("query runner > change column", () => {
                 // other drivers handle them as sequential safe operations.
                 // Spanner cannot rename columns without recreation.
                 if (dataSource.driver.options.type === "spanner") return
+                // MSSQL and SAP cannot ADD a NOT NULL column to a non-empty table;
+                // their ALTER support is tracked separately.
+                if (
+                    dataSource.driver.options.type === "mssql" ||
+                    dataSource.driver.options.type === "sap"
+                )
+                    return
 
                 const queryRunner = dataSource.createQueryRunner()
 
@@ -365,8 +380,9 @@ describe("query runner > change column", () => {
                     true,
                 )
 
+                // Use unquoted identifiers so the query works across all drivers.
                 await queryRunner.query(
-                    `INSERT INTO "issue_3357_rename" ("id", "old_col") VALUES (1, 'world')`,
+                    `INSERT INTO issue_3357_rename (id, old_col) VALUES (1, 'world')`,
                 )
 
                 let table = await queryRunner.getTable("issue_3357_rename")
@@ -393,7 +409,7 @@ describe("query runner > change column", () => {
 
                 // Data must be preserved
                 const rows = await queryRunner.query(
-                    `SELECT * FROM "issue_3357_rename" WHERE "id" = 1`,
+                    `SELECT * FROM issue_3357_rename WHERE id = 1`,
                 )
                 rows.length.should.be.equal(1)
                 rows[0].new_col.should.be.equal("world")

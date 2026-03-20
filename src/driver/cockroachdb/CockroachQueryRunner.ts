@@ -1377,22 +1377,32 @@ export class CockroachQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Enum type changes must use DROP + ADD because createFullType() returns
+        // the generic keyword "enum" rather than the actual type name (e.g.
+        // "table_col_enum"), so ALTER COLUMN ... TYPE would fail.
+        const typeOrLengthChanged =
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length ||
+            newColumn.isArray !== oldColumn.isArray
+        const isEnumChange =
+            oldColumn.type === "enum" ||
+            oldColumn.type === "simple-enum" ||
+            newColumn.type === "enum" ||
+            newColumn.type === "simple-enum"
+
         if (
             oldColumn.generatedType !== newColumn.generatedType ||
-            oldColumn.asExpression !== newColumn.asExpression
+            oldColumn.asExpression !== newColumn.asExpression ||
+            (typeOrLengthChanged && isEnumChange)
         ) {
-            // Generated/computed column changes require full recreation
+            // Generated/computed columns and enum type changes require full recreation
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
-                oldColumn.type !== newColumn.type ||
-                oldColumn.length !== newColumn.length ||
-                newColumn.isArray !== oldColumn.isArray
-            ) {
+            if (typeOrLengthChanged) {
                 // Use ALTER COLUMN ... TYPE to preserve data instead of DROP + ADD.
                 upQueries.push(
                     new Query(

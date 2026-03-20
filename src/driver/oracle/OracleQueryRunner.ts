@@ -1130,10 +1130,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.generatedType !== newColumn.generatedType ||
-            oldColumn.asExpression !== newColumn.asExpression
+            oldColumn.asExpression !== newColumn.asExpression ||
+            // Can't MODIFY an identity column to a different type; requires recreation
+            (oldColumn.type !== newColumn.type && oldColumn.isGenerated)
         ) {
             // Oracle does not support changing of IDENTITY column or computed columns
-            // without full recreation
+            // without full recreation; identity + type change also requires recreation
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
