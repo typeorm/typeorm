@@ -2881,6 +2881,23 @@ export class PostgresQueryRunner
             )
         }
 
+        if (!uniqueConstraint.name) {
+            const match = table.uniques.find((u) =>
+                OrmUtils.isArraysEqual(
+                    [...u.columnNames].sort((a, b) => a.localeCompare(b)),
+                    [...uniqueConstraint.columnNames].sort((a, b) =>
+                        a.localeCompare(b),
+                    ),
+                ),
+            )
+            uniqueConstraint.name =
+                match?.name ??
+                this.connection.namingStrategy.uniqueConstraintName(
+                    table,
+                    uniqueConstraint.columnNames,
+                )
+        }
+
         const up = this.dropUniqueConstraintSql(
             table,
             uniqueConstraint,
