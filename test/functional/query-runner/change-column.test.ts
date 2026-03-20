@@ -336,7 +336,10 @@ describe("query runner > change column", () => {
                     `SELECT * FROM issue_3357 WHERE id = 1`,
                 )
                 rows.length.should.be.equal(1)
-                rows[0].description.should.be.equal("hello")
+                // Oracle returns column names in uppercase; normalise for comparison.
+                const descVal =
+                    rows[0]["description"] ?? rows[0]["DESCRIPTION"]
+                descVal.should.be.equal("hello")
 
                 await queryRunner.dropTable("issue_3357")
                 await queryRunner.release()
@@ -412,7 +415,10 @@ describe("query runner > change column", () => {
                     `SELECT * FROM issue_3357_rename WHERE id = 1`,
                 )
                 rows.length.should.be.equal(1)
-                rows[0].new_col.should.be.equal("world")
+                // Oracle returns column names in uppercase; normalise for comparison.
+                const newColVal =
+                    rows[0]["new_col"] ?? rows[0]["NEW_COL"]
+                newColVal.should.be.equal("world")
 
                 await queryRunner.dropTable("issue_3357_rename")
                 await queryRunner.release()

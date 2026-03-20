@@ -1142,10 +1142,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
+            const lengthOnlyChanged =
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
-            ) {
+            if (lengthOnlyChanged) {
                 // Only the length changed within the same base type: use MODIFY to
                 // preserve existing row data instead of DROP + ADD.
                 upQueries.push(
@@ -1376,7 +1376,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (!lengthOnlyChanged && this.isColumnChanged(oldColumn, newColumn, true)) {
                 let defaultUp: string = ""
                 let defaultDown: string = ""
                 let nullableUp: string = ""

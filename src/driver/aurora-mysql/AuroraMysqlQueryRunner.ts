@@ -1030,7 +1030,7 @@ export class AuroraMysqlQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (!(typeOrLengthChanged && newColumn.name === oldColumn.name) && this.isColumnChanged(oldColumn, newColumn, true)) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
