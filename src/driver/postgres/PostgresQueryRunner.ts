@@ -1348,6 +1348,14 @@ export class PostgresQueryRunner
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+
+                // Update clonedTable so replaceCachedTable() propagates the
+                // correct column definition.
+                const clonedColIdx = clonedTable.columns.findIndex(
+                    (c) => c.name === oldColumn.name,
+                )
+                if (clonedColIdx !== -1)
+                    clonedTable.columns[clonedColIdx] = newColumn.clone()
             }
 
             if (oldColumn.name !== newColumn.name) {

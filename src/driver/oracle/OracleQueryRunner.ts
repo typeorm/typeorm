@@ -1420,6 +1420,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )} ${defaultDown} ${nullableDown}`,
                     ),
                 )
+
+                // Update clonedTable so replaceCachedTable() propagates the
+                // correct column definition (oldColumn.name may have been
+                // updated to newColumn.name by the rename block above).
+                const clonedColIdx = clonedTable.columns.findIndex(
+                    (c) => c.name === newColumn.name,
+                )
+                if (clonedColIdx !== -1)
+                    clonedTable.columns[clonedColIdx] = newColumn.clone()
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
