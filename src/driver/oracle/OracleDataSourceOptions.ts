@@ -1,4 +1,5 @@
 import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { ReplicationConfig } from "../types/ReplicationConfig"
 import type { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
 
 export interface OracleThickModeOptions {
@@ -45,16 +46,7 @@ export interface OracleDataSourceOptions
 
     /**
      * Replication setup.
+     * Supports both `master`/`slaves` and `primary`/`replicas` keys.
      */
-    readonly replication?: {
-        /**
-         * Master server used by orm to perform writes.
-         */
-        readonly master: OracleConnectionCredentialsOptions
-
-        /**
-         * List of read-from servers (slaves).
-         */
-        readonly slaves: OracleConnectionCredentialsOptions[]
-    }
+    readonly replication?: ReplicationConfig<OracleConnectionCredentialsOptions>
 }

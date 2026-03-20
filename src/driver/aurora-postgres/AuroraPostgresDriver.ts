@@ -5,7 +5,10 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import { PostgresDriver } from "../postgres/PostgresDriver"
-import type { ReplicationMode } from "../types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    type ReplicationMode,
+} from "../types/ReplicationMode"
 import type { AuroraPostgresDataSourceOptions } from "./AuroraPostgresDataSourceOptions"
 import { AuroraPostgresQueryRunner } from "./AuroraPostgresQueryRunner"
 
@@ -99,6 +102,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
+        const normalizedMode = normalizeReplicationMode(mode)
         return new AuroraPostgresQueryRunner(
             this,
             new this.DataApiDriver(
@@ -111,7 +115,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
                 this.options.serviceConfigOptions,
                 this.options.formatOptions,
             ),
-            mode,
+            normalizedMode,
         )
     }
 
