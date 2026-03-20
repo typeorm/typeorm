@@ -95,6 +95,31 @@ describe("repository > findOrCreate", () => {
             }),
         ))
 
+    it("should not allow create to override where values", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+
+                const [post, created] = await postRepository.findOrCreate({
+                    where: { title: "Correct Title" },
+                    create: { title: "Wrong Title" as any, text: "Some text" },
+                })
+
+                expect(created).to.be.true
+                // where should take precedence over create for overlapping keys
+                expect(post.title).to.equal("Correct Title")
+                expect(post.text).to.equal("Some text")
+
+                // second call should find the existing entity
+                const [post2, created2] = await postRepository.findOrCreate({
+                    where: { title: "Correct Title" },
+                })
+
+                expect(created2).to.be.false
+                expect(post2.id).to.equal(post.id)
+            }),
+        ))
+
     it("should work via EntityManager API", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

@@ -1339,10 +1339,14 @@ export class EntityManager {
             return [existing, false]
         }
 
-        const merged = Object.assign({}, options.where, options.create ?? {})
-        const entity = this.create(entityClass, merged as DeepPartial<Entity>)
-        const saved = await this.save(entityClass, entity as any)
-        return [saved as Entity, true]
+        const merged = Object.assign(
+            {},
+            options.create ?? {},
+            options.where,
+        ) as DeepPartial<Entity>
+        const entity = this.create(entityClass, merged)
+        const saved = await this.save(entityClass, entity)
+        return [saved, true]
     }
 
     /**
