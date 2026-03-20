@@ -1301,10 +1301,14 @@ export class PostgresQueryRunner
         // Enum type changes must use DROP + ADD because createFullType() returns
         // the generic keyword "enum" rather than the actual type name (e.g.
         // "table_col_enum"), so ALTER COLUMN ... TYPE would fail.
+        const typeChanged = oldColumn.type !== newColumn.type
+        const isArrayChanged = newColumn.isArray !== oldColumn.isArray
+        const lengthOnlyChanged =
+            !typeChanged &&
+            !isArrayChanged &&
+            oldColumn.length !== newColumn.length
         const typeOrLengthChanged =
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray
+            typeChanged || oldColumn.length !== newColumn.length || isArrayChanged
         const isEnumChange =
             oldColumn.type === "enum" ||
             oldColumn.type === "simple-enum" ||
@@ -1316,77 +1320,34 @@ export class PostgresQueryRunner
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED") ||
-            (typeOrLengthChanged && isEnumChange)
+            (typeOrLengthChanged && (isEnumChange || typeChanged || isArrayChanged))
         ) {
-            // Stored generated columns and enum type changes require full recreation
+            // Stored generated columns, enum changes, actual type changes, and array
+            // dimension changes all require full DROP + ADD recreation.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (typeOrLengthChanged) {
-                // Use ALTER COLUMN ... TYPE to preserve data instead of DROP + ADD.
-                // Drop the default first if type is changing to avoid cast failures.
-                if (
-                    oldColumn.type !== newColumn.type &&
-                    oldColumn.default !== null &&
-                    oldColumn.default !== undefined
-                ) {
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${oldColumn.default}`,
-                        ),
-                    )
-                }
-
+            if (lengthOnlyChanged) {
+                // Only the length changed within the same base type (e.g. varchar(50)
+                // → varchar(200)).  Use ALTER COLUMN ... TYPE so existing row data is
+                // preserved instead of being discarded by DROP + ADD.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             oldColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}${
-                            oldColumn.type !== newColumn.type
-                                ? ` USING "${oldColumn.name}"::${this.driver.createFullType(newColumn)}`
-                                : ""
-                        }`,
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             oldColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}${
-                            oldColumn.type !== newColumn.type
-                                ? ` USING "${oldColumn.name}"::${this.driver.createFullType(oldColumn)}`
-                                : ""
-                        }`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
-
-                // Restore default after type change.
-                // Use oldColumn.name here because RENAME COLUMN (if any) happens
-                // after this block; the default persists through the rename.
-                if (
-                    oldColumn.type !== newColumn.type &&
-                    newColumn.default !== null &&
-                    newColumn.default !== undefined
-                ) {
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${newColumn.default}`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`,
-                        ),
-                    )
-                }
             }
 
             if (oldColumn.name !== newColumn.name) {

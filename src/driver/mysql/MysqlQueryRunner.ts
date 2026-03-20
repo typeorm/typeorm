@@ -1123,14 +1123,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            const typeOrLengthChanged =
-                oldColumn.type !== newColumn.type ||
+            const lengthOnlyChanged =
+                oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
 
-            if (typeOrLengthChanged && newColumn.name === oldColumn.name) {
-                // Type or length changed without rename: use CHANGE to preserve data.
-                // Using CHANGE col col new_def is equivalent to MODIFY and handles all
-                // column attributes in a single statement.
+            if (lengthOnlyChanged && newColumn.name === oldColumn.name) {
+                // Only the length changed within the same base type (e.g. varchar(50)
+                // → varchar(200)).  Use CHANGE to preserve existing row data instead
+                // of the destructive DROP + ADD path.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${

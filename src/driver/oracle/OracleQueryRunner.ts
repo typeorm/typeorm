@@ -1143,10 +1143,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable = table.clone()
         } else {
             if (
-                oldColumn.type !== newColumn.type ||
+                oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
             ) {
-                // Use MODIFY to preserve data instead of DROP + ADD.
+                // Only the length changed within the same base type: use MODIFY to
+                // preserve existing row data instead of DROP + ADD.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} MODIFY "${

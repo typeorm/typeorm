@@ -1380,10 +1380,14 @@ export class CockroachQueryRunner
         // Enum type changes must use DROP + ADD because createFullType() returns
         // the generic keyword "enum" rather than the actual type name (e.g.
         // "table_col_enum"), so ALTER COLUMN ... TYPE would fail.
+        const typeChanged = oldColumn.type !== newColumn.type
+        const isArrayChanged = newColumn.isArray !== oldColumn.isArray
+        const lengthOnlyChanged =
+            !typeChanged &&
+            !isArrayChanged &&
+            oldColumn.length !== newColumn.length
         const typeOrLengthChanged =
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray
+            typeChanged || oldColumn.length !== newColumn.length || isArrayChanged
         const isEnumChange =
             oldColumn.type === "enum" ||
             oldColumn.type === "simple-enum" ||
@@ -1393,17 +1397,19 @@ export class CockroachQueryRunner
         if (
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression ||
-            (typeOrLengthChanged && isEnumChange)
+            (typeOrLengthChanged && (isEnumChange || typeChanged || isArrayChanged))
         ) {
-            // Generated/computed columns and enum type changes require full recreation
+            // Generated/computed columns, enum changes, actual type changes, and array
+            // dimension changes all require full DROP + ADD recreation.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (typeOrLengthChanged) {
-                // Use ALTER COLUMN ... TYPE to preserve data instead of DROP + ADD.
+            if (lengthOnlyChanged) {
+                // Only the length changed within the same base type (e.g. varchar(50)
+                // → varchar(200)).  Use ALTER COLUMN ... TYPE to preserve row data.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
