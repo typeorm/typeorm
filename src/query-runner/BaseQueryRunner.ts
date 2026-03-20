@@ -17,6 +17,7 @@ import { OrmUtils } from "../util/OrmUtils"
 import type { MetadataTableType } from "../driver/types/MetadataTableType"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 
 export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
@@ -131,7 +132,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      */
     abstract query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult?: boolean,
     ): Promise<any>
 
