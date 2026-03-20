@@ -1110,6 +1110,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
+            // A change in base type requires column recreation (DROP + ADD) so that
+            // MySQL can properly re-validate data and constraints for the new type.
+            oldColumn.type !== newColumn.type ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1123,8 +1126,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // At this point oldColumn.type === newColumn.type (type change was handled above).
             const lengthOnlyChanged =
-                oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
 
             if (lengthOnlyChanged && newColumn.name === oldColumn.name) {

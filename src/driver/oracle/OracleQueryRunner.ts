@@ -1142,27 +1142,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            const lengthOnlyChanged =
-                oldColumn.type === newColumn.type &&
+            // Cover both type and length changes: non-identity type changes and any
+            // length changes within the same type can be handled non-destructively with
+            // ALTER TABLE … MODIFY (identity-column type changes are excluded by the
+            // DROP+ADD branch above).
+            const typeOrLengthChanged =
+                oldColumn.type !== newColumn.type ||
                 oldColumn.length !== newColumn.length
-            if (lengthOnlyChanged) {
-                // Only the length changed within the same base type: use MODIFY to
-                // preserve existing row data instead of DROP + ADD.
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} MODIFY "${
-                            oldColumn.name
-                        }" ${this.driver.createFullType(newColumn)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} MODIFY "${
-                            oldColumn.name
-                        }" ${this.driver.createFullType(oldColumn)}`,
-                    ),
-                )
-            }
 
             if (newColumn.name !== oldColumn.name) {
                 // rename column
@@ -1376,7 +1362,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (!lengthOnlyChanged && this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (typeOrLengthChanged || this.isColumnChanged(oldColumn, newColumn, true)) {
                 let defaultUp: string = ""
                 let defaultDown: string = ""
                 let nullableUp: string = ""
