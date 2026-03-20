@@ -1033,13 +1033,15 @@ export class AuroraMysqlQueryRunner
                         foreignKey.name = newForeignKeyName
                     })
 
-                // rename old column in the Table object
+                // rename old column in the Table object, propagating all
+                // column changes (name, type, length) so the cache stays
+                // accurate even when rename and type/length change together.
                 const oldTableColumn = clonedTable.columns.find(
                     (column) => column.name === oldColumn.name,
                 )
                 clonedTable.columns[
                     clonedTable.columns.indexOf(oldTableColumn!)
-                ].name = newColumn.name
+                ] = newColumn.clone()
                 oldColumn.name = newColumn.name
             }
 
