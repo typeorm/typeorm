@@ -21,7 +21,7 @@ export class Author {
         name: "AuthorBooks",
     })
     @ManyToMany(() => Book, (book) => book.author, { eager: true })
-    books: Book
+    books: Book[]
 
     @OneToMany(() => Comment, (comment) => comment.author)
     comments: Comment[]
