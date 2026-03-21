@@ -3547,8 +3547,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (oldColumn.isNullable === newColumn.isNullable) {
             const stripNullability = (def: string) =>
                 def
-                    .replace(/[ \t]+NOT NULL(?=[ \t]|$)/gi, "")
-                    .replace(/[ \t]+NULL(?=[ \t]|$)/gi, "")
+                    .replace(/[ \t]+NOT NULL(?!\S)/gi, "")
+                    .replace(/[ \t]+NULL(?!\S)/gi, "")
             finalNewDef = stripNullability(finalNewDef)
             finalOldDef = stripNullability(finalOldDef)
         }
