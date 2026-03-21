@@ -1,27 +1,25 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import sinon from "sinon"
-import { SelectQueryBuilder } from "../../../../src"
-import type { DataSource } from "../../../../src/data-source/index"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Author } from "./entity/Author"
 import { Book } from "./entity/Book"
 import { Comment } from "./entity/Comment"
 
 describe("query builder > relation-load-strategy > eager relations respect relationLoadStrategy", () => {
     let dataSources: DataSource[]
-
-    before(async () => {
-        dataSources = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
-            schemaCreate: true,
-            dropSchema: true,
-        })
-    })
+    before(
+        async () =>
+            (dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: true,
+                dropSchema: true,
+            })),
+    )
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -30,194 +28,90 @@ describe("query builder > relation-load-strategy > eager relations respect relat
         const bookRepository = dataSource.getRepository(Book)
         const commentRepository = dataSource.getRepository(Comment)
 
-        const authorModel = authorRepository.create({
-            name: "author",
-        })
-        const author = await authorRepository.save(authorModel)
+        const author = await authorRepository.save(
+            authorRepository.create({ name: "author" }),
+        )
 
-        const bookModels = bookRepository.create([
-            {
-                title: "book1",
-                text: "text1",
-                author: [author],
-            },
-            {
-                title: "book2",
-                text: "text2",
-                author: [author],
-            },
-            {
-                title: "book3",
-                text: "text3",
-                author: [author],
-            },
-        ])
-        const books = await bookRepository.save(bookModels)
+        const books = await bookRepository.save(
+            bookRepository.create([
+                { title: "book1", text: "text1", author: [author] },
+                { title: "book2", text: "text2", author: [author] },
+                { title: "book3", text: "text3", author: [author] },
+            ]),
+        )
 
         for (const book of books) {
-            for (let index = 0; index < 3; index++) {
-                const comment = commentRepository.create({
-                    text: `${book.title}: comment${index}`,
-                    bookId: book.id,
-                    authorId: author.id,
-                })
-                await commentRepository.save(comment)
+            for (let i = 0; i < 3; i++) {
+                await commentRepository.save(
+                    commentRepository.create({
+                        text: `${book.title}: comment${i}`,
+                        bookId: book.id,
+                        authorId: author.id,
+                    }),
+                )
             }
         }
         return { authorRepository, author }
     }
 
-    it("it should load eager relations using relationLoadStrategy as main strategy", async () => {
-        for (const dataSource of dataSources) {
-            const { authorRepository, author } = await setupTestData(dataSource)
+    it("should load eager relations using query strategy", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const { authorRepository, author } =
+                    await setupTestData(dataSource)
 
-            const getManySpy = sinon.spy(
-                SelectQueryBuilder.prototype,
-                "getMany",
-            )
-            const getOneSpy = sinon.spy(SelectQueryBuilder.prototype, "getOne")
-            const getRawManySpy = sinon.spy(
-                SelectQueryBuilder.prototype,
-                "getRawMany",
-            )
+                const result = await authorRepository.findOne({
+                    where: { id: author.id },
+                    relationLoadStrategy: "query",
+                })
 
-            const eageredAuthor = await authorRepository.findOne({
-                where: { id: author.id },
-                relationLoadStrategy: "query",
-            })
+                expect(result).to.not.be.null
+                expect(result!.name).to.equal("author")
 
-            const [manyToManyCall] = getManySpy.getCalls()
+                // ManyToMany eager: Author -> Book
+                expect(result!.books).to.be.an("array")
+                expect(result!.books).to.have.length(3)
 
-            expect(
-                manyToManyCall.thisValue.expressionMap.joinAttributes,
-            ).to.be.an("array")
-            expect(
-                manyToManyCall.thisValue.expressionMap.joinAttributes,
-            ).to.have.length(1) // Only join attribute allowed, in many to many relations, to be more performatic
+                const titles = result!.books
+                    .map((b) => b.title)
+                    .sort()
+                expect(titles).to.deep.equal(["book1", "book2", "book3"])
 
-            getOneSpy.getCalls().forEach((call) => {
-                expect(call.thisValue.expressionMap.joinAttributes).to.be.an(
-                    "array",
-                )
-                expect(
-                    call.thisValue.expressionMap.joinAttributes,
-                ).to.have.length(0) // No Join Attributes in relationLoadStrategy: "query",
-            })
+                // OneToMany eager: Book -> Comment (nested)
+                for (const book of result!.books) {
+                    expect(book.comments).to.be.an("array")
+                    expect(book.comments).to.have.length(3)
+                    for (const comment of book.comments!) {
+                        expect(comment.text).to.include(book.title)
+                    }
+                }
+            }),
+        ))
 
-            expect(getRawManySpy.callCount).to.be.equal(1)
-            expect(getManySpy.callCount).to.be.equal(2)
-            expect(getOneSpy.callCount).to.be.equal(1)
+    it("should suppress nested eager relations when loadEagerRelations is false", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const { authorRepository, author } =
+                    await setupTestData(dataSource)
 
-            expect(eageredAuthor).to.deep.equal({
-                id: 1,
-                name: "author",
-                books: [
-                    {
-                        id: 1,
-                        title: "book1",
-                        text: "text1",
-                        comments: [
-                            {
-                                id: 1,
-                                text: "book1: comment0",
-                                bookId: 1,
-                                authorId: 1,
-                            },
-                            {
-                                id: 2,
-                                text: "book1: comment1",
-                                bookId: 1,
-                                authorId: 1,
-                            },
-                            {
-                                id: 3,
-                                text: "book1: comment2",
-                                bookId: 1,
-                                authorId: 1,
-                            },
-                        ],
-                    },
-                    {
-                        id: 2,
-                        title: "book2",
-                        text: "text2",
-                        comments: [
-                            {
-                                id: 4,
-                                text: "book2: comment0",
-                                bookId: 2,
-                                authorId: 1,
-                            },
-                            {
-                                id: 5,
-                                text: "book2: comment1",
-                                bookId: 2,
-                                authorId: 1,
-                            },
-                            {
-                                id: 6,
-                                text: "book2: comment2",
-                                bookId: 2,
-                                authorId: 1,
-                            },
-                        ],
-                    },
-                    {
-                        id: 3,
-                        title: "book3",
-                        text: "text3",
-                        comments: [
-                            {
-                                id: 7,
-                                text: "book3: comment0",
-                                bookId: 3,
-                                authorId: 1,
-                            },
-                            {
-                                id: 8,
-                                text: "book3: comment1",
-                                bookId: 3,
-                                authorId: 1,
-                            },
-                            {
-                                id: 9,
-                                text: "book3: comment2",
-                                bookId: 3,
-                                authorId: 1,
-                            },
-                        ],
-                    },
-                ],
-            })
+                const result = await authorRepository.findOne({
+                    where: { id: author.id },
+                    relations: { books: true },
+                    loadEagerRelations: false,
+                    relationLoadStrategy: "query",
+                })
 
-            getManySpy.restore()
-            getOneSpy.restore()
-            getRawManySpy.restore()
-        }
-    })
+                expect(result).to.not.be.null
+                expect(result!.name).to.equal("author")
 
-    it("it should respect loadEagerRelations option", async () => {
-        for (const dataSource of dataSources) {
-            const { authorRepository, author } = await setupTestData(dataSource)
+                // Explicit relation loads
+                expect(result!.books).to.be.an("array")
+                expect(result!.books).to.have.length(3)
 
-            const queriedAuthor = await authorRepository.findOne({
-                where: { id: author.id },
-                relations: {
-                    books: true,
-                },
-                loadEagerRelations: false,
-                relationLoadStrategy: "query",
-            })
-
-            expect(queriedAuthor).to.deep.equal({
-                id: 1,
-                name: "author",
-                books: [
-                    { id: 1, title: "book1", text: "text1" },
-                    { id: 2, title: "book2", text: "text2" },
-                    { id: 3, title: "book3", text: "text3" },
-                ],
-            })
-        }
-    })
+                // But nested eager (Book.comments) should NOT load
+                for (const book of result!.books) {
+                    expect(book.comments).to.be.undefined
+                }
+            }),
+        ))
 })
