@@ -1,18 +1,18 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import sinon from "sinon"
-import { SelectQueryBuilder } from "../../../src"
-import type { DataSource } from "../../../src/data-source/index"
+import { SelectQueryBuilder } from "../../../../src"
+import type { DataSource } from "../../../../src/data-source/index"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 import { Author } from "./entity/Author"
 import { Book } from "./entity/Book"
 import { Comment } from "./entity/Comment"
 
-describe("github issues > #9006 Eager relations do not respect relationLoadStrategy", () => {
+describe("query builder > relation-load-strategy > eager relations respect relationLoadStrategy", () => {
     let dataSources: DataSource[]
 
     before(async () => {
