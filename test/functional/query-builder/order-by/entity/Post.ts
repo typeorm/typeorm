@@ -21,7 +21,7 @@ export class Post {
     @Column()
     num2: number = 1
 
-    @Column()
+    @Column({ nullable: true })
     title: string
 
     @CreateDateColumn({ name: "created_at" })
