@@ -1386,4 +1386,58 @@ describe("schema builder > change column", () => {
                 nameColumn.length = "255"
             }),
         ))
+
+    it("preserves existing data when widening varchar column", () =>
+        Promise.all(
+            dataSources.map(async (connection: DataSource) => {
+                const driver = connection.driver.options.type
+
+                // Skip Spanner as it doesn't support CHAR/VARCHAR in the same way
+                if (driver === "spanner") return
+
+                const metadata = connection.getMetadata(Post)
+                const nameColumn = metadata.findColumnWithPropertyName("name")!
+
+                // Step 1: Create table with varchar(50)
+                nameColumn.type = "varchar"
+                nameColumn.length = "50"
+                await connection.synchronize()
+
+                // Step 2: Insert a 45-character value BEFORE schema change
+                const longTitle = "This is a 45-character title to test data"
+                const repository = connection.getRepository(Post)
+                const post = new Post()
+                post.name = longTitle
+                post.version = "1.0"
+                post.text = "Some content"
+                await repository.save(post)
+
+                // Verify data exists before change
+                const beforeChange = await repository.findOne({
+                    where: { name: longTitle },
+                })
+                expect(beforeChange).to.not.be.undefined
+                expect(beforeChange?.name).to.equal(longTitle)
+                expect(beforeChange?.text).to.equal("Some content")
+
+                // Step 3: Change to varchar(80) and synchronize
+                nameColumn.type = "varchar"
+                nameColumn.length = "80"
+                await connection.synchronize()
+
+                // Step 4: Verify data still exists with original value after ALTER
+                const afterChange = await repository.findOne({
+                    where: { name: longTitle },
+                })
+                expect(afterChange).to.not.be.undefined
+                expect(afterChange?.name).to.equal(
+                    longTitle,
+                    "Data should be preserved after ALTER COLUMN",
+                )
+                expect(afterChange?.text).to.equal("Some content")
+
+                // Revert schema for cleanup
+                nameColumn.length = "255"
+            }),
+        ))
 })

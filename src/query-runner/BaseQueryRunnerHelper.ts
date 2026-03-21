@@ -337,6 +337,7 @@ export function isSafeAlter(
         const isCharish = (t: string) =>
             t === "char" || t === "nchar" || t.endsWith("char")
         const isVarcharish = (t: string) => t.includes("varchar")
+        const isUnicode = (t: string) => t.startsWith("n")
         const textLikes = new Set(["text", "ntext", "clob"])
 
         const oldP = paramsFromType(oldRaw)
@@ -346,12 +347,24 @@ export function isSafeAlter(
 
         // CHAR(N) -> VARCHAR(M) with M >= N (or unknown lengths: assume widening)
         if (isCharish(oldType) && isVarcharish(newType)) {
+            // Reject char <-> nchar and char <-> nvarchar as unsafe (different encodings)
+            if (isUnicode(oldType) !== isUnicode(newType)) return false
+            if (oldLen === undefined || newLen === undefined) return true
+            return newLen >= oldLen
+        }
+
+        // CHAR(N) -> CHAR(M) with M >= N (or unknown lengths: assume widening)
+        if (isCharish(oldType) && isCharish(newType)) {
+            // Reject char <-> nchar as unsafe (different encodings)
+            if (isUnicode(oldType) !== isUnicode(newType)) return false
             if (oldLen === undefined || newLen === undefined) return true
             return newLen >= oldLen
         }
 
         // VARCHAR(N) -> VARCHAR(M) with M >= N (or unknown lengths: assume widening)
         if (isVarcharish(oldType) && isVarcharish(newType)) {
+            // Reject varchar <-> nvarchar as unsafe (different encodings)
+            if (isUnicode(oldType) !== isUnicode(newType)) return false
             if (oldLen === undefined || newLen === undefined) return true
             return newLen >= oldLen
         }

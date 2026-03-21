@@ -29,10 +29,9 @@ import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { PostgresDriver } from "./PostgresDriver"
 import {
-    handlePostgresLengthOnlyFastPath,
-    handleSafeAlterPostgres,
-} from "./PostgresQueryRunnerHelper"
-import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
+    isSafeAlter,
+    normalizeColumnLength,
+} from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -1594,7 +1593,7 @@ export class PostgresQueryRunner
             }
 
             if (oldColumn.type !== newColumn.type) {
-                await handleSafeAlterPostgres({
+                const handled = await this.handleSafeAlterPostgres({
                     table,
                     clonedTable,
                     oldColumn,
@@ -1689,7 +1688,7 @@ export class PostgresQueryRunner
                 )
             ) {
                 // BEGIN length-only fast path (Postgres) — FIXED
-                handlePostgresLengthOnlyFastPath({
+                this.handlePostgresLengthOnlyFastPath({
                     table,
                     clonedTable,
                     oldColumn,
@@ -5263,6 +5262,243 @@ export class PostgresQueryRunner
             `SELECT TRUE FROM information_schema.columns WHERE table_name = 'pg_class' and column_name = 'relispartition'`,
         )
         return result.length ? true : false
+    }
+
+    /**
+     * Handles length-only fast path changes for PostgreSQL.
+     * Returns true if change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private handlePostgresLengthOnlyFastPath({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): boolean {
+        const oldLen = normalizeColumnLength(
+            oldColumn.length != null
+                ? parseInt(String(oldColumn.length), 10)
+                : undefined,
+        )
+        const newLen = normalizeColumnLength(
+            newColumn.length != null
+                ? parseInt(String(newColumn.length), 10)
+                : undefined,
+        )
+
+        // Length change never implies a rename; guard identifier
+        const colName: string = (newColumn?.name ?? oldColumn?.name) as string
+        const qCol = `"${colName.replace(/"/g, '""')}"`
+
+        const isStringType =
+            /^(varchar|character varying|text|char|character)$/i.test(
+                String(newColumn?.type ?? ""),
+            )
+
+        const typeNew = this.driver.createFullType(newColumn)
+        const typeOld = this.driver.createFullType(oldColumn)
+
+        // Are we shrinking? (new length is defined and < old, or old was unspecified)
+        const shrinking =
+            isStringType &&
+            newLen !== undefined &&
+            (oldLen === undefined || newLen < oldLen)
+
+        if (isStringType && shrinking) {
+            // --- UP: shrink with USING + substring to avoid errors
+            // newLen is defined here
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${qCol} TYPE ${typeNew} USING substring(${qCol} FROM 1 FOR ${newLen})`,
+                ),
+            )
+
+            // --- DOWN: revert; ONLY add USING if oldLen exists; otherwise no USING
+            const usingOld =
+                oldLen !== undefined
+                    ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+                    : ""
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${qCol} TYPE ${typeOld}${usingOld}`,
+                ),
+            )
+        } else {
+            // Widening or non-string types: plain TYPE both directions
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${qCol} TYPE ${typeNew}`,
+                ),
+            )
+
+            // For DOWN, if going back to a **shorter** varchar and oldLen is known,
+            // use USING to guarantee safe cast; else plain TYPE.
+            const needsUsingOld =
+                isStringType &&
+                oldLen !== undefined &&
+                (newLen === undefined || oldLen < newLen)
+            const usingOld = needsUsingOld
+                ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+                : ""
+
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${qCol} TYPE ${typeOld}${usingOld}`,
+                ),
+            )
+        }
+
+        // Update cloned metadata and stop fallthrough
+        const cloned = clonedTable?.findColumnByName?.(colName)
+        if (cloned) {
+            cloned.type = newColumn.type
+            cloned.length = newColumn.length ?? ""
+            cloned.precision = newColumn.precision
+            cloned.scale = newColumn.scale
+        }
+        this.replaceCachedTable(table, clonedTable)
+
+        return true
+    }
+
+    /**
+     * Handles safe ALTER COLUMN changes for PostgreSQL.
+     * Returns true if change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private async handleSafeAlterPostgres({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): Promise<boolean> {
+        // Skip generated/computed/identity/serial-like columns (cannot freely change type without extra steps)
+        if (oldColumn.asExpression || newColumn.asExpression) return false
+        if (oldColumn.generatedIdentity || newColumn.generatedIdentity)
+            return false
+
+        // Only proceed when caller says this change is safely widening
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const tableSql = this.escapePath(table)
+        const colName = String(oldColumn.name)
+        const q = (i: string) => `"${i.replace(/"/g, '""')}"`
+
+        // Build TYPE-only fragments (no NULL/DEFAULT/etc.)
+        const buildColumnType = (column: TableColumn): string => {
+            const t = String(column.type ?? "").toLowerCase()
+            const len = column.length
+                ? parseInt(String(column.length), 10)
+                : undefined
+            const prec = column.precision
+            const scale = column.scale
+
+            const withLen = (base: string) => (len ? `${base}(${len})` : base)
+            const withPS = (base: string) => {
+                if (prec == null) return base
+                if (scale == null) return `${base}(${prec})`
+                return `${base}(${prec},${scale})`
+            }
+            const withTimePrec = (base: string) =>
+                prec != null ? `${base}(${prec})` : base
+
+            // strings
+            if (t === "varchar" || t === "character varying")
+                return withLen("varchar")
+            if (t === "char" || t === "character") return withLen("char")
+            if (t === "string" || t === "text") return "text"
+
+            // numerics
+            if (t === "decimal" || t === "numeric") return withPS("decimal")
+            if (t === "int" || t === "integer" || t === "int4") return "int"
+            if (t === "bigint" || t === "int8") return "bigint"
+            if (t === "smallint" || t === "int2") return "smallint"
+            if (t === "real" || t === "float4") return "real"
+            if (t === "double" || t === "double precision" || t === "float8")
+                return "double precision"
+            if (t === "float") return "double precision"
+
+            // temporals
+            if (t === "timestamp" || t === "timestamp without time zone")
+                return withTimePrec("timestamp")
+            if (t === "timestamptz" || t === "timestamp with time zone")
+                return withTimePrec("timestamptz")
+            if (t === "time" || t === "time without time zone")
+                return withTimePrec("time")
+            if (t === "timetz" || t === "time with time zone")
+                return withTimePrec("timetz")
+            if (t === "date") return "date"
+
+            // bytes / other common
+            if (t === "bytea" || t === "bytes") return "bytea"
+
+            // fallback: return raw type
+            return t
+        }
+
+        const newType = buildColumnType(newColumn)
+        const oldType = buildColumnType(oldColumn)
+
+        // Postgres widening: no USING clause needed
+        const upSql = `ALTER TABLE ${tableSql} ALTER COLUMN ${q(
+            colName,
+        )} TYPE ${newType}`
+        const downSql = `ALTER TABLE ${tableSql} ALTER COLUMN ${q(
+            colName,
+        )} TYPE ${oldType}`
+
+        upQueries.push(new Query(upSql))
+        downQueries.push(new Query(downSql))
+
+        // best-effort cache sync
+        const cloned = clonedTable?.findColumnByName?.(colName)
+        if (cloned) {
+            cloned.type = newColumn.type
+            cloned.length = newColumn.length ?? ""
+            cloned.precision = newColumn.precision
+            cloned.scale = newColumn.scale
+        }
+        this.replaceCachedTable(table, clonedTable)
+
+        return true
     }
 
     /**

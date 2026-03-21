@@ -23,10 +23,6 @@ import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
-import {
-    handleMysqlLengthOnlyFastPath,
-    handleSafeAlter,
-} from "./AuroraMysqlQueryRunnerHelper"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
@@ -90,6 +86,187 @@ export class AuroraMysqlQueryRunner
         if (this.databaseConnection) this.databaseConnection.release()
         return Promise.resolve()
     }
+
+    // -------------------------------------------------------------------------
+    // Private Helper Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Handles length-only fast path changes for MySQL family.
+     * Returns true if the change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private async handleMysqlLengthOnlyFastPath({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): Promise<boolean> {
+        // Only use this path when no other column attributes changed.
+        const newColumnExceptLength: TableColumn = newColumn?.clone
+            ? newColumn.clone()
+            : Object.assign(
+                  Object.create(Object.getPrototypeOf(newColumn)),
+                  newColumn,
+              )
+        newColumnExceptLength.length = oldColumn.length
+
+        if (
+            this.isColumnChanged(oldColumn, newColumnExceptLength, true, true)
+        ) {
+            // Other changes present; fall through to generic change flow.
+            return false
+        }
+
+        const col: string = String(oldColumn.name)
+
+        const type = String(oldColumn.type || "").toLowerCase()
+        if (type === "bit") {
+            // Not safe to truncate/modify BIT via string funcs; fall through to generic flow.
+            return false
+        }
+
+        const isGenerated = Boolean(
+            newColumn.asExpression || oldColumn.asExpression,
+        )
+
+        // Generated/computed columns are handled by the generic change flow.
+        if (isGenerated) {
+            return false
+        }
+
+        const oldLenRaw =
+            oldColumn.length != null
+                ? parseInt(String(oldColumn.length), 10)
+                : NaN
+        const newLenRaw =
+            newColumn.length != null
+                ? parseInt(String(newColumn.length), 10)
+                : NaN
+
+        const haveFiniteLengths =
+            Number.isFinite(oldLenRaw) && Number.isFinite(newLenRaw)
+
+        if (haveFiniteLengths && newLenRaw < oldLenRaw) {
+            const newLen = newLenRaw
+            // shrink: pre-truncate rows that exceed new length
+            upQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(
+                        table,
+                    )} SET \`${col}\` = LEFT(\`${col}\`, ${newLen}) WHERE CHAR_LENGTH(\`${col}\`) > ${newLen}`,
+                ),
+            )
+            // (optional) down: if reverting to larger oldLen, no data change needed
+        }
+
+        // In-place alter; include full column definition to preserve all attributes
+        upQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    table,
+                )} MODIFY \`${col}\` ${this.buildCreateColumnSql(
+                    newColumn,
+                    true,
+                    true,
+                )}`,
+            ),
+        )
+        downQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    table,
+                )} MODIFY \`${col}\` ${this.buildCreateColumnSql(
+                    oldColumn,
+                    true,
+                    true,
+                )}`,
+            ),
+        )
+
+        return true
+    }
+
+    /**
+     * Handles safe ALTER COLUMN changes for MySQL family.
+     * Returns true if the change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private async handleSafeAlter({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): Promise<boolean> {
+        // Do not touch generated/computed columns
+        if (oldColumn.asExpression || newColumn.asExpression) return false
+
+        // Only proceed when caller's rule says to change is safe
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const tableSql = this.escapePath(table)
+        const colName = String(oldColumn.name)
+        const quoteIdent = (i: string) => `\`${i}\``
+
+        // Build FULL MySQL definition strings to preserve attributes (nullability, default, collation, etc.)
+        const newDef = this.buildCreateColumnSql(
+            newColumn,
+            /*skipDefault*/ true,
+            /*skipOnUpdate*/ true,
+        )
+        const oldDef = this.buildCreateColumnSql(
+            oldColumn,
+            /*skipDefault*/ true,
+            /*skipOnUpdate*/ true,
+        )
+
+        // Aurora MySQL prefers MODIFY COLUMN for type/width/precision changes
+        const upSql = `ALTER TABLE ${tableSql} MODIFY COLUMN ${quoteIdent(
+            colName,
+        )} ${newDef}`
+        const downSql = `ALTER TABLE ${tableSql} MODIFY COLUMN ${quoteIdent(
+            colName,
+        )} ${oldDef}`
+
+        upQueries.push(new Query(upSql))
+        downQueries.push(new Query(downSql))
+
+        return true
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
 
     /**
      * Starts transaction on the current connection.
@@ -1007,42 +1184,15 @@ export class AuroraMysqlQueryRunner
             }
 
             if (oldColumn.type !== newColumn.type) {
-                await handleSafeAlter({
+                const handled = await this.handleSafeAlterMysql({
                     table,
                     clonedTable,
                     oldColumn,
                     newColumn,
                     upQueries,
                     downQueries,
-                    Query: Query,
-                    escapePath: (t) => this.escapePath(t),
-                    buildCreateColumnSql: (col) =>
-                        this.buildCreateColumnSql(col, true, true),
-                    executeQueries: (up, down) => this.executeQueries(up, down),
-                    replaceCachedTable: (t, ct) =>
-                        this.replaceCachedTable(t, ct),
-                    isSafeAlter,
                 })
-            } else if (
-                oldColumn?.type === newColumn?.type &&
-                oldColumn?.length !== newColumn?.length
-            ) {
-                // BEGIN length-only fast path (MySQL family)
-                await handleMysqlLengthOnlyFastPath({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                    Query,
-                    escapePath: this.escapePath.bind(this),
-                    isColumnChanged: this.isColumnChanged.bind(this),
-                    buildCreateColumnSql: this.buildCreateColumnSql.bind(this),
-                    executeQueries: this.executeQueries.bind(this),
-                    replaceCachedTable: this.replaceCachedTable.bind(this),
-                })
-                // END length-only fast path
+                if (handled) return
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
