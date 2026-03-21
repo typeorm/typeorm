@@ -94,8 +94,8 @@ export class User {
     })
     photos: Photo[]
 
-    @DeleteDateColumn()
-    deletedAt: Date
+    @DeleteDateColumn({ nullable: true })
+    deletedAt?: Date
 }
 ```
 
