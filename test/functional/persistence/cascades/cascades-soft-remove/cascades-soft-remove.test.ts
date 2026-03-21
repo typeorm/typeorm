@@ -10,7 +10,7 @@ import { User } from "./entity/User"
 import { IsNull } from "../../../../../src"
 import { expect } from "chai"
 
-describe.only("persistence > cascades > remove", () => {
+describe("persistence > cascades > remove", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
