@@ -93,7 +93,7 @@ dataSource.initialize().then(
                 }) as Promise<EverythingEntity>
             })
             .then((entity) => {
-                return postRepository.findOneById(entity.id)
+                return postRepository.findOneBy({ id: entity.id })
             })
             .then((entity) => {
                 console.log("Entity is loaded: ", entity)

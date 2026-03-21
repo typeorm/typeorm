@@ -480,8 +480,8 @@ export class PostgresQueryRunner
             if (databaseAlreadyExists) return Promise.resolve()
         }
 
-        const up = `CREATE DATABASE "${database}"`
-        const down = `DROP DATABASE "${database}"`
+        const up = `CREATE DATABASE ${this.driver.escape(database)}`
+        const down = `DROP DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -493,9 +493,9 @@ export class PostgresQueryRunner
      */
     async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
         const up = ifExists
-            ? `DROP DATABASE IF EXISTS "${database}"`
-            : `DROP DATABASE "${database}"`
-        const down = `CREATE DATABASE "${database}"`
+            ? `DROP DATABASE IF EXISTS ${this.driver.escape(database)}`
+            : `DROP DATABASE ${this.driver.escape(database)}`
+        const down = `CREATE DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -512,11 +512,12 @@ export class PostgresQueryRunner
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
+        const escapedSchema = this.driver.escape(schema)
 
         const up = ifNotExists
-            ? `CREATE SCHEMA IF NOT EXISTS "${schema}"`
-            : `CREATE SCHEMA "${schema}"`
-        const down = `DROP SCHEMA "${schema}" CASCADE`
+            ? `CREATE SCHEMA IF NOT EXISTS ${escapedSchema}`
+            : `CREATE SCHEMA ${escapedSchema}`
+        const down = `DROP SCHEMA ${escapedSchema} CASCADE`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -535,11 +536,12 @@ export class PostgresQueryRunner
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
+        const escapedSchema = this.driver.escape(schema)
 
         const up = ifExists
-            ? `DROP SCHEMA IF EXISTS "${schema}" ${isCascade ? "CASCADE" : ""}`
-            : `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`
-        const down = `CREATE SCHEMA "${schema}"`
+            ? `DROP SCHEMA IF EXISTS ${escapedSchema} ${isCascade ? "CASCADE" : ""}`
+            : `DROP SCHEMA ${escapedSchema} ${isCascade ? "CASCADE" : ""}`
+        const down = `CREATE SCHEMA ${escapedSchema}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 

@@ -54,7 +54,7 @@ describe("find options > select", () => {
                         id: true,
                         posts: true,
                     },
-                    relations: ["posts"],
+                    relations: { posts: true },
                 })
 
                 categories.should.be.eql([
@@ -92,7 +92,7 @@ describe("find options > select", () => {
                             tags: true,
                         },
                     },
-                    relations: ["posts", "posts.tags"],
+                    relations: { posts: { tags: true } },
                 })
 
                 categories.should.be.eql([
@@ -132,7 +132,7 @@ describe("find options > select", () => {
                             meta: true,
                         },
                     },
-                    relations: ["posts"],
+                    relations: { posts: true },
                 })
 
                 categories.should.be.eql([
@@ -165,7 +165,7 @@ describe("find options > select", () => {
                             },
                         },
                     },
-                    relations: ["posts"],
+                    relations: { posts: true },
                 })
 
                 categories.should.be.eql([

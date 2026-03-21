@@ -2422,7 +2422,7 @@ export abstract class AbstractSqliteQueryRunner
         return tableName
             .replace(/^\.+|\.+$/g, "")
             .split(".")
-            .map((i) => (disableEscape ? i : `"${i}"`))
+            .map((i) => (disableEscape ? i : this.driver.escape(i)))
             .join(".")
     }
 

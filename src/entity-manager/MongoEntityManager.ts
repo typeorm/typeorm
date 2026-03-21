@@ -57,10 +57,7 @@ import type {
 import type { DataSource } from "../data-source/DataSource"
 import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
 import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
-import type {
-    FindOptionsSelect,
-    FindOptionsSelectByString,
-} from "../find-options/FindOptionsSelect"
+import type { FindOptionsSelect } from "../find-options/FindOptionsSelect"
 import { ObjectUtils } from "../util/ObjectUtils"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 
@@ -262,23 +259,6 @@ export class MongoEntityManager extends EntityManager {
         where: any,
     ): Promise<Entity | null> {
         return this.executeFindOne(entityClassOrName, where)
-    }
-
-    /**
-     * Finds entity that matches given id.
-     * @param entityClassOrName
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById<Entity>(
-        entityClassOrName: EntityTarget<Entity>,
-        id: string | number | Date | ObjectId,
-    ): Promise<Entity | null> {
-        return this.executeFindOne(entityClassOrName, id)
     }
 
     /**
@@ -1111,6 +1091,10 @@ export class MongoEntityManager extends EntityManager {
     ): ObjectLiteral | undefined {
         if (!optionsOrConditions) return undefined
 
+        FindOptionsUtils.rejectJoinOption(optionsOrConditions)
+        FindOptionsUtils.rejectStringArraySelect(optionsOrConditions)
+        FindOptionsUtils.rejectStringArrayRelations(optionsOrConditions)
+
         if (FindOptionsUtils.isFindManyOptions<Entity>(optionsOrConditions))
             // If where condition is passed as a string which contains sql we have to ignore
             // as mongo is not a sql database
@@ -1132,6 +1116,10 @@ export class MongoEntityManager extends EntityManager {
             | undefined,
     ): ObjectLiteral | undefined {
         if (!optionsOrConditions) return undefined
+
+        FindOptionsUtils.rejectJoinOption(optionsOrConditions)
+        FindOptionsUtils.rejectStringArraySelect(optionsOrConditions)
+        FindOptionsUtils.rejectStringArrayRelations(optionsOrConditions)
 
         if (FindOptionsUtils.isFindOneOptions<Entity>(optionsOrConditions))
             // If where condition is passed as a string which contains sql we have to ignore
@@ -1168,17 +1156,10 @@ export class MongoEntityManager extends EntityManager {
      * @param selects
      */
     protected convertFindOptionsSelectToProjectCriteria(
-        selects: FindOptionsSelect<any> | FindOptionsSelectByString<any>,
+        selects: FindOptionsSelect<any>,
     ) {
-        if (Array.isArray(selects)) {
-            return selects.reduce((projectCriteria, key) => {
-                projectCriteria[key] = 1
-                return projectCriteria
-            }, {} as any)
-        } else {
-            // todo: implement
-            return {}
-        }
+        // todo: implement
+        return {}
     }
 
     /**

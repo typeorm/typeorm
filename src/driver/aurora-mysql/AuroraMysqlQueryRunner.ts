@@ -495,9 +495,9 @@ export class AuroraMysqlQueryRunner
         ifNotExists?: boolean,
     ): Promise<void> {
         const up = ifNotExists
-            ? `CREATE DATABASE IF NOT EXISTS \`${database}\``
-            : `CREATE DATABASE \`${database}\``
-        const down = `DROP DATABASE \`${database}\``
+            ? `CREATE DATABASE IF NOT EXISTS ${this.driver.escape(database)}`
+            : `CREATE DATABASE ${this.driver.escape(database)}`
+        const down = `DROP DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -508,9 +508,9 @@ export class AuroraMysqlQueryRunner
      */
     async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
         const up = ifExists
-            ? `DROP DATABASE IF EXISTS \`${database}\``
-            : `DROP DATABASE \`${database}\``
-        const down = `CREATE DATABASE \`${database}\``
+            ? `DROP DATABASE IF EXISTS ${this.driver.escape(database)}`
+            : `DROP DATABASE ${this.driver.escape(database)}`
+        const down = `CREATE DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 

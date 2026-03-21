@@ -45,11 +45,8 @@ describe("relations > relation with primary key", () => {
 
                     // now check
                     const posts = await dataSource.manager.find(Post, {
-                        join: {
-                            alias: "post",
-                            innerJoinAndSelect: {
-                                category: "post.category",
-                            },
+                        relations: {
+                            category: true,
                         },
                         order: {
                             categoryId: "ASC",
