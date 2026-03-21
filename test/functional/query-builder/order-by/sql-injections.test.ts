@@ -51,11 +51,9 @@ describe("query builder > order-by > sql injections", () => {
     it("should not allow SQL injection via OrderByCondition object", () => {
         dataSources.forEach((dataSource) => {
             expect(() => {
-                dataSource.manager
-                    .createQueryBuilder(Post, "post")
-                    .orderBy({
-                        "post.id": "ASC; DELETE FROM post;--" as any,
-                    })
+                dataSource.manager.createQueryBuilder(Post, "post").orderBy({
+                    "post.id": "ASC; DELETE FROM post;--" as any,
+                })
             }).to.throw(Error)
         })
     })

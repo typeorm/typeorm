@@ -125,5 +125,4 @@ describe("other issues > preventing-injection", () => {
             }).to.throw(Error)
         })
     })
-
 })
