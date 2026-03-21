@@ -270,6 +270,52 @@ describe("query builder > order-by", () => {
                 expect(result[0].post).to.not.be.undefined
             }),
         ))
+
+    it("should allow expression-based orderBy keys with explicit direction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const short = new Post()
+                short.myOrder = 1
+                short.title = "hi"
+
+                const long = new Post()
+                long.myOrder = 2
+                long.title = "hello world"
+                await dataSource.manager.save([short, long])
+
+                const loadedPosts = await dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .orderBy('LENGTH("post"."title")', "DESC")
+                    .getMany()
+
+                expect(loadedPosts[0].title).to.be.equal("hello world")
+                expect(loadedPosts[1].title).to.be.equal("hi")
+            }),
+        ))
+
+    it("should allow expression-based orderBy keys without explicit direction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const short = new Post()
+                short.myOrder = 1
+                short.title = "hi"
+
+                const long = new Post()
+                long.myOrder = 2
+                long.title = "hello world"
+                await dataSource.manager.save([short, long])
+
+                const loadedPosts = await dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .orderBy('LENGTH("post"."title")')
+                    .getMany()
+
+                // default direction is ASC
+                expect(loadedPosts[0].title).to.be.equal("hi")
+                expect(loadedPosts[1].title).to.be.equal("hello world")
+            }),
+        ))
+
     it("should properly escape column names or aliases in order by", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
