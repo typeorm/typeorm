@@ -262,7 +262,7 @@ export class RelationIdLoader {
             ? junctionMetadata.inverseColumns
             : junctionMetadata.ownerColumns
         const fieldsToMetadata = new Map<string, ColumnMetadata>()
-        const qb = this.dataSource.manager.connection.createQueryBuilder(
+        const qb = this.dataSource.createQueryBuilder(
             this.queryRunner,
         )
 
@@ -418,7 +418,7 @@ export class RelationIdLoader {
                         const column = fieldsToMetadata.get(key)
                         if (column) {
                             data[key] =
-                                this.dataSource.manager.connection.driver.prepareHydratedValue(
+                                this.dataSource.driver.prepareHydratedValue(
                                     data[key],
                                     column,
                                 )
