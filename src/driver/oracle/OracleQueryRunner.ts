@@ -3545,10 +3545,20 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         let finalOldDef = oldDefSansName
 
         if (oldColumn.isNullable === newColumn.isNullable) {
-            const stripNullability = (def: string) =>
-                def
-                    .replace(/[ \t]+NOT NULL(?!\S)/gi, "")
-                    .replace(/[ \t]+NULL(?!\S)/gi, "")
+            const stripNullability = (def: string) => {
+                const upper = def.toUpperCase()
+
+                if (upper.endsWith(" NOT NULL")) {
+                    return def.slice(0, -" NOT NULL".length)
+                }
+
+                if (upper.endsWith(" NULL")) {
+                    return def.slice(0, -" NULL".length)
+                }
+
+                return def
+            }
+
             finalNewDef = stripNullability(finalNewDef)
             finalOldDef = stripNullability(finalOldDef)
         }
