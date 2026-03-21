@@ -610,10 +610,8 @@ export class RelationIdLoader {
         entities: ObjectLiteral[],
         relatedEntities?: ObjectLiteral[],
     ) {
-        ;[relation, relation.inverseRelation!] = [
-            relation.inverseRelation!,
-            relation,
-        ]
+        const originalRelation = relation
+        relation = relation.inverseRelation!
 
         if (
             relation.entityMetadata.primaryColumns.length ===
@@ -651,7 +649,7 @@ export class RelationIdLoader {
                                 undefined,
                                 joinColumn.entityMetadata.name +
                                     "_" +
-                                    relation.inverseRelation!.propertyPath.replace(
+                                    originalRelation.propertyPath.replace(
                                         ".",
                                         "_",
                                     ) +
@@ -680,7 +678,7 @@ export class RelationIdLoader {
                 undefined,
                 primaryColumn.entityMetadata.name +
                     "_" +
-                    relation.inverseRelation!.propertyPath.replace(".", "_") +
+                    originalRelation.propertyPath.replace(".", "_") +
                     "_" +
                     primaryColumn.propertyPath.replace(".", "_"),
             )
