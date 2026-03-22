@@ -3358,19 +3358,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.loadAllRelationIds(this.findOptions.loadRelationIds as any)
             }
 
-            if (this.findOptions.loadEagerRelations !== false) {
+            if (
+                this.findOptions.loadEagerRelations !== false &&
+                this.expressionMap.mainAlias
+            ) {
                 if (this.expressionMap.relationLoadStrategy === "join") {
                     FindOptionsUtils.joinEagerRelations(
                         this,
-                        this.expressionMap.mainAlias!.name,
-                        this.expressionMap.mainAlias!.metadata,
+                        this.expressionMap.mainAlias.name,
+                        this.expressionMap.mainAlias.metadata,
                     )
                 } else if (
                     this.expressionMap.relationLoadStrategy === "query"
                 ) {
                     this.concatRelationMetadata(
-                        ...this.expressionMap.mainAlias!.metadata
-                            .eagerRelations,
+                        ...this.expressionMap.mainAlias.metadata.eagerRelations,
                     )
                 }
             }

@@ -430,15 +430,16 @@ export class RelationLoader {
     ): void {
         if (loadEagerRelations === false) return
 
+        const mainAlias = qb.expressionMap.mainAlias
+        if (!mainAlias) return
+
         if (qb.expressionMap.relationLoadStrategy === "query") {
-            qb.concatRelationMetadata(
-                ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
-            )
+            qb.concatRelationMetadata(...mainAlias.metadata.eagerRelations)
         } else {
             FindOptionsUtils.joinEagerRelations(
                 qb,
                 qb.alias,
-                qb.expressionMap.mainAlias!.metadata,
+                mainAlias.metadata,
             )
         }
     }

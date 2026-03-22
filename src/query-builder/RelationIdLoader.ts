@@ -268,27 +268,33 @@ export class RelationIdLoader {
 
         // select all columns from junction table
         columns.forEach((column) => {
+            const referenced = column.referencedColumn
+            if (!referenced) return
+
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
                 undefined,
-                column.referencedColumn!.entityMetadata.name +
+                referenced.entityMetadata.name +
                     "_" +
-                    column.referencedColumn!.propertyPath.replace(".", "_"),
+                    referenced.propertyPath.replace(".", "_"),
             )
-            fieldsToMetadata.set(columnName, column.referencedColumn!)
+            fieldsToMetadata.set(columnName, referenced)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
         inverseColumns.forEach((column) => {
+            const referenced = column.referencedColumn
+            if (!referenced) return
+
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
                 undefined,
-                column.referencedColumn!.entityMetadata.name +
+                referenced.entityMetadata.name +
                     "_" +
                     relation.propertyPath.replace(".", "_") +
                     "_" +
-                    column.referencedColumn!.propertyPath.replace(".", "_"),
+                    referenced.propertyPath.replace(".", "_"),
             )
-            fieldsToMetadata.set(columnName, column.referencedColumn!)
+            fieldsToMetadata.set(columnName, referenced)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
 
@@ -531,16 +537,19 @@ export class RelationIdLoader {
             )
         })
         relation.joinColumns.forEach((column) => {
+            const referenced = column.referencedColumn
+            if (!referenced) return
+
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
                 undefined,
-                column.referencedColumn!.entityMetadata.name +
+                referenced.entityMetadata.name +
                     "_" +
                     relation.propertyPath.replace(".", "_") +
                     "_" +
-                    column.referencedColumn!.propertyPath.replace(".", "_"),
+                    referenced.propertyPath.replace(".", "_"),
             )
-            fieldsToMetadata.set(columnName, column.referencedColumn!)
+            fieldsToMetadata.set(columnName, referenced)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
 
@@ -700,14 +709,17 @@ export class RelationIdLoader {
             )
         })
         relation.joinColumns.forEach((column) => {
+            const referenced = column.referencedColumn
+            if (!referenced) return
+
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
                 undefined,
-                column.referencedColumn!.entityMetadata.name +
+                referenced.entityMetadata.name +
                     "_" +
-                    column.referencedColumn!.propertyPath.replace(".", "_"),
+                    referenced.propertyPath.replace(".", "_"),
             )
-            fieldsToMetadata.set(columnName, column.referencedColumn!)
+            fieldsToMetadata.set(columnName, referenced)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
 
