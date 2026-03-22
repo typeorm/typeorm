@@ -13,6 +13,9 @@ describe("PlatformTools", () => {
         afterEach(() => {
             sandbox.restore()
         })
+        afterAll(() => {
+            sandbox.restore()
+        })
 
         it("should successfully read version from an installed package", () => {
             // Test with a package we know exists in node_modules (chai is in devDependencies)

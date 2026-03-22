@@ -32,6 +32,9 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
 
         await closeTestingConnections(dataSources)
     })
+    afterAll(() => {
+        sandbox.restore()
+    })
 
     describe("when no option is passed", () => {
         beforeAll(async () => {

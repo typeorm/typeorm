@@ -30,6 +30,9 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
         sandbox.restore()
         await closeTestingConnections(dataSources)
     })
+    afterAll(() => {
+        sandbox.restore()
+    })
 
     it("if query executed, should write query to file", async () =>
         Promise.all(

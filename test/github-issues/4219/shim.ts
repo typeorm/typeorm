@@ -1,9 +1,9 @@
 let _Shim: any
 try {
-    // We're in /test
-    _Shim = require("../../../../extra/typeorm-class-transformer-shim")
+    // Running from TypeScript sources under /test/github-issues/4219
+    _Shim = require("../../../extra/typeorm-class-transformer-shim")
 } catch {
-    // We're in /build/compiled/test
+    // Running from compiled files under /build/compiled/test/github-issues/4219
     _Shim = require("../../../../../extra/typeorm-class-transformer-shim")
 }
 

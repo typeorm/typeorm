@@ -27,6 +27,9 @@ describe("RedisQueryResultCache", () => {
     afterEach(() => {
         sandbox.restore()
     })
+    afterAll(() => {
+        sandbox.restore()
+    })
 
     describe("isExpired", () => {
         it("detects expiration based on duration", () => {
