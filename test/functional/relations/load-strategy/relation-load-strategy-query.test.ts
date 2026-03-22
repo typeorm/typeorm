@@ -10,6 +10,7 @@ import { Author } from "./entity/Author"
 import { Book } from "./entity/Book"
 import { Comment } from "./entity/Comment"
 import { Category } from "./entity/Category"
+import { Profile } from "./entity/Profile"
 
 describe("relations > load-strategy > query", () => {
     let dataSources: DataSource[]
@@ -28,46 +29,65 @@ describe("relations > load-strategy > query", () => {
         const bookRepository = dataSource.getRepository(Book)
         const commentRepository = dataSource.getRepository(Comment)
 
-        const author = await authorRepository.save(
-            authorRepository.create({ name: "author" }),
+        const author1 = await authorRepository.save(
+            authorRepository.create({ name: "author1" }),
+        )
+        const author2 = await authorRepository.save(
+            authorRepository.create({ name: "author2" }),
         )
 
-        const books = await bookRepository.save(
+        const books1 = await bookRepository.save(
             bookRepository.create([
-                { title: "book1", text: "text1", author: [author] },
-                { title: "book2", text: "text2", author: [author] },
-                { title: "book3", text: "text3", author: [author] },
+                { title: "book1", text: "text1", author: [author1] },
+                { title: "book2", text: "text2", author: [author1] },
+                { title: "book3", text: "text3", author: [author1] },
+            ]),
+        )
+        const books2 = await bookRepository.save(
+            bookRepository.create([
+                { title: "book4", text: "text4", author: [author2] },
+                { title: "book5", text: "text5", author: [author2] },
             ]),
         )
 
-        for (const book of books) {
-            for (let i = 0; i < 3; i++) {
+        for (const book of [...books1, ...books2]) {
+            for (let i = 0; i < 2; i++) {
                 await commentRepository.save(
                     commentRepository.create({
                         text: `${book.title}: comment${i}`,
                         bookId: book.id,
-                        authorId: author.id,
+                        authorId:
+                            book === books1[0] ||
+                            book === books1[1] ||
+                            book === books1[2]
+                                ? author1.id
+                                : author2.id,
                     }),
                 )
             }
         }
-        return { authorRepository, bookRepository, author, books }
+        return {
+            authorRepository,
+            bookRepository,
+            authors: [author1, author2],
+            books: [...books1, ...books2],
+        }
     }
 
     describe("ManyToMany eager", () => {
         it("should load eager ManyToMany relations via query strategy", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const { authorRepository, author } =
+                    const { authorRepository, authors } =
                         await setupTestData(dataSource)
 
                     const result = await authorRepository.findOne({
-                        where: { id: author.id },
+                        where: { id: authors[0].id },
                         relationLoadStrategy: "query",
                     })
 
                     expect(result).to.not.be.null
-                    expect(result!.name).to.equal("author")
+                    expect(result!.name).to.equal("author1")
                     expect(result!.books).to.be.an("array")
                     expect(result!.books).to.have.length(3)
 
@@ -81,18 +101,18 @@ describe("relations > load-strategy > query", () => {
         it("should load nested eager OneToMany relations via query strategy", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const { authorRepository, author } =
+                    const { authorRepository, authors } =
                         await setupTestData(dataSource)
 
                     const result = await authorRepository.findOne({
-                        where: { id: author.id },
+                        where: { id: authors[0].id },
                         relationLoadStrategy: "query",
                     })
 
                     expect(result).to.not.be.null
                     for (const book of result!.books) {
                         expect(book.comments).to.be.an("array")
-                        expect(book.comments).to.have.length(3)
+                        expect(book.comments).to.have.length(2)
                         for (const comment of book.comments!) {
                             expect(comment.text).to.include(book.title)
                         }
@@ -105,8 +125,7 @@ describe("relations > load-strategy > query", () => {
         it("should load eager ManyToOne relations via query strategy", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const { bookRepository, books } =
-                        await setupTestData(dataSource)
+                    const { books } = await setupTestData(dataSource)
 
                     const comments = await dataSource
                         .getRepository(Comment)
@@ -115,11 +134,42 @@ describe("relations > load-strategy > query", () => {
                             relationLoadStrategy: "query",
                         })
 
-                    expect(comments).to.have.length(3)
+                    expect(comments).to.have.length(2)
                     for (const comment of comments) {
                         expect(comment.author).to.not.be.undefined
                         expect(comment.author).to.not.be.null
-                        expect(comment.author.name).to.equal("author")
+                        expect(comment.author.name).to.equal("author1")
+                    }
+                }),
+            ))
+    })
+
+    describe("OneToOne eager", () => {
+        it("should load eager OneToOne relations via query strategy", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { authors } = await setupTestData(dataSource)
+                    const profileRepository = dataSource.getRepository(Profile)
+
+                    await profileRepository.save(
+                        profileRepository.create([
+                            { bio: "bio1", author: authors[0] },
+                            { bio: "bio2", author: authors[1] },
+                        ]),
+                    )
+
+                    const profiles = await profileRepository.find({
+                        relationLoadStrategy: "query",
+                    })
+
+                    expect(profiles).to.have.length(2)
+                    for (const profile of profiles) {
+                        expect(profile.author).to.not.be.undefined
+                        expect(profile.author).to.not.be.null
+                        expect(profile.author.name).to.be.oneOf([
+                            "author1",
+                            "author2",
+                        ])
                     }
                 }),
             ))
@@ -131,22 +181,32 @@ describe("relations > load-strategy > query", () => {
                 dataSources.map(async (dataSource) => {
                     const manager = dataSource.manager
 
-                    const parent = new Category()
-                    await manager.save(parent)
+                    const parent1 = await manager.save(new Category())
+                    const parent2 = await manager.save(new Category())
 
-                    const child = new Category()
-                    child.parent = parent
-                    await manager.save(child)
+                    const child1 = new Category()
+                    child1.parent = parent1
+                    await manager.save(child1)
 
-                    const loaded = await manager.findOne(Category, {
-                        where: { id: child.id },
+                    const child2 = new Category()
+                    child2.parent = parent2
+                    await manager.save(child2)
+
+                    const loaded1 = await manager.findOne(Category, {
+                        where: { id: child1.id },
+                        relations: { parent: true },
+                        relationLoadStrategy: "query",
+                    })
+                    const loaded2 = await manager.findOne(Category, {
+                        where: { id: child2.id },
                         relations: { parent: true },
                         relationLoadStrategy: "query",
                     })
 
-                    expect(loaded).to.not.be.null
-                    expect(loaded?.parent).to.not.be.null
-                    expect(loaded?.parent?.id).to.equal(parent.id)
+                    expect(loaded1).to.not.be.null
+                    expect(loaded1?.parent?.id).to.equal(parent1.id)
+                    expect(loaded2).to.not.be.null
+                    expect(loaded2?.parent?.id).to.equal(parent2.id)
                 }),
             ))
 
@@ -155,8 +215,7 @@ describe("relations > load-strategy > query", () => {
                 dataSources.map(async (dataSource) => {
                     const manager = dataSource.manager
 
-                    const grandparent = new Category()
-                    await manager.save(grandparent)
+                    const grandparent = await manager.save(new Category())
 
                     const parent = new Category()
                     parent.parent = grandparent
@@ -173,9 +232,7 @@ describe("relations > load-strategy > query", () => {
                     })
 
                     expect(loaded).to.not.be.null
-                    expect(loaded?.parent).to.not.be.null
                     expect(loaded?.parent?.id).to.equal(parent.id)
-                    expect(loaded?.parent?.parent).to.not.be.null
                     expect(loaded?.parent?.parent?.id).to.equal(grandparent.id)
                 }),
             ))
@@ -235,21 +292,112 @@ describe("relations > load-strategy > query", () => {
             ))
     })
 
+    describe("find() with multiple results", () => {
+        it("should load eager relations for all entities returned by find()", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { authorRepository } = await setupTestData(dataSource)
+
+                    const results = await authorRepository.find({
+                        relationLoadStrategy: "query",
+                        order: { name: "ASC" },
+                    })
+
+                    expect(results).to.have.length(2)
+
+                    expect(results[0].name).to.equal("author1")
+                    expect(results[0].books).to.be.an("array")
+                    expect(results[0].books).to.have.length(3)
+
+                    expect(results[1].name).to.equal("author2")
+                    expect(results[1].books).to.be.an("array")
+                    expect(results[1].books).to.have.length(2)
+
+                    // nested eager relations load for all results
+                    for (const author of results) {
+                        for (const book of author.books) {
+                            expect(book.comments).to.be.an("array")
+                            expect(book.comments).to.have.length(2)
+                        }
+                    }
+                }),
+            ))
+    })
+
+    describe("DataSource-level strategy", () => {
+        let dsLevelDataSources: DataSource[]
+        before(async () => {
+            dsLevelDataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: true,
+                dropSchema: true,
+                relationLoadStrategy: "query",
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dsLevelDataSources))
+        after(() => closeTestingConnections(dsLevelDataSources))
+
+        it("should respect relationLoadStrategy set at DataSource level", () =>
+            Promise.all(
+                dsLevelDataSources.map(async (dataSource) => {
+                    const authorRepository = dataSource.getRepository(Author)
+                    const bookRepository = dataSource.getRepository(Book)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    const author1 = await authorRepository.save(
+                        authorRepository.create({ name: "ds-author1" }),
+                    )
+                    const author2 = await authorRepository.save(
+                        authorRepository.create({ name: "ds-author2" }),
+                    )
+
+                    await bookRepository.save(
+                        bookRepository.create([
+                            {
+                                title: "ds-book1",
+                                text: "t1",
+                                author: [author1],
+                            },
+                            {
+                                title: "ds-book2",
+                                text: "t2",
+                                author: [author2],
+                            },
+                        ]),
+                    )
+
+                    // no relationLoadStrategy specified — uses DataSource default
+                    const results = await authorRepository.find({
+                        order: { name: "ASC" },
+                    })
+
+                    expect(results).to.have.length(2)
+                    expect(results[0].books).to.be.an("array")
+                    expect(results[0].books).to.have.length(1)
+                    expect(results[0].books[0].title).to.equal("ds-book1")
+
+                    expect(results[1].books).to.be.an("array")
+                    expect(results[1].books).to.have.length(1)
+                    expect(results[1].books[0].title).to.equal("ds-book2")
+                }),
+            ))
+    })
+
     describe("loadEagerRelations", () => {
         it("should not load any eager relations when loadEagerRelations is false and no explicit relations", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const { authorRepository, author } =
+                    const { authorRepository, authors } =
                         await setupTestData(dataSource)
 
                     const result = await authorRepository.findOne({
-                        where: { id: author.id },
+                        where: { id: authors[0].id },
                         loadEagerRelations: false,
                         relationLoadStrategy: "query",
                     })
 
                     expect(result).to.not.be.null
-                    expect(result!.name).to.equal("author")
+                    expect(result!.name).to.equal("author1")
                     expect(result!.books).to.be.undefined
                 }),
             ))
@@ -257,11 +405,11 @@ describe("relations > load-strategy > query", () => {
         it("should load explicit relations but suppress nested eager when loadEagerRelations is false", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const { authorRepository, author } =
+                    const { authorRepository, authors } =
                         await setupTestData(dataSource)
 
                     const result = await authorRepository.findOne({
-                        where: { id: author.id },
+                        where: { id: authors[0].id },
                         relations: { books: true },
                         loadEagerRelations: false,
                         relationLoadStrategy: "query",
