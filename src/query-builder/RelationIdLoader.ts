@@ -262,9 +262,7 @@ export class RelationIdLoader {
             ? junctionMetadata.inverseColumns
             : junctionMetadata.ownerColumns
         const fieldsToMetadata = new Map<string, ColumnMetadata>()
-        const qb = this.dataSource.createQueryBuilder(
-            this.queryRunner,
-        )
+        const qb = this.dataSource.createQueryBuilder(this.queryRunner)
 
         // select all columns from junction table
         columns.forEach((column) => {
@@ -651,10 +649,7 @@ export class RelationIdLoader {
                                         "_",
                                     ) +
                                     "_" +
-                                    joinColumn.propertyPath.replace(
-                                        ".",
-                                        "_",
-                                    ),
+                                    joinColumn.propertyPath.replace(".", "_"),
                             )
                             result[joinColumnName] = value
                             result[primaryColumnName] = value

@@ -20,7 +20,7 @@ export class Comment {
     authorId: number
 
     @JoinColumn({ name: "authorId" })
-    @ManyToOne(() => Author, { eager: true })
+    @ManyToOne(() => Author)
     author: Author
 
     @Column()

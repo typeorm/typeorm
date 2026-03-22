@@ -11,6 +11,7 @@ import { Book } from "./entity/Book"
 import { Comment } from "./entity/Comment"
 import { Category } from "./entity/Category"
 import { Profile } from "./entity/Profile"
+import { Review } from "./entity/Review"
 
 describe("relations > load-strategy > query", () => {
     let dataSources: DataSource[]
@@ -126,19 +127,26 @@ describe("relations > load-strategy > query", () => {
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const { books } = await setupTestData(dataSource)
+                    const reviewRepository = dataSource.getRepository(Review)
 
-                    const comments = await dataSource
-                        .getRepository(Comment)
-                        .find({
-                            where: { bookId: books[0].id },
-                            relationLoadStrategy: "query",
-                        })
+                    await reviewRepository.save(
+                        reviewRepository.create([
+                            { text: "great", book: books[0] },
+                            { text: "ok", book: books[0] },
+                        ]),
+                    )
 
-                    expect(comments).to.have.length(2)
-                    for (const comment of comments) {
-                        expect(comment.author).to.not.be.undefined
-                        expect(comment.author).to.not.be.null
-                        expect(comment.author.name).to.equal("author1")
+                    const reviews = await reviewRepository.find({
+                        relationLoadStrategy: "query",
+                    })
+
+                    expect(reviews).to.have.length(2)
+                    for (const review of reviews) {
+                        expect(review.book).to.not.be.undefined
+                        expect(review.book).to.not.be.null
+                        expect(review.book.title).to.equal("book1")
+                        // nested eager: Book -> Comments
+                        expect(review.book.comments).to.be.an("array")
                     }
                 }),
             ))
