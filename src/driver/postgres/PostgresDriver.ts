@@ -1600,13 +1600,13 @@ export class PostgresDriver implements Driver {
 
         let normalizedValue = this.lowerDefaultValueIfNecessary(value).trim()
 
-        normalizedValue = normalizedValue.replace(/::[\w\s.[\]\-"]+/g, "")
-        normalizedValue = normalizedValue.replace(
+        normalizedValue = normalizedValue.replaceAll(/::[\w\s.[\]\-"]+/g, "")
+        normalizedValue = normalizedValue.replaceAll(
             /\((-?\d+(?:\.\d+)?)\)/g,
             "$1",
         )
         normalizedValue = this.unwrapDefaultExpression(normalizedValue)
-        normalizedValue = normalizedValue.replace(/\s+/g, " ").trim()
+        normalizedValue = normalizedValue.replaceAll(/\s+/g, " ").trim()
 
         return normalizedValue
     }

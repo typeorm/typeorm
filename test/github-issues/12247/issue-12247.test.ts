@@ -6,7 +6,7 @@ import {
 } from "../../utils/test-utils"
 import { Todo } from "./entity/Todo"
 
-describe("github issues > #0 Postgres migration repeatedly alters epoch default expressions", () => {
+describe("github issues > #12247 Postgres migration repeatedly alters epoch default expressions", () => {
     let dataSources: DataSource[]
 
     before(async () => {
