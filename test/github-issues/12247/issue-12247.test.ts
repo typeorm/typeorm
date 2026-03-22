@@ -11,7 +11,7 @@ describe("github issues > #12247 Postgres migration repeatedly alters epoch defa
 
     before(async () => {
         dataSources = await createTestingConnections({
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres", "aurora-postgres", "cockroachdb"],
             schemaCreate: false,
             dropSchema: true,
             entities: [Todo],
