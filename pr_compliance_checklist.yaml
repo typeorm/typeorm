@@ -17,6 +17,12 @@ pr_compliances:
       success_criteria: "All identifiers follow the established naming patterns (camelCase, PascalCase, snake_case, etc.)"
       failure_criteria: "Inconsistent or non-standard naming that deviates from project conventions"
 
+    - title: "Prefer optional chaining over non-null assertions in tests"
+      compliance_label: true
+      objective: "Tests should use optional chaining (?.) instead of non-null assertions (!) after null checks."
+      success_criteria: "Test assertions use expect(result).to.not.be.null followed by result?.property and result?.items ?? [] for iteration."
+      failure_criteria: "Tests use result!.property or result!.items non-null assertions after null checks."
+
     - title: "Remove AI-generated noise"
       compliance_label: true
       objective: "Changes should not introduce AI-generated slop."
