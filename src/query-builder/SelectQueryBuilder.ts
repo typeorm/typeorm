@@ -3620,7 +3620,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (this.expressionMap.relationLoadStrategy === "query") {
             const queryStrategyRelationIdLoader =
-                new QueryStrategyRelationIdLoader(this.connection, queryRunner)
+                new QueryStrategyRelationIdLoader(
+                    this.connection,
+                    queryRunner,
+                    this.findOptions.loadEagerRelations,
+                )
 
             await Promise.all(
                 this.relationMetadatas.map(async (relation) => {

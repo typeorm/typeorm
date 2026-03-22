@@ -17,6 +17,7 @@ export class RelationIdLoader {
     constructor(
         private dataSource: DataSource,
         protected queryRunner?: QueryRunner | undefined,
+        private loadEagerRelations?: boolean,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -93,6 +94,7 @@ export class RelationIdLoader {
                 entitiesOrEntities,
                 this.queryRunner,
                 queryBuilder,
+                this.loadEagerRelations,
             )
             if (!relatedEntityOrEntities.length)
                 return entities.map((entity) => ({

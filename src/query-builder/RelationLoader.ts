@@ -27,12 +27,14 @@ export class RelationLoader {
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     load(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any[]> {
         // todo: check all places where it uses non array
         if (queryRunner && queryRunner.isReleased) queryRunner = undefined // get new one if already closed
@@ -42,6 +44,7 @@ export class RelationLoader {
                 entityOrEntities,
                 queryRunner,
                 queryBuilder,
+                loadEagerRelations,
             )
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
             return this.loadOneToManyOrOneToOneNotOwner(
@@ -49,6 +52,7 @@ export class RelationLoader {
                 entityOrEntities,
                 queryRunner,
                 queryBuilder,
+                loadEagerRelations,
             )
         } else if (relation.isManyToManyOwner) {
             return this.loadManyToManyOwner(
@@ -56,6 +60,7 @@ export class RelationLoader {
                 entityOrEntities,
                 queryRunner,
                 queryBuilder,
+                loadEagerRelations,
             )
         } else {
             // many-to-many non owner
@@ -64,6 +69,7 @@ export class RelationLoader {
                 entityOrEntities,
                 queryRunner,
                 queryBuilder,
+                loadEagerRelations,
             )
         }
     }
@@ -79,12 +85,14 @@ export class RelationLoader {
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     loadManyToOneOrOneToOneOwner(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any> {
         const entities = Array.isArray(entityOrEntities)
             ? entityOrEntities
@@ -179,16 +187,18 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        if (qb.expressionMap.relationLoadStrategy === "query") {
-            qb.concatRelationMetadata(
-                ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
-            )
-        } else {
-            FindOptionsUtils.joinEagerRelations(
-                qb,
-                qb.alias,
-                qb.expressionMap.mainAlias!.metadata,
-            )
+        if (loadEagerRelations !== false) {
+            if (qb.expressionMap.relationLoadStrategy === "query") {
+                qb.concatRelationMetadata(
+                    ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
+                )
+            } else {
+                FindOptionsUtils.joinEagerRelations(
+                    qb,
+                    qb.alias,
+                    qb.expressionMap.mainAlias!.metadata,
+                )
+            }
         }
 
         return qb.getMany()
@@ -205,12 +215,14 @@ export class RelationLoader {
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     loadOneToManyOrOneToOneNotOwner(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any> {
         const entities = Array.isArray(entityOrEntities)
             ? entityOrEntities
@@ -273,16 +285,18 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        if (qb.expressionMap.relationLoadStrategy === "query") {
-            qb.concatRelationMetadata(
-                ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
-            )
-        } else {
-            FindOptionsUtils.joinEagerRelations(
-                qb,
-                qb.alias,
-                qb.expressionMap.mainAlias!.metadata,
-            )
+        if (loadEagerRelations !== false) {
+            if (qb.expressionMap.relationLoadStrategy === "query") {
+                qb.concatRelationMetadata(
+                    ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
+                )
+            } else {
+                FindOptionsUtils.joinEagerRelations(
+                    qb,
+                    qb.alias,
+                    qb.expressionMap.mainAlias!.metadata,
+                )
+            }
         }
 
         return qb.getMany()
@@ -301,12 +315,14 @@ export class RelationLoader {
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     loadManyToManyOwner(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any> {
         const entities = Array.isArray(entityOrEntities)
             ? entityOrEntities
@@ -351,16 +367,18 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        if (qb.expressionMap.relationLoadStrategy === "query") {
-            qb.concatRelationMetadata(
-                ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
-            )
-        } else {
-            FindOptionsUtils.joinEagerRelations(
-                qb,
-                qb.alias,
-                qb.expressionMap.mainAlias!.metadata,
-            )
+        if (loadEagerRelations !== false) {
+            if (qb.expressionMap.relationLoadStrategy === "query") {
+                qb.concatRelationMetadata(
+                    ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
+                )
+            } else {
+                FindOptionsUtils.joinEagerRelations(
+                    qb,
+                    qb.alias,
+                    qb.expressionMap.mainAlias!.metadata,
+                )
+            }
         }
 
         return qb.getMany()
@@ -378,12 +396,14 @@ export class RelationLoader {
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     loadManyToManyNotOwner(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any> {
         const entities = Array.isArray(entityOrEntities)
             ? entityOrEntities
@@ -429,16 +449,18 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        if (qb.expressionMap.relationLoadStrategy === "query") {
-            qb.concatRelationMetadata(
-                ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
-            )
-        } else {
-            FindOptionsUtils.joinEagerRelations(
-                qb,
-                qb.alias,
-                qb.expressionMap.mainAlias!.metadata,
-            )
+        if (loadEagerRelations !== false) {
+            if (qb.expressionMap.relationLoadStrategy === "query") {
+                qb.concatRelationMetadata(
+                    ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
+                )
+            } else {
+                FindOptionsUtils.joinEagerRelations(
+                    qb,
+                    qb.alias,
+                    qb.expressionMap.mainAlias!.metadata,
+                )
+            }
         }
 
         return qb.getMany()
