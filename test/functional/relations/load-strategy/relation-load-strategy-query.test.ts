@@ -342,7 +342,6 @@ describe("relations > load-strategy > query", () => {
                 dsLevelDataSources.map(async (dataSource) => {
                     const authorRepository = dataSource.getRepository(Author)
                     const bookRepository = dataSource.getRepository(Book)
-                    const commentRepository = dataSource.getRepository(Comment)
 
                     const author1 = await authorRepository.save(
                         authorRepository.create({ name: "ds-author1" }),
