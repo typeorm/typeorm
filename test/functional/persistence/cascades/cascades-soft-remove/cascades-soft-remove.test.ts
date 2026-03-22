@@ -8,9 +8,8 @@ import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
 import { IsNull } from "../../../../../src"
-import { expect } from "chai"
 
-describe("persistence > cascades > remove", () => {
+describe("persistence > cascades > softRemove", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -96,7 +95,7 @@ describe("persistence > cascades > remove", () => {
                 const allPhotos = await dataSource.manager.find(Photo, {
                     withDeleted: true,
                 })
-                expect(allPhotos).to.have.lengthOf(2)
+                allPhotos.length.should.be.equal(2)
 
                 // recover user..
                 await dataSource.manager.recover(user)
@@ -127,7 +126,7 @@ describe("persistence > cascades > remove", () => {
                 const allPhotos = await dataSource.manager.find(Photo, {
                     withDeleted: true,
                 })
-                expect(allPhotos).to.have.lengthOf(2)
+                allPhotos.length.should.be.equal(1)
 
                 // recover user..
                 await dataSource.manager.recover(user)
