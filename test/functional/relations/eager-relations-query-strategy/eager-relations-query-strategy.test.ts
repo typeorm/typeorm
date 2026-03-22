@@ -71,9 +71,7 @@ describe("query builder > relation-load-strategy > eager relations respect relat
                 expect(result!.books).to.be.an("array")
                 expect(result!.books).to.have.length(3)
 
-                const titles = result!.books
-                    .map((b) => b.title)
-                    .sort()
+                const titles = result!.books.map((b) => b.title).sort()
                 expect(titles).to.deep.equal(["book1", "book2", "book3"])
 
                 // OneToMany eager: Book -> Comment (nested)
