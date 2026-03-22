@@ -3388,6 +3388,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
+    /**
+     * Registers relation metadata for loading via separate queries when using
+     * the "query" relation load strategy.
+     */
     public concatRelationMetadata(relationMetadata: RelationMetadata) {
         this.relationMetadatas.push(relationMetadata)
     }
