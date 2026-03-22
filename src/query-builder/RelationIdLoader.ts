@@ -17,7 +17,7 @@ export class RelationIdLoader {
     constructor(
         private dataSource: DataSource,
         protected queryRunner?: QueryRunner | undefined,
-        private loadEagerRelations?: boolean,
+        private readonly loadEagerRelations?: boolean,
     ) {}
 
     // -------------------------------------------------------------------------

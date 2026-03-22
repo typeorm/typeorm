@@ -187,19 +187,7 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        if (loadEagerRelations !== false) {
-            if (qb.expressionMap.relationLoadStrategy === "query") {
-                qb.concatRelationMetadata(
-                    ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
-                )
-            } else {
-                FindOptionsUtils.joinEagerRelations(
-                    qb,
-                    qb.alias,
-                    qb.expressionMap.mainAlias!.metadata,
-                )
-            }
-        }
+        this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
         // return qb.getOne(); todo: fix all usages
@@ -285,19 +273,7 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        if (loadEagerRelations !== false) {
-            if (qb.expressionMap.relationLoadStrategy === "query") {
-                qb.concatRelationMetadata(
-                    ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
-                )
-            } else {
-                FindOptionsUtils.joinEagerRelations(
-                    qb,
-                    qb.alias,
-                    qb.expressionMap.mainAlias!.metadata,
-                )
-            }
-        }
+        this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
         // return relation.isOneToMany ? qb.getMany() : qb.getOne(); todo: fix all usages
@@ -367,19 +343,7 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        if (loadEagerRelations !== false) {
-            if (qb.expressionMap.relationLoadStrategy === "query") {
-                qb.concatRelationMetadata(
-                    ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
-                )
-            } else {
-                FindOptionsUtils.joinEagerRelations(
-                    qb,
-                    qb.alias,
-                    qb.expressionMap.mainAlias!.metadata,
-                )
-            }
-        }
+        this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
     }
@@ -449,21 +413,34 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        if (loadEagerRelations !== false) {
-            if (qb.expressionMap.relationLoadStrategy === "query") {
-                qb.concatRelationMetadata(
-                    ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
-                )
-            } else {
-                FindOptionsUtils.joinEagerRelations(
-                    qb,
-                    qb.alias,
-                    qb.expressionMap.mainAlias!.metadata,
-                )
-            }
-        }
+        this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
+    }
+
+    /**
+     * Applies eager relation loading to the given query builder based on the
+     * configured relation load strategy.
+     * @param qb
+     * @param loadEagerRelations
+     */
+    private applyEagerRelations(
+        qb: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
+    ): void {
+        if (loadEagerRelations === false) return
+
+        if (qb.expressionMap.relationLoadStrategy === "query") {
+            qb.concatRelationMetadata(
+                ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
+            )
+        } else {
+            FindOptionsUtils.joinEagerRelations(
+                qb,
+                qb.alias,
+                qb.expressionMap.mainAlias!.metadata,
+            )
+        }
     }
 
     /**

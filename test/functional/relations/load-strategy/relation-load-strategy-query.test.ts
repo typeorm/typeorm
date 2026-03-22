@@ -88,11 +88,11 @@ describe("relations > load-strategy > query", () => {
                     })
 
                     expect(result).to.not.be.null
-                    expect(result!.name).to.equal("author1")
-                    expect(result!.books).to.be.an("array")
-                    expect(result!.books).to.have.length(3)
+                    expect(result?.name).to.equal("author1")
+                    expect(result?.books).to.be.an("array")
+                    expect(result?.books).to.have.length(3)
 
-                    const titles = result!.books
+                    const titles = result?.books
                         .map((b) => b.title)
                         .sort((a, b) => a.localeCompare(b))
                     expect(titles).to.deep.equal(["book1", "book2", "book3"])
@@ -113,10 +113,10 @@ describe("relations > load-strategy > query", () => {
                     })
 
                     expect(result).to.not.be.null
-                    for (const book of result!.books) {
+                    for (const book of result?.books ?? []) {
                         expect(book.comments).to.be.an("array")
                         expect(book.comments).to.have.length(2)
-                        for (const comment of book.comments!) {
+                        for (const comment of book.comments ?? []) {
                             expect(comment.text).to.include(book.title)
                         }
                     }
@@ -147,7 +147,6 @@ describe("relations > load-strategy > query", () => {
                         expect(review.book).to.not.be.undefined
                         expect(review.book).to.not.be.null
                         expect(review.book.title).to.equal("book1")
-                        // nested eager: Book -> Comments
                         expect(review.book.comments).to.be.an("array")
                     }
                 }),
@@ -264,8 +263,8 @@ describe("relations > load-strategy > query", () => {
                     })
 
                     expect(result).to.not.be.null
-                    expect(result!.books).to.be.an("array")
-                    expect(result!.books).to.have.length(0)
+                    expect(result?.books).to.be.an("array")
+                    expect(result?.books).to.have.length(0)
                 }),
             ))
 
@@ -292,12 +291,12 @@ describe("relations > load-strategy > query", () => {
                     })
 
                     expect(result).to.not.be.null
-                    const loadedBook = result!.books.find(
+                    const loadedBook = result?.books.find(
                         (b) => b.id === book.id,
                     )
                     expect(loadedBook).to.not.be.undefined
-                    expect(loadedBook!.comments).to.be.an("array")
-                    expect(loadedBook!.comments).to.have.length(0)
+                    expect(loadedBook?.comments).to.be.an("array")
+                    expect(loadedBook?.comments).to.have.length(0)
                 }),
             ))
     })
@@ -323,7 +322,6 @@ describe("relations > load-strategy > query", () => {
                     expect(results[1].books).to.be.an("array")
                     expect(results[1].books).to.have.length(2)
 
-                    // nested eager relations load for all results
                     for (const author of results) {
                         for (const book of author.books) {
                             expect(book.comments).to.be.an("array")
@@ -375,7 +373,6 @@ describe("relations > load-strategy > query", () => {
                         ]),
                     )
 
-                    // no relationLoadStrategy specified — uses DataSource default
                     const results = await authorRepository.find({
                         order: { name: "ASC" },
                     })
@@ -406,8 +403,8 @@ describe("relations > load-strategy > query", () => {
                     })
 
                     expect(result).to.not.be.null
-                    expect(result!.name).to.equal("author1")
-                    expect(result!.books).to.be.undefined
+                    expect(result?.name).to.equal("author1")
+                    expect(result?.books).to.be.undefined
                 }),
             ))
 
@@ -425,10 +422,10 @@ describe("relations > load-strategy > query", () => {
                     })
 
                     expect(result).to.not.be.null
-                    expect(result!.books).to.be.an("array")
-                    expect(result!.books).to.have.length(3)
+                    expect(result?.books).to.be.an("array")
+                    expect(result?.books).to.have.length(3)
 
-                    for (const book of result!.books) {
+                    for (const book of result?.books ?? []) {
                         expect(book.comments).to.be.undefined
                     }
                 }),
