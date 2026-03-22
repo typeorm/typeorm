@@ -9,11 +9,6 @@ on:
 jobs:
   better-sqlite3:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        shardIndex: [1, 2, 3, 4]
-        shardTotal: [4]
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
@@ -28,20 +23,15 @@ jobs:
 
       - run: pnpm install
       - run: jq 'map(select(.type == "better-sqlite3"))' ormconfig.sample.json > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+      - run: pnpm exec c8 pnpm run test:ci
 
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: better-sqlite3-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}-windows
+          flag-name: better-sqlite3-node:${{ matrix.node-version }}-windows
           parallel: true
 
   sqljs:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        shardIndex: [1, 2, 3, 4]
-        shardTotal: [4]
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
@@ -56,9 +46,9 @@ jobs:
 
       - run: pnpm install
       - run: jq 'map(select(.type == "sqljs"))' ormconfig.sample.json > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+      - run: pnpm exec c8 pnpm run test:ci
 
       - uses: coverallsapp/github-action@v2
         with:
-          flag-name: sqljs-shard:${{ matrix.shardIndex }}-node:${{ matrix.node-version }}-windows
+          flag-name: sqljs-node:${{ matrix.node-version }}-windows
           parallel: true
