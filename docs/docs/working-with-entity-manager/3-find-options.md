@@ -57,26 +57,6 @@ LEFT JOIN "videos" ON "videos"."id" = "user"."videoId"
 LEFT JOIN "video_attributes" ON "video_attributes"."id" = "videos"."video_attributesId"
 ```
 
-- `relationLoadStrategy` - controls how relations are loaded. `"join"` (default) uses SQL JOINs in a single query; `"query"` loads relations via separate database queries, which can be more efficient for deeply nested relations.
-
-```typescript
-userRepository.find({
-    relations: { profile: true, photos: true },
-    relationLoadStrategy: "query",
-})
-```
-
-This can also be set as the default for the entire DataSource via the `relationLoadStrategy` option.
-
-- `loadEagerRelations` - controls whether eager relations (marked with `eager: true`) are automatically loaded. Defaults to `true`. Set to `false` to suppress eager loading, for example to load only explicitly requested relations.
-
-```typescript
-userRepository.find({
-    relations: { profile: true },
-    loadEagerRelations: false, // only loads profile, not other eager relations
-})
-```
-
 - `where` - simple conditions by which entity should be queried.
 
 ```typescript

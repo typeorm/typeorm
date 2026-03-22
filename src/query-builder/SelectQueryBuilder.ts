@@ -3397,12 +3397,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
-    /**
-     * Registers relation metadata for loading via separate queries when using
-     * the "query" relation load strategy. Deduplicates by propertyPath to
-     * prevent the same relation from being loaded multiple times.
-     * @param relationMetadata
-     */
     public concatRelationMetadata(...relationMetadata: RelationMetadata[]) {
         const newRelationMetadata = relationMetadata.filter(
             (metadata) =>
