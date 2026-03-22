@@ -7,7 +7,7 @@
 const dataSourceOptions: DataSourceOptions = dataSource.options
 ```
 
-- `isInitialized` - Indicates if the `DataSource` was initialized and initial the connection / connection pool with the database was established or not.
+- `isInitialized` - Indicates if the `DataSource` was initialized and the connection / connection pool with the database was established or not.
 
 ```typescript
 const isInitialized: boolean = dataSource.isInitialized

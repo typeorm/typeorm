@@ -87,7 +87,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        const connection = this.driver.dataSource
+        const dataSource = this.driver.dataSource
 
         // better-sqlite3 cannot bind booleans, convert to 0/1
         const normalizedParameters = parameters.map((p) =>
@@ -136,7 +136,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             )
-                connection.logger.logQuerySlow(
+                dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     normalizedParameters,
@@ -159,7 +159,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
             return result
         } catch (err) {
-            connection.logger.logQueryError(
+            dataSource.logger.logQueryError(
                 err,
                 query,
                 normalizedParameters,
