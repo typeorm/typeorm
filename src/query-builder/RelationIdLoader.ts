@@ -441,9 +441,8 @@ export class RelationIdLoader {
         relatedEntities?: ObjectLiteral[],
     ) {
         const mainAlias = relation.entityMetadata.targetName
+        const fieldsToMetadata = new Map<string, ColumnMetadata>()
 
-        // console.log("entitiesx", entities);
-        // console.log("relatedEntitiesx", relatedEntities);
         const hasAllJoinColumnsInEntity = relation.joinColumns.every(
             (joinColumn) => {
                 return !!relation.entityMetadata.nonVirtualColumns.find(
@@ -525,6 +524,7 @@ export class RelationIdLoader {
                     "_" +
                     primaryColumn.propertyPath.replace(".", "_"),
             )
+            fieldsToMetadata.set(columnName, primaryColumn)
             qb.addSelect(
                 mainAlias + "." + primaryColumn.propertyPath,
                 columnName,
@@ -540,6 +540,7 @@ export class RelationIdLoader {
                     "_" +
                     column.referencedColumn!.propertyPath.replace(".", "_"),
             )
+            fieldsToMetadata.set(columnName, column.referencedColumn!)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
 
@@ -597,6 +598,21 @@ export class RelationIdLoader {
             .from(relation.entityMetadata.target, mainAlias)
             .where(condition)
             .getRawMany()
+            .then((result) => {
+                result.forEach((data) => {
+                    Object.keys(data).forEach((key) => {
+                        const column = fieldsToMetadata.get(key)
+                        if (column) {
+                            data[key] =
+                                this.dataSource.driver.prepareHydratedValue(
+                                    data[key],
+                                    column,
+                                )
+                        }
+                    })
+                })
+                return result
+            })
     }
 
     /**
@@ -612,6 +628,7 @@ export class RelationIdLoader {
     ) {
         const originalRelation = relation
         relation = relation.inverseRelation!
+        const fieldsToMetadata = new Map<string, ColumnMetadata>()
 
         if (
             relation.entityMetadata.primaryColumns.length ===
@@ -676,6 +693,7 @@ export class RelationIdLoader {
                     "_" +
                     primaryColumn.propertyPath.replace(".", "_"),
             )
+            fieldsToMetadata.set(columnName, primaryColumn)
             qb.addSelect(
                 mainAlias + "." + primaryColumn.propertyPath,
                 columnName,
@@ -689,6 +707,7 @@ export class RelationIdLoader {
                     "_" +
                     column.referencedColumn!.propertyPath.replace(".", "_"),
             )
+            fieldsToMetadata.set(columnName, column.referencedColumn!)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
 
@@ -748,5 +767,20 @@ export class RelationIdLoader {
             .from(relation.entityMetadata.target, mainAlias)
             .where(condition)
             .getRawMany()
+            .then((result) => {
+                result.forEach((data) => {
+                    Object.keys(data).forEach((key) => {
+                        const column = fieldsToMetadata.get(key)
+                        if (column) {
+                            data[key] =
+                                this.dataSource.driver.prepareHydratedValue(
+                                    data[key],
+                                    column,
+                                )
+                        }
+                    })
+                })
+                return result
+            })
     }
 }
