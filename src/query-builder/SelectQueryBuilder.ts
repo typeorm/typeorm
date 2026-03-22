@@ -71,6 +71,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         nulls?: "NULLS FIRST" | "NULLS LAST"
     }[] = []
     protected relationMetadatas: RelationMetadata[] = []
+    protected eagerLoadChain: Set<string> = new Set()
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -3628,18 +3629,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.loadEagerRelations,
                 )
 
-            // Track visited eager relations to prevent infinite recursion
-            // from circular eager chains (e.g. A→B→C→A)
-            const isRootEagerLoad = !queryRunner.data.eagerLoadVisited
-            const eagerLoadVisited: Set<string> =
-                (queryRunner.data.eagerLoadVisited ??= new Set())
-
             await Promise.all(
                 this.relationMetadatas.map(async (relation) => {
+                    // Prevent infinite recursion from circular eager
+                    // chains (e.g. A→B→C→A). Each branch maintains its
+                    // own visited set so parallel branches don't interfere.
                     if (relation.isEager) {
-                        const visitKey = `${relation.entityMetadata.name}:${relation.propertyPath}`
-                        if (eagerLoadVisited.has(visitKey)) return
-                        eagerLoadVisited.add(visitKey)
+                        const targetEntity = relation.inverseEntityMetadata.name
+                        if (this.eagerLoadChain.has(targetEntity)) return
                     }
 
                     const relationTarget = relation.inverseEntityMetadata.target
@@ -3649,31 +3646,42 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const queryBuilder = this.createQueryBuilder(queryRunner)
                         .select(relationAlias)
                         .from(relationTarget, relationAlias)
-                        .setFindOptions({
-                            select: this.findOptions.select
-                                ? OrmUtils.deepValue(
-                                      this.findOptions.select,
-                                      relation.propertyPath,
-                                  )
-                                : undefined,
-                            order: this.findOptions.order
-                                ? OrmUtils.deepValue(
-                                      this.findOptions.order,
-                                      relation.propertyPath,
-                                  )
-                                : undefined,
-                            relations: this.findOptions.relations
-                                ? OrmUtils.deepValue(
-                                      this.findOptions.relations,
-                                      relation.propertyPath,
-                                  )
-                                : undefined,
-                            withDeleted: this.findOptions.withDeleted,
-                            relationLoadStrategy:
-                                this.findOptions.relationLoadStrategy,
-                            loadEagerRelations:
-                                this.findOptions.loadEagerRelations,
-                        })
+
+                    // Propagate eager load chain with current entity
+                    // added, so the child detects cycles in its branch
+                    if (relation.isEager) {
+                        queryBuilder.eagerLoadChain = new Set(
+                            this.eagerLoadChain,
+                        )
+                        queryBuilder.eagerLoadChain.add(
+                            relation.entityMetadata.name,
+                        )
+                    }
+
+                    queryBuilder.setFindOptions({
+                        select: this.findOptions.select
+                            ? OrmUtils.deepValue(
+                                  this.findOptions.select,
+                                  relation.propertyPath,
+                              )
+                            : undefined,
+                        order: this.findOptions.order
+                            ? OrmUtils.deepValue(
+                                  this.findOptions.order,
+                                  relation.propertyPath,
+                              )
+                            : undefined,
+                        relations: this.findOptions.relations
+                            ? OrmUtils.deepValue(
+                                  this.findOptions.relations,
+                                  relation.propertyPath,
+                              )
+                            : undefined,
+                        withDeleted: this.findOptions.withDeleted,
+                        relationLoadStrategy:
+                            this.findOptions.relationLoadStrategy,
+                        loadEagerRelations: this.findOptions.loadEagerRelations,
+                    })
                     if (entities.length > 0) {
                         const relatedEntityGroups: any[] =
                             await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
@@ -3697,10 +3705,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
                 }),
             )
-
-            if (isRootEagerLoad) {
-                delete queryRunner.data.eagerLoadVisited
-            }
         }
 
         return {
