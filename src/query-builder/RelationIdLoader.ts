@@ -414,25 +414,13 @@ export class RelationIdLoader {
         const condition = [condition1, condition2]
             .filter((v) => v.length > 0)
             .join(" AND ")
-        return qb
-            .from(junctionMetadata.target, mainAlias)
-            .where(condition)
-            .getRawMany()
-            .then((result) => {
-                result.forEach((data) => {
-                    Object.keys(data).forEach((key) => {
-                        const column = fieldsToMetadata.get(key)
-                        if (column) {
-                            data[key] =
-                                this.dataSource.driver.prepareHydratedValue(
-                                    data[key],
-                                    column,
-                                )
-                        }
-                    })
-                })
-                return result
-            })
+        return this.executeAndHydrateRaw(
+            qb,
+            junctionMetadata.target,
+            mainAlias,
+            condition,
+            fieldsToMetadata,
+        )
     }
 
     /**
@@ -603,25 +591,13 @@ export class RelationIdLoader {
         }
 
         // execute query
-        return qb
-            .from(relation.entityMetadata.target, mainAlias)
-            .where(condition)
-            .getRawMany()
-            .then((result) => {
-                result.forEach((data) => {
-                    Object.keys(data).forEach((key) => {
-                        const column = fieldsToMetadata.get(key)
-                        if (column) {
-                            data[key] =
-                                this.dataSource.driver.prepareHydratedValue(
-                                    data[key],
-                                    column,
-                                )
-                        }
-                    })
-                })
-                return result
-            })
+        return this.executeAndHydrateRaw(
+            qb,
+            relation.entityMetadata.target,
+            mainAlias,
+            condition,
+            fieldsToMetadata,
+        )
     }
 
     /**
@@ -775,8 +751,33 @@ export class RelationIdLoader {
         }
 
         // execute query
+        return this.executeAndHydrateRaw(
+            qb,
+            relation.entityMetadata.target,
+            mainAlias,
+            condition,
+            fieldsToMetadata,
+        )
+    }
+
+    /**
+     * Executes a raw query and hydrates the results using driver-specific
+     * value preparation based on the column metadata.
+     * @param qb
+     * @param target
+     * @param mainAlias
+     * @param condition
+     * @param fieldsToMetadata
+     */
+    private executeAndHydrateRaw(
+        qb: SelectQueryBuilder<any>,
+        target: Function | string,
+        mainAlias: string,
+        condition: string,
+        fieldsToMetadata: Map<string, ColumnMetadata>,
+    ): Promise<ObjectLiteral[]> {
         return qb
-            .from(relation.entityMetadata.target, mainAlias)
+            .from(target, mainAlias)
             .where(condition)
             .getRawMany()
             .then((result) => {
