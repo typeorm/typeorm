@@ -179,14 +179,11 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        if (
-            !queryBuilder &&
-            qb.expressionMap.relationLoadStrategy === "query"
-        ) {
+        if (qb.expressionMap.relationLoadStrategy === "query") {
             qb.concatRelationMetadata(
                 ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
             )
-        } else if (qb.expressionMap.relationLoadStrategy === "join") {
+        } else {
             FindOptionsUtils.joinEagerRelations(
                 qb,
                 qb.alias,
@@ -276,14 +273,11 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        if (
-            !queryBuilder &&
-            qb.expressionMap.relationLoadStrategy === "query"
-        ) {
+        if (qb.expressionMap.relationLoadStrategy === "query") {
             qb.concatRelationMetadata(
                 ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
             )
-        } else if (qb.expressionMap.relationLoadStrategy === "join") {
+        } else {
             FindOptionsUtils.joinEagerRelations(
                 qb,
                 qb.alias,
@@ -357,14 +351,11 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        if (
-            !queryBuilder &&
-            qb.expressionMap.relationLoadStrategy === "query"
-        ) {
+        if (qb.expressionMap.relationLoadStrategy === "query") {
             qb.concatRelationMetadata(
                 ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
             )
-        } else if (qb.expressionMap.relationLoadStrategy === "join") {
+        } else {
             FindOptionsUtils.joinEagerRelations(
                 qb,
                 qb.alias,
@@ -438,14 +429,11 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        if (
-            !queryBuilder &&
-            qb.expressionMap.relationLoadStrategy === "query"
-        ) {
+        if (qb.expressionMap.relationLoadStrategy === "query") {
             qb.concatRelationMetadata(
                 ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
             )
-        } else if (qb.expressionMap.relationLoadStrategy === "join") {
+        } else {
             FindOptionsUtils.joinEagerRelations(
                 qb,
                 qb.alias,
