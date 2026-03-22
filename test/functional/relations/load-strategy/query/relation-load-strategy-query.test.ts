@@ -4,8 +4,8 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../utils/test-utils"
-import type { DataSource } from "../../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Author } from "./entity/Author"
 import { Book } from "./entity/Book"
 import { Comment } from "./entity/Comment"

@@ -4,7 +4,7 @@ import {
     JoinColumn,
     ManyToOne,
     PrimaryGeneratedColumn,
-} from "../../../../../src"
+} from "../../../../../../src"
 import { Book } from "./Book"
 
 @Entity()

@@ -3626,8 +3626,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.loadEagerRelations,
                 )
 
+            // Track visited eager relations to prevent infinite recursion
+            // from circular eager chains (e.g. A→B→C→A)
+            const isRootEagerLoad = !queryRunner.data.eagerLoadVisited
+            const eagerLoadVisited: Set<string> =
+                (queryRunner.data.eagerLoadVisited ??= new Set())
+
             await Promise.all(
                 this.relationMetadatas.map(async (relation) => {
+                    if (relation.isEager) {
+                        const visitKey = `${relation.entityMetadata.name}:${relation.propertyPath}`
+                        if (eagerLoadVisited.has(visitKey)) return
+                        eagerLoadVisited.add(visitKey)
+                    }
+
                     const relationTarget = relation.inverseEntityMetadata.target
                     const relationAlias =
                         relation.inverseEntityMetadata.targetName
@@ -3683,6 +3695,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
                 }),
             )
+
+            if (isRootEagerLoad) {
+                delete queryRunner.data.eagerLoadVisited
+            }
         }
 
         return {

@@ -5,7 +5,7 @@ import {
     ManyToMany,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../../src"
+} from "../../../../../../src"
 import { Book } from "./Book"
 import { Comment } from "./Comment"
 
