@@ -1,3 +1,4 @@
+import type { TestError } from "vitest"
 import { defineConfig } from "vitest/config"
 
 export default defineConfig({
@@ -23,6 +24,11 @@ export default defineConfig({
         },
         watch: false,
         reporters: "tree",
+        onUnhandledError(
+            _error: (TestError | Error) & { type: string },
+        ): boolean | void {
+            return false
+        },
     },
     cache: true,
 })

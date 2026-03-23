@@ -16,12 +16,7 @@ describe("github issues > #7907 add support for mongodb driver v5", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    afterAll(async () => {
-        // wait for all clients to get closed
-        // this is a workaround for the error: MongoClientClosedError: Operation interrupted because client was closed
-        await new Promise((resolve) => setTimeout(resolve, 1))
-        await closeTestingConnections(dataSources)
-    })
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should find the Post without throw error: Cannot read property 'prototype' of undefined", () =>
         Promise.all(

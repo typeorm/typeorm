@@ -89,7 +89,7 @@ import { DataSource } from "../../../src/data-source/DataSource"
 
 describe("description of functionality", () => {
     let dataSources: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -98,7 +98,7 @@ describe("description of functionality", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should do something specific", () =>
         Promise.all(
@@ -121,10 +121,11 @@ describe("description of functionality", () => {
     - Reference GitHub issue numbers when fixing specific issues
 
 4. **Running Tests**:
-    - Full test suite: `pnpm run test` (compiles then runs tests)
-    - Fast iteration: `pnpm run test:fast` (runs without recompiling)
-    - Specific tests: `pnpm run test:fast -- --grep "pattern"`
-    - Watch mode: `pnpm run compile -- --watch` + `pnpm run test:fast`
+    - Full test suite: `pnpm run test`
+    - Specific tests:
+        - `pnpm run test test/functional/some-feature.test.ts test/github-issues/1234/some-issue.test.ts` (runs specific test files)
+        - `pnpm run test test/glob-regex/\*_/_.test.ts -t "should do something specific"` (runs tests matching description)
+    - Watch mode: `pnpm run test watch` (reruns tests when they changes)
 
 ## Database-Specific Considerations
 
@@ -183,7 +184,7 @@ Each driver in `src/driver/` implements common interfaces:
 - **Build**: `pnpm run compile` - Compiles TypeScript to `build/compiled/`
 - **Package**: `pnpm run package` - Creates distribution in `build/package/`
 - **Pack**: `pnpm pack` - Creates `.tgz` file in `build/`
-- **Test**: `pnpm run test` - Compile and run all tests
+- **Test**: `pnpm run test` - Runs all tests
 - **Lint**: `pnpm run lint` - Run ESLint
 - **Format**: `pnpm run format` - Run Prettier
 - **Watch**: `pnpm run watch` - Watch mode for TypeScript compilation

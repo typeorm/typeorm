@@ -85,9 +85,8 @@
     "package": "gulp package",
     "prepare": "husky",
     "publish:preview": "pkg-pr-new publish './build/package' --template='./sample/playground'",
-    "test": "pnpm run test:fast",
+    "test": "vitest",
     "test:ci": "vitest run --bail=1",
-    "test:fast": "vitest run",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch"
   },
