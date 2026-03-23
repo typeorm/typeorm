@@ -7,6 +7,6 @@ export class Test {
     @PrimaryGeneratedColumn({ unsigned: true })
     id: number
 
-    @Column()
+    @Column({ type: Number })
     value: ValueUnion
 }

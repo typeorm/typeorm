@@ -45,7 +45,7 @@ export async function importClassesFromDirectories(
         .reduce((allDirs, dir) => {
             return allDirs.concat(globSync(PlatformTools.pathNormalize(dir)))
         }, [] as string[])
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
 
     if (directories.length > 0 && allFiles.length === 0) {
         logger.log(logLevel, `${classesNotFoundMessage} "${directories}"`)

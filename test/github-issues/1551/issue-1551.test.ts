@@ -10,8 +10,7 @@ import { Recipient } from "./entity/Recipient"
 import { User } from "./entity/User"
 import { Chat } from "./entity/Chat"
 
-// Fixme: Vitest
-describe.skip("github issues > #1551 complex example of cascades + multiple primary keys = persistence order", () => {
+describe("github issues > #1551 complex example of cascades + multiple primary keys = persistence order", () => {
     let dataSources: DataSource[]
     beforeAll(async () => {
         dataSources = await createTestingConnections({

@@ -5,8 +5,7 @@ import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptio
 import type { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 
-// Fixme: Vitest
-describe.skip("ConnectionOptionsReader", () => {
+describe("ConnectionOptionsReader", () => {
     it("properly loads config with entities specified", async () => {
         type EntititesList = Function[] | string[]
         const connectionOptionsReader = new ConnectionOptionsReader({

@@ -12,7 +12,7 @@ import { Journalist } from "./entity/Journalist"
 
 describe("relations > load-strategy > query > circular eager (Publisher→Magazine→Journalist→Publisher)", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("relations > load-strategy > query > circular eager (Publisher→Magazi
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should not recurse infinitely with circular eager relations and query strategy", () =>
         Promise.all(

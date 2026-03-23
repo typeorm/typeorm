@@ -8,8 +8,7 @@ import {
 import { Event } from "./entity/Event"
 import type { DataSource } from "../../../../src"
 
-// Fixme: Vitest (Expected: "2025-06-01" Received: "2025-05-31")
-describe.skip("columns > date utc flag", () => {
+describe("columns > date utc flag", () => {
     let originalTZ: string | undefined
     let dataSources: DataSource[]
 

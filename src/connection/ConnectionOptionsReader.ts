@@ -97,17 +97,24 @@ export class ConnectionOptionsReader {
                 const [importOrRequireResult, moduleSystem] =
                     await importOrRequireFile(configFile)
                 const configModule = await importOrRequireResult
+                const moduleDefaultExport =
+                    configModule &&
+                    typeof configModule === "object" &&
+                    "default" in configModule
+                        ? configModule.default
+                        : undefined
 
-                if (
+                const loadedConnectionOptions =
                     moduleSystem === "esm" ||
                     (configModule &&
                         "__esModule" in configModule &&
                         "default" in configModule)
-                ) {
-                    connectionOptions = configModule.default
-                } else {
-                    connectionOptions = configModule
-                }
+                        ? moduleDefaultExport
+                        : configModule
+
+                connectionOptions = await Promise.resolve(
+                    loadedConnectionOptions,
+                )
             } catch (err) {
                 PlatformTools.logWarn(
                     `Warning: Could not load ormconfig file at ${configFile}`,

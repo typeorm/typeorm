@@ -29,11 +29,11 @@ export async function importOrRequireFile(
         return [require(filePath), "commonjs"]
     }
 
-    if (process.env.VITEST) {
+    const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
+
+    if (process.env.VITEST && (extension === "ts" || extension === "mts")) {
         return tryToImport()
     }
-
-    const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
 
     if (extension === "mjs" || extension === "mts") return tryToImport()
     else if (extension === "cjs" || extension === "cts") return tryToRequire()

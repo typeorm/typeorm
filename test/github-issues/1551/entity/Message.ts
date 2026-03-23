@@ -73,7 +73,7 @@ export class Message {
     @CreateDateColumn()
     createdAt: number
 
-    @Column({ nullable: true })
+    @Column({ type: Number, nullable: true })
     type: MessageType
 
     @OneToMany(() => Recipient, (recipient) => recipient.message, {

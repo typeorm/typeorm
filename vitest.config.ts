@@ -6,7 +6,6 @@ export default defineConfig({
         setupFiles: ["test/utils/test-setup.ts"],
         testTimeout: 90000,
         hookTimeout: 0,
-        pool: "forks",
         fileParallelism: false,
         globals: true,
         isolate: false,
@@ -26,5 +25,4 @@ export default defineConfig({
         reporters: "tree",
     },
     cache: true,
-    dangerouslyIgnoreUnhandledErrors: true,
 })

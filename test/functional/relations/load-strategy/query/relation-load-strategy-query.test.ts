@@ -15,7 +15,7 @@ import { Review } from "./entity/Review"
 
 describe("relations > load-strategy > query", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -23,7 +23,7 @@ describe("relations > load-strategy > query", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     const setupTestData = async (dataSource: DataSource) => {
         const authorRepository = dataSource.getRepository(Author)
@@ -334,7 +334,7 @@ describe("relations > load-strategy > query", () => {
 
     describe("DataSource-level strategy", () => {
         let dsLevelDataSources: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             dsLevelDataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
@@ -343,7 +343,7 @@ describe("relations > load-strategy > query", () => {
             })
         })
         beforeEach(() => reloadTestingDatabases(dsLevelDataSources))
-        after(() => closeTestingConnections(dsLevelDataSources))
+        afterAll(() => closeTestingConnections(dsLevelDataSources))
 
         it("should respect relationLoadStrategy set at DataSource level", () =>
             Promise.all(

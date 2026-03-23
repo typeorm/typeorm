@@ -10,8 +10,7 @@ import {
 } from "../../utils/test-utils"
 import { LessThan } from "../../../src"
 
-// Fixme: Vitest
-describe.skip("github issues > #9152 Can't use LessThan for Union field", () => {
+describe("github issues > #9152 Can't use LessThan for Union field", () => {
     let dataSources: DataSource[]
     beforeAll(async () => {
         dataSources = await createTestingConnections({
