@@ -293,9 +293,9 @@ The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has b
 
 Note: code that reads `dataSource.name` will now receive `undefined` instead of `"default"`. If you use this value in logging or multi-tenancy logic, update accordingly.
 
-### `.connection` property in various classes
+### `.connection` property in various classes is now `.dataSource`
 
-The `connection` property in the `Driver` and `QueryRunner` classes was renamed to `dataSource`. To ease the transition, a deprecated getter was added that returns the same value as `dataSource`.
+The `connection` property in the `Driver`, `QueryRunner`, `EntityManager` and `QueryBuilder` classes was renamed to `dataSource`. For `EntityManager`, this change was announced in 0.3, but it was not actually implemented. To ease the transition, a deprecated getter was added that returns the same value as `dataSource`.
 
 ### Miscellaneous
 

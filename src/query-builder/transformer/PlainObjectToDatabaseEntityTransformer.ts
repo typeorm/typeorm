@@ -130,7 +130,7 @@ export class PlainObjectToDatabaseEntityTransformer {
         fillLoadMap(plainObject, metadata)
         // load all entities and store them in the load map
         const isMongoDb =
-            this.manager.connection.driver.options.type === "mongodb"
+            this.manager.dataSource.driver.options.type === "mongodb"
         await Promise.all(
             loadMap.groupByTargetIds().map(async (targetWithIds) => {
                 let entities: ObjectLiteral[]
