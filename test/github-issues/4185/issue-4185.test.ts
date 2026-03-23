@@ -35,11 +35,11 @@ describe("github issues > #4185 afterLoad() subscriber interface missing additio
                     assert.isDefined(entity.simpleSubscriberSaw)
                     const event = entity.extendedSubscriberSaw
                     assert.isDefined(event)
-                    assert.strictEqual(event!.dataSource, dataSource)
-                    assert.isDefined(event!.queryRunner)
-                    assert.isDefined(event!.manager)
-                    assert.strictEqual(event!.entity, entity)
-                    assert.isDefined(event!.metadata)
+                    assert.strictEqual(event.dataSource, dataSource)
+                    assert.isDefined(event.queryRunner)
+                    assert.isDefined(event.manager)
+                    assert.strictEqual(event.entity, entity)
+                    assert.isDefined(event.metadata)
                 }
             }),
         ))
