@@ -30,7 +30,7 @@ export class NestedSetSubjectExecutor {
      */
     async insert(subject: Subject): Promise<void> {
         const escape = (alias: string) =>
-            this.queryRunner.connection.driver.escape(alias)
+            this.queryRunner.dataSource.driver.escape(alias)
         const tableName = this.getTableName(subject.metadata.tablePath)
         const leftColumnName = escape(
             subject.metadata.nestedSetLeftColumn!.databaseName,
@@ -141,7 +141,7 @@ export class NestedSetSubjectExecutor {
 
         if (parent) {
             const escape = (alias: string) =>
-                this.queryRunner.connection.driver.escape(alias)
+                this.queryRunner.dataSource.driver.escape(alias)
             const tableName = this.getTableName(subject.metadata.tablePath)
             const leftColumnName = escape(
                 subject.metadata.nestedSetLeftColumn!.databaseName,
@@ -245,7 +245,7 @@ export class NestedSetSubjectExecutor {
         const metadata = subjects[0].metadata
 
         const escape = (alias: string) =>
-            this.queryRunner.connection.driver.escape(alias)
+            this.queryRunner.dataSource.driver.escape(alias)
         const tableName = this.getTableName(metadata.tablePath)
         const leftColumnName = escape(
             metadata.nestedSetLeftColumn!.databaseName,
@@ -335,7 +335,7 @@ export class NestedSetSubjectExecutor {
         parent: any,
     ): Promise<boolean> {
         const escape = (alias: string) =>
-            this.queryRunner.connection.driver.escape(alias)
+            this.queryRunner.dataSource.driver.escape(alias)
         const tableName = this.getTableName(subject.metadata.tablePath)
         const parameters: any[] = []
         const whereCondition = subject.metadata
@@ -349,7 +349,7 @@ export class NestedSetSubjectExecutor {
 
                 parameters.push(parameter)
                 const parameterName =
-                    this.queryRunner.connection.driver.createParameter(
+                    this.queryRunner.dataSource.driver.createParameter(
                         "entity_" + column.databaseName,
                         parameters.length - 1,
                     )
@@ -381,7 +381,7 @@ export class NestedSetSubjectExecutor {
                 // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
                 return i === ""
                     ? i
-                    : this.queryRunner.connection.driver.escape(i)
+                    : this.queryRunner.dataSource.driver.escape(i)
             })
             .join(".")
     }

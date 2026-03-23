@@ -75,7 +75,7 @@ export abstract class AbstractSqliteQueryRunner
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         if (this.driver.transactionSupport === "none")
             throw new TypeORMError(
-                `Transactions aren't supported by ${this.connection.driver.options.type}.`,
+                `Transactions aren't supported by ${this.dataSource.driver.options.type}.`,
             )
 
         if (
@@ -324,7 +324,7 @@ export abstract class AbstractSqliteQueryRunner
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(
+                    index.name = this.dataSource.namingStrategy.indexName(
                         table,
                         index.columnNames,
                         index.where,
@@ -491,7 +491,7 @@ export abstract class AbstractSqliteQueryRunner
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
             const oldUniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     oldTable,
                     unique.columnNames,
                 )
@@ -499,7 +499,7 @@ export abstract class AbstractSqliteQueryRunner
             // Skip renaming if Unique has user defined constraint name
             if (unique.name !== oldUniqueName) return
 
-            unique.name = this.connection.namingStrategy.uniqueConstraintName(
+            unique.name = this.dataSource.namingStrategy.uniqueConstraintName(
                 newTable,
                 unique.columnNames,
             )
@@ -508,7 +508,7 @@ export abstract class AbstractSqliteQueryRunner
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
             const oldForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     oldTable,
                     foreignKey.columnNames,
                     this.getTablePath(foreignKey),
@@ -518,7 +518,7 @@ export abstract class AbstractSqliteQueryRunner
             // Skip renaming if foreign key has user defined constraint name
             if (foreignKey.name !== oldForeignKeyName) return
 
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 newTable,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -528,7 +528,7 @@ export abstract class AbstractSqliteQueryRunner
 
         // rename indices
         newTable.indices.forEach((index) => {
-            const oldIndexName = this.connection.namingStrategy.indexName(
+            const oldIndexName = this.dataSource.namingStrategy.indexName(
                 oldTable,
                 index.columnNames,
                 index.where,
@@ -537,7 +537,7 @@ export abstract class AbstractSqliteQueryRunner
             // Skip renaming if Index has user defined constraint name
             if (index.name !== oldIndexName) return
 
-            index.name = this.connection.namingStrategy.indexName(
+            index.name = this.dataSource.namingStrategy.indexName(
                 newTable,
                 index.columnNames,
                 index.where,
@@ -664,7 +664,7 @@ export abstract class AbstractSqliteQueryRunner
                     .findColumnUniques(changedColumnSet.oldColumn)
                     .forEach((unique) => {
                         const uniqueName =
-                            this.connection.namingStrategy.uniqueConstraintName(
+                            this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 unique.columnNames,
                             )
@@ -680,7 +680,7 @@ export abstract class AbstractSqliteQueryRunner
                         // rename Unique only if it has default constraint name
                         if (unique.name === uniqueName) {
                             unique.name =
-                                this.connection.namingStrategy.uniqueConstraintName(
+                                this.dataSource.namingStrategy.uniqueConstraintName(
                                     changedTable,
                                     unique.columnNames,
                                 )
@@ -691,7 +691,7 @@ export abstract class AbstractSqliteQueryRunner
                     .findColumnForeignKeys(changedColumnSet.oldColumn)
                     .forEach((foreignKey) => {
                         const foreignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 table,
                                 foreignKey.columnNames,
                                 this.getTablePath(foreignKey),
@@ -711,7 +711,7 @@ export abstract class AbstractSqliteQueryRunner
                         // rename FK only if it has default constraint name
                         if (foreignKey.name === foreignKeyName) {
                             foreignKey.name =
-                                this.connection.namingStrategy.foreignKeyName(
+                                this.dataSource.namingStrategy.foreignKeyName(
                                     changedTable,
                                     foreignKey.columnNames,
                                     this.getTablePath(foreignKey),
@@ -724,7 +724,7 @@ export abstract class AbstractSqliteQueryRunner
                     .findColumnIndices(changedColumnSet.oldColumn)
                     .forEach((index) => {
                         const indexName =
-                            this.connection.namingStrategy.indexName(
+                            this.dataSource.namingStrategy.indexName(
                                 table,
                                 index.columnNames,
                                 index.where,
@@ -741,7 +741,7 @@ export abstract class AbstractSqliteQueryRunner
                         // rename Index only if it has default constraint name
                         if (index.name === indexName) {
                             index.name =
-                                this.connection.namingStrategy.indexName(
+                                this.dataSource.namingStrategy.indexName(
                                     changedTable,
                                     index.columnNames,
                                     index.where,
@@ -1776,7 +1776,7 @@ export abstract class AbstractSqliteQueryRunner
                         return new TableUnique({
                             name: foundMapping
                                 ? foundMapping.name
-                                : this.connection.namingStrategy.uniqueConstraintName(
+                                : this.dataSource.namingStrategy.uniqueConstraintName(
                                       table,
                                       indexColumns,
                                   ),
@@ -1902,7 +1902,7 @@ export abstract class AbstractSqliteQueryRunner
                 if (!isUniqueExist)
                     table.uniques.push(
                         new TableUnique({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -1916,7 +1916,7 @@ export abstract class AbstractSqliteQueryRunner
                 .map((unique) => {
                     const uniqueName = unique.name
                         ? unique.name
-                        : this.connection.namingStrategy.uniqueConstraintName(
+                        : this.dataSource.namingStrategy.uniqueConstraintName(
                               newTableName,
                               unique.columnNames,
                           )
@@ -1935,7 +1935,7 @@ export abstract class AbstractSqliteQueryRunner
                 .map((check) => {
                     const checkName = check.name
                         ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
+                        : this.dataSource.namingStrategy.checkConstraintName(
                               newTableName,
                               check.expression!,
                           )
@@ -1965,7 +1965,7 @@ export abstract class AbstractSqliteQueryRunner
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
                     if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
+                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
                             newTableName,
                             fk.columnNames,
                             this.getTablePath(fk),
@@ -2028,7 +2028,7 @@ export abstract class AbstractSqliteQueryRunner
         } else {
             return new Query(
                 `CREATE VIEW "${view.name}" AS ${view
-                    .expression(this.connection)
+                    .expression(this.dataSource)
                     .getQuery()}`,
             )
         }
@@ -2038,7 +2038,7 @@ export abstract class AbstractSqliteQueryRunner
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return this.insertTypeormMetadataSql({
             type: MetadataTableType.VIEW,
             name: view.name,
@@ -2132,7 +2132,7 @@ export abstract class AbstractSqliteQueryRunner
         if (InstanceChecker.isColumnMetadata(column)) {
             c += " " + this.driver.normalizeType(column)
         } else {
-            c += " " + this.connection.driver.createFullType(column)
+            c += " " + this.dataSource.driver.createFullType(column)
         }
         if (column.enum && !column.isArray)
             c +=
@@ -2269,7 +2269,7 @@ export abstract class AbstractSqliteQueryRunner
         newTable.indices.forEach((index) => {
             // new index may be passed without name. In this case we generate index name manually.
             if (!index.name)
-                index.name = this.connection.namingStrategy.indexName(
+                index.name = this.dataSource.namingStrategy.indexName(
                     newTable,
                     index.columnNames,
                     index.where,
@@ -2420,7 +2420,7 @@ export abstract class AbstractSqliteQueryRunner
         return tableName
             .replaceAll(/^\.+|\.+$/g, "")
             .split(".")
-            .map((i) => (disableEscape ? i : `"${i}"`))
+            .map((i) => (disableEscape ? i : this.driver.escape(i)))
             .join(".")
     }
 

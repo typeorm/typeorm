@@ -17,13 +17,14 @@ import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { ObjectUtils } from "../../util/ObjectUtils"
 import { OrmUtils } from "../../util/OrmUtils"
-import type { Driver, ReturningType } from "../Driver"
+import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
 import type { UpsertType } from "../types/UpsertType"
 import type { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import type { CockroachDataSourceOptions } from "./CockroachDataSourceOptions"
@@ -38,9 +39,17 @@ export class CockroachDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    readonly dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Cockroach underlying library.
@@ -68,7 +77,7 @@ export class CockroachDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: CockroachDataSourceOptions
 
@@ -253,9 +262,9 @@ export class CockroachDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as CockroachDataSourceOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as CockroachDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
 
         // load postgres package
@@ -328,13 +337,13 @@ export class CockroachDriver implements Driver {
     async afterConnect(): Promise<void> {
         // enable time travel queries
         if (this.options.timeTravelQueries) {
-            await this.connection.query(
+            await this.dataSource.query(
                 `SET default_transaction_use_follower_reads = 'on';`,
             )
         }
 
         // enable experimental alter column type support (we need it to alter enum types)
-        await this.connection.query(
+        await this.dataSource.query(
             "SET enable_experimental_alter_column_type_general = true",
         )
 
@@ -359,7 +368,7 @@ export class CockroachDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -563,7 +572,7 @@ export class CockroachDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return '"' + columnName + '"'
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
@@ -1142,7 +1151,7 @@ export class CockroachDriver implements Driver {
 
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)
-        const { logger } = this.connection
+        const { logger } = this.dataSource
 
         const poolErrorHandler =
             options.poolErrorHandler ||

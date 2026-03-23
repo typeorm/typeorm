@@ -11,7 +11,6 @@ import { NoNeedToReleaseEntityManagerError } from "../error/NoNeedToReleaseEntit
 import { MongoRepository } from "../repository/MongoRepository"
 import { TreeRepository } from "../repository/TreeRepository"
 import { Repository } from "../repository/Repository"
-import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import { PlainObjectToNewEntityTransformer } from "../query-builder/transformer/PlainObjectToNewEntityTransformer"
 import { PlainObjectToDatabaseEntityTransformer } from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer"
 import { TreeRepositoryNotSupportedError, TypeORMError } from "../error"
@@ -46,9 +45,17 @@ export class EntityManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by this entity manager.
+     * DataSource used by this entity manager.
      */
-    readonly connection: DataSource
+    readonly dataSource: DataSource
+
+    /**
+     * DataSource used by this entity manager.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Custom query runner to be used for operations in this entity manager.
@@ -81,8 +88,8 @@ export class EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource, queryRunner?: QueryRunner) {
-        this.connection = connection
+    constructor(dataSource: DataSource, queryRunner?: QueryRunner) {
+        this.dataSource = dataSource
         if (queryRunner) {
             this.queryRunner = queryRunner
             // dynamic: this.queryRunner = manager;
@@ -144,7 +151,7 @@ export class EntityManager {
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
         const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
+            this.queryRunner || this.dataSource.createQueryRunner()
 
         try {
             await queryRunner.startTransaction(isolation)
@@ -171,7 +178,7 @@ export class EntityManager {
      * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
     async query<T = any>(query: string, parameters?: any[]): Promise<T> {
-        return this.connection.query(query, parameters, this.queryRunner)
+        return this.dataSource.query(query, parameters, this.queryRunner)
     }
 
     /**
@@ -188,7 +195,7 @@ export class EntityManager {
         ...values: unknown[]
     ): Promise<T> {
         const { query, parameters } = buildSqlTag({
-            driver: this.connection.driver,
+            driver: this.dataSource.driver,
             strings: strings,
             expressions: values,
         })
@@ -222,13 +229,13 @@ export class EntityManager {
         queryRunner?: QueryRunner,
     ): SelectQueryBuilder<Entity> {
         if (alias) {
-            return this.connection.createQueryBuilder(
+            return this.dataSource.createQueryBuilder(
                 entityClass as EntityTarget<Entity>,
                 alias,
                 queryRunner || this.queryRunner,
             )
         } else {
-            return this.connection.createQueryBuilder(
+            return this.dataSource.createQueryBuilder(
                 (entityClass as QueryRunner | undefined) ||
                     queryRunner ||
                     this.queryRunner,
@@ -255,7 +262,7 @@ export class EntityManager {
         const target =
             arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor
         const entity = arguments.length === 2 ? maybeEntity : targetOrEntity
-        const metadata = this.connection.getMetadata(target)
+        const metadata = this.dataSource.getMetadata(target)
         return metadata.hasId(entity)
     }
 
@@ -278,7 +285,7 @@ export class EntityManager {
         const target =
             arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor
         const entity = arguments.length === 2 ? maybeEntity : targetOrEntity
-        const metadata = this.connection.getMetadata(target)
+        const metadata = this.dataSource.getMetadata(target)
         return metadata.getEntityIdMixedMap(entity)
     }
 
@@ -310,7 +317,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         plainObjectOrObjects?: EntityLike | EntityLike[],
     ): Entity | Entity[] {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
 
         if (!plainObjectOrObjects) return metadata.create(this.queryRunner)
 
@@ -341,7 +348,7 @@ export class EntityManager {
         ...entityLikes: DeepPartial<Entity>[]
     ): Entity {
         // todo: throw exception if entity manager is released
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         entityLikes.forEach((object) =>
             this.plainObjectToEntityTransformer.transform(
                 mergeIntoEntity,
@@ -364,9 +371,9 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         entityLike: DeepPartial<Entity>,
     ): Promise<Entity | undefined> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         const plainObjectToDatabaseEntityTransformer =
-            new PlainObjectToDatabaseEntityTransformer(this.connection.manager)
+            new PlainObjectToDatabaseEntityTransformer(this.dataSource.manager)
         const transformedEntity =
             await plainObjectToDatabaseEntityTransformer.transform(
                 entityLike,
@@ -468,7 +475,7 @@ export class EntityManager {
 
         // execute save operation
         return new EntityPersistExecutor(
-            this.connection,
+            this.dataSource,
             this.queryRunner,
             "save",
             target,
@@ -539,7 +546,7 @@ export class EntityManager {
 
         // execute save operation
         return new EntityPersistExecutor(
-            this.connection,
+            this.dataSource,
             this.queryRunner,
             "remove",
             target,
@@ -615,7 +622,7 @@ export class EntityManager {
 
         // execute soft-remove operation
         return new EntityPersistExecutor(
-            this.connection,
+            this.dataSource,
             this.queryRunner,
             "soft-remove",
             target,
@@ -691,7 +698,7 @@ export class EntityManager {
 
         // execute recover operation
         return new EntityPersistExecutor(
-            this.connection,
+            this.dataSource,
             this.queryRunner,
             "recover",
             target,
@@ -731,7 +738,7 @@ export class EntityManager {
             | QueryDeepPartialEntity<Entity>[],
         conflictPathsOrOptions: string[] | UpsertOptions<Entity>,
     ): Promise<InsertResult> {
-        const metadata = this.connection.getMetadata(target)
+        const metadata = this.dataSource.getMetadata(target)
 
         let options: UpsertOptions<Entity>
 
@@ -769,7 +776,7 @@ export class EntityManager {
         )
 
         const upsertType =
-            options.upsertType || this.connection.driver.supportedUpsertTypes[0]
+            options.upsertType || this.dataSource.driver.supportedUpsertTypes[0]
 
         const qb = this.createQueryBuilder()
             .insert()
@@ -844,7 +851,7 @@ export class EntityManager {
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
                 criteria as ObjectLiteral,
-                this.connection.options.invalidWhereValuesBehavior,
+                this.dataSource.options.invalidWhereValuesBehavior,
             )
             const qb = this.createQueryBuilder()
                 .update(target)
@@ -923,7 +930,7 @@ export class EntityManager {
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
                 criteria as ObjectLiteral,
-                this.connection.options.invalidWhereValuesBehavior,
+                this.dataSource.options.invalidWhereValuesBehavior,
             )
             return this.createQueryBuilder()
                 .delete()
@@ -987,7 +994,7 @@ export class EntityManager {
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
                 criteria as ObjectLiteral,
-                this.connection.options.invalidWhereValuesBehavior,
+                this.dataSource.options.invalidWhereValuesBehavior,
             )
             return this.createQueryBuilder()
                 .softDelete()
@@ -1037,7 +1044,7 @@ export class EntityManager {
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
                 criteria as ObjectLiteral,
-                this.connection.options.invalidWhereValuesBehavior,
+                this.dataSource.options.invalidWhereValuesBehavior,
             )
             return this.createQueryBuilder()
                 .restore()
@@ -1056,12 +1063,8 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<boolean> {
-        const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder(
-            entityClass,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
-        )
+        const metadata = this.dataSource.getMetadata(entityClass)
+        return this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions(options || {})
             .getExists()
     }
@@ -1075,7 +1078,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<boolean> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions({ where })
             .getExists()
@@ -1091,12 +1094,8 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<number> {
-        const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder(
-            entityClass,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
-        )
+        const metadata = this.dataSource.getMetadata(entityClass)
+        return this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions(options || {})
             .getCount()
     }
@@ -1111,7 +1110,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions({ where })
             .getCount()
@@ -1179,7 +1178,7 @@ export class EntityManager {
         columnName: PickKeysByType<Entity, number>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
     ): Promise<number | null> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         const column = metadata.columns.find(
             (item) => item.propertyPath === columnName,
         )
@@ -1196,9 +1195,9 @@ export class EntityManager {
 
         const result = await qb
             .select(
-                `${fnName}(${this.connection.driver.escape(
+                `${fnName}(${this.dataSource.driver.escape(
                     alias,
-                )}.${this.connection.driver.escape(column.databaseName)})`,
+                )}.${this.dataSource.driver.escape(column.databaseName)})`,
                 fnName,
             )
             .setOption("disable-global-order")
@@ -1215,11 +1214,10 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<Entity[]> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
+            metadata.name,
         )
             .setFindOptions(options || {})
             .getMany()
@@ -1234,7 +1232,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity[]> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             metadata.name,
@@ -1254,11 +1252,10 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<[Entity[], number]> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
+            metadata.name,
         )
             .setFindOptions(options || {})
             .getManyAndCount()
@@ -1275,7 +1272,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<[Entity[], number]> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             metadata.name,
@@ -1294,13 +1291,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
     ): Promise<Entity | null> {
-        const metadata = this.connection.getMetadata(entityClass)
-
-        // prepare alias for built query
-        let alias: string = metadata.name
-        if (options && options.join) {
-            alias = options.join.alias
-        }
+        const metadata = this.dataSource.getMetadata(entityClass)
 
         if (!options.where) {
             throw new Error(
@@ -1309,7 +1300,7 @@ export class EntityManager {
         }
 
         // create query builder and apply find options
-        return this.createQueryBuilder<Entity>(entityClass, alias)
+        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({
                 ...options,
                 take: 1,
@@ -1327,7 +1318,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity | null> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
 
         // create query builder and apply find options
         return this.createQueryBuilder<Entity>(entityClass, metadata.name)
@@ -1335,32 +1326,6 @@ export class EntityManager {
                 where,
                 take: 1,
             })
-            .getOne()
-    }
-
-    /**
-     * Finds first entity that matches given id.
-     * If entity was not found in the database - returns null.
-     * @param entityClass
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById<Entity extends ObjectLiteral>(
-        entityClass: EntityTarget<Entity>,
-        id: number | string | Date | ObjectId,
-    ): Promise<Entity | null> {
-        const metadata = this.connection.getMetadata(entityClass)
-
-        // create query builder and apply find options
-        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
-            .setFindOptions({
-                take: 1,
-            })
-            .whereInIds(metadata.ensureEntityIdMap(id))
             .getOne()
     }
 
@@ -1421,10 +1386,10 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         options?: { cascade?: boolean },
     ): Promise<void> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
 
         const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
+            this.queryRunner || this.dataSource.createQueryRunner()
         try {
             return await queryRunner.clearTable(metadata.tablePath, options)
         } finally {
@@ -1445,7 +1410,7 @@ export class EntityManager {
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         const column = metadata.findColumnWithPropertyPath(propertyPath)
         if (!column)
             throw new TypeORMError(
@@ -1461,7 +1426,7 @@ export class EntityManager {
             .reduceRight(
                 (value, key) => ({ [key]: value }) as any,
                 () =>
-                    this.connection.driver.escape(column.databaseName) +
+                    this.dataSource.driver.escape(column.databaseName) +
                     " + " +
                     value,
             )
@@ -1486,7 +1451,7 @@ export class EntityManager {
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         const column = metadata.findColumnWithPropertyPath(propertyPath)
         if (!column)
             throw new TypeORMError(
@@ -1502,7 +1467,7 @@ export class EntityManager {
             .reduceRight(
                 (value, key) => ({ [key]: value }) as any,
                 () =>
-                    this.connection.driver.escape(column.databaseName) +
+                    this.dataSource.driver.escape(column.databaseName) +
                     " - " +
                     value,
             )
@@ -1529,7 +1494,7 @@ export class EntityManager {
         if (repoFromMap) return repoFromMap
 
         // if repository was not found then create it, store its instance and return it
-        if (this.connection.driver.options.type === "mongodb") {
+        if (this.dataSource.driver.options.type === "mongodb") {
             const newRepository = new MongoRepository(
                 target,
                 this,
@@ -1559,8 +1524,8 @@ export class EntityManager {
         target: EntityTarget<Entity>,
     ): TreeRepository<Entity> {
         // tree tables aren't supported by some drivers (mongodb)
-        if (this.connection.driver.treeSupport === false)
-            throw new TreeRepositoryNotSupportedError(this.connection.driver)
+        if (this.dataSource.driver.treeSupport === false)
+            throw new TreeRepositoryNotSupportedError(this.dataSource.driver)
 
         // find already created repository instance and return it if found
         const repository = this.treeRepositories.find(
@@ -1581,7 +1546,7 @@ export class EntityManager {
     getMongoRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): MongoRepository<Entity> {
-        return this.connection.getMongoRepository<Entity>(target)
+        return this.dataSource.getMongoRepository<Entity>(target)
     }
 
     /**
