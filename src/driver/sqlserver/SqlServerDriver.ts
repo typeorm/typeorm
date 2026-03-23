@@ -16,13 +16,14 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
-import type { Driver, ReturningType } from "../Driver"
+import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
 import type { UpsertType } from "../types/UpsertType"
 import { MssqlParameter } from "./MssqlParameter"
 import type { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
@@ -38,9 +39,17 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * SQL Server library.
@@ -63,7 +72,7 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: SqlServerDataSourceOptions
 
@@ -253,9 +262,9 @@ export class SqlServerDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as SqlServerDataSourceOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as SqlServerDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
 
         // load mssql package
@@ -355,7 +364,7 @@ export class SqlServerDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -423,7 +432,7 @@ export class SqlServerDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return `"${columnName}"`
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
@@ -650,7 +659,10 @@ export class SqlServerDriver implements Driver {
             return "datetime"
         } else if (column.type === Boolean) {
             return "bit"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "binary"
         } else if (column.type === "uuid") {
             return "uniqueidentifier"
@@ -1060,10 +1072,10 @@ export class SqlServerDriver implements Driver {
      */
     parametrizeMap(tablePath: string, map: ObjectLiteral): ObjectLiteral {
         // find metadata for the given table
-        if (!this.connection.hasMetadata(tablePath))
+        if (!this.dataSource.hasMetadata(tablePath))
             // if no metadata found then we can't proceed because we don't have columns and their types
             return map
-        const metadata = this.connection.getMetadata(tablePath)
+        const metadata = this.dataSource.getMetadata(tablePath)
 
         return Object.keys(map).reduce((newMap, key) => {
             const value = map[key]
@@ -1205,7 +1217,7 @@ export class SqlServerDriver implements Driver {
         return new Promise<void>((ok, fail) => {
             const pool = new this.mssql.ConnectionPool(connectionOptions)
 
-            const { logger } = this.connection
+            const { logger } = this.dataSource
 
             const poolErrorHandler =
                 (options.pool && options.pool.errorHandler) ||

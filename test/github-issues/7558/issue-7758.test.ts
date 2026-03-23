@@ -100,7 +100,9 @@ describe("github issues > #7558 Child entities' wrong discriminator value when e
                 await entityManager.save(person)
 
                 // Retrieve it back from the DB.
-                const persons = await personRepo.find({ relations: ["pets"] })
+                const persons = await personRepo.find({
+                    relations: { pets: true },
+                })
                 expect(persons.length).to.equal(1)
 
                 // And check whether the pets are still the same.

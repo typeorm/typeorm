@@ -30,7 +30,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
       postgres:
-        image: ghcr.io/naorpeled/typeorm-postgres:pg17-postgis3-pgvectorv0.8.0
+        image: ghcr.io/typeorm/docker:postgres-17.9-postgis-3.6.2-pgvector-0.8.2
         ports:
           - "5432:5432"
         env:
@@ -44,7 +44,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
@@ -65,7 +65,7 @@ jobs:
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: mutation-testing
           path: ./reports/mutation/mutation.html
