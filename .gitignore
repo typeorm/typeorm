@@ -23,10 +23,9 @@ node_modules/
 *.iml
 
 ### Custom ###
+temp/
 /ormconfig.json
 ormlogs.log
-
-/test/github-issues/799/tmp/*
 
 # stryker temp files
 .stryker-tmp

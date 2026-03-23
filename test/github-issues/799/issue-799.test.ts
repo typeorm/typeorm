@@ -8,7 +8,7 @@ import { getTypeOrmConfig } from "../../utils/test-utils"
 describe("github issues > #799 sqlite: 'database' path should be created", () => {
     let dataSource: DataSource
 
-    const path = `${__dirname}/tmp/sqlitedb.db`
+    const path = `temp/issue-799/sqlitedb.db`
 
     before(() => rm(dirname(path), { recursive: true, force: true }))
     after(() => rm(dirname(path), { recursive: true, force: true }))

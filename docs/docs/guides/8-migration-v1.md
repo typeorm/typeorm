@@ -301,10 +301,10 @@ The `connection` property in the `Driver`, `QueryRunner`, `EntityManager`, `Quer
 
 The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
 
-`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
+`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed. It will now search for the `ormconfig` file in `process.cwd()` instead of the application path. You can use the `root` option to change the search location.
 
 ```typescript
-const reader = new ConnectionOptionsReader()
+const reader = new ConnectionOptionsReader({ root: process.cwd() })
 
 // when your ormconfig has a single data source
 const [options] = await reader.get()
@@ -408,6 +408,10 @@ For browser environments, `RandomGenerator.sha1` was fixed to the standard imple
 ### Glob patterns
 
 Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is mostly a drop-in replacement, but edge cases with brace expansion or platform-specific path separators may behave differently.
+
+### Logger
+
+`FileLogger` lets the underlying platform (e.g. NodeJS) handle the paths instead of determining the path relative to the app root. You can provide an absolute path (or a path relative to `process.cwd()`) if the app is not started from its root folder.
 
 ## Columns
 
