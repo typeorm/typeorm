@@ -37,9 +37,17 @@ export class SapDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * SAP HANA Client Pool instance.
@@ -66,7 +74,7 @@ export class SapDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: SapDataSourceOptions
 
@@ -236,9 +244,9 @@ export class SapDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as SapDataSourceOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as SapDataSourceOptions
         this.loadDependencies()
 
         this.database = DriverUtils.buildDriverOptions(this.options).database
@@ -296,7 +304,7 @@ export class SapDriver implements Driver {
         this.poolErrorHandler =
             this.options.pool?.poolErrorHandler ??
             ((error: Error) => {
-                this.connection.logger.log(
+                this.dataSource.logger.log(
                     "warn",
                     `SAP HANA pool raised an error: ${error}`,
                 )
@@ -380,7 +388,7 @@ export class SapDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -443,7 +451,7 @@ export class SapDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return `"${columnName}"`
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**

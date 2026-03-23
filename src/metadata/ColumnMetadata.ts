@@ -345,7 +345,6 @@ export class ColumnMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
-        connection: DataSource
         entityMetadata: EntityMetadata
         embeddedMetadata?: EmbeddedMetadata
         referencedColumn?: ColumnMetadata
@@ -356,7 +355,9 @@ export class ColumnMetadata {
         materializedPath?: boolean
     }) {
         this.entityMetadata = options.entityMetadata
-        this.embeddedMetadata = options.embeddedMetadata!
+        const driver = this.entityMetadata.dataSource.driver
+
+        this.embeddedMetadata = options.embeddedMetadata
         this.referencedColumn = options.referencedColumn
         if (options.args.target) this.target = options.args.target
         if (options.args.propertyName)
@@ -475,58 +476,46 @@ export class ColumnMetadata {
             this.srid = options.args.options.srid
         if ((options.args.options as VirtualColumnOptions).query)
             this.query = (options.args.options as VirtualColumnOptions).query
-        if (this.isTreeLevel)
-            this.type = options.connection.driver.mappedDataTypes.treeLevel
+        if (this.isTreeLevel) this.type = driver.mappedDataTypes.treeLevel
         if (this.isCreateDate) {
-            if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.createDate
+            if (!this.type) this.type = driver.mappedDataTypes.createDate
             if (!this.default)
-                this.default = () =>
-                    options.connection.driver.mappedDataTypes.createDateDefault
+                this.default = () => driver.mappedDataTypes.createDateDefault
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
                 options.args.options.precision === undefined &&
-                options.connection.driver.mappedDataTypes.createDatePrecision
+                driver.mappedDataTypes.createDatePrecision
             )
-                this.precision =
-                    options.connection.driver.mappedDataTypes.createDatePrecision
+                this.precision = driver.mappedDataTypes.createDatePrecision
         }
         if (this.isUpdateDate) {
-            if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.updateDate
+            if (!this.type) this.type = driver.mappedDataTypes.updateDate
             if (!this.default)
-                this.default = () =>
-                    options.connection.driver.mappedDataTypes.updateDateDefault
+                this.default = () => driver.mappedDataTypes.updateDateDefault
             if (!this.onUpdate)
-                this.onUpdate =
-                    options.connection.driver.mappedDataTypes.updateDateDefault
+                this.onUpdate = driver.mappedDataTypes.updateDateDefault
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
                 options.args.options.precision === undefined &&
-                options.connection.driver.mappedDataTypes.updateDatePrecision
+                driver.mappedDataTypes.updateDatePrecision
             )
-                this.precision =
-                    options.connection.driver.mappedDataTypes.updateDatePrecision
+                this.precision = driver.mappedDataTypes.updateDatePrecision
         }
         if (this.isDeleteDate) {
-            if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.deleteDate
+            if (!this.type) this.type = driver.mappedDataTypes.deleteDate
             if (!this.isNullable)
-                this.isNullable =
-                    options.connection.driver.mappedDataTypes.deleteDateNullable
+                this.isNullable = driver.mappedDataTypes.deleteDateNullable
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
                 options.args.options.precision === undefined &&
-                options.connection.driver.mappedDataTypes.deleteDatePrecision
+                driver.mappedDataTypes.deleteDatePrecision
             )
-                this.precision =
-                    options.connection.driver.mappedDataTypes.deleteDatePrecision
+                this.precision = driver.mappedDataTypes.deleteDatePrecision
         }
-        if (this.isVersion)
-            this.type = options.connection.driver.mappedDataTypes.version
+        if (this.isVersion) this.type = driver.mappedDataTypes.version
         if (options.closureType) this.closureType = options.closureType
         if (options.nestedSetLeft) this.isNestedSetLeft = options.nestedSetLeft
         if (options.nestedSetRight)

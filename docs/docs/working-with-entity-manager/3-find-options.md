@@ -57,6 +57,10 @@ LEFT JOIN "videos" ON "videos"."id" = "user"."videoId"
 LEFT JOIN "video_attributes" ON "video_attributes"."id" = "videos"."video_attributesId"
 ```
 
+- `relationLoadStrategy` - controls how relations are loaded: `"join"` (default) uses SQL JOINs, `"query"` uses separate queries. See [Eager and Lazy Relations](../relations/5-eager-and-lazy-relations.md#relation-load-strategy) for details.
+
+- `loadEagerRelations` - controls whether eager relations (marked with `eager: true`) are automatically loaded. Defaults to `true`. See [Eager and Lazy Relations](../relations/5-eager-and-lazy-relations.md#relation-load-strategy) for details.
+
 - `where` - simple conditions by which entity should be queried.
 
 ```typescript

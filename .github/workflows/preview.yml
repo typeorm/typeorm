@@ -1,0 +1,30 @@
+name: PR preview release
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/preview.yml
+      - src/**
+      - gulpfile.ts
+      - package.json
+      - tsconfig.json
+      - tsconfig.browser.json
+      - tsconfig.node.json
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Release preview build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-node
+
+      - run: pnpm run package
+      - run: pnpm run publish:preview
