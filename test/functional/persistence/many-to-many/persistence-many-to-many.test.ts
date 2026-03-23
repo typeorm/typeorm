@@ -58,11 +58,9 @@ describe("persistence > many-to-many", function () {
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
@@ -110,11 +108,9 @@ describe("persistence > many-to-many", function () {
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
@@ -134,11 +130,9 @@ describe("persistence > many-to-many", function () {
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
@@ -187,11 +181,9 @@ describe("persistence > many-to-many", function () {
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
@@ -211,11 +203,9 @@ describe("persistence > many-to-many", function () {
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
@@ -263,11 +253,9 @@ describe("persistence > many-to-many", function () {
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
@@ -287,11 +275,9 @@ describe("persistence > many-to-many", function () {
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })

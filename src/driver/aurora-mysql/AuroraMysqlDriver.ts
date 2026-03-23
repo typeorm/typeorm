@@ -15,7 +15,7 @@ import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import type { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
+import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
@@ -33,7 +33,18 @@ export class AuroraMysqlDriver implements Driver {
     // Public Properties
     // -------------------------------------------------------------------------
 
-    connection: DataSource
+    /**
+     * DataSource used by the driver.
+     */
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Aurora Data API underlying library.
@@ -58,7 +69,7 @@ export class AuroraMysqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: AuroraMysqlDataSourceOptions
 
@@ -180,18 +191,6 @@ export class AuroraMysqlDriver implements Driver {
     ]
 
     /**
-     * Gets list of column data types that support unsigned by a driver.
-     */
-    unsignedColumnTypes: UnsignedColumnType[] = [
-        "tinyint",
-        "smallint",
-        "mediumint",
-        "int",
-        "integer",
-        "bigint",
-    ]
-
-    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = [
@@ -291,9 +290,9 @@ export class AuroraMysqlDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as AuroraMysqlDataSourceOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as AuroraMysqlDataSourceOptions
 
         // load mysql package
         this.loadDependencies()
@@ -304,7 +303,7 @@ export class AuroraMysqlDriver implements Driver {
             this.options.resourceArn,
             this.options.database,
             (query: string, parameters?: any[]) =>
-                this.connection.logger.logQuery(query, parameters),
+                this.dataSource.logger.logQuery(query, parameters),
             this.options.serviceConfigOptions,
             this.options.formatOptions,
         )
@@ -356,7 +355,7 @@ export class AuroraMysqlDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -372,7 +371,7 @@ export class AuroraMysqlDriver implements Driver {
                 this.options.resourceArn,
                 this.options.database,
                 (query: string, parameters?: any[]) =>
-                    this.connection.logger.logQuery(query, parameters),
+                    this.dataSource.logger.logQuery(query, parameters),
                 this.options.serviceConfigOptions,
                 this.options.formatOptions,
             ),
@@ -430,7 +429,7 @@ export class AuroraMysqlDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return "`" + columnName + "`"
+        return "`" + columnName.replaceAll("`", "``") + "`"
     }
 
     /**
@@ -1059,7 +1058,7 @@ export class AuroraMysqlDriver implements Driver {
      * @param connection
      */
     private prepareDbConnection(connection: any): any {
-        const { logger } = this.connection
+        const { logger } = this.dataSource
         /**
          * Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
          * cause the hosting app to crash.

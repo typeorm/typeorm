@@ -41,9 +41,17 @@ export abstract class AbstractSqliteDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Sqlite has a single QueryRunner because it works on a single database connection.
@@ -60,7 +68,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: BaseDataSourceOptions
 
@@ -244,9 +252,9 @@ export abstract class AbstractSqliteDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as BaseDataSourceOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as BaseDataSourceOptions
 
         this.database = DriverUtils.buildDriverOptions(this.options).database
     }
@@ -310,7 +318,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -516,7 +524,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return '"' + columnName + '"'
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
