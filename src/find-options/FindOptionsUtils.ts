@@ -229,7 +229,7 @@ export class FindOptionsUtils {
         matchedBaseRelations.forEach((relation) => {
             // generate a relation alias
             const relationAlias: string = DriverUtils.buildAlias(
-                qb.connection.driver,
+                qb.dataSource.driver,
                 { joiner: "__" },
                 alias,
                 relation.propertyPath,
@@ -319,7 +319,7 @@ export class FindOptionsUtils {
         metadata.eagerRelations.forEach((relation) => {
             // generate a relation alias
             let relationAlias: string = DriverUtils.buildAlias(
-                qb.connection.driver,
+                qb.dataSource.driver,
                 { joiner: "__" },
                 alias,
                 relation.propertyName,
