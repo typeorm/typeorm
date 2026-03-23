@@ -1,4 +1,3 @@
-import "reflect-metadata"
 import { expect } from "chai"
 import type { DataSource } from "../../../src"
 import {
@@ -17,12 +16,17 @@ describe("github issues > #7907 add support for mongodb driver v5", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    afterAll(() => closeTestingConnections(dataSources))
+    afterAll(async () => {
+        // wait for all clients to get closed
+        // this is a workaround for the error: MongoClientClosedError: Operation interrupted because client was closed
+        await new Promise((resolve) => setTimeout(resolve, 1))
+        await closeTestingConnections(dataSources)
+    })
 
     it("should find the Post without throw error: Cannot read property 'prototype' of undefined", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postMongoRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postMongoRepository = dataSource.getMongoRepository(Post)
 
                 // save a post
                 const post = new Post()
