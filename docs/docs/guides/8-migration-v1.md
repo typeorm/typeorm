@@ -295,7 +295,7 @@ Note: code that reads `dataSource.name` will now receive `undefined` instead of 
 
 ### `.connection` property in various classes is now `.dataSource`
 
-The `connection` property in the `Driver`, `QueryRunner`, `EntityManager` and `QueryBuilder` classes was renamed to `dataSource`. For `EntityManager`, this change was announced in 0.3, but it was not actually implemented. To ease the transition, a deprecated getter was added that returns the same value as `dataSource`.
+The `connection` property in the `Driver`, `QueryRunner`, `EntityManager`, `QueryBuilder` and `*Event` classes was renamed to `dataSource`. For `EntityManager`, this change was announced in 0.3, but it was not actually implemented. To ease the transition, a deprecated getter was added that returns the same value as `dataSource`.
 
 ### Miscellaneous
 

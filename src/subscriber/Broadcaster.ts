@@ -148,6 +148,7 @@ export class Broadcaster {
                     subscriber.beforeInsert
                 ) {
                     const executionResult = subscriber.beforeInsert({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -203,6 +204,7 @@ export class Broadcaster {
                     subscriber.beforeUpdate
                 ) {
                     const executionResult = subscriber.beforeUpdate({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -258,6 +260,7 @@ export class Broadcaster {
                     subscriber.beforeRemove
                 ) {
                     const executionResult = subscriber.beforeRemove({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -314,6 +317,7 @@ export class Broadcaster {
                     subscriber.beforeSoftRemove
                 ) {
                     const executionResult = subscriber.beforeSoftRemove({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -370,6 +374,7 @@ export class Broadcaster {
                     subscriber.beforeRecover
                 ) {
                     const executionResult = subscriber.beforeRecover({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -424,6 +429,7 @@ export class Broadcaster {
                     subscriber.afterInsert
                 ) {
                     const executionResult = subscriber.afterInsert({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -454,6 +460,7 @@ export class Broadcaster {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeQuery) {
                     const executionResult = subscriber.beforeQuery({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -491,6 +498,7 @@ export class Broadcaster {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterQuery) {
                     const executionResult = subscriber.afterQuery({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -518,6 +526,7 @@ export class Broadcaster {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionStart) {
                     const executionResult = subscriber.beforeTransactionStart({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -539,6 +548,7 @@ export class Broadcaster {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionStart) {
                     const executionResult = subscriber.afterTransactionStart({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -560,6 +570,7 @@ export class Broadcaster {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionCommit) {
                     const executionResult = subscriber.beforeTransactionCommit({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -581,6 +592,7 @@ export class Broadcaster {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionCommit) {
                     const executionResult = subscriber.afterTransactionCommit({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -603,6 +615,7 @@ export class Broadcaster {
                 if (subscriber.beforeTransactionRollback) {
                     const executionResult =
                         subscriber.beforeTransactionRollback({
+                            dataSource: this.queryRunner.dataSource,
                             connection: this.queryRunner.dataSource,
                             queryRunner: this.queryRunner,
                             manager: this.queryRunner.manager,
@@ -625,6 +638,7 @@ export class Broadcaster {
                 if (subscriber.afterTransactionRollback) {
                     const executionResult = subscriber.afterTransactionRollback(
                         {
+                            dataSource: this.queryRunner.dataSource,
                             connection: this.queryRunner.dataSource,
                             queryRunner: this.queryRunner,
                             manager: this.queryRunner.manager,
@@ -678,6 +692,7 @@ export class Broadcaster {
                     subscriber.afterUpdate
                 ) {
                     const executionResult = subscriber.afterUpdate({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -733,6 +748,7 @@ export class Broadcaster {
                     subscriber.afterRemove
                 ) {
                     const executionResult = subscriber.afterRemove({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -789,6 +805,7 @@ export class Broadcaster {
                     subscriber.afterSoftRemove
                 ) {
                     const executionResult = subscriber.afterSoftRemove({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -845,6 +862,7 @@ export class Broadcaster {
                     subscriber.afterRecover
                 ) {
                     const executionResult = subscriber.afterRecover({
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -935,11 +953,12 @@ export class Broadcaster {
             fittingSubscribers.forEach((subscriber) => {
                 nonPromiseEntities.forEach((entity) => {
                     const executionResult = subscriber.afterLoad!(entity, {
-                        entity,
-                        metadata,
+                        dataSource: this.queryRunner.dataSource,
                         connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
+                        entity,
+                        metadata,
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
