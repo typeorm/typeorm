@@ -3635,7 +3635,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     // chains (e.g. A→B→C→A). Each branch maintains its
                     // own visited set so parallel branches don't interfere.
                     if (relation.isEager) {
-                        const targetEntity = relation.inverseEntityMetadata.name
+                        const targetEntity =
+                            relation.inverseEntityMetadata.tableName
                         if (this.eagerLoadChain.has(targetEntity)) return
                     }
 
@@ -3654,7 +3655,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             this.eagerLoadChain,
                         )
                         queryBuilder.eagerLoadChain.add(
-                            relation.entityMetadata.name,
+                            relation.entityMetadata.tableName,
                         )
                     }
 
