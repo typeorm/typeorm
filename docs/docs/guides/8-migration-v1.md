@@ -287,15 +287,19 @@ The following renames apply throughout:
 | `connection.close()`             | `dataSource.destroy()`     |
 | `connection.isConnected`         | `dataSource.isInitialized` |
 
-### `ConnectionManager`
-
-The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
-
 ### `name` property removed
 
 The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
 
 Note: code that reads `dataSource.name` will now receive `undefined` instead of `"default"`. If you use this value in logging or multi-tenancy logic, update accordingly.
+
+### `.connection` property in various classes is now `.dataSource`
+
+The `connection` property in the `Driver`, `QueryRunner`, `EntityManager`, `QueryBuilder`, `EntityMetadata` and `*Event` classes was renamed to `dataSource`. For `EntityManager`, this change was announced in 0.3, but it was not actually implemented. To ease the transition, a deprecated getter was added that returns the same value as `dataSource`.
+
+### Miscellaneous
+
+The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
 
 `ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
 
@@ -870,7 +874,7 @@ TypeORM no longer has built-in IoC container support. The `typeorm-typedi-extens
 
 ### Subscribers and migrations with dependencies
 
-TypeORM always instantiates subscribers and migrations internally using a zero-argument constructor, so you cannot pass pre-built instances. If your migrations need access to services, use the `DataSource` (available via `queryRunner.connection`) inside the migration itself:
+TypeORM always instantiates subscribers and migrations internally using a zero-argument constructor, so you cannot pass pre-built instances. If your migrations need access to services, use the `DataSource` (available via `queryRunner.dataSource`) inside the migration itself:
 
 ```typescript
 // Before
@@ -881,7 +885,7 @@ useContainer(Container)
 // After — access dependencies via the DataSource inside the migration
 export class MyMigration1234 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
-        const repo = queryRunner.connection.getRepository(User)
+        const repo = queryRunner.dataSource.getRepository(User)
         // ...
     }
 }
