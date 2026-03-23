@@ -1,4 +1,8 @@
-import { Entity, ManyToOne, PrimaryGeneratedColumn } from "../../../../../src"
+import {
+    Entity,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+} from "../../../../../../src"
 
 @Entity()
 export class Category {
