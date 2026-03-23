@@ -4,7 +4,7 @@ import {
     EventSubscriber,
     InsertEvent,
     UpdateEvent,
-} from "../../../../src"
+} from "../../../../../src"
 
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface<Post> {
