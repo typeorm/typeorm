@@ -1129,19 +1129,27 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType ||
-            oldColumn.asExpression !== newColumn.asExpression
+            oldColumn.asExpression !== newColumn.asExpression ||
+            // Can't MODIFY an identity column to a different type; requires recreation
+            (oldColumn.type !== newColumn.type && oldColumn.isGenerated)
         ) {
-            // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
+            // Oracle does not support changing of IDENTITY column or computed columns
+            // without full recreation; identity + type change also requires recreation
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Cover both type and length changes: non-identity type changes and any
+            // length changes within the same type can be handled non-destructively with
+            // ALTER TABLE … MODIFY (identity-column type changes are excluded by the
+            // DROP+ADD branch above).
+            const typeOrLengthChanged =
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+
             if (newColumn.name !== oldColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1354,7 +1362,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (typeOrLengthChanged || this.isColumnChanged(oldColumn, newColumn, true)) {
                 let defaultUp: string = ""
                 let defaultDown: string = ""
                 let nullableUp: string = ""
@@ -1412,6 +1420,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )} ${defaultDown} ${nullableDown}`,
                     ),
                 )
+
+                // Update clonedTable so replaceCachedTable() propagates the
+                // correct column definition (oldColumn.name may have been
+                // updated to newColumn.name by the rename block above).
+                const clonedColIdx = clonedTable.columns.findIndex(
+                    (c) => c.name === newColumn.name,
+                )
+                if (clonedColIdx !== -1)
+                    clonedTable.columns[clonedColIdx] = newColumn.clone()
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {

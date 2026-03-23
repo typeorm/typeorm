@@ -879,10 +879,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         if (
+            // Cloud Spanner does not support RENAME COLUMN; name changes require recreation
             oldColumn.name !== newColumn.name ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -893,10 +891,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
+            const spannerTypeOrSizeChanged =
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                oldColumn.isArray !== newColumn.isArray ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
-            ) {
+            if (spannerTypeOrSizeChanged) {
+                // Use ALTER COLUMN ... TYPE to preserve data instead of DROP + ADD.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -911,6 +913,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+
+                // Update clonedTable so replaceCachedTable() propagates the
+                // correct column definition.
+                const clonedColIdx = clonedTable.columns.findIndex(
+                    (c) => c.name === oldColumn.name,
+                )
+                if (clonedColIdx !== -1)
+                    clonedTable.columns[clonedColIdx] = newColumn.clone()
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {

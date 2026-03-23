@@ -1110,8 +1110,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
+            // A change in base type requires column recreation (DROP + ADD) so that
+            // MySQL can properly re-validate data and constraints for the new type.
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1125,14 +1126,61 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // At this point oldColumn.type === newColumn.type (type change was handled above).
+            const lengthOnlyChanged =
+                oldColumn.length !== newColumn.length
+
+            if (lengthOnlyChanged && newColumn.name === oldColumn.name) {
+                // Only the length changed within the same base type (e.g. varchar(50)
+                // → varchar(200)).  Use CHANGE to preserve existing row data instead
+                // of the destructive DROP + ADD path.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            newColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            oldColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+
+                // Update clonedTable so replaceCachedTable() propagates the
+                // correct column definition.  Preserve oldColumn.name so that
+                // the rename block below can still locate this entry; it will
+                // update .name to newColumn.name when it runs.
+                const clonedColIdx = clonedTable.columns.findIndex(
+                    (c) => c.name === oldColumn.name,
+                )
+                if (clonedColIdx !== -1) {
+                    const updatedCol = newColumn.clone()
+                    updatedCol.name = oldColumn.name
+                    clonedTable.columns[clonedColIdx] = updatedCol
+                }
+            }
+
             if (newColumn.name !== oldColumn.name) {
-                // We don't change any column properties, just rename it.
+                // Column rename, possibly combined with a type/length change.
+                // A single CHANGE statement handles both atomically, avoiding the
+                // revert bug that occurs when two separate statements are used.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
                             oldColumn.name
                         }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
-                            oldColumn,
+                            newColumn,
                             true,
                             true,
                         )}`,
@@ -1292,7 +1340,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
+            if (!lengthOnlyChanged && this.isColumnChanged(oldColumn, newColumn, true, true)) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${

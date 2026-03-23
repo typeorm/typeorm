@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
-import { TableColumn } from "../../../src"
+import { Table, TableColumn } from "../../../src"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
@@ -266,6 +266,156 @@ describe("query runner > change column", () => {
                 generatedColumn!.asExpression!.should.be.equals(
                     "text || tag || name",
                 )
+            }),
+        ))
+
+    it("should preserve data when changing column type or length (issue #3357)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Spanner does not support column type changes in place
+                if (dataSource.driver.options.type === "spanner") return
+                // MSSQL cannot ADD a NOT NULL column to a non-empty table.
+                if (dataSource.driver.options.type === "mssql") return
+                // SAP HANA uses NVARCHAR for length-only changes via ALTER TABLE … ALTER (…);
+                // the "varchar" column type is an alias for nvarchar there.
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                // Create a fresh test table with a varchar column
+                await queryRunner.createTable(
+                    new Table({
+                        name: "issue_3357",
+                        columns: [
+                            new TableColumn({
+                                name: "id",
+                                type: "int",
+                                isPrimary: true,
+                            }),
+                            new TableColumn({
+                                name: "description",
+                                type: "varchar",
+                                length: "50",
+                                isNullable: false,
+                            }),
+                        ],
+                    }),
+                    true,
+                )
+
+                // Insert a row to verify data is preserved after type change.
+                // Use unquoted identifiers so the query works across all drivers.
+                await queryRunner.query(
+                    `INSERT INTO issue_3357 (id, description) VALUES (1, 'hello')`,
+                )
+
+                let table = await queryRunner.getTable("issue_3357")
+                const originalColumn = table!.findColumnByName("description")!
+
+                // Change the column length: varchar(50) → varchar(100)
+                const widenedColumn = originalColumn.clone()
+                widenedColumn.length = "100"
+                await queryRunner.changeColumn(
+                    table!,
+                    originalColumn,
+                    widenedColumn,
+                )
+
+                // Schema should reflect the new length
+                table = await queryRunner.getTable("issue_3357")
+                if (!DriverUtils.isSQLiteFamily(dataSource.driver)) {
+                    table!
+                        .findColumnByName("description")!
+                        .length!.should.be.equal("100")
+                }
+
+                // Data must be preserved — the ALTER must not have dropped the column
+                const rows = await queryRunner.query(
+                    `SELECT * FROM issue_3357 WHERE id = 1`,
+                )
+                rows.length.should.be.equal(1)
+                // Oracle returns column names in uppercase; normalise for comparison.
+                const descVal =
+                    rows[0]["description"] ?? rows[0]["DESCRIPTION"]
+                descVal.should.be.equal("hello")
+
+                await queryRunner.dropTable("issue_3357")
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should preserve data when renaming a column and changing its type simultaneously (issue #3357)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Only MySQL-family supports atomic rename+type in one CHANGE statement;
+                // other drivers handle them as sequential safe operations.
+                // Spanner cannot rename columns without recreation.
+                if (dataSource.driver.options.type === "spanner") return
+                // MSSQL cannot ADD a NOT NULL column to a non-empty table.
+                if (dataSource.driver.options.type === "mssql") return
+                // SAP HANA handles rename + length change as two sequential operations:
+                // RENAME COLUMN then ALTER TABLE … ALTER (…) — both are data-safe.
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                await queryRunner.createTable(
+                    new Table({
+                        name: "issue_3357_rename",
+                        columns: [
+                            new TableColumn({
+                                name: "id",
+                                type: "int",
+                                isPrimary: true,
+                            }),
+                            new TableColumn({
+                                name: "old_col",
+                                type: "varchar",
+                                length: "50",
+                                isNullable: false,
+                            }),
+                        ],
+                    }),
+                    true,
+                )
+
+                // Use unquoted identifiers so the query works across all drivers.
+                await queryRunner.query(
+                    `INSERT INTO issue_3357_rename (id, old_col) VALUES (1, 'world')`,
+                )
+
+                let table = await queryRunner.getTable("issue_3357_rename")
+                const originalColumn = table!.findColumnByName("old_col")!
+
+                // Rename AND widen in one operation
+                const renamedColumn = originalColumn.clone()
+                renamedColumn.name = "new_col"
+                renamedColumn.length = "200"
+                await queryRunner.changeColumn(
+                    table!,
+                    originalColumn,
+                    renamedColumn,
+                )
+
+                table = await queryRunner.getTable("issue_3357_rename")
+                expect(table!.findColumnByName("old_col")).to.be.undefined
+                expect(table!.findColumnByName("new_col")).to.not.be.undefined
+                if (!DriverUtils.isSQLiteFamily(dataSource.driver)) {
+                    table!
+                        .findColumnByName("new_col")!
+                        .length!.should.be.equal("200")
+                }
+
+                // Data must be preserved
+                const rows = await queryRunner.query(
+                    `SELECT * FROM issue_3357_rename WHERE id = 1`,
+                )
+                rows.length.should.be.equal(1)
+                // Oracle returns column names in uppercase; normalise for comparison.
+                const newColVal =
+                    rows[0]["new_col"] ?? rows[0]["NEW_COL"]
+                newColVal.should.be.equal("world")
+
+                await queryRunner.dropTable("issue_3357_rename")
+                await queryRunner.release()
             }),
         ))
 })

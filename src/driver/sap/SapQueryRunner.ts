@@ -1235,14 +1235,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const typeChanged = oldColumn.type !== newColumn.type
+        const lengthOnlyChanged =
+            !typeChanged && oldColumn.length !== newColumn.length
+
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
+            typeChanged
         ) {
-            // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
+            // SAP HANA does not support changing of IDENTITY column, so we must drop column and recreate it again.
+            // Also, we recreate column if column type changed.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1432,7 +1435,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (
+                this.isColumnChanged(oldColumn, newColumn, true) ||
+                lengthOnlyChanged
+            ) {
+                // Only the length changed within the same base type (e.g.
+                // nvarchar(50) → nvarchar(200)).  Use ALTER TABLE … ALTER (…)
+                // to preserve existing row data instead of DROP + ADD.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1461,6 +1470,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )})`,
                     ),
                 )
+
+                // Update clonedTable so replaceCachedTable() propagates the
+                // correct column definition.  Preserve the current name so
+                // the rename block (if any, already executed above) continues
+                // to work correctly.
+                const clonedColIdx = clonedTable.columns.findIndex(
+                    (c) => c.name === oldColumn.name,
+                )
+                if (clonedColIdx !== -1) {
+                    const updatedCol = newColumn.clone()
+                    updatedCol.name = oldColumn.name
+                    clonedTable.columns[clonedColIdx] = updatedCol
+                }
             } else if (oldColumn.comment !== newColumn.comment) {
                 upQueries.push(
                     new Query(

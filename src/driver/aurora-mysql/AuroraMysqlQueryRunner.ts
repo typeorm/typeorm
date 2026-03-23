@@ -851,8 +851,6 @@ export class AuroraMysqlQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType
         ) {
             await this.dropColumn(table, oldColumn)
@@ -861,14 +859,58 @@ export class AuroraMysqlQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
+            const typeOrLengthChanged =
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+
+            if (typeOrLengthChanged && newColumn.name === oldColumn.name) {
+                // Type or length changed without rename: use CHANGE to preserve data.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            newColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            oldColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+
+                // Update clonedTable so replaceCachedTable() propagates the
+                // correct column definition.  Preserve oldColumn.name so that
+                // the rename block below can still locate this entry; it will
+                // update .name to newColumn.name when it runs.
+                const clonedColIdx = clonedTable.columns.findIndex(
+                    (c) => c.name === oldColumn.name,
+                )
+                if (clonedColIdx !== -1) {
+                    const updatedCol = newColumn.clone()
+                    updatedCol.name = oldColumn.name
+                    clonedTable.columns[clonedColIdx] = updatedCol
+                }
+            }
+
             if (newColumn.name !== oldColumn.name) {
-                // We don't change any column properties, just rename it.
+                // Column rename, possibly combined with a type/length change.
+                // A single CHANGE handles both atomically.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
                             oldColumn.name
                         }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
-                            oldColumn,
+                            newColumn,
                             true,
                             true,
                         )}`,
@@ -991,17 +1033,19 @@ export class AuroraMysqlQueryRunner
                         foreignKey.name = newForeignKeyName
                     })
 
-                // rename old column in the Table object
+                // rename old column in the Table object, propagating all
+                // column changes (name, type, length) so the cache stays
+                // accurate even when rename and type/length change together.
                 const oldTableColumn = clonedTable.columns.find(
                     (column) => column.name === oldColumn.name,
                 )
                 clonedTable.columns[
                     clonedTable.columns.indexOf(oldTableColumn!)
-                ].name = newColumn.name
+                ] = newColumn.clone()
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (!(typeOrLengthChanged && newColumn.name === oldColumn.name) && this.isColumnChanged(oldColumn, newColumn, true)) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${

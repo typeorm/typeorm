@@ -1377,20 +1377,68 @@ export class CockroachQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Enum type changes must use DROP + ADD because createFullType() returns
+        // the generic keyword "enum" rather than the actual type name (e.g.
+        // "table_col_enum"), so ALTER COLUMN ... TYPE would fail.
+        const typeChanged = oldColumn.type !== newColumn.type
+        const isArrayChanged = newColumn.isArray !== oldColumn.isArray
+        const lengthOnlyChanged =
+            !typeChanged &&
+            !isArrayChanged &&
+            oldColumn.length !== newColumn.length
+        const typeOrLengthChanged =
+            typeChanged || oldColumn.length !== newColumn.length || isArrayChanged
+        const isEnumChange =
+            oldColumn.type === "enum" ||
+            oldColumn.type === "simple-enum" ||
+            newColumn.type === "enum" ||
+            newColumn.type === "simple-enum"
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
-            oldColumn.asExpression !== newColumn.asExpression
+            oldColumn.asExpression !== newColumn.asExpression ||
+            (typeOrLengthChanged && (isEnumChange || typeChanged || isArrayChanged))
         ) {
-            // To avoid data conversion, we just recreate column
+            // Generated/computed columns, enum changes, actual type changes, and array
+            // dimension changes all require full DROP + ADD recreation.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (lengthOnlyChanged) {
+                // Only the length changed within the same base type (e.g. varchar(50)
+                // → varchar(200)).  Use ALTER COLUMN ... TYPE to preserve row data.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+
+                // Update clonedTable so replaceCachedTable() propagates the
+                // correct column definition.  Preserve oldColumn.name so that
+                // the rename block below can still locate this entry; it will
+                // update .name to newColumn.name when it runs.
+                const clonedColIdx = clonedTable.columns.findIndex(
+                    (c) => c.name === oldColumn.name,
+                )
+                if (clonedColIdx !== -1) {
+                    const updatedCol = newColumn.clone()
+                    updatedCol.name = oldColumn.name
+                    clonedTable.columns[clonedColIdx] = updatedCol
+                }
+            }
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(

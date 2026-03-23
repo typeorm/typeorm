@@ -115,3 +115,18 @@ export class PostRefactoringTIMESTAMP {
 See, you don't need to write the queries on your own.
 
 The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
+
+## Column type and length changes
+
+When TypeORM detects that only a column's length changed within the same base type (e.g. `varchar(50)` → `varchar(200)`), it generates a non-destructive in-place `ALTER` statement instead of a destructive `DROP COLUMN` + `ADD COLUMN` pair. This preserves all existing row data during the migration.
+
+For example, after changing `length: "50"` to `length: "200"` on a `varchar` column:
+
+| Driver | Generated SQL |
+|--------|---------------|
+| MySQL / Aurora MySQL | `ALTER TABLE \`post\` CHANGE \`description\` \`description\` varchar(200) NOT NULL` |
+| PostgreSQL / CockroachDB | `ALTER TABLE "post" ALTER COLUMN "description" TYPE varchar(200)` |
+| Spanner | `ALTER TABLE \`post\` ALTER COLUMN "description" TYPE string(200)` |
+| Oracle | `ALTER TABLE "post" MODIFY "description" varchar2(200)` |
+
+Changes that require a full column recreation (e.g. switching between incompatible types, enum changes, or identity column type changes) still use the `DROP COLUMN` + `ADD COLUMN` approach.
