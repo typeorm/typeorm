@@ -262,23 +262,6 @@ export class MongoEntityManager extends EntityManager {
     }
 
     /**
-     * Finds entity that matches given id.
-     * @param entityClassOrName
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById<Entity>(
-        entityClassOrName: EntityTarget<Entity>,
-        id: string | number | Date | ObjectId,
-    ): Promise<Entity | null> {
-        return this.executeFindOne(entityClassOrName, id)
-    }
-
-    /**
      * Inserts a given entity into the database.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.

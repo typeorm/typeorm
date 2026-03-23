@@ -62,7 +62,7 @@ dataSource.initialize().then(
             .save(post)
             .then((post) => {
                 console.log("Post has been saved")
-                return postRepository.findOneById(post.id)
+                return postRepository.findOneBy({ id: post.id })
             })
             .then((loadedPost) => {
                 console.log("post is loaded: ", loadedPost)
@@ -70,7 +70,7 @@ dataSource.initialize().then(
             })
             .then((blog) => {
                 console.log("Blog has been saved")
-                return blogRepository.findOneById(blog.id)
+                return blogRepository.findOneBy({ id: blog.id })
             })
             .then((loadedBlog) => {
                 console.log("blog is loaded: ", loadedBlog)

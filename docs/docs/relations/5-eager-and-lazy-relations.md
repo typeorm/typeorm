@@ -66,6 +66,8 @@ If you use `QueryBuilder` eager relations are disabled and have to use `leftJoin
 Eager relations can only be used on one side of the relationship,
 using `eager: true` on both sides of relationship is disallowed.
 
+By default, eager relations are loaded using `LEFT JOIN`. If the relation is also marked `nullable: false` (and it owns the join column, i.e. `ManyToOne` or owning `OneToOne`), TypeORM uses `INNER JOIN` instead, which can produce more efficient query plans.
+
 ## Lazy relations
 
 Entities in lazy relations are loaded once you access them.
