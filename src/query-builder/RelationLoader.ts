@@ -7,9 +7,8 @@ import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 
 /**
- * Loads relation data for entities. Supports both "join" (via SQL JOINs)
- * and "query" (via separate queries) strategies for eager relations,
- * and provides lazy-load wrappers via getters/setters.
+ * Loads relation data for entities and provides lazy-load wrappers
+ * via getters/setters.
  */
 export class RelationLoader {
     // -------------------------------------------------------------------------
