@@ -4,6 +4,7 @@ import type { DataSource } from "../data-source/DataSource"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 import { DriverUtils } from "../driver/DriverUtils"
+import { TypeORMError } from "../error/TypeORMError"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
@@ -269,7 +270,11 @@ export class RelationIdLoader {
         // select all columns from junction table
         columns.forEach((column) => {
             const referenced = column.referencedColumn
-            if (!referenced) return
+            if (!referenced) {
+                throw new TypeORMError(
+                    `Column "${column.propertyPath}" is missing a referencedColumn in junction table "${junctionMetadata.tableName}".`,
+                )
+            }
 
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
@@ -283,7 +288,11 @@ export class RelationIdLoader {
         })
         inverseColumns.forEach((column) => {
             const referenced = column.referencedColumn
-            if (!referenced) return
+            if (!referenced) {
+                throw new TypeORMError(
+                    `Column "${column.propertyPath}" is missing a referencedColumn in junction table "${junctionMetadata.tableName}".`,
+                )
+            }
 
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
@@ -526,7 +535,11 @@ export class RelationIdLoader {
         })
         relation.joinColumns.forEach((column) => {
             const referenced = column.referencedColumn
-            if (!referenced) return
+            if (!referenced) {
+                throw new TypeORMError(
+                    `Join column "${column.propertyPath}" on "${relation.entityMetadata.targetName}" is missing a referencedColumn.`,
+                )
+            }
 
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
@@ -686,7 +699,11 @@ export class RelationIdLoader {
         })
         relation.joinColumns.forEach((column) => {
             const referenced = column.referencedColumn
-            if (!referenced) return
+            if (!referenced) {
+                throw new TypeORMError(
+                    `Join column "${column.propertyPath}" on "${relation.entityMetadata.targetName}" is missing a referencedColumn.`,
+                )
+            }
 
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
