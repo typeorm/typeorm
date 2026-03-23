@@ -3125,7 +3125,7 @@ export class SqlServerQueryRunner
                 return (
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
                     `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
-                    `LEFT JOIN "sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "column_name" ` +
+                    `LEFT JOIN "sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "COLUMNS"."COLUMN_NAME" AND OBJECT_NAME("cc"."object_id") = "COLUMNS"."TABLE_NAME" AND OBJECT_SCHEMA_NAME("cc"."object_id") = "COLUMNS"."TABLE_SCHEMA" ` +
                     `WHERE (${condition})`
                 )
             })
