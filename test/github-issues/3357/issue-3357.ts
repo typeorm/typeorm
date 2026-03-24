@@ -1,6 +1,5 @@
 import "reflect-metadata"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { TableColumn } from "../../../src/schema-builder/table/TableColumn"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -27,10 +26,9 @@ describe("github issues > #3357 migration generation drops and creates columns i
                 const queryRunner = connection.createQueryRunner()
 
                 try {
-                    // Insert test data
-                    await queryRunner.manager.query(
-                        `INSERT INTO "test_entity" ("name") VALUES ('test-value')`,
-                    )
+                    // Insert test data using repository API to avoid driver-specific quoting issues
+                    const { TestEntity } = require("./entity/TestEntity")
+                    await connection.getRepository(TestEntity).save({ name: "test-value" })
 
                     const table = await queryRunner.getTable("test_entity")
                     const nameColumn = table!.findColumnByName("name")!
@@ -39,25 +37,10 @@ describe("github issues > #3357 migration generation drops and creates columns i
                     const newColumn = nameColumn.clone()
                     newColumn.length = "100"
 
-                    const sqlsInMemory =
-                        await queryRunner.getMemorySql()
-                    sqlsInMemory.upQueries = []
-                    sqlsInMemory.downQueries = []
-
                     await queryRunner.changeColumn(table!, nameColumn, newColumn)
 
-                    // Verify no DROP COLUMN was generated
-                    const allSqls = [
-                        ...sqlsInMemory.upQueries,
-                    ]
-                        .map((q) => q.query)
-                        .join(" ")
-
-                    // allSqls.should.not.contain("DROP COLUMN") - this is hard to test without spying
-                    // Instead verify data is preserved
-                    const rows = await queryRunner.query(
-                        `SELECT "name" FROM "test_entity"`,
-                    )
+                    // Verify data is preserved after ALTER COLUMN
+                    const rows = await connection.getRepository(TestEntity).find()
                     rows.should.have.length(1)
                     rows[0].name.should.equal("test-value")
 

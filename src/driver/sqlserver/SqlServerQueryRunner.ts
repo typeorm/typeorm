@@ -1393,15 +1393,20 @@ export class SqlServerQueryRunner
                     )
                 }
 
+                // Build ALTER COLUMN using the current (old) column name since rename hasn't run yet
+                const alterColumnForType = newColumn.clone()
+                alterColumnForType.name = oldColumn.name
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
                             table,
                         )} ALTER COLUMN ${this.buildCreateColumnSql(
                             table,
-                            newColumn,
+                            alterColumnForType,
                             true,
                             false,
+                            true,
                         )}`,
                     ),
                 )
@@ -1414,11 +1419,12 @@ export class SqlServerQueryRunner
                             oldColumn,
                             true,
                             false,
+                            true,
                         )}`,
                     ),
                 )
 
-                // Restore default constraint after type change
+                // Restore default constraint after type change (use old name — rename hasn't run yet)
                 if (
                     newColumn.default !== null &&
                     newColumn.default !== undefined
@@ -1426,13 +1432,13 @@ export class SqlServerQueryRunner
                     const defaultName =
                         this.dataSource.namingStrategy.defaultConstraintName(
                             table,
-                            newColumn.name,
+                            oldColumn.name,
                         )
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
                                 table,
-                            )} ADD CONSTRAINT "${defaultName}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`,
+                            )} ADD CONSTRAINT "${defaultName}" DEFAULT ${newColumn.default} FOR "${oldColumn.name}"`,
                         ),
                     )
                     downQueries.push(
@@ -1769,6 +1775,7 @@ export class SqlServerQueryRunner
             }
 
             if (
+                !typeOrLengthChanged &&
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
                 upQueries.push(
