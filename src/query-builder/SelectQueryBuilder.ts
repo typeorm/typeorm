@@ -1445,7 +1445,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (sort) {
             if (typeof sort === "object") {
-                this.expressionMap.orderBys = sort as OrderByCondition
+                this.validateOrderByCondition(sort)
+                this.expressionMap.orderBys = sort
             } else {
                 if (nulls) {
                     this.expressionMap.orderBys = {
@@ -2591,15 +2592,22 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const orderValue =
                         typeof orderBys[columnName] === "string"
                             ? orderBys[columnName]
-                            : (orderBys[columnName] as any).order +
+                            : orderBys[columnName].order +
                               " " +
-                              (orderBys[columnName] as any).nulls
+                              orderBys[columnName].nulls
+
+                    if (/[;'"\\]/.test(orderValue))
+                        throw new TypeORMError(
+                            `Unsafe order-by value "${orderValue}" for "${columnName}".`,
+                        )
+
                     const selectionByAlias = this.expressionMap.selects.find(
                         (s) => s.aliasName === columnName,
                     )
                     if (selectionByAlias) {
                         return this.escape(columnName) + " " + orderValue
                     }
+
                     const selection = this.expressionMap.selects.find(
                         (s) => s.selection === columnName,
                     )
