@@ -15,16 +15,22 @@ const format = async (source: string) =>
     })
 
 function getFixturePairs(): { name: string; input: string; output: string }[] {
-    const files = fs.readdirSync(fixturesDir)
-    const inputs = files.filter((f) => f.endsWith(".input.ts"))
+    const dirs = fs
+        .readdirSync(fixturesDir, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
 
-    return inputs.map((inputFile) => {
-        const name = inputFile.replace(".input.ts", "")
-        const outputFile = `${name}.output.ts`
+    return dirs.map((dir) => {
+        const name = dir.name
         return {
             name,
-            input: fs.readFileSync(path.join(fixturesDir, inputFile), "utf8"),
-            output: fs.readFileSync(path.join(fixturesDir, outputFile), "utf8"),
+            input: fs.readFileSync(
+                path.join(fixturesDir, name, `${name}.input.ts`),
+                "utf8",
+            ),
+            output: fs.readFileSync(
+                path.join(fixturesDir, name, `${name}.output.ts`),
+                "utf8",
+            ),
         }
     })
 }
