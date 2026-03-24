@@ -2,6 +2,7 @@ import path from "node:path"
 import { run as jscodeshift } from "jscodeshift/src/Runner"
 import { colors } from "./colors"
 import { collectTodos } from "../transforms/todo"
+import { versions } from "../transforms"
 import {
     findPackageJsonFiles,
     upgradeDependencies,
@@ -11,6 +12,7 @@ export const runTransforms = async (
     transforms: string[],
     paths: string[],
     dry: boolean,
+    version: string,
 ): Promise<void> => {
     const ext = transforms[0]?.endsWith(".ts") ? ".ts" : ".js"
     const allTodos = new Map<string, string[]>()
@@ -59,6 +61,19 @@ export const runTransforms = async (
                     console.log(`  ${colors.red("Error:")} ${e}`),
                 )
             }
+        }
+    }
+
+    if (!dry) {
+        console.log(
+            `\n${colors.blue("Tip:")} run your project's formatter (e.g. Prettier, ESLint with --fix) to clean up any minor style differences introduced by the codemod.`,
+        )
+
+        const guide = versions[version]?.migrationGuide
+        if (guide) {
+            console.log(
+                `\nSee the full migration guide for details: ${colors.blue(guide)}`,
+            )
         }
     }
 

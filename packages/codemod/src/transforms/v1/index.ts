@@ -32,6 +32,7 @@ import { findOptionsStringRelations } from "./find-options-string-relations"
 import { transformer } from "../transformer"
 
 export const description = "Migrate from v0.3.x to v1.0"
+export const migrationGuide = "https://typeorm.io/docs/guides/migration-v1"
 
 /**
  * Ordered list of v1 transforms. Order matters — connection renames

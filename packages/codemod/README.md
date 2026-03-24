@@ -22,10 +22,22 @@ npx @typeorm/codemod v1 --list
 
 Some transforms leave `TODO` comments in your code where manual changes are needed. After the codemod completes, it will list all files that require manual review.
 
-If you use an auto-formatter like Prettier, run it after the codemod to restore your code style.
+### Formatting
 
-## Docmentation
+The codemod uses an AST-based approach which may introduce minor formatting differences (e.g. extra parentheses, quote style changes). Run your project's formatter after the codemod to restore your code style, for example:
 
-See the full migration guides for details on all breaking changes:
+```bash
+npx @typeorm/codemod v1 src/
+npx eslint --fix src/
+npx prettier --write src/
+```
+
+### Scoping
+
+Transforms that rename properties or methods (e.g. `.connection` to `.dataSource`) rely on type annotations to identify TypeORM instances. Code that uses TypeORM APIs without type annotations may not be transformed automatically — review `git diff` after running.
+
+## Documentation
+
+See the full migration guide for details on all breaking changes:
 
 - [v1](https://typeorm.io/docs/guides/migration-v1)
