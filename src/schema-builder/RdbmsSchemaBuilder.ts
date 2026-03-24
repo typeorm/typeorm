@@ -72,7 +72,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     async build(): Promise<void> {
         this.queryRunner = this.dataSource.createQueryRunner()
 
-        // this.connection.driver.database || this.currentDatabase;
         this.currentDatabase = this.dataSource.driver.database
         this.currentSchema = this.dataSource.driver.schema
 

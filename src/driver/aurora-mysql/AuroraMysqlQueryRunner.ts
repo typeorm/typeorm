@@ -59,7 +59,7 @@ export class AuroraMysqlQueryRunner
     constructor(driver: AuroraMysqlDriver, client: any) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.client = client
         this.broadcaster = new Broadcaster(this)
     }
@@ -519,7 +519,7 @@ export class AuroraMysqlQueryRunner
             const columnNames = index.columnNames
                 .map((column) => `\`${column}\``)
                 .join(", ")
-            const newIndexName = this.connection.namingStrategy.indexName(
+            const newIndexName = this.dataSource.namingStrategy.indexName(
                 newTable,
                 index.columnNames,
                 index.where,
@@ -561,7 +561,7 @@ export class AuroraMysqlQueryRunner
                 .map((column) => `\`${column}\``)
                 .join(",")
             const newForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     newTable,
                     foreignKey.columnNames,
                 )
@@ -740,7 +740,7 @@ export class AuroraMysqlQueryRunner
             downQueries.push(this.dropIndexSql(table, columnIndex))
         } else if (column.isUnique) {
             const uniqueIndex = new TableIndex({
-                name: this.connection.namingStrategy.indexName(table, [
+                name: this.dataSource.namingStrategy.indexName(table, [
                     column.name,
                 ]),
                 columnNames: [column.name],
@@ -898,7 +898,7 @@ export class AuroraMysqlQueryRunner
                         .map((column) => `\`${column}\``)
                         .join(", ")
                     const newIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -950,7 +950,7 @@ export class AuroraMysqlQueryRunner
                                 .map((column) => `\`${column}\``)
                                 .join(",")
                         const newForeignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                             )
@@ -1167,7 +1167,7 @@ export class AuroraMysqlQueryRunner
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueIndex = new TableIndex({
-                        name: this.connection.namingStrategy.indexName(table, [
+                        name: this.dataSource.namingStrategy.indexName(table, [
                             newColumn.name,
                         ]),
                         columnNames: [newColumn.name],
@@ -1409,7 +1409,7 @@ export class AuroraMysqlQueryRunner
         } else if (column.isUnique) {
             // we splice constraints both from table uniques and indices.
             const uniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(table, [
+                this.dataSource.namingStrategy.uniqueConstraintName(table, [
                     column.name,
                 ])
             const foundUnique = clonedTable.uniques.find(
@@ -1421,7 +1421,7 @@ export class AuroraMysqlQueryRunner
                     1,
                 )
 
-            const indexName = this.connection.namingStrategy.indexName(table, [
+            const indexName = this.dataSource.namingStrategy.indexName(table, [
                 column.name,
             ])
             const foundIndex = clonedTable.indices.find(
@@ -1846,7 +1846,7 @@ export class AuroraMysqlQueryRunner
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
             )
@@ -1897,7 +1897,7 @@ export class AuroraMysqlQueryRunner
         }
 
         if (!foreignKey.name) {
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
             )
@@ -2271,7 +2271,7 @@ export class AuroraMysqlQueryRunner
                         )
                     })
 
-                    const tableMetadata = this.connection.entityMetadatas.find(
+                    const tableMetadata = this.dataSource.entityMetadatas.find(
                         (metadata) =>
                             this.getTablePath(table) ===
                             this.getTablePath(metadata),
@@ -2573,7 +2573,7 @@ export class AuroraMysqlQueryRunner
                 if (!isUniqueIndexExist && !isUniqueConstraintExist)
                     table.indices.push(
                         new TableIndex({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -2608,7 +2608,7 @@ export class AuroraMysqlQueryRunner
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
                     if (!index.name)
-                        index.name = this.connection.namingStrategy.indexName(
+                        index.name = this.dataSource.namingStrategy.indexName(
                             table,
                             index.columnNames,
                             index.where,
@@ -2632,7 +2632,7 @@ export class AuroraMysqlQueryRunner
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
                     if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
+                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
                             table,
                             fk.columnNames,
                         )
@@ -2683,7 +2683,7 @@ export class AuroraMysqlQueryRunner
         } else {
             return new Query(
                 `CREATE VIEW ${this.escapePath(view)} AS ${view
-                    .expression(this.connection)
+                    .expression(this.dataSource)
                     .getQuery()}`,
             )
         }
@@ -2694,7 +2694,7 @@ export class AuroraMysqlQueryRunner
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return this.insertTypeormMetadataSql({
             type: MetadataTableType.VIEW,
             schema: currentDatabase,
@@ -2892,9 +2892,9 @@ export class AuroraMysqlQueryRunner
     ) {
         let c: string
         if (skipName) {
-            c = this.connection.driver.createFullType(column)
+            c = this.dataSource.driver.createFullType(column)
         } else {
-            c = `\`${column.name}\` ${this.connection.driver.createFullType(
+            c = `\`${column.name}\` ${this.dataSource.driver.createFullType(
                 column,
             )}`
         }

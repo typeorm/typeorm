@@ -60,12 +60,12 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     readonly options: DataSourceOptions
 
     /**
-     * Indicates if DataSource is initialized or not.
+     * Indicates if the DataSource is initialized or not.
      */
     readonly isInitialized: boolean
 
