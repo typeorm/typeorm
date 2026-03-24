@@ -17,7 +17,7 @@ describe("tree-tables > closure-table > insert without level column", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should work correctly when saving using parent category", () =>
+    it("should save and retrieve descendants when using parent reference", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const categoryRepository =
@@ -84,7 +84,7 @@ describe("tree-tables > closure-table > insert without level column", () => {
             }),
         ))
 
-    it("should work correctly when saving using children categories", () =>
+    it("should save and retrieve descendants when using children array", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const categoryRepository =

@@ -7,12 +7,12 @@ import {
 import { Node } from "./Node"
 import { Fact } from "./Fact"
 
-@Entity("rule")
+@Entity()
 export class Rule {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column("varchar")
+    @Column()
     name: string
 
     @ManyToOne(() => Fact, (fact) => fact.rules, { eager: true })

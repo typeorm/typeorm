@@ -6,12 +6,12 @@ import {
 } from "../../../../../../src"
 import { Rule } from "./Rule"
 
-@Entity("fact")
+@Entity()
 export class Fact {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column("varchar")
+    @Column()
     name: string
 
     @OneToMany(() => Rule, (rule) => rule.fact)

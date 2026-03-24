@@ -32,7 +32,7 @@ export class Foo2Entity {
     parentId: number
 
     @TreeParent()
-    @JoinColumn({ name: "parent_id", referencedColumnName: "id" })
+    @JoinColumn({ name: "parent_id" })
     parent: Foo2Entity
 
     @TreeChildren()

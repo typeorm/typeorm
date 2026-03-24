@@ -6,27 +6,19 @@ import { Entity } from "../../../../../../src/decorator/entity/Entity"
 import { Tree } from "../../../../../../src/decorator/tree/Tree"
 import { JoinColumn } from "../../../../../../src/decorator/relations/JoinColumn"
 
-@Entity({ name: "categories" })
+@Entity()
 @Tree("materialized-path")
 export class Category {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({
-        type: "varchar",
-        name: "uid",
-        unique: true,
-    })
+    @Column({ unique: true })
     uid: string
 
     @Column()
     name: string
 
-    @Column({
-        type: "varchar",
-        name: "parentUid",
-        nullable: true,
-    })
+    @Column({ nullable: true })
     parentUid?: string | null
 
     @TreeParent()

@@ -17,7 +17,7 @@ describe("tree-tables > materialized-path > custom primary column", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("entity parent column should work with custom primary column names ", () =>
+    it("should persist and retrieve roots with custom primary column names", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const categoryRepository =

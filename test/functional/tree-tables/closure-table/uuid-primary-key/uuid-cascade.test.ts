@@ -17,7 +17,7 @@ describe("tree-tables > closure-table > uuid cascade", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should work correctly", () =>
+    it("should save tree via parent reference and retrieve descendants with UUID keys", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const categoryRepository =

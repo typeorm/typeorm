@@ -14,7 +14,7 @@ export class Group extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     id: string
 
-    @Column({ nullable: false })
+    @Column()
     name: string
 
     @TreeChildren()

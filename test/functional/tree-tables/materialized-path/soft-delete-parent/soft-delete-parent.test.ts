@@ -22,7 +22,7 @@ describe("tree-tables > materialized-path > soft-delete parent", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("Should update mpath even if parent was soft deleted", () =>
+    it("should update mpath when reassigning child to a new parent after soft-deleting the old one", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const nodeRepository = dataSource.getTreeRepository(Node)
