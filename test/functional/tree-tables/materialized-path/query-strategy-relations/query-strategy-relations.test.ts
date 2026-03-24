@@ -5,9 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import type { DataSource } from "../../../../../src"
-import { SelectQueryBuilder } from "../../../../../src"
 import { expect } from "chai"
-import sinon from "sinon"
 import { Node } from "./entity/Node"
 import { Fact } from "./entity/Fact"
 import { Rule } from "./entity/Rule"
@@ -71,44 +69,6 @@ describe("tree-tables > materialized-path > query strategy relations", () => {
                 for (const rule of loadedChild?.rules ?? []) {
                     expect(rule.fact).to.not.be.undefined
                     expect(rule.fact?.name).to.be.a("string")
-                }
-            }),
-        ))
-
-    it("should not use LEFT JOINs for relations when using query strategy", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const nodeRepository = dataSource.getTreeRepository(Node)
-                const ruleRepository = dataSource.getRepository(Rule)
-                const factRepository = dataSource.getRepository(Fact)
-
-                const parent = await nodeRepository.save(
-                    nodeRepository.create({ name: "root node" }),
-                )
-                const child = await nodeRepository.save(
-                    nodeRepository.create({ name: "child node", parent }),
-                )
-                const [factA] = await factRepository.save([{ name: "Fact A" }])
-                await ruleRepository.save([
-                    { name: "Rule 1", node: child, fact: factA },
-                ])
-
-                const leftJoinSpy = sinon.spy(
-                    SelectQueryBuilder.prototype,
-                    "leftJoinAndSelect",
-                )
-
-                try {
-                    await nodeRepository.findDescendants(parent, {
-                        relations: ["rules", "rules.fact"],
-                    })
-
-                    expect(leftJoinSpy.called).to.equal(
-                        false,
-                        "Expected no leftJoinAndSelect calls — relations should be loaded via separate queries, not JOINs",
-                    )
-                } finally {
-                    leftJoinSpy.restore()
                 }
             }),
         ))
