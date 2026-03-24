@@ -10,16 +10,39 @@ on:
       - tsconfig.json
       - tsconfig.browser.json
       - tsconfig.node.json
+      - packages/codemod/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  release:
-    name: Release preview build
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      typeorm: ${{ steps.filter.outputs.typeorm }}
+      codemod: ${{ steps.filter.outputs.codemod }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            typeorm:
+              - src/**
+              - gulpfile.ts
+              - package.json
+              - tsconfig.json
+              - tsconfig.browser.json
+              - tsconfig.node.json
+            codemod:
+              - packages/codemod/**
 
+  preview-typeorm:
+    if: needs.detect-changes.outputs.typeorm == 'true'
+    needs: detect-changes
+    name: Preview typeorm
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
@@ -33,3 +56,25 @@ jobs:
       - run: pnpm install
       - run: pnpm run package
       - run: pnpm run publish:preview
+
+  preview-codemod:
+    if: needs.detect-changes.outputs.codemod == 'true'
+    needs: detect-changes
+    name: Preview @typeorm/codemod
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+        working-directory: packages/codemod
+      - run: pnpm run build
+        working-directory: packages/codemod
+      - run: pnpm run publish:preview
+        working-directory: packages/codemod

@@ -57,6 +57,9 @@ jobs:
               - *src-or-tests
               - eslint.config.mjs
 
+            codemod:
+              - packages/codemod/**/*
+
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
     needs: detect-changes
@@ -142,6 +145,23 @@ jobs:
     with:
       node-version: 22
 
+  test-codemod:
+    if: contains(needs.detect-changes.outputs.changes, 'codemod')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+        working-directory: packages/codemod
+      - run: pnpm test
+        working-directory: packages/codemod
+
   coverage:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
     runs-on: ubuntu-latest
@@ -161,6 +181,7 @@ jobs:
       - docs
       - format
       - lint
+      - test-codemod
       - tests-linux
       - tests-windows
     steps:
