@@ -37,11 +37,21 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         close: "destroy",
     }
 
-    // Property renames
-    const propertyRenames: Record<string, string> = {
-        isConnected: "isInitialized",
-        connection: "dataSource",
-    }
+    // TypeORM types whose instances have a `.connection` property
+    // that was renamed to `.dataSource` in v1
+    const typesWithConnectionProp = new Set([
+        "QueryRunner",
+        "EntityManager",
+        "Repository",
+        "TreeRepository",
+        "MongoRepository",
+        "SelectQueryBuilder",
+        "InsertQueryBuilder",
+        "UpdateQueryBuilder",
+        "DeleteQueryBuilder",
+        "SoftDeleteQueryBuilder",
+        "RelationQueryBuilder",
+    ])
 
     // Rename imports from "typeorm"
     root.find(j.ImportDeclaration, {
@@ -154,17 +164,85 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         })
     }
 
-    // Rename property access: .isConnected → .isInitialized
-    for (const [oldProp, newProp] of Object.entries(propertyRenames)) {
-        root.find(j.MemberExpression, {
-            property: { name: oldProp },
-        }).forEach((path) => {
-            if (path.node.property.type === "Identifier") {
-                path.node.property.name = newProp
+    // Collect variable/param names typed as TypeORM types with .connection
+    const connectionPropVarNames = new Set<string>()
+
+    const collectTypedIdentifier = (id: {
+        type: string
+        name?: string
+        typeAnnotation?: any
+    }) => {
+        if (
+            id.type === "Identifier" &&
+            id.name &&
+            id.typeAnnotation?.type === "TSTypeAnnotation"
+        ) {
+            const ann = id.typeAnnotation.typeAnnotation
+            if (
+                ann.type === "TSTypeReference" &&
+                ann.typeName.type === "Identifier" &&
+                typesWithConnectionProp.has(ann.typeName.name)
+            ) {
+                connectionPropVarNames.add(id.name)
+            }
+        }
+    }
+
+    // Variable declarations with type annotations
+    root.find(j.VariableDeclarator).forEach((path) => {
+        collectTypedIdentifier(path.node.id as any)
+    })
+
+    // Function/method/arrow parameters with type annotations
+    root.find(j.FunctionDeclaration).forEach((path) => {
+        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
+    })
+    root.find(j.FunctionExpression).forEach((path) => {
+        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
+    })
+    root.find(j.ArrowFunctionExpression).forEach((path) => {
+        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
+    })
+    root.find(j.ClassMethod).forEach((path) => {
+        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
+    })
+    root.find(j.TSDeclareMethod).forEach((path) => {
+        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
+    })
+
+    // Constructor parameter properties: constructor(private queryRunner: QueryRunner)
+    root.find(j.TSParameterProperty).forEach((path) => {
+        collectTypedIdentifier(path.node.parameter as any)
+    })
+
+    // Rename .isConnected → .isInitialized on Connection/DataSource instances
+    root.find(j.MemberExpression, {
+        property: { name: "isConnected" },
+    }).forEach((path) => {
+        if (path.node.property.type === "Identifier") {
+            const obj = path.node.object
+            if (obj.type === "Identifier" && connectionVarNames.has(obj.name)) {
+                path.node.property.name = "isInitialized"
                 hasChanges = true
             }
-        })
-    }
+        }
+    })
+
+    // Rename .connection → .dataSource on known TypeORM instances
+    root.find(j.MemberExpression, {
+        property: { name: "connection" },
+    }).forEach((path) => {
+        if (path.node.property.type === "Identifier") {
+            const obj = path.node.object
+            if (
+                obj.type === "Identifier" &&
+                connectionPropVarNames.has(obj.name)
+            ) {
+                path.node.property.name = "dataSource"
+                hasChanges = true
+            }
+        }
+    })
 
     return hasChanges ? root.toSource() : undefined
 }
