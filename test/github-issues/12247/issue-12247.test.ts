@@ -29,15 +29,7 @@ describe("github issues > #12247 Postgres migration repeatedly alters epoch defa
                     .createSchemaBuilder()
                     .log()
 
-                const setDefaultEpochQueries = sqlInMemory.upQueries
-                    .map((query) => query.query)
-                    .filter((query) =>
-                        query.includes(
-                            "SET DEFAULT EXTRACT(EPOCH FROM now()) * 1000",
-                        ),
-                    )
-
-                expect(setDefaultEpochQueries).to.eql([])
+                expect(sqlInMemory.upQueries).to.eql([])
             }),
         ))
 })
