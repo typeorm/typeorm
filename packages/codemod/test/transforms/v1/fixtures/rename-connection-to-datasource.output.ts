@@ -14,3 +14,7 @@ await connection.destroy()
 const ds = queryRunner.dataSource
 const ds2 = event.dataSource
 const ds3 = entityManager.dataSource
+
+// Should NOT be transformed — not TypeORM
+await app.close()
+await server.close()

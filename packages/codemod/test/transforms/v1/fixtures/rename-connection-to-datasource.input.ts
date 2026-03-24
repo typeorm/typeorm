@@ -14,3 +14,7 @@ await connection.close()
 const ds = queryRunner.connection
 const ds2 = event.connection
 const ds3 = entityManager.connection
+
+// Should NOT be transformed — not TypeORM
+await app.close()
+await server.close()
