@@ -34,7 +34,7 @@ export class Foo3Entity {
     parentId: string
 
     @TreeParent()
-    @JoinColumn({ name: "parent_id", referencedColumnName: "id" })
+    @JoinColumn({ name: "parent_id" })
     parent: Foo3Entity
 
     @TreeChildren()

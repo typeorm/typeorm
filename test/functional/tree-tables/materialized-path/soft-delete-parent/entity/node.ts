@@ -9,28 +9,25 @@ import {
     JoinColumn,
 } from "../../../../../../src"
 
-@Entity("node")
+@Entity()
 @Tree("materialized-path")
 export class Node {
-    @PrimaryGeneratedColumn({ type: "int" })
-    id?: number
+    @PrimaryGeneratedColumn()
+    id: number
 
     @DeleteDateColumn()
-    deletedAt?: Date
+    deletedAt: Date
 
-    @Column("varchar")
-    name!: string
+    @Column()
+    name: string
 
     @TreeChildren({ cascade: true })
-    children?: Node[]
+    children: Node[]
 
-    @Column({ type: "int", nullable: true, name: "parentId" })
-    parentId?: number
+    @Column({ nullable: true })
+    parentId: number
 
     @TreeParent()
-    @JoinColumn({
-        name: "parentId",
-        referencedColumnName: "id",
-    })
-    parent?: Node
+    @JoinColumn({ name: "parentId" })
+    parent: Node
 }

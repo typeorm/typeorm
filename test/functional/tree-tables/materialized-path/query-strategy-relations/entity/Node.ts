@@ -9,13 +9,13 @@ import {
 } from "../../../../../../src"
 import { Rule } from "./Rule"
 
-@Entity("node")
+@Entity()
 @Tree("materialized-path")
 export class Node {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column("varchar")
+    @Column()
     name: string
 
     @OneToMany(() => Rule, (rule) => rule.node, {

@@ -658,7 +658,7 @@ describe("tree tables > materialized-path", () => {
                 const productRepository = dataSource.getRepository(Product)
 
                 // first increment the category primary id once by saving and removing an item
-                // this is necessary to reproduce the bug behaviour
+                // this is necessary to reproduce the bug behavior
                 const existingCategory = new Category()
                 existingCategory.name = "irrelevant"
                 await categoryRepository.save(existingCategory)
@@ -674,12 +674,12 @@ describe("tree tables > materialized-path", () => {
                 product.name = "My product"
                 product.categories = [rootCategory]
 
-                // save it alongside its categories ( cascade )
+                // save it alongside its categories (cascade)
                 const savedProduct = await productRepository.save(product)
                 const pathResult = await dataSource
                     .createQueryBuilder()
                     .select("category.mpath", "mpath")
-                    .from("categories", "category")
+                    .from(Category, "category")
                     .where("category.product = :id")
                     .setParameters({ id: savedProduct.id })
                     .getRawOne()

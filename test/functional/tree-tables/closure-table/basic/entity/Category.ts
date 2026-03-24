@@ -19,7 +19,4 @@ export class Category {
 
     @TreeChildren({ cascade: true })
     childCategories: Category[]
-
-    // @TreeLevelColumn()
-    // level: number;
 }
