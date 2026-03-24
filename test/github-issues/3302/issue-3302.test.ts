@@ -1,20 +1,20 @@
-import "reflect-metadata"
-import appRootPath from "app-root-path"
 import sinon from "sinon"
 import type { DataSource } from "../../../src"
+import { PlatformTools } from "../../../src/platform/PlatformTools"
 import {
+    closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    closeTestingConnections,
 } from "../../utils/test-utils"
-import { PlatformTools } from "../../../src/platform/PlatformTools"
+import {
+    afterQueryLogPath,
+    beforeQueryLogPath,
+} from "./subscriber/PostSubscriber"
 
 describe("github issues > #3302 Tracking query time for slow queries and statsd timers", () => {
     let dataSources: DataSource[]
-    let stub: sinon.SinonStub
+    let appendStub: sinon.SinonStub
     let sandbox: sinon.SinonSandbox
-    const beforeQueryLogPath = appRootPath + "/before-query.log"
-    const afterQueryLogPath = appRootPath + "/after-query.log"
 
     before(async () => {
         dataSources = await createTestingConnections({
@@ -22,11 +22,11 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
         sandbox = sinon.createSandbox()
-        stub = sandbox.stub(PlatformTools, "appendFileSync")
+        appendStub = sandbox.stub(PlatformTools, "appendFileSync")
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     afterEach(async () => {
-        stub.resetHistory()
+        appendStub.resetHistory()
         sandbox.restore()
         await closeTestingConnections(dataSources)
     })
@@ -41,12 +41,12 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
                 await connection.query(testQuery)
 
                 sinon.assert.calledWith(
-                    stub,
+                    appendStub,
                     beforeQueryLogPath,
                     sinon.match(testQuery),
                 )
                 sinon.assert.calledWith(
-                    stub,
+                    appendStub,
                     afterQueryLogPath,
                     sinon.match(testQuery),
                 )

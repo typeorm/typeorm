@@ -1,5 +1,4 @@
-import appRootPath from "app-root-path"
-import path from "path"
+import path from "node:path"
 
 import type { DataSourceOptions } from "../data-source/DataSourceOptions"
 import { TypeORMError } from "../error"
@@ -18,8 +17,8 @@ export class ConnectionOptionsReader {
     constructor(
         protected options?: {
             /**
-             * Directory where ormconfig should be read from.
-             * By default its your application root (where your app package.json is located).
+             * Directory from where the `ormconfig` file should be read.
+             * Default: `process.cwd()`.
              */
             root?: string
 
@@ -147,11 +146,9 @@ export class ConnectionOptionsReader {
             options.baseDirectory = this.baseDirectory
             if (options.entities) {
                 const entities = (options.entities as any[]).map((entity) => {
-                    if (
-                        typeof entity === "string" &&
-                        entity.substr(0, 1) !== "/"
-                    )
+                    if (typeof entity === "string" && !entity.startsWith("/")) {
                         return this.baseDirectory + "/" + entity
+                    }
 
                     return entity
                 })
@@ -162,9 +159,10 @@ export class ConnectionOptionsReader {
                     (subscriber) => {
                         if (
                             typeof subscriber === "string" &&
-                            subscriber.substr(0, 1) !== "/"
-                        )
+                            !subscriber.startsWith("/")
+                        ) {
                             return this.baseDirectory + "/" + subscriber
+                        }
 
                         return subscriber
                     },
@@ -176,9 +174,10 @@ export class ConnectionOptionsReader {
                     (migration) => {
                         if (
                             typeof migration === "string" &&
-                            migration.substr(0, 1) !== "/"
-                        )
+                            !migration.startsWith("/")
+                        ) {
                             return this.baseDirectory + "/" + migration
+                        }
 
                         return migration
                     },
@@ -191,8 +190,8 @@ export class ConnectionOptionsReader {
                 if (
                     typeof options.database === "string" &&
                     !isAbsolute(options.database) &&
-                    options.database.substr(0, 1) !== "/" && // unix absolute
-                    options.database.substr(1, 2) !== ":\\" && // windows absolute
+                    !options.database.startsWith("/") && // unix absolute
+                    options.database.substring(1, 3) !== ":\\" && // windows absolute
                     options.database !== ":memory:"
                 ) {
                     Object.assign(options, {
@@ -216,7 +215,7 @@ export class ConnectionOptionsReader {
      * Gets directory where configuration file should be located.
      */
     protected get baseDirectory(): string {
-        return this.options?.root ?? appRootPath.path
+        return this.options?.root ?? process.cwd()
     }
 
     /**

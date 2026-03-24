@@ -79,14 +79,11 @@ This code will log all queries which run for more than `1 second`.
 
 TypeORM ships with 4 different types of logger:
 
-- `advanced-console` - this is the default logger which logs all messages into the console using color
-  and sql syntax highlighting.
-- `simple-console` - this is a simple console logger which is exactly the same as the advanced logger, but it does not use any color highlighting.
-  This logger can be used if you have problems / or don't like colorized logs.
-- `formatted-console` - this is almost the same as the advanced logger, but it formats sql queries to
-  be more readable (using [@sqltools/formatter](https://github.com/mtxr/vscode-sqltools)).
-- `file` - this logger writes all logs into `ormlogs.log` in the root folder of your project (near `package.json`).
-- `debug` - this logger uses [debug package](https://github.com/visionmedia/debug), to turn on logging set your env variable `DEBUG=typeorm:*` (note logging option has no effect on this logger).
+- `advanced-console` - this is the default logger which logs all messages into the console using color and sql syntax highlighting.
+- `simple-console` - this is a simple console logger which is exactly the same as the advanced logger, but it does not use any color highlighting. This logger can be used if you have problems / or don't like colorized logs.
+- `formatted-console` - this is almost the same as the advanced logger, but it formats sql queries to be more readable (using [@sqltools/formatter](https://github.com/mtxr/vscode-sqltools)).
+- `file` - this logger writes all logs into `ormlogs.log` in the current working directory.
+- `debug` - this logger uses [debug package](https://github.com/debug-js/debug), to turn on logging set your env variable `DEBUG=typeorm:*` (note: this logger will pass all logs to the `debug` package, which controls the log level setting).
 
 You can enable any of them in data source options:
 

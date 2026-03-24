@@ -1,7 +1,6 @@
-import appRoot from "app-root-path"
 import { expect } from "chai"
-import fs from "fs/promises"
-import path from "path"
+import fs from "node:fs/promises"
+import path from "node:path"
 import { glob } from "tinyglobby"
 
 import type { DataSource } from "../../../../src/data-source/DataSource"
@@ -66,7 +65,7 @@ describe("multi-database > basic-functionality", () => {
 
     describe("multiple databases", () => {
         let dataSources: DataSource[]
-        const tempPath = path.resolve(appRoot.path, "temp")
+        const tempPath = path.resolve(process.cwd(), "temp")
         const attachAnswerPath = path.join(
             tempPath,
             "filename-sqlite.attach.db",
