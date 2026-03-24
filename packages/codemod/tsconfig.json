@@ -4,13 +4,11 @@
     "module": "commonjs",
     "lib": ["ES2023"],
     "outDir": "dist",
-    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "declaration": true,
-    "sourceMap": true
+    "noEmit": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "test"]
+  "include": ["src", "test"],
+  "exclude": ["node_modules", "dist", "test/transforms/v1/fixtures"]
 }

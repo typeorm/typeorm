@@ -56,6 +56,7 @@ jobs:
             lint:
               - *src-or-tests
               - eslint.config.mjs
+              - packages/codemod/**/*
 
             codemod:
               - packages/codemod/**/*
@@ -126,6 +127,11 @@ jobs:
 
       - run: pnpm install
       - run: pnpm run lint
+
+      - run: pnpm install
+        working-directory: packages/codemod
+      - run: pnpm lint
+        working-directory: packages/codemod
 
   tests-linux:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')

@@ -20,12 +20,11 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      typeorm: ${{ steps.filter.outputs.typeorm }}
-      codemod: ${{ steps.filter.outputs.codemod }}
+      changes: ${{ steps.detect-changes.outputs.changes }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
-        id: filter
+        id: detect-changes
         with:
           filters: |
             typeorm:
@@ -39,9 +38,8 @@ jobs:
               - packages/codemod/**
 
   preview-typeorm:
-    if: needs.detect-changes.outputs.typeorm == 'true'
+    if: contains(needs.detect-changes.outputs.changes, 'typeorm')
     needs: detect-changes
-    name: Preview typeorm
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -58,9 +56,8 @@ jobs:
       - run: pnpm run publish:preview
 
   preview-codemod:
-    if: needs.detect-changes.outputs.codemod == 'true'
+    if: contains(needs.detect-changes.outputs.changes, 'codemod')
     needs: detect-changes
-    name: Preview @typeorm/codemod
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

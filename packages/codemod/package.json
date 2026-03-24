@@ -15,7 +15,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint",
     "publish:preview": "pkg-pr-new publish",
     "start": "ts-node src/index.ts",
@@ -37,8 +37,13 @@
     "pkg-pr-new": "^0.0.63",
     "prettier": "^3.8.1",
     "sinon": "^21.0.3",
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.0.0",
+    "eslint-plugin-chai-friendly": "^1.0.1",
+    "globals": "^16.0.0",
     "ts-node": "^10.9.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.35.0"
   },
   "engines": {
     "node": ">=20"

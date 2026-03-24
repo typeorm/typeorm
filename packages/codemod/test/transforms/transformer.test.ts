@@ -52,7 +52,7 @@ describe("transformer", () => {
         }
 
         const composite = transformer([tracking, tracking])
-        composite(makeFile("start"), mockApi, {})
+        void composite(makeFile("start"), mockApi, {})
 
         expect(sources).to.deep.equal(["start", "start!"])
     })
