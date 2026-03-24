@@ -1,4 +1,4 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { ASTNode, API, FileInfo } from "jscodeshift"
 
 export const description = "replace string-array `select` with object syntax"
 
@@ -21,14 +21,16 @@ export const findOptionsStringSelect = (file: FileInfo, api: API) => {
                 (el) =>
                     el !== null &&
                     (el.type === "StringLiteral" || el.type === "Literal") &&
-                    typeof (el as any).value === "string",
+                    typeof (el as ASTNode & { value: unknown }).value ===
+                        "string",
             )
         ) {
             return
         }
 
         // Convert ["id", "name"] → { id: true, name: true }
-        const properties = elements.map((el: any) =>
+        type StringNode = ASTNode & { value: string }
+        const properties = (elements as StringNode[]).map((el) =>
             j.property("init", j.identifier(el.value), j.literal(true)),
         )
 

@@ -1,4 +1,4 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, Identifier } from "jscodeshift"
 
 export const description =
     "replace `findOneById()` with `findOneBy()` using `{ id: value }`"
@@ -30,7 +30,7 @@ export const repositoryFindOneById = (file: FileInfo, api: API) => {
 
         if (args.length >= 2) {
             // manager.findOneById(Entity, id) → manager.findOneBy(Entity, { id: id })
-            const idArg = args[1] as any
+            const idArg = args[1] as Identifier
             path.node.arguments = [
                 args[0],
                 j.objectExpression([
@@ -39,7 +39,7 @@ export const repositoryFindOneById = (file: FileInfo, api: API) => {
             ]
         } else {
             // repository.findOneById(id) → repository.findOneBy({ id: id })
-            const idArg = args[0] as any
+            const idArg = args[0] as Identifier
             path.node.arguments = [
                 j.objectExpression([
                     j.property("init", j.identifier("id"), idArg),

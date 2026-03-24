@@ -1,5 +1,4 @@
 import type { API, FileInfo } from "jscodeshift"
-import { fileImportsFrom } from "../ast-helpers"
 
 export const description = "migrate from `Connection` to `DataSource`"
 
@@ -7,8 +6,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
     let hasChanges = false
-
-    const hasTypeormImport = fileImportsFrom(root, j, "typeorm")
 
     // Type/class renames
     const typeRenames: Record<string, string> = {

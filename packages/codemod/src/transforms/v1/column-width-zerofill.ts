@@ -1,4 +1,5 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { ASTNode, API, FileInfo } from "jscodeshift"
+import { forEachDecoratorObjectArg } from "../ast-helpers"
 
 export const description =
     "remove `width` and `zerofill` from `@Column` options"
@@ -10,40 +11,28 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
 
     const propsToRemove = new Set(["width", "zerofill"])
 
-    // jscodeshift does not traverse into decorator expressions,
-    // so we find ClassProperty nodes and inspect their decorators manually.
-    root.find(j.ClassProperty).forEach((path) => {
-        const decorators = (path.node as any).decorators as any[] | undefined
-        if (!decorators) return
+    forEachDecoratorObjectArg(root, j, (arg) => {
+        const obj = arg as ASTNode & {
+            properties: {
+                type: string
+                key: { type: string; name: string }
+            }[]
+        }
 
-        for (const decorator of decorators) {
+        const filtered = obj.properties.filter((prop) => {
             if (
-                decorator.type !== "Decorator" ||
-                decorator.expression.type !== "CallExpression"
+                (prop.type === "Property" || prop.type === "ObjectProperty") &&
+                prop.key.type === "Identifier" &&
+                propsToRemove.has(prop.key.name)
             ) {
-                continue
+                hasChanges = true
+                return false
             }
+            return true
+        })
 
-            for (const arg of decorator.expression.arguments) {
-                if (arg.type !== "ObjectExpression") continue
-
-                const filtered = arg.properties.filter((prop: any) => {
-                    if (
-                        (prop.type === "Property" ||
-                            prop.type === "ObjectProperty") &&
-                        prop.key.type === "Identifier" &&
-                        propsToRemove.has(prop.key.name)
-                    ) {
-                        hasChanges = true
-                        return false
-                    }
-                    return true
-                })
-
-                if (filtered.length !== arg.properties.length) {
-                    arg.properties = filtered
-                }
-            }
+        if (filtered.length !== obj.properties.length) {
+            obj.properties = filtered
         }
     })
 

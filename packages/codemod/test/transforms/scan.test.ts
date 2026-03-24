@@ -25,7 +25,7 @@ describe("scan", () => {
 
         it("should return names sorted alphabetically", () => {
             const names = getTransformNames("v1")
-            const sorted = [...names].sort()
+            const sorted = [...names].sort((a, b) => a.localeCompare(b))
             expect(names).to.deep.equal(sorted)
         })
     })

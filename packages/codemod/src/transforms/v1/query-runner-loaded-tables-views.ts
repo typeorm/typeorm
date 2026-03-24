@@ -1,9 +1,18 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { ASTNode, API, FileInfo } from "jscodeshift"
 import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
     "replace removed `loadedTables` and `loadedViews` with TODO"
 export const manual = true
+
+interface TraversalNode {
+    parent?: TraversalNode & {
+        node: ASTNode & {
+            type: string
+            comments?: { value: string }[]
+        }
+    }
+}
 
 export const queryRunnerLoadedTablesViews = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -20,8 +29,7 @@ export const queryRunnerLoadedTablesViews = (file: FileInfo, api: API) => {
         const propName = path.node.property.name
 
         // Find the containing statement to add a comment
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let current = path as any
+        let current: TraversalNode = path
         while (current.parent && current.parent.node.type !== "Program") {
             if (
                 current.parent.node.type === "ExpressionStatement" ||
@@ -35,7 +43,7 @@ export const queryRunnerLoadedTablesViews = (file: FileInfo, api: API) => {
                 const commentValue = ` TODO: ${message}`
                 const comments = (stmt.comments = stmt.comments || [])
                 const hasSameComment = comments.some(
-                    (c: any) => c.value === commentValue,
+                    (c) => c.value === commentValue,
                 )
                 if (!hasSameComment) {
                     addTodoComment(stmt, message, j)

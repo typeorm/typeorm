@@ -1,6 +1,40 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { ASTNode, API, FileInfo, ObjectExpression } from "jscodeshift"
 
 export const description = "replace string-array `relations` with object syntax"
+
+type StringElement = ASTNode & { value: string }
+
+/**
+ * Convert an array of dot-path strings into a nested object structure.
+ *
+ * Example: `["profile", "posts.comments"]` becomes
+ * `{ profile: true, posts: { comments: true } }`
+ */
+function convertRelationsArrayToObject(
+    elements: StringElement[],
+): Record<string, unknown> {
+    const result: Record<string, unknown> = {}
+
+    for (const el of elements) {
+        const parts = el.value.split(".")
+        let current = result
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i]
+            if (i === parts.length - 1) {
+                if (current[part] === undefined) {
+                    current[part] = true
+                }
+            } else {
+                if (current[part] === undefined || current[part] === true) {
+                    current[part] = {}
+                }
+                current = current[part] as Record<string, unknown>
+            }
+        }
+    }
+
+    return result
+}
 
 export const findOptionsStringRelations = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -21,33 +55,15 @@ export const findOptionsStringRelations = (file: FileInfo, api: API) => {
                 (el) =>
                     el !== null &&
                     (el.type === "StringLiteral" || el.type === "Literal") &&
-                    typeof (el as any).value === "string",
+                    typeof (el as StringElement).value === "string",
             )
         ) {
             return
         }
 
-        // Convert ["profile", "posts.comments"] →
-        // { profile: true, posts: { comments: true } }
-        const result: Record<string, any> = {}
-        for (const el of elements as any[]) {
-            const parts = (el.value as string).split(".")
-            let current = result
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i]
-                if (i === parts.length - 1) {
-                    if (current[part] === undefined) {
-                        current[part] = true
-                    }
-                } else {
-                    if (current[part] === undefined || current[part] === true) {
-                        current[part] = {}
-                    }
-                    current = current[part]
-                }
-            }
-        }
-
+        const result = convertRelationsArrayToObject(
+            elements as StringElement[],
+        )
         path.node.value = buildObjectExpression(j, result)
         hasChanges = true
     })
@@ -55,7 +71,10 @@ export const findOptionsStringRelations = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-function buildObjectExpression(j: any, obj: Record<string, any>): any {
+function buildObjectExpression(
+    j: API["jscodeshift"],
+    obj: Record<string, unknown>,
+): ObjectExpression {
     const properties = Object.entries(obj).map(([key, value]) => {
         if (value === true) {
             return j.property("init", j.identifier(key), j.literal(true))
@@ -63,7 +82,7 @@ function buildObjectExpression(j: any, obj: Record<string, any>): any {
         return j.property(
             "init",
             j.identifier(key),
-            buildObjectExpression(j, value),
+            buildObjectExpression(j, value as Record<string, unknown>),
         )
     })
     return j.objectExpression(properties)

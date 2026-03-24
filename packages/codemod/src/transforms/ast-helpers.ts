@@ -1,4 +1,4 @@
-import type { ASTNode, Collection, JSCodeshift } from "jscodeshift"
+import type { ASTNode, ASTPath, Collection, JSCodeshift } from "jscodeshift"
 
 /**
  * Extracts a string value from a StringLiteral or Literal node.
@@ -41,4 +41,43 @@ export const fileImportsFrom = (
             source: { value: moduleName },
         }).length > 0
     )
+}
+
+/**
+ * Traverses ClassProperty decorators and calls `callback` for each
+ * ObjectExpression argument found in decorator call expressions.
+ *
+ * This avoids duplicating the decorator-traversal boilerplate across
+ * multiple transforms.
+ */
+export const forEachDecoratorObjectArg = (
+    root: Collection,
+    j: JSCodeshift,
+    callback: (objectExpression: ASTNode, path: ASTPath) => void,
+): void => {
+    root.find(j.ClassProperty).forEach((path) => {
+        const node = path.node as ASTNode & {
+            decorators?: { type: string; expression: ASTNode }[]
+        }
+        const decorators = node.decorators
+        if (!decorators) return
+
+        for (const decorator of decorators) {
+            if (
+                decorator.type !== "Decorator" ||
+                (decorator.expression as ASTNode & { type: string }).type !==
+                    "CallExpression"
+            ) {
+                continue
+            }
+
+            const expr = decorator.expression as ASTNode & {
+                arguments: ASTNode[]
+            }
+            for (const arg of expr.arguments) {
+                if (arg.type !== "ObjectExpression") continue
+                callback(arg, path)
+            }
+        }
+    })
 }
