@@ -17,7 +17,7 @@ describe("tree-tables > closure-table > uuid primary key", () => {
     })
     after(() => closeTestingConnections(dataSources))
 
-    it("should correctly work with primary UUID column", () =>
+    it("should synchronize schema and persist tree with UUID primary column", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 await connection.synchronize()

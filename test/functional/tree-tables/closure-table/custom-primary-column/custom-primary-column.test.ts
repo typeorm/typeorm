@@ -17,7 +17,7 @@ describe("tree-tables > closure-table > custom primary column", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("entities with custom primary column names should work", () =>
+    it("should persist and retrieve tree with custom primary column names", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const categoryRepository =

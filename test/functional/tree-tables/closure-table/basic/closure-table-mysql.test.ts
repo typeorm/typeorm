@@ -10,7 +10,7 @@ import {
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
 
-describe("mysql > tree tables > closure-table", () => {
+describe("tree-tables > closure-table > closure column metadata", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -21,7 +21,7 @@ describe("mysql > tree tables > closure-table", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("foo1 should create closure columns unsigned", () => {
+    it("should create closure columns unsigned for integer primary key", () => {
         dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo1",
@@ -52,7 +52,7 @@ describe("mysql > tree tables > closure-table", () => {
         })
     })
 
-    it("foo2 should create closure columns with specified precision and scale", () => {
+    it("should create closure columns with specified precision and scale", () => {
         dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo2",
@@ -86,7 +86,7 @@ describe("mysql > tree tables > closure-table", () => {
         })
     })
 
-    it("foo3 should create closure columns with specified length, charset and collation", () => {
+    it("should create closure columns with specified length, charset and collation", () => {
         dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo3",

@@ -17,7 +17,7 @@ describe("tree-tables > materialized-path > non-pk parent column", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("attach should work properly", () =>
+    it("should save tree via parent reference and detach subtree by nulling parent", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const categoryRepository =
@@ -158,82 +158,86 @@ describe("tree-tables > materialized-path > non-pk parent column", () => {
                 })
             }),
         ))
-    it("findTrees() tests > findTrees should load all category roots", () =>
-        Promise.all(
-            dataSources.map(async (connection) => {
-                const categoryRepository =
-                    connection.getTreeRepository(Category)
+    describe("findTrees", () => {
+        it("should load all category roots and attached children", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const categoryRepository =
+                        connection.getTreeRepository(Category)
 
-                const a1 = new Category()
-                a1.name = "a1"
-                a1.uid = "a1"
+                    const a1 = new Category()
+                    a1.name = "a1"
+                    a1.uid = "a1"
 
-                const a11 = new Category()
-                a11.name = "a11"
-                a11.uid = "a11"
+                    const a11 = new Category()
+                    a11.name = "a11"
+                    a11.uid = "a11"
 
-                const a12 = new Category()
-                a12.name = "a12"
-                a12.uid = "a12"
+                    const a12 = new Category()
+                    a12.name = "a12"
+                    a12.uid = "a12"
 
-                const a111 = new Category()
-                a111.name = "a111"
-                a111.uid = "a111"
+                    const a111 = new Category()
+                    a111.name = "a111"
+                    a111.uid = "a111"
 
-                const a112 = new Category()
-                a112.name = "a112"
-                a112.uid = "a112"
+                    const a112 = new Category()
+                    a112.name = "a112"
+                    a112.uid = "a112"
 
-                a1.childCategories = [a11, a12]
-                a11.childCategories = [a111, a112]
-                await categoryRepository.save(a1)
+                    a1.childCategories = [a11, a12]
+                    a11.childCategories = [a111, a112]
+                    await categoryRepository.save(a1)
 
-                const categoriesTree = await categoryRepository.findTrees()
-                // using sort because some drivers returns arrays in wrong order
-                categoriesTree[0].childCategories.sort((a, b) => a.id - b.id)
-                categoriesTree[0].childCategories[0].childCategories.sort(
-                    (a, b) => a.id - b.id,
-                )
+                    const categoriesTree = await categoryRepository.findTrees()
+                    // using sort because some drivers returns arrays in wrong order
+                    categoriesTree[0].childCategories.sort(
+                        (a, b) => a.id - b.id,
+                    )
+                    categoriesTree[0].childCategories[0].childCategories.sort(
+                        (a, b) => a.id - b.id,
+                    )
 
-                categoriesTree.should.be.eql([
-                    {
-                        id: a1.id,
-                        name: "a1",
-                        uid: "a1",
-                        parentUid: null,
-                        childCategories: [
-                            {
-                                id: a11.id,
-                                name: "a11",
-                                uid: "a11",
-                                parentUid: "a1",
-                                childCategories: [
-                                    {
-                                        id: a111.id,
-                                        name: "a111",
-                                        uid: "a111",
-                                        parentUid: "a11",
-                                        childCategories: [],
-                                    },
-                                    {
-                                        id: a112.id,
-                                        name: "a112",
-                                        uid: "a112",
-                                        parentUid: "a11",
-                                        childCategories: [],
-                                    },
-                                ],
-                            },
-                            {
-                                id: a12.id,
-                                name: "a12",
-                                uid: "a12",
-                                parentUid: "a1",
-                                childCategories: [],
-                            },
-                        ],
-                    },
-                ])
-            }),
-        ))
+                    categoriesTree.should.be.eql([
+                        {
+                            id: a1.id,
+                            name: "a1",
+                            uid: "a1",
+                            parentUid: null,
+                            childCategories: [
+                                {
+                                    id: a11.id,
+                                    name: "a11",
+                                    uid: "a11",
+                                    parentUid: "a1",
+                                    childCategories: [
+                                        {
+                                            id: a111.id,
+                                            name: "a111",
+                                            uid: "a111",
+                                            parentUid: "a11",
+                                            childCategories: [],
+                                        },
+                                        {
+                                            id: a112.id,
+                                            name: "a112",
+                                            uid: "a112",
+                                            parentUid: "a11",
+                                            childCategories: [],
+                                        },
+                                    ],
+                                },
+                                {
+                                    id: a12.id,
+                                    name: "a12",
+                                    uid: "a12",
+                                    parentUid: "a1",
+                                    childCategories: [],
+                                },
+                            ],
+                        },
+                    ])
+                }),
+            ))
+    })
 })
