@@ -55,6 +55,10 @@ describe("query builder > sql injection", () => {
         "1 OR 1=1",
     ]
 
+    const inputsWithSemicolons = maliciousInputs.filter((input) =>
+        input.includes(";"),
+    )
+
     function verifyIntegrity(dataSource: DataSource) {
         return async () => {
             const count = await dataSource.getRepository(Post).count()
@@ -62,23 +66,17 @@ describe("query builder > sql injection", () => {
         }
     }
 
-    // TODO: addSelect accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("addSelect", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
+    describe("addSelect", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
+                        expect(() =>
+                            dataSource
                                 .getRepository(Post)
                                 .createQueryBuilder("post")
-                                .addSelect(malicious)
-                                .getRawMany()
-                        } catch {
-                            // expected to throw on invalid column expression
-                        }
+                                .addSelect(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
                         await verifyIntegrity(dataSource)()
                     }),
                 ))
@@ -131,23 +129,17 @@ describe("query builder > sql injection", () => {
         }
     })
 
-    // TODO: groupBy accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("groupBy", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
+    describe("groupBy", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
+                        expect(() =>
+                            dataSource
                                 .getRepository(Post)
                                 .createQueryBuilder("post")
-                                .groupBy(malicious)
-                                .getRawMany()
-                        } catch {
-                            // expected to throw on invalid column name
-                        }
+                                .groupBy(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
                         await verifyIntegrity(dataSource)()
                     }),
                 ))
@@ -177,23 +169,17 @@ describe("query builder > sql injection", () => {
         }
     })
 
-    // TODO: orderBy accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("orderBy", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
+    describe("orderBy", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
+                        expect(() =>
+                            dataSource
                                 .getRepository(Post)
                                 .createQueryBuilder("post")
-                                .orderBy(malicious)
-                                .getMany()
-                        } catch {
-                            // expected to throw on invalid column name
-                        }
+                                .orderBy(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
                         await verifyIntegrity(dataSource)()
                     }),
                 ))
@@ -329,23 +315,17 @@ describe("query builder > sql injection", () => {
         }
     })
 
-    // TODO: select accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("select", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
+    describe("select", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
+                        expect(() =>
+                            dataSource
                                 .getRepository(Post)
                                 .createQueryBuilder("post")
-                                .select(malicious)
-                                .getRawMany()
-                        } catch {
-                            // expected to throw on invalid column expression
-                        }
+                                .select(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
                         await verifyIntegrity(dataSource)()
                     }),
                 ))
@@ -395,6 +375,27 @@ describe("query builder > sql injection", () => {
                                 })
                                 .getMany()
                             expect(results).to.have.length(0)
+                        } catch {
+                            // some drivers reject certain byte sequences
+                        }
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
+    describe("findOne", () => {
+        for (const malicious of maliciousInputs) {
+            it(`should prevent injection with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        try {
+                            const result = await dataSource
+                                .getRepository(Post)
+                                .findOne({
+                                    where: { name: malicious },
+                                })
+                            expect(result).to.be.null
                         } catch {
                             // some drivers reject certain byte sequences
                         }
