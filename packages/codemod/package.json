@@ -21,12 +21,14 @@
     "test": "mocha"
   },
   "dependencies": {
-    "jscodeshift": "^17.1.2"
+    "jscodeshift": "^17.1.2",
+    "semver": "^7.7.2"
   },
   "devDependencies": {
     "@types/jscodeshift": "^0.12.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "^20.0.0",
+    "@types/semver": "^7.7.0",
     "@types/sinon": "^21.0.0",
     "chai": "^4.5.0",
     "mocha": "^11.0.0",

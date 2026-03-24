@@ -2,6 +2,10 @@ import path from "node:path"
 import { run as jscodeshift } from "jscodeshift/src/Runner"
 import { colors } from "./colors"
 import { collectTodos } from "../transforms/todo"
+import {
+    findPackageJsonFiles,
+    upgradeDependencies,
+} from "../transforms/v1/upgrade-dependencies"
 
 export const runTransforms = async (
     transforms: string[],
@@ -27,6 +31,34 @@ export const runTransforms = async (
             const existing = allTodos.get(transform) ?? []
             existing.push(...files)
             allTodos.set(transform, existing)
+        }
+    }
+
+    // Upgrade package.json dependencies
+    const packageJsonFiles = findPackageJsonFiles(paths)
+    if (packageJsonFiles.length > 0) {
+        console.log(
+            `\nUpgrading dependencies in ${packageJsonFiles.length} package.json file(s)`,
+        )
+        for (const file of packageJsonFiles) {
+            const report = upgradeDependencies(file, dry)
+
+            if (report.changes.length > 0) {
+                console.log(`\n  ${colors.dim(file)}:`)
+                report.changes.forEach((c) => console.log(`    ${c}`))
+            }
+
+            if (report.warnings.length > 0) {
+                report.warnings.forEach((w) =>
+                    console.log(`  ${colors.yellow("Warning:")} ${w}`),
+                )
+            }
+
+            if (report.errors.length > 0) {
+                report.errors.forEach((e) =>
+                    console.log(`  ${colors.red("Error:")} ${e}`),
+                )
+            }
         }
     }
 
