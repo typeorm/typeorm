@@ -40,6 +40,7 @@ export const renameConnectionToDataSource = (file: FileInfo, api: API) => {
     // Property renames
     const propertyRenames: Record<string, string> = {
         isConnected: "isInitialized",
+        connection: "dataSource",
     }
 
     // Rename imports from "typeorm"

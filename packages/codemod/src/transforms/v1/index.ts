@@ -1,6 +1,7 @@
 import { renameConnectionToDataSource } from "./rename-connection-to-datasource"
 import { replaceGlobalFunctions } from "./replace-global-functions"
 import { renameFindByIds } from "./rename-find-by-ids"
+import { renameFindOneById } from "./rename-find-one-by-id"
 import { renameExistToExists } from "./rename-exist-to-exists"
 import { renamePrintSqlToLogQuery } from "./rename-print-sql-to-log-query"
 import { renameGetAllMigrations } from "./rename-get-all-migrations"
@@ -26,6 +27,8 @@ import { replaceOnConflict } from "./replace-on-conflict"
 import { renameOrUpdateOverload } from "./rename-or-update-overload"
 import { renameLoadedTablesViews } from "./rename-loaded-tables-views"
 import { removeReplacePropertyNames } from "./remove-replace-property-names"
+import { replaceStringSelect } from "./replace-string-select"
+import { replaceStringRelations } from "./replace-string-relations"
 import { transformer } from "../transformer"
 
 export const description = "Migrate from v0.3.x to v1.0"
@@ -38,6 +41,7 @@ const transforms = [
     renameConnectionToDataSource,
     replaceGlobalFunctions,
     renameFindByIds,
+    renameFindOneById,
     renameExistToExists,
     renamePrintSqlToLogQuery,
     renameGetAllMigrations,
@@ -63,6 +67,8 @@ const transforms = [
     renameOrUpdateOverload,
     renameLoadedTablesViews,
     removeReplacePropertyNames,
+    replaceStringSelect,
+    replaceStringRelations,
 ]
 
 export default transformer(transforms)

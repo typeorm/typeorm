@@ -9,3 +9,8 @@ const connection = new DataSource(options)
 await connection.initialize()
 console.log(connection.isInitialized)
 await connection.destroy()
+
+// Property access: .connection → .dataSource
+const ds = queryRunner.dataSource
+const ds2 = event.dataSource
+const ds3 = entityManager.dataSource
