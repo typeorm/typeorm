@@ -189,7 +189,7 @@ export class RelationQueryBuilder<
             of = metadata.primaryColumns[0].createValueMap(of)
         }
 
-        return this.connection.relationLoader.load(
+        return this.dataSource.relationLoader.load(
             this.expressionMap.relationMetadata,
             of,
             this.queryRunner,

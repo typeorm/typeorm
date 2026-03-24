@@ -27,8 +27,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
         // If autoSave is enabled by user, location or autoSaveCallback have to be set
         // because either autoSave saves to location or calls autoSaveCallback.
@@ -238,7 +238,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                     const query = "SELECT last_insert_rowid()"
                     try {
                         const result = this.databaseConnection.exec(query)
-                        this.connection.logger.logQuery(query)
+                        this.dataSource.logger.logQuery(query)
                         return OrmUtils.mergeDeep(
                             map,
                             generatedColumn.createValueMap(
@@ -246,7 +246,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                             ),
                         )
                     } catch (e) {
-                        this.connection.logger.logQueryError(e, query, [])
+                        this.dataSource.logger.logQueryError(e, query, [])
                     }
                 }
 

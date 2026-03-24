@@ -1,0 +1,61 @@
+import "reflect-metadata"
+import {
+    createTestingConnections,
+    closeTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src"
+import { Node } from "./entity/node"
+import { expect } from "chai"
+
+describe("tree-tables > materialized-path > soft-delete parent", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            relationLoadStrategy: "query",
+            enabledDrivers: ["mysql"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should update mpath when reassigning child to a new parent after soft-deleting the old one", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const nodeRepository = dataSource.getTreeRepository(Node)
+
+                // Entity instances setup
+                const parent = await nodeRepository.save(
+                    nodeRepository.create({ name: "root node" }),
+                )
+                const child = await nodeRepository.save(
+                    nodeRepository.create({ name: "child node", parent }),
+                )
+
+                // Validate mpath
+                let [mpath] = await dataSource.query(
+                    "SELECT mpath FROM node WHERE id = ?",
+                    [child.id],
+                )
+                expect(mpath?.mpath).to.be.equal(`${parent.id}.${child.id}.`)
+                // Soft delete parent
+                await nodeRepository.softDelete(parent)
+
+                // Assign new parent
+                const newParent = await nodeRepository.save(
+                    nodeRepository.create({ name: "root node 2" }),
+                )
+                child.parent = newParent
+                await nodeRepository.save(child)
+                ;[mpath] = await dataSource.query(
+                    "SELECT mpath FROM node WHERE id = ?",
+                    [child.id],
+                )
+
+                expect(mpath?.mpath).to.be.equal(`${newParent.id}.${child.id}.`)
+            }),
+        ))
+})

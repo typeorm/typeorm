@@ -287,15 +287,19 @@ The following renames apply throughout:
 | `connection.close()`             | `dataSource.destroy()`     |
 | `connection.isConnected`         | `dataSource.isInitialized` |
 
-### `ConnectionManager`
-
-The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
-
 ### `name` property removed
 
 The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
 
 Note: code that reads `dataSource.name` will now receive `undefined` instead of `"default"`. If you use this value in logging or multi-tenancy logic, update accordingly.
+
+### `.connection` property in various classes is now `.dataSource`
+
+The `connection` property in the `Driver`, `QueryRunner`, `EntityManager`, `QueryBuilder`, `EntityMetadata` and `*Event` classes was renamed to `dataSource`. For `EntityManager`, this change was announced in 0.3, but it was not actually implemented. To ease the transition, a deprecated getter was added that returns the same value as `dataSource`.
+
+### Miscellaneous
+
+The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
 
 `ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
 
@@ -425,7 +429,49 @@ authorName: string
 
 The deprecated `unsigned` property on `ColumnNumericOptions` (used with decimal/float column type overloads like `@Column("decimal", { unsigned: true })`) has been removed, as MySQL deprecated `UNSIGNED` for non-integer numeric types. The `unsigned` option on `ColumnOptions` for integer types is **not** affected.
 
+## Relations
+
+### `nullable: false` now uses INNER JOIN
+
+Relations marked with `nullable: false` now use `INNER JOIN` instead of `LEFT JOIN` when loaded via `relations`, eager loading, or find options. This applies only to relation types that own the join column (`ManyToOne` and owning-side `OneToOne`).
+
+This is semantically correct since a non-nullable foreign key guarantees the related entity exists, and allows the database optimizer to produce more efficient query plans.
+
+**Potentially breaking:** If your database contains rows that violate the `NOT NULL` constraint (e.g. orphaned foreign keys, or `nullable: false` was set but the column is actually nullable in the DB), those rows will be excluded from query results. Verify your data integrity or change the relation to `nullable: true` if needed.
+
+```typescript
+// INNER JOIN — related entity is guaranteed to exist
+@ManyToOne(() => User, { nullable: false })
+author: User
+
+// LEFT JOIN — related entity may not exist (default)
+@ManyToOne(() => User)
+optionalEditor: User
+```
+
+`OneToMany`, `ManyToMany`, and inverse `OneToOne` relations always use `LEFT JOIN` regardless of the `nullable` setting, since these relation types do not have a join column on the current table.
+
+**Soft-delete exception:** If the related entity has a `@DeleteDateColumn`, `LEFT JOIN` is used even for `nullable: false` relations (unless `withDeleted: true` is set). This prevents soft-deleted related entities from filtering out their parent rows.
+
 ## Repository
+
+### `findOneById`
+
+The deprecated `findOneById` method has been removed from `EntityManager`, `Repository`, `BaseEntity`, `MongoEntityManager`, and `MongoRepository`. Use `findOneBy` instead:
+
+```typescript
+// Before
+const user = await manager.findOneById(User, 1)
+const user = await repository.findOneById(1)
+const user = await User.findOneById(1)
+
+// After
+const user = await manager.findOneBy(User, { id: 1 })
+const user = await repository.findOneBy({ id: 1 })
+const user = await User.findOneBy({ id: 1 })
+```
+
+For MongoDB entities with `@ObjectIdColumn()`, `findOneBy` works the same way — TypeORM automatically translates the property name to `_id`.
 
 ### `findByIds` removed
 
@@ -494,6 +540,162 @@ categoryCount: number
 })
 categoryCount: number
 ```
+
+## Find Options
+
+### `join` option removed
+
+The deprecated `join` property on `FindOneOptions` and `FindManyOptions` has been removed, along with the `JoinOptions` interface.
+
+#### `leftJoinAndSelect` → `relations`
+
+If you were using `leftJoinAndSelect`, replace it with the `relations` object syntax — `relations` always performs LEFT JOINs with selection, which is equivalent:
+
+```typescript
+// Before
+const posts = await repository.find({
+    join: {
+        alias: "post",
+        leftJoinAndSelect: {
+            categories: "post.categories",
+            author: "post.author",
+        },
+    },
+})
+
+// After
+const posts = await repository.find({
+    relations: { categories: true, author: true },
+})
+```
+
+#### All other join types → QueryBuilder
+
+The `relations` option only supports LEFT JOINs with selection. If you were using `innerJoinAndSelect`, `innerJoin`, or `leftJoin` (without select), switch to the QueryBuilder API:
+
+```typescript
+// Before — innerJoinAndSelect
+const posts = await repository.find({
+    join: {
+        alias: "post",
+        innerJoinAndSelect: {
+            categories: "post.categories",
+        },
+    },
+})
+
+// After — QueryBuilder with innerJoinAndSelect
+const posts = await repository
+    .createQueryBuilder("post")
+    .innerJoinAndSelect("post.categories", "categories")
+    .getMany()
+
+// Before — leftJoin (without select)
+const posts = await repository.find({
+    join: {
+        alias: "post",
+        leftJoin: {
+            categories: "post.categories",
+        },
+    },
+    where: { categories: { isRemoved: false } },
+})
+
+// After — QueryBuilder with leftJoin
+const posts = await repository
+    .createQueryBuilder("post")
+    .leftJoin("post.categories", "categories")
+    .where("categories.isRemoved = :isRemoved", { isRemoved: false })
+    .getMany()
+```
+
+This distinction matters in practice. For example, PostgreSQL and CockroachDB do not allow `FOR UPDATE` on the nullable side of an outer join, so queries that combine locking with joined relations may need INNER JOINs:
+
+```typescript
+// Before — innerJoinAndSelect + lock
+const post = await repository.findOne({
+    join: {
+        alias: "post",
+        innerJoinAndSelect: {
+            categories: "post.categories",
+        },
+    },
+    lock: { mode: "pessimistic_write", tables: ["category"] },
+})
+
+// After — QueryBuilder with innerJoinAndSelect + lock
+const post = await repository
+    .createQueryBuilder("post")
+    .innerJoinAndSelect("post.categories", "categories")
+    .setLock("pessimistic_write", undefined, ["categories"])
+    .getOne()
+```
+
+#### Locking with nested relations → QueryBuilder
+
+The `relations` option cannot be used with pessimistic locking on joined tables because `relations` always uses LEFT JOINs, and PostgreSQL/CockroachDB reject `FOR UPDATE` on the nullable side of outer joins. Use QueryBuilder with `innerJoinAndSelect` instead:
+
+```typescript
+// Before — nested relations + lock via find options
+const post = await repository.findOne({
+    where: { id: 1 },
+    join: {
+        alias: "post",
+        innerJoinAndSelect: {
+            categories: "post.categories",
+            images: "categories.images",
+        },
+    },
+    lock: { mode: "pessimistic_write", tables: ["images"] },
+})
+
+// After — QueryBuilder with innerJoinAndSelect + lock
+const post = await repository
+    .createQueryBuilder("post")
+    .innerJoinAndSelect("post.categories", "categories")
+    .innerJoinAndSelect("categories.images", "images")
+    .where("post.id = :id", { id: 1 })
+    .setLock("pessimistic_write", undefined, ["images"])
+    .getOne()
+```
+
+Note that locking the _main_ table still works with `relations` — only locking _joined_ tables requires QueryBuilder with inner joins.
+
+### String-based `select` removed
+
+The deprecated string-array syntax for `select` find options has been removed. Use the object syntax instead:
+
+```typescript
+// Before
+const users = await repository.find({
+    select: ["id", "name"],
+})
+
+// After
+const users = await repository.find({
+    select: { id: true, name: true },
+})
+```
+
+The removed type is `FindOptionsSelectByString`.
+
+### String-based `relations` removed
+
+The deprecated string-array syntax for `relations` find options has been removed. Use the object syntax instead:
+
+```typescript
+// Before
+const users = await repository.find({
+    relations: ["profile", "posts"],
+})
+
+// After
+const users = await repository.find({
+    relations: { profile: true, posts: true },
+})
+```
+
+The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
 
@@ -672,7 +874,7 @@ TypeORM no longer has built-in IoC container support. The `typeorm-typedi-extens
 
 ### Subscribers and migrations with dependencies
 
-TypeORM always instantiates subscribers and migrations internally using a zero-argument constructor, so you cannot pass pre-built instances. If your migrations need access to services, use the `DataSource` (available via `queryRunner.connection`) inside the migration itself:
+TypeORM always instantiates subscribers and migrations internally using a zero-argument constructor, so you cannot pass pre-built instances. If your migrations need access to services, use the `DataSource` (available via `queryRunner.dataSource`) inside the migration itself:
 
 ```typescript
 // Before
@@ -683,7 +885,7 @@ useContainer(Container)
 // After — access dependencies via the DataSource inside the migration
 export class MyMigration1234 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
-        const repo = queryRunner.connection.getRepository(User)
+        const repo = queryRunner.dataSource.getRepository(User)
         // ...
     }
 }
