@@ -1483,6 +1483,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         `Semicolons are not allowed in orderBy() to prevent SQL injection. Use parameter binding instead.`,
                     )
             }
+            this.validateOrderByCondition(sort)
             this.expressionMap.orderBys = sort as OrderByCondition
             return this
         }
@@ -2634,15 +2635,22 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const orderValue =
                         typeof orderBys[columnName] === "string"
                             ? orderBys[columnName]
-                            : (orderBys[columnName] as any).order +
+                            : orderBys[columnName].order +
                               " " +
-                              (orderBys[columnName] as any).nulls
+                              orderBys[columnName].nulls
+
+                    if (/[;'"\\]/.test(orderValue))
+                        throw new TypeORMError(
+                            `Unsafe order-by value "${orderValue}" for "${columnName}".`,
+                        )
+
                     const selectionByAlias = this.expressionMap.selects.find(
                         (s) => s.aliasName === columnName,
                     )
                     if (selectionByAlias) {
                         return this.escape(columnName) + " " + orderValue
                     }
+
                     const selection = this.expressionMap.selects.find(
                         (s) => s.selection === columnName,
                     )

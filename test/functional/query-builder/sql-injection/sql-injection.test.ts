@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -183,6 +184,109 @@ describe("query builder > sql injection", () => {
                     }),
                 ))
         }
+    })
+
+    describe("orderBy value injection", () => {
+        it("should reject invalid order direction in OrderByCondition", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    expect(() =>
+                        dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            .orderBy({
+                                "post.id": "ASC; DELETE FROM post;" as any,
+                            }),
+                    ).to.throw(/Invalid order direction/)
+                }),
+            ))
+
+        it("should reject invalid nulls option in OrderByCondition", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    expect(() =>
+                        dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            .orderBy({
+                                "post.id": {
+                                    order: "ASC",
+                                    nulls: "NULLS FIRST; DROP TABLE post;" as any,
+                                },
+                            }),
+                    ).to.throw(/Invalid nulls option/)
+                }),
+            ))
+
+        it("should accept valid OrderByCondition values", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .orderBy({
+                            "post.id": "DESC",
+                            "post.name": "ASC",
+                        })
+                        .getMany()
+                }),
+            ))
+
+        it("should accept valid OrderByCondition with nulls option", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (
+                        DriverUtils.isMySQLFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "mssql"
+                    )
+                        return
+
+                    await dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .orderBy({
+                            "post.id": "DESC",
+                            "post.name": {
+                                order: "ASC",
+                                nulls: "NULLS LAST",
+                            },
+                        })
+                        .getMany()
+                }),
+            ))
+        it("should reject invalid order direction in UpdateQueryBuilder", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy({
+                                id: "ASC; DROP TABLE post;" as any,
+                            }),
+                    ).to.throw(/Invalid order direction/)
+                }),
+            ))
+
+        it("should reject invalid order direction in SoftDeleteQueryBuilder", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy({
+                                id: "ASC; DROP TABLE post;" as any,
+                            }),
+                    ).to.throw(/Invalid order direction/)
+                }),
+            ))
     })
 
     describe("orWhere", () => {
