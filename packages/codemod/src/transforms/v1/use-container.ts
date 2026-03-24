@@ -22,7 +22,7 @@ export const useContainer = (file: FileInfo, api: API) => {
             },
         }).forEach((path) => {
             // Replace with a comment
-            const replacement = j.expressionStatement(j.identifier("undefined"))
+            const replacement = j.emptyStatement()
             addTodoComment(
                 replacement,
                 `${funcName}() was removed in TypeORM v1. See migration guide: https://typeorm.io/docs/guides/migration-v1#container-system`,

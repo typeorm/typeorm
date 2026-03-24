@@ -202,6 +202,6 @@ export const findPackageJsonFiles = (paths: string[]): string[] => {
 
 /** Detect indentation from a JSON string. */
 const detectIndent = (json: string): number => {
-    const match = json.match(/^(\s+)"/m)
+    const match = json.match(/^( +)"/m)
     return match ? match[1].length : 2
 }
