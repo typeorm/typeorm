@@ -1,4 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
+import { fileImportsFrom } from "../ast-helpers"
 
 export const description =
     "replace `findByIds()` with `findBy()` and `In` operator"
@@ -9,6 +10,10 @@ export const renameFindByIds = (file: FileInfo, api: API) => {
     let hasChanges = false
     let needsInImport = false
 
+    if (!fileImportsFrom(root, j, "typeorm")) {
+        return undefined
+    }
+
     root.find(j.CallExpression, {
         callee: {
             type: "MemberExpression",
@@ -17,7 +22,7 @@ export const renameFindByIds = (file: FileInfo, api: API) => {
     }).forEach((path) => {
         if (
             path.node.callee.type !== "MemberExpression" ||
-            path.node.arguments.length < 1
+            path.node.arguments.length !== 1
         ) {
             return
         }

@@ -9,7 +9,9 @@ const fixturesDir = path.join(__dirname, "fixtures")
 const format = async (source: string) =>
     prettier.format(source, {
         parser: "typescript",
-        ...(await prettier.resolveConfig(fixturesDir)),
+        ...(await prettier.resolveConfig(fixturesDir, {
+            editorconfig: true,
+        })),
     })
 
 function getFixturePairs(): { name: string; input: string; output: string }[] {

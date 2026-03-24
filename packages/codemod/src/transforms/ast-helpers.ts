@@ -1,4 +1,4 @@
-import type { ASTNode } from "jscodeshift"
+import type { ASTNode, Collection, JSCodeshift } from "jscodeshift"
 
 /**
  * Extracts a string value from a StringLiteral or Literal node.
@@ -26,4 +26,19 @@ export const setStringValue = (node: ASTNode, value: string): void => {
     if (node.type === "StringLiteral" || node.type === "Literal") {
         ;(node as ASTNode & { value: string }).value = value
     }
+}
+
+/**
+ * Checks whether the file contains an import from the given module.
+ */
+export const fileImportsFrom = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+): boolean => {
+    return (
+        root.find(j.ImportDeclaration, {
+            source: { value: moduleName },
+        }).length > 0
+    )
 }

@@ -7,21 +7,43 @@ export const replaceReadonlyColumn = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
-    root.find(j.ObjectProperty, {
-        key: { name: "readonly" },
-    }).forEach((path) => {
-        if (path.node.key.type === "Identifier") {
-            // readonly: true → update: false
-            // readonly: false → update: true
-            path.node.key.name = "update"
+    // jscodeshift does not traverse into decorator expressions,
+    // so we find ClassProperty nodes and inspect their decorators manually.
+    root.find(j.ClassProperty).forEach((path) => {
+        const decorators = (path.node as any).decorators as any[] | undefined
+        if (!decorators) return
+
+        for (const decorator of decorators) {
             if (
-                path.node.value.type === "BooleanLiteral" ||
-                (path.node.value.type === "Literal" &&
-                    typeof path.node.value.value === "boolean")
+                decorator.type !== "Decorator" ||
+                decorator.expression.type !== "CallExpression"
             ) {
-                path.node.value.value = !path.node.value.value
+                continue
             }
-            hasChanges = true
+
+            for (const arg of decorator.expression.arguments) {
+                if (arg.type !== "ObjectExpression") continue
+
+                for (const prop of arg.properties) {
+                    if (
+                        prop.type === "ObjectProperty" &&
+                        prop.key.type === "Identifier" &&
+                        prop.key.name === "readonly"
+                    ) {
+                        // readonly: true → update: false
+                        // readonly: false → update: true
+                        prop.key.name = "update"
+                        if (
+                            prop.value.type === "BooleanLiteral" ||
+                            (prop.value.type === "Literal" &&
+                                typeof prop.value.value === "boolean")
+                        ) {
+                            prop.value.value = !prop.value.value
+                        }
+                        hasChanges = true
+                    }
+                }
+            }
         }
     })
 

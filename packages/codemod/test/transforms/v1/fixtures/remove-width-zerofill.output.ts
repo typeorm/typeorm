@@ -1,7 +1,9 @@
 import { Column } from "typeorm"
 
 class Post {
-    @Column({ type: "int" })
+    @Column({
+        type: "int",
+    })
     postCode: number
 }
 

@@ -1,4 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
+import { fileImportsFrom } from "../ast-helpers"
 
 export const description = "migrate from `Connection` to `DataSource`"
 
@@ -6,6 +7,8 @@ export const renameConnectionToDataSource = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
     let hasChanges = false
+
+    const hasTypeormImport = fileImportsFrom(root, j, "typeorm")
 
     // Type/class renames
     const typeRenames: Record<string, string> = {
@@ -92,7 +95,45 @@ export const renameConnectionToDataSource = (file: FileInfo, api: API) => {
         })
     }
 
+    // Collect variable names known to be Connection/DataSource instances
+    const connectionTypeNames = new Set(Object.keys(typeRenames))
+    connectionTypeNames.add("DataSource")
+    const connectionVarNames = new Set<string>()
+
+    // Variables assigned from new Connection(...) / new DataSource(...)
+    root.find(j.VariableDeclarator).forEach((path) => {
+        const init = path.node.init
+        if (
+            init?.type === "NewExpression" &&
+            init.callee.type === "Identifier" &&
+            connectionTypeNames.has(init.callee.name)
+        ) {
+            if (path.node.id.type === "Identifier") {
+                connectionVarNames.add(path.node.id.name)
+            }
+        }
+    })
+
+    // Variables with Connection/DataSource type annotations
+    root.find(j.VariableDeclarator).forEach((path) => {
+        const id = path.node.id
+        if (
+            id.type === "Identifier" &&
+            id.typeAnnotation?.type === "TSTypeAnnotation"
+        ) {
+            const ann = id.typeAnnotation.typeAnnotation
+            if (
+                ann.type === "TSTypeReference" &&
+                ann.typeName.type === "Identifier" &&
+                connectionTypeNames.has(ann.typeName.name)
+            ) {
+                connectionVarNames.add(id.name)
+            }
+        }
+    })
+
     // Rename method calls: .connect() → .initialize(), .close() → .destroy()
+    // Only on variables known to be Connection/DataSource instances
     for (const [oldMethod, newMethod] of Object.entries(methodRenames)) {
         root.find(j.CallExpression, {
             callee: {
@@ -104,8 +145,14 @@ export const renameConnectionToDataSource = (file: FileInfo, api: API) => {
                 path.node.callee.type === "MemberExpression" &&
                 path.node.callee.property.type === "Identifier"
             ) {
-                path.node.callee.property.name = newMethod
-                hasChanges = true
+                const obj = path.node.callee.object
+                if (
+                    obj.type === "Identifier" &&
+                    connectionVarNames.has(obj.name)
+                ) {
+                    path.node.callee.property.name = newMethod
+                    hasChanges = true
+                }
             }
         })
     }

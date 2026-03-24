@@ -10,22 +10,40 @@ export const removeWidthZerofill = (file: FileInfo, api: API) => {
 
     const propsToRemove = new Set(["width", "zerofill"])
 
-    root.find(j.ObjectExpression).forEach((path) => {
-        const props = path.node.properties
-        const filtered = props.filter((prop) => {
-            if (
-                (prop.type === "Property" || prop.type === "ObjectProperty") &&
-                prop.key.type === "Identifier" &&
-                propsToRemove.has(prop.key.name)
-            ) {
-                hasChanges = true
-                return false
-            }
-            return true
-        })
+    // jscodeshift does not traverse into decorator expressions,
+    // so we find ClassProperty nodes and inspect their decorators manually.
+    root.find(j.ClassProperty).forEach((path) => {
+        const decorators = (path.node as any).decorators as any[] | undefined
+        if (!decorators) return
 
-        if (filtered.length !== props.length) {
-            path.node.properties = filtered
+        for (const decorator of decorators) {
+            if (
+                decorator.type !== "Decorator" ||
+                decorator.expression.type !== "CallExpression"
+            ) {
+                continue
+            }
+
+            for (const arg of decorator.expression.arguments) {
+                if (arg.type !== "ObjectExpression") continue
+
+                const filtered = arg.properties.filter((prop: any) => {
+                    if (
+                        (prop.type === "Property" ||
+                            prop.type === "ObjectProperty") &&
+                        prop.key.type === "Identifier" &&
+                        propsToRemove.has(prop.key.name)
+                    ) {
+                        hasChanges = true
+                        return false
+                    }
+                    return true
+                })
+
+                if (filtered.length !== arg.properties.length) {
+                    arg.properties = filtered
+                }
+            }
         }
     })
 
