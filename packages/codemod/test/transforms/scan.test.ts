@@ -18,8 +18,8 @@ describe("scan", () => {
             const names = getTransformNames("v1")
             expect(names).to.be.an("array")
             expect(names.length).to.be.greaterThan(0)
-            expect(names).to.include("rename-find-by-ids")
-            expect(names).to.include("replace-sqlite-type")
+            expect(names).to.include("repository-find-by-ids")
+            expect(names).to.include("datasource-sqlite-type")
             expect(names).to.not.include("index")
         })
 
@@ -32,9 +32,9 @@ describe("scan", () => {
 
     describe("getTransformPath", () => {
         it("should return path for existing transform", () => {
-            const result = getTransformPath("v1", "rename-find-by-ids")
+            const result = getTransformPath("v1", "repository-find-by-ids")
             expect(result).to.not.be.null
-            expect(result).to.include("rename-find-by-ids")
+            expect(result).to.include("repository-find-by-ids")
         })
 
         it("should return null for non-existing transform", () => {

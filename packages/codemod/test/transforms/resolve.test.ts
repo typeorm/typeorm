@@ -23,9 +23,9 @@ describe("resolveTransforms", () => {
     })
 
     it("should return specific transform path when transform is specified", () => {
-        const result = resolveTransforms("v1", "rename-find-by-ids")
+        const result = resolveTransforms("v1", "repository-find-by-ids")
         expect(result).to.have.lengthOf(1)
-        expect(result[0]).to.include("rename-find-by-ids")
+        expect(result[0]).to.include("repository-find-by-ids")
     })
 
     it("should call process.exit for unknown version", () => {

@@ -17,15 +17,15 @@ describe("listTransforms", () => {
         listTransforms("v1")
 
         const output = logStub.args.map((a) => a[0]).join("\n")
-        expect(output).to.include("rename-find-by-ids")
-        expect(output).to.include("replace-sqlite-type")
+        expect(output).to.include("repository-find-by-ids")
+        expect(output).to.include("datasource-sqlite-type")
     })
 
     it("should mark manual transforms with (*)", () => {
         listTransforms("v1")
 
         const output = logStub.args.map((a) => a[0]).join("\n")
-        expect(output).to.include("remove-use-container")
+        expect(output).to.include("use-container")
         expect(output).to.include("(*)")
     })
 
