@@ -3,6 +3,7 @@
 ._*
 
 ### Node ###
+.nvmrc
 .node-version
 build/
 coverage/
