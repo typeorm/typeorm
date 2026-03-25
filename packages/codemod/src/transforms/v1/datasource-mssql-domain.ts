@@ -5,7 +5,7 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "replace removed `domain` option in MSSQL config with TODO"
+    "flag removed `domain` MSSQL option for manual migration"
 export const manual = true
 
 export const datasourceMssqlDomain = (file: FileInfo, api: API) => {
@@ -19,7 +19,7 @@ export const datasourceMssqlDomain = (file: FileInfo, api: API) => {
     }).forEach((path) => {
         addTodoComment(
             path.node,
-            '`domain` was removed in TypeORM v1. Restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`. See migration guide: https://typeorm.io/docs/guides/migration-v1',
+            '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`',
             j,
         )
         hasChanges = true

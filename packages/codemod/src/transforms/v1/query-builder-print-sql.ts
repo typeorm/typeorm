@@ -5,7 +5,7 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "replace removed `printSql()` with `getSql()` or `getQueryAndParameters()`"
+    "flag removed `printSql()` for manual migration to `getSql()` / `getQueryAndParameters()`"
 export const manual = true
 
 export const queryBuilderPrintSql = (file: FileInfo, api: API) => {
@@ -15,7 +15,7 @@ export const queryBuilderPrintSql = (file: FileInfo, api: API) => {
     let hasTodos = false
 
     const message =
-        "`printSql()` was removed in TypeORM v1. Use `getSql()` or `getQueryAndParameters()` to inspect SQL. See migration guide: https://typeorm.io/docs/guides/migration-v1"
+        "`printSql()` was removed — use `getSql()` or `getQueryAndParameters()` to inspect SQL"
 
     root.find(j.CallExpression, {
         callee: {

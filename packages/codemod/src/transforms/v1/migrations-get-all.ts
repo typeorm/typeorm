@@ -5,7 +5,7 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "replace removed `getAllMigrations()` with TODO comment"
+    "flag removed `getAllMigrations()` for manual migration"
 export const manual = true
 
 export const migrationsGetAll = (file: FileInfo, api: API) => {
@@ -25,7 +25,7 @@ export const migrationsGetAll = (file: FileInfo, api: API) => {
             statement.forEach((stmtPath) => {
                 addTodoComment(
                     stmtPath.node,
-                    "getAllMigrations() was removed in TypeORM v1. Use getPendingMigrations(), getExecutedMigrations(), or dataSource.migrations instead.",
+                    "`getAllMigrations()` was removed — use `getPendingMigrations()`, `getExecutedMigrations()`, or `dataSource.migrations` instead",
                     j,
                 )
             })

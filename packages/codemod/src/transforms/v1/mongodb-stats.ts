@@ -4,7 +4,7 @@ import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
-export const description = "replace removed `stats()` with TODO comment"
+export const description = "flag removed `stats()` for manual migration"
 export const manual = true
 
 export const mongodbStats = (file: FileInfo, api: API) => {
@@ -13,8 +13,7 @@ export const mongodbStats = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    const message =
-        "`stats()` was removed in TypeORM v1. Use the MongoDB driver directly. See migration guide: https://typeorm.io/docs/guides/migration-v1"
+    const message = "`stats()` was removed — use the MongoDB driver directly"
 
     // Find .stats() calls
     root.find(j.CallExpression, {

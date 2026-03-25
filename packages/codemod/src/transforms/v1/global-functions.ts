@@ -5,7 +5,7 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "replace deprecated global functions with `DataSource` methods"
+    "flag deprecated global functions for manual migration to `DataSource` methods"
 export const manual = true
 
 export const globalFunctions = (file: FileInfo, api: API) => {

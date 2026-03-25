@@ -29,7 +29,7 @@ export const useContainer = (file: FileInfo, api: API) => {
             const replacement = j.emptyStatement()
             addTodoComment(
                 replacement,
-                `${funcName}() was removed in TypeORM v1. See migration guide: https://typeorm.io/docs/guides/migration-v1#container-system`,
+                `${funcName}() was removed — the container system is no longer supported`,
                 j,
             )
             j(path).replaceWith(replacement)

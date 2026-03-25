@@ -6,7 +6,7 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "replace removed `@EntityRepository` and `AbstractRepository` with TODO"
+    "flag removed `@EntityRepository` and `AbstractRepository` for manual migration"
 export const manual = true
 
 export const repositoryAbstract = (file: FileInfo, api: API) => {
@@ -24,7 +24,7 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     }).forEach((path) => {
         addTodoComment(
             path.node,
-            "`@EntityRepository` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+            "`@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`",
             j,
         )
         hasChanges = true
@@ -50,7 +50,7 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
 
         addTodoComment(
             path.node,
-            "`AbstractRepository` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+            "`AbstractRepository` was removed — use a custom service class with `dataSource.getRepository()`",
             j,
         )
         hasChanges = true
@@ -60,7 +60,7 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     // Find getCustomRepository() calls and add TODO
     const addGetCustomRepoTodo = (path: ASTPath) => {
         const message =
-            "`getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1"
+            "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"
         const parentNode: Node = path.parent.node
         if (parentNode.type === "ExpressionStatement") {
             addTodoComment(parentNode, message, j)

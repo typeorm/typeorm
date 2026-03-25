@@ -6,7 +6,7 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "replace removed `@RelationCount` decorator with TODO"
+    "flag removed `@RelationCount` decorator for manual migration"
 export const manual = true
 
 export const relationCount = (file: FileInfo, api: API) => {
@@ -24,7 +24,7 @@ export const relationCount = (file: FileInfo, api: API) => {
     }).forEach((path) => {
         addTodoComment(
             path.node,
-            "`@RelationCount` was removed in TypeORM v1. Use `QueryBuilder` with `loadRelationCountAndMap()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1",
+            "`@RelationCount` was removed — use `QueryBuilder` with `loadRelationCountAndMap()` instead",
             j,
         )
         hasChanges = true

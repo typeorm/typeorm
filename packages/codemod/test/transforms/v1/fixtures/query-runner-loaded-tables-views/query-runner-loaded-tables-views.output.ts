@@ -1,4 +1,4 @@
-// TODO: `loadedTables` was removed in TypeORM v1. Use async `loadTables()` / `loadViews()` methods instead. See migration guide: https://typeorm.io/docs/guides/migration-v1
+// TODO(typeorm-v1): `loadedTables` was removed — use `getTables()` / `getViews()` instead
 const tables = queryRunner.loadedTables
-// TODO: `loadedViews` was removed in TypeORM v1. Use async `loadTables()` / `loadViews()` methods instead. See migration guide: https://typeorm.io/docs/guides/migration-v1
+// TODO(typeorm-v1): `loadedViews` was removed — use `getTables()` / `getViews()` instead
 const views = queryRunner.loadedViews

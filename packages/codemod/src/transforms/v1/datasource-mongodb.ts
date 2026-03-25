@@ -96,7 +96,7 @@ export const datasourceMongodb = (file: FileInfo, api: API) => {
         if (writeConcernProps.has(name)) {
             addTodoComment(
                 path.node,
-                `\`${name}\` was removed in TypeORM v1. Migrate to \`writeConcern: { ... }\`. See migration guide: https://typeorm.io/docs/guides/migration-v1`,
+                `\`${name}\` was removed — migrate to \`writeConcern: { ... }\``,
                 j,
             )
             hasChanges = true

@@ -1,6 +1,6 @@
 const dataSource = new DataSource({
     type: "mssql",
-    // TODO: `domain` was removed in TypeORM v1. Restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`. See migration guide: https://typeorm.io/docs/guides/migration-v1
+    // TODO(typeorm-v1): `domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`
     domain: "MYDOMAIN",
     username: "user",
 })

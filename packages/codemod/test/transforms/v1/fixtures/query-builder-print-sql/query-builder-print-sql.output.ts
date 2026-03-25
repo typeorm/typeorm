@@ -1,4 +1,4 @@
-// TODO: `printSql()` was removed in TypeORM v1. Use `getSql()` or `getQueryAndParameters()` to inspect SQL. See migration guide: https://typeorm.io/docs/guides/migration-v1
+// TODO(typeorm-v1): `printSql()` was removed — use `getSql()` or `getQueryAndParameters()` to inspect SQL
 const users = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")

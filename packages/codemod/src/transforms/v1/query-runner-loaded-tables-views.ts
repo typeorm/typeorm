@@ -5,7 +5,7 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "replace removed `loadedTables` and `loadedViews` with TODO"
+    "flag removed `loadedTables` and `loadedViews` for manual migration to `getTables()` / `getViews()`"
 export const manual = true
 
 interface TraversalNode {
@@ -40,10 +40,10 @@ export const queryRunnerLoadedTablesViews = (file: FileInfo, api: API) => {
                 current.parent.node.type === "ReturnStatement"
             ) {
                 const stmt = current.parent.node
-                const message = `\`${propName}\` was removed in TypeORM v1. Use async \`loadTables()\` / \`loadViews()\` methods instead. See migration guide: https://typeorm.io/docs/guides/migration-v1`
+                const message = `\`${propName}\` was removed — use \`getTables()\` / \`getViews()\` instead`
 
                 // Avoid duplicate comments
-                const commentValue = ` TODO: ${message}`
+                const commentValue = ` TODO(typeorm-v1): ${message}`
                 const comments = (stmt.comments = stmt.comments || [])
                 const hasSameComment = comments.some(
                     (c) => c.value === commentValue,

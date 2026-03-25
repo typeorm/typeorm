@@ -6,7 +6,7 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "replace removed `onConflict()` with `orIgnore()` or TODO"
+    "flag removed `onConflict()` for manual migration to `orIgnore()` / `orUpdate()`"
 export const manual = true
 
 export const queryBuilderOnConflict = (file: FileInfo, api: API) => {
@@ -34,7 +34,7 @@ export const queryBuilderOnConflict = (file: FileInfo, api: API) => {
         } else {
             // Add a TODO comment
             const message =
-                "`onConflict()` was removed in TypeORM v1. Use `orIgnore()` or `orUpdate()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1"
+                "`onConflict()` was removed — use `orIgnore()` or `orUpdate()` instead"
             const parentNode: Node = path.parent.node
             if (parentNode.type === "ExpressionStatement") {
                 addTodoComment(parentNode, message, j)

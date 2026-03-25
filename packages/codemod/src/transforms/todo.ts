@@ -6,5 +6,5 @@ export const addTodoComment = (
     j: JSCodeshift,
 ): void => {
     if (!node.comments) node.comments = []
-    node.comments.push(j.commentLine(` TODO: ${message}`))
+    node.comments.push(j.commentLine(` TODO(typeorm-v1): ${message}`))
 }

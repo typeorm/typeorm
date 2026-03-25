@@ -1,5 +1,5 @@
 class MyQueryBuilder extends SelectQueryBuilder<any> {
-    // TODO: `replacePropertyNames` was removed in TypeORM v1. This method override is no longer called. See migration guide: https://typeorm.io/docs/guides/migration-v1
+    // TODO(typeorm-v1): `replacePropertyNames` was removed — property name replacement is now handled internally
     replacePropertyNames(query: string): string {
         return query
     }

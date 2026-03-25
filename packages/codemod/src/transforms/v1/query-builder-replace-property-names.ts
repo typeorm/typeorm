@@ -5,7 +5,7 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "flag removed `replacePropertyNames` override with TODO"
+    "flag removed `replacePropertyNames` override for manual review"
 export const manual = true
 
 export const queryBuilderReplacePropertyNames = (file: FileInfo, api: API) => {
@@ -16,7 +16,7 @@ export const queryBuilderReplacePropertyNames = (file: FileInfo, api: API) => {
 
     // Find method declarations named replacePropertyNames in classes
     const message =
-        "`replacePropertyNames` was removed in TypeORM v1. This method override is no longer called. See migration guide: https://typeorm.io/docs/guides/migration-v1"
+        "`replacePropertyNames` was removed — property name replacement is now handled internally"
 
     root.find(j.ClassMethod, {
         key: { type: "Identifier", name: "replacePropertyNames" },
