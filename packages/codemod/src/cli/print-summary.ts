@@ -13,6 +13,8 @@ export interface SummaryData {
     todos: Map<string, string[]>
     applied: Map<string, number>
     depChanges: string[]
+    depWarnings: string[]
+    depErrors: string[]
 }
 
 export const printSummary = (data: SummaryData): void => {
@@ -26,6 +28,8 @@ export const printSummary = (data: SummaryData): void => {
         todos,
         applied,
         depChanges,
+        depWarnings,
+        depErrors,
     } = data
 
     console.log(`\n${colors.bold("Statistics:")}`)
@@ -56,10 +60,26 @@ export const printSummary = (data: SummaryData): void => {
         }
     }
 
-    if (depChanges.length > 0) {
+    if (
+        depChanges.length > 0 ||
+        depWarnings.length > 0 ||
+        depErrors.length > 0
+    ) {
         console.log(`\n${colors.bold("Dependency changes:")}`)
         for (const change of depChanges) {
             console.log(`  ${highlight(change)}`)
+        }
+        if (depWarnings.length > 0) {
+            console.log(`\n  ${colors.yellow("Warnings:")}`)
+            for (const w of depWarnings) {
+                console.log(`    ${highlight(w)}`)
+            }
+        }
+        if (depErrors.length > 0) {
+            console.log(`\n  ${colors.red("Errors:")}`)
+            for (const e of depErrors) {
+                console.log(`    ${highlight(e)}`)
+            }
         }
     }
 }

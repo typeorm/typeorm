@@ -28,6 +28,8 @@ export const run = async (options: RunOptions): Promise<void> => {
     printSummary({
         ...result,
         depChanges: depResult?.changes ?? [],
+        depWarnings: depResult?.warnings ?? [],
+        depErrors: depResult?.errors ?? [],
     })
 
     printGuide(version)

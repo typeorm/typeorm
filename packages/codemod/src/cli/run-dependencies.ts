@@ -1,9 +1,7 @@
 import { colors } from "../lib/colors"
 import { createSpinner } from "../lib/spinner"
 import { formatTime } from "../lib/format-time"
-import { highlight } from "../lib/highlight"
 import {
-    type DependencyReport,
     findPackageJsonFiles,
     getConfig,
     upgradeDependencies,
@@ -11,7 +9,8 @@ import {
 
 export interface DependencyResult {
     changes: string[]
-    reports: DependencyReport[]
+    warnings: string[]
+    errors: string[]
 }
 
 export const runDependencies = (
@@ -30,14 +29,16 @@ export const runDependencies = (
     )
     const depStart = Date.now()
     let depFilesChanged = 0
-    const reports: DependencyReport[] = []
     const changes: string[] = []
+    const warnings: string[] = []
+    const errors: string[] = []
 
     for (const file of packageJsonFiles) {
         const report = upgradeDependencies(file, dry, depConfig)
         if (report.changes.length > 0) depFilesChanged++
         changes.push(...report.changes)
-        reports.push(report)
+        warnings.push(...report.warnings)
+        errors.push(...report.errors)
     }
 
     const depElapsed = (Date.now() - depStart) / 1000
@@ -51,14 +52,5 @@ export const runDependencies = (
         `${colors.green("✔")} ${depSummary} (${formatTime(depElapsed)})`,
     )
 
-    for (const report of reports) {
-        report.warnings.forEach((w) =>
-            console.log(`  ${colors.yellow("Warning:")} ${highlight(w)}`),
-        )
-        report.errors.forEach((e) =>
-            console.log(`  ${colors.red("Error:")} ${highlight(e)}`),
-        )
-    }
-
-    return { changes, reports }
+    return { changes, warnings, errors }
 }
