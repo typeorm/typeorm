@@ -19,7 +19,6 @@ ${colors.bold("Options:")}
   ${colors.blue("--help, -h")}              Show this help
   ${colors.blue("--ignore, -i")} <pattern>  Glob pattern to exclude files ${colors.dim("(repeatable)")}
   ${colors.blue("--list, -l")}              List available transforms
-  ${colors.blue("--stats, -s")}             Show detailed statistics after run
   ${colors.blue("--transform, -t")} <name>  Run a specific transform only
   ${colors.blue("--workers, -w")} <num>     Number of worker processes ${colors.dim("(default: CPU cores - 1)")}
 

@@ -42,7 +42,6 @@ const main = async () => {
         dry: options.dry || false,
         version: options.version,
         workers: options.workers,
-        stats: options.stats || false,
         ignore: options.ignore,
     })
 }

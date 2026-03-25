@@ -8,8 +8,10 @@
 ## Run command
 
 ```bash
-npx @typeorm/codemod v1 --dry --stats --workers 4 packages/
+npx @typeorm/codemod v1 --dry --ignore '**/generated*' packages/
 ```
+
+**Note:** Vendure's `e2e/graphql/generated-e2e-admin-types.ts` (42k lines) and `generated-e2e-shop-types.ts` (11k lines) are auto-generated GraphQL types that contain no TypeORM code. Excluding them with `--ignore '**/generated*'` significantly reduces run time.
 
 ## Results
 

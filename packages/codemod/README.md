@@ -20,9 +20,6 @@ npx @typeorm/codemod v1 --ignore '**/generated*' --ignore '**/e2e/**' src/
 # Control parallelism
 npx @typeorm/codemod v1 --workers 4 src/
 
-# Show detailed statistics after run
-npx @typeorm/codemod v1 --stats src/
-
 # List available transforms
 npx @typeorm/codemod v1 --list
 ```
@@ -35,7 +32,6 @@ npx @typeorm/codemod v1 --list
 | `--help`             | `-h`  | Show help                                           |
 | `--ignore <pattern>` | `-i`  | Glob pattern to exclude files (repeatable)          |
 | `--list`             | `-l`  | List available transforms                           |
-| `--stats`            | `-s`  | Show detailed statistics after run                  |
 | `--transform <name>` | `-t`  | Run a specific transform only                       |
 | `--workers <num>`    | `-w`  | Number of worker processes (default: CPU cores - 1) |
 

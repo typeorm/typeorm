@@ -24,19 +24,6 @@ interface RunResult {
 const highlight = (text: string): string =>
     text.replace(/`([^`]+)`/g, (_, content: string) => colors.dim(content))
 
-const printReport = (report: DependencyReport): void => {
-    if (report.changes.length > 0) {
-        console.log(`\n  ${colors.dim(report.file)}:`)
-        report.changes.forEach((c) => console.log(`    ${highlight(c)}`))
-    }
-    report.warnings.forEach((w) =>
-        console.log(`  ${colors.yellow("Warning:")} ${highlight(w)}`),
-    )
-    report.errors.forEach((e) =>
-        console.log(`  ${colors.red("Error:")} ${highlight(e)}`),
-    )
-}
-
 const camelToKebab = (s: string): string =>
     s.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
 
@@ -53,12 +40,11 @@ export interface RunOptions {
     dry: boolean
     version: string
     workers?: number
-    stats?: boolean
     ignore?: string[]
 }
 
 export const runTransforms = async (options: RunOptions): Promise<void> => {
-    const { transforms, paths, dry, version, workers, stats, ignore } = options
+    const { transforms, paths, dry, version, workers, ignore } = options
     const allTodos = new Map<string, string[]>()
     const allApplied = new Map<string, number>()
     let totalOk = 0
@@ -173,7 +159,14 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
                 `${colors.green("✔")} ${depSummary} (${formatTime(depElapsed)})`,
             )
             for (const report of reports) {
-                printReport(report)
+                report.warnings.forEach((w) =>
+                    console.log(
+                        `  ${colors.yellow("Warning:")} ${highlight(w)}`,
+                    ),
+                )
+                report.errors.forEach((e) =>
+                    console.log(`  ${colors.red("Error:")} ${highlight(e)}`),
+                )
             }
         }
     }
@@ -195,33 +188,29 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
         printTodos(allTodos)
     }
 
-    if (stats) {
-        console.log(`\n${colors.bold("Statistics:")}`)
-        console.log(
-            `  Files processed:   ${totalOk + totalError + totalSkip + totalNochange}`,
-        )
-        console.log(`  Files transformed: ${totalOk}`)
-        console.log(`  Files skipped:     ${totalSkip + totalNochange}`)
-        console.log(`  Parse errors:      ${totalError}`)
-        console.log(`  Time elapsed:      ${formatTime(totalTime)}`)
+    console.log(`\n${colors.bold("Statistics:")}`)
+    console.log(
+        `  Files processed:   ${totalOk + totalError + totalSkip + totalNochange}`,
+    )
+    console.log(`  Files transformed: ${totalOk}`)
+    console.log(`  Files skipped:     ${totalSkip + totalNochange}`)
+    console.log(`  Parse errors:      ${totalError}`)
+    console.log(`  Time elapsed:      ${formatTime(totalTime)}`)
 
-        if (allApplied.size > 0) {
-            console.log(`\n${colors.bold("Transforms applied:")}`)
-            const sorted = [...allApplied.entries()].sort(
-                ([, a], [, b]) => b - a,
+    if (allApplied.size > 0) {
+        console.log(`\n${colors.bold("Transforms applied:")}`)
+        const sorted = [...allApplied.entries()].sort(([, a], [, b]) => b - a)
+        for (const [name, count] of sorted) {
+            console.log(
+                `  ${colors.dim(camelToKebab(name).padEnd(45))} ${count} file${count === 1 ? "" : "s"}`,
             )
-            for (const [name, count] of sorted) {
-                console.log(
-                    `  ${colors.dim(camelToKebab(name).padEnd(45))} ${count} file${count === 1 ? "" : "s"}`,
-                )
-            }
         }
+    }
 
-        if (depChanges.length > 0) {
-            console.log(`\n${colors.bold("Dependency changes:")}`)
-            for (const change of depChanges) {
-                console.log(`  ${highlight(change)}`)
-            }
+    if (depChanges.length > 0) {
+        console.log(`\n${colors.bold("Dependency changes:")}`)
+        for (const change of depChanges) {
+            console.log(`  ${highlight(change)}`)
         }
     }
 }
