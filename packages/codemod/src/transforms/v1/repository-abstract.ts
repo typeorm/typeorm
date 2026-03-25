@@ -1,4 +1,4 @@
-import type { API, ASTPath, FileInfo } from "jscodeshift"
+import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
@@ -58,9 +58,9 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     const addGetCustomRepoTodo = (path: ASTPath) => {
         const message =
             "`getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1"
-        const parent = path.parent
-        if (parent.node.type === "ExpressionStatement") {
-            addTodoComment(parent.node, message, j)
+        const parentNode: Node = path.parent.node
+        if (parentNode.type === "ExpressionStatement") {
+            addTodoComment(parentNode, message, j)
         } else {
             addTodoComment(path.node, message, j)
         }

@@ -48,7 +48,8 @@ const createNewImport = (
 
     const allImports = root.find(j.ImportDeclaration)
     if (allImports.length > 0) {
-        j(allImports.at(-1).get()).insertAfter(newImport)
+        const lastImport: ASTPath<ImportDeclaration> = allImports.at(-1).get()
+        j(lastImport).insertAfter(newImport)
     } else {
         root.get().node.program.body.unshift(newImport)
     }
@@ -94,10 +95,10 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
         })
 
         if (existingMongoImport.length > 0) {
-            addToExistingImport(
-                existingMongoImport.at(0).get(),
-                movedSpecifiers,
-            )
+            const mongoImport: ASTPath<ImportDeclaration> = existingMongoImport
+                .at(0)
+                .get()
+            addToExistingImport(mongoImport, movedSpecifiers)
         } else {
             createNewImport(j, root, importPath, movedSpecifiers)
         }

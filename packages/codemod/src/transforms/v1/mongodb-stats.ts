@@ -1,4 +1,4 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, Node } from "jscodeshift"
 import { addTodoComment, reportTodo } from "../todo"
 
 export const description = "replace removed `stats()` with TODO comment"
@@ -20,30 +20,21 @@ export const mongodbStats = (file: FileInfo, api: API) => {
             property: { type: "Identifier", name: "stats" },
         },
     }).forEach((path) => {
-        // Check if this is a statement expression we can add a comment before
-        const parent = path.parent
-        if (parent.node.type === "ExpressionStatement") {
-            addTodoComment(parent.node, message, j)
-            hasChanges = true
-            hasTodos = true
-        } else if (parent.node.type === "AwaitExpression") {
-            const grandparent = path.parent.parent
-            if (grandparent.node.type === "ExpressionStatement") {
-                addTodoComment(grandparent.node, message, j)
-                hasChanges = true
-                hasTodos = true
+        const parentNode: Node = path.parent.node
+        if (parentNode.type === "ExpressionStatement") {
+            addTodoComment(parentNode, message, j)
+        } else if (parentNode.type === "AwaitExpression") {
+            const grandparentNode: Node = path.parent.parent.node
+            if (grandparentNode.type === "ExpressionStatement") {
+                addTodoComment(grandparentNode, message, j)
             } else {
-                // Nested in an expression — add comment to the call itself
                 addTodoComment(path.node, message, j)
-                hasChanges = true
-                hasTodos = true
             }
         } else {
-            // Nested in an expression — add comment to the call itself
             addTodoComment(path.node, message, j)
-            hasChanges = true
-            hasTodos = true
         }
+        hasChanges = true
+        hasTodos = true
     })
 
     if (hasTodos) reportTodo("replace-mongodb-stats", file, api)

@@ -2,6 +2,7 @@ import { expect } from "chai"
 import fs from "node:fs"
 import path from "node:path"
 import { applyTransform } from "jscodeshift/src/testUtils"
+import type { Transform } from "jscodeshift"
 import prettier from "prettier"
 
 const fixturesDir = path.join(__dirname, "fixtures")
@@ -46,12 +47,17 @@ describe("v1 transforms", () => {
                 `${name}.ts`,
             )
 
-            const transformModule = require(transformPath)
+            const transformModule = require(transformPath) as {
+                default?: Transform
+            }
 
             const result = applyTransform(
-                transformModule.default
+                (transformModule.default
                     ? transformModule
-                    : { default: transformModule },
+                    : { default: transformModule }) as {
+                    default: Transform
+                    parser: undefined
+                },
                 {},
                 { source: input, path: "test.ts" },
                 { parser: "tsx" },

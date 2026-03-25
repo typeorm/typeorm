@@ -1,4 +1,4 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, Node } from "jscodeshift"
 import { getStringValue } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
@@ -32,9 +32,9 @@ export const queryBuilderOnConflict = (file: FileInfo, api: API) => {
             // Add a TODO comment
             const message =
                 "`onConflict()` was removed in TypeORM v1. Use `orIgnore()` or `orUpdate()` instead. See migration guide: https://typeorm.io/docs/guides/migration-v1"
-            const parent = path.parent
-            if (parent.node.type === "ExpressionStatement") {
-                addTodoComment(parent.node, message, j)
+            const parentNode: Node = path.parent.node
+            if (parentNode.type === "ExpressionStatement") {
+                addTodoComment(parentNode, message, j)
             } else {
                 addTodoComment(path.node, message, j)
             }

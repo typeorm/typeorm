@@ -2,6 +2,14 @@ import fs from "node:fs"
 import semver from "semver"
 import type { DependencyConfig, DependencyReport } from "./config"
 
+interface PackageJson {
+    engines?: { node?: string }
+    dependencies?: Record<string, string>
+    devDependencies?: Record<string, string>
+    peerDependencies?: Record<string, string>
+    optionalDependencies?: Record<string, string>
+}
+
 const sections = [
     "dependencies",
     "devDependencies",
@@ -22,28 +30,31 @@ export const upgradeDependencies = (
     }
 
     const raw = fs.readFileSync(filePath, "utf8")
-    const pkg = JSON.parse(raw)
+    const pkg: PackageJson = JSON.parse(raw)
     let modified = false
+
+    const getDeps = (section: (typeof sections)[number]) => pkg[section]
 
     // Replace deprecated packages
     for (const [oldPkg, { replacement, version }] of Object.entries(
         config.replacements,
     )) {
         for (const section of sections) {
-            if (pkg[section]?.[oldPkg]) {
-                delete pkg[section][oldPkg]
-                if (pkg[section][replacement]) {
-                    report.changes.push(
-                        `${section}: removed \`${oldPkg}\` (${replacement} already present)`,
-                    )
-                } else {
-                    pkg[section][replacement] = version
-                    report.changes.push(
-                        `${section}: replaced \`${oldPkg}\` with \`${replacement}@${version}\``,
-                    )
-                }
-                modified = true
+            const deps = getDeps(section)
+            if (!deps?.[oldPkg]) continue
+
+            delete deps[oldPkg]
+            if (deps[replacement]) {
+                report.changes.push(
+                    `${section}: removed \`${oldPkg}\` (${replacement} already present)`,
+                )
+            } else {
+                deps[replacement] = version
+                report.changes.push(
+                    `${section}: replaced \`${oldPkg}\` with \`${replacement}@${version}\``,
+                )
             }
+            modified = true
         }
     }
 
@@ -52,8 +63,9 @@ export const upgradeDependencies = (
         config.upgrades,
     )) {
         for (const section of sections) {
-            const current = pkg[section]?.[pkgName]
-            if (!current) continue
+            const deps = getDeps(section)
+            const current = deps?.[pkgName]
+            if (!deps || !current) continue
 
             const currentMin = semver.minVersion(current)
             const requiredMin = semver.minVersion(minVersion)
@@ -62,7 +74,7 @@ export const upgradeDependencies = (
                 requiredMin &&
                 semver.lt(currentMin, requiredMin)
             ) {
-                pkg[section][pkgName] = version
+                deps[pkgName] = version
                 report.changes.push(
                     `${section}: bumped \`${pkgName}\` from \`${current}\` to \`${version}\``,
                 )
@@ -74,7 +86,7 @@ export const upgradeDependencies = (
     // Check for incompatible packages (hard errors)
     for (const [pkgName, message] of Object.entries(config.incompatible)) {
         for (const section of sections) {
-            if (pkg[section]?.[pkgName]) {
+            if (getDeps(section)?.[pkgName]) {
                 report.errors.push(message)
                 break
             }
@@ -95,7 +107,7 @@ export const upgradeDependencies = (
     // Check for packages that trigger soft warnings
     for (const [pkgName, message] of Object.entries(config.warnings)) {
         for (const section of sections) {
-            if (pkg[section]?.[pkgName]) {
+            if (getDeps(section)?.[pkgName]) {
                 report.warnings.push(message)
                 break
             }
