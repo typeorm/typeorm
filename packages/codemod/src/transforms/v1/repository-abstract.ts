@@ -1,4 +1,5 @@
 import type { API, ASTPath, FileInfo } from "jscodeshift"
+import { removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
@@ -80,30 +81,16 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     }).forEach(addGetCustomRepoTodo)
 
     // Remove imports
-    const removedImports = new Set(["EntityRepository", "AbstractRepository"])
-
-    root.find(j.ImportDeclaration, {
-        source: { value: "typeorm" },
-    }).forEach((importPath) => {
-        const remaining = importPath.node.specifiers?.filter((spec) => {
-            if (
-                spec.type === "ImportSpecifier" &&
-                spec.imported.type === "Identifier"
-            ) {
-                if (removedImports.has(spec.imported.name)) {
-                    hasChanges = true
-                    return false
-                }
-            }
-            return true
-        })
-
-        if (remaining?.length === 0) {
-            j(importPath).remove()
-        } else if (remaining) {
-            importPath.node.specifiers = remaining
-        }
-    })
+    if (
+        removeImportSpecifiers(
+            root,
+            j,
+            "typeorm",
+            new Set(["EntityRepository", "AbstractRepository"]),
+        )
+    ) {
+        hasChanges = true
+    }
 
     if (hasTodos) reportTodo("remove-abstract-repository", file, api)
 

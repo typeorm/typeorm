@@ -1,26 +1,13 @@
 import type { API, FileInfo } from "jscodeshift"
+import { renameMemberMethod } from "../ast-helpers"
 
 export const description = "rename `Repository.exist()` to `exists()`"
 
 export const repositoryExist = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
-    let hasChanges = false
 
-    root.find(j.CallExpression, {
-        callee: {
-            type: "MemberExpression",
-            property: { name: "exist" },
-        },
-    }).forEach((path) => {
-        if (
-            path.node.callee.type === "MemberExpression" &&
-            path.node.callee.property.type === "Identifier"
-        ) {
-            path.node.callee.property.name = "exists"
-            hasChanges = true
-        }
-    })
+    const hasChanges = renameMemberMethod(root, j, "exist", "exists")
 
     return hasChanges ? root.toSource() : undefined
 }

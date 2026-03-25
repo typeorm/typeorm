@@ -1,4 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
+import { removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
@@ -43,28 +44,9 @@ export const useContainer = (file: FileInfo, api: API) => {
         "UseContainerOptions",
     ])
 
-    root.find(j.ImportDeclaration, {
-        source: { value: "typeorm" },
-    }).forEach((importPath) => {
-        const remaining = importPath.node.specifiers?.filter((spec) => {
-            if (
-                spec.type === "ImportSpecifier" &&
-                spec.imported.type === "Identifier"
-            ) {
-                if (removedImports.has(spec.imported.name)) {
-                    hasChanges = true
-                    return false
-                }
-            }
-            return true
-        })
-
-        if (remaining?.length === 0) {
-            j(importPath).remove()
-        } else if (remaining) {
-            importPath.node.specifiers = remaining
-        }
-    })
+    if (removeImportSpecifiers(root, j, "typeorm", removedImports)) {
+        hasChanges = true
+    }
 
     if (hasTodos) reportTodo("remove-use-container", file, api)
 

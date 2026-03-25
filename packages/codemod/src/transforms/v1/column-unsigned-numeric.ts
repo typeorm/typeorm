@@ -1,10 +1,11 @@
 import type { API, FileInfo } from "jscodeshift"
-import { getStringValue } from "../ast-helpers"
+import { getStringValue, removeObjectProperties } from "../ast-helpers"
 
 export const description =
     "remove deprecated `unsigned` from decimal/float column options"
 
 const numericTypes = new Set(["decimal", "float", "double", "numeric"])
+const propertyNames = new Set(["unsigned"])
 
 export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -28,20 +29,8 @@ export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
         const secondArg = args[1]
         if (secondArg.type !== "ObjectExpression") return
 
-        const filtered = secondArg.properties.filter((prop) => {
-            if (
-                prop.type === "ObjectProperty" &&
-                prop.key.type === "Identifier" &&
-                prop.key.name === "unsigned"
-            ) {
-                hasChanges = true
-                return false
-            }
-            return true
-        })
-
-        if (filtered.length !== secondArg.properties.length) {
-            secondArg.properties = filtered
+        if (removeObjectProperties(secondArg, propertyNames)) {
+            hasChanges = true
         }
     })
 
@@ -69,20 +58,8 @@ export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
 
         if (!typeValue || !numericTypes.has(typeValue)) return
 
-        const filtered = arg.properties.filter((prop) => {
-            if (
-                prop.type === "ObjectProperty" &&
-                prop.key.type === "Identifier" &&
-                prop.key.name === "unsigned"
-            ) {
-                hasChanges = true
-                return false
-            }
-            return true
-        })
-
-        if (filtered.length !== arg.properties.length) {
-            arg.properties = filtered
+        if (removeObjectProperties(arg, propertyNames)) {
+            hasChanges = true
         }
     })
 

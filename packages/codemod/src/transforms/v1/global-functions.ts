@@ -1,4 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
+import { removeImportSpecifiers } from "../ast-helpers"
 import { reportTodo } from "../todo"
 
 export const description =
@@ -82,31 +83,9 @@ export const globalFunctions = (file: FileInfo, api: API) => {
     })
 
     // Remove imports of deprecated globals from "typeorm"
-    root.find(j.ImportDeclaration, {
-        source: { value: "typeorm" },
-    }).forEach((importPath) => {
-        const remaining = importPath.node.specifiers?.filter((spec) => {
-            if (
-                spec.type === "ImportSpecifier" &&
-                spec.imported.type === "Identifier"
-            ) {
-                return !removedGlobals.has(spec.imported.name)
-            }
-            return true
-        })
-
-        if (
-            remaining &&
-            remaining.length !== importPath.node.specifiers?.length
-        ) {
-            hasChanges = true
-            if (remaining.length === 0) {
-                j(importPath).remove()
-            } else {
-                importPath.node.specifiers = remaining
-            }
-        }
-    })
+    if (removeImportSpecifiers(root, j, "typeorm", removedGlobals)) {
+        hasChanges = true
+    }
 
     if (hasChanges) reportTodo("replace-global-functions", file, api)
 

@@ -1,4 +1,5 @@
 import type { API, FileInfo } from "jscodeshift"
+import { removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
@@ -28,27 +29,11 @@ export const relationCount = (file: FileInfo, api: API) => {
     })
 
     // Remove RelationCount import from typeorm
-    root.find(j.ImportDeclaration, {
-        source: { value: "typeorm" },
-    }).forEach((importPath) => {
-        const remaining = importPath.node.specifiers?.filter((spec) => {
-            if (
-                spec.type === "ImportSpecifier" &&
-                spec.imported.type === "Identifier" &&
-                spec.imported.name === "RelationCount"
-            ) {
-                hasChanges = true
-                return false
-            }
-            return true
-        })
-
-        if (remaining?.length === 0) {
-            j(importPath).remove()
-        } else if (remaining) {
-            importPath.node.specifiers = remaining
-        }
-    })
+    if (
+        removeImportSpecifiers(root, j, "typeorm", new Set(["RelationCount"]))
+    ) {
+        hasChanges = true
+    }
 
     if (hasTodos) reportTodo("remove-relation-count", file, api)
 

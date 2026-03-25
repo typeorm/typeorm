@@ -110,3 +110,96 @@ export const forEachDecoratorObjectArg = (
         }
     })
 }
+
+/**
+ * Removes properties matching the given key names from an ObjectExpression.
+ * Returns true if any properties were removed.
+ */
+export const removeObjectProperties = (
+    obj: ObjectExpression,
+    propertyNames: Set<string>,
+): boolean => {
+    const original = obj.properties.length
+
+    obj.properties = obj.properties.filter((prop) => {
+        if (
+            (prop.type === "Property" || prop.type === "ObjectProperty") &&
+            prop.key.type === "Identifier" &&
+            propertyNames.has(prop.key.name)
+        ) {
+            return false
+        }
+        return true
+    })
+
+    return obj.properties.length !== original
+}
+
+/**
+ * Finds imports from a module, removes the specified named import specifiers,
+ * and removes the entire import declaration if no specifiers remain.
+ * Returns true if any specifiers were removed.
+ */
+export const removeImportSpecifiers = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+    specifierNames: Set<string>,
+): boolean => {
+    let removed = false
+
+    root.find(j.ImportDeclaration, {
+        source: { value: moduleName },
+    }).forEach((importPath) => {
+        const remaining = importPath.node.specifiers?.filter((spec) => {
+            if (
+                spec.type === "ImportSpecifier" &&
+                spec.imported.type === "Identifier" &&
+                specifierNames.has(spec.imported.name)
+            ) {
+                removed = true
+                return false
+            }
+            return true
+        })
+
+        if (remaining?.length === 0) {
+            j(importPath).remove()
+        } else if (remaining) {
+            importPath.node.specifiers = remaining
+        }
+    })
+
+    return removed
+}
+
+/**
+ * Finds CallExpression nodes with a MemberExpression callee where the
+ * property matches `oldName`, and renames the property to `newName`.
+ * Returns true if any were renamed.
+ */
+export const renameMemberMethod = (
+    root: Collection,
+    j: JSCodeshift,
+    oldName: string,
+    newName: string,
+): boolean => {
+    let renamed = false
+
+    root.find(j.CallExpression, {
+        callee: {
+            type: "MemberExpression",
+            property: { name: oldName },
+        },
+    }).forEach((path) => {
+        if (
+            path.node.callee.type === "MemberExpression" &&
+            path.node.callee.property.type === "Identifier"
+        ) {
+            path.node.callee.property.name = newName
+            renamed = true
+        }
+    })
+
+    return renamed
+}

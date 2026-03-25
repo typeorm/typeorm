@@ -1,26 +1,13 @@
 import type { API, FileInfo } from "jscodeshift"
+import { renameMemberMethod } from "../ast-helpers"
 
 export const description = "rename `printSql()` to `logQuery()`"
 
 export const queryBuilderPrintSql = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
-    let hasChanges = false
 
-    root.find(j.CallExpression, {
-        callee: {
-            type: "MemberExpression",
-            property: { name: "printSql" },
-        },
-    }).forEach((path) => {
-        if (
-            path.node.callee.type === "MemberExpression" &&
-            path.node.callee.property.type === "Identifier"
-        ) {
-            path.node.callee.property.name = "logQuery"
-            hasChanges = true
-        }
-    })
+    const hasChanges = renameMemberMethod(root, j, "printSql", "logQuery")
 
     return hasChanges ? root.toSource() : undefined
 }

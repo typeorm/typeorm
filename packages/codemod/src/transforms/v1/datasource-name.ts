@@ -1,7 +1,10 @@
 import type { API, ASTNode, FileInfo } from "jscodeshift"
+import { removeObjectProperties } from "../ast-helpers"
 
 export const description =
     "remove deprecated `name` property from DataSource options"
+
+const propertyNames = new Set(["name"])
 
 export const datasourceName = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -11,20 +14,8 @@ export const datasourceName = (file: FileInfo, api: API) => {
     const removeNameFromObject = (arg: ASTNode | undefined) => {
         if (arg?.type !== "ObjectExpression") return
 
-        const filtered = arg.properties.filter((prop) => {
-            if (
-                (prop.type === "Property" || prop.type === "ObjectProperty") &&
-                prop.key.type === "Identifier" &&
-                prop.key.name === "name"
-            ) {
-                hasChanges = true
-                return false
-            }
-            return true
-        })
-
-        if (filtered.length !== arg.properties.length) {
-            arg.properties = filtered
+        if (removeObjectProperties(arg, propertyNames)) {
+            hasChanges = true
         }
     }
 
