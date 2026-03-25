@@ -1,4 +1,4 @@
-import type { ASTNode, API, FileInfo } from "jscodeshift"
+import type { API, FileInfo } from "jscodeshift"
 import { forEachDecoratorObjectArg } from "../ast-helpers"
 
 export const description =
@@ -11,14 +11,7 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
 
     const propsToRemove = new Set(["width", "zerofill"])
 
-    forEachDecoratorObjectArg(root, j, (arg) => {
-        const obj = arg as ASTNode & {
-            properties: {
-                type: string
-                key: { type: string; name: string }
-            }[]
-        }
-
+    forEachDecoratorObjectArg(root, j, (obj) => {
         const filtered = obj.properties.filter((prop) => {
             if (
                 (prop.type === "Property" || prop.type === "ObjectProperty") &&

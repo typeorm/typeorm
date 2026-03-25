@@ -1,4 +1,4 @@
-import type { ASTNode, API, FileInfo } from "jscodeshift"
+import type { API, FileInfo } from "jscodeshift"
 import { forEachDecoratorObjectArg } from "../ast-helpers"
 
 export const description = "replace `readonly` column option with `update`"
@@ -8,15 +8,7 @@ export const columnReadonly = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
-    forEachDecoratorObjectArg(root, j, (arg) => {
-        const obj = arg as ASTNode & {
-            properties: {
-                type: string
-                key: { type: string; name: string }
-                value: { type: string; value: unknown }
-            }[]
-        }
-
+    forEachDecoratorObjectArg(root, j, (obj) => {
         for (const prop of obj.properties) {
             if (
                 prop.type === "ObjectProperty" &&

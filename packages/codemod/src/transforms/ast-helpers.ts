@@ -6,6 +6,7 @@ import type {
     Decorator,
     Identifier,
     JSCodeshift,
+    ObjectExpression,
 } from "jscodeshift"
 
 /**
@@ -90,7 +91,7 @@ export const forEachIdentifierParam = (
 export const forEachDecoratorObjectArg = (
     root: Collection,
     j: JSCodeshift,
-    callback: (objectExpression: ASTNode, path: ASTPath) => void,
+    callback: (objectExpression: ObjectExpression, path: ASTPath) => void,
 ): void => {
     root.find(j.ClassProperty).forEach((path) => {
         // ast-types omits `decorators` from ClassProperty — extend it

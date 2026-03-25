@@ -1,4 +1,5 @@
-import type { ASTNode, API, FileInfo } from "jscodeshift"
+import type { API, FileInfo } from "jscodeshift"
+import { getStringValue } from "../ast-helpers"
 
 export const description = "replace string-array `select` with object syntax"
 
@@ -14,24 +15,13 @@ export const findOptionsStringSelect = (file: FileInfo, api: API) => {
         const value = path.node.value
         if (value.type !== "ArrayExpression") return
 
-        // Check all elements are string literals
         const elements = value.elements
-        if (
-            !elements.every(
-                (el) =>
-                    el !== null &&
-                    (el.type === "StringLiteral" || el.type === "Literal") &&
-                    typeof (el as ASTNode & { value: unknown }).value ===
-                        "string",
-            )
-        ) {
-            return
-        }
+        const strings = elements.map((el) => el && getStringValue(el))
+        if (strings.some((s) => s === null || s === undefined)) return
 
         // Convert ["id", "name"] → { id: true, name: true }
-        type StringNode = ASTNode & { value: string }
-        const properties = (elements as StringNode[]).map((el) =>
-            j.property("init", j.identifier(el.value), j.literal(true)),
+        const properties = (strings as string[]).map((s) =>
+            j.property("init", j.identifier(s), j.literal(true)),
         )
 
         path.node.value = j.objectExpression(properties)

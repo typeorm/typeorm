@@ -1,4 +1,4 @@
-import type { API, ASTNode, FileInfo, JSCodeshift } from "jscodeshift"
+import type { API, FileInfo, JSCodeshift, Node } from "jscodeshift"
 
 const PREFIX = "todo:"
 
@@ -33,11 +33,10 @@ export const collectTodos = (
 }
 
 export const addTodoComment = (
-    node: ASTNode,
+    node: Node,
     message: string,
     j: JSCodeshift,
 ): void => {
-    const n = node as ASTNode & { comments?: unknown[] }
-    if (!n.comments) n.comments = []
-    n.comments.push(j.commentLine(` TODO: ${message}`))
+    if (!node.comments) node.comments = []
+    node.comments.push(j.commentLine(` TODO: ${message}`))
 }
