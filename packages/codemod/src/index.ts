@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-import { fail } from "./cli/error"
+import { fail } from "./lib/error"
 import { parseArgs } from "./cli/parse-args"
 import { printUsage } from "./cli/print-usage"
 import { listTransforms } from "./cli/list-transforms"
 import { resolveTransforms } from "./transforms/resolve"
-import { runTransforms } from "./cli/run"
+import { run } from "./cli/run"
 import { versions } from "./transforms"
 
 const main = async () => {
@@ -36,7 +36,7 @@ const main = async () => {
     }
 
     const transforms = resolveTransforms(options.version, options.transform)
-    await runTransforms({
+    await run({
         transforms,
         paths: options.paths,
         dry: options.dry || false,

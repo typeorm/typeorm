@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { colors } from "../../src/cli/colors"
+import { colors } from "../../src/lib/colors"
 
 describe("colors", () => {
     it("should wrap text with bold escape codes", () => {

@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import sinon from "sinon"
-import { fail } from "../../src/cli/error"
+import { fail } from "../../src/lib/error"
 
 describe("fail", () => {
     let stderrStub: sinon.SinonStub

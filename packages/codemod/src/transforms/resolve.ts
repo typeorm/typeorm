@@ -1,6 +1,6 @@
 import path from "node:path"
 import { versions } from "./index"
-import { fail } from "../cli/error"
+import { fail } from "../lib/error"
 import { listTransforms } from "../cli/list-transforms"
 
 const getExt = () => (__filename.endsWith(".ts") ? ".ts" : ".js")

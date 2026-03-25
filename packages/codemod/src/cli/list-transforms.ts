@@ -1,4 +1,4 @@
-import { colors } from "./colors"
+import { colors } from "../lib/colors"
 import { versions } from "../transforms"
 
 export const listTransforms = (version: string): void => {
