@@ -1,9 +1,10 @@
 import fs from "node:fs"
 import path from "node:path"
+import { globSync } from "tinyglobby"
 
 /**
- * Finds all package.json files in the given paths (non-recursive for
- * the given directories, but checks common monorepo patterns).
+ * Finds all package.json files in the given paths recursively,
+ * excluding node_modules.
  */
 export const findPackageJsonFiles = (paths: string[]): string[] => {
     const results: string[] = []
@@ -14,30 +15,14 @@ export const findPackageJsonFiles = (paths: string[]): string[] => {
 
         if (stat.isFile() && path.basename(p) === "package.json") {
             results.push(p)
-            continue
-        }
-
-        if (stat.isDirectory()) {
-            const rootPkg = path.join(p, "package.json")
-            if (fs.existsSync(rootPkg)) results.push(rootPkg)
-
-            const packagesDir = path.join(p, "packages")
-            if (
-                fs.existsSync(packagesDir) &&
-                fs.statSync(packagesDir).isDirectory()
-            ) {
-                for (const entry of fs.readdirSync(packagesDir, {
-                    withFileTypes: true,
-                })) {
-                    if (!entry.isDirectory()) continue
-                    const pkgFile = path.join(
-                        packagesDir,
-                        entry.name,
-                        "package.json",
-                    )
-                    if (fs.existsSync(pkgFile)) results.push(pkgFile)
-                }
-            }
+        } else if (stat.isDirectory()) {
+            results.push(
+                ...globSync("**/package.json", {
+                    cwd: p,
+                    ignore: ["**/node_modules/**"],
+                    absolute: true,
+                }),
+            )
         }
     }
 
