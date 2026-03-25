@@ -1,4 +1,12 @@
-import type { ASTNode, ASTPath, Collection, JSCodeshift } from "jscodeshift"
+import type {
+    ASTNode,
+    ASTPath,
+    ClassProperty,
+    Collection,
+    Decorator,
+    Identifier,
+    JSCodeshift,
+} from "jscodeshift"
 
 /**
  * Extracts a string value from a StringLiteral or Literal node.
@@ -6,14 +14,11 @@ import type { ASTNode, ASTPath, Collection, JSCodeshift } from "jscodeshift"
  */
 export const getStringValue = (node: ASTNode): string | null => {
     if (node.type === "StringLiteral") {
-        return (node as ASTNode & { value: string }).value
+        return node.value
     }
 
-    if (
-        node.type === "Literal" &&
-        typeof (node as ASTNode & { value: unknown }).value === "string"
-    ) {
-        return (node as ASTNode & { value: string }).value
+    if (node.type === "Literal") {
+        return typeof node.value === "string" ? node.value : null
     }
 
     return null
@@ -24,9 +29,15 @@ export const getStringValue = (node: ASTNode): string | null => {
  */
 export const setStringValue = (node: ASTNode, value: string): void => {
     if (node.type === "StringLiteral" || node.type === "Literal") {
-        ;(node as ASTNode & { value: string }).value = value
+        node.value = value
     }
 }
+
+/**
+ * Type guard that narrows an AST node to an Identifier.
+ */
+export const isIdentifier = (node: { type: string }): node is Identifier =>
+    node.type === "Identifier"
 
 /**
  * Checks whether the file contains an import from the given module.
@@ -44,6 +55,32 @@ export const fileImportsFrom = (
 }
 
 /**
+ * Calls `callback` for each Identifier parameter found in function-like
+ * nodes (functions, methods, arrows) and TSParameterProperty nodes.
+ */
+export const forEachIdentifierParam = (
+    root: Collection,
+    j: JSCodeshift,
+    callback: (id: Identifier) => void,
+): void => {
+    const collectParams = (params: { type: string }[]) => {
+        params.filter(isIdentifier).forEach(callback)
+    }
+    root.find(j.FunctionDeclaration).forEach((p) =>
+        collectParams(p.node.params),
+    )
+    root.find(j.FunctionExpression).forEach((p) => collectParams(p.node.params))
+    root.find(j.ArrowFunctionExpression).forEach((p) =>
+        collectParams(p.node.params),
+    )
+    root.find(j.ClassMethod).forEach((p) => collectParams(p.node.params))
+    root.find(j.TSDeclareMethod).forEach((p) => collectParams(p.node.params))
+    root.find(j.TSParameterProperty).forEach((path) => {
+        if (isIdentifier(path.node.parameter)) callback(path.node.parameter)
+    })
+}
+
+/**
  * Traverses ClassProperty decorators and calls `callback` for each
  * ObjectExpression argument found in decorator call expressions.
  *
@@ -56,25 +93,16 @@ export const forEachDecoratorObjectArg = (
     callback: (objectExpression: ASTNode, path: ASTPath) => void,
 ): void => {
     root.find(j.ClassProperty).forEach((path) => {
-        const node = path.node as ASTNode & {
-            decorators?: { type: string; expression: ASTNode }[]
+        // ast-types omits `decorators` from ClassProperty — extend it
+        const node = path.node as ClassProperty & {
+            decorators?: Decorator[]
         }
-        const decorators = node.decorators
-        if (!decorators) return
+        if (!node.decorators) return
 
-        for (const decorator of decorators) {
-            if (
-                decorator.type !== "Decorator" ||
-                (decorator.expression as ASTNode & { type: string }).type !==
-                    "CallExpression"
-            ) {
-                continue
-            }
+        for (const decorator of node.decorators) {
+            if (decorator.expression.type !== "CallExpression") continue
 
-            const expr = decorator.expression as ASTNode & {
-                arguments: ASTNode[]
-            }
-            for (const arg of expr.arguments) {
+            for (const arg of decorator.expression.arguments) {
                 if (arg.type !== "ObjectExpression") continue
                 callback(arg, path)
             }

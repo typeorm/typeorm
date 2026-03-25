@@ -1,4 +1,5 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, Identifier } from "jscodeshift"
+import { forEachIdentifierParam, isIdentifier } from "../ast-helpers"
 
 export const description = "migrate from `Connection` to `DataSource`"
 
@@ -167,53 +168,29 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     // Collect variable/param names typed as TypeORM types with .connection
     const connectionPropVarNames = new Set<string>()
 
-    const collectTypedIdentifier = (id: {
-        type: string
-        name?: string
-        typeAnnotation?: any
-    }) => {
+    const collectTypedIdentifier = (id: Identifier) => {
+        if (!id.name || !id.typeAnnotation) return
+        if (id.typeAnnotation.type !== "TSTypeAnnotation") return
+
+        const ann = id.typeAnnotation
+        if (ann.typeAnnotation.type !== "TSTypeReference") return
+
+        const ref = ann.typeAnnotation
         if (
-            id.type === "Identifier" &&
-            id.name &&
-            id.typeAnnotation?.type === "TSTypeAnnotation"
+            ref.typeName.type === "Identifier" &&
+            typesWithConnectionProp.has(ref.typeName.name)
         ) {
-            const ann = id.typeAnnotation.typeAnnotation
-            if (
-                ann.type === "TSTypeReference" &&
-                ann.typeName.type === "Identifier" &&
-                typesWithConnectionProp.has(ann.typeName.name)
-            ) {
-                connectionPropVarNames.add(id.name)
-            }
+            connectionPropVarNames.add(id.name)
         }
     }
 
     // Variable declarations with type annotations
     root.find(j.VariableDeclarator).forEach((path) => {
-        collectTypedIdentifier(path.node.id as any)
+        if (isIdentifier(path.node.id)) collectTypedIdentifier(path.node.id)
     })
 
-    // Function/method/arrow parameters with type annotations
-    root.find(j.FunctionDeclaration).forEach((path) => {
-        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
-    })
-    root.find(j.FunctionExpression).forEach((path) => {
-        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
-    })
-    root.find(j.ArrowFunctionExpression).forEach((path) => {
-        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
-    })
-    root.find(j.ClassMethod).forEach((path) => {
-        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
-    })
-    root.find(j.TSDeclareMethod).forEach((path) => {
-        path.node.params.forEach((p) => collectTypedIdentifier(p as any))
-    })
-
-    // Constructor parameter properties: constructor(private queryRunner: QueryRunner)
-    root.find(j.TSParameterProperty).forEach((path) => {
-        collectTypedIdentifier(path.node.parameter as any)
-    })
+    // Function/method/arrow parameters and constructor parameter properties
+    forEachIdentifierParam(root, j, collectTypedIdentifier)
 
     // Rename .isConnected → .isInitialized on Connection/DataSource instances
     root.find(j.MemberExpression, {

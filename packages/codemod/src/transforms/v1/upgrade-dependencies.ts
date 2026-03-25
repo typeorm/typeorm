@@ -74,14 +74,14 @@ export const upgradeDependencies = (
         for (const section of depSections) {
             if (pkg[section]?.[oldPkg]) {
                 delete pkg[section][oldPkg]
-                if (!pkg[section][replacement]) {
+                if (pkg[section][replacement]) {
+                    report.changes.push(
+                        `${section}: removed \`${oldPkg}\` (${replacement} already present)`,
+                    )
+                } else {
                     pkg[section][replacement] = version
                     report.changes.push(
                         `${section}: replaced \`${oldPkg}\` with \`${replacement}@${version}\``,
-                    )
-                } else {
-                    report.changes.push(
-                        `${section}: removed \`${oldPkg}\` (${replacement} already present)`,
                     )
                 }
                 modified = true
@@ -202,6 +202,6 @@ export const findPackageJsonFiles = (paths: string[]): string[] => {
 
 /** Detect indentation from a JSON string. */
 const detectIndent = (json: string): number => {
-    const match = json.match(/^( +)"/m)
+    const match = /^( +)"/m.exec(json)
     return match ? match[1].length : 2
 }

@@ -4,9 +4,32 @@ import { colors } from "./colors"
 import { collectTodos } from "../transforms/todo"
 import { versions } from "../transforms"
 import {
+    type DependencyReport,
     findPackageJsonFiles,
     upgradeDependencies,
 } from "../transforms/v1/upgrade-dependencies"
+
+const printReport = (report: DependencyReport): void => {
+    if (report.changes.length > 0) {
+        console.log(`\n  ${colors.dim(report.file)}:`)
+        report.changes.forEach((c) => console.log(`    ${c}`))
+    }
+    report.warnings.forEach((w) =>
+        console.log(`  ${colors.yellow("Warning:")} ${w}`),
+    )
+    report.errors.forEach((e) => console.log(`  ${colors.red("Error:")} ${e}`))
+}
+
+const printTodos = (allTodos: Map<string, string[]>): void => {
+    console.log(
+        `\n${colors.yellow("Warning:")} the following files contain TODO comments that need manual review:\n`,
+    )
+    for (const [transform, files] of allTodos) {
+        console.log(`  ${colors.dim(transform)}:`)
+        files.forEach((f) => console.log(`    ${f}`))
+    }
+    console.log()
+}
 
 export const runTransforms = async (
     transforms: string[],
@@ -43,24 +66,7 @@ export const runTransforms = async (
             `\nUpgrading dependencies in ${packageJsonFiles.length} package.json file(s)`,
         )
         for (const file of packageJsonFiles) {
-            const report = upgradeDependencies(file, dry)
-
-            if (report.changes.length > 0) {
-                console.log(`\n  ${colors.dim(file)}:`)
-                report.changes.forEach((c) => console.log(`    ${c}`))
-            }
-
-            if (report.warnings.length > 0) {
-                report.warnings.forEach((w) =>
-                    console.log(`  ${colors.yellow("Warning:")} ${w}`),
-                )
-            }
-
-            if (report.errors.length > 0) {
-                report.errors.forEach((e) =>
-                    console.log(`  ${colors.red("Error:")} ${e}`),
-                )
-            }
+            printReport(upgradeDependencies(file, dry))
         }
     }
 
@@ -78,15 +84,6 @@ export const runTransforms = async (
     }
 
     if (!dry && allTodos.size > 0) {
-        console.log(
-            `\n${colors.yellow("Warning:")} the following files contain TODO comments that need manual review:\n`,
-        )
-
-        for (const [transform, files] of allTodos) {
-            console.log(`  ${colors.dim(transform)}:`)
-            files.forEach((f) => console.log(`    ${f}`))
-        }
-
-        console.log()
+        printTodos(allTodos)
     }
 }
