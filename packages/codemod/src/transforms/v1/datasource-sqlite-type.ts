@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { setStringValue } from "../ast-helpers"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace `sqlite` driver with `better-sqlite3`"
 
 export const datasourceSqliteType = (file: FileInfo, api: API) => {
@@ -20,4 +22,5 @@ export const datasourceSqliteType = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default datasourceSqliteType
+export const fn = datasourceSqliteType
+export default fn

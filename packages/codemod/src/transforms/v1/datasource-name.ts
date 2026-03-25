@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, ASTNode, FileInfo } from "jscodeshift"
 import { removeObjectProperties } from "../ast-helpers"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "remove deprecated `name` property from DataSource options"
 
@@ -43,4 +45,5 @@ export const datasourceName = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default datasourceName
+export const fn = datasourceName
+export default fn

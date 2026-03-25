@@ -1,5 +1,7 @@
+import path from "node:path"
 import type { API, FileInfo, Identifier } from "jscodeshift"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace `findOneById()` with `findOneBy()` using `{ id: value }`"
 
@@ -53,4 +55,5 @@ export const repositoryFindOneById = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default repositoryFindOneById
+export const fn = repositoryFindOneById
+export default fn

@@ -1,5 +1,7 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "remove deprecated `connectorPackage` option from MySQL config"
 
@@ -18,4 +20,5 @@ export const datasourceMysqlConnector = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default datasourceMysqlConnector
+export const fn = datasourceMysqlConnector
+export default fn

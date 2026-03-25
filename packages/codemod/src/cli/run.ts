@@ -24,9 +24,6 @@ interface RunResult {
 const highlight = (text: string): string =>
     text.replace(/`([^`]+)`/g, (_, content: string) => colors.dim(content))
 
-const camelToKebab = (s: string): string =>
-    s.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
-
 const formatTime = (seconds: number): string => {
     if (seconds < 60) return `${seconds.toFixed(1)}s`
     const m = Math.floor(seconds / 60)
@@ -47,6 +44,7 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
     const { transforms, paths, dry, version, workers, ignore } = options
     const allTodos = new Map<string, string[]>()
     const allApplied = new Map<string, number>()
+    const allParseErrors: { file: string; message: string }[] = []
     let totalOk = 0
     let totalError = 0
     let totalSkip = 0
@@ -71,7 +69,7 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
         }
 
         // Intercept stdout to capture jscodeshift progress
-        const errors: string[] = []
+        const parseErrors: { file: string; message: string }[] = []
         const originalWrite = process.stdout.write.bind(process.stdout)
         process.stdout.write = ((chunk: string | Uint8Array) => {
             const str = typeof chunk === "string" ? chunk : chunk.toString()
@@ -88,7 +86,14 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
             // Track per-file completion and collect errors
             if (str.includes(" ERR ")) {
                 processed++
-                errors.push(str.trim())
+                const errMatch =
+                    / ERR (.+?) Transformation error \((.+)\)/.exec(str)
+                if (errMatch) {
+                    parseErrors.push({
+                        file: errMatch[1],
+                        message: errMatch[2],
+                    })
+                }
             } else if (
                 str.includes(" OKK ") ||
                 str.includes(" NOC ") ||
@@ -96,7 +101,7 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
             ) {
                 processed++
             } else {
-                // Suppress other jscodeshift output
+                // Suppress other jscodeshift output (including stack traces)
                 return true
             }
 
@@ -122,12 +127,10 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
         spinner.stop(
             `${colors.green("✔")} Changed ${result.ok} out of ${total} files (${formatTime(elapsed)})${errorSuffix}`,
         )
-        for (const err of errors) {
-            console.log(`  ${err}`)
-        }
 
         totalOk += result.ok
         totalError += result.error
+        allParseErrors.push(...parseErrors)
         totalSkip += result.skip
         totalNochange += result.nochange
         totalTime += parseFloat(result.timeElapsed)
@@ -184,23 +187,6 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
         }
     }
 
-    if (!dry) {
-        console.log(
-            `\n${colors.blue("Tip:")} run your project's formatter (e.g. Prettier, ESLint with --fix) to clean up any minor style differences introduced by the codemod.`,
-        )
-
-        const guide = versions[version]?.migrationGuide
-        if (guide) {
-            console.log(
-                `\nSee the full migration guide for details: ${colors.blue(guide)}`,
-            )
-        }
-    }
-
-    if (!dry && allTodos.size > 0) {
-        printTodos(allTodos)
-    }
-
     console.log(`\n${colors.bold("Statistics:")}`)
     console.log(
         `  Files processed:   ${totalOk + totalError + totalSkip + totalNochange}`,
@@ -215,8 +201,19 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
         const sorted = [...allApplied.entries()].sort(([, a], [, b]) => b - a)
         for (const [name, count] of sorted) {
             console.log(
-                `  ${colors.dim(camelToKebab(name).padEnd(45))} ${count} file${count === 1 ? "" : "s"}`,
+                `  ${colors.dim(name.padEnd(45))} ${count} file${count === 1 ? "" : "s"}`,
             )
+        }
+    }
+
+    if (allTodos.size > 0) {
+        printTodos(allTodos)
+    }
+
+    if (allParseErrors.length > 0) {
+        console.log(`\n  ${colors.red("Parse errors:")}`)
+        for (const { file, message } of allParseErrors) {
+            console.log(`    ${colors.dim(file)} ${message}`)
         }
     }
 
@@ -225,5 +222,18 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
         for (const change of depChanges) {
             console.log(`  ${highlight(change)}`)
         }
+    }
+
+    console.log(
+        highlight(
+            `\n${colors.blue("Tip:")} run your project's formatter (e.g. \`prettier\`, \`eslint --fix\`) to clean up any style differences introduced by the codemod.`,
+        ),
+    )
+
+    const guide = versions[version]?.migrationGuide
+    if (guide) {
+        console.log(
+            `\nSee the full migration guide for details: ${colors.blue(guide)}`,
+        )
     }
 }

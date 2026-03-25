@@ -1,5 +1,7 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "rename and remove deprecated SAP HANA connection options"
 
@@ -60,4 +62,5 @@ export const datasourceSap = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default datasourceSap
+export const fn = datasourceSap
+export default fn

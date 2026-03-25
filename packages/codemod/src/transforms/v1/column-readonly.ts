@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { forEachDecoratorObjectArg } from "../ast-helpers"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace `readonly` column option with `update`"
 
 export const columnReadonly = (file: FileInfo, api: API) => {
@@ -33,4 +35,5 @@ export const columnReadonly = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default columnReadonly
+export const fn = columnReadonly
+export default fn

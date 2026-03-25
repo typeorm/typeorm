@@ -1,7 +1,9 @@
+import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
 import { getStringValue } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace removed `onConflict()` with `orIgnore()` or TODO"
 export const manual = true
@@ -43,9 +45,10 @@ export const queryBuilderOnConflict = (file: FileInfo, api: API) => {
         }
     })
 
-    if (hasTodos) reportTodo("replace-on-conflict", file, api)
+    if (hasTodos) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default queryBuilderOnConflict
+export const fn = queryBuilderOnConflict
+export default fn

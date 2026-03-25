@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo, ObjectExpression } from "jscodeshift"
 import { getStringValue, setStringValue } from "../ast-helpers"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace deprecated pessimistic lock modes"
 
 export const findOptionsLockModes = (file: FileInfo, api: API) => {
@@ -97,4 +99,5 @@ export const findOptionsLockModes = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default findOptionsLockModes
+export const fn = findOptionsLockModes
+export default fn

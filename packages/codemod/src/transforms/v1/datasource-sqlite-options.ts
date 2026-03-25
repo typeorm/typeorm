@@ -1,5 +1,7 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "rename `busyTimeout` to `timeout` and remove `flags` in SQLite config"
 
@@ -29,4 +31,5 @@ export const datasourceSqliteOptions = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default datasourceSqliteOptions
+export const fn = datasourceSqliteOptions
+export default fn

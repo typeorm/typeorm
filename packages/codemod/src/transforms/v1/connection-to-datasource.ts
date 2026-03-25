@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo, Identifier } from "jscodeshift"
 import { forEachIdentifierParam, isIdentifier } from "../ast-helpers"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description = "migrate from `Connection` to `DataSource`"
 
 export const connectionToDataSource = (file: FileInfo, api: API) => {
@@ -224,4 +226,5 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default connectionToDataSource
+export const fn = connectionToDataSource
+export default fn

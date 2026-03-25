@@ -1,5 +1,7 @@
+import path from "node:path"
 import type { API, FileInfo, ObjectProperty } from "jscodeshift"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace object-style `orUpdate()` with array-style signature"
 
@@ -49,4 +51,5 @@ export const queryBuilderOrUpdate = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default queryBuilderOrUpdate
+export const fn = queryBuilderOrUpdate
+export default fn

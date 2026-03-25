@@ -1,3 +1,4 @@
+import path from "node:path"
 import type {
     API,
     ASTPath,
@@ -8,6 +9,7 @@ import type {
     JSCodeshift,
 } from "jscodeshift"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description = "move `ObjectId` import from `typeorm` to `mongodb`"
 
 const addToExistingImport = (
@@ -109,4 +111,5 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default mongodbTypes
+export const fn = mongodbTypes
+export default fn

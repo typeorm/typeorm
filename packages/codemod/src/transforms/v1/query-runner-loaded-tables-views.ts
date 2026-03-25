@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { ASTNode, API, FileInfo } from "jscodeshift"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace removed `loadedTables` and `loadedViews` with TODO"
 export const manual = true
@@ -56,9 +58,10 @@ export const queryRunnerLoadedTablesViews = (file: FileInfo, api: API) => {
         }
     })
 
-    if (hasTodos) reportTodo("rename-loaded-tables-views", file, api)
+    if (hasTodos) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default queryRunnerLoadedTablesViews
+export const fn = queryRunnerLoadedTablesViews
+export default fn

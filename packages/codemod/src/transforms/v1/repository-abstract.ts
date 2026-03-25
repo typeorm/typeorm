@@ -1,7 +1,9 @@
+import path from "node:path"
 import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace removed `@EntityRepository` and `AbstractRepository` with TODO"
 export const manual = true
@@ -92,9 +94,10 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         hasChanges = true
     }
 
-    if (hasTodos) reportTodo("remove-abstract-repository", file, api)
+    if (hasTodos) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default repositoryAbstract
+export const fn = repositoryAbstract
+export default fn

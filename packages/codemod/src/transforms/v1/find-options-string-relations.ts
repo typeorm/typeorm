@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo, ObjectExpression } from "jscodeshift"
 import { getStringValue } from "../ast-helpers"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace string-array `relations` with object syntax"
 
 interface NestedObject {
@@ -77,4 +79,5 @@ function buildObjectExpression(
     return j.objectExpression(properties)
 }
 
-export default findOptionsStringRelations
+export const fn = findOptionsStringRelations
+export default fn

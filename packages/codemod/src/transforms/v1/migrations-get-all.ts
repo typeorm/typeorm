@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace removed `getAllMigrations()` with TODO comment"
 export const manual = true
@@ -30,9 +32,10 @@ export const migrationsGetAll = (file: FileInfo, api: API) => {
         hasChanges = true
     })
 
-    if (hasChanges) reportTodo("rename-get-all-migrations", file, api)
+    if (hasChanges) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default migrationsGetAll
+export const fn = migrationsGetAll
+export default fn

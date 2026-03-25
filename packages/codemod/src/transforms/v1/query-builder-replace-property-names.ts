@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "flag removed `replacePropertyNames` override with TODO"
 export const manual = true
@@ -32,9 +34,10 @@ export const queryBuilderReplacePropertyNames = (file: FileInfo, api: API) => {
         hasTodos = true
     })
 
-    if (hasTodos) reportTodo("remove-replace-property-names", file, api)
+    if (hasTodos) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default queryBuilderReplacePropertyNames
+export const fn = queryBuilderReplacePropertyNames
+export default fn

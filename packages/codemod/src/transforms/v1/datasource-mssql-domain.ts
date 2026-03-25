@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace removed `domain` option in MSSQL config with TODO"
 export const manual = true
@@ -23,9 +25,10 @@ export const datasourceMssqlDomain = (file: FileInfo, api: API) => {
         hasTodos = true
     })
 
-    if (hasTodos) reportTodo("replace-mssql-domain", file, api)
+    if (hasTodos) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default datasourceMssqlDomain
+export const fn = datasourceMssqlDomain
+export default fn

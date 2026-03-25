@@ -1,7 +1,9 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "remove `useContainer()` and `getFromContainer()` calls"
 export const manual = true
@@ -48,9 +50,10 @@ export const useContainer = (file: FileInfo, api: API) => {
         hasChanges = true
     }
 
-    if (hasTodos) reportTodo("remove-use-container", file, api)
+    if (hasTodos) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default useContainer
+export const fn = useContainer
+export default fn

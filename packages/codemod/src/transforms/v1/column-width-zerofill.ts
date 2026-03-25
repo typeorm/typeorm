@@ -1,9 +1,11 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import {
     forEachDecoratorObjectArg,
     removeObjectProperties,
 } from "../ast-helpers"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "remove `width` and `zerofill` from `@Column` options"
 
@@ -23,4 +25,5 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default columnWidthZerofill
+export const fn = columnWidthZerofill
+export default fn

@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { getStringValue, removeObjectProperties } from "../ast-helpers"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "remove deprecated `unsigned` from decimal/float column options"
 
@@ -66,4 +68,5 @@ export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default columnUnsignedNumeric
+export const fn = columnUnsignedNumeric
+export default fn

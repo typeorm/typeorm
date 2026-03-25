@@ -1,7 +1,9 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
 import { reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace deprecated global functions with `DataSource` methods"
 export const manual = true
@@ -87,9 +89,10 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         hasChanges = true
     }
 
-    if (hasChanges) reportTodo("replace-global-functions", file, api)
+    if (hasChanges) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default globalFunctions
+export const fn = globalFunctions
+export default fn

@@ -1,5 +1,7 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "rename `WhereExpression` to `WhereExpressionBuilder`"
 
@@ -46,4 +48,5 @@ export const queryBuilderWhereExpression = (file: FileInfo, api: API) => {
     return hasChanges ? root.toSource() : undefined
 }
 
-export default queryBuilderWhereExpression
+export const fn = queryBuilderWhereExpression
+export default fn

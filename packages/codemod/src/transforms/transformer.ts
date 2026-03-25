@@ -1,5 +1,12 @@
 import type { API, FileInfo, Transform } from "jscodeshift"
 
+export interface TransformModule {
+    name: string
+    description?: string
+    manual?: boolean
+    fn: Transform
+}
+
 const STATS_PREFIX = "applied:"
 
 export const collectApplied = (
@@ -16,13 +23,13 @@ export const collectApplied = (
 }
 
 export const transformer =
-    (transforms: Transform[]): Transform =>
+    (transforms: TransformModule[]): Transform =>
     (file: FileInfo, api: API): string | undefined => {
         let source = file.source
         let hasChanges = false
 
         for (const transform of transforms) {
-            const result = transform({ ...file, source }, api, {})
+            const result = transform.fn({ ...file, source }, api, {})
 
             if (typeof result === "string") {
                 source = result

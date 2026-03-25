@@ -1,7 +1,9 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace removed `@RelationCount` decorator with TODO"
 export const manual = true
@@ -35,9 +37,10 @@ export const relationCount = (file: FileInfo, api: API) => {
         hasChanges = true
     }
 
-    if (hasTodos) reportTodo("remove-relation-count", file, api)
+    if (hasTodos) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default relationCount
+export const fn = relationCount
+export default fn

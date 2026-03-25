@@ -1,7 +1,9 @@
+import path from "node:path"
 import { versions } from "./index"
 import { fail } from "../cli/error"
 import { listTransforms } from "../cli/list-transforms"
-import { getTransformPath, getCompositeTransformPath } from "./scan"
+
+const getExt = () => (__filename.endsWith(".ts") ? ".ts" : ".js")
 
 export const resolveTransforms = (
     version: string,
@@ -11,18 +13,21 @@ export const resolveTransforms = (
         fail(`no transforms found for version "${version}"`)
     }
 
-    if (transform) {
-        const transformPath = getTransformPath(version, transform)
+    const dir = path.join(__dirname, version)
+    const ext = getExt()
 
-        if (!transformPath) {
+    if (transform) {
+        const found = versions[version].transforms.some(
+            (t) => t.name === transform,
+        )
+        if (!found) {
             fail(
                 `transform "${transform}" not found for version "${version}"`,
                 () => listTransforms(version),
             )
         }
-
-        return [transformPath!]
+        return [`${dir}/${transform}${ext}`]
     }
 
-    return [getCompositeTransformPath(version)]
+    return [`${dir}/index${ext}`]
 }

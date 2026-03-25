@@ -1,7 +1,9 @@
+import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { fileImportsFrom } from "../ast-helpers"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "remove and rename deprecated MongoDB connection options"
 export const manual = true
@@ -101,9 +103,10 @@ export const datasourceMongodb = (file: FileInfo, api: API) => {
         }
     })
 
-    if (hasTodos) reportTodo("remove-mongodb-options", file, api)
+    if (hasTodos) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default datasourceMongodb
+export const fn = datasourceMongodb
+export default fn

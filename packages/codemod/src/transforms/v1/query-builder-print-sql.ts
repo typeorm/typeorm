@@ -1,6 +1,8 @@
+import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
 import { addTodoComment, reportTodo } from "../todo"
 
+export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "replace removed `printSql()` with `getSql()` or `getQueryAndParameters()`"
 export const manual = true
@@ -38,9 +40,10 @@ export const queryBuilderPrintSql = (file: FileInfo, api: API) => {
         hasTodos = true
     })
 
-    if (hasTodos) reportTodo("query-builder-print-sql", file, api)
+    if (hasTodos) reportTodo(name, file, api)
 
     return hasChanges ? root.toSource() : undefined
 }
 
-export default queryBuilderPrintSql
+export const fn = queryBuilderPrintSql
+export default fn
