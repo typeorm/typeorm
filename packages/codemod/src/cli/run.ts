@@ -1,6 +1,6 @@
-import path from "node:path"
 import { run as jscodeshift } from "jscodeshift/src/Runner"
 import { colors } from "./colors"
+import { createSpinner } from "./spinner"
 import { printTodos } from "./print-todos"
 import { collectTodos } from "../transforms/todo"
 import { collectApplied } from "../transforms/transformer"
@@ -40,6 +40,13 @@ const printReport = (report: DependencyReport): void => {
 const camelToKebab = (s: string): string =>
     s.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
 
+const formatTime = (seconds: number): string => {
+    if (seconds < 60) return `${seconds.toFixed(1)}s`
+    const m = Math.floor(seconds / 60)
+    const s = Math.round(seconds % 60)
+    return s > 0 ? `${m}m ${s}s` : `${m}m`
+}
+
 export const runTransforms = async (
     transforms: string[],
     paths: string[],
@@ -48,7 +55,6 @@ export const runTransforms = async (
     workers?: number,
     stats?: boolean,
 ): Promise<void> => {
-    const ext = transforms[0]?.endsWith(".ts") ? ".ts" : ".js"
     const allTodos = new Map<string, string[]>()
     const allApplied = new Map<string, number>()
     let totalOk = 0
@@ -58,17 +64,63 @@ export const runTransforms = async (
     let totalTime = 0
 
     for (const transform of transforms) {
-        const name = path.basename(transform, ext)
-        console.log(`\nRunning transform: ${name}`)
+        let fileCount = 0
+        let processed = 0
+        const spinner = createSpinner("Scanning files...")
+
+        // Intercept stdout to capture jscodeshift progress
+        const errors: string[] = []
+        const originalWrite = process.stdout.write.bind(process.stdout)
+        process.stdout.write = ((chunk: string | Uint8Array) => {
+            const str = typeof chunk === "string" ? chunk : chunk.toString()
+
+            // Capture file count from jscodeshift's "Processing N files..."
+            const countMatch = /Processing (\d+) files/.exec(str)
+            if (countMatch) {
+                fileCount = parseInt(countMatch[1], 10)
+                spinner.update(`Processing 0/${fileCount} files...`)
+                return true
+            }
+
+            // Track per-file completion and collect errors
+            if (str.includes(" ERR ")) {
+                processed++
+                errors.push(str.trim())
+            } else if (
+                str.includes(" OKK ") ||
+                str.includes(" NOC ") ||
+                str.includes(" SKIP ")
+            ) {
+                processed++
+            } else {
+                // Suppress other jscodeshift output
+                return true
+            }
+
+            spinner.update(`Processing ${processed}/${fileCount} files...`)
+            return true
+        }) as typeof process.stdout.write
 
         const result = (await jscodeshift(transform, paths, {
             dry,
             print: false,
-            verbose: 0,
+            verbose: 2,
             extensions: "ts,tsx,js,jsx",
             parser: "tsx",
             ...(workers !== undefined && { cpus: workers }),
         })) as RunResult
+
+        process.stdout.write = originalWrite
+
+        const elapsed = parseFloat(result.timeElapsed)
+        const total = result.ok + result.error + result.skip + result.nochange
+        const errorSuffix = result.error > 0 ? `, ${result.error} errors` : ""
+        spinner.stop(
+            `${colors.green("✔")} Changed ${result.ok} out of ${total} files (${formatTime(elapsed)})${errorSuffix}`,
+        )
+        for (const err of errors) {
+            console.log(`  ${err}`)
+        }
 
         totalOk += result.ok
         totalError += result.error
@@ -93,13 +145,30 @@ export const runTransforms = async (
     if (depConfig) {
         const packageJsonFiles = findPackageJsonFiles(paths)
         if (packageJsonFiles.length > 0) {
-            console.log(
-                `\nUpgrading dependencies in ${packageJsonFiles.length} package.json file(s)`,
+            const depSpinner = createSpinner(
+                `Upgrading dependencies in ${packageJsonFiles.length} package.json file${packageJsonFiles.length === 1 ? "" : "s"}...`,
             )
+            const depStart = Date.now()
+            let depFilesChanged = 0
+            const reports: DependencyReport[] = []
             for (const file of packageJsonFiles) {
                 const report = upgradeDependencies(file, dry, depConfig)
-                printReport(report)
+                if (report.changes.length > 0) depFilesChanged++
                 depChanges.push(...report.changes)
+                reports.push(report)
+            }
+            const depElapsed = (Date.now() - depStart) / 1000
+            const depSummary =
+                packageJsonFiles.length === 1
+                    ? depFilesChanged === 1
+                        ? "Updated one package.json file"
+                        : "No package.json changes needed"
+                    : `Updated ${depFilesChanged} out of ${packageJsonFiles.length} package.json files`
+            depSpinner.stop(
+                `${colors.green("✔")} ${depSummary} (${formatTime(depElapsed)})`,
+            )
+            for (const report of reports) {
+                printReport(report)
             }
         }
     }
@@ -129,7 +198,7 @@ export const runTransforms = async (
         console.log(`  Files transformed: ${totalOk}`)
         console.log(`  Files skipped:     ${totalSkip + totalNochange}`)
         console.log(`  Parse errors:      ${totalError}`)
-        console.log(`  Time elapsed:      ${totalTime.toFixed(1)}s`)
+        console.log(`  Time elapsed:      ${formatTime(totalTime)}`)
 
         if (allApplied.size > 0) {
             console.log(`\n${colors.bold("Transforms applied:")}`)
@@ -146,7 +215,7 @@ export const runTransforms = async (
         if (depChanges.length > 0) {
             console.log(`\n${colors.bold("Dependency changes:")}`)
             for (const change of depChanges) {
-                console.log(`  ${change}`)
+                console.log(`  ${highlight(change)}`)
             }
         }
     }
