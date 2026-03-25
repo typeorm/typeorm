@@ -42,6 +42,7 @@ const main = async () => {
         options.dry || false,
         options.version,
         options.workers,
+        options.stats || false,
     )
 }
 

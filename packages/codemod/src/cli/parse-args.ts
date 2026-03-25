@@ -5,6 +5,7 @@ export interface CliOptions {
     dry?: boolean
     list?: boolean
     workers?: number
+    stats?: boolean
 }
 
 export const parseArgs = (args: string[]): CliOptions => {
@@ -24,6 +25,8 @@ export const parseArgs = (args: string[]): CliOptions => {
             options.transform = args[++i]
         } else if (arg === "--workers" || arg === "-w") {
             options.workers = parseInt(args[++i], 10)
+        } else if (arg === "--stats" || arg === "-s") {
+            options.stats = true
         } else if (options.version) {
             options.paths.push(arg)
         } else {
