@@ -56,7 +56,19 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
     for (const transform of transforms) {
         let fileCount = 0
         let processed = 0
+        let startTime = 0
         const spinner = createSpinner("Scanning files...")
+
+        const progressText = () => {
+            const elapsed = (Date.now() - startTime) / 1000
+            let text = `Processing ${processed}/${fileCount} files... ${colors.dim(formatTime(elapsed))}`
+            if (processed > 0 && processed < fileCount) {
+                const remaining =
+                    (elapsed / processed) * (fileCount - processed)
+                text += colors.dim(` (ETA: ${formatTime(remaining)})`)
+            }
+            return text
+        }
 
         // Intercept stdout to capture jscodeshift progress
         const errors: string[] = []
@@ -68,6 +80,7 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
             const countMatch = /Processing (\d+) files/.exec(str)
             if (countMatch) {
                 fileCount = parseInt(countMatch[1], 10)
+                startTime = Date.now()
                 spinner.update(`Processing 0/${fileCount} files...`)
                 return true
             }
@@ -87,7 +100,7 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
                 return true
             }
 
-            spinner.update(`Processing ${processed}/${fileCount} files...`)
+            spinner.update(progressText)
             return true
         }) as typeof process.stdout.write
 

@@ -3,26 +3,27 @@ import { colors } from "./colors"
 const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
 export interface Spinner {
-    update: (text: string) => void
+    update: (text: string | (() => string)) => void
     stop: (text?: string) => void
 }
 
-export const createSpinner = (text: string): Spinner => {
+export const createSpinner = (text: string | (() => string)): Spinner => {
     let i = 0
+    let getText = typeof text === "function" ? text : () => text
     const clear = () => process.stderr.write(`\r\x1b[K`)
 
     const render = () => {
         clear()
-        process.stderr.write(`${colors.brightGreen(frames[i])} ${text}`)
+        process.stderr.write(`${colors.brightGreen(frames[i])} ${getText()}`)
         i = (i + 1) % frames.length
     }
 
     render()
-    const timer = setInterval(render, 80)
+    const timer = setInterval(render, 100)
 
     return {
-        update(newText: string) {
-            text = newText
+        update(newText: string | (() => string)) {
+            getText = typeof newText === "function" ? newText : () => newText
         },
         stop(finalText?: string) {
             clearInterval(timer)
