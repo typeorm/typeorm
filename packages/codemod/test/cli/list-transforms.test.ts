@@ -16,7 +16,7 @@ describe("listTransforms", () => {
     it("should print transform names for v1", () => {
         listTransforms("v1")
 
-        const output = logStub.args.map((a) => a[0]).join("\n")
+        const output = logStub.args.map((a: string[]) => a[0]).join("\n")
         expect(output).to.include("repository-find-by-ids")
         expect(output).to.include("datasource-sqlite-type")
     })
@@ -24,7 +24,7 @@ describe("listTransforms", () => {
     it("should mark manual transforms with (*)", () => {
         listTransforms("v1")
 
-        const output = logStub.args.map((a) => a[0]).join("\n")
+        const output = logStub.args.map((a: string[]) => a[0]).join("\n")
         expect(output).to.include("use-container")
         expect(output).to.include("(*)")
     })
@@ -32,7 +32,7 @@ describe("listTransforms", () => {
     it("should show warning about manual transforms", () => {
         listTransforms("v1")
 
-        const output = logStub.args.map((a) => a[0]).join("\n")
+        const output = logStub.args.map((a: string[]) => a[0]).join("\n")
         expect(output).to.include("Warning:")
         expect(output).to.include("manual review")
     })

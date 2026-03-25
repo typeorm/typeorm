@@ -2,7 +2,7 @@ import fs from "node:fs"
 import semver from "semver"
 import type { DependencyConfig, DependencyReport } from "./config"
 
-interface PackageJson {
+export interface PackageJson {
     engines?: { node?: string }
     dependencies?: Record<string, string>
     devDependencies?: Record<string, string>
