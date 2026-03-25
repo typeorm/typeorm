@@ -77,7 +77,7 @@ describe("upgrade-dependencies", () => {
         const report = upgradeDependencies(file, false, config)
         const pkg = readPackageJson(file) as any
 
-        expect(pkg.dependencies.mongodb).to.equal("^7.0.0")
+        expect(pkg.dependencies.mongodb).to.equal("^7.1.1")
         expect(report.changes).to.have.length(1)
         expect(report.changes[0]).to.include("bumped")
     })

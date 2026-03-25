@@ -6,16 +6,19 @@ export const config: DependencyConfig = {
         sqlite3: { replacement: "better-sqlite3", version: "^12.8.0" },
     },
 
-    minimumVersions: {
-        "@google-cloud/spanner": "^8.0.0",
-        "better-sqlite3": "^12.0.0",
-        ioredis: "^5.0.4",
-        mongodb: "^7.0.0",
-        mssql: "^12.0.0",
-        mysql2: "^3.15.3",
-        redis: "^5.0.0",
-        typeorm: "^1.0.0-beta.1",
-        "typeorm-aurora-data-api-driver": "^3.0.0",
+    upgrades: {
+        "@google-cloud/spanner": { minVersion: "^8.0.0", version: "^8.6.0" },
+        "better-sqlite3": { minVersion: "^12.0.0", version: "^12.8.0" },
+        ioredis: { minVersion: "^5.0.4", version: "^5.10.1" },
+        mongodb: { minVersion: "^7.0.0", version: "^7.1.1" },
+        mssql: { minVersion: "^12.0.0", version: "^12.2.1" },
+        mysql2: { minVersion: "^3.15.3", version: "^3.20.0" },
+        redis: { minVersion: "^5.0.0", version: "^5.11.0" },
+        typeorm: { minVersion: "^1.0.0-beta.1", version: "^1.0.0-beta.1" },
+        "typeorm-aurora-data-api-driver": {
+            minVersion: "^3.0.0",
+            version: "^3.0.2",
+        },
     },
 
     incompatible: {

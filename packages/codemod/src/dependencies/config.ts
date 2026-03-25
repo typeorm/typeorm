@@ -2,8 +2,8 @@ export interface DependencyConfig {
     /** Packages to replace (old → new package name + version). */
     replacements: Record<string, { replacement: string; version: string }>
 
-    /** Minimum supported versions (package name → semver range). */
-    minimumVersions: Record<string, string>
+    /** Packages to upgrade (minVersion triggers upgrade, version is the target). */
+    upgrades: Record<string, { minVersion: string; version: string }>
 
     /** Packages that are incompatible (package name → error message). */
     incompatible: Record<string, string>

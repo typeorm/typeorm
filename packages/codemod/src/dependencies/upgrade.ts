@@ -47,22 +47,24 @@ export const upgradeDependencies = (
         }
     }
 
-    // Bump versions below minimum
-    for (const [pkgName, minRange] of Object.entries(config.minimumVersions)) {
+    // Upgrade packages below minimum version
+    for (const [pkgName, { minVersion, version }] of Object.entries(
+        config.upgrades,
+    )) {
         for (const section of sections) {
             const current = pkg[section]?.[pkgName]
             if (!current) continue
 
             const currentMin = semver.minVersion(current)
-            const requiredMin = semver.minVersion(minRange)
+            const requiredMin = semver.minVersion(minVersion)
             if (
                 currentMin &&
                 requiredMin &&
                 semver.lt(currentMin, requiredMin)
             ) {
-                pkg[section][pkgName] = minRange
+                pkg[section][pkgName] = version
                 report.changes.push(
-                    `${section}: bumped \`${pkgName}\` from \`${current}\` to \`${minRange}\``,
+                    `${section}: bumped \`${pkgName}\` from \`${current}\` to \`${version}\``,
                 )
                 modified = true
             }
