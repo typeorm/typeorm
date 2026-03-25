@@ -6,6 +6,7 @@ export interface CliOptions {
     list?: boolean
     workers?: number
     stats?: boolean
+    ignore?: string[]
 }
 
 export const parseArgs = (args: string[]): CliOptions => {
@@ -27,6 +28,9 @@ export const parseArgs = (args: string[]): CliOptions => {
             options.workers = parseInt(args[++i], 10)
         } else if (arg === "--stats" || arg === "-s") {
             options.stats = true
+        } else if (arg === "--ignore" || arg === "-i") {
+            if (!options.ignore) options.ignore = []
+            options.ignore.push(args[++i])
         } else if (options.version) {
             options.paths.push(arg)
         } else {

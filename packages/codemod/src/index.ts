@@ -36,14 +36,15 @@ const main = async () => {
     }
 
     const transforms = resolveTransforms(options.version, options.transform)
-    await runTransforms(
+    await runTransforms({
         transforms,
-        options.paths,
-        options.dry || false,
-        options.version,
-        options.workers,
-        options.stats || false,
-    )
+        paths: options.paths,
+        dry: options.dry || false,
+        version: options.version,
+        workers: options.workers,
+        stats: options.stats || false,
+        ignore: options.ignore,
+    })
 }
 
 main().catch((err) => {

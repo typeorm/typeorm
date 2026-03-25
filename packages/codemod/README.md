@@ -12,11 +12,32 @@ npx @typeorm/codemod v1 src/
 npx @typeorm/codemod v1 --dry src/
 
 # Run a specific transform
-npx @typeorm/codemod v1 --transform rename-find-by-ids src/
+npx @typeorm/codemod v1 --transform connection-to-datasource src/
+
+# Exclude files by glob pattern (repeatable)
+npx @typeorm/codemod v1 --ignore '**/generated*' --ignore '**/e2e/**' src/
+
+# Control parallelism
+npx @typeorm/codemod v1 --workers 4 src/
+
+# Show detailed statistics after run
+npx @typeorm/codemod v1 --stats src/
 
 # List available transforms
 npx @typeorm/codemod v1 --list
 ```
+
+## Options
+
+| Option               | Short | Description                                         |
+| -------------------- | ----- | --------------------------------------------------- |
+| `--dry`              | `-d`  | Dry run (show changes without writing)              |
+| `--help`             | `-h`  | Show help                                           |
+| `--ignore <pattern>` | `-i`  | Glob pattern to exclude files (repeatable)          |
+| `--list`             | `-l`  | List available transforms                           |
+| `--stats`            | `-s`  | Show detailed statistics after run                  |
+| `--transform <name>` | `-t`  | Run a specific transform only                       |
+| `--workers <num>`    | `-w`  | Number of worker processes (default: CPU cores - 1) |
 
 ## After running
 
@@ -24,12 +45,11 @@ Some transforms leave `TODO` comments in your code where manual changes are need
 
 ### Formatting
 
-The codemod uses an AST-based approach which may introduce minor formatting differences (e.g. extra parentheses, quote style changes). Run your project's formatter after the codemod to restore your code style, for example:
+The codemod uses an AST-based approach which may introduce minor formatting differences (e.g. extra parentheses, quote style changes). Run your project's formatter after the codemod to restore your code style:
 
 ```bash
 npx @typeorm/codemod v1 src/
-npx eslint --fix src/
-npx prettier --write src/
+npx prettier --write src/        # or: npx eslint --fix src/
 ```
 
 ### Scoping

@@ -47,14 +47,18 @@ const formatTime = (seconds: number): string => {
     return s > 0 ? `${m}m ${s}s` : `${m}m`
 }
 
-export const runTransforms = async (
-    transforms: string[],
-    paths: string[],
-    dry: boolean,
-    version: string,
-    workers?: number,
-    stats?: boolean,
-): Promise<void> => {
+export interface RunOptions {
+    transforms: string[]
+    paths: string[]
+    dry: boolean
+    version: string
+    workers?: number
+    stats?: boolean
+    ignore?: string[]
+}
+
+export const runTransforms = async (options: RunOptions): Promise<void> => {
+    const { transforms, paths, dry, version, workers, stats, ignore } = options
     const allTodos = new Map<string, string[]>()
     const allApplied = new Map<string, number>()
     let totalOk = 0
@@ -108,6 +112,7 @@ export const runTransforms = async (
             extensions: "ts,tsx,js,jsx",
             parser: "tsx",
             ...(workers !== undefined && { cpus: workers }),
+            ...(ignore !== undefined && { ignorePattern: ignore }),
         })) as RunResult
 
         process.stdout.write = originalWrite
