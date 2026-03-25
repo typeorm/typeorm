@@ -699,9 +699,9 @@ The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
 
-### `printSql` renamed to `logQuery`
+### `printSql` removed
 
-The `printSql()` method on query builders has been renamed to `logQuery()` to better reflect its behavior — it logs the query through the configured logger rather than printing to stdout:
+The `printSql()` method on query builders has been removed. It was redundant because all executed queries are already automatically logged through the configured logger when query logging is enabled. Use `getSql()` or `getQueryAndParameters()` to inspect the generated SQL instead:
 
 ```typescript
 // Before
@@ -712,13 +712,25 @@ const users = await dataSource
     .printSql()
     .getMany()
 
-// After
-const users = await dataSource
+// After — inspect SQL before executing
+const qb = dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .where("user.id = :id", { id: 1 })
-    .logQuery()
-    .getMany()
+
+console.log(qb.getSql())
+// or: const [sql, params] = qb.getQueryAndParameters()
+
+const users = await qb.getMany()
+```
+
+To log all executed queries automatically, enable query logging in your DataSource:
+
+```typescript
+new DataSource({
+    // ...
+    logging: ["query"],
+})
 ```
 
 ### `onConflict` removed
