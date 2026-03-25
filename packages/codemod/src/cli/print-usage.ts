@@ -17,6 +17,7 @@ ${versionList}
 ${colors.bold("Options:")}
   ${colors.blue("--transform, -t")} <name>  Run a specific transform only
   ${colors.blue("--dry, -d")}               Dry run ${colors.dim("(show changes without writing)")}
+  ${colors.blue("--workers, -w")} <num>     Number of worker processes ${colors.dim("(default: CPU cores - 1)")}
   ${colors.blue("--list, -l")}              List available transforms
   ${colors.blue("--help, -h")}              Show this help
 

@@ -41,6 +41,7 @@ const main = async () => {
         options.paths,
         options.dry || false,
         options.version,
+        options.workers,
     )
 }
 

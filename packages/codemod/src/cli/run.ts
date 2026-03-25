@@ -27,6 +27,7 @@ export const runTransforms = async (
     paths: string[],
     dry: boolean,
     version: string,
+    workers?: number,
 ): Promise<void> => {
     const ext = transforms[0]?.endsWith(".ts") ? ".ts" : ".js"
     const allTodos = new Map<string, string[]>()
@@ -41,6 +42,7 @@ export const runTransforms = async (
             verbose: 0,
             extensions: "ts,tsx,js,jsx",
             parser: "tsx",
+            ...(workers !== undefined && { cpus: workers }),
         })
 
         for (const [transform, files] of collectTodos(result.stats ?? {})) {
