@@ -1,6 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { addTodoComment, reportTodo } from "../todo"
+import { addTodoComment } from "../todo"
+import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -32,7 +33,7 @@ export const migrationsGetAll = (file: FileInfo, api: API) => {
         hasChanges = true
     })
 
-    if (hasChanges) reportTodo(name, file, api)
+    if (hasChanges) stats.count.todo(api, name, file)
 
     return hasChanges ? root.toSource() : undefined
 }

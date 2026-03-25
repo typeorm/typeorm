@@ -1,7 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
-import { reportTodo } from "../todo"
+import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -89,7 +89,7 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         hasChanges = true
     }
 
-    if (hasChanges) reportTodo(name, file, api)
+    if (hasChanges) stats.count.todo(api, name, file)
 
     return hasChanges ? root.toSource() : undefined
 }

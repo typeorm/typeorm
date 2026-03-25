@@ -1,7 +1,8 @@
 import path from "node:path"
 import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
-import { addTodoComment, reportTodo } from "../todo"
+import { addTodoComment } from "../todo"
+import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -94,7 +95,7 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         hasChanges = true
     }
 
-    if (hasTodos) reportTodo(name, file, api)
+    if (hasTodos) stats.count.todo(api, name, file)
 
     return hasChanges ? root.toSource() : undefined
 }

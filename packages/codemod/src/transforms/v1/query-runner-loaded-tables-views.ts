@@ -1,6 +1,7 @@
 import path from "node:path"
 import type { ASTNode, API, FileInfo } from "jscodeshift"
-import { addTodoComment, reportTodo } from "../todo"
+import { addTodoComment } from "../todo"
+import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -58,7 +59,7 @@ export const queryRunnerLoadedTablesViews = (file: FileInfo, api: API) => {
         }
     })
 
-    if (hasTodos) reportTodo(name, file, api)
+    if (hasTodos) stats.count.todo(api, name, file)
 
     return hasChanges ? root.toSource() : undefined
 }

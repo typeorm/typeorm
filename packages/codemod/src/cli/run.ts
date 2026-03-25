@@ -2,7 +2,6 @@ import { run as jscodeshift } from "jscodeshift/src/Runner"
 import { colors } from "./colors"
 import { createSpinner } from "./spinner"
 import { printTodos } from "./print-todos"
-import { collectTodos } from "../transforms/todo"
 import { stats } from "../transforms/stats"
 import { versions } from "../transforms"
 import {
@@ -135,7 +134,9 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
         totalNochange += result.nochange
         totalTime += parseFloat(result.timeElapsed)
 
-        for (const [transform, files] of collectTodos(result.stats ?? {})) {
+        for (const [transform, files] of stats.collect.todos(
+            result.stats ?? {},
+        )) {
             const existing = allTodos.get(transform) ?? []
             existing.push(...files)
             allTodos.set(transform, existing)
