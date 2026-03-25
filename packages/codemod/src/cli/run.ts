@@ -1,13 +1,15 @@
 import path from "node:path"
 import { run as jscodeshift } from "jscodeshift/src/Runner"
 import { colors } from "./colors"
+import { printTodos } from "./print-todos"
 import { collectTodos } from "../transforms/todo"
 import { versions } from "../transforms"
 import {
     type DependencyReport,
     findPackageJsonFiles,
+    getConfig,
     upgradeDependencies,
-} from "../transforms/v1/upgrade-dependencies"
+} from "../dependencies"
 
 const printReport = (report: DependencyReport): void => {
     if (report.changes.length > 0) {
@@ -18,17 +20,6 @@ const printReport = (report: DependencyReport): void => {
         console.log(`  ${colors.yellow("Warning:")} ${w}`),
     )
     report.errors.forEach((e) => console.log(`  ${colors.red("Error:")} ${e}`))
-}
-
-const printTodos = (allTodos: Map<string, string[]>): void => {
-    console.log(
-        `\n${colors.yellow("Warning:")} the following files contain TODO comments that need manual review:\n`,
-    )
-    for (const [transform, files] of allTodos) {
-        console.log(`  ${colors.dim(transform)}:`)
-        files.forEach((f) => console.log(`    ${f}`))
-    }
-    console.log()
 }
 
 export const runTransforms = async (
@@ -60,13 +51,16 @@ export const runTransforms = async (
     }
 
     // Upgrade package.json dependencies
-    const packageJsonFiles = findPackageJsonFiles(paths)
-    if (packageJsonFiles.length > 0) {
-        console.log(
-            `\nUpgrading dependencies in ${packageJsonFiles.length} package.json file(s)`,
-        )
-        for (const file of packageJsonFiles) {
-            printReport(upgradeDependencies(file, dry))
+    const depConfig = getConfig(version)
+    if (depConfig) {
+        const packageJsonFiles = findPackageJsonFiles(paths)
+        if (packageJsonFiles.length > 0) {
+            console.log(
+                `\nUpgrading dependencies in ${packageJsonFiles.length} package.json file(s)`,
+            )
+            for (const file of packageJsonFiles) {
+                printReport(upgradeDependencies(file, dry, depConfig))
+            }
         }
     }
 

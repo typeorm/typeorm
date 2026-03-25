@@ -2,7 +2,8 @@ import { expect } from "chai"
 import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
-import { upgradeDependencies } from "../../../src/transforms/v1/upgrade-dependencies"
+import { upgradeDependencies } from "../../../src/dependencies/upgrade"
+import { config } from "../../../src/dependencies/v1"
 
 describe("upgrade-dependencies", () => {
     let tmpDir: string
@@ -30,7 +31,7 @@ describe("upgrade-dependencies", () => {
             dependencies: { typeorm: "^1.0.0", sqlite3: "^5.1.0" },
         })
 
-        const report = upgradeDependencies(file, false)
+        const report = upgradeDependencies(file, false, config)
         const pkg = readPackageJson(file) as any
 
         expect(pkg.dependencies.sqlite3).to.be.undefined
@@ -44,7 +45,7 @@ describe("upgrade-dependencies", () => {
             dependencies: { typeorm: "^1.0.0", mysql: "^2.18.1" },
         })
 
-        const report = upgradeDependencies(file, false)
+        const report = upgradeDependencies(file, false, config)
         const pkg = readPackageJson(file) as any
 
         expect(pkg.dependencies.mysql).to.be.undefined
@@ -60,7 +61,7 @@ describe("upgrade-dependencies", () => {
             },
         })
 
-        const report = upgradeDependencies(file, false)
+        const report = upgradeDependencies(file, false, config)
         const pkg = readPackageJson(file) as any
 
         expect(pkg.dependencies.mysql).to.be.undefined
@@ -73,7 +74,7 @@ describe("upgrade-dependencies", () => {
             dependencies: { mongodb: "^6.0.0" },
         })
 
-        const report = upgradeDependencies(file, false)
+        const report = upgradeDependencies(file, false, config)
         const pkg = readPackageJson(file) as any
 
         expect(pkg.dependencies.mongodb).to.equal("^7.0.0")
@@ -86,7 +87,7 @@ describe("upgrade-dependencies", () => {
             dependencies: { mongodb: "^7.1.0" },
         })
 
-        const report = upgradeDependencies(file, false)
+        const report = upgradeDependencies(file, false, config)
 
         expect(report.changes).to.have.length(0)
     })
@@ -99,7 +100,7 @@ describe("upgrade-dependencies", () => {
             },
         })
 
-        const report = upgradeDependencies(file, false)
+        const report = upgradeDependencies(file, false, config)
 
         expect(report.errors).to.have.length(1)
         expect(report.errors[0]).to.include("incompatible")
@@ -110,7 +111,7 @@ describe("upgrade-dependencies", () => {
             engines: { node: ">=16" },
         })
 
-        const report = upgradeDependencies(file, false)
+        const report = upgradeDependencies(file, false, config)
 
         expect(report.warnings).to.have.length(1)
         expect(report.warnings[0]).to.include("Node.js")
@@ -121,7 +122,7 @@ describe("upgrade-dependencies", () => {
             engines: { node: ">=20" },
         })
 
-        const report = upgradeDependencies(file, false)
+        const report = upgradeDependencies(file, false, config)
 
         expect(report.warnings).to.have.length(0)
     })
@@ -131,7 +132,7 @@ describe("upgrade-dependencies", () => {
             dependencies: { dotenv: "^16.0.0" },
         })
 
-        const report = upgradeDependencies(file, false)
+        const report = upgradeDependencies(file, false, config)
 
         expect(report.warnings).to.have.length(1)
         expect(report.warnings[0]).to.include("dotenv")
@@ -142,7 +143,7 @@ describe("upgrade-dependencies", () => {
             dependencies: { sqlite3: "^5.1.0" },
         })
 
-        const report = upgradeDependencies(file, true)
+        const report = upgradeDependencies(file, true, config)
         const pkg = readPackageJson(file) as any
 
         expect(report.changes).to.have.length(1)
@@ -156,7 +157,7 @@ describe("upgrade-dependencies", () => {
             JSON.stringify({ dependencies: { sqlite3: "^5.1.0" } }, null, 4),
         )
 
-        upgradeDependencies(filePath, false)
+        upgradeDependencies(filePath, false, config)
         const raw = fs.readFileSync(filePath, "utf8")
 
         expect(raw).to.match(/^ {4}"dependencies"/m)
