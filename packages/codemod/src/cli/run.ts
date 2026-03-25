@@ -3,7 +3,7 @@ import { colors } from "./colors"
 import { createSpinner } from "./spinner"
 import { printTodos } from "./print-todos"
 import { collectTodos } from "../transforms/todo"
-import { collectApplied } from "../transforms/transformer"
+import { stats } from "../transforms/stats"
 import { versions } from "../transforms"
 import {
     type DependencyReport,
@@ -141,7 +141,7 @@ export const runTransforms = async (options: RunOptions): Promise<void> => {
             allTodos.set(transform, existing)
         }
 
-        for (const [name, count] of collectApplied(result.stats ?? {})) {
+        for (const [name, count] of stats.collect.applied(result.stats ?? {})) {
             allApplied.set(name, (allApplied.get(name) ?? 0) + count)
         }
     }

@@ -5,7 +5,12 @@ import globals from "globals"
 import ts from "typescript-eslint"
 
 export default defineConfig([
-    globalIgnores(["dist/**", "node_modules/**", "test/**/fixtures/**"]),
+    globalIgnores([
+        "dist/**",
+        "examples/**",
+        "node_modules/**",
+        "test/**/fixtures/**",
+    ]),
 
     {
         files: ["**/*.ts"],
