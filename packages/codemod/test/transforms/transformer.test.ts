@@ -1,10 +1,10 @@
 import { expect } from "chai"
-import type { API, FileInfo } from "jscodeshift"
+import jscodeshift, { type API, type FileInfo } from "jscodeshift"
 import { transformer } from "../../src/transforms/transformer"
 
 describe("transformer", () => {
     const mockApi = {
-        jscodeshift: require("jscodeshift").withParser("tsx"),
+        jscodeshift: jscodeshift.withParser("tsx"),
         stats: () => {},
         report: () => {},
     } as unknown as API

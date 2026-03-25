@@ -1,5 +1,6 @@
 import { versions } from "./index"
 import { fail } from "../cli/error"
+import { listTransforms } from "../cli/list-transforms"
 import { getTransformPath, getCompositeTransformPath } from "./scan"
 
 export const resolveTransforms = (
@@ -14,8 +15,6 @@ export const resolveTransforms = (
         const transformPath = getTransformPath(version, transform)
 
         if (!transformPath) {
-            // Import dynamically to avoid circular dependency
-            const { listTransforms } = require("../cli/list-transforms")
             fail(
                 `transform "${transform}" not found for version "${version}"`,
                 () => listTransforms(version),

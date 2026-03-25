@@ -51,7 +51,9 @@ const createNewImport = (
         const lastImport: ASTPath<ImportDeclaration> = allImports.at(-1).get()
         j(lastImport).insertAfter(newImport)
     } else {
-        root.get().node.program.body.unshift(newImport)
+        root.find(j.Program).forEach((p) => {
+            p.node.body.unshift(newImport)
+        })
     }
 }
 

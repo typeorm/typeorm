@@ -56,10 +56,10 @@ export const findOptionsLockModes = (file: FileInfo, api: API) => {
         if (!value || !lockModeMap[value]) return
 
         // Check parent is a lock options object
-        const parent = path.parent
-        if (parent.node.type !== "ObjectExpression") return
+        if (path.parent.node.type !== "ObjectExpression") return
+        const lockObj: ObjectExpression = path.parent.node
 
-        const grandparent = parent.parent
+        const grandparent = path.parent.parent
         if (
             grandparent.node.type !== "Property" ||
             grandparent.node.key.type !== "Identifier" ||
@@ -74,7 +74,7 @@ export const findOptionsLockModes = (file: FileInfo, api: API) => {
         setStringValue(path.node.value, replacement.mode)
 
         // Add onLocked property to the lock object
-        const hasOnLocked = parent.node.properties.some(
+        const hasOnLocked = lockObj.properties.some(
             (p: ObjectExpression["properties"][number]) =>
                 p.type === "Property" &&
                 p.key.type === "Identifier" &&
@@ -82,7 +82,7 @@ export const findOptionsLockModes = (file: FileInfo, api: API) => {
         )
 
         if (!hasOnLocked) {
-            parent.node.properties.push(
+            lockObj.properties.push(
                 j.property(
                     "init",
                     j.identifier("onLocked"),
