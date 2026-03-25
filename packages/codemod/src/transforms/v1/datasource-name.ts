@@ -1,4 +1,4 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { API, ASTNode, FileInfo } from "jscodeshift"
 
 export const description =
     "remove deprecated `name` property from DataSource options"
@@ -8,10 +8,10 @@ export const datasourceName = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
-    const removeNameFromObject = (arg: any) => {
+    const removeNameFromObject = (arg: ASTNode | undefined) => {
         if (arg?.type !== "ObjectExpression") return
 
-        const filtered = arg.properties.filter((prop: any) => {
+        const filtered = arg.properties.filter((prop) => {
             if (
                 (prop.type === "Property" || prop.type === "ObjectProperty") &&
                 prop.key.type === "Identifier" &&

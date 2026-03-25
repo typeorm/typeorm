@@ -25,7 +25,6 @@ export default defineConfig([
         extends: [js.configs.recommended, ...ts.configs.recommendedTypeChecked],
         rules: {
             // jscodeshift AST nodes are loosely typed — these are unavoidable
-            "@typescript-eslint/no-explicit-any": "off",
             "@typescript-eslint/no-require-imports": "off",
             "@typescript-eslint/no-unsafe-argument": "off",
             "@typescript-eslint/no-unsafe-assignment": "off",

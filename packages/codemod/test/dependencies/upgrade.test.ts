@@ -22,7 +22,9 @@ describe("upgrade-dependencies", () => {
         return filePath
     }
 
-    const readPackageJson = (filePath: string): object => {
+    const readPackageJson = (
+        filePath: string,
+    ): Record<string, Record<string, string>> => {
         return JSON.parse(fs.readFileSync(filePath, "utf8"))
     }
 
@@ -32,7 +34,7 @@ describe("upgrade-dependencies", () => {
         })
 
         const report = upgradeDependencies(file, false, config)
-        const pkg = readPackageJson(file) as any
+        const pkg = readPackageJson(file)
 
         expect(pkg.dependencies.sqlite3).to.be.undefined
         expect(pkg.dependencies["better-sqlite3"]).to.equal("^12.8.0")
@@ -46,7 +48,7 @@ describe("upgrade-dependencies", () => {
         })
 
         const report = upgradeDependencies(file, false, config)
-        const pkg = readPackageJson(file) as any
+        const pkg = readPackageJson(file)
 
         expect(pkg.dependencies.mysql).to.be.undefined
         expect(pkg.dependencies.mysql2).to.equal("^3.20.0")
@@ -62,7 +64,7 @@ describe("upgrade-dependencies", () => {
         })
 
         const report = upgradeDependencies(file, false, config)
-        const pkg = readPackageJson(file) as any
+        const pkg = readPackageJson(file)
 
         expect(pkg.dependencies.mysql).to.be.undefined
         expect(pkg.dependencies.mysql2).to.equal("^3.15.3")
@@ -75,7 +77,7 @@ describe("upgrade-dependencies", () => {
         })
 
         const report = upgradeDependencies(file, false, config)
-        const pkg = readPackageJson(file) as any
+        const pkg = readPackageJson(file)
 
         expect(pkg.dependencies.mongodb).to.equal("^7.1.1")
         expect(report.changes).to.have.length(1)
@@ -144,7 +146,7 @@ describe("upgrade-dependencies", () => {
         })
 
         const report = upgradeDependencies(file, true, config)
-        const pkg = readPackageJson(file) as any
+        const pkg = readPackageJson(file)
 
         expect(report.changes).to.have.length(1)
         expect(pkg.dependencies.sqlite3).to.equal("^5.1.0")

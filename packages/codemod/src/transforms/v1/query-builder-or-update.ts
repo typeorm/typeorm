@@ -1,4 +1,4 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, ObjectProperty } from "jscodeshift"
 
 export const description =
     "replace object-style `orUpdate()` with array-style signature"
@@ -21,8 +21,8 @@ export const queryBuilderOrUpdate = (file: FileInfo, api: API) => {
         const arg = args[0]
         if (arg.type !== "ObjectExpression") return
 
-        let conflictTarget: any = null
-        let overwrite: any = null
+        let conflictTarget: ObjectProperty["value"] | null = null
+        let overwrite: ObjectProperty["value"] | null = null
 
         for (const prop of arg.properties) {
             if (prop.type !== "ObjectProperty") continue
@@ -38,7 +38,11 @@ export const queryBuilderOrUpdate = (file: FileInfo, api: API) => {
         if (!conflictTarget || !overwrite) return
 
         // Transform to .orUpdate([overwrite], [conflict_target])
-        path.node.arguments = [overwrite, conflictTarget]
+        // Values are always expressions at runtime (array literals from object properties)
+        path.node.arguments = [
+            overwrite,
+            conflictTarget,
+        ] as typeof path.node.arguments
         hasChanges = true
     })
 

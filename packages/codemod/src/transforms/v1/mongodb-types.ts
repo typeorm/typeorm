@@ -1,16 +1,27 @@
-import type { API, FileInfo } from "jscodeshift"
+import type {
+    API,
+    ASTPath,
+    Collection,
+    FileInfo,
+    ImportDeclaration,
+    ImportSpecifier,
+    JSCodeshift,
+} from "jscodeshift"
 
 export const description = "move `ObjectId` import from `typeorm` to `mongodb`"
 
-const addToExistingImport = (existing: any, movedSpecifiers: any[]) => {
+const addToExistingImport = (
+    existing: ASTPath<ImportDeclaration>,
+    movedSpecifiers: ImportSpecifier[],
+) => {
     const existingNames = new Set(
         existing.node.specifiers
             ?.filter(
-                (s: any) =>
+                (s): s is ImportSpecifier =>
                     s.type === "ImportSpecifier" &&
                     s.imported.type === "Identifier",
             )
-            .map((s: any) => s.imported.name) ?? [],
+            .map((s) => s.imported.name) ?? [],
     )
 
     for (const spec of movedSpecifiers) {
@@ -21,10 +32,10 @@ const addToExistingImport = (existing: any, movedSpecifiers: any[]) => {
 }
 
 const createNewImport = (
-    j: any,
-    root: any,
-    importPath: any,
-    movedSpecifiers: any[],
+    j: JSCodeshift,
+    root: Collection,
+    importPath: ASTPath<ImportDeclaration>,
+    movedSpecifiers: ImportSpecifier[],
 ) => {
     const newImport = j.importDeclaration(
         movedSpecifiers,
@@ -53,7 +64,7 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
     root.find(j.ImportDeclaration, {
         source: { value: "typeorm" },
     }).forEach((importPath) => {
-        const movedSpecifiers: any[] = []
+        const movedSpecifiers: ImportSpecifier[] = []
         const remaining = importPath.node.specifiers?.filter((spec) => {
             if (
                 spec.type === "ImportSpecifier" &&

@@ -1,4 +1,4 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, ObjectExpression } from "jscodeshift"
 import { getStringValue, setStringValue } from "../ast-helpers"
 
 export const description = "replace deprecated pessimistic lock modes"
@@ -75,7 +75,7 @@ export const findOptionsLockModes = (file: FileInfo, api: API) => {
 
         // Add onLocked property to the lock object
         const hasOnLocked = parent.node.properties.some(
-            (p: any) =>
+            (p: ObjectExpression["properties"][number]) =>
                 p.type === "Property" &&
                 p.key.type === "Identifier" &&
                 p.key.name === "onLocked",

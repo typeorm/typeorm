@@ -1,4 +1,4 @@
-import type { API, FileInfo } from "jscodeshift"
+import type { API, ASTPath, FileInfo } from "jscodeshift"
 import { addTodoComment, reportTodo } from "../todo"
 
 export const description =
@@ -54,7 +54,7 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     })
 
     // Find getCustomRepository() calls and add TODO
-    const addGetCustomRepoTodo = (path: any) => {
+    const addGetCustomRepoTodo = (path: ASTPath) => {
         const message =
             "`getCustomRepository()` was removed in TypeORM v1. Use a custom service class with `dataSource.getRepository()`. See migration guide: https://typeorm.io/docs/guides/migration-v1"
         const parent = path.parent
