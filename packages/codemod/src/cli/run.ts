@@ -21,15 +21,20 @@ interface RunResult {
     stats: Record<string, number>
 }
 
+const highlight = (text: string): string =>
+    text.replace(/`([^`]+)`/g, (_, content: string) => colors.dim(content))
+
 const printReport = (report: DependencyReport): void => {
     if (report.changes.length > 0) {
         console.log(`\n  ${colors.dim(report.file)}:`)
-        report.changes.forEach((c) => console.log(`    ${c}`))
+        report.changes.forEach((c) => console.log(`    ${highlight(c)}`))
     }
     report.warnings.forEach((w) =>
-        console.log(`  ${colors.yellow("Warning:")} ${w}`),
+        console.log(`  ${colors.yellow("Warning:")} ${highlight(w)}`),
     )
-    report.errors.forEach((e) => console.log(`  ${colors.red("Error:")} ${e}`))
+    report.errors.forEach((e) =>
+        console.log(`  ${colors.red("Error:")} ${highlight(e)}`),
+    )
 }
 
 const camelToKebab = (s: string): string =>

@@ -29,7 +29,7 @@ export const config: DependencyConfig = {
     },
 
     warnings: {
-        dotenv: "`dotenv` detected — TypeORM v1 no longer auto-loads `.env` files. Make sure your app loads environment variables itself (e.g. via `dotenv/config` import).",
+        dotenv: "`dotenv` detected — TypeORM no longer auto-loads `.env` files. Make sure your database configuration is defined explicitly using `DataSource`.",
     },
 
     minNodeVersion: "20.0.0",
