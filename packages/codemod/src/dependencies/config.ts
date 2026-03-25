@@ -6,7 +6,10 @@ export interface DependencyConfig {
     minimumVersions: Record<string, string>
 
     /** Packages that are incompatible (package name → error message). */
-    incompatiblePackages: Record<string, string>
+    incompatible: Record<string, string>
+
+    /** Packages that trigger a soft warning (package name → warning message). */
+    warnings: Record<string, string>
 
     /** Minimum required Node.js version. */
     minNodeVersion: string

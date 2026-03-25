@@ -2,8 +2,8 @@ import { expect } from "chai"
 import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
-import { upgradeDependencies } from "../../../src/dependencies/upgrade"
-import { config } from "../../../src/dependencies/v1"
+import { upgradeDependencies } from "../../src/dependencies/upgrade"
+import { config } from "../../src/dependencies/v1"
 
 describe("upgrade-dependencies", () => {
     let tmpDir: string

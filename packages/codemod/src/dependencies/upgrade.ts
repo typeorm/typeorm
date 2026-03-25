@@ -2,7 +2,7 @@ import fs from "node:fs"
 import semver from "semver"
 import type { DependencyConfig, DependencyReport } from "./config"
 
-const DEP_SECTIONS = [
+const sections = [
     "dependencies",
     "devDependencies",
     "peerDependencies",
@@ -29,7 +29,7 @@ export const upgradeDependencies = (
     for (const [oldPkg, { replacement, version }] of Object.entries(
         config.replacements,
     )) {
-        for (const section of DEP_SECTIONS) {
+        for (const section of sections) {
             if (pkg[section]?.[oldPkg]) {
                 delete pkg[section][oldPkg]
                 if (pkg[section][replacement]) {
@@ -49,7 +49,7 @@ export const upgradeDependencies = (
 
     // Bump versions below minimum
     for (const [pkgName, minRange] of Object.entries(config.minimumVersions)) {
-        for (const section of DEP_SECTIONS) {
+        for (const section of sections) {
             const current = pkg[section]?.[pkgName]
             if (!current) continue
 
@@ -70,10 +70,8 @@ export const upgradeDependencies = (
     }
 
     // Check for incompatible packages (hard errors)
-    for (const [pkgName, message] of Object.entries(
-        config.incompatiblePackages,
-    )) {
-        for (const section of DEP_SECTIONS) {
+    for (const [pkgName, message] of Object.entries(config.incompatible)) {
+        for (const section of sections) {
             if (pkg[section]?.[pkgName]) {
                 report.errors.push(message)
                 break
@@ -92,13 +90,13 @@ export const upgradeDependencies = (
         }
     }
 
-    // Check for dotenv (soft warning)
-    for (const section of DEP_SECTIONS) {
-        if (pkg[section]?.dotenv) {
-            report.warnings.push(
-                "`dotenv` detected — TypeORM v1 no longer auto-loads `.env` files. Make sure your app loads environment variables itself (e.g. via `dotenv/config` import).",
-            )
-            break
+    // Check for packages that trigger soft warnings
+    for (const [pkgName, message] of Object.entries(config.warnings)) {
+        for (const section of sections) {
+            if (pkg[section]?.[pkgName]) {
+                report.warnings.push(message)
+                break
+            }
         }
     }
 
