@@ -103,17 +103,25 @@ export const runTransforms = async (
             return true
         }) as typeof process.stdout.write
 
-        const result = (await jscodeshift(transform, paths, {
-            dry,
-            print: false,
-            verbose: 2,
-            extensions: "ts,tsx,js,jsx",
-            parser: "tsx",
-            ...(workers !== undefined && { cpus: workers }),
-            ...(ignore !== undefined && { ignorePattern: ignore }),
-        })) as JscodeshiftResult
-
-        process.stdout.write = originalWrite
+        let result: JscodeshiftResult
+        try {
+            result = (await jscodeshift(transform, paths, {
+                dry,
+                print: false,
+                verbose: 2,
+                extensions: "ts,tsx,js,jsx",
+                parser: "tsx",
+                ...(workers !== undefined && { cpus: workers }),
+                ...(ignore !== undefined && { ignorePattern: ignore }),
+            })) as JscodeshiftResult
+        } catch (err) {
+            spinner.stop(
+                `${colors.red("✖")} Transform failed: ${err instanceof Error ? err.message : String(err)}`,
+            )
+            throw err
+        } finally {
+            process.stdout.write = originalWrite
+        }
 
         const elapsed = Number.parseFloat(result.timeElapsed)
         const total = result.ok + result.error + result.skip + result.nochange
