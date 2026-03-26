@@ -19,10 +19,11 @@ import { FindOperator } from "../find-options/FindOperator"
 import { Equal } from "../find-options/operator/Equal"
 import { In } from "../find-options/operator/In"
 import { TypeORMError } from "../error"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
 import type { WhereClause, WhereClauseCondition } from "./WhereClause"
 import type { NotBrackets } from "./NotBrackets"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
-import type { ReturningType } from "../driver/Driver"
+import type { ReturningType } from "../driver/types/ReturningType"
 import type { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
@@ -53,9 +54,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection on which QueryBuilder was created.
+     * DataSource on which QueryBuilder was created.
      */
-    readonly connection: DataSource
+    readonly dataSource: DataSource
+
+    /**
+     * DataSource on which QueryBuilder was created.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -110,11 +119,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         queryRunner?: QueryRunner,
     ) {
         if (InstanceChecker.isDataSource(connectionOrQueryBuilder)) {
-            this.connection = connectionOrQueryBuilder
+            this.dataSource = connectionOrQueryBuilder
             this.queryRunner = queryRunner
-            this.expressionMap = new QueryExpressionMap(this.connection)
+            this.expressionMap = new QueryExpressionMap(this.dataSource)
         } else {
-            this.connection = connectionOrQueryBuilder.connection
+            this.dataSource = connectionOrQueryBuilder.dataSource
             this.queryRunner = connectionOrQueryBuilder.queryRunner
             this.expressionMap = connectionOrQueryBuilder.expressionMap.clone()
         }
@@ -368,7 +377,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         target: EntityTarget<T>,
         relation: string | string[],
     ): boolean {
-        const entityMetadata = this.connection.getMetadata(target)
+        const entityMetadata = this.dataSource.getMetadata(target)
         const relations = Array.isArray(relation) ? relation : [relation]
         return relations.every((relation) => {
             return !!entityMetadata.findRelationWithPropertyPath(relation)
@@ -468,15 +477,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Logs the generated sql query using the configured logger.
-     */
-    logQuery(): this {
-        const [query, parameters] = this.getQueryAndParameters()
-        this.connection.logger.logQuery(query, parameters)
-        return this
-    }
-
-    /**
      * Gets generated sql that will be executed.
      * Parameters in the query are escaped for the currently used driver.
      */
@@ -490,7 +490,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     getQueryAndParameters(): [string, any[]] {
         const query = this.getQuery()
         const parameters = this.getParameters()
-        return this.connection.driver.escapeQueryWithParameters(
+        return this.dataSource.driver.escapeQueryWithParameters(
             query,
             parameters,
         )
@@ -520,7 +520,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     createQueryBuilder(queryRunner?: QueryRunner): this {
         return new (this.constructor as any)(
-            this.connection,
+            this.dataSource,
             queryRunner ?? this.queryRunner,
         )
     }
@@ -560,7 +560,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     escape(name: string): string {
         if (!this.expressionMap.disableEscaping) return name
-        return this.connection.driver.escape(name)
+        return this.dataSource.driver.escape(name)
     }
 
     /**
@@ -658,14 +658,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         aliasName?: string,
     ): Alias {
         // if table has a metadata then find it to properly escape its properties
-        // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
-        if (this.connection.hasMetadata(entityTarget)) {
-            const metadata = this.connection.getMetadata(entityTarget)
+        // const metadata = this.dataSource.entityMetadatas.find(metadata => metadata.tableName === tableName);
+        if (this.dataSource.hasMetadata(entityTarget)) {
+            const metadata = this.dataSource.getMetadata(entityTarget)
 
             return this.expressionMap.createAlias({
                 type: "from",
                 name: aliasName,
-                metadata: this.connection.getMetadata(entityTarget),
+                metadata: this.dataSource.getMetadata(entityTarget),
                 tablePath: metadata.tablePath,
             })
         } else {
@@ -909,7 +909,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     protected createReturningExpression(returningType: ReturningType): string {
         const columns = this.getReturningColumns()
-        const driver = this.connection.driver
+        const driver = this.dataSource.driver
 
         // also add columns we must auto-return to perform entity updation
         // if user gave his own returning
@@ -1016,11 +1016,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         return (
                             (index > 0 ? "AND " : "") +
                             `${
-                                this.connection.options.isolateWhereStatements
+                                this.dataSource.options.isolateWhereStatements
                                     ? "("
                                     : ""
                             }${expression}${
-                                this.connection.options.isolateWhereStatements
+                                this.dataSource.options.isolateWhereStatements
                                     ? ")"
                                     : ""
                             }`
@@ -1029,11 +1029,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         return (
                             (index > 0 ? "OR " : "") +
                             `${
-                                this.connection.options.isolateWhereStatements
+                                this.dataSource.options.isolateWhereStatements
                                     ? "("
                                     : ""
                             }${expression}${
-                                this.connection.options.isolateWhereStatements
+                                this.dataSource.options.isolateWhereStatements
                                     ? ")"
                                     : ""
                             }`
@@ -1071,7 +1071,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             return "(" + this.createWhereClausesExpression(condition) + ")"
         }
 
-        const { driver } = this.connection
+        const { driver } = this.dataSource
 
         switch (condition.operator) {
             case "lessThan":
@@ -1148,7 +1148,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             return ""
         }
         const databaseRequireRecusiveHint =
-            this.connection.driver.cteCapabilities.requiresRecursiveHint
+            this.dataSource.driver.cteCapabilities.requiresRecursiveHint
 
         const cteStrings = this.expressionMap.commonTableExpressions.map(
             (cte) => {
@@ -1162,11 +1162,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     }
                     cteBodyExpression = cte.queryBuilder.getQuery()
                     if (
-                        !this.connection.driver.cteCapabilities.writable &&
+                        !this.dataSource.driver.cteCapabilities.writable &&
                         !InstanceChecker.isSelectQueryBuilder(cte.queryBuilder)
                     ) {
                         throw new TypeORMError(
-                            `Only select queries are supported in CTEs in ${this.connection.options.type} (CTE: ${cte.alias})`,
+                            `Only select queries are supported in CTEs in ${this.dataSource.options.type} (CTE: ${cte.alias})`,
                         )
                     }
                     this.setParameters(cte.queryBuilder.getParameters())
@@ -1197,7 +1197,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         : ""
                 let materializeClause = ""
                 if (
-                    this.connection.driver.cteCapabilities.materializedHint &&
+                    this.dataSource.driver.cteCapabilities.materializedHint &&
                     cte.options.materialized !== undefined
                 ) {
                     materializeClause = cte.options.materialized
@@ -1660,10 +1660,40 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Creates a query builder used to execute sql queries inside this query builder.
      */
     protected obtainQueryRunner() {
-        return this.queryRunner || this.connection.createQueryRunner()
+        return this.queryRunner || this.dataSource.createQueryRunner()
     }
 
     protected hasCommonTableExpressions(): boolean {
         return this.expressionMap.commonTableExpressions.length > 0
+    }
+
+    protected validateOrderByCondition(sort: OrderByCondition): void {
+        const validOrders = ["ASC", "DESC"]
+        const validNulls = ["NULLS FIRST", "NULLS LAST"]
+
+        for (const [key, value] of Object.entries(sort)) {
+            if (typeof value === "string") {
+                if (!validOrders.includes(value))
+                    throw new TypeORMError(
+                        `Invalid order direction "${value}" for "${key}". Allowed values: ${validOrders.join(", ")}.`,
+                    )
+            } else if (typeof value === "object" && value !== null) {
+                if (!validOrders.includes(value.order))
+                    throw new TypeORMError(
+                        `Invalid order direction "${value.order}" for "${key}". Allowed values: ${validOrders.join(", ")}.`,
+                    )
+                if (
+                    value.nulls !== undefined &&
+                    !validNulls.includes(value.nulls)
+                )
+                    throw new TypeORMError(
+                        `Invalid nulls option "${value.nulls}" for "${key}". Allowed values: ${validNulls.join(", ")}.`,
+                    )
+            } else {
+                throw new TypeORMError(
+                    `Invalid order-by value for "${key}". Expected "ASC", "DESC", or { order, nulls } object.`,
+                )
+            }
+        }
     }
 }
