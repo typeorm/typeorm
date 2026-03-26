@@ -1,3 +1,5 @@
+import { DataSource } from "typeorm"
+
 const dataSource = new DataSource({
     type: "sap",
     driver: "hdb",
