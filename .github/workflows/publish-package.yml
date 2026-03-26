@@ -168,6 +168,11 @@ jobs:
         run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
         working-directory: build/package
 
+      - name: Install @typeorm/codemod dependencies
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0.3'
+        run: pnpm install --frozen-lockfile
+        working-directory: packages/codemod
+
       - name: Build @typeorm/codemod
         if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0.3'
         run: pnpm run build
