@@ -25,6 +25,10 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { OracleDriver } from "./OracleDriver"
+import {
+    isSafeAlter,
+    normalizeColumnLength,
+} from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single oracle database connection.
@@ -1119,6 +1123,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : table.columns.find(
                   (column) => column.name === oldTableColumnOrName,
               )
+
         if (!oldColumn)
             throw new TypeORMError(
                 `Column "${oldTableColumnOrName}" was not found in the ${this.escapePath(
@@ -1129,8 +1134,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1352,6 +1357,48 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+            if (oldColumn.type !== newColumn.type) {
+                const handled = await this.handleSafeAlterOracle({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                })
+                if (handled) {
+                    // Update clonedTable so replaceCachedTable reflects the new type,
+                    // preventing a stale cache that would cause the next synchronize()
+                    // to falsely detect the column as removed.
+                    const clonedCol = clonedTable.columns.find(
+                        (c) => c.name === oldColumn.name,
+                    )
+                    if (clonedCol) {
+                        clonedCol.type = newColumn.type
+                        clonedCol.length = newColumn.length
+                    }
+                }
+            } else if (
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length &&
+                // ensure *only* the length changed – everything else must be identical
+                oldColumn?.isNullable === newColumn?.isNullable &&
+                oldColumn?.default === newColumn?.default &&
+                oldColumn?.name === newColumn?.name &&
+                oldColumn?.isPrimary === newColumn?.isPrimary &&
+                oldColumn?.isUnique === newColumn?.isUnique
+            ) {
+                // BEGIN length-only fast path (Oracle)
+                this.handleOracleLengthOnlyFastPath({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                })
+                // END length-only fast path
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
@@ -2514,7 +2561,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return `("C"."OWNER" = '${OWNER}' AND "C"."TABLE_NAME" = '${TABLE_NAME}')`
             })
             .join(" OR ")
-        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition})`
+        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition}) AND NOT ("C"."HIDDEN_COLUMN" = 'YES' AND "C"."VIRTUAL_COLUMN" = 'NO')`
 
         const indicesSql =
             `SELECT "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS", ` +
@@ -3361,6 +3408,172 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         return `"${tableName}"`
+    }
+
+    /**
+     * Handles length-only fast path changes for Oracle.
+     * Returns true if change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private handleOracleLengthOnlyFastPath({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): boolean {
+        const oldLen = normalizeColumnLength(oldColumn.length)
+        const newLen = normalizeColumnLength(newColumn.length)
+        const col: string = String(oldColumn.name)
+
+        if (oldLen && newLen && newLen < oldLen) {
+            // shrink: avoid ORA-01441 by truncating first
+            upQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(
+                        table,
+                    )} SET "${col}" = SUBSTR("${col}", 1, ${newLen}) WHERE LENGTH("${col}") > ${newLen}`,
+                ),
+            )
+        }
+
+        // IMPORTANT: since nullability didn't change, don't mention it here.
+        // This prevents ORA-01442 when combined with other generated statements.
+        upQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    table,
+                )} MODIFY ("${col}" ${this.driver.createFullType(newColumn)})`,
+            ),
+        )
+
+        downQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    table,
+                )} MODIFY ("${col}" ${this.driver.createFullType(oldColumn)})`,
+            ),
+        )
+
+        // Keep in-memory cloned metadata in sync to avoid later re-diffs.
+        const clonedCol = clonedTable?.columns?.find?.(
+            (c: TableColumn) => c.name === col,
+        )
+        if (clonedCol) clonedCol.length = newColumn.length
+
+        return true
+    }
+
+    /**
+     * Handles safe ALTER COLUMN changes for Oracle.
+     * Returns true if change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private async handleSafeAlterOracle({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): Promise<boolean> {
+        // Skip generated/computed/identity columns (Oracle won't freely MODIFY these)
+        if (oldColumn.asExpression || newColumn.asExpression) return false
+        if (oldColumn.generatedIdentity || newColumn.generatedIdentity)
+            return false
+
+        // Only proceed when caller says this change is safely widening
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const tableSql = this.escapePath(table)
+        const colName = String(oldColumn.name)
+        const q = (i: string) => `"${i.replace(/"/g, '""')}"`
+
+        // Oracle TIMESTAMP precision must be between 0 and 9. Clamp to avoid ORA-30088.
+        const clampTs = (col: TableColumn) => {
+            const t = String(col.type ?? "").toLowerCase()
+            if (t === "timestamp" || t.startsWith("timestamp")) {
+                const p = col.precision
+                if (p == null) col.precision = 6
+                else col.precision = Math.max(0, Math.min(9, Number(p)))
+            }
+        }
+        clampTs(newColumn)
+        clampTs(oldColumn)
+
+        // Build full definitions
+        const newDef = this.buildCreateColumnSql(newColumn)
+        const oldDef = this.buildCreateColumnSql(oldColumn)
+
+        // Strip the leading `"colname" ` so we can inject the identifier only once
+        const stripLeadingName = (def: string) => def.replace(/^"[^"]+"\s+/, "")
+
+        const newDefSansName = stripLeadingName(newDef)
+        const oldDefSansName = stripLeadingName(oldDef)
+
+        // When nullability hasn't changed, avoid specifying NULL/NOT NULL in MODIFY.
+        // This prevents ORA-01442 ("column to be modified to NOT NULL is already NOT NULL")
+        // for safe widening changes.
+        let finalNewDef = newDefSansName
+        let finalOldDef = oldDefSansName
+
+        if (oldColumn.isNullable === newColumn.isNullable) {
+            const stripNullability = (def: string) => {
+                const upper = def.toUpperCase()
+
+                if (upper.endsWith(" NOT NULL")) {
+                    return def.slice(0, -" NOT NULL".length)
+                }
+
+                if (upper.endsWith(" NULL")) {
+                    return def.slice(0, -" NULL".length)
+                }
+
+                return def
+            }
+
+            finalNewDef = stripNullability(finalNewDef)
+            finalOldDef = stripNullability(finalOldDef)
+        }
+
+        // Correct: name only once
+        const upSql = `ALTER TABLE ${tableSql} MODIFY (${q(
+            colName,
+        )} ${finalNewDef})`
+        const downSql = `ALTER TABLE ${tableSql} MODIFY (${q(
+            colName,
+        )} ${finalOldDef})`
+
+        upQueries.push(new Query(upSql))
+        downQueries.push(new Query(downSql))
+        return true
     }
 
     /**

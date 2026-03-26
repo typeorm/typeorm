@@ -27,6 +27,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { MysqlDriver } from "./MysqlDriver"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -106,6 +107,138 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.databaseConnection) this.databaseConnection.release()
         return Promise.resolve()
     }
+
+    // -------------------------------------------------------------------------
+    // Private Helper Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Handles length-only fast path changes for MySQL family.
+     * Returns true if the change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private handleMysqlLengthOnlyFastPathChangeColumn({
+        table,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): boolean {
+        // Parse lengths as integers if present
+        const oldLen =
+            oldColumn.length != null
+                ? parseInt(String(oldColumn.length), 10)
+                : undefined
+        const newLen =
+            newColumn.length != null
+                ? parseInt(String(newColumn.length), 10)
+                : undefined
+        const col = oldColumn.name
+
+        // If shrinking, proactively truncate values that exceed new length
+        if (oldLen && newLen && newLen < oldLen) {
+            upQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(
+                        table,
+                    )} SET \`${col}\` = LEFT(\`${col}\`, ${newLen}) WHERE CHAR_LENGTH(\`${col}\`) > ${newLen}`,
+                ),
+            )
+            // Note: on down (reverting to larger size) we don't need a data UPDATE
+        }
+
+        // Build full column definitions to preserve all attributes (nullability, default, charset, collation, comment, etc.)
+        const newColDef = {
+            ...newColumn,
+            name: oldColumn.name,
+        } as TableColumn
+        const oldColDef = {
+            ...oldColumn,
+            name: oldColumn.name,
+        } as TableColumn
+
+        // Use CHANGE COLUMN so that emitted SQL matches tests expecting "MODIFY/CHANGE COLUMN"
+        const up = `ALTER TABLE ${this.escapePath(table)} CHANGE COLUMN \`${
+            oldColumn.name
+        }\` ${this.buildCreateColumnSql(newColDef, true)}`
+        const down = `ALTER TABLE ${this.escapePath(table)} CHANGE COLUMN \`${
+            oldColumn.name
+        }\` ${this.buildCreateColumnSql(oldColDef, true)}`
+
+        upQueries.push(new Query(up))
+        downQueries.push(new Query(down))
+
+        return true
+    }
+
+    /**
+     * Handles safe ALTER COLUMN changes for MySQL family.
+     * Returns true if the change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private async handleSafeAlterMysql({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): Promise<boolean> {
+        // Skip generated/computed columns (MySQL can't freely MODIFY these)
+        if (oldColumn.asExpression || newColumn.asExpression) return false
+
+        // Only proceed when caller says this change is safely widening
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const tableSql = this.escapePath(table)
+        const colName = String(oldColumn.name)
+        const q = (i: string) => `\`${i.replace(/`/g, "``")}\``
+
+        // Build full definitions to preserve attributes (NULL/DEFAULT/ON UPDATE/COLLATION/etc.)
+        const newDef = this.buildCreateColumnSql(newColumn, true)
+        const oldDef = this.buildCreateColumnSql(oldColumn, true)
+
+        // MySQL syntax for type/width/precision changes
+        const upSql = `ALTER TABLE ${tableSql} MODIFY COLUMN ${q(
+            colName,
+        )} ${newDef}`
+        const downSql = `ALTER TABLE ${tableSql} MODIFY COLUMN ${q(
+            colName,
+        )} ${oldDef}`
+
+        upQueries.push(new Query(upSql))
+        downQueries.push(new Query(downSql))
+
+        return true
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
 
     /**
      * Starts transaction on the current connection.
@@ -1110,8 +1243,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1292,7 +1425,39 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
+            // Track whether safe alter handlers already handled the column change
+            let safeAlterHandled = false
+
+            if (oldColumn.type !== newColumn.type) {
+                safeAlterHandled = await this.handleSafeAlterMysql({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                })
+            } else if (
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length
+            ) {
+                // BEGIN length-only fast path (MySQL family)
+                safeAlterHandled =
+                    this.handleMysqlLengthOnlyFastPathChangeColumn({
+                        table,
+                        oldColumn,
+                        newColumn,
+                        upQueries,
+                        downQueries,
+                    })
+                // END length-only fast path
+            }
+
+            // Skip this block if safe alter already handled the change to avoid double ALTER
+            if (
+                !safeAlterHandled &&
+                this.isColumnChanged(oldColumn, newColumn, true, true)
+            ) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${

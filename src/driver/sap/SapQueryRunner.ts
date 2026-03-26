@@ -28,6 +28,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { SapDriver } from "./SapDriver"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -1235,11 +1236,65 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Handle type changes with safe alter if possible
+        if (oldColumn.type !== newColumn.type) {
+            await this.handleSafeAlterSap({
+                table,
+                clonedTable,
+                oldColumn,
+                newColumn,
+                upQueries,
+                downQueries,
+            })
+        }
+
+        // Handle length-only fast path changes
+        if (
+            oldColumn?.type === newColumn?.type &&
+            oldColumn?.length !== newColumn?.length &&
+            // allow only safe text/binary types
+            [
+                "char",
+                "nchar",
+                "varchar",
+                "nvarchar",
+                "alphanum",
+                "shorttext",
+                "varbinary",
+                "binary",
+            ].includes(String(oldColumn?.type).toLowerCase()) &&
+            // no rename in this fast path
+            newColumn?.name === oldColumn?.name &&
+            // exclude arrays
+            !oldColumn?.isArray &&
+            !newColumn?.isArray &&
+            // exclude primary key columns to avoid HANA constraints
+            !oldColumn?.isPrimary &&
+            !newColumn?.isPrimary &&
+            // ensure only length changed; let general path handle other mutations
+            newColumn?.isNullable === oldColumn?.isNullable &&
+            newColumn?.default === oldColumn?.default &&
+            newColumn?.comment === oldColumn?.comment &&
+            newColumn?.isUnique === oldColumn?.isUnique
+        ) {
+            // BEGIN length-only fast path (SAP HANA)
+
+            this.handleHanaLengthOnlyFastPath({
+                table,
+                clonedTable,
+                oldColumn,
+                newColumn,
+                upQueries,
+                downQueries,
+            })
+            // END length-only fast path (SAP HANA)
+        }
+
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
+            (newColumn.type !== oldColumn.type &&
+                !isSafeAlter(oldColumn, newColumn))
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
@@ -1433,6 +1488,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
+                // UP: apply full column definition change
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1447,20 +1503,59 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )})`,
                     ),
                 )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            table,
-                        )} ALTER (${this.buildCreateColumnSql(
-                            oldColumn,
-                            !(
-                                newColumn.default === null ||
-                                newColumn.default === undefined
-                            ),
-                            !newColumn.isNullable,
-                        )})`,
-                    ),
-                )
+
+                // DOWN: revert column definition.
+                // On SAP HANA, in-place *shrink* (e.g., 500 -> 255) is not supported.
+                // If reverting would shrink, keep the widened length but restore other attributes
+                // (default/nullability/unique/etc.) so the revert succeeds.
+                {
+                    const isSap = this.driver.options.type === "sap"
+
+                    const oldLen =
+                        oldColumn.length !== undefined &&
+                        oldColumn.length !== null
+                            ? parseInt(String(oldColumn.length), 10)
+                            : undefined
+                    const newLen =
+                        newColumn.length !== undefined &&
+                        newColumn.length !== null
+                            ? parseInt(String(newColumn.length), 10)
+                            : undefined
+
+                    const wouldShrinkOnDown =
+                        isSap &&
+                        oldLen !== undefined &&
+                        newLen !== undefined &&
+                        newLen > oldLen
+
+                    // Target the *current* column name on the table (may have been renamed earlier)
+                    const targetName = newColumn.name
+
+                    const downColDef = wouldShrinkOnDown
+                        ? Object.assign(new TableColumn(), oldColumn, {
+                              // keep the widened length so DOWN doesn't try to shrink on HANA
+                              length: newColumn.length,
+                              name: targetName,
+                          })
+                        : Object.assign(new TableColumn(), oldColumn, {
+                              name: targetName,
+                          })
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER (${this.buildCreateColumnSql(
+                                downColDef,
+                                !(
+                                    newColumn.default === null ||
+                                    newColumn.default === undefined
+                                ),
+                                !newColumn.isNullable,
+                            )})`,
+                        ),
+                    )
+                }
             } else if (oldColumn.comment !== newColumn.comment) {
                 upQueries.push(
                     new Query(
@@ -3595,6 +3690,417 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         return c
+    }
+
+    /**
+     * Handles length-only fast path changes for SAP HANA.
+     * Returns true if change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private handleHanaLengthOnlyFastPath({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): boolean {
+        // Check for dependent indexes, foreign keys, checks, or uniques
+        const colName: string = String(oldColumn.name)
+        const hasIndex = Boolean(
+            clonedTable?.indices?.some?.((index: { columnNames?: string[] }) =>
+                index.columnNames?.includes?.(colName),
+            ),
+        )
+        const hasForeignKey = Boolean(
+            clonedTable?.foreignKeys?.some?.((fk: { columnNames?: string[] }) =>
+                fk.columnNames?.includes?.(colName),
+            ),
+        )
+        const hasCheck = Boolean(
+            clonedTable?.checks?.some?.((check: { columnNames?: string[] }) =>
+                check.columnNames?.includes?.(colName),
+            ),
+        )
+        const hasUnique = Boolean(
+            clonedTable?.uniques?.some?.((unique: { columnNames?: string[] }) =>
+                unique.columnNames?.includes?.(colName),
+            ),
+        )
+
+        // If column participates in any constraint/index, fall back to generic path
+        if (hasIndex || hasForeignKey || hasCheck || hasUnique) {
+            return false
+        }
+
+        // Skip renamed columns
+        if (oldColumn.name !== newColumn.name) {
+            return false
+        }
+
+        const escapeColumnName = (name: string) =>
+            `"${String(name).replace(/"/g, '""')}"`
+
+        const oldLen = oldColumn.length
+            ? parseInt(String(oldColumn.length), 10)
+            : undefined
+        const newLen = newColumn.length
+            ? parseInt(String(newColumn.length), 10)
+            : undefined
+
+        // Validate that lengths are valid numbers and at least one is defined
+        if (!oldLen && !newLen) {
+            return false
+        }
+        if ((oldLen && isNaN(oldLen)) || (newLen && isNaN(newLen))) {
+            return false
+        }
+
+        const col = colName
+        const escapedCol = escapeColumnName(colName)
+
+        // ---------- SHORTEN (recreate without RENAME) ----------
+        if (oldLen && newLen && newLen < oldLen) {
+            const tmp = `${colName}__tmp_len`
+            const escapedTmp = escapeColumnName(tmp)
+
+            // 1) ADD temp column with the *new* (shorter) length; keep NULLable for the copy
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ADD (` +
+                        this.buildCreateColumnSql(
+                            Object.assign(new TableColumn(), newColumn, {
+                                name: tmp,
+                                isNullable: true, // relax during copy
+                            }),
+                            !(
+                                newColumn.default === null ||
+                                newColumn.default === undefined
+                            ),
+                            false, // don't force NOT NULL yet
+                        ) +
+                        `)`,
+                ),
+            )
+
+            // 2) COPY data into temp, trimming to new length
+            upQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(
+                        table,
+                    )} SET ${escapedTmp} = SUBSTRING(${escapedCol}, 1, ${newLen})`,
+                ),
+            )
+
+            // 3) DROP old column
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} DROP (${escapedCol})`,
+                ),
+            )
+
+            // 4) ADD final column with the new definition (still NULLable for now)
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ADD (` +
+                        this.buildCreateColumnSql(
+                            Object.assign(new TableColumn(), newColumn, {
+                                name: col,
+                                isNullable: true, // relax for back-copy
+                            }),
+                            !(
+                                newColumn.default === null ||
+                                newColumn.default === undefined
+                            ),
+                            false,
+                        ) +
+                        `)`,
+                ),
+            )
+
+            // 5) COPY data back from temp → final
+            upQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(table)} SET ${escapedCol} = ${escapedTmp}`,
+                ),
+            )
+
+            // 6) Enforce NOT NULL (and other attributes) if needed via ALTER (...)
+            if (!newColumn.isNullable) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                            this.buildCreateColumnSql(
+                                Object.assign(new TableColumn(), newColumn, {
+                                    name: col,
+                                }),
+                                !(
+                                    newColumn.default === null ||
+                                    newColumn.default === undefined
+                                ),
+                                true, // NOT NULL now
+                            ) +
+                            `)`,
+                    ),
+                )
+            }
+
+            // 7) DROP temp column
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} DROP (${escapedTmp})`,
+                ),
+            )
+
+            // DOWN (best-effort): widen back to oldLen in place
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                        this.buildCreateColumnSql(
+                            Object.assign(new TableColumn(), oldColumn, {
+                                name: col,
+                            }),
+                            !(
+                                oldColumn.default === null ||
+                                oldColumn.default === undefined
+                            ),
+                            !oldColumn.isNullable,
+                        ) +
+                        `)`,
+                ),
+            )
+
+            const updatedCol = clonedTable?.findColumnByName?.(col)
+            if (updatedCol) {
+                updatedCol.length = newColumn.length || ""
+                updatedCol.isNullable = newColumn.isNullable
+                updatedCol.default = newColumn.default
+                updatedCol.comment = newColumn.comment
+                updatedCol.isUnique = newColumn.isUnique
+            }
+            return true
+        }
+
+        // ---------- WIDEN (safe in-place ALTER) ----------
+        if (oldLen && newLen && newLen > oldLen) {
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                        this.buildCreateColumnSql(
+                            Object.assign(new TableColumn(), newColumn, {
+                                name: col,
+                            }),
+                            !(
+                                oldColumn.default === null ||
+                                oldColumn.default === undefined
+                            ),
+                            !oldColumn.isNullable,
+                        ) +
+                        `)`,
+                ),
+            )
+
+            // DOWN: HANA cannot shrink in-place; use copy/truncate strategy to restore old length
+            const tmpDown = `${colName}__tmp_down`
+            const escapedTmpDown = escapeColumnName(tmpDown)
+
+            // 1) ADD temp column with the *old* (shorter) length; keep NULLable for the copy
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ADD (` +
+                        this.buildCreateColumnSql(
+                            Object.assign(new TableColumn(), oldColumn, {
+                                name: tmpDown,
+                                isNullable: true,
+                            }),
+                            !(
+                                oldColumn.default === null ||
+                                oldColumn.default === undefined
+                            ),
+                            false,
+                        ) +
+                        `)`,
+                ),
+            )
+
+            // 2) COPY data into temp, trimming to old length
+            downQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(
+                        table,
+                    )} SET ${escapedTmpDown} = SUBSTRING(${escapedCol}, 1, ${oldLen})`,
+                ),
+            )
+
+            // 3) DROP widened column
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} DROP (${escapedCol})`,
+                ),
+            )
+
+            // 4) ADD final column with the old definition (NULLable for now)
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ADD (` +
+                        this.buildCreateColumnSql(
+                            Object.assign(new TableColumn(), oldColumn, {
+                                name: col,
+                                isNullable: true,
+                            }),
+                            !(
+                                oldColumn.default === null ||
+                                oldColumn.default === undefined
+                            ),
+                            false,
+                        ) +
+                        `)`,
+                ),
+            )
+
+            // 5) COPY data back from temp → final
+            downQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(table)} SET ${escapedCol} = ${escapedTmpDown}`,
+                ),
+            )
+
+            // 6) Enforce NOT NULL if needed
+            if (!oldColumn.isNullable) {
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                            this.buildCreateColumnSql(
+                                Object.assign(new TableColumn(), oldColumn, {
+                                    name: col,
+                                }),
+                                !(
+                                    oldColumn.default === null ||
+                                    oldColumn.default === undefined
+                                ),
+                                true,
+                            ) +
+                            `)`,
+                    ),
+                )
+            }
+
+            // 7) DROP temp column
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} DROP (${escapedTmpDown})`,
+                ),
+            )
+            return true
+        }
+
+        // If lengths are equal or no valid comparison, fall back to generic path
+        return false
+    }
+
+    /**
+     * Handles safe ALTER COLUMN changes for SAP HANA.
+     * Returns true if change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private async handleSafeAlterSap({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): Promise<boolean> {
+        // Skip generated/computed/identity
+        if (oldColumn.asExpression || newColumn.asExpression) return false
+        if (oldColumn.generatedIdentity || newColumn.generatedIdentity)
+            return false
+
+        // Only proceed when caller says this change is safely widening
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const tableSql = this.escapePath(table)
+        const colName = String(oldColumn.name)
+        const q = (i: string) => `"${i.replace(/"/g, '""')}"`
+
+        const buildColumnType = (column: TableColumn): string => {
+            const t = String(column.type ?? "").toLowerCase()
+            const len = column.length
+                ? parseInt(String(column.length), 10)
+                : undefined
+            const prec = column.precision
+            const scale = column.scale
+
+            const withLen = (base: string) => (len ? `${base}(${len})` : base)
+            const withPS = (base: string) => {
+                if (prec == null) return base
+                if (scale == null) return `${base}(${prec})`
+                return `${base}(${prec},${scale})`
+            }
+
+            // strings
+            if (t === "varchar") return withLen("varchar")
+            if (t === "nvarchar") return withLen("nvarchar")
+            if (t === "char") return withLen("char")
+            if (t === "nchar") return withLen("nchar")
+            if (t === "string" || t === "text") return "string"
+
+            // numerics
+            if (t === "decimal" || t === "numeric") return withPS("decimal")
+            if (t === "int" || t === "integer") return "int"
+            if (t === "bigint") return "bigint"
+            if (t === "smallint") return "smallint"
+            if (t === "float" || t === "real") return "real"
+            if (t === "double") return "double"
+
+            // temporals
+            if (t === "date") return "date"
+            if (t === "time") return "time"
+            if (t === "timestamp") return "timestamp"
+            if (t === "timestamptz") return "timestamptz"
+
+            // fallback: return raw type
+            return t
+        }
+
+        // TYPE-only fragments (nullability/default unchanged)
+        const newType = buildColumnType(newColumn)
+        const oldType = buildColumnType(oldColumn)
+
+        // SAP HANA syntax: ALTER TABLE <t> ALTER (<col> <type>)
+        const upSql = `ALTER TABLE ${tableSql} ALTER (${q(colName)} ${newType})`
+        const downSql = `ALTER TABLE ${tableSql} ALTER (${q(colName)} ${oldType})`
+
+        upQueries.push(new Query(upSql))
+        downQueries.push(new Query(downSql))
+
+        return true
     }
 
     /**

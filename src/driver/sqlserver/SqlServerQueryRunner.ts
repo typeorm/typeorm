@@ -28,6 +28,7 @@ import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { MssqlParameter } from "./MssqlParameter"
 import type { SqlServerDriver } from "./SqlServerDriver"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -1346,8 +1347,8 @@ export class SqlServerQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
+            (newColumn.type !== oldColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
@@ -1681,10 +1682,110 @@ export class SqlServerQueryRunner
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
             }
+            if (oldColumn.type !== newColumn.type) {
+                // SQL Server refuses ALTER COLUMN when a unique constraint or index
+                // references the column. Drop them first, alter, then recreate.
+                const safeAlterColUnique = clonedTable.uniques.find(
+                    (unique) =>
+                        unique.columnNames.length === 1 &&
+                        unique.columnNames[0] === oldColumn.name,
+                )
+                if (safeAlterColUnique) {
+                    upQueries.push(
+                        this.dropUniqueConstraintSql(table, safeAlterColUnique),
+                    )
+                    downQueries.push(
+                        this.createUniqueConstraintSql(
+                            table,
+                            safeAlterColUnique,
+                        ),
+                    )
+                }
+
+                const safeAlterColIndex = clonedTable.indices.find(
+                    (index) =>
+                        index.columnNames.length === 1 &&
+                        index.columnNames[0] === oldColumn.name,
+                )
+                if (safeAlterColIndex) {
+                    upQueries.push(this.dropIndexSql(table, safeAlterColIndex))
+                    downQueries.push(
+                        this.createIndexSql(table, safeAlterColIndex),
+                    )
+                }
+
+                const handled = await this.handleSafeAlterSqlServer({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                })
+
+                if (safeAlterColIndex) {
+                    upQueries.push(
+                        this.createIndexSql(table, safeAlterColIndex),
+                    )
+                    downQueries.push(
+                        this.dropIndexSql(table, safeAlterColIndex),
+                    )
+                }
+
+                if (safeAlterColUnique) {
+                    upQueries.push(
+                        this.createUniqueConstraintSql(
+                            table,
+                            safeAlterColUnique,
+                        ),
+                    )
+                    downQueries.push(
+                        this.dropUniqueConstraintSql(table, safeAlterColUnique),
+                    )
+                }
+            } else if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                // BEGIN pre-truncate oversized values when shrinking, then length-only ALTER
+                this.handleColumnLengthChange({
+                    oldColumn,
+                    newColumn,
+                    table,
+                    upQueries,
+                })
+                // END length-only ALTER
+            }
 
             if (
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
+                // SQL Server refuses ALTER COLUMN when a unique constraint or index
+                // references the column. Drop them first, alter, then recreate.
+                const columnUnique = clonedTable.uniques.find(
+                    (unique) =>
+                        unique.columnNames.length === 1 &&
+                        unique.columnNames[0] === oldColumn.name,
+                )
+                if (columnUnique) {
+                    upQueries.push(
+                        this.dropUniqueConstraintSql(table, columnUnique),
+                    )
+                    downQueries.push(
+                        this.createUniqueConstraintSql(table, columnUnique),
+                    )
+                }
+
+                const columnIndex = clonedTable.indices.find(
+                    (index) =>
+                        index.columnNames.length === 1 &&
+                        index.columnNames[0] === oldColumn.name,
+                )
+                if (columnIndex) {
+                    upQueries.push(this.dropIndexSql(table, columnIndex))
+                    downQueries.push(this.createIndexSql(table, columnIndex))
+                }
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1711,6 +1812,20 @@ export class SqlServerQueryRunner
                         )}`,
                     ),
                 )
+
+                if (columnIndex) {
+                    upQueries.push(this.createIndexSql(table, columnIndex))
+                    downQueries.push(this.dropIndexSql(table, columnIndex))
+                }
+
+                if (columnUnique) {
+                    upQueries.push(
+                        this.createUniqueConstraintSql(table, columnUnique),
+                    )
+                    downQueries.push(
+                        this.dropUniqueConstraintSql(table, columnUnique),
+                    )
+                }
             }
 
             if (this.isEnumChanged(oldColumn, newColumn)) {
@@ -4431,5 +4546,197 @@ export class SqlServerQueryRunner
         throw new TypeORMError(
             `sqlserver driver does not support change table comment.`,
         )
+    }
+
+    /**
+     * Handles column length changes for SQL Server.
+     * @param root0
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.table
+     * @param root0.upQueries
+     */
+    private handleColumnLengthChange({
+        oldColumn,
+        newColumn,
+        table,
+        upQueries,
+    }: {
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        table: Table
+        upQueries: Query[]
+    }): void {
+        const oldLen =
+            typeof oldColumn.length === "string"
+                ? parseInt(oldColumn.length, 10)
+                : undefined
+        const newLen =
+            typeof newColumn.length === "string"
+                ? parseInt(newColumn.length, 10)
+                : undefined
+        const isOldMax =
+            typeof oldColumn.length === "string" &&
+            oldColumn.length.toUpperCase() === "MAX"
+        const isNewMax =
+            typeof newColumn.length === "string" &&
+            newColumn.length.toUpperCase() === "MAX"
+
+        if (
+            !isNewMax &&
+            typeof newLen === "number" &&
+            ((typeof oldLen === "number" && newLen < oldLen) || isOldMax)
+        ) {
+            const col = this.driver.escape(oldColumn.name)
+            const t = (newColumn.type as string).toLowerCase()
+            const threshold = t.startsWith("n") ? `${newLen}*2` : `${newLen}`
+            const isBinary = t === "varbinary" || t === "binary"
+            const updateExpr = isBinary
+                ? `SUBSTRING(${col}, 1, ${newLen})`
+                : `LEFT(${col}, ${newLen})`
+
+            upQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(
+                        table,
+                    )} SET ${col} = ${updateExpr} WHERE DATALENGTH(${col}) > ${threshold}`,
+                ),
+            )
+        }
+
+        const t = (newColumn.type as string).toLowerCase()
+        const isCharOrBin =
+            t === "varchar" ||
+            t === "nvarchar" ||
+            t === "varbinary" ||
+            t === "char" ||
+            t === "nchar" ||
+            t === "binary"
+
+        if (isCharOrBin) {
+            const fullTypeSql = this.driver.createFullType(newColumn)
+            const collationSql = newColumn.collation
+                ? ` COLLATE ${newColumn.collation}`
+                : ""
+            const nullSql = newColumn.isNullable ? " NULL" : " NOT NULL"
+
+            const tableName = this.escapePath(table)
+            const colName = this.driver.escape(newColumn.name)
+
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${tableName} ALTER COLUMN ${colName} ${fullTypeSql}${collationSql}${nullSql}`,
+                ),
+            )
+
+            const cached = table.findColumnByName(newColumn.name)
+            if (cached) cached.length = newColumn.length
+        }
+    }
+
+    /**
+     * Handles safe ALTER COLUMN changes for SQL Server.
+     * Returns true if change was handled.
+     * @param root0
+     * @param root0.table
+     * @param root0.clonedTable
+     * @param root0.oldColumn
+     * @param root0.newColumn
+     * @param root0.upQueries
+     * @param root0.downQueries
+     */
+    private async handleSafeAlterSqlServer({
+        table,
+        clonedTable,
+        oldColumn,
+        newColumn,
+        upQueries,
+        downQueries,
+    }: {
+        table: Table
+        clonedTable: Table
+        oldColumn: TableColumn
+        newColumn: TableColumn
+        upQueries: Query[]
+        downQueries: Query[]
+    }): Promise<boolean> {
+        // Skip computed/identity columns (cannot freely ALTER type)
+        if (oldColumn.asExpression || newColumn.asExpression) return false
+        if (oldColumn.generatedIdentity || newColumn.generatedIdentity)
+            return false
+
+        // Only proceed when caller says this change is safely widening
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const tableSql = this.escapePath(table)
+        const colName = String(oldColumn.name)
+
+        // SQL Server does not allow ALTER COLUMN when the column has a DEFAULT constraint.
+        // We must drop it before altering and re-add it afterwards.
+        const hasDefault =
+            oldColumn.default !== null && oldColumn.default !== undefined
+        const quoteIdent = (i: string) => `[${i.replace(/]/g, "]]")}]`
+
+        if (hasDefault) {
+            const defName =
+                this.connection.namingStrategy.defaultConstraintName(
+                    table,
+                    colName,
+                )
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${tableSql} DROP CONSTRAINT "${defName}"`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${tableSql} ADD CONSTRAINT "${defName}" DEFAULT ${oldColumn.default} FOR ${quoteIdent(colName)}`,
+                ),
+            )
+        }
+
+        // Build ALTER-COLUMN definitions (must include NULL/NOT NULL; do NOT include DEFAULT in SQL Server)
+        const buildAlterColumnDefinition = (column: TableColumn): string => {
+            const fullTypeSql = this.driver.createFullType(column)
+            const collationSql = column.collation
+                ? ` COLLATE ${column.collation}`
+                : ""
+            const nullSql = column.isNullable ? " NULL" : " NOT NULL"
+            return `${fullTypeSql}${collationSql}${nullSql}`
+        }
+
+        const newDef = buildAlterColumnDefinition(newColumn)
+        const oldDef = buildAlterColumnDefinition(oldColumn)
+
+        const upSql = `ALTER TABLE ${tableSql} ALTER COLUMN ${quoteIdent(
+            colName,
+        )} ${newDef}`
+        const downSql = `ALTER TABLE ${tableSql} ALTER COLUMN ${quoteIdent(
+            colName,
+        )} ${oldDef}`
+
+        upQueries.push(new Query(upSql))
+        downQueries.push(new Query(downSql))
+
+        // Re-add the default constraint after the ALTER COLUMN
+        if (hasDefault) {
+            const defName =
+                this.connection.namingStrategy.defaultConstraintName(
+                    table,
+                    colName,
+                )
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${tableSql} ADD CONSTRAINT "${defName}" DEFAULT ${oldColumn.default} FOR ${quoteIdent(colName)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${tableSql} DROP CONSTRAINT "${defName}"`,
+                ),
+            )
+        }
+
+        return true
     }
 }

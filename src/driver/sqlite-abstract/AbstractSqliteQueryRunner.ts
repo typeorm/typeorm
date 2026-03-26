@@ -618,6 +618,8 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Changes a column in the table.
+     * Note: SQLite doesn't use safe-ALTER (data-protected column changes) because it always
+     * recreates tables with data migration for ALTER operations, which is inherently safe.
      * @param tableOrName
      * @param oldTableColumnOrName
      * @param newColumn
