@@ -766,7 +766,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             .join("|")
 
         if (replacementKeys.length > 0) {
-            statement = statement.replace(
+            statement = statement.replaceAll(
                 new RegExp(
                     // Avoid a lookbehind here since it's not well supported
                     `([ =(]|^.{0})` + // any of ' =(' or start of line
@@ -819,7 +819,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         // to scrub "ending" characters from the SQL but otherwise we can leave everything else
         // as-is and it should be valid.
 
-        return `/* ${this.expressionMap.comment.replace(/\*\//g, "")} */ `
+        return `/* ${this.expressionMap.comment.replaceAll("*/", "")} */ `
     }
 
     /**

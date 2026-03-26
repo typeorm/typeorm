@@ -807,7 +807,7 @@ export class PostgresDriver implements Driver {
                     }
                     // Convert non-null values to string since HStore only stores strings anyway.
                     // To include a double quote or a backslash in a key or value, escape it with a backslash.
-                    return `"${`${value}`.replace(/(?=["\\])/g, "\\")}"`
+                    return `"${`${value}`.replaceAll(/(?=["\\])/g, "\\")}"`
                 }
                 return Object.keys(value)
                     .map(
@@ -832,7 +832,7 @@ export class PostgresDriver implements Driver {
                 .split(".")
                 .filter(Boolean)
                 .join(".")
-                .replace(/[\s]+/g, "_")
+                .replaceAll(/[\s]+/g, "_")
         } else if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum") &&
@@ -890,11 +890,11 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
                 const unescapeString = (str: string) =>
-                    str.replace(/\\./g, (m) => m[1])
+                    str.replaceAll(/\\./g, (m) => m[1])
                 const regexp =
                     /"([^"\\]*(?:\\.[^"\\]*)*)"=>(?:(NULL)|"([^"\\]*(?:\\.[^"\\]*)*)")(?:,|$)/g
                 const object: ObjectLiteral = {}
-                ;`${value}`.replace(
+                ;`${value}`.replaceAll(
                     regexp,
                     (_, key, nullValue, stringValue) => {
                         object[unescapeString(key)] = nullValue
@@ -910,7 +910,7 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "cube") {
-            value = value.replace(/[()\s]+/g, "") // remove whitespace
+            value = value.replaceAll(/[()\s]+/g, "") // remove whitespace
             if (columnMetadata.isArray) {
                 /**
                  * Strips these groups from `{"1,2,3","",NULL}`:
@@ -952,7 +952,7 @@ export class PostgresDriver implements Driver {
                         if (val.startsWith(`"`) && val.endsWith(`"`))
                             val = val.slice(1, -1)
                         // replace escaped backslash and double quotes
-                        return val.replace(/\\(\\|")/g, "$1")
+                        return val.replaceAll(/\\(\\|")/g, "$1")
                     })
 
                 // convert to number if that exists in possible enum options
@@ -998,7 +998,7 @@ export class PostgresDriver implements Driver {
             return [sql, escapedParameters]
 
         const parameterIndexMap = new Map<string, number>()
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
@@ -1850,7 +1850,7 @@ export class PostgresDriver implements Driver {
     protected escapeComment(comment?: string) {
         if (!comment) return comment
 
-        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return comment
     }

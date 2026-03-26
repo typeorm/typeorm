@@ -4047,7 +4047,7 @@ export class PostgresQueryRunner
 
                                 const defaultWithoutQuotes = dbColumn[
                                     "column_default"
-                                ].replace(/"/g, "")
+                                ].replaceAll('"', "")
 
                                 if (
                                     defaultWithoutQuotes ===
@@ -4081,7 +4081,7 @@ export class PostgresQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/::[\w\s.[\]\-"]+/g, "")
+                                    ].replaceAll(/::[\w\s.[\]\-"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?\d+)$/,
@@ -5041,7 +5041,7 @@ export class PostgresQueryRunner
             return "NULL"
         }
 
-        comment = comment.replace(/'/g, "''").replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("'", "''").replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return `'${comment}'`
     }

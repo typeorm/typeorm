@@ -392,7 +392,7 @@ export class AuroraMysqlDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
@@ -1089,8 +1089,8 @@ export class AuroraMysqlDriver implements Driver {
         ) {
             // we need to cut out "'" because in mysql we can understand returned value is a string or a function
             // as result compare cannot understand if default is really changed or not
-            columnMetadataValue = columnMetadataValue.replace(/^'+|'+$/g, "")
-            databaseValue = databaseValue.replace(/^'+|'+$/g, "")
+            columnMetadataValue = columnMetadataValue.replaceAll(/^'+|'+$/g, "")
+            databaseValue = databaseValue.replaceAll(/^'+|'+$/g, "")
         }
 
         return columnMetadataValue === databaseValue
@@ -1103,7 +1103,7 @@ export class AuroraMysqlDriver implements Driver {
     protected escapeComment(comment?: string) {
         if (!comment) return comment
 
-        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return comment
     }

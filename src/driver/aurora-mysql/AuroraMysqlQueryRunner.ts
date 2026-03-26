@@ -2858,9 +2858,9 @@ export class AuroraMysqlQueryRunner
         }
 
         comment = comment
-            .replace(/\\/g, "\\\\") // MySQL allows escaping characters via backslashes
-            .replace(/'/g, "''")
-            .replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+            .replaceAll("\\", "\\\\") // MySQL allows escaping characters via backslashes
+            .replaceAll("'", "''")
+            .replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return `'${comment}'`
     }

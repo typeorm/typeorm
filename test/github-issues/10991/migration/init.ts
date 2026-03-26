@@ -7,7 +7,7 @@ export class CreateDatabase0000000000001 implements MigrationInterface {
 
     async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(
-            `CREATE TABLE "${TEST_TABLE_NAME.replace(/"/g, '""')}" ()`,
+            `CREATE TABLE "${TEST_TABLE_NAME.replaceAll('"', '""')}" ()`,
         )
     }
 
