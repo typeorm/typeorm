@@ -17,7 +17,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint",
-    "publish:preview": "pkg-pr-new publish",
     "start": "ts-node src/index.ts",
     "test": "mocha"
   },
@@ -39,7 +38,6 @@
     "eslint-plugin-chai-friendly": "^1.0.1",
     "globals": "^16.0.0",
     "mocha": "^11.0.0",
-    "pkg-pr-new": "^0.0.63",
     "prettier": "^3.8.1",
     "sinon": "^21.0.3",
     "ts-node": "^10.9.0",
