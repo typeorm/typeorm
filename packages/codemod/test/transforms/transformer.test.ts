@@ -53,7 +53,7 @@ describe("transformer", () => {
         expect(result).to.equal("new")
     })
 
-    it("should pass updated source to subsequent transforms", () => {
+    it("should pass updated source to subsequent transforms", async () => {
         const sources: string[] = []
         const tracking = (file: FileInfo) => {
             sources.push(file.source)
@@ -64,7 +64,7 @@ describe("transformer", () => {
             mod("t1", tracking),
             mod("t2", tracking),
         ])
-        void composite(makeFile("start"), mockApi, {})
+        await composite(makeFile("start"), mockApi, {})
 
         expect(sources).to.deep.equal(["start", "start!"])
     })
