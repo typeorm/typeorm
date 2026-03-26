@@ -17,69 +17,75 @@ export interface SummaryData {
     depErrors: string[]
 }
 
-export const printSummary = (data: SummaryData): void => {
-    const {
-        ok,
-        error,
-        skip,
-        nochange,
-        timeElapsed,
-        parseErrors,
-        todos,
-        applied,
-        depChanges,
-        depWarnings,
-        depErrors,
-    } = data
-
+const printStatistics = (data: SummaryData): void => {
     console.log(`\n${colors.bold("Statistics:")}`)
-    console.log(`  Files processed:   ${ok + error + skip + nochange}`)
-    console.log(`  Files transformed: ${ok}`)
-    console.log(`  Files skipped:     ${skip + nochange}`)
-    console.log(`  Parse errors:      ${error}`)
-    console.log(`  Time elapsed:      ${formatTime(timeElapsed)}`)
+    console.log(
+        `  Files processed:   ${data.ok + data.error + data.skip + data.nochange}`,
+    )
+    console.log(`  Files transformed: ${data.ok}`)
+    console.log(`  Files skipped:     ${data.skip + data.nochange}`)
+    console.log(`  Parse errors:      ${data.error}`)
+    console.log(`  Time elapsed:      ${formatTime(data.timeElapsed)}`)
+}
 
-    if (applied.size > 0) {
-        console.log(`\n${colors.bold("Transforms applied:")}`)
-        const sorted = [...applied.entries()].sort(([, a], [, b]) => b - a)
-        for (const [name, count] of sorted) {
-            console.log(
-                `  ${colors.dim(name.padEnd(45))} ${count} file${count === 1 ? "" : "s"}`,
-            )
+const printApplied = (applied: Map<string, number>): void => {
+    console.log(`\n${colors.bold("Transforms applied:")}`)
+    const sorted = [...applied.entries()].sort(([, a], [, b]) => b - a)
+    for (const [name, count] of sorted) {
+        console.log(
+            `  ${colors.dim(name.padEnd(45))} ${count} file${count === 1 ? "" : "s"}`,
+        )
+    }
+}
+
+const printParseErrors = (
+    parseErrors: { file: string; message: string }[],
+): void => {
+    console.log(`\n  ${colors.red("Parse errors:")}`)
+    for (const { file, message } of parseErrors) {
+        console.log(`    ${colors.dim(file)} ${message}`)
+    }
+}
+
+const printDependencyChanges = (
+    changes: string[],
+    warnings: string[],
+    errors: string[],
+): void => {
+    console.log(`\n${colors.bold("Dependency changes:")}`)
+    for (const change of changes) {
+        console.log(`  ${highlight(change)}`)
+    }
+    if (warnings.length > 0) {
+        console.log(`\n  ${colors.yellow("Warnings:")}`)
+        for (const w of warnings) {
+            console.log(`    ${highlight(w)}`)
         }
     }
-
-    if (todos.size > 0) {
-        printTodos(todos)
-    }
-
-    if (parseErrors.length > 0) {
-        console.log(`\n  ${colors.red("Parse errors:")}`)
-        for (const { file, message } of parseErrors) {
-            console.log(`    ${colors.dim(file)} ${message}`)
+    if (errors.length > 0) {
+        console.log(`\n  ${colors.red("Errors:")}`)
+        for (const e of errors) {
+            console.log(`    ${highlight(e)}`)
         }
     }
+}
+
+export const printSummary = (data: SummaryData): void => {
+    printStatistics(data)
+
+    if (data.applied.size > 0) printApplied(data.applied)
+    if (data.todos.size > 0) printTodos(data.todos)
+    if (data.parseErrors.length > 0) printParseErrors(data.parseErrors)
 
     if (
-        depChanges.length > 0 ||
-        depWarnings.length > 0 ||
-        depErrors.length > 0
+        data.depChanges.length > 0 ||
+        data.depWarnings.length > 0 ||
+        data.depErrors.length > 0
     ) {
-        console.log(`\n${colors.bold("Dependency changes:")}`)
-        for (const change of depChanges) {
-            console.log(`  ${highlight(change)}`)
-        }
-        if (depWarnings.length > 0) {
-            console.log(`\n  ${colors.yellow("Warnings:")}`)
-            for (const w of depWarnings) {
-                console.log(`    ${highlight(w)}`)
-            }
-        }
-        if (depErrors.length > 0) {
-            console.log(`\n  ${colors.red("Errors:")}`)
-            for (const e of depErrors) {
-                console.log(`    ${highlight(e)}`)
-            }
-        }
+        printDependencyChanges(
+            data.depChanges,
+            data.depWarnings,
+            data.depErrors,
+        )
     }
 }

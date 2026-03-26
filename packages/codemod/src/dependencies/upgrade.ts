@@ -17,30 +17,28 @@ const sections = [
     "optionalDependencies",
 ] as const
 
-export const upgradeDependencies = (
-    filePath: string,
-    dry: boolean,
-    config: DependencyConfig,
-): DependencyReport => {
-    const report: DependencyReport = {
-        file: filePath,
-        changes: [],
-        warnings: [],
-        errors: [],
-    }
+type Section = (typeof sections)[number]
 
-    const raw = fs.readFileSync(filePath, "utf8")
-    const pkg: PackageJson = JSON.parse(raw)
+const getDeps = (
+    pkg: PackageJson,
+    section: Section,
+): Record<string, string> | undefined => pkg[section]
+
+const findInAnySection = (pkg: PackageJson, pkgName: string): boolean =>
+    sections.some((s) => getDeps(pkg, s)?.[pkgName])
+
+const replacePackages = (
+    pkg: PackageJson,
+    config: DependencyConfig,
+    report: DependencyReport,
+): boolean => {
     let modified = false
 
-    const getDeps = (section: (typeof sections)[number]) => pkg[section]
-
-    // Replace deprecated packages
     for (const [oldPkg, { replacement, version }] of Object.entries(
         config.replacements,
     )) {
         for (const section of sections) {
-            const deps = getDeps(section)
+            const deps = getDeps(pkg, section)
             if (!deps?.[oldPkg]) continue
 
             delete deps[oldPkg]
@@ -58,12 +56,21 @@ export const upgradeDependencies = (
         }
     }
 
-    // Upgrade packages below minimum version
+    return modified
+}
+
+const upgradePackages = (
+    pkg: PackageJson,
+    config: DependencyConfig,
+    report: DependencyReport,
+): boolean => {
+    let modified = false
+
     for (const [pkgName, { minVersion, version }] of Object.entries(
         config.upgrades,
     )) {
         for (const section of sections) {
-            const deps = getDeps(section)
+            const deps = getDeps(pkg, section)
             const current = deps?.[pkgName]
             if (!deps || !current) continue
 
@@ -83,36 +90,76 @@ export const upgradeDependencies = (
         }
     }
 
-    // Check for incompatible packages (hard errors)
+    return modified
+}
+
+const checkIncompatible = (
+    pkg: PackageJson,
+    config: DependencyConfig,
+    report: DependencyReport,
+): void => {
     for (const [pkgName, message] of Object.entries(config.incompatible)) {
-        for (const section of sections) {
-            if (getDeps(section)?.[pkgName]) {
-                report.errors.push(message)
-                break
-            }
+        if (findInAnySection(pkg, pkgName)) {
+            report.errors.push(message)
         }
     }
+}
 
-    // Check Node.js engine requirement
+const checkNodeVersion = (
+    pkg: PackageJson,
+    config: DependencyConfig,
+    report: DependencyReport,
+): void => {
     const engines = pkg.engines?.node
-    if (engines) {
-        const currentMin = semver.minVersion(engines)
-        if (currentMin && semver.lt(currentMin, config.minNodeVersion)) {
-            report.warnings.push(
-                `\`engines.node\` is \`${engines}\` — TypeORM requires Node.js ${config.minNodeVersion}+. Update your engines field.`,
-            )
+    if (!engines) return
+
+    const currentMin = semver.minVersion(engines)
+    if (currentMin && semver.lt(currentMin, config.minNodeVersion)) {
+        report.warnings.push(
+            `\`engines.node\` is \`${engines}\` — TypeORM requires Node.js ${config.minNodeVersion}+. Update your engines field.`,
+        )
+    }
+}
+
+const checkWarnings = (
+    pkg: PackageJson,
+    config: DependencyConfig,
+    report: DependencyReport,
+): void => {
+    for (const [pkgName, message] of Object.entries(config.warnings)) {
+        if (findInAnySection(pkg, pkgName)) {
+            report.warnings.push(message)
         }
+    }
+}
+
+const detectIndent = (json: string): number => {
+    const match = /^( +)"/m.exec(json)
+    return match ? match[1].length : 2
+}
+
+export const upgradeDependencies = (
+    filePath: string,
+    dry: boolean,
+    config: DependencyConfig,
+): DependencyReport => {
+    const report: DependencyReport = {
+        file: filePath,
+        changes: [],
+        warnings: [],
+        errors: [],
     }
 
-    // Check for packages that trigger soft warnings
-    for (const [pkgName, message] of Object.entries(config.warnings)) {
-        for (const section of sections) {
-            if (getDeps(section)?.[pkgName]) {
-                report.warnings.push(message)
-                break
-            }
-        }
-    }
+    const raw = fs.readFileSync(filePath, "utf8")
+    const pkg: PackageJson = JSON.parse(raw)
+
+    const replaced = replacePackages(pkg, config, report)
+    const upgraded = upgradePackages(pkg, config, report)
+    const modified = replaced || upgraded
+
+    checkIncompatible(pkg, config, report)
+    checkNodeVersion(pkg, config, report)
+    checkWarnings(pkg, config, report)
 
     if (modified && !dry) {
         const indent = detectIndent(raw)
@@ -124,9 +171,4 @@ export const upgradeDependencies = (
     }
 
     return report
-}
-
-const detectIndent = (json: string): number => {
-    const match = /^( +)"/m.exec(json)
-    return match ? match[1].length : 2
 }
