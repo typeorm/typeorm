@@ -152,7 +152,7 @@ describe("upgrade-dependencies", () => {
         expect(pkg.dependencies?.sqlite3).to.equal("^5.1.0")
     })
 
-    it("should skip non-standard version specifiers with warning", () => {
+    it("should skip non-standard version specifiers with error", () => {
         const file = writePackageJson({
             dependencies: {
                 typeorm: "npm:@cool-midway/typeorm@0.3.20",
@@ -166,11 +166,11 @@ describe("upgrade-dependencies", () => {
             "npm:@cool-midway/typeorm@0.3.20",
         )
         expect(report.changes).to.have.length(0)
-        expect(report.warnings).to.have.length(1)
-        expect(report.warnings[0]).to.include("non-standard")
+        expect(report.errors).to.have.length(1)
+        expect(report.errors[0]).to.include("non-standard")
     })
 
-    it("should skip patch protocol version specifiers with warning", () => {
+    it("should skip patch protocol version specifiers with error", () => {
         const file = writePackageJson({
             dependencies: {
                 typeorm: "patch:typeorm@0.3.20#./patches/typeorm+0.3.20.patch",
@@ -184,8 +184,8 @@ describe("upgrade-dependencies", () => {
             "patch:typeorm@0.3.20#./patches/typeorm+0.3.20.patch",
         )
         expect(report.changes).to.have.length(0)
-        expect(report.warnings).to.have.length(1)
-        expect(report.warnings[0]).to.include("non-standard")
+        expect(report.errors).to.have.length(1)
+        expect(report.errors[0]).to.include("non-standard")
     })
 
     it("should preserve indentation", () => {

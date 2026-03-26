@@ -80,8 +80,8 @@ const upgradePackages = (
             if (!deps || !current) continue
 
             if (!isStandardVersion(current)) {
-                report.warnings.push(
-                    `\`${pkgName}\` has non-standard version specifier \`${current}\` — skipping upgrade`,
+                report.errors.push(
+                    `\`${pkgName}\` has non-standard version specifier \`${current}\` — needs manual upgrade`,
                 )
                 continue
             }
