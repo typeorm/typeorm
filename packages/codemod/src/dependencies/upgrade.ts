@@ -27,6 +27,11 @@ const getDeps = (
 const findInAnySection = (pkg: PackageJson, pkgName: string): boolean =>
     sections.some((s) => getDeps(pkg, s)?.[pkgName])
 
+const isStandardVersion = (version: string): boolean =>
+    !version.includes(":") &&
+    !version.startsWith("file:") &&
+    !version.startsWith("link:")
+
 const replacePackages = (
     pkg: PackageJson,
     config: DependencyConfig,
@@ -73,6 +78,13 @@ const upgradePackages = (
             const deps = getDeps(pkg, section)
             const current = deps?.[pkgName]
             if (!deps || !current) continue
+
+            if (!isStandardVersion(current)) {
+                report.warnings.push(
+                    `\`${pkgName}\` has non-standard version specifier \`${current}\` — skipping upgrade`,
+                )
+                continue
+            }
 
             const currentMin = semver.minVersion(current)
             const requiredMin = semver.minVersion(minVersion)
