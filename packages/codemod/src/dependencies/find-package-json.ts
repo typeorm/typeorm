@@ -10,19 +10,23 @@ export const findPackageJsonFiles = (paths: string[]): string[] => {
     const results: string[] = []
 
     for (const p of paths) {
-        const stat = fs.statSync(p, { throwIfNoEntry: false })
-        if (!stat) continue
+        try {
+            const stat = fs.statSync(p, { throwIfNoEntry: false })
+            if (!stat) continue
 
-        if (stat.isFile() && path.basename(p) === "package.json") {
-            results.push(p)
-        } else if (stat.isDirectory()) {
-            results.push(
-                ...globSync("**/package.json", {
-                    cwd: p,
-                    ignore: ["**/node_modules/**"],
-                    absolute: true,
-                }),
-            )
+            if (stat.isFile() && path.basename(p) === "package.json") {
+                results.push(p)
+            } else if (stat.isDirectory()) {
+                results.push(
+                    ...globSync("**/package.json", {
+                        cwd: p,
+                        ignore: ["**/node_modules/**"],
+                        absolute: true,
+                    }),
+                )
+            }
+        } catch {
+            // Skip unreadable paths (permission errors, broken symlinks, etc.)
         }
     }
 
