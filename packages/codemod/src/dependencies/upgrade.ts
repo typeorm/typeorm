@@ -30,7 +30,8 @@ const findInAnySection = (pkg: PackageJson, pkgName: string): boolean =>
 const isStandardVersion = (version: string): boolean =>
     !version.includes(":") &&
     !version.startsWith("file:") &&
-    !version.startsWith("link:")
+    !version.startsWith("link:") &&
+    semver.validRange(version) !== null
 
 const replacePackages = (
     pkg: PackageJson,
