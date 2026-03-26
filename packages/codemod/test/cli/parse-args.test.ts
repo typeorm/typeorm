@@ -1,7 +1,21 @@
 import { expect } from "chai"
+import sinon from "sinon"
 import { parseArgs } from "../../src/cli/parse-args"
 
 describe("parseArgs", () => {
+    let exitStub: sinon.SinonStub
+    let stderrStub: sinon.SinonStub
+
+    beforeEach(() => {
+        exitStub = sinon.stub(process, "exit")
+        stderrStub = sinon.stub(console, "error")
+    })
+
+    afterEach(() => {
+        exitStub.restore()
+        stderrStub.restore()
+    })
+
     describe("version", () => {
         it("should parse as first positional argument", () => {
             const result = parseArgs(["v1", "src/"])
@@ -86,6 +100,49 @@ describe("parseArgs", () => {
             expect(result.transform).to.equal("my-transform")
             expect(result.dry).to.be.true
             expect(result.paths).to.deep.equal(["src/", "lib/"])
+        })
+    })
+
+    describe("validation", () => {
+        describe("--transform", () => {
+            it("should exit when value is missing", () => {
+                parseArgs(["v1", "--transform"])
+                expect(exitStub.calledWith(1)).to.be.true
+            })
+
+            it("should exit when value looks like a flag", () => {
+                parseArgs(["v1", "--transform", "--dry"])
+                expect(exitStub.calledWith(1)).to.be.true
+            })
+        })
+
+        describe("--ignore", () => {
+            it("should exit when value is missing", () => {
+                parseArgs(["v1", "--ignore"])
+                expect(exitStub.calledWith(1)).to.be.true
+            })
+        })
+
+        describe("--workers", () => {
+            it("should exit when value is missing", () => {
+                parseArgs(["v1", "--workers"])
+                expect(exitStub.calledWith(1)).to.be.true
+            })
+
+            it("should exit when value is not a number", () => {
+                parseArgs(["v1", "--workers", "abc"])
+                expect(exitStub.calledWith(1)).to.be.true
+            })
+
+            it("should exit when value is zero", () => {
+                parseArgs(["v1", "--workers", "0"])
+                expect(exitStub.calledWith(1)).to.be.true
+            })
+
+            it("should exit when value is negative", () => {
+                parseArgs(["v1", "--workers", "-1"])
+                expect(exitStub.calledWith(1)).to.be.true
+            })
         })
     })
 })
