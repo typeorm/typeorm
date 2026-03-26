@@ -1,6 +1,7 @@
 import path from "node:path"
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, Node } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
+import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -89,7 +90,30 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         hasChanges = true
     }
 
-    if (hasChanges) stats.count.todo(api, name, file)
+    // Add a TODO comment on the first dataSource usage
+    if (hasChanges) {
+        const firstUsage = root.find(j.Identifier, { name: "dataSource" })
+        if (firstUsage.length > 0) {
+            let current = firstUsage.paths()[0]
+            while (current.parent) {
+                const node: Node = current.parent.node
+                if (
+                    node.type === "ExpressionStatement" ||
+                    node.type === "VariableDeclaration" ||
+                    node.type === "ReturnStatement"
+                ) {
+                    addTodoComment(
+                        node,
+                        "`dataSource` is not defined — inject or import your DataSource instance",
+                        j,
+                    )
+                    break
+                }
+                current = current.parent
+            }
+        }
+        stats.count.todo(api, name, file)
+    }
 
     return hasChanges ? root.toSource() : undefined
 }
