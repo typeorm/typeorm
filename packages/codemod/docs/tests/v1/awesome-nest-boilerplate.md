@@ -4,12 +4,12 @@
 - **Branch**: `main`
 - **Commit**: `c1f521e`
 - **TypeORM version**: `0.3.20`
-- **Date**: 2026-03-25
+- **Date**: 2026-03-26
 
 ## Run command
 
 ```bash
-npx @typeorm/codemod v1 --dry --ignore '**/generated*' .
+npx @typeorm/codemod v1 --dry .
 ```
 
 ## Analysis
@@ -18,7 +18,7 @@ No TypeORM code was transformed — the project uses TypeORM v0.3.20 but the cod
 
 ### Parse errors
 
-1 file (`src/main.ts`) failed to parse — likely uses TypeScript syntax not supported by the Babel parser. Since no transforms applied, this has no impact.
+1 file (`src/main.ts`) failed to parse due to `(<any>import.meta).env?.PROD` on line 99. Babel's TSX parser cannot handle `import.meta` — it's an ES module syntax that Babel rejects when parsing in CJS mode. The file doesn't import from `typeorm`, so it wouldn't have been transformed anyway.
 
 ### Dependency changes
 
@@ -27,13 +27,12 @@ TypeORM bumped from `0.3.20` to `^1.0.0-beta.1`.
 ## Output
 
 ```
-✔ Updated one package.json file (0.0s)
 Statistics:
   Files processed:   102
   Files transformed: 0
   Files skipped:     101
   Parse errors:      1
-  Time elapsed:      5.6s
+  Time elapsed:      5.9s
   Parse errors:
     src/main.ts Unexpected token, expected "}" (100:26)
 Dependency changes:

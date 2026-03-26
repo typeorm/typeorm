@@ -4,12 +4,12 @@
 - **Branch**: `master`
 - **Commit**: `c1c2cc4`
 - **TypeORM version**: `^0.2.24`
-- **Date**: 2026-03-25
+- **Date**: 2026-03-26
 
 ## Run command
 
 ```bash
-npx @typeorm/codemod v1 --dry --ignore '**/generated*' .
+npx @typeorm/codemod v1 --dry .
 ```
 
 ## Analysis
@@ -29,13 +29,12 @@ Replaced `mysql` with `mysql2`, TypeORM bumped from `^0.2.24` to `^1.0.0-beta.1`
 ## Output
 
 ```
-✔ Updated one package.json file (0.0s)
 Statistics:
   Files processed:   71
   Files transformed: 4
   Files skipped:     67
   Parse errors:      0
-  Time elapsed:      5.4s
+  Time elapsed:      4.9s
 Transforms applied:
   connection-to-datasource                      2 files
   global-functions                              2 files

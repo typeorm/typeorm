@@ -4,12 +4,12 @@
 - **Branch**: `main`
 - **Commit**: `63571f4`
 - **TypeORM version**: `0.3.28`
-- **Date**: 2026-03-25
+- **Date**: 2026-03-26
 
 ## Run command
 
 ```bash
-npx @typeorm/codemod v1 --dry --ignore '**/generated*' .
+npx @typeorm/codemod v1 --dry .
 ```
 
 ## Analysis
@@ -18,8 +18,8 @@ npx @typeorm/codemod v1 --dry --ignore '**/generated*' .
 
 ### Transforms
 
-- `datasource-mongodb` (1 file) — correctly handling MongoDB option renames
 - `use-container` (1 file) — correctly flags `useContainer()` removal in `main.ts`
+- `datasource-mongodb` (1 file) — correctly handling MongoDB option renames
 
 ### Dependency changes
 
@@ -28,16 +28,15 @@ TypeORM bumped from `0.3.28` to `^1.0.0-beta.1`. Node.js engine warning: `>=16.0
 ## Output
 
 ```
-✔ Updated one package.json file (0.0s)
 Statistics:
   Files processed:   179
   Files transformed: 2
   Files skipped:     177
   Parse errors:      0
-  Time elapsed:      6.2s
+  Time elapsed:      5.4s
 Transforms applied:
-  datasource-mongodb                            1 file
   use-container                                 1 file
+  datasource-mongodb                            1 file
   Files requiring manual review:
     use-container:
       src/main.ts
