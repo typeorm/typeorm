@@ -8,6 +8,15 @@ export interface Spinner {
 }
 
 export const createSpinner = (text: string | (() => string)): Spinner => {
+    if (!process.stderr.isTTY) {
+        return {
+            update() {},
+            stop(finalText?: string) {
+                if (finalText) process.stderr.write(`${finalText}\n`)
+            },
+        }
+    }
+
     let i = 0
     let getText = typeof text === "function" ? text : () => text
     const clear = () => process.stderr.write(`\r\x1b[K`)
