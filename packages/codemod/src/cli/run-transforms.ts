@@ -4,15 +4,6 @@ import { createSpinner } from "../lib/spinner"
 import { formatTime } from "../lib/format-time"
 import { stats } from "../transforms/stats"
 
-interface JscodeshiftResult {
-    ok: number
-    error: number
-    nochange: number
-    skip: number
-    timeElapsed: string
-    stats: Record<string, number>
-}
-
 export interface TransformResult {
     ok: number
     error: number
@@ -103,9 +94,9 @@ export const runTransforms = async (
             return true
         }) as typeof process.stdout.write
 
-        let result: JscodeshiftResult
+        let result: Awaited<ReturnType<typeof jscodeshift>>
         try {
-            result = (await jscodeshift(transform, paths, {
+            result = await jscodeshift(transform, paths, {
                 dry,
                 print: false,
                 verbose: 2,
@@ -113,7 +104,7 @@ export const runTransforms = async (
                 parser: "tsx",
                 ...(workers !== undefined && { cpus: workers }),
                 ...(ignore !== undefined && { ignorePattern: ignore }),
-            })) as JscodeshiftResult
+            })
         } catch (err) {
             spinner.stop(
                 `${colors.red("✖")} Transform failed: ${err instanceof Error ? err.message : String(err)}`,
