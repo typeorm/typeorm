@@ -71,7 +71,7 @@ export const runTransforms = async (
             // Capture file count from jscodeshift's "Processing N files..."
             const countMatch = /Processing (\d+) files/.exec(str)
             if (countMatch) {
-                fileCount = parseInt(countMatch[1], 10)
+                fileCount = Number.parseInt(countMatch[1], 10)
                 startTime = Date.now()
                 spinner.update(`Processing 0/${fileCount} files...`)
                 return true
@@ -96,7 +96,7 @@ export const runTransforms = async (
                 processed++
             } else {
                 // Suppress other jscodeshift output (including stack traces)
-                return true
+                return false
             }
 
             spinner.update(progressText)
@@ -115,7 +115,7 @@ export const runTransforms = async (
 
         process.stdout.write = originalWrite
 
-        const elapsed = parseFloat(result.timeElapsed)
+        const elapsed = Number.parseFloat(result.timeElapsed)
         const total = result.ok + result.error + result.skip + result.nochange
         const errorSuffix = result.error > 0 ? `, ${result.error} errors` : ""
         spinner.stop(
@@ -127,7 +127,7 @@ export const runTransforms = async (
         allParseErrors.push(...parseErrors)
         totalSkip += result.skip
         totalNochange += result.nochange
-        totalTime += parseFloat(result.timeElapsed)
+        totalTime += Number.parseFloat(result.timeElapsed)
 
         for (const [transform, files] of stats.collect.todos(
             result.stats ?? {},

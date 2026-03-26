@@ -42,12 +42,15 @@ export const runDependencies = (
     }
 
     const depElapsed = (Date.now() - depStart) / 1000
-    const depSummary =
-        packageJsonFiles.length === 1
-            ? depFilesChanged === 1
+    let depSummary: string
+    if (packageJsonFiles.length === 1) {
+        depSummary =
+            depFilesChanged === 1
                 ? "Updated one package.json file"
                 : "No package.json changes needed"
-            : `Updated ${depFilesChanged} out of ${packageJsonFiles.length} package.json files`
+    } else {
+        depSummary = `Updated ${depFilesChanged} out of ${packageJsonFiles.length} package.json files`
+    }
     depSpinner.stop(
         `${colors.green("✔")} ${depSummary} (${formatTime(depElapsed)})`,
     )

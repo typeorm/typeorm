@@ -24,9 +24,7 @@ function convertRelationsArrayToObject(values: string[]): NestedObject {
         for (let i = 0; i < parts.length; i++) {
             const part = parts[i]
             if (i === parts.length - 1) {
-                if (current[part] === undefined) {
-                    current[part] = true
-                }
+                current[part] ??= true
             } else {
                 if (current[part] === undefined || current[part] === true) {
                     current[part] = {}
