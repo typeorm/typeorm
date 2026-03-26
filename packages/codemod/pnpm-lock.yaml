@@ -28,10 +28,10 @@ importers:
         specifier: ^17.3.0
         version: 17.3.0
       '@types/mocha':
-        specifier: ^10.0.0
+        specifier: ^10.0.10
         version: 10.0.10
       '@types/node':
-        specifier: ^20.0.0
+        specifier: ^20.19.33
         version: 20.19.37
       '@types/semver':
         specifier: ^7.7.0
@@ -46,11 +46,11 @@ importers:
         specifier: ^10.0.0
         version: 10.1.0
       eslint-plugin-chai-friendly:
-        specifier: ^1.0.1
+        specifier: ^1.1.0
         version: 1.1.1(eslint@10.1.0)
       globals:
-        specifier: ^16.0.0
-        version: 16.5.0
+        specifier: ^17.4.0
+        version: 17.4.0
       mocha:
         specifier: ^11.0.0
         version: 11.7.5
@@ -64,10 +64,10 @@ importers:
         specifier: ^10.9.0
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.9.3
         version: 5.9.3
       typescript-eslint:
-        specifier: ^8.35.0
+        specifier: ^8.56.1
         version: 8.57.2(eslint@10.1.0)(typescript@5.9.3)
 
 packages:
@@ -757,8 +757,8 @@ packages:
     deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
-  globals@16.5.0:
-    resolution: {integrity: sha512-c/c15i26VrJ4IRt5Z89DnIzCGDn9EcebibhAOjw5ibqEHsE1wLUgkPn9RDmNcUKyU87GeaL633nyJ+pplFR2ZQ==}
+  globals@17.4.0:
+    resolution: {integrity: sha512-hjrNztw/VajQwOLsMNT1cbJiH2muO3OROCHnbehc8eY5JyD2gqz4AcMHPqgaOR59DjgUjYAYLeH699g/eWi2jw==}
     engines: {node: '>=18'}
 
   graceful-fs@4.2.11:
@@ -1994,7 +1994,7 @@ snapshots:
       package-json-from-dist: 1.0.1
       path-scurry: 1.11.1
 
-  globals@16.5.0: {}
+  globals@17.4.0: {}
 
   graceful-fs@4.2.11: {}
 

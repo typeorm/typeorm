@@ -29,20 +29,20 @@
     "@eslint/js": "^10.0.0",
     "@types/chai": "^4.3.0",
     "@types/jscodeshift": "^17.3.0",
-    "@types/mocha": "^10.0.0",
-    "@types/node": "^20.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.33",
     "@types/semver": "^7.7.0",
     "@types/sinon": "^21.0.0",
     "chai": "^4.5.0",
     "eslint": "^10.0.0",
-    "eslint-plugin-chai-friendly": "^1.0.1",
-    "globals": "^16.0.0",
+    "eslint-plugin-chai-friendly": "^1.1.0",
+    "globals": "^17.4.0",
     "mocha": "^11.0.0",
     "prettier": "^3.8.1",
     "sinon": "^21.0.3",
     "ts-node": "^10.9.0",
-    "typescript": "^5.7.0",
-    "typescript-eslint": "^8.35.0"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
   },
   "engines": {
     "node": ">=20"
