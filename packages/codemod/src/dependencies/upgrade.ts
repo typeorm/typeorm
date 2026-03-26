@@ -162,8 +162,17 @@ export const upgradeDependencies = (
         errors: [],
     }
 
-    const raw = fs.readFileSync(filePath, "utf8")
-    const pkg: PackageJson = JSON.parse(raw)
+    let raw: string
+    let pkg: PackageJson
+    try {
+        raw = fs.readFileSync(filePath, "utf8")
+        pkg = JSON.parse(raw) as PackageJson
+    } catch (err) {
+        report.errors.push(
+            `failed to read \`${filePath}\`: ${err instanceof Error ? err.message : String(err)}`,
+        )
+        return report
+    }
 
     const replaced = replacePackages(pkg, config, report)
     const upgraded = upgradePackages(pkg, config, report)
@@ -174,12 +183,18 @@ export const upgradeDependencies = (
     checkWarnings(pkg, config, report)
 
     if (modified && !dry) {
-        const indent = detectIndent(raw)
-        fs.writeFileSync(
-            filePath,
-            JSON.stringify(pkg, null, indent) + "\n",
-            "utf8",
-        )
+        try {
+            const indent = detectIndent(raw)
+            fs.writeFileSync(
+                filePath,
+                JSON.stringify(pkg, null, indent) + "\n",
+                "utf8",
+            )
+        } catch (err) {
+            report.errors.push(
+                `failed to write \`${filePath}\`: ${err instanceof Error ? err.message : String(err)}`,
+            )
+        }
     }
 
     return report
