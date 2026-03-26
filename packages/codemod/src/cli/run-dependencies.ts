@@ -21,7 +21,8 @@ export const runDependencies = (
     const depConfig = getConfig(version)
     if (!depConfig) return undefined
 
-    const packageJsonFiles = findPackageJsonFiles(paths)
+    const searchRoots = [...new Set([process.cwd(), ...paths])]
+    const packageJsonFiles = findPackageJsonFiles(searchRoots)
     if (packageJsonFiles.length === 0) return undefined
 
     const depSpinner = createSpinner(
