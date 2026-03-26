@@ -38,7 +38,7 @@ export const useContainer = (file: FileInfo, api: API) => {
         })
     }
 
-    // Remove imports
+    // Remove imports from typeorm
     const removedImports = new Set([
         "useContainer",
         "getFromContainer",
