@@ -33,4 +33,8 @@ export const run = async (options: RunOptions): Promise<void> => {
     })
 
     printGuide(version)
+
+    if (result.error > 0 || (depResult?.errors.length ?? 0) > 0) {
+        process.exitCode = 1
+    }
 }
