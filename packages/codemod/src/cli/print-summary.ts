@@ -42,8 +42,28 @@ const printParseErrors = (
     parseErrors: { file: string; message: string }[],
 ): void => {
     console.log(`\n  ${colors.red("Parse errors:")}`)
-    for (const { file, message } of parseErrors) {
+    const sorted = [...parseErrors].sort((a, b) => a.file.localeCompare(b.file))
+    for (const { file, message } of sorted) {
         console.log(`    ${colors.dim(file)} ${message}`)
+    }
+}
+
+const groupLines = (lines: string[]): [string, number][] => {
+    const counts = new Map<string, number>()
+    for (const line of lines) {
+        counts.set(line, (counts.get(line) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+}
+
+const printGrouped = (
+    lines: string[],
+    indent: string,
+    formatter: (line: string) => string = highlight,
+): void => {
+    for (const [line, count] of groupLines(lines)) {
+        const suffix = count > 1 ? ` ${colors.dim(`(${count} times)`)}` : ""
+        console.log(`${indent}${formatter(line)}${suffix}`)
     }
 }
 
@@ -53,20 +73,14 @@ const printDependencyChanges = (
     errors: string[],
 ): void => {
     console.log(`\n${colors.bold("Dependency changes:")}`)
-    for (const change of changes) {
-        console.log(`  ${highlight(change)}`)
+    printGrouped(changes, "  ")
+    if (errors.length > 0) {
+        console.log(`\n  ${colors.red("Errors:")}`)
+        printGrouped(errors, "    ")
     }
     if (warnings.length > 0) {
         console.log(`\n  ${colors.yellow("Warnings:")}`)
-        for (const w of warnings) {
-            console.log(`    ${highlight(w)}`)
-        }
-    }
-    if (errors.length > 0) {
-        console.log(`\n  ${colors.red("Errors:")}`)
-        for (const e of errors) {
-            console.log(`    ${highlight(e)}`)
-        }
+        printGrouped(warnings, "    ")
     }
 }
 
