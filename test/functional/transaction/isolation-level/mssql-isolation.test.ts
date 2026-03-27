@@ -22,7 +22,7 @@ const getCurrentTransactionLevelAndAssert = async (
     const query = `DBCC USEROPTIONS`
     const actualIsolationLevel = await entityManagerOrDataSource.query(query)
     actualIsolationLevel[actualIsolationLevel.length - 1].Value.should.be.equal(
-        expectedIsolationLevel.toLocaleLowerCase(),
+        expectedIsolationLevel.toLowerCase(),
     )
 }
 
