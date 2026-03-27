@@ -4,27 +4,74 @@ on:
   pull_request:
     paths:
       - .github/workflows/preview.yml
+      # core
       - src/**
       - gulpfile.ts
       - package.json
-      - tsconfig.json
-      - tsconfig.browser.json
-      - tsconfig.node.json
+      - tsconfig*.json
+      # codemod
+      - packages/codemod/src/**
+      - packages/codemod/package.json
+      - packages/codemod/tsconfig*.json
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  release:
-    name: Release preview build
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.detect-changes.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
+        id: detect-changes
+        with:
+          filters: |
+            ci: &ci
+              - .github/workflows/preview.yml
 
+            typeorm:
+              - *ci
+              - src/**
+              - gulpfile.ts
+              - package.json
+              - tsconfig*.json
+
+            codemod:
+              - *ci
+              - packages/codemod/**
+
+  preview:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changes != '[]'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-node
 
-      - run: pnpm run package
-      - run: pnpm run publish:preview
+      # typeorm
+      - name: build typeorm
+        if: contains(needs.detect-changes.outputs.changes, 'typeorm')
+        run: |
+          pnpm run package
+          echo "PACKAGES=./build/package" >> "$GITHUB_ENV"
+
+      # @typeorm/codemod
+      - name: install codemod
+        if: contains(needs.detect-changes.outputs.changes, 'codemod')
+        run: pnpm install --frozen-lockfile
+        working-directory: packages/codemod
+
+      - name: build codemod
+        if: contains(needs.detect-changes.outputs.changes, 'codemod')
+        run: |
+          pnpm run build
+          echo "PACKAGES=${{ env.PACKAGES }} ./packages/codemod" >> "$GITHUB_ENV"
+        working-directory: packages/codemod
+
+      # publish
+      - run: pnpm exec pkg-pr-new publish ${{ env.PACKAGES }} --template='./sample/playground'

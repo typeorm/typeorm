@@ -56,6 +56,10 @@ jobs:
             lint:
               - *src-or-tests
               - eslint.config.mjs
+              - packages/codemod/**/*
+
+            codemod:
+              - packages/codemod/**/*
 
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
@@ -108,6 +112,11 @@ jobs:
       - run: pnpm run package
       - run: pnpm run publish:preview
 
+      - run: pnpm install
+        working-directory: packages/codemod
+      - run: pnpm lint
+        working-directory: packages/codemod
+
   tests-linux:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
     needs: [detect-changes, build]
@@ -125,6 +134,23 @@ jobs:
     uses: ./.github/workflows/tests-windows.yml
     with:
       node-version: 22
+
+  test-codemod:
+    if: contains(needs.detect-changes.outputs.changes, 'codemod')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+        working-directory: packages/codemod
+      - run: pnpm test
+        working-directory: packages/codemod
 
   coverage:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
@@ -145,6 +171,7 @@ jobs:
       - docs
       - format
       - lint
+      - test-codemod
       - tests-linux
       - tests-windows
     steps:
