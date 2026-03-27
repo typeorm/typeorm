@@ -92,7 +92,7 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 - `options.camelCaseColumns` - A boolean, controlling whether the column names returned will have the first letter
   converted to lower case (`true`) or not. This value is ignored if you provide a `columnNameReplacer`. (default: `false`).
 
-- `options.isolationLevel` - The default isolation level that transactions will be run with.
+- `options.isolationLevel` - The default isolation level that transactions will be run with. See [Known Issues > Connection pool does not reset isolation level](#connection-pool-does-not-reset-isolation-level).
     - `READ UNCOMMITTED`
     - `READ COMMITTED`
     - `REPEATABLE READ`
@@ -102,7 +102,7 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
     (default: `READ COMMITTED`)
 
 - `options.connectionIsolationLevel` - The default isolation level for new connections. All out-of-transaction queries
-  are executed with this setting.
+  are executed with this setting. See [Known Issues > Connection pool does not reset isolation level](#connection-pool-does-not-reset-isolation-level).
     - `READ UNCOMMITTED`
     - `READ COMMITTED`
     - `REPEATABLE READ`
@@ -222,3 +222,15 @@ const results = await dataSource.query(
 
 - SQL Server version with vector support enabled
 - Vector dimensions must be specified using the `length` option
+
+## Known Issues
+
+### Connection pool does not reset isolation level
+
+The `options.isolationLevel` and `options.connectionIsolationLevel` data source options are correctly applied when a connection is first created by the underlying [node-mssql](https://github.com/tediousjs/node-mssql) driver. However, `node-mssql` does not call `connection.reset()` when returning connections to the pool. This means that if any operation changes the isolation level on a pooled connection (e.g., an explicit transaction at a different level), the change persists and leaks to the next consumer of that connection.
+
+In practice, this makes `options.isolationLevel` and `options.connectionIsolationLevel` unreliable for applications that also use per-transaction isolation levels.
+
+**Per-transaction isolation levels are not affected.** Setting the isolation level via `startTransaction()` or the `transaction()` callback always works correctly because it is applied explicitly on the active connection.
+
+This is an upstream limitation tracked in [tediousjs/node-mssql#1483](https://github.com/tediousjs/node-mssql/issues/1483).

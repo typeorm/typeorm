@@ -58,7 +58,11 @@ const prepareDataAndTest = async (dataSource: DataSource) => {
 describe("transaction > isolation level > mssql", () => {
     describe("defined in data source", () => {
         describe("connection level", () => {
-            describe("supported", () => {
+            // Skipped: node-mssql does not reset session state when returning connections
+            // to the pool, so connectionIsolationLevel can be overwritten by prior operations.
+            // Upstream: https://github.com/tediousjs/node-mssql/issues/1483
+            // Docs: https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level
+            describe.skip("supported", () => {
                 for (const isolationLevel of supportedLevels) {
                     // As per SqlServerDataSourceOptions: The default isolation level for new connections. All out-of-transaction queries are executed with this setting.
                     describe(isolationLevel, () => {
@@ -110,7 +114,10 @@ describe("transaction > isolation level > mssql", () => {
         })
 
         describe("default level", () => {
-            describe("supported", () => {
+            // Skipped: same upstream pool limitation as connectionIsolationLevel above.
+            // Upstream: https://github.com/tediousjs/node-mssql/issues/1483
+            // Docs: https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level
+            describe.skip("supported", () => {
                 for (const isolationLevel of supportedLevels) {
                     // As per SqlServerDataSourceOptions: The default isolation level that transactions will be run with.
                     describe(isolationLevel, () => {
