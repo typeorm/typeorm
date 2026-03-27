@@ -25,6 +25,20 @@ import userSchema from "./model-schema/UserSchema"
 import type { Question } from "./model/Question"
 import type { User } from "./model/User"
 import { Customer } from "./entity/Customer"
+import {
+    SaveOneToOneProfile,
+    SaveOneToOneUser,
+} from "./entity/SaveOneToOneEntities"
+import {
+    SaveOneToManyAuthor,
+    SaveOneToManyPost,
+} from "./entity/SaveOneToManyEntities"
+import {
+    SaveManyToManyArticle,
+    SaveManyToManyTag,
+} from "./entity/SaveManyToManyEntities"
+import { SaveEmbeddedEntity } from "./entity/SaveEmbeddedEntity"
+import { SaveStiBase, SaveStiPhoto } from "./entity/SaveStiEntities"
 
 describe("repository > basic methods", () => {
     const UserEntity = new EntitySchema<any>(userSchema as any)
@@ -45,6 +59,15 @@ describe("repository > basic methods", () => {
                 RelationAsPrimaryKey,
                 TwoUniqueColumnsEntity,
                 OneToOneRelationEntity,
+                SaveOneToOneUser,
+                SaveOneToOneProfile,
+                SaveOneToManyAuthor,
+                SaveOneToManyPost,
+                SaveManyToManyArticle,
+                SaveManyToManyTag,
+                SaveEmbeddedEntity,
+                SaveStiBase,
+                SaveStiPhoto,
             ],
         })
     })
@@ -454,6 +477,118 @@ describe("repository > basic methods", () => {
                         firstName: "Baz",
                         lastName: "Bar",
                     })
+                }),
+            ))
+
+        it("should return transformed values after save for OneToOne", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repo =
+                        dataSource.manager.getRepository(SaveOneToOneUser)
+
+                    const user = await repo.save({
+                        name: " Alice ",
+                        profile: {
+                            bio: " Engineer ",
+                        },
+                    })
+
+                    user.name.should.be.equal("Alice")
+                    user.profile.bio.should.be.equal("Engineer")
+
+                    user.profile.bio = " Architect "
+                    const updatedUser = await repo.save(user)
+                    updatedUser.profile.bio.should.be.equal("Architect")
+                }),
+            ))
+
+        it("should return transformed values after save for OneToMany", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repo =
+                        dataSource.manager.getRepository(SaveOneToManyAuthor)
+
+                    const author = await repo.save({
+                        name: " Bob ",
+                        posts: [
+                            {
+                                title: " First Post ",
+                            },
+                        ],
+                    })
+
+                    author.name.should.be.equal("Bob")
+                    author.posts[0].title.should.be.equal("First Post")
+
+                    author.posts[0].title = " Updated Post "
+                    const updatedAuthor = await repo.save(author)
+                    updatedAuthor.posts[0].title.should.be.equal("Updated Post")
+                }),
+            ))
+
+        it("should return transformed values after save for ManyToMany", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.manager.getRepository(
+                        SaveManyToManyArticle,
+                    )
+
+                    const article = await repo.save({
+                        title: " Intro ",
+                        tags: [
+                            {
+                                label: " TypeORM ",
+                            },
+                        ],
+                    })
+
+                    article.title.should.be.equal("Intro")
+                    article.tags[0].label.should.be.equal("TypeORM")
+
+                    article.tags[0].label = " ORM "
+                    const updatedArticle = await repo.save(article)
+                    updatedArticle.tags[0].label.should.be.equal("ORM")
+                }),
+            ))
+
+        it("should return transformed values after save for embedded entities", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repo =
+                        dataSource.manager.getRepository(SaveEmbeddedEntity)
+
+                    const record = await repo.save({
+                        name: " Charlie ",
+                        address: {
+                            city: " Berlin ",
+                        },
+                    })
+
+                    record.name.should.be.equal("Charlie")
+                    record.address.city.should.be.equal("Berlin")
+
+                    record.address.city = " Hamburg "
+                    const updatedRecord = await repo.save(record)
+                    updatedRecord.address.city.should.be.equal("Hamburg")
+                }),
+            ))
+
+        it("should return transformed values after save for STI", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.manager.getRepository(SaveStiPhoto)
+
+                    const photo = await repo.save({
+                        title: " Cover ",
+                        caption: " Main Image ",
+                    })
+
+                    photo.title.should.be.equal("Cover")
+                    photo.caption.should.be.equal("Main Image")
+
+                    photo.caption = " Hero Image "
+                    const updatedPhoto = await repo.save(photo)
+                    updatedPhoto.caption.should.be.equal("Hero Image")
                 }),
             ))
     })

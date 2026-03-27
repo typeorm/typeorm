@@ -501,11 +501,7 @@ export class SubjectExecutor {
             subjects.forEach((subject) => {
                 if (subject.entity) {
                     subject.metadata.columns.forEach((column) => {
-                        if (
-                            column.embeddedMetadata ||
-                            column.relationMetadata ||
-                            !column.transformer
-                        )
+                        if (column.relationMetadata || !column.transformer)
                             return
 
                         const value = column.getEntityValue(subject.entity!)
@@ -645,11 +641,7 @@ export class SubjectExecutor {
 
                 if (subject.entity) {
                     subject.metadata.columns.forEach((column) => {
-                        if (
-                            column.embeddedMetadata ||
-                            column.relationMetadata ||
-                            !column.transformer
-                        )
+                        if (column.relationMetadata || !column.transformer)
                             return
 
                         const value = column.getEntityValue(subject.entity!)
