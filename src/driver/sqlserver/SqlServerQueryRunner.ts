@@ -1343,22 +1343,114 @@ export class SqlServerQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
+        // SQL Server does not support changing of IDENTITY property or computed columns,
+        // so we must drop and recreate column in those cases only.
+        const requiresRecreation =
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
-        ) {
-            // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
+
+        // Pure type/length changes can use ALTER COLUMN to preserve data
+        const typeOrLengthChanged =
+            newColumn.type !== oldColumn.type ||
+            newColumn.length !== oldColumn.length
+
+        if (requiresRecreation) {
+            // Must drop and recreate for identity/computed column changes
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (typeOrLengthChanged) {
+                // Use ALTER COLUMN to preserve data instead of DROP + ADD
+                // SQL Server supports: ALTER TABLE t ALTER COLUMN col_name new_type [NULL | NOT NULL]
+                // Drop default constraint first if one exists (SQL Server requires this before ALTER COLUMN)
+                if (
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    const defaultName =
+                        this.dataSource.namingStrategy.defaultConstraintName(
+                            table,
+                            oldColumn.name,
+                        )
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} DROP CONSTRAINT "${defaultName}"`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ADD CONSTRAINT "${defaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`,
+                        ),
+                    )
+                }
+
+                // Build ALTER COLUMN using the current (old) column name since rename hasn't run yet
+                const alterColumnForType = newColumn.clone()
+                alterColumnForType.name = oldColumn.name
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            alterColumnForType,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            oldColumn,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
+
+                // Restore default constraint after type change (use old name — rename hasn't run yet)
+                if (
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    const defaultName =
+                        this.dataSource.namingStrategy.defaultConstraintName(
+                            table,
+                            oldColumn.name,
+                        )
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ADD CONSTRAINT "${defaultName}" DEFAULT ${newColumn.default} FOR "${oldColumn.name}"`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} DROP CONSTRAINT "${defaultName}"`,
+                        ),
+                    )
+                }
+            }
+
             if (newColumn.name !== oldColumn.name) {
                 // we need database name and schema name to rename FK constraints
                 let dbName: string | undefined = undefined
@@ -1683,6 +1775,7 @@ export class SqlServerQueryRunner
             }
 
             if (
+                !typeOrLengthChanged &&
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
                 upQueries.push(
