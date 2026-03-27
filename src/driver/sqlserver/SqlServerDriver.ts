@@ -1223,12 +1223,12 @@ export class SqlServerDriver implements Driver {
         const connectionOptions = Object.assign(
             {},
             {
-                connectionTimeout: this.options.connectionTimeout,
-                requestTimeout: this.options.requestTimeout,
-                stream: this.options.stream,
-                pool: this.options.pool,
+                connectionTimeout: options.connectionTimeout,
+                requestTimeout: options.requestTimeout,
+                stream: options.stream,
+                pool: options.pool,
                 options: {
-                    ...this.options.options,
+                    ...options.options,
                     isolationLevel: isolationLevel,
                     connectionIsolationLevel: connectionIsolationLevel,
                 },
