@@ -127,7 +127,6 @@ jobs:
       - uses: ./.github/actions/setup-node
         with:
           working-directory: packages/codemod
-          cache-dependency-path: packages/codemod/pnpm-lock.yaml
       - run: pnpm test
         working-directory: packages/codemod
 

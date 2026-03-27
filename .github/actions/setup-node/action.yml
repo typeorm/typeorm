@@ -9,9 +9,6 @@ inputs:
   working-directory:
     description: Working directory
     required: false
-  cache-dependency-path:
-    description: Path to pnpm-lock.yaml for cache key
-    required: false
   download-build:
     description: Download build artifact
     required: false
@@ -26,7 +23,6 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         cache: pnpm
-        cache-dependency-path: ${{ inputs.cache-dependency-path || '' }}
 
     - run: pnpm install --frozen-lockfile
       shell: bash
