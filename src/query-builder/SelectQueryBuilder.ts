@@ -3516,6 +3516,29 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             originalQuery.expressionMap.limit = undefined
             originalQuery.expressionMap.offset = undefined
 
+            for (const orderCriteria of Object.keys(
+                this.expressionMap.allOrderBys,
+            )) {
+                if (orderCriteria.indexOf(".") !== -1) {
+                    const criteriaParts = orderCriteria.split(".")
+                    const aliasName = criteriaParts[0]
+                    const propertyPath = criteriaParts.slice(1).join(".")
+                    const alias = this.expressionMap.findAliasByName(aliasName)
+                    if (!alias.hasMetadata) {
+                        const columnAlias = DriverUtils.buildAlias(
+                            this.connection.driver,
+                            undefined,
+                            aliasName,
+                            propertyPath,
+                        )
+                        originalQuery.expressionMap.selects.push({
+                            selection: `${aliasName}.${propertyPath}`,
+                            aliasName: columnAlias,
+                        })
+                    }
+                }
+            }
+
             // preserve original timeTravel value since we set it to "false" in subquery
             const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
@@ -3739,11 +3762,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const aliasName = criteriaParts[0]
                     const propertyPath = criteriaParts.slice(1).join(".")
                     const alias = this.expressionMap.findAliasByName(aliasName)
-                    const column =
-                        alias.metadata.findColumnWithPropertyPath(
-                            propertyPath,
-                        ) ??
-                        alias.metadata.findColumnWithDatabaseName(propertyPath)
+                    const column = alias.hasMetadata
+                        ? (alias.metadata.findColumnWithPropertyPath(
+                              propertyPath,
+                          ) ??
+                          alias.metadata.findColumnWithDatabaseName(
+                              propertyPath,
+                          ))
+                        : undefined
                     const databaseName = column
                         ? column.databaseName
                         : propertyPath
@@ -3785,9 +3811,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const aliasName = criteriaParts[0]
                 const propertyPath = criteriaParts.slice(1).join(".")
                 const alias = this.expressionMap.findAliasByName(aliasName)
-                const column =
-                    alias.metadata.findColumnWithPropertyPath(propertyPath) ??
-                    alias.metadata.findColumnWithDatabaseName(propertyPath)
+                const column = alias.hasMetadata
+                    ? (alias.metadata.findColumnWithPropertyPath(
+                          propertyPath,
+                      ) ??
+                      alias.metadata.findColumnWithDatabaseName(propertyPath))
+                    : undefined
                 const databaseName = column ? column.databaseName : propertyPath
                 orderByObject[
                     this.escape(parentAlias) +
