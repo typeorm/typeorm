@@ -24,13 +24,13 @@ const getCurrentTransactionLevelAndAssert = async (
         .transaction_isolation
 
     if (
-        entityManager.connection.driver.options.type === "cockroachdb" &&
+        entityManager.dataSource.driver.options.type === "cockroachdb" &&
         expectedIsolationLevel === "READ UNCOMMITTED"
     ) {
         // CockroachDB does not support READ UNCOMMITTED isolation level, it uses READ COMMITTED
-        actualIsolationLevel.should.be.equal("read committed")
+        expect(actualIsolationLevel).to.equal("read committed")
     } else {
-        actualIsolationLevel.should.be.equal(
+        expect(actualIsolationLevel).to.equal(
             expectedIsolationLevel.toLowerCase(),
         )
     }
@@ -83,8 +83,7 @@ describe("transaction > isolation level > postgres / cockroachdb", () => {
                                     where: { title: "Post #1" },
                                 },
                             )
-                            expect(post).not.to.be.null
-                            post!.should.be.eql({
+                            expect(post).to.eql({
                                 id: postId,
                                 title: "Post #1",
                             })
@@ -95,8 +94,7 @@ describe("transaction > isolation level > postgres / cockroachdb", () => {
                                     where: { name: "Category #1" },
                                 },
                             )
-                            expect(category).not.to.be.null
-                            category!.should.be.eql({
+                            expect(category).to.eql({
                                 id: categoryId,
                                 name: "Category #1",
                             })

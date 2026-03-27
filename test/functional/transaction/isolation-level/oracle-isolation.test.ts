@@ -73,8 +73,7 @@ describe("transaction > isolation level > oracle", () => {
                                     where: { title: "Post #1" },
                                 },
                             )
-                            expect(post).not.to.be.null
-                            post!.should.be.eql({
+                            expect(post).to.eql({
                                 id: postId,
                                 title: "Post #1",
                             })
@@ -85,8 +84,7 @@ describe("transaction > isolation level > oracle", () => {
                                     where: { name: "Category #1" },
                                 },
                             )
-                            expect(category).not.to.be.null
-                            category!.should.be.eql({
+                            expect(category).to.eql({
                                 id: categoryId,
                                 name: "Category #1",
                             })

@@ -25,9 +25,9 @@ const getCurrentTransactionLevelAndAssert = async (
     const actualIsolationLevel = (await entityManager.query(query))[0]
         .read_uncommitted
     if (expectedIsolationLevel === "READ UNCOMMITTED") {
-        actualIsolationLevel.should.be.equal(1)
+        expect(actualIsolationLevel).to.equal(1)
     } else {
-        actualIsolationLevel.should.be.equal(0)
+        expect(actualIsolationLevel).to.equal(0)
     }
 }
 
@@ -78,8 +78,7 @@ describe("transaction > isolation level > sqlite", () => {
                                     where: { title: "Post #1" },
                                 },
                             )
-                            expect(post).not.to.be.null
-                            post!.should.be.eql({
+                            expect(post).to.eql({
                                 id: postId,
                                 title: "Post #1",
                             })
@@ -90,8 +89,7 @@ describe("transaction > isolation level > sqlite", () => {
                                     where: { name: "Category #1" },
                                 },
                             )
-                            expect(category).not.to.be.null
-                            category!.should.be.eql({
+                            expect(category).to.eql({
                                 id: categoryId,
                                 name: "Category #1",
                             })

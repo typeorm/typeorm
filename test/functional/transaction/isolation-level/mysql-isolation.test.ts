@@ -22,7 +22,7 @@ const getCurrentTransactionLevelAndAssert = async (
     const query = `SELECT isolation_level FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE'`
     const actualIsolationLevel = (await entityManager.query(query))[0]
         .isolation_level
-    actualIsolationLevel.should.be.equal(expectedIsolationLevel)
+    expect(actualIsolationLevel).to.equal(expectedIsolationLevel)
 }
 
 describe("transaction > isolation level > mysql", () => {
@@ -75,8 +75,7 @@ describe("transaction > isolation level > mysql", () => {
                                     where: { title: "Post #1" },
                                 },
                             )
-                            expect(post).not.to.be.null
-                            post!.should.be.eql({
+                            expect(post).to.eql({
                                 id: postId,
                                 title: "Post #1",
                             })
@@ -87,8 +86,7 @@ describe("transaction > isolation level > mysql", () => {
                                     where: { name: "Category #1" },
                                 },
                             )
-                            expect(category).not.to.be.null
-                            category!.should.be.eql({
+                            expect(category).to.eql({
                                 id: categoryId,
                                 name: "Category #1",
                             })

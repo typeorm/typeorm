@@ -21,9 +21,9 @@ const getCurrentTransactionLevelAndAssert = async (
 ) => {
     const query = `DBCC USEROPTIONS`
     const actualIsolationLevel = await entityManagerOrDataSource.query(query)
-    actualIsolationLevel[actualIsolationLevel.length - 1].Value.should.be.equal(
-        expectedIsolationLevel.toLowerCase(),
-    )
+    expect(
+        actualIsolationLevel[actualIsolationLevel.length - 1].Value,
+    ).to.equal(expectedIsolationLevel.toLowerCase())
 }
 
 const prepareDataAndTest = async (dataSource: DataSource) => {
@@ -39,8 +39,7 @@ const prepareDataAndTest = async (dataSource: DataSource) => {
         where: { title: "Post #1" },
     })
 
-    expect(loadedPost).not.to.be.null
-    loadedPost!.should.be.eql({
+    expect(loadedPost).to.eql({
         id: post.id,
         title: "Post #1",
     })
@@ -48,8 +47,7 @@ const prepareDataAndTest = async (dataSource: DataSource) => {
     const loadedCategory = await dataSource.manager.findOne(Category, {
         where: { name: "Category #1" },
     })
-    expect(loadedCategory).not.to.be.null
-    loadedCategory!.should.be.eql({
+    expect(loadedCategory).to.eql({
         id: category.id,
         name: "Category #1",
     })
@@ -231,8 +229,7 @@ describe("transaction > isolation level > mssql", () => {
                                 },
                             )
 
-                            expect(loadedPost).not.to.be.null
-                            loadedPost!.should.be.eql({
+                            expect(loadedPost).to.eql({
                                 id: postId,
                                 title: "Post #1",
                             })

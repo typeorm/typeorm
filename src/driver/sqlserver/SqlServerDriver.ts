@@ -1229,8 +1229,8 @@ export class SqlServerDriver implements Driver {
                 pool: options.pool,
                 options: {
                     ...options.options,
-                    isolationLevel: isolationLevel,
-                    connectionIsolationLevel: connectionIsolationLevel,
+                    isolationLevel,
+                    connectionIsolationLevel,
                 },
             },
             {
