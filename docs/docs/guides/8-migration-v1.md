@@ -421,6 +421,46 @@ For browser environments, `RandomGenerator.sha1` was fixed to the standard imple
 
 Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is mostly a drop-in replacement, but edge cases with brace expansion or platform-specific path separators may behave differently.
 
+### Transformers now applied to returned entities
+
+**This is a significant behavioral change that may affect your application.**
+
+Previously, the `save()`, `insert()`, and `update()` methods did not apply column transformers to embedded entity properties and relation properties in the returned entity. Starting in v1.0, transformers are now **always** applied to all column properties in the returned entity, including those within embedded entities and relations.
+
+If your entity uses `@Column({ transformer: ... })` on columns within embedded entities or relations, you will now receive transformed values in the saved/updated entity:
+
+```typescript
+class Address {
+    @Column({ transformer: new TrimTransformer() })
+    city: string
+}
+
+@Entity()
+class User {
+    @Column()
+    name: string
+
+    @Column(() => Address)
+    address: Address
+}
+
+// Before: returned entity.address.city was " Berlin " (untransformed)
+// After: returned entity.address.city is "Berlin" (transformed)
+const user = await repository.save({
+    name: "John",
+    address: { city: " Berlin " },
+})
+console.log(user.address.city) // Now returns "Berlin" instead of " Berlin "
+```
+
+This applies to:
+
+- `EntityManager.save()` and `Repository.save()` (both insert and update operations)
+- `EntityManager.insert()` and `Repository.insert()`
+- `EntityManager.update()` and `Repository.update()`
+
+**Potentially breaking:** If your application code relies on receiving untransformed values from these methods, you will need to adjust your logic. This is generally rare, but if it occurs, verify that your transformers are correct and adjust accordingly.
+
 ## Columns
 
 ### `readonly` option removed

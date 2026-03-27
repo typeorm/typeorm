@@ -97,7 +97,7 @@ const user = await repository.preload(partialUser)
   If the entity does not exist in the database, it is inserted.
   It saves all given entities in a single transaction (in the case of entity, manager is not transactional).
   Also supports partial updating since all undefined properties are skipped.
-  Returns the saved entity/entities.
+  Returns the saved entity/entities with all transformed values applied by column transformers, including those in embedded entities and relations.
 
 ```typescript
 await repository.save(user)
