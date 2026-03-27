@@ -435,7 +435,7 @@ export async function createTestingConnections(
                 )
             }
 
-            if (DriverUtils.isMySQLFamily(connection.driver)) {
+            if (connection.driver.options.type === "mysql") {
                 await queryRunner.query(
                     `UPDATE performance_schema.setup_instruments
                         SET ENABLED = 'YES', TIMED = 'YES'
