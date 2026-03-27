@@ -8,6 +8,7 @@ on:
 jobs:
   mutation-testing:
     runs-on: ubuntu-latest
+    environment: stryker
 
     services:
       mysql:
