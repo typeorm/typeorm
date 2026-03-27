@@ -100,23 +100,6 @@ jobs:
       - uses: ./.github/actions/setup-node
       - run: pnpm run lint
 
-  preview:
-    if: github.event_name == 'pull_request' && contains(needs.detect-changes.outputs.changes, 'src')
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-node
-        with:
-          node-version: 20
-      - run: pnpm run package
-      - run: pnpm run publish:preview
-
-      - run: pnpm install
-        working-directory: packages/codemod
-      - run: pnpm lint
-        working-directory: packages/codemod
-
   tests-linux:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
     needs: [detect-changes, build]
@@ -135,7 +118,7 @@ jobs:
     with:
       node-version: 22
 
-  test-codemod:
+  tests-codemod:
     if: contains(needs.detect-changes.outputs.changes, 'codemod')
     needs: detect-changes
     runs-on: ubuntu-latest
@@ -171,7 +154,7 @@ jobs:
       - docs
       - format
       - lint
-      - test-codemod
+      - tests-codemod
       - tests-linux
       - tests-windows
     steps:
