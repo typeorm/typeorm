@@ -214,10 +214,14 @@ describe("transaction > isolation level > mssql", () => {
                             try {
                                 await transactionPromise
                             } catch (error) {
-                                expect(error.message).to.match(
-                                    /Snapshot isolation transaction failed accessing database 'tempdb' because snapshot isolation is not allowed in this database/,
-                                )
-                                return
+                                if (isolationLevel === "SNAPSHOT") {
+                                    // SNAPSHOT may fail if not enabled on the database
+                                    expect(error.message).to.match(
+                                        /snapshot isolation.*not allowed/i,
+                                    )
+                                    return
+                                }
+                                throw error
                             }
 
                             const loadedPost = await dataSource.manager.findOne(
