@@ -45,6 +45,7 @@ jobs:
 
             src-or-tests: &src-or-tests
               - *src
+              - .github/actions/setup-node/**
               - .github/workflows/test*.yml
               - docker-compose.yml
               - docker/**/*
