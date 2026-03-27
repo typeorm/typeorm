@@ -400,9 +400,15 @@ export class EntityMetadataBuilder {
                 entityMetadata.relations
                     .filter((relation) => relation.isLazy)
                     .forEach((relation) => {
+                        const relationTarget = relation.embeddedMetadata
+                            ? relation.target
+                            : entityMetadata.target
+
+                        if (typeof relationTarget !== "function") return
+
                         this.dataSource.relationLoader.enableLazyLoad(
                             relation,
-                            (entityMetadata.target as Function).prototype,
+                            relationTarget.prototype,
                         )
                     })
             })

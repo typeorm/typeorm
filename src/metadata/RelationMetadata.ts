@@ -418,8 +418,38 @@ export class RelationMetadata {
         getLazyRelationsPromiseValue: boolean = false,
     ): any | undefined {
         if (entity === null || entity === undefined) return undefined
+        const dataIndex = "__" + this.propertyName + "__"
+        const promiseIndex = "__promise_" + this.propertyName + "__"
+        const resolveIndex = "__has_" + this.propertyName + "__"
         // extract column value from embeddeds of entity if column is in embedded
         if (this.embeddedMetadata) {
+            const setEmbeddedMetadata = (
+                embeddedEntity: ObjectLiteral,
+                parentEntity: ObjectLiteral,
+            ) => {
+                Object.defineProperty(
+                    embeddedEntity,
+                    "__typeormEmbeddedParentEntity__",
+                    {
+                        value: parentEntity,
+                        configurable: true,
+                        enumerable: false,
+                        writable: true,
+                    },
+                )
+
+                Object.defineProperty(
+                    embeddedEntity,
+                    "__relation_metadata_" + this.propertyName + "__",
+                    {
+                        value: this,
+                        configurable: true,
+                        enumerable: false,
+                        writable: true,
+                    },
+                )
+            }
+
             // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
             // we need to get value of "id" column from the post real entity object
 
@@ -451,15 +481,46 @@ export class RelationMetadata {
                 entity,
             )
 
-            if (this.isLazy) {
-                if (
-                    embeddedObject["__" + this.propertyName + "__"] !==
-                    undefined
-                )
-                    return embeddedObject["__" + this.propertyName + "__"]
+            if (embeddedObject && this.isLazy) {
+                setEmbeddedMetadata(embeddedObject, entity)
+            }
 
-                if (getLazyRelationsPromiseValue === true)
-                    return embeddedObject[this.propertyName]
+            if (this.isLazy) {
+                if (!embeddedObject) return undefined
+                if (
+                    embeddedObject[resolveIndex] === true ||
+                    embeddedObject[dataIndex] !== undefined
+                )
+                    return embeddedObject[dataIndex]
+
+                if (embeddedObject[promiseIndex])
+                    return getLazyRelationsPromiseValue === true
+                        ? embeddedObject[promiseIndex]
+                        : undefined
+
+                if (getLazyRelationsPromiseValue === true) {
+                    const ownDescriptor = Object.getOwnPropertyDescriptor(
+                        embeddedObject,
+                        this.propertyName,
+                    )
+                    if (
+                        ownDescriptor &&
+                        typeof ownDescriptor.get === "function"
+                    )
+                        return undefined
+                    const proto = Object.getPrototypeOf(embeddedObject)
+                    const protoDescriptor =
+                        proto &&
+                        Object.getOwnPropertyDescriptor(
+                            proto,
+                            this.propertyName,
+                        )
+                    if (
+                        !protoDescriptor ||
+                        typeof protoDescriptor.get !== "function"
+                    )
+                        return embeddedObject[this.propertyName]
+                }
 
                 return undefined
             }
@@ -473,11 +534,40 @@ export class RelationMetadata {
         } else {
             // no embeds - no problems. Simply return column name by property name of the entity
             if (this.isLazy) {
-                if (entity["__" + this.propertyName + "__"] !== undefined)
-                    return entity["__" + this.propertyName + "__"]
+                if (
+                    entity[resolveIndex] === true ||
+                    entity[dataIndex] !== undefined
+                )
+                    return entity[dataIndex]
 
-                if (getLazyRelationsPromiseValue === true)
-                    return entity[this.propertyName]
+                if (entity[promiseIndex])
+                    return getLazyRelationsPromiseValue === true
+                        ? entity[promiseIndex]
+                        : undefined
+
+                if (getLazyRelationsPromiseValue === true) {
+                    const ownDescriptor = Object.getOwnPropertyDescriptor(
+                        entity,
+                        this.propertyName,
+                    )
+                    if (
+                        ownDescriptor &&
+                        typeof ownDescriptor.get === "function"
+                    )
+                        return undefined
+                    const proto = Object.getPrototypeOf(entity)
+                    const protoDescriptor =
+                        proto &&
+                        Object.getOwnPropertyDescriptor(
+                            proto,
+                            this.propertyName,
+                        )
+                    if (
+                        !protoDescriptor ||
+                        typeof protoDescriptor.get !== "function"
+                    )
+                        return entity[this.propertyName]
+                }
 
                 return undefined
             }
@@ -499,10 +589,45 @@ export class RelationMetadata {
             : this.propertyName
 
         if (this.embeddedMetadata) {
+            const setEmbeddedMetadata = (
+                embeddedMetadata: EmbeddedMetadata,
+                embeddedEntity: ObjectLiteral,
+                parentEntity: ObjectLiteral,
+            ) => {
+                Object.defineProperty(
+                    embeddedEntity,
+                    "__typeormEmbeddedParentEntity__",
+                    {
+                        value: parentEntity,
+                        configurable: true,
+                        enumerable: false,
+                        writable: true,
+                    },
+                )
+
+                embeddedMetadata.relations
+                    .filter((relation) => relation.isLazy)
+                    .forEach((relation) => {
+                        Object.defineProperty(
+                            embeddedEntity,
+                            "__relation_metadata_" +
+                                relation.propertyName +
+                                "__",
+                            {
+                                value: relation,
+                                configurable: true,
+                                enumerable: false,
+                                writable: true,
+                            },
+                        )
+                    })
+            }
+
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
             const extractEmbeddedColumnValue = (
                 embeddedMetadatas: EmbeddedMetadata[],
                 map: ObjectLiteral,
+                rootEntity: ObjectLiteral,
             ): any => {
                 // if (!object[embeddedMetadata.propertyName])
                 //     object[embeddedMetadata.propertyName] = embeddedMetadata.create();
@@ -513,9 +638,16 @@ export class RelationMetadata {
                         map[embeddedMetadata.propertyName] =
                             embeddedMetadata.create()
 
+                    setEmbeddedMetadata(
+                        embeddedMetadata,
+                        map[embeddedMetadata.propertyName],
+                        rootEntity,
+                    )
+
                     extractEmbeddedColumnValue(
                         embeddedMetadatas,
                         map[embeddedMetadata.propertyName],
+                        rootEntity,
                     )
                     return map
                 }
@@ -524,6 +656,7 @@ export class RelationMetadata {
             }
             return extractEmbeddedColumnValue(
                 [...this.embeddedMetadata.embeddedMetadataTree],
+                entity,
                 entity,
             )
         } else {
