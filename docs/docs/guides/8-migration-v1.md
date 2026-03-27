@@ -2,6 +2,18 @@
 
 This is the migration guide for upgrading from version `0.3.x` to `1.0`.
 
+## Automated migration
+
+The `@typeorm/codemod` package can automate most of the breaking changes described in this guide:
+
+```bash
+npx @typeorm/codemod v1 src/
+```
+
+This will update your code in place — use `--dry` to preview changes without writing. The codemod handles import renames, API replacements, find option syntax, dependency upgrades, and more. Changes that cannot be automated are left as `TODO` comments for manual review.
+
+See the [codemod README](https://github.com/typeorm/typeorm/tree/master/packages/codemod) for full usage and options.
+
 ## Platform requirements
 
 ### Node.js 20+
