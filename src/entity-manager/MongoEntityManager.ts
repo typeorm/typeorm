@@ -13,6 +13,7 @@ import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
+import { EntityPropertyNotFoundError } from "../error"
 
 import type {
     AggregateOptions,
@@ -119,6 +120,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
@@ -223,6 +225,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
@@ -1154,12 +1157,52 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Converts FindOptions into mongodb select by criteria.
      * @param selects
+     * @param metadata
      */
     protected convertFindOptionsSelectToProjectCriteria(
         selects: FindOptionsSelect<any>,
+        metadata: EntityMetadata,
     ) {
-        // todo: implement
-        return {}
+        // Validate top-level select keys against entity metadata
+        for (const key of Object.keys(selects)) {
+            const column = metadata.findColumnWithPropertyPathStrict(key)
+            const embed = metadata.findEmbeddedWithPropertyPath(key)
+            if (!column && !embed) {
+                throw new EntityPropertyNotFoundError(key, metadata)
+            }
+        }
+
+        const projection: ObjectLiteral = {}
+        const flatten = (obj: ObjectLiteral, prefix: string) => {
+            for (const key of Object.keys(obj)) {
+                const value = obj[key]
+                const path = prefix ? `${prefix}.${key}` : key
+                if (value === true) {
+                    projection[path] = 1
+                } else if (
+                    value &&
+                    typeof value === "object" &&
+                    !Array.isArray(value)
+                ) {
+                    flatten(value, path)
+                }
+            }
+        }
+        flatten(selects, "")
+
+        // Translate ObjectIdColumn property name (e.g. "id") to "_id" for MongoDB
+        if (metadata.objectIdColumn) {
+            const propertyName = metadata.objectIdColumn.propertyName
+            if (
+                propertyName !== "_id" &&
+                projection[propertyName] !== undefined
+            ) {
+                projection["_id"] = projection[propertyName]
+                delete projection[propertyName]
+            }
+        }
+
+        return projection
     }
 
     /**
@@ -1299,6 +1342,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         findOneOptionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (findOneOptionsOrConditions.order)
@@ -1341,6 +1385,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
@@ -1384,6 +1429,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
