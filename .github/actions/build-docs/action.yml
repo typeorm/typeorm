@@ -7,7 +7,6 @@ runs:
     - uses: ./.github/actions/setup-node
       with:
         working-directory: ./docs
-        cache-dependency-path: docs/pnpm-lock.yaml
 
     - run: pnpm run build
       shell: bash
