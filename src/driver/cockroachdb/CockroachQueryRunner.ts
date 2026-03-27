@@ -24,9 +24,10 @@ import { VersionUtils } from "../../util/VersionUtils"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { CockroachDriver } from "./CockroachDriver"
+import { CockroachDriver } from "./CockroachDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -186,7 +187,10 @@ export class CockroachQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        this.validateIsolationLevel(isolationLevel)
+        validateIsolationLevel(
+            CockroachDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
 
         this.isTransactionActive = true
         this.transactionRetries = 0

@@ -24,10 +24,11 @@ import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { MssqlParameter } from "./MssqlParameter"
-import type { SqlServerDriver } from "./SqlServerDriver"
+import { SqlServerDriver } from "./SqlServerDriver"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -89,7 +90,10 @@ export class SqlServerQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        this.validateIsolationLevel(isolationLevel)
+        validateIsolationLevel(
+            SqlServerDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         this.isTransactionActive = true

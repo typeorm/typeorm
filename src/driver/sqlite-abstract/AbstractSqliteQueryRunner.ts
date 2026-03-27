@@ -7,7 +7,7 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { View } from "../../schema-builder/view/View"
 import { Query } from "../Query"
-import type { AbstractSqliteDriver } from "./AbstractSqliteDriver"
+import { AbstractSqliteDriver } from "./AbstractSqliteDriver"
 import type { ReadStream } from "../../platform/PlatformTools"
 import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -15,6 +15,7 @@ import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TransactionAlreadyStartedError, TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
@@ -73,7 +74,10 @@ export abstract class AbstractSqliteQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        this.validateIsolationLevel(isolationLevel)
+        validateIsolationLevel(
+            AbstractSqliteDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
 
         if (this.driver.transactionSupport === "none")
             throw new TypeORMError(

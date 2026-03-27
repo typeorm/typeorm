@@ -22,6 +22,7 @@ import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
@@ -35,6 +36,22 @@ import { SqlServerQueryRunner } from "./SqlServerQueryRunner"
  * Organizes communication with SQL Server DBMS.
  */
 export class SqlServerDriver implements Driver {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://learn.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+        "SNAPSHOT",
+    ]
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -152,18 +169,6 @@ export class SqlServerDriver implements Driver {
         "geography",
         "rowversion",
         "vector",
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://learn.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
-        "REPEATABLE READ",
-        "SERIALIZABLE",
-        "SNAPSHOT",
     ]
 
     /**
@@ -1195,12 +1200,20 @@ export class SqlServerDriver implements Driver {
 
         let isolationLevel: IsolationLevel | undefined
         if (options.options?.isolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.isolationLevel,
+            )
             isolationLevel = this.convertIsolationLevel(
                 options.options.isolationLevel,
             )
         }
         let connectionIsolationLevel: IsolationLevel | undefined
         if (options.options?.connectionIsolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.connectionIsolationLevel,
+            )
             connectionIsolationLevel = this.convertIsolationLevel(
                 options.options.connectionIsolationLevel,
             )

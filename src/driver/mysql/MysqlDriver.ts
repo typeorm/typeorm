@@ -35,6 +35,21 @@ import { MysqlQueryRunner } from "./MysqlQueryRunner"
  */
 export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -167,17 +182,6 @@ export class MysqlDriver implements Driver {
         "uuid",
         "inet4",
         "inet6",
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
-        "REPEATABLE READ",
-        "SERIALIZABLE",
     ]
 
     /**

@@ -31,6 +31,21 @@ import { AuroraMysqlQueryRunner } from "./AuroraMysqlQueryRunner"
  */
 export class AuroraMysqlDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -159,17 +174,6 @@ export class AuroraMysqlDriver implements Driver {
         "multilinestring",
         "multipolygon",
         "geometrycollection",
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
-        "REPEATABLE READ",
-        "SERIALIZABLE",
     ]
 
     /**

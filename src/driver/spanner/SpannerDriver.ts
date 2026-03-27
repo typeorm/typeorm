@@ -29,6 +29,21 @@ import { SpannerQueryRunner } from "./SpannerQueryRunner"
  */
 export class SpannerDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://cloud.google.com/spanner/docs/transactions
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -104,17 +119,6 @@ export class SpannerDriver implements Driver {
         "date",
         "timestamp",
         "array",
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://cloud.google.com/spanner/docs/transactions
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
-        "REPEATABLE READ",
-        "SERIALIZABLE",
     ]
 
     /**

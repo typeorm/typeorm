@@ -36,6 +36,21 @@ import { CockroachQueryRunner } from "./CockroachQueryRunner"
  */
 export class CockroachDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://www.cockroachlabs.com/docs/stable/transactions#isolation-levels
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -166,17 +181,6 @@ export class CockroachDriver implements Driver {
         "json",
         "jsonb",
         "uuid",
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://www.cockroachlabs.com/docs/stable/transactions#isolation-levels
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
-        "REPEATABLE READ",
-        "SERIALIZABLE",
     ]
 
     /**

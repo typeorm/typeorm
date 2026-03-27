@@ -38,6 +38,19 @@ type DatabasesMap = Record<
  */
 export abstract class AbstractSqliteDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://www.sqlite.org/isolation.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -137,15 +150,6 @@ export abstract class AbstractSqliteDriver implements Driver {
         "datetime",
         "json",
         "jsonb",
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://www.sqlite.org/isolation.html
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "SERIALIZABLE",
     ]
 
     /**

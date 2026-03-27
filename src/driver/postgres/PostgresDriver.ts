@@ -39,6 +39,21 @@ import { PostgresQueryRunner } from "./PostgresQueryRunner"
  */
 export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://www.postgresql.org/docs/current/transaction-iso.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -206,17 +221,6 @@ export class PostgresDriver implements Driver {
         "ltree",
         "vector",
         "halfvec",
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://www.postgresql.org/docs/current/transaction-iso.html
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
-        "REPEATABLE READ",
-        "SERIALIZABLE",
     ]
 
     /**

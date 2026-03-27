@@ -22,9 +22,10 @@ import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { OracleDriver } from "./OracleDriver"
+import { OracleDriver } from "./OracleDriver"
 
 /**
  * Runs queries on a single oracle database connection.
@@ -116,7 +117,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     async startTransaction(
         isolationLevel: IsolationLevel = "READ COMMITTED",
     ): Promise<void> {
-        this.validateIsolationLevel(isolationLevel)
+        validateIsolationLevel(
+            OracleDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         this.isTransactionActive = true

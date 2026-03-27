@@ -34,6 +34,20 @@ import { SapQueryRunner } from "./SapQueryRunner"
  */
 export class SapDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://help.sap.com/docs/SAP_HANA_PLATFORM/4fe29514fd584807ac9f2a04f6754767/d91cbe21f56e4b82b3b7e4ff2b35acf8.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -148,16 +162,6 @@ export class SapDriver implements Driver {
         "tinyint",
         "varbinary",
         "varchar", // in SAP HANA Cloud: alias for "nvarchar"
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://help.sap.com/docs/SAP_HANA_PLATFORM/4fe29514fd584807ac9f2a04f6754767/d91cbe21f56e4b82b3b7e4ff2b35acf8.html
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ COMMITTED",
-        "REPEATABLE READ",
-        "SERIALIZABLE",
     ]
 
     /**

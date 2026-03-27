@@ -36,6 +36,19 @@ import { OracleQueryRunner } from "./OracleQueryRunner"
  */
 export class OracleDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://docs.oracle.com/en/database/oracle/oracle-database/23/cncpt/data-concurrency-and-consistency.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ COMMITTED",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -139,15 +152,6 @@ export class OracleDriver implements Driver {
         "urowid",
         "simple-json",
         "json",
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://docs.oracle.com/en/database/oracle/oracle-database/23/cncpt/data-concurrency-and-consistency.html
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ COMMITTED",
-        "SERIALIZABLE",
     ]
 
     /**

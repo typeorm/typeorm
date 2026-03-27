@@ -38,6 +38,19 @@ type DatabasesMap = Record<
  */
 export class ReactNativeDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://www.sqlite.org/isolation.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -135,15 +148,6 @@ export class ReactNativeDriver implements Driver {
         "date",
         "time",
         "datetime",
-    ]
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     * @see https://www.sqlite.org/isolation.html
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "SERIALIZABLE",
     ]
 
     /**

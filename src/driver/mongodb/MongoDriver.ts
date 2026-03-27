@@ -32,6 +32,15 @@ import { MongoQueryRunner } from "./MongoQueryRunner"
  */
 export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -79,11 +88,6 @@ export class MongoDriver implements Driver {
      * Mongodb does not need to have column types because they are not used in schema sync.
      */
     supportedDataTypes: ColumnType[] = []
-
-    /**
-     * Transaction isolation levels supported by this driver.
-     */
-    readonly supportedIsolationLevels: IsolationLevel[] = []
 
     /**
      * Returns type of upsert supported by driver if any
