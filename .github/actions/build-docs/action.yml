@@ -1,0 +1,13 @@
+name: Build docs
+description: Sets up Node.js and builds the documentation
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/setup-node
+      with:
+        working-directory: ./docs
+
+    - run: pnpm run build
+      shell: bash
+      working-directory: ./docs

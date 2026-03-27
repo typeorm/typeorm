@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: detect-changes
         with:
           filters: |
@@ -45,6 +45,7 @@ jobs:
 
             src-or-tests: &src-or-tests
               - *src
+              - .github/actions/setup-node/**
               - .github/workflows/test*.yml
               - docker-compose.yml
               - docker/**/*
@@ -65,19 +66,9 @@ jobs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
     needs: detect-changes
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./docs
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
-      - run: pnpm run build
+      - uses: ./.github/actions/build-docs
 
   build:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
@@ -85,13 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
+      - uses: ./.github/actions/setup-node
       - run: pnpm run compile
 
       - uses: actions/upload-artifact@v7
@@ -104,13 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
+      - uses: ./.github/actions/setup-node
       - run: pnpm run format:ci
 
   lint:
@@ -119,18 +98,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
+      - uses: ./.github/actions/setup-node
       - run: pnpm run lint
-
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
         working-directory: packages/codemod
-      - run: pnpm lint
+      - run: pnpm run lint
         working-directory: packages/codemod
 
   tests-linux:
@@ -151,20 +123,15 @@ jobs:
     with:
       node-version: 22
 
-  test-codemod:
+  tests-codemod:
     if: contains(needs.detect-changes.outputs.changes, 'codemod')
     needs: detect-changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
-        working-directory: packages/codemod
+          working-directory: packages/codemod
       - run: pnpm test
         working-directory: packages/codemod
 
@@ -187,7 +154,7 @@ jobs:
       - docs
       - format
       - lint
-      - test-codemod
+      - tests-codemod
       - tests-linux
       - tests-windows
     steps:

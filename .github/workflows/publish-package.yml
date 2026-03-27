@@ -97,7 +97,7 @@ jobs:
         with:
           ref: ${{ matrix.ref || github.ref }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
 
       - name: Check if there are new commits since last publish (nightly) or if it's a release
         id: publishable

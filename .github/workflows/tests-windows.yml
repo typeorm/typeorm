@@ -1,4 +1,5 @@
 name: tests-windows
+
 on:
   workflow_call:
     inputs:
@@ -11,17 +12,11 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "better-sqlite3"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
@@ -34,17 +29,11 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "sqljs"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
