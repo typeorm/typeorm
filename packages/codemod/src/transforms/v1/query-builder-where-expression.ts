@@ -34,17 +34,6 @@ export const queryBuilderWhereExpression = (file: FileInfo, api: API) => {
         }
     })
 
-    // Rename in identifiers (variable types, parameters, etc.)
-    root.find(j.Identifier, { name: "WhereExpression" }).forEach((path) => {
-        if (
-            path.parent.node.type !== "ImportSpecifier" &&
-            path.parent.node.type !== "TSTypeReference"
-        ) {
-            path.node.name = "WhereExpressionBuilder"
-            hasChanges = true
-        }
-    })
-
     return hasChanges ? root.toSource() : undefined
 }
 
