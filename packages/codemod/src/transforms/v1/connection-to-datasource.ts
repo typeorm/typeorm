@@ -56,7 +56,8 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         "RelationQueryBuilder",
     ])
 
-    // Rename imports from "typeorm"
+    // Collect local names imported from "typeorm" that need renaming
+    const localRenames = new Map<string, string>()
     root.find(j.ImportDeclaration, {
         source: { value: "typeorm" },
     }).forEach((path) => {
@@ -65,14 +66,21 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                 spec.type === "ImportSpecifier" &&
                 spec.imported.type === "Identifier"
             ) {
-                const oldName = spec.imported.name
-                if (typeRenames[oldName]) {
-                    spec.imported.name = typeRenames[oldName]
+                const oldImported = spec.imported.name
+                if (typeRenames[oldImported]) {
+                    const localName =
+                        spec.local?.type === "Identifier"
+                            ? spec.local.name
+                            : oldImported
+                    localRenames.set(localName, typeRenames[oldImported])
+
+                    // Rename the import specifier itself
+                    spec.imported.name = typeRenames[oldImported]
                     if (
                         spec.local?.type === "Identifier" &&
-                        spec.local.name === oldName
+                        spec.local.name === localName
                     ) {
-                        spec.local.name = typeRenames[oldName]
+                        spec.local.name = typeRenames[oldImported]
                     }
                     hasChanges = true
                 }
@@ -80,26 +88,24 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         })
     })
 
-    // Rename type references
-    for (const [oldName, newName] of Object.entries(typeRenames)) {
-        root.find(j.Identifier, { name: oldName }).forEach((path) => {
-            // Skip import specifiers (already handled)
-            if (
-                path.parent.node.type === "ImportSpecifier" ||
-                path.parent.node.type === "ImportDefaultSpecifier"
-            ) {
-                return
-            }
-            path.node.name = newName
-            hasChanges = true
-        })
-
-        // Also rename TSTypeReference
+    // Rename only identifiers that were imported from "typeorm"
+    for (const [oldName, newName] of localRenames) {
+        // TSTypeReference (e.g. const x: Connection = ...)
         root.find(j.TSTypeReference, {
             typeName: { name: oldName },
         }).forEach((path) => {
             if (path.node.typeName.type === "Identifier") {
                 path.node.typeName.name = newName
+                hasChanges = true
+            }
+        })
+
+        // NewExpression (e.g. new Connection(...))
+        root.find(j.NewExpression, {
+            callee: { type: "Identifier", name: oldName },
+        }).forEach((path) => {
+            if (path.node.callee.type === "Identifier") {
+                path.node.callee.name = newName
                 hasChanges = true
             }
         })
