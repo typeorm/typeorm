@@ -16,6 +16,10 @@ const unsupportedLevels = IsolationLevels.filter(
     (level) => !supportedLevels.includes(level),
 )
 
+// Note: Oracle does not expose the current transaction isolation level through any
+// dictionary view, system variable, or built-in package, so these tests only verify
+// that transactions complete successfully at each isolation level without asserting
+// the active level directly.
 describe("transaction > isolation level > oracle", () => {
     describe("defined for transaction", () => {
         let dataSources: DataSource[]

@@ -31,7 +31,10 @@ describe("transaction > isolation level > mysql", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql"], // mariadb not returning any isolation level from performance_schema.events_transactions_current table
+                // MariaDB excluded: it does not implement performance_schema.events_transactions_current (MySQL-only),
+                // and SELECT @@transaction_isolation returns the session default, not the active transaction's level.
+                // See: https://bugs.mysql.com/bug.php?id=53341
+                enabledDrivers: ["mysql"],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
