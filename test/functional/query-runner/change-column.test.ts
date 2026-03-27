@@ -182,6 +182,155 @@ describe("query runner > change column", () => {
             }),
         ))
 
+    it("should use ALTER COLUMN for length change and preserve data", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // SQLite does not impose any length restrictions
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+                // CockroachDB and Spanner do not allow changing primary columns
+                if (
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                )
+                    return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                // Insert test data
+                await queryRunner.query(
+                    DriverUtils.isMySQLFamily(dataSource.driver)
+                        ? "INSERT INTO `post` (`id`, `version`, `name`, `text`, `tag`) VALUES (900, 1, 'length_test', 'body', 'atag')"
+                        : `INSERT INTO "post" ("id", "version", "name", "text", "tag") VALUES (900, 1, 'length_test', 'body', 'atag')`,
+                )
+
+                // Change column length
+                let table = await queryRunner.getTable("post")
+                const nameColumn = table!.findColumnByName("name")!
+                const changedColumn = nameColumn.clone()
+                changedColumn.length = "500"
+
+                await queryRunner.changeColumn(
+                    table!,
+                    nameColumn,
+                    changedColumn,
+                )
+
+                // Verify data was preserved
+                const rows: { name: string }[] = await queryRunner.query(
+                    DriverUtils.isMySQLFamily(dataSource.driver)
+                        ? "SELECT `name` FROM `post` WHERE `id` = 900"
+                        : `SELECT "name" FROM "post" WHERE "id" = 900`,
+                )
+                expect(rows).to.have.length(1)
+                expect(rows[0].name).to.equal("length_test")
+
+                // cleanup
+                await queryRunner.query(
+                    DriverUtils.isMySQLFamily(dataSource.driver)
+                        ? "DELETE FROM `post` WHERE `id` = 900"
+                        : `DELETE FROM "post" WHERE "id" = 900`,
+                )
+
+                await queryRunner.executeMemoryDownSql()
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should use ALTER COLUMN for type change and preserve data", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // SQLite recreates the table on any change
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+                // CockroachDB and Spanner do not allow changing primary columns
+                if (
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                )
+                    return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                // Insert test data
+                await queryRunner.query(
+                    DriverUtils.isMySQLFamily(dataSource.driver)
+                        ? "INSERT INTO `post` (`id`, `version`, `name`, `text`, `tag`) VALUES (901, 1, 'type_test', 'body', 'atag')"
+                        : `INSERT INTO "post" ("id", "version", "name", "text", "tag") VALUES (901, 1, 'type_test', 'body', 'atag')`,
+                )
+
+                // Change column type from varchar to text
+                let table = await queryRunner.getTable("post")
+                const textColumn = table!.findColumnByName("text")!
+                const changedColumn = textColumn.clone()
+                changedColumn.type = "text"
+                changedColumn.length = ""
+
+                await queryRunner.changeColumn(
+                    table!,
+                    textColumn,
+                    changedColumn,
+                )
+
+                // Verify data was preserved
+                const rows: { text: string }[] = await queryRunner.query(
+                    DriverUtils.isMySQLFamily(dataSource.driver)
+                        ? "SELECT `text` FROM `post` WHERE `id` = 901"
+                        : `SELECT "text" FROM "post" WHERE "id" = 901`,
+                )
+                expect(rows).to.have.length(1)
+                expect(rows[0].text).to.equal("body")
+
+                // cleanup
+                await queryRunner.query(
+                    DriverUtils.isMySQLFamily(dataSource.driver)
+                        ? "DELETE FROM `post` WHERE `id` = 901"
+                        : `DELETE FROM "post" WHERE "id" = 901`,
+                )
+
+                await queryRunner.executeMemoryDownSql()
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should generate ALTER COLUMN SQL, not DROP + ADD, for type/length changes", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // SQLite recreates the table on any change
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+                // CockroachDB and Spanner do not allow changing primary columns
+                if (
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                )
+                    return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                let table = await queryRunner.getTable("post")
+                const nameColumn = table!.findColumnByName("name")!
+                const changedColumn = nameColumn.clone()
+                changedColumn.length = "200"
+
+                queryRunner.enableSqlMemory()
+                await queryRunner.changeColumn(
+                    table!,
+                    nameColumn,
+                    changedColumn,
+                )
+
+                // None of the generated SQL should include DROP COLUMN for the name column
+                const memorySql = queryRunner.getMemorySql()
+                const hasDropColumn = memorySql.upQueries.some(
+                    (q) =>
+                        q.query.includes("DROP COLUMN") &&
+                        q.query.includes("name"),
+                )
+                expect(hasDropColumn).to.be.false
+
+                queryRunner.disableSqlMemory()
+                await queryRunner.release()
+            }),
+        ))
+
     it("should correctly change generated as expression", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
