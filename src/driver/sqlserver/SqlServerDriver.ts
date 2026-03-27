@@ -1297,8 +1297,9 @@ export class SqlServerDriver implements Driver {
                 return ISOLATION_LEVEL.SNAPSHOT
 
             case "READ COMMITTED":
-            default:
                 return ISOLATION_LEVEL.READ_COMMITTED
+            default:
+                throw new TypeORMError(`Unknown isolation level "${isolation}"`)
         }
     }
 }
