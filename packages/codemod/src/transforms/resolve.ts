@@ -26,8 +26,8 @@ export const resolveTransforms = (
                 () => listTransforms(version),
             )
         }
-        return [`${dir}/${transform}${ext}`]
+        return [path.join(dir, `${transform}${ext}`)]
     }
 
-    return [`${dir}/index${ext}`]
+    return [path.join(dir, `index${ext}`)]
 }
