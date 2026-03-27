@@ -812,10 +812,14 @@ export class CockroachDriver implements Driver {
             return this.compareJsonDefaults(columnMetadata, tableColumn)
         }
 
-        const columnDefault = this.lowerDefaultValueIfNecessary(
+        const columnDefault = this.normalizeDefaultForComparison(
             this.normalizeDefault(columnMetadata),
         )
-        return columnDefault === tableColumn.default
+        const tableDefault = this.normalizeDefaultForComparison(
+            tableColumn.default,
+        )
+
+        return columnDefault === tableDefault
     }
 
     /**
@@ -1046,6 +1050,70 @@ export class CockroachDriver implements Driver {
             })
             .join(`'`)
     }
+
+    private normalizeDefaultForComparison(value: string | undefined) {
+        if (!value) {
+            return value
+        }
+
+        const loweredValue = this.lowerDefaultValueIfNecessary(value)
+
+        if (!loweredValue) {
+            return loweredValue
+        }
+
+        let normalizedValue = loweredValue.trim()
+
+        normalizedValue = normalizedValue.replaceAll(/::[\w\s.[\]\-"]+/g, "")
+        normalizedValue = normalizedValue.replaceAll(
+            /\((-?\d+(?:\.\d+)?)\)/g,
+            "$1",
+        )
+        normalizedValue = normalizedValue.replaceAll(
+            /extract\('([^']+)'\s*,\s*([a-z_]+\(\))\)/g,
+            "extract($1 from $2)",
+        )
+        normalizedValue = normalizedValue.replaceAll(/\b(\d+)\.0+\b/g, "$1")
+        normalizedValue = this.unwrapDefaultExpression(normalizedValue)
+        normalizedValue = normalizedValue.replaceAll(/\s+/g, " ").trim()
+
+        return normalizedValue
+    }
+
+    private unwrapDefaultExpression(value: string) {
+        let normalizedValue = value
+
+        while (
+            normalizedValue.startsWith("(") &&
+            normalizedValue.endsWith(")") &&
+            this.hasMatchingOuterParens(normalizedValue)
+        ) {
+            normalizedValue = normalizedValue.slice(1, -1).trim()
+        }
+
+        return normalizedValue
+    }
+
+    private hasMatchingOuterParens(value: string) {
+        let depth = 0
+
+        for (let index = 0; index < value.length; index++) {
+            const char = value[index]
+
+            if (char === "(") {
+                depth += 1
+            } else if (char === ")") {
+                depth -= 1
+
+                if (depth === 0 && index < value.length - 1) {
+                    return false
+                }
+            }
+        }
+
+        return depth === 0
+    }
+
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      * @param _returningType
