@@ -29,10 +29,11 @@ const getCurrentTransactionLevelAndAssert = async (
     ) {
         // CockroachDB does not support READ UNCOMMITTED isolation level, it uses READ COMMITTED
         actualIsolationLevel.should.be.equal("read committed")
-    } else
+    } else {
         actualIsolationLevel.should.be.equal(
             expectedIsolationLevel.toLowerCase(),
         )
+    }
 }
 
 describe("transaction > isolation level > postgres / cockroachdb", () => {
