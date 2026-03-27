@@ -21,7 +21,7 @@ const getCurrentTransactionLevelAndAssert = async (
     entityManager: EntityManager,
     expectedIsolationLevel: string,
 ) => {
-    const query = `SELECT CURRENT_TRANSACTION_ISOLATION_LEVEL AS isolation_level FROM SYS.DUMMY`
+    const query = `SELECT CURRENT_TRANSACTION_ISOLATION_LEVEL AS ISOLATION_LEVEL FROM SYS.DUMMY`
     const actualIsolationLevel = (await entityManager.query(query))[0]
         .ISOLATION_LEVEL
     actualIsolationLevel.should.be.equal(expectedIsolationLevel)
