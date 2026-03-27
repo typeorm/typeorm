@@ -23,6 +23,7 @@ import type { InsertResult } from "../query-builder/result/InsertResult"
 import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import type { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { FindOrCreateOptions } from "../find-options/FindOrCreateOptions"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
 import type { UpsertOptions } from "../repository/UpsertOptions"
@@ -1327,6 +1328,32 @@ export class EntityManager {
                 take: 1,
             })
             .getOne()
+    }
+
+    /**
+     * Finds the first entity matching the given where conditions.
+     * If no entity is found, creates and saves a new one.
+     * Returns a tuple of the entity and a boolean indicating whether it was newly created.
+     * @param entityClass
+     * @param options
+     */
+    async findOrCreate<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        options: FindOrCreateOptions<Entity>,
+    ): Promise<[Entity, boolean]> {
+        const existing = await this.findOneBy(entityClass, options.where)
+
+        if (existing) {
+            return [existing, false]
+        }
+
+        const merged = {
+            ...(options.create ?? {}),
+            ...options.where,
+        } as DeepPartial<Entity>
+        const entity = this.create(entityClass, merged)
+        const saved = await this.save(entityClass, entity)
+        return [saved, true]
     }
 
     /**

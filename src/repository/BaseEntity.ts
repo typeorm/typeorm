@@ -1,5 +1,6 @@
 import type { Repository } from "./Repository"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { FindOrCreateOptions } from "../find-options/FindOrCreateOptions"
 import type { DeepPartial } from "../common/DeepPartial"
 import type { SaveOptions } from "./SaveOptions"
 import type { FindOneOptions } from "../find-options/FindOneOptions"
@@ -580,6 +581,19 @@ export class BaseEntity {
         where: FindOptionsWhere<T>,
     ): Promise<T | null> {
         return this.getRepository<T>().findOneBy(where)
+    }
+
+    /**
+     * Finds the first entity matching the given where conditions.
+     * If no entity is found, creates and saves a new one.
+     * Returns a tuple of the entity and a boolean indicating whether it was newly created.
+     * @param options
+     */
+    static findOrCreate<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        options: FindOrCreateOptions<T>,
+    ): Promise<[T, boolean]> {
+        return this.getRepository<T>().findOrCreate(options)
     }
 
     /**

@@ -13,6 +13,7 @@ import type { InsertResult } from "../query-builder/result/InsertResult"
 import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import type { ObjectId } from "../driver/mongodb/typings"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { FindOrCreateOptions } from "../find-options/FindOrCreateOptions"
 import type { UpsertOptions } from "./UpsertOptions"
 import type { UpdateOptions } from "./UpdateOptions"
 import type { EntityTarget } from "../common/EntityTarget"
@@ -662,6 +663,18 @@ export class Repository<Entity extends ObjectLiteral> {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity | null> {
         return this.manager.findOneBy(this.metadata.target, where)
+    }
+
+    /**
+     * Finds the first entity matching the given where conditions.
+     * If no entity is found, creates and saves a new one.
+     * Returns a tuple of the entity and a boolean indicating whether it was newly created.
+     * @param options
+     */
+    async findOrCreate(
+        options: FindOrCreateOptions<Entity>,
+    ): Promise<[Entity, boolean]> {
+        return this.manager.findOrCreate(this.metadata.target, options)
     }
 
     /**

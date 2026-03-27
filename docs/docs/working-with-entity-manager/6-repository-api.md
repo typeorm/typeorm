@@ -431,6 +431,17 @@ const timber = await repository.findOne({
 const timber = await repository.findOneBy({ firstName: "Timber" })
 ```
 
+- `findOrCreate` - Finds the first entity matching the given where conditions. If no entity is found, creates and saves a new one. Returns a tuple of `[entity, created]` where `created` indicates whether the entity was newly created.
+
+```typescript
+const [user, created] = await repository.findOrCreate({
+    where: { firstName: "Timber" },
+    create: { lastName: "Saw", age: 25 },
+})
+// created === true if the user was just created
+// created === false if an existing user was found
+```
+
 - `findOneOrFail` - Finds the first entity that matches some id or find options.
   Rejects the returned promise if nothing matches.
 
