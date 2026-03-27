@@ -42,7 +42,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **`readonly` column option removed** — use `update: false` instead ([#12132](https://github.com/typeorm/typeorm/pull/12132) by [@pkuczynski](https://github.com/pkuczynski))
 - **`unsigned` on `ColumnNumericOptions` removed** — only affected decimal/float types; integer `unsigned` is unchanged ([#12133](https://github.com/typeorm/typeorm/pull/12133) by [@pkuczynski](https://github.com/pkuczynski))
 - **QueryBuilder: `onConflict()`, deprecated `orUpdate()` overload, and `setNativeParameters()` removed** — use `orIgnore()`/`orUpdate()` array signature and `setParameters()` instead ([#12090](https://github.com/typeorm/typeorm/pull/12090) by [@pkuczynski](https://github.com/pkuczynski))
-- **QueryBuilder: `printSql()` renamed to `logQuery()`** ([#12151](https://github.com/typeorm/typeorm/pull/12151) by [@naorpeled](https://github.com/naorpeled))
+- **QueryBuilder: `printSql()` removed** — it was redundant since all executed queries are already logged through the configured logger; use `getSql()` or `getQueryAndParameters()` to inspect SQL instead ([#12151](https://github.com/typeorm/typeorm/pull/12151) by [@naorpeled](https://github.com/naorpeled), [#12220](https://github.com/typeorm/typeorm/pull/12220) by [@pkuczynski](https://github.com/pkuczynski))
 - **QueryBuilder: `WhereExpression` type alias removed** — use `WhereExpressionBuilder` instead ([#12097](https://github.com/typeorm/typeorm/pull/12097) by [@pkuczynski](https://github.com/pkuczynski))
 - **QueryBuilder: `replacePropertyNames()` removed** — it was a no-op ([#12178](https://github.com/typeorm/typeorm/pull/12178) by [@pkuczynski](https://github.com/pkuczynski))
 - **`join` find option removed** — use `relations` for LEFT JOINs or QueryBuilder for other join types ([#12188](https://github.com/typeorm/typeorm/pull/12188) by [@pkuczynski](https://github.com/pkuczynski))
@@ -165,4 +165,4 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 - **PostgreSQL / CockroachDB: batched DROP in `clearDatabase()`** — consolidates individual DROP statements into single batched queries, significantly reducing round-trips during test setup ([#12164](https://github.com/typeorm/typeorm/pull/12164), [#12159](https://github.com/typeorm/typeorm/pull/12159) by [@pkuczynski](https://github.com/pkuczynski))
 
-<!-- Built against 93eec630630b219b162ba4e0c072afa851697cff -->
+<!-- Built against 50ba2dba8 -->
