@@ -10,6 +10,7 @@ export default defineConfig([
         "build/**",
         "docs/**",
         "node_modules/**",
+        "packages/**",
         "sample/playground/**",
         "src/driver/mongodb/{typings.ts,bson.typings.ts}",
         "temp/**",
