@@ -155,6 +155,18 @@ export class SqlServerDriver implements Driver {
     ]
 
     /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://learn.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql
+     */
+    readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+        "SNAPSHOT",
+    ]
+
+    /**
      * Returns type of upsert supported by driver if any
      */
     supportedUpsertTypes: UpsertType[] = ["merge-into"]

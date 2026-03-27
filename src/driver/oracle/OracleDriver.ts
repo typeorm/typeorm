@@ -25,6 +25,7 @@ import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
 import type { OracleDataSourceOptions } from "./OracleDataSourceOptions"
@@ -138,6 +139,15 @@ export class OracleDriver implements Driver {
         "urowid",
         "simple-json",
         "json",
+    ]
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://docs.oracle.com/en/database/oracle/oracle-database/23/cncpt/data-concurrency-and-consistency.html
+     */
+    readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ COMMITTED",
+        "SERIALIZABLE",
     ]
 
     /**

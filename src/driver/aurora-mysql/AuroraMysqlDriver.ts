@@ -20,6 +20,7 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
 import type { AuroraMysqlDataSourceOptions } from "./AuroraMysqlDataSourceOptions"
@@ -158,6 +159,17 @@ export class AuroraMysqlDriver implements Driver {
         "multilinestring",
         "multipolygon",
         "geometrycollection",
+    ]
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
+     */
+    readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
     ]
 
     /**

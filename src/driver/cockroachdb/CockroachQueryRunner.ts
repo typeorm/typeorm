@@ -186,11 +186,7 @@ export class CockroachQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (isolationLevel === "SNAPSHOT") {
-            throw new TypeORMError(
-                "CockroachDB does not support SNAPSHOT isolation level",
-            )
-        }
+        this.validateIsolationLevel(isolationLevel)
 
         this.isTransactionActive = true
         this.transactionRetries = 0

@@ -112,12 +112,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (isolationLevel === "SNAPSHOT") {
-            throw new TypeORMError(
-                "MySQL does not support SNAPSHOT isolation level",
-            )
-        }
+        this.validateIsolationLevel(isolationLevel)
+
         this.isTransactionActive = true
+
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {

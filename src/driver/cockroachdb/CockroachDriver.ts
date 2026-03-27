@@ -25,6 +25,7 @@ import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import type { CockroachDataSourceOptions } from "./CockroachDataSourceOptions"
@@ -165,6 +166,17 @@ export class CockroachDriver implements Driver {
         "json",
         "jsonb",
         "uuid",
+    ]
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://www.cockroachlabs.com/docs/stable/transactions#isolation-levels
+     */
+    readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
     ]
 
     /**

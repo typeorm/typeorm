@@ -19,6 +19,7 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { ReactNativeDataSourceOptions } from "./ReactNativeDataSourceOptions"
 import { ReactNativeQueryRunner } from "./ReactNativeQueryRunner"
@@ -134,6 +135,15 @@ export class ReactNativeDriver implements Driver {
         "date",
         "time",
         "datetime",
+    ]
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://www.sqlite.org/isolation.html
+     */
+    readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "SERIALIZABLE",
     ]
 
     /**

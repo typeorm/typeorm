@@ -116,17 +116,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     async startTransaction(
         isolationLevel: IsolationLevel = "READ COMMITTED",
     ): Promise<void> {
+        this.validateIsolationLevel(isolationLevel)
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
-
-        // await this.query("START TRANSACTION");
-        if (
-            isolationLevel !== "SERIALIZABLE" &&
-            isolationLevel !== "READ COMMITTED"
-        ) {
-            throw new TypeORMError(
-                `Oracle only supports SERIALIZABLE and READ COMMITTED isolation levels`,
-            )
-        }
 
         this.isTransactionActive = true
         try {

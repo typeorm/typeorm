@@ -9,6 +9,7 @@ import type { Table } from "../schema-builder/table/Table"
 import type { EntityManager } from "../entity-manager/EntityManager"
 import type { TableColumn } from "../schema-builder/table/TableColumn"
 import type { Broadcaster } from "../subscriber/Broadcaster"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import type { ReplicationMode } from "../driver/types/ReplicationMode"
 import { TypeORMError } from "../error/TypeORMError"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
@@ -172,6 +173,27 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     protected abstract loadTables(tablePaths?: string[]): Promise<Table[]>
 
     protected abstract loadViews(tablePaths?: string[]): Promise<View[]>
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Validates that the given isolation level is supported by the current driver.
+     * Throws a TypeORMError if the level is not in the driver's supportedIsolationLevels list.
+     * @param isolationLevel
+     */
+    protected validateIsolationLevel(isolationLevel?: IsolationLevel): void {
+        if (!isolationLevel) return
+
+        const supported = this.dataSource.driver.supportedIsolationLevels
+        if (!supported.includes(isolationLevel)) {
+            const driverName = this.dataSource.driver.options.type
+            throw new TypeORMError(
+                `${driverName} does not support ${isolationLevel} isolation level`,
+            )
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Public Methods

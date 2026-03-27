@@ -22,6 +22,7 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { MongoDataSourceOptions } from "./MongoDataSourceOptions"
 import { MongoQueryRunner } from "./MongoQueryRunner"
@@ -78,6 +79,11 @@ export class MongoDriver implements Driver {
      * Mongodb does not need to have column types because they are not used in schema sync.
      */
     supportedDataTypes: ColumnType[] = []
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     */
+    readonly supportedIsolationLevels: IsolationLevel[] = []
 
     /**
      * Returns type of upsert supported by driver if any

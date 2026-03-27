@@ -73,6 +73,8 @@ export abstract class AbstractSqliteQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        this.validateIsolationLevel(isolationLevel)
+
         if (this.driver.transactionSupport === "none")
             throw new TypeORMError(
                 `Transactions aren't supported by ${this.dataSource.driver.options.type}.`,
@@ -83,15 +85,6 @@ export abstract class AbstractSqliteQueryRunner
             this.driver.transactionSupport === "simple"
         )
             throw new TransactionAlreadyStartedError()
-
-        if (
-            isolationLevel &&
-            isolationLevel !== "READ UNCOMMITTED" &&
-            isolationLevel !== "SERIALIZABLE"
-        )
-            throw new TypeORMError(
-                `SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation levels`,
-            )
 
         this.isTransactionActive = true
         try {

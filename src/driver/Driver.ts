@@ -15,6 +15,7 @@ import type { TableIndex } from "../schema-builder/table/TableIndex"
 import type { View } from "../schema-builder/view/View"
 import type { ColumnType } from "./types/ColumnTypes"
 import type { CteCapabilities } from "./types/CteCapabilities"
+import type { IsolationLevel } from "./types/IsolationLevel"
 import type { DataTypeDefaults } from "./types/DataTypeDefaults"
 import type { MappedColumnTypes } from "./types/MappedColumnTypes"
 import type { ReplicationMode } from "./types/ReplicationMode"
@@ -66,6 +67,14 @@ export interface Driver {
      * Gets list of supported column data types by a driver.
      */
     supportedDataTypes: ColumnType[]
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * Used by {@link BaseQueryRunner.validateIsolationLevel} to validate
+     * isolation levels passed to `startTransaction()`.
+     * @see https://typeorm.io/docs/transactions
+     */
+    readonly supportedIsolationLevels: IsolationLevel[]
 
     /**
      * Returns type of upsert supported by driver if any

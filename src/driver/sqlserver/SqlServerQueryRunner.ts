@@ -89,6 +89,7 @@ export class SqlServerQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        this.validateIsolationLevel(isolationLevel)
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         this.isTransactionActive = true

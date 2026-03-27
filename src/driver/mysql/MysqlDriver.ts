@@ -24,6 +24,7 @@ import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 import type { MysqlDataSourceOptions } from "./MysqlDataSourceOptions"
@@ -166,6 +167,17 @@ export class MysqlDriver implements Driver {
         "uuid",
         "inet4",
         "inet6",
+    ]
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
+     */
+    readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
     ]
 
     /**
