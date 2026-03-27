@@ -124,14 +124,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
-        working-directory: packages/codemod
+          working-directory: packages/codemod
+          cache-dependency-path: packages/codemod/pnpm-lock.yaml
       - run: pnpm test
         working-directory: packages/codemod
 
