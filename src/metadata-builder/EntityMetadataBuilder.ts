@@ -550,24 +550,51 @@ export class EntityMetadataBuilder {
                         (column) => column.propertyName === args.propertyName,
                     )!
 
-                // for multiple table inheritance we can override default column values
+                // for multiple table inheritance we can override column values from child class
+                let mergedArgs = args
                 if (
                     entityMetadata.tableType === "regular" &&
-                    args.target !== entityMetadata.target
+                    args.target !== entityMetadata.target &&
+                    typeof args.target === "function"
                 ) {
-                    const childArgs = this.metadataArgsStorage.columns.find(
-                        (c) =>
-                            c.propertyName === args.propertyName &&
-                            c.target === entityMetadata.target,
-                    )
-                    if (childArgs && childArgs.options.default) {
-                        args.options.default = childArgs.options.default
+                    const argsTargetDepth =
+                        entityMetadata.inheritanceTree.indexOf(args.target)
+                    const childArgs = this.metadataArgsStorage.columns
+                        .filter((c) => {
+                            if (typeof c.target !== "function") return false
+                            const depth =
+                                entityMetadata.inheritanceTree.indexOf(c.target)
+                            return (
+                                c.propertyName === args.propertyName &&
+                                depth !== -1 &&
+                                depth < argsTargetDepth
+                            )
+                        })
+                        .sort(
+                            (a, b) =>
+                                entityMetadata.inheritanceTree.indexOf(
+                                    a.target as Function,
+                                ) -
+                                entityMetadata.inheritanceTree.indexOf(
+                                    b.target as Function,
+                                ),
+                        )[0]
+                    if (childArgs?.options) {
+                        const mergedOptions = { ...childArgs.options }
+                        if (mergedOptions.primary) {
+                            mergedOptions.nullable = false
+                        }
+                        mergedArgs = {
+                            ...args,
+                            mode: childArgs.mode,
+                            options: mergedOptions,
+                        }
                     }
                 }
 
                 const column = new ColumnMetadata({
                     entityMetadata,
-                    args,
+                    args: mergedArgs,
                 })
 
                 // if single table inheritance used, we need to mark all inherit table columns as nullable

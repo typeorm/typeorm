@@ -83,6 +83,8 @@ export function PrimaryColumn(
         // explicitly set a primary to column options
         options.primary = true
 
+        options.nullable = false
+
         // create and register a new column metadata
         getMetadataArgsStorage().columns.push({
             target: object.constructor,
