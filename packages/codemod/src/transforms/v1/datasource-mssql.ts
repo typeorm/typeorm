@@ -24,36 +24,77 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    // Flag removed `domain` option with TODO
-    root.find(j.ObjectProperty, {
-        key: { type: "Identifier", name: "domain" },
-    }).forEach((propPath) => {
-        addTodoComment(
-            propPath.node,
-            '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`',
-            j,
+    // Find object literals with `type: "mssql"`
+    root.find(j.ObjectExpression).forEach((objPath) => {
+        const props = objPath.node.properties
+        const isMssql = props.some(
+            (p) =>
+                p.type === "ObjectProperty" &&
+                p.key.type === "Identifier" &&
+                p.key.name === "type" &&
+                p.value.type === "StringLiteral" &&
+                p.value.value === "mssql",
         )
-        hasChanges = true
-        hasTodos = true
-    })
+        if (!isMssql) return
 
-    // Rename `isolation` → `isolationLevel`
-    root.find(j.ObjectProperty, {
-        key: { type: "Identifier", name: "isolation" },
-    }).forEach((propPath) => {
-        if (propPath.node.key.type === "Identifier") {
-            propPath.node.key.name = "isolationLevel"
-            hasChanges = true
+        // Flag removed `domain` option with TODO
+        for (const prop of props) {
+            if (
+                prop.type === "ObjectProperty" &&
+                prop.key.type === "Identifier" &&
+                prop.key.name === "domain"
+            ) {
+                addTodoComment(
+                    prop,
+                    '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`',
+                    j,
+                )
+                hasChanges = true
+                hasTodos = true
+            }
+        }
+
+        // Find the `options` nested object
+        const optionsProp = props.find(
+            (p) =>
+                p.type === "ObjectProperty" &&
+                p.key.type === "Identifier" &&
+                p.key.name === "options" &&
+                p.value.type === "ObjectExpression",
+        )
+        if (
+            !optionsProp ||
+            optionsProp.type !== "ObjectProperty" ||
+            optionsProp.value.type !== "ObjectExpression"
+        )
+            return
+
+        for (const innerProp of optionsProp.value.properties) {
+            if (
+                innerProp.type !== "ObjectProperty" ||
+                innerProp.key.type !== "Identifier"
+            )
+                continue
+
+            // Rename `isolation` → `isolationLevel`
+            if (innerProp.key.name === "isolation") {
+                innerProp.key.name = "isolationLevel"
+                hasChanges = true
+            }
+
+            // Fix isolation value format on isolationLevel / connectionIsolationLevel
+            if (
+                (innerProp.key.name === "isolationLevel" ||
+                    innerProp.key.name === "connectionIsolationLevel") &&
+                innerProp.value.type === "StringLiteral" &&
+                isolationValueRenames[innerProp.value.value]
+            ) {
+                innerProp.value.value =
+                    isolationValueRenames[innerProp.value.value]
+                hasChanges = true
+            }
         }
     })
-
-    // Fix isolation value format: "READ_COMMITTED" → "READ COMMITTED" etc.
-    for (const [oldValue, newValue] of Object.entries(isolationValueRenames)) {
-        root.find(j.StringLiteral, { value: oldValue }).forEach((strPath) => {
-            strPath.node.value = newValue
-            hasChanges = true
-        })
-    }
 
     if (hasTodos) stats.count.todo(api, name, file)
 
