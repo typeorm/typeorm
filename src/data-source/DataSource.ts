@@ -138,7 +138,6 @@ export class DataSource {
             this.options.logger,
             this.options.logging,
         )
-        this.driver = new DriverFactory().create(this)
         this.manager = this.createEntityManager()
         this.namingStrategy =
             options.namingStrategy || new DefaultNamingStrategy()
@@ -233,6 +232,8 @@ export class DataSource {
      */
     async initialize(): Promise<this> {
         if (this.isInitialized) throw new CannotConnectAlreadyConnectedError()
+
+        this.driver = await new DriverFactory().create(this)
 
         // connect to the database via its driver
         await this.driver.connect()
