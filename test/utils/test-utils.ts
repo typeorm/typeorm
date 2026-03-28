@@ -14,7 +14,6 @@ import type { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
 import type { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
-import { DriverUtils } from "../../src/driver/DriverUtils"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
