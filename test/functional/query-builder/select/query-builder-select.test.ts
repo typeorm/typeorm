@@ -841,6 +841,81 @@ describe("query builder > select", () => {
             ))
     })
 
+    describe("object-style select with aliases", () => {
+        it("should select columns with custom aliases using an object map", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select({ "post.id": "id", "post.title": "title" })
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS id, post.title AS title FROM post post",
+                    )
+                }),
+            ))
+
+        it("should append columns with custom aliases using addSelect with an object map", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select("post.id", "id")
+                        .addSelect({ "post.title": "title" })
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS id, post.title AS title FROM post post",
+                    )
+                }),
+            ))
+
+        it("should not clear existing selections when select is called with an empty object", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select("post.id", "id")
+                        .select({})
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal("SELECT post.id AS id FROM post post")
+                }),
+            ))
+
+        it("should not alter existing selections when addSelect is called with an empty object", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select("post.id", "id")
+                        .addSelect({})
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal("SELECT post.id AS id FROM post post")
+                }),
+            ))
+
+        it("should escape aliases that are reserved words", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select({ "post.id": "order", "post.title": "select" })
+                        .getSql()
+
+                    // better-sqlite3 escapes with double quotes
+                    expect(sql).to.contain('AS "order"')
+                    expect(sql).to.contain('AS "select"')
+                }),
+            ))
+    })
+
     describe("column order in select statement", () => {
         it("should return columns in the order they were specified in select statement", () =>
             Promise.all(

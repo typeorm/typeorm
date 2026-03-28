@@ -149,6 +149,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
+     * Accepts an object map of selection to alias.
+     * Example: .select({ "user.name": "name", "user.email": "email" })
+     */
+    select(selection: Record<string, string>): this
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all previous selections if they exist.
      * @param selection
      * @param selectionAliasName
      */
@@ -156,25 +164,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         selection?:
             | string
             | string[]
+            | Record<string, string>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         selectionAliasName?: string,
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
-        if (Array.isArray(selection)) {
-            this.expressionMap.selects = selection.map((selection) => ({
-                selection: selection,
-            }))
-        } else if (typeof selection === "function") {
-            const subQueryBuilder = selection(this.subQuery())
-            this.setParameters(subQueryBuilder.getParameters())
-            this.expressionMap.selects.push({
-                selection: subQueryBuilder.getQuery(),
-                aliasName: selectionAliasName,
-            })
-        } else if (selection) {
-            this.expressionMap.selects = [
-                { selection: selection, aliasName: selectionAliasName },
-            ]
+        const parsed = this.parseSelectInput(selection, selectionAliasName)
+        if (parsed !== undefined) {
+            this.expressionMap.selects = parsed
         }
 
         return this
@@ -200,6 +197,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new selection to the SELECT query.
+     * Accepts an object map of selection to alias.
+     * Example: .addSelect({ "user.name": "name", "user.email": "email" })
+     */
+    addSelect(selection: Record<string, string>): this
+
+    /**
+     * Adds new selection to the SELECT query.
      * @param selection
      * @param selectionAliasName
      */
@@ -207,27 +211,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         selection:
             | string
             | string[]
+            | Record<string, string>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         selectionAliasName?: string,
     ): this {
         if (!selection) return this
 
-        if (Array.isArray(selection)) {
-            this.expressionMap.selects = this.expressionMap.selects.concat(
-                selection.map((selection) => ({ selection: selection })),
-            )
-        } else if (typeof selection === "function") {
-            const subQueryBuilder = selection(this.subQuery())
-            this.setParameters(subQueryBuilder.getParameters())
-            this.expressionMap.selects.push({
-                selection: subQueryBuilder.getQuery(),
-                aliasName: selectionAliasName,
-            })
-        } else if (selection) {
-            this.expressionMap.selects.push({
-                selection: selection,
-                aliasName: selectionAliasName,
-            })
+        const parsed = this.parseSelectInput(selection, selectionAliasName)
+        if (parsed !== undefined) {
+            this.expressionMap.selects =
+                this.expressionMap.selects.concat(parsed)
         }
 
         return this
@@ -2195,6 +2188,50 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 subQuery: isSubQuery === true ? subQuery : undefined,
             })
         }
+    }
+
+    /**
+     * Parses the selection input into an array of SelectQuery objects.
+     * Returns undefined when the input is falsy (no-arg call).
+     * @param selection
+     * @param selectionAliasName
+     */
+    private parseSelectInput(
+        selection:
+            | string
+            | string[]
+            | Record<string, string>
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)
+            | undefined,
+        selectionAliasName?: string,
+    ): SelectQuery[] | undefined {
+        if (Array.isArray(selection)) {
+            return selection.map((s) => ({ selection: s }))
+        } else if (typeof selection === "object" && selection !== null) {
+            const entries = Object.entries(selection)
+            if (entries.length === 0) return undefined
+            return entries.map(([sel, alias]) => ({
+                selection: sel,
+                aliasName: alias,
+            }))
+        } else if (typeof selection === "function") {
+            const subQueryBuilder = selection(this.subQuery())
+            this.setParameters(subQueryBuilder.getParameters())
+            return [
+                {
+                    selection: subQueryBuilder.getQuery(),
+                    aliasName: selectionAliasName,
+                },
+            ]
+        } else if (selection) {
+            return [
+                {
+                    selection: selection,
+                    aliasName: selectionAliasName,
+                },
+            ]
+        }
+        return undefined
     }
 
     /**
