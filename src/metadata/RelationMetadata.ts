@@ -120,6 +120,11 @@ export class RelationMetadata {
     orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
 
     /**
+     * Indicates if orphanedRowAction was explicitly set in relation options.
+     */
+    isOrphanedRowActionSet: boolean = false
+
+    /**
      * If set to true then related objects are allowed to be inserted to the database.
      */
     isCascadeInsert: boolean = false
@@ -334,6 +339,10 @@ export class RelationMetadata {
         this.isEager = args.options.eager || false
         this.persistenceEnabled =
             args.options.persistence === false ? false : true
+        this.isOrphanedRowActionSet = Object.prototype.hasOwnProperty.call(
+            args.options,
+            "orphanedRowAction",
+        )
         this.orphanedRowAction = args.options.orphanedRowAction || "nullify"
         this.isTreeParent = args.isTreeParent || false
         this.isTreeChildren = args.isTreeChildren || false
