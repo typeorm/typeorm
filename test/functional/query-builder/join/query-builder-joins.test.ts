@@ -296,6 +296,108 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should load results from a left join with a child inner join both of which have zero results", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const post = new Post()
+                    post.title = "about BMW"
+                    await dataSource.manager.save(post)
+
+                    const loadedPost = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.categories).to.be.eql([])
+                    expect(loadedPost?.categories.length).to.be.equal(0)
+                }),
+            ))
+
+        it("should load results from a left join with a child inner join that has zero results", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const category = new Category()
+                    category.name = "germany"
+                    await dataSource.manager.save(category)
+
+                    const post = new Post()
+                    post.title = "about BMW"
+                    post.categories = [category]
+                    await dataSource.manager.save(post)
+
+                    const loadedPost = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.categories).to.be.eql([])
+                    expect(loadedPost?.categories.length).to.be.equal(0)
+                }),
+            ))
+
+        it("should load results from a left join with a child inner join when inner join has matching data", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const image = new Image()
+                    image.name = "cat-image"
+                    await dataSource.manager.save(image)
+
+                    const category = new Category()
+                    category.name = "animals"
+                    category.images = [image]
+                    await dataSource.manager.save(category)
+
+                    const post = new Post()
+                    post.title = "about cats"
+                    post.categories = [category]
+                    await dataSource.manager.save(post)
+
+                    const loadedPost = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.categories.length).to.be.equal(1)
+                    expect(loadedPost?.categories[0].name).to.be.equal(
+                        "animals",
+                    )
+                    expect(loadedPost?.categories[0].images.length).to.be.equal(
+                        1,
+                    )
+                    expect(
+                        loadedPost?.categories[0].images[0].name,
+                    ).to.be.equal("cat-image")
+                }),
+            ))
+
+        it("should load results from a many-to-one left join with a child inner join that has zero results", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const post = new Post()
+                    post.title = "about dogs"
+                    await dataSource.manager.save(post)
+
+                    const loadedPost = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.tag", "tag")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.title).to.be.equal("about dogs")
+                    expect(loadedPost?.tag).to.be.null
+                }),
+            ))
+
         it("should load data when additional condition used", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
