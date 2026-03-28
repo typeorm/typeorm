@@ -9,13 +9,11 @@ import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
 import { IsNull } from "../../../../../src"
 
-// todo: fix later
-describe.skip("persistence > cascades > remove", () => {
+describe("persistence > cascades > softRemove", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
             __dirname,
-            enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -74,6 +72,67 @@ describe.skip("persistence > cascades > remove", () => {
                 })
                 allPhotos.length.should.be.equal(1)
                 allPhotos[0].name.should.be.equal("Photo #1")
+            }),
+        ))
+
+    it("recovers 1-many relations after soft-remove cascade", async () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const user = new User()
+                user.id = 2
+                user.name = "Mr. Cascade Danger"
+                user.manyPhotos = [
+                    new Photo("one-to-many-to-restore #1"),
+                    new Photo("one-to-many-to-restore #2"),
+                ]
+                await dataSource.manager.save(user)
+                await dataSource.manager.softRemove(user)
+                // sanity check photos are soft-removed
+                const allDeletedPhotos = await dataSource.manager.find(Photo)
+                allDeletedPhotos.length.should.be.equal(0)
+
+                // and can be retrieved if we ask for them
+                const allPhotos = await dataSource.manager.find(Photo, {
+                    withDeleted: true,
+                })
+                allPhotos.length.should.be.equal(2)
+
+                // recover user..
+                await dataSource.manager.recover(user)
+                // photos should be recovered as well
+                const allRecoveredPhotos = await dataSource.manager.find(Photo)
+                allRecoveredPhotos.length.should.be.equal(2)
+            }),
+        ))
+
+    // recovery fails with "QueryFailedError: duplicate key value violates unique constraint"
+    it.skip("recovers many-many relations after soft-remove cascade", async () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const user = new User()
+                user.id = 2
+                user.name = "Mr. Cascade Danger"
+                user.manyToManyPhotos = [
+                    new Photo("many-to-many-to-recover #1"),
+                    new Photo("many-to-many-to-recover #2"),
+                ]
+                await dataSource.manager.save(user)
+                await dataSource.manager.softRemove(user)
+                // sanity check photos are soft-removed
+                const allDeletedPhotos = await dataSource.manager.find(Photo)
+                allDeletedPhotos.length.should.be.equal(0)
+
+                // and can be retrieved if we ask for them
+                const allPhotos = await dataSource.manager.find(Photo, {
+                    withDeleted: true,
+                })
+                allPhotos.length.should.be.equal(1)
+
+                // recover user..
+                await dataSource.manager.recover(user)
+                // photos should be recovered as well
+                const allRecoveredPhotos = await dataSource.manager.find(Photo)
+                allRecoveredPhotos.length.should.be.equal(2)
             }),
         ))
 })
