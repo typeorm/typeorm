@@ -91,6 +91,12 @@ export class AuroraMysqlQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        if (isolationLevel) {
+            throw new TypeORMError(
+                `Setting transaction isolation level is not supported by the Aurora Data API`,
+            )
+        }
+
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")

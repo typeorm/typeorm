@@ -21,6 +21,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **SQLite: `sqlite3` dropped, `better-sqlite3` is the default** — the `sqlite3` package is no longer supported; `flags` and `busyTimeout` options have been removed ([#11836](https://github.com/typeorm/typeorm/pull/11836) by [@pkuczynski](https://github.com/pkuczynski))
 - **MongoDB: driver v7+ required** — support for MongoDB Node.js driver v5/v6 has been dropped; `stats()` method removed; deprecated connection options removed; internal types are no longer exported ([#12208](https://github.com/typeorm/typeorm/pull/12208) by [@naorpeled](https://github.com/naorpeled), [#12179](https://github.com/typeorm/typeorm/pull/12179) by [@pkuczynski](https://github.com/pkuczynski), [#12120](https://github.com/typeorm/typeorm/pull/12120) by [@pkuczynski](https://github.com/pkuczynski), [#12037](https://github.com/typeorm/typeorm/pull/12037) by [@alumni](https://github.com/alumni))
 - **MS SQL Server: `domain` connection option removed** — use `authentication` with NTLM type instead ([#12135](https://github.com/typeorm/typeorm/pull/12135) by [@pkuczynski](https://github.com/pkuczynski))
+- **MS SQL Server: `options.isolation` renamed to `options.isolationLevel`** — value format changed from `READ_COMMITTED` to `READ COMMITTED` to match `IsolationLevel` type; `SNAPSHOT` isolation level added ([#12231](https://github.com/typeorm/typeorm/pull/12231) by [@Cprakhar](https://github.com/Cprakhar))
 - **SAP HANA: deprecated connection aliases removed** — `hanaClientDriver`, `pool.max`, `pool.requestTimeout`, `pool.idleTimeout`, and others have been removed in favor of their modern equivalents ([#12080](https://github.com/typeorm/typeorm/pull/12080) by [@gioboa](https://github.com/gioboa))
 - **Expo: legacy driver removed** — the legacy Expo SQLite driver has been removed; use Expo SDK v52+ with the modern async API ([#11860](https://github.com/typeorm/typeorm/pull/11860) by [@G0maa](https://github.com/G0maa))
 - **Redis: legacy client support removed** — only modern Redis client (v4+) is supported for query result caching ([#12057](https://github.com/typeorm/typeorm/pull/12057) by [@G0maa](https://github.com/G0maa))
@@ -28,11 +29,13 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 ### Removed APIs
 
 - **`Connection` and `ConnectionOptions` removed** — use `DataSource` and `DataSourceOptions` instead ([#12022](https://github.com/typeorm/typeorm/pull/12022) by [@alumni](https://github.com/alumni))
+- **`.connection` property renamed to `.dataSource`** — the `connection` property on `Driver`, `QueryRunner`, `EntityManager`, `QueryBuilder`, `EntityMetadata`, and all `*Event` subscriber interfaces has been renamed to `dataSource`; a deprecated getter is provided as a bridge ([#12244](https://github.com/typeorm/typeorm/pull/12244), [#12245](https://github.com/typeorm/typeorm/pull/12245), [#12246](https://github.com/typeorm/typeorm/pull/12246), [#12249](https://github.com/typeorm/typeorm/pull/12249) by [@pkuczynski](https://github.com/pkuczynski))
 - **`ConnectionManager` and global convenience functions removed** — `createConnection`, `getConnection`, `getManager`, `getRepository`, `createQueryBuilder`, and other globals have been removed ([#12098](https://github.com/typeorm/typeorm/pull/12098) by [@michaelbromley](https://github.com/michaelbromley))
 - **`getMongoRepository` and `getMongoManager` globals removed** — use `dataSource.getMongoRepository()` and `dataSource.mongoManager` instead ([#12099](https://github.com/typeorm/typeorm/pull/12099) by [@pkuczynski](https://github.com/pkuczynski))
 - **`DataSource.name` removed** — named connections were deprecated in v0.3; `ConnectionOptionsReader.all()` renamed to `get()` ([#12136](https://github.com/typeorm/typeorm/pull/12136) by [@pkuczynski](https://github.com/pkuczynski))
 - **`TYPEORM_*` environment variable support removed** — `ConnectionOptionsEnvReader`, `ormconfig.env`, and `dotenv` auto-loading have been removed ([#12134](https://github.com/typeorm/typeorm/pull/12134) by [@pkuczynski](https://github.com/pkuczynski))
 - **`findByIds` removed** — use `findBy` with `In` operator instead ([#12114](https://github.com/typeorm/typeorm/pull/12114) by [@pkuczynski](https://github.com/pkuczynski))
+- **`findOneById` removed** — use `findOneBy` instead ([#12198](https://github.com/typeorm/typeorm/pull/12198) by [@pkuczynski](https://github.com/pkuczynski))
 - **`Repository.exist()` removed** — use `Repository.exists()` instead ([#12131](https://github.com/typeorm/typeorm/pull/12131) by [@pkuczynski](https://github.com/pkuczynski))
 - **`AbstractRepository`, `@EntityRepository`, and `getCustomRepository` removed** — use `Repository.extend()` instead ([#12096](https://github.com/typeorm/typeorm/pull/12096) by [@pkuczynski](https://github.com/pkuczynski))
 - **`@RelationCount` decorator removed** — use `@VirtualColumn` with a sub-query instead ([#12181](https://github.com/typeorm/typeorm/pull/12181) by [@pkuczynski](https://github.com/pkuczynski))
@@ -40,9 +43,12 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **`readonly` column option removed** — use `update: false` instead ([#12132](https://github.com/typeorm/typeorm/pull/12132) by [@pkuczynski](https://github.com/pkuczynski))
 - **`unsigned` on `ColumnNumericOptions` removed** — only affected decimal/float types; integer `unsigned` is unchanged ([#12133](https://github.com/typeorm/typeorm/pull/12133) by [@pkuczynski](https://github.com/pkuczynski))
 - **QueryBuilder: `onConflict()`, deprecated `orUpdate()` overload, and `setNativeParameters()` removed** — use `orIgnore()`/`orUpdate()` array signature and `setParameters()` instead ([#12090](https://github.com/typeorm/typeorm/pull/12090) by [@pkuczynski](https://github.com/pkuczynski))
-- **QueryBuilder: `printSql()` renamed to `logQuery()`** ([#12151](https://github.com/typeorm/typeorm/pull/12151) by [@naorpeled](https://github.com/naorpeled))
+- **QueryBuilder: `printSql()` removed** — it was redundant since all executed queries are already logged through the configured logger; use `getSql()` or `getQueryAndParameters()` to inspect SQL instead ([#12151](https://github.com/typeorm/typeorm/pull/12151) by [@naorpeled](https://github.com/naorpeled), [#12220](https://github.com/typeorm/typeorm/pull/12220) by [@pkuczynski](https://github.com/pkuczynski))
 - **QueryBuilder: `WhereExpression` type alias removed** — use `WhereExpressionBuilder` instead ([#12097](https://github.com/typeorm/typeorm/pull/12097) by [@pkuczynski](https://github.com/pkuczynski))
 - **QueryBuilder: `replacePropertyNames()` removed** — it was a no-op ([#12178](https://github.com/typeorm/typeorm/pull/12178) by [@pkuczynski](https://github.com/pkuczynski))
+- **`join` find option removed** — use `relations` for LEFT JOINs or QueryBuilder for other join types ([#12188](https://github.com/typeorm/typeorm/pull/12188) by [@pkuczynski](https://github.com/pkuczynski))
+- **String-based `select` removed** — use object syntax `select: { id: true }` instead of `select: ["id"]` ([#12214](https://github.com/typeorm/typeorm/pull/12214) by [@pkuczynski](https://github.com/pkuczynski))
+- **String-based `relations` removed** — use object syntax `relations: { profile: true }` instead of `relations: ["profile"]` ([#12215](https://github.com/typeorm/typeorm/pull/12215) by [@pkuczynski](https://github.com/pkuczynski))
 - **Deprecated lock modes removed** — `pessimistic_partial_write` and `pessimistic_write_or_fail` replaced by `pessimistic_write` with `onLocked` option ([#12093](https://github.com/typeorm/typeorm/pull/12093) by [@pkuczynski](https://github.com/pkuczynski))
 - **`QueryRunner.loadedTables` and `loadedViews` removed** — use `getTables()` and `getViews()` instead ([#12183](https://github.com/typeorm/typeorm/pull/12183) by [@pkuczynski](https://github.com/pkuczynski))
 - **`MigrationExecutor.getAllMigrations()` removed** — use `getPendingMigrations()`, `getExecutedMigrations()`, or `dataSource.migrations` instead ([#12142](https://github.com/typeorm/typeorm/pull/12142) by [@pkuczynski](https://github.com/pkuczynski))
@@ -53,6 +59,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 ### Behavioral changes
 
+- **Non-nullable relations now use INNER JOIN** — `ManyToOne` and owning `OneToOne` relations marked `nullable: false` now use `INNER JOIN` instead of `LEFT JOIN`, which may exclude rows with orphaned foreign keys ([#12064](https://github.com/typeorm/typeorm/pull/12064) by [@pkuczynski](https://github.com/pkuczynski))
 - **`invalidWhereValuesBehavior` defaults to `throw`** — passing `null` or `undefined` in where conditions now throws an error instead of silently ignoring the property; use `IsNull()` for null matching ([#11710](https://github.com/typeorm/typeorm/pull/11710) by [@naorpeled](https://github.com/naorpeled))
 - **`invalidWhereValuesBehavior` scoped to high-level APIs only** — QueryBuilder's `.where()`, `.andWhere()`, `.orWhere()` are no longer affected by this setting ([#11878](https://github.com/typeorm/typeorm/pull/11878) by [@naorpeled](https://github.com/naorpeled))
 
@@ -107,6 +114,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 ### Relations & Eager loading
 
+- **Eager relations now respect `relationLoadStrategy: "query"`** — eager relations are loaded via separate queries when the `"query"` strategy is set, instead of always using JOINs ([#11326](https://github.com/typeorm/typeorm/pull/11326) by [@SharkSharp](https://github.com/SharkSharp))
 - **Self-referencing relation alias collision** — self-referencing relations with `relationLoadStrategy: "query"` no longer produce incorrect SQL due to alias collision ([#11066](https://github.com/typeorm/typeorm/pull/11066) by [@campmarc](https://github.com/campmarc))
 - **Eager relations no longer joined twice** — explicitly specifying an eager relation in `relations` no longer causes duplicate JOINs ([#11991](https://github.com/typeorm/typeorm/pull/11991) by [@veeceey](https://github.com/veeceey))
 - **Save with eagerly loaded relations** — fixed save failures when an entity has eagerly loaded relations ([#11975](https://github.com/typeorm/typeorm/pull/11975) by [@gioboa](https://github.com/gioboa))
@@ -125,6 +133,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **Map/object comparison** — fixed incorrect change detection for Map and plain object column values ([#10990](https://github.com/typeorm/typeorm/pull/10990) by [@mgohin](https://github.com/mgohin))
 - **Date transformer change detection** — fixed false-positive dirty detection with date value transformers ([#11963](https://github.com/typeorm/typeorm/pull/11963) by [@gioboa](https://github.com/gioboa))
 - **Child mpath update** — tree entity mpath is now correctly updated when re-parenting, even with soft-deleted parents ([#10844](https://github.com/typeorm/typeorm/pull/10844) by [@JoseCToscano](https://github.com/JoseCToscano))
+- **Closure junction table schema/database propagation** — schema and database settings are now correctly propagated to closure junction tables ([#12110](https://github.com/typeorm/typeorm/pull/12110) by [@pkuczynski](https://github.com/pkuczynski))
 - **Virtual property handling in schema builder** — schema builder no longer attempts to create columns for virtual properties ([#11000](https://github.com/typeorm/typeorm/pull/11000) by [@skyran1278](https://github.com/skyran1278))
 - **Nameless `TableForeignKey` drop** — dropping a foreign key without an explicit name no longer fails ([#10744](https://github.com/typeorm/typeorm/pull/10744) by [@taichunmin](https://github.com/taichunmin))
 - **`getPendingMigrations` no longer creates the migrations table** — checking for pending migrations no longer has side effects ([#11672](https://github.com/typeorm/typeorm/pull/11672) by [@pkuczynski](https://github.com/pkuczynski))
@@ -151,9 +160,10 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 ## Security fixes
 
 - **SQL injection prevention** — parameterized queries and escaped identifiers are now used across all drivers for schema introspection and DDL methods, preventing SQL injection via database/schema/table/column names ([#12207](https://github.com/typeorm/typeorm/pull/12207) by [@pkuczynski](https://github.com/pkuczynski), [#12197](https://github.com/typeorm/typeorm/pull/12197) by [@pkuczynski](https://github.com/pkuczynski), [#12185](https://github.com/typeorm/typeorm/pull/12185) by [@pkuczynski](https://github.com/pkuczynski))
+- **OrderBy condition validation** — QueryBuilder `orderBy` and `addOrderBy` now validate condition values at runtime, preventing injection via order expressions ([#12217](https://github.com/typeorm/typeorm/pull/12217) by [@pkuczynski](https://github.com/pkuczynski))
 
 ## Performance improvements
 
 - **PostgreSQL / CockroachDB: batched DROP in `clearDatabase()`** — consolidates individual DROP statements into single batched queries, significantly reducing round-trips during test setup ([#12164](https://github.com/typeorm/typeorm/pull/12164), [#12159](https://github.com/typeorm/typeorm/pull/12159) by [@pkuczynski](https://github.com/pkuczynski))
 
-<!-- Built against e2284d81ef198948245ba77a614a9d45536f13d4 -->
+<!-- Built against 50ba2dba8 -->

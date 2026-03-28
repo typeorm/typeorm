@@ -2,6 +2,18 @@
 
 This is the migration guide for upgrading from version `0.3.x` to `1.0`.
 
+## Automated migration
+
+The `@typeorm/codemod` package can automate most of the breaking changes described in this guide:
+
+```bash
+npx @typeorm/codemod v1 src/
+```
+
+This will update your code in place — use `--dry` to preview changes without writing. The codemod handles import renames, API replacements, find option syntax, dependency upgrades, and more. Changes that cannot be automated are left as `TODO` comments for manual review.
+
+See the [codemod README](https://github.com/typeorm/typeorm/tree/master/packages/codemod) for full usage and options.
+
 ## Platform requirements
 
 ### Node.js 20+
@@ -199,6 +211,34 @@ new DataSource({
             userName: "user",
             password: "pass",
         },
+    },
+    // ...
+})
+```
+
+#### `options.isolation` and `options.connectionIsolationLevel`
+
+The `options.isolation` option on `SqlServerDataSourceOptions` was renamed to `options.isolationLevel` as was not the correct option in the first place. Also note that the value format has changed from `READ_COMMITTED` to `READ COMMITTED` (underscore replaced with space) to match the expected format used by the TypeORM throughout the codebase. Update your DataSource options accordingly:
+
+```typescript
+// Before
+new DataSource({
+    type: "mssql",
+    options: {
+        isolation: "READ_COMMITTED",
+        connectionIsolationLevel: "READ_COMMITTED",
+        // ...
+    },
+    // ...
+})
+
+// After
+new DataSource({
+    type: "mssql",
+    options: {
+        isolationLevel: "READ COMMITTED",
+        connectionIsolationLevel: "READ COMMITTED",
+        // ...
     },
     // ...
 })
@@ -699,9 +739,9 @@ The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
 
-### `printSql` renamed to `logQuery`
+### `printSql` removed
 
-The `printSql()` method on query builders has been renamed to `logQuery()` to better reflect its behavior — it logs the query through the configured logger rather than printing to stdout:
+The `printSql()` method on query builders has been removed. It was redundant because all executed queries are already automatically logged through the configured logger when query logging is enabled. Use `getSql()` or `getQueryAndParameters()` to inspect the generated SQL instead:
 
 ```typescript
 // Before
@@ -712,13 +752,25 @@ const users = await dataSource
     .printSql()
     .getMany()
 
-// After
-const users = await dataSource
+// After — inspect SQL before executing
+const qb = dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .where("user.id = :id", { id: 1 })
-    .logQuery()
-    .getMany()
+
+console.log(qb.getSql())
+// or: const [sql, params] = qb.getQueryAndParameters()
+
+const users = await qb.getMany()
+```
+
+To log all executed queries automatically, enable query logging in your DataSource:
+
+```typescript
+new DataSource({
+    // ...
+    logging: ["query"],
+})
 ```
 
 ### `onConflict` removed

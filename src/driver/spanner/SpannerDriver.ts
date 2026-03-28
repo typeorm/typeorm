@@ -19,6 +19,7 @@ import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { SpannerDataSourceOptions } from "./SpannerDataSourceOptions"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
@@ -27,6 +28,21 @@ import { SpannerQueryRunner } from "./SpannerQueryRunner"
  * Organizes communication with Spanner DBMS.
  */
 export class SpannerDriver implements Driver {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://cloud.google.com/spanner/docs/transactions
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------

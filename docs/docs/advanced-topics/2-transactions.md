@@ -44,17 +44,22 @@ await myDataSource.manager.transaction(
 )
 ```
 
-Isolation level implementations are _not_ agnostic across all databases.
+Isolation level implementations are _not_ agnostic across all databases. Each driver declares which levels it supports, and TypeORM will throw an error if you request an unsupported level.
 
-The following database drivers support the standard isolation levels (`READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`):
+| Driver          | Supported isolation levels                                                          |
+| --------------- | ----------------------------------------------------------------------------------- |
+| MySQL / MariaDB | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| PostgreSQL      | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| CockroachDB     | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| SQL Server      | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`, `SNAPSHOT` |
+| Oracle          | `READ COMMITTED`, `SERIALIZABLE`                                                    |
+| SAP HANA        | `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`                                 |
+| SQLite          | `READ UNCOMMITTED`\*, `SERIALIZABLE`                                                |
+| Spanner         | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
 
-- MySQL
-- Postgres
-- SQL Server
+\* SQLite's `READ UNCOMMITTED` only takes effect when [shared-cache mode](https://www.sqlite.org/sharedcache.html) is enabled. In the default mode, SQLite always uses `SERIALIZABLE` isolation regardless of the setting.
 
-**SQLite** defaults transactions to `SERIALIZABLE`, but if _shared cache mode_ is enabled, a transaction can use the `READ UNCOMMITTED` isolation level.
-
-**Oracle** only supports the `READ COMMITTED` and `SERIALIZABLE` isolation levels.
+SQL Server also supports setting a default isolation level via data source options (`isolationLevel` and `connectionIsolationLevel`), but these are subject to an [upstream pool limitation](../drivers/microsoft-sqlserver.md#connection-pool-does-not-reset-isolation-level). Per-transaction isolation levels are not affected.
 
 ## Using `QueryRunner` to create and control state of single database connection
 

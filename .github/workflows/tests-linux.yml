@@ -1,4 +1,5 @@
 name: tests-linux
+
 on:
   workflow_call:
     inputs:
@@ -8,17 +9,14 @@ on:
 
 jobs:
   cockroachdb:
-    # CockroachDB is slow, run less often so it doesn't block other workflows
-    if: ${{ inputs.node-version >= 22 }}
+    if: ${{ inputs.node-version >= 24 }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4, 5, 6]
-
     env:
       TOTAL_SHARDS: 6
-
     services:
       cockroachdb:
         image: cockroachdb/cockroach:v24.3.8
@@ -31,20 +29,13 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "cockroachdb"))' ormconfig.sample.json > ormconfig.json
 
       - name: Split test files for shard ${{ matrix.shard }}/${{ env.TOTAL_SHARDS }}
@@ -52,19 +43,14 @@ jobs:
           find build/compiled/test -name "*.test.js" | sort | awk "NR % $TOTAL_SHARDS == ${{ matrix.shard }} - 1" \
             | jq -R -s 'split("\n") | map(select(length > 0))' \
             | jq -s '.[0] as $files | .[1] | .spec = $files | .recursive = false' - .mocharc.json > .mocharc.${{ matrix.shard }}.json
-          echo "Shard ${{ matrix.shard }}/$TOTAL_SHARDS: $(jq '.spec | length' .mocharc.${{ matrix.shard }}.json) test files"
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mocharc-shard-${{ matrix.shard }}
-          path: .mocharc.${{ matrix.shard }}.json
+          echo "Shard ${{ matrix.shard }}/$TOTAL_SHARDS: $(jq '.spec | length' .mocharc.${{ matrix.shard }}.json) test files"
 
       - run: pnpm exec c8 mocha --bail --config .mocharc.${{ matrix.shard }}.json
 
-      - name: Coveralls Parallel
-        uses: coverallsapp/github-action@v2
+      - uses: coverallsapp/github-action@v2
         with:
-          flag-name: crdb-shard:${{ matrix.shard }}-node:${{ inputs.node-version }}
+          flag-name: cockroachdb-shard:${{ matrix.shard }}-node:${{ inputs.node-version }}
           parallel: true
 
   mongodb:
@@ -74,20 +60,13 @@ jobs:
         image: mongo:8.2.5
         ports:
           - "27017:27017"
-
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "mongodb"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
@@ -107,20 +86,13 @@ jobs:
           SA_PASSWORD: Admin12345
           ACCEPT_EULA: Y
           MSSQL_PID: Express
-
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "mssql"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
@@ -150,20 +122,13 @@ jobs:
           MYSQL_USER: username
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
-
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: |
           jq 'map(select(.type | IN($ARGS.positional[])))' \
             ormconfig.sample.json \
@@ -198,20 +163,13 @@ jobs:
           MYSQL_USER: username
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
-
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: |
           jq 'map(select(.type | IN($ARGS.positional[])))' \
             ormconfig.sample.json \
@@ -229,17 +187,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "better-sqlite3"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
@@ -252,17 +204,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "sqljs"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
@@ -294,17 +240,11 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "postgres"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
@@ -320,17 +260,11 @@ jobs:
 
       - run: docker compose up oracle --detach
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "oracle"))' ormconfig.sample.json > ormconfig.json
       - run: docker compose up oracle --no-recreate --wait
       - run: sleep 3 # wait for oracle to be fully ready
@@ -348,17 +282,11 @@ jobs:
 
       - run: docker compose up hanaexpress --detach
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-          path: build/
+          download-build: true
 
-      - run: pnpm install
       - run: jq 'map(select(.type == "sap"))' ormconfig.sample.json > ormconfig.json
       - run: docker compose up hanaexpress --no-recreate --wait
       - run: pnpm exec c8 pnpm run test:ci

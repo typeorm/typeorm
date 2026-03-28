@@ -44,12 +44,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: "pnpm"
-      - run: pnpm install
+      - uses: ./.github/actions/setup-node
+
       - run: |
           jq 'map(select(.type | IN($ARGS.positional[])))' \
             ormconfig.sample.json \
@@ -60,6 +56,7 @@ jobs:
               "postgres" \
               "sqljs" \
             > ormconfig.json
+
       - run: pnpm exec stryker run
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
