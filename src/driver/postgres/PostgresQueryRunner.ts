@@ -25,9 +25,10 @@ import { DriverUtils } from "../DriverUtils"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { PostgresDriver } from "./PostgresDriver"
+import { PostgresDriver } from "./PostgresDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -168,6 +169,11 @@ export class PostgresQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        validateIsolationLevel(
+            PostgresDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
+
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")

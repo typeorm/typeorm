@@ -5,4 +5,8 @@ const dataSource = new DataSource({
     // TODO(typeorm-v1): `domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`
     domain: "MYDOMAIN",
     username: "user",
+    options: {
+        isolationLevel: "READ COMMITTED",
+        connectionIsolationLevel: "REPEATABLE READ",
+    },
 })

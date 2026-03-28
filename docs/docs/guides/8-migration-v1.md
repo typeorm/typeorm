@@ -216,6 +216,34 @@ new DataSource({
 })
 ```
 
+#### `options.isolation` and `options.connectionIsolationLevel`
+
+The `options.isolation` option on `SqlServerDataSourceOptions` was renamed to `options.isolationLevel` as was not the correct option in the first place. Also note that the value format has changed from `READ_COMMITTED` to `READ COMMITTED` (underscore replaced with space) to match the expected format used by the TypeORM throughout the codebase. Update your DataSource options accordingly:
+
+```typescript
+// Before
+new DataSource({
+    type: "mssql",
+    options: {
+        isolation: "READ_COMMITTED",
+        connectionIsolationLevel: "READ_COMMITTED",
+        // ...
+    },
+    // ...
+})
+
+// After
+new DataSource({
+    type: "mssql",
+    options: {
+        isolationLevel: "READ COMMITTED",
+        connectionIsolationLevel: "READ COMMITTED",
+        // ...
+    },
+    // ...
+})
+```
+
 ### SAP HANA
 
 Several deprecated SAP HANA connection aliases were removed.

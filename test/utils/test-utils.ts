@@ -429,6 +429,22 @@ export async function createTestingConnections(
                 await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
                 )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING sql.txn.repeatable_read_isolation.enabled = 'true';`,
+                )
+            }
+
+            if (connection.driver.options.type === "mysql") {
+                await queryRunner.query(
+                    `UPDATE performance_schema.setup_instruments
+                        SET ENABLED = 'YES', TIMED = 'YES'
+                        WHERE NAME = 'transaction'`,
+                )
+                await queryRunner.query(
+                    `UPDATE performance_schema.setup_consumers
+                        SET ENABLED = 'YES'
+                        WHERE NAME LIKE 'events_transactions%'`,
+                )
             }
 
             // create new schemas

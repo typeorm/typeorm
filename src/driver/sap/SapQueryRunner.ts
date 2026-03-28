@@ -25,9 +25,10 @@ import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { SapDriver } from "./SapDriver"
+import { SapDriver } from "./SapDriver"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -106,6 +107,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        validateIsolationLevel(
+            SapDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         if (

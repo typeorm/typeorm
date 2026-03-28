@@ -7,7 +7,7 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { View } from "../../schema-builder/view/View"
 import { Query } from "../Query"
-import type { AbstractSqliteDriver } from "./AbstractSqliteDriver"
+import { AbstractSqliteDriver } from "./AbstractSqliteDriver"
 import type { ReadStream } from "../../platform/PlatformTools"
 import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -15,6 +15,7 @@ import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TransactionAlreadyStartedError, TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
@@ -73,6 +74,11 @@ export abstract class AbstractSqliteQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        validateIsolationLevel(
+            AbstractSqliteDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
+
         if (this.driver.transactionSupport === "none")
             throw new TypeORMError(
                 `Transactions aren't supported by ${this.dataSource.driver.options.type}.`,
@@ -83,15 +89,6 @@ export abstract class AbstractSqliteQueryRunner
             this.driver.transactionSupport === "simple"
         )
             throw new TransactionAlreadyStartedError()
-
-        if (
-            isolationLevel &&
-            isolationLevel !== "READ UNCOMMITTED" &&
-            isolationLevel !== "SERIALIZABLE"
-        )
-            throw new TypeORMError(
-                `SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`,
-            )
 
         this.isTransactionActive = true
         try {

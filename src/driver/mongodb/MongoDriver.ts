@@ -22,6 +22,7 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { MongoDataSourceOptions } from "./MongoDataSourceOptions"
 import { MongoQueryRunner } from "./MongoQueryRunner"
@@ -30,6 +31,15 @@ import { MongoQueryRunner } from "./MongoQueryRunner"
  * Organizes communication with MongoDB.
  */
 export class MongoDriver implements Driver {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------

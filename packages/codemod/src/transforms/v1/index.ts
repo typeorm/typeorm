@@ -3,7 +3,7 @@ import * as columnUnsignedNumeric from "./column-unsigned-numeric"
 import * as columnWidthZerofill from "./column-width-zerofill"
 import * as connectionToDataSource from "./connection-to-datasource"
 import * as datasourceMongodb from "./datasource-mongodb"
-import * as datasourceMssqlDomain from "./datasource-mssql-domain"
+import * as datasourceMssql from "./datasource-mssql"
 import * as datasourceMysqlConnector from "./datasource-mysql-connector"
 import * as datasourceName from "./datasource-name"
 import * as datasourceSap from "./datasource-sap"
@@ -58,7 +58,7 @@ export const transforms = [
     datasourceMongodb,
     mongodbStats,
     mongodbTypes,
-    datasourceMssqlDomain,
+    datasourceMssql,
     datasourceSap,
     datasourceName,
     columnUnsignedNumeric,

@@ -21,6 +21,8 @@ import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
@@ -34,6 +36,22 @@ import { SqlServerQueryRunner } from "./SqlServerQueryRunner"
  * Organizes communication with SQL Server DBMS.
  */
 export class SqlServerDriver implements Driver {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://learn.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+        "SNAPSHOT",
+    ]
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -1180,15 +1198,40 @@ export class SqlServerDriver implements Driver {
             DriverUtils.buildDriverOptions(credentials),
         ) // todo: do it better way
 
+        let isolationLevel: number | undefined
+        if (options.options?.isolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.isolationLevel,
+            )
+            isolationLevel = this.convertIsolationLevel(
+                options.options.isolationLevel,
+            )
+        }
+        let connectionIsolationLevel: number | undefined
+        if (options.options?.connectionIsolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.connectionIsolationLevel,
+            )
+            connectionIsolationLevel = this.convertIsolationLevel(
+                options.options.connectionIsolationLevel,
+            )
+        }
+
         // build connection options for the driver
         const connectionOptions = Object.assign(
             {},
             {
-                connectionTimeout: this.options.connectionTimeout,
-                requestTimeout: this.options.requestTimeout,
-                stream: this.options.stream,
-                pool: this.options.pool,
-                options: this.options.options,
+                connectionTimeout: options.connectionTimeout,
+                requestTimeout: options.requestTimeout,
+                stream: options.stream,
+                pool: options.pool,
+                options: {
+                    ...options.options,
+                    isolationLevel,
+                    connectionIsolationLevel,
+                },
             },
             {
                 server: credentials.host,
@@ -1234,5 +1277,29 @@ export class SqlServerDriver implements Driver {
                 ok(connection)
             })
         })
+    }
+
+    /**
+     * Converts string literal of isolation level to enum.
+     * The underlying mssql driver requires an enum for the isolation level.
+     * @param isolation
+     */
+    convertIsolationLevel(isolation: IsolationLevel): number {
+        const ISOLATION_LEVEL = this.mssql.ISOLATION_LEVEL
+        switch (isolation) {
+            case "READ UNCOMMITTED":
+                return ISOLATION_LEVEL.READ_UNCOMMITTED
+            case "REPEATABLE READ":
+                return ISOLATION_LEVEL.REPEATABLE_READ
+            case "SERIALIZABLE":
+                return ISOLATION_LEVEL.SERIALIZABLE
+            case "SNAPSHOT":
+                return ISOLATION_LEVEL.SNAPSHOT
+
+            case "READ COMMITTED":
+                return ISOLATION_LEVEL.READ_COMMITTED
+            default:
+                throw new TypeORMError(`Unknown isolation level "${isolation}"`)
+        }
     }
 }

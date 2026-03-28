@@ -19,6 +19,7 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { ReactNativeDataSourceOptions } from "./ReactNativeDataSourceOptions"
 import { ReactNativeQueryRunner } from "./ReactNativeQueryRunner"
@@ -36,6 +37,19 @@ type DatabasesMap = Record<
  * Organizes communication with sqlite DBMS.
  */
 export class ReactNativeDriver implements Driver {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://www.sqlite.org/isolation.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "SERIALIZABLE",
+    ]
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
