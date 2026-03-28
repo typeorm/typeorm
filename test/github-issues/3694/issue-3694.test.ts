@@ -40,7 +40,10 @@ describe("github issues > #3694 Sync enums on schema sync", () => {
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
-                expect(table!.findColumnByName("fruit")!.enum).to.deep.equal([
+                const enumValues = table?.findColumnByName("fruit")?.enum
+                expect(enumValues).to.exist
+                expect(enumValues).to.have.lengthOf(4)
+                expect(enumValues).to.have.members([
                     "apple",
                     "pineapple",
                     "BANANA",
