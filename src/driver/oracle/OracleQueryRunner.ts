@@ -2476,26 +2476,39 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const tablesSql = `SELECT "TABLE_NAME", "OWNER" FROM "ALL_TABLES"`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
-            const tablesCondition = tableNames
-                .map((tableName) => {
-                    const parts = tableName.split(".")
+            // Build conditions with bind parameters to prevent SQL injection
+            const conditions: string[] = []
+            const parameters: string[] = []
+            let paramIndex = 1
 
-                    if (parts.length >= 3) {
-                        const [, schema, name] = parts
-                        return `("OWNER" = '${schema}' AND "TABLE_NAME" = UPPER('${name}'))`
-                    } else if (parts.length === 2) {
-                        const [schema, name] = parts
-                        return `("OWNER" = '${schema}' AND "TABLE_NAME" = UPPER('${name}'))`
-                    } else if (parts.length === 1) {
-                        const [name] = parts
-                        return `("TABLE_NAME" = UPPER('${name}'))`
-                    } else {
-                        return `(1=0)`
-                    }
-                })
-                .join(" OR ")
-            const tablesSql = `SELECT "TABLE_NAME", "OWNER" FROM "ALL_TABLES" WHERE ${tablesCondition}`
-            dbTables.push(...(await this.query(tablesSql)))
+            for (const tableName of tableNames) {
+                const parts = tableName.split(".")
+
+                if (parts.length >= 3) {
+                    const [, schema, name] = parts
+                    // Support both exact case and UPPER case for table names
+                    conditions.push(`("OWNER" = :${paramIndex} AND ("TABLE_NAME" = :${paramIndex + 1} OR "TABLE_NAME" = UPPER(:${paramIndex + 1})))`)
+                    parameters.push(schema, name)
+                    paramIndex += 2
+                } else if (parts.length === 2) {
+                    const [schema, name] = parts
+                    // Support both exact case and UPPER case for table names
+                    conditions.push(`("OWNER" = :${paramIndex} AND ("TABLE_NAME" = :${paramIndex + 1} OR "TABLE_NAME" = UPPER(:${paramIndex + 1})))`)
+                    parameters.push(schema, name)
+                    paramIndex += 2
+                } else if (parts.length === 1) {
+                    const [name] = parts
+                    // Support both exact case and UPPER case for table names
+                    conditions.push(`("TABLE_NAME" = :${paramIndex} OR "TABLE_NAME" = UPPER(:${paramIndex}))`)
+                    parameters.push(name)
+                    paramIndex += 1
+                }
+            }
+
+            if (conditions.length > 0) {
+                const tablesSql = `SELECT "TABLE_NAME", "OWNER" FROM "ALL_TABLES" WHERE ${conditions.join(" OR ")}`
+                dbTables.push(...(await this.query(tablesSql, parameters)))
+            }
         }
 
         // if tables were not found in the db, no need to proceed
@@ -2504,11 +2517,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         // load tables, columns, indices and foreign keys
-        const columnsCondition = dbTables
-            .map(({ TABLE_NAME, OWNER }) => {
-                return `("C"."OWNER" = '${OWNER}' AND "C"."TABLE_NAME" = '${TABLE_NAME}')`
-            })
-            .join(" OR ")
+        // Build conditions with bind parameters to prevent SQL injection
+        const columnsParameters: string[] = []
+        let colParamIndex = 1
+        const columnsConditions = dbTables.map(({ TABLE_NAME, OWNER }) => {
+            const condition = `("C"."OWNER" = :${colParamIndex} AND "C"."TABLE_NAME" = :${colParamIndex + 1})`
+            columnsParameters.push(OWNER, TABLE_NAME)
+            colParamIndex += 2
+            return condition
+        })
+        const columnsCondition = columnsConditions.join(" OR ")
         const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition})`
 
         const indicesSql =
@@ -2540,10 +2558,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             dbForeignKeys,
             dbConstraints,
         ]: ObjectLiteral[][] = await Promise.all([
-            this.query(columnsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql),
-            this.query(constraintsSql),
+            this.query(columnsSql, columnsParameters),
+            this.query(indicesSql, columnsParameters),
+            this.query(foreignKeysSql, columnsParameters),
+            this.query(constraintsSql, columnsParameters),
         ])
 
         // create tables for loaded tables
