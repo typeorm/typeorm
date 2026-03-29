@@ -751,6 +751,25 @@ describe("query builder > locking", () => {
             }),
         ))
 
+    it("should allow locking a relation of a relation with select", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    return
+                }
+
+                await dataSource.manager.transaction((entityManager) =>
+                    entityManager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: 1 })
+                        .setLock("pessimistic_write", undefined, ["images"])
+                        .getOne(),
+                ).should.not.be.rejected
+            }),
+        ))
+
     it('skip_locked with "pessimistic_read"', () => {
         for (const dataSource of dataSources) {
             if (

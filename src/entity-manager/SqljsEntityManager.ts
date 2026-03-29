@@ -16,9 +16,9 @@ export class SqljsEntityManager extends EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource, queryRunner?: QueryRunner) {
-        super(connection, queryRunner)
-        this.driver = connection.driver as SqljsDriver
+    constructor(dataSource: DataSource, queryRunner?: QueryRunner) {
+        super(dataSource, queryRunner)
+        this.driver = dataSource.driver as SqljsDriver
     }
 
     // -------------------------------------------------------------------------

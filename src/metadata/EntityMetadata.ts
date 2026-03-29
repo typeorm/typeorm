@@ -35,9 +35,17 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection where this entity metadata is created.
+     * DataSource where this entity metadata is created.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource where this entity metadata is created.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Metadata arguments used to build this entity metadata.
@@ -521,14 +529,14 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
-        connection: DataSource
+        dataSource: DataSource
         inheritanceTree?: Function[]
         inheritancePattern?: "STI" /*|"CTI"*/
         tableTree?: TreeMetadataArgs
         parentClosureEntityMetadata?: EntityMetadata
         args: TableMetadataArgs
     }) {
-        this.connection = options.connection
+        this.dataSource = options.dataSource
         this.inheritanceTree = options.inheritanceTree || []
         this.inheritancePattern = options.inheritancePattern
         this.treeType = options.tableTree ? options.tableTree.type : undefined
@@ -574,12 +582,12 @@ export class EntityMetadata {
         }
 
         // add "typename" property
-        if (this.connection.options.typename) {
-            ret[this.connection.options.typename] = this.targetName
+        if (this.dataSource.options.typename) {
+            ret[this.dataSource.options.typename] = this.targetName
         }
 
         this.lazyRelations.forEach((relation) =>
-            this.connection.relationLoader.enableLazyLoad(
+            this.dataSource.relationLoader.enableLazyLoad(
                 relation,
                 ret,
                 queryRunner,
@@ -968,10 +976,10 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     build() {
-        const namingStrategy = this.connection.namingStrategy
-        const entityPrefix = this.connection.options.entityPrefix
+        const namingStrategy = this.dataSource.namingStrategy
+        const entityPrefix = this.dataSource.options.entityPrefix
         const entitySkipConstructor =
-            this.connection.options.entitySkipConstructor
+            this.dataSource.options.entitySkipConstructor
 
         this.engine = this.tableMetadataArgs.engine
         this.database =
@@ -986,8 +994,8 @@ export class EntityMetadata {
             this.parentEntityMetadata
         ) {
             this.schema = this.parentEntityMetadata.schema
-        } else if (this.connection.options?.hasOwnProperty("schema")) {
-            this.schema = (this.connection.options as any).schema
+        } else if (this.dataSource.options?.hasOwnProperty("schema")) {
+            this.schema = (this.dataSource.options as any).schema
         }
         this.givenTableName =
             this.tableMetadataArgs.type === "entity-child" &&
@@ -1019,10 +1027,10 @@ export class EntityMetadata {
 
             if (
                 this.tableMetadataArgs.type === "junction" &&
-                this.connection.driver.maxAliasLength &&
-                this.connection.driver.maxAliasLength > 0 &&
+                this.dataSource.driver.maxAliasLength &&
+                this.dataSource.driver.maxAliasLength > 0 &&
                 this.tableNameWithoutPrefix.length >
-                    this.connection.driver.maxAliasLength
+                    this.dataSource.driver.maxAliasLength
             ) {
                 // note: we are not using DriverUtils.buildAlias here because we would like to avoid
                 // hashed table names. However, current algorithm also isn't perfect, but we cannot
@@ -1044,7 +1052,7 @@ export class EntityMetadata {
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid =
             this.tableMetadataArgs.withoutRowid === true ? true : false
-        this.tablePath = this.connection.driver.buildTableName(
+        this.tablePath = this.dataSource.driver.buildTableName(
             this.tableName,
             this.schema,
             this.database,

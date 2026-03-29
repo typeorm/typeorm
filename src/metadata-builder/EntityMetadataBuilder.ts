@@ -473,7 +473,7 @@ export class EntityMetadataBuilder {
         }
 
         return new EntityMetadata({
-            connection: this.dataSource,
+            dataSource: this.dataSource,
             args: tableArgs,
             inheritanceTree: inheritanceTree,
             tableTree: tableTree,
@@ -566,7 +566,6 @@ export class EntityMetadataBuilder {
                 }
 
                 const column = new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata,
                     args,
                 })
@@ -594,8 +593,7 @@ export class EntityMetadataBuilder {
             )
             if (!discriminatorColumn) {
                 discriminatorColumn = new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     args: {
                         target: entityMetadata.target,
                         mode: "virtual",
@@ -655,8 +653,7 @@ export class EntityMetadataBuilder {
         if (entityMetadata.treeType === "materialized-path") {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     materializedPath: true,
                     args: {
                         target: entityMetadata.target,
@@ -675,7 +672,6 @@ export class EntityMetadataBuilder {
             const { left, right } = namingStrategy.nestedSetColumnNames
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     nestedSetLeft: true,
                     args: {
@@ -693,8 +689,7 @@ export class EntityMetadataBuilder {
             )
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     nestedSetRight: true,
                     args: {
                         target: entityMetadata.target,
@@ -857,7 +852,6 @@ export class EntityMetadataBuilder {
                 .filterColumns(targets)
                 .map((args) => {
                     return new ColumnMetadata({
-                        connection: this.dataSource,
                         entityMetadata,
                         embeddedMetadata,
                         args,

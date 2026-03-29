@@ -38,11 +38,8 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "ticket",
-                            innerJoinAndSelect: {
-                                request: "ticket.request",
-                            },
+                        relations: {
+                            request: true,
                         },
                     })
 
@@ -63,11 +60,8 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "request",
-                            innerJoinAndSelect: {
-                                ticket: "request.ticket",
-                            },
+                        relations: {
+                            ticket: true,
                         },
                     })
 
@@ -113,9 +107,8 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                         where: {
                             id: 2,
                         },
-                        join: {
-                            alias: "request",
-                            innerJoinAndSelect: { ticket: "request.ticket" },
+                        relations: {
+                            ticket: true,
                         },
                     },
                 )

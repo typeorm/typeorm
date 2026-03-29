@@ -57,11 +57,8 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            manyCategories: "post.manyCategories",
-                        },
+                    relations: {
+                        manyCategories: true,
                     },
                 })
 
@@ -101,9 +98,8 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "category",
-                        leftJoinAndSelect: { manyPosts: "category.manyPosts" },
+                    relations: {
+                        manyPosts: true,
                     },
                 })
 
@@ -153,11 +149,8 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            manyCategories: "post.manyCategories",
-                        },
+                    relations: {
+                        manyCategories: true,
                     },
                 })
 
@@ -203,9 +196,8 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "category",
-                        leftJoinAndSelect: { manyPosts: "category.manyPosts" },
+                    relations: {
+                        manyPosts: true,
                     },
                 })
 
@@ -241,9 +233,8 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: { categories: "post.categories" },
+                    relations: {
+                        categories: true,
                     },
                 })
 
@@ -277,9 +268,8 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "category",
-                        leftJoinAndSelect: { post: "category.post" },
+                    relations: {
+                        post: true,
                     },
                 })
 
@@ -313,9 +303,8 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: { categories: "post.categories" },
+                    relations: {
+                        categories: true,
                     },
                 })
 
@@ -349,9 +338,8 @@ describe.skip("repository > set/add/remove relation methods", function () {
                     where: {
                         id: 1,
                     },
-                    join: {
-                        alias: "category",
-                        leftJoinAndSelect: { post: "category.post" },
+                    relations: {
+                        post: true,
                     },
                 })
 

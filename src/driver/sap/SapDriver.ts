@@ -23,6 +23,7 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { SapDataSourceOptions } from "./SapDataSourceOptions"
 import { SapQueryRunner } from "./SapQueryRunner"
@@ -33,13 +34,35 @@ import { SapQueryRunner } from "./SapQueryRunner"
  */
 export class SapDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://help.sap.com/docs/SAP_HANA_PLATFORM/4fe29514fd584807ac9f2a04f6754767/d91cbe21f56e4b82b3b7e4ff2b35acf8.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * SAP HANA Client Pool instance.
@@ -66,7 +89,7 @@ export class SapDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: SapDataSourceOptions
 
@@ -236,9 +259,9 @@ export class SapDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as SapDataSourceOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as SapDataSourceOptions
         this.loadDependencies()
 
         this.database = DriverUtils.buildDriverOptions(this.options).database
@@ -296,7 +319,7 @@ export class SapDriver implements Driver {
         this.poolErrorHandler =
             this.options.pool?.poolErrorHandler ??
             ((error: Error) => {
-                this.connection.logger.log(
+                this.dataSource.logger.log(
                     "warn",
                     `SAP HANA pool raised an error: ${error}`,
                 )
@@ -380,7 +403,7 @@ export class SapDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**

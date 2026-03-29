@@ -142,7 +142,7 @@ export class EmbeddedMetadata {
     relationsFromTree: RelationMetadata[] = []
 
     /**
-     * Relations of this embed and all relations from its child embeds.
+     * Listeners of this embed and all listeners from its child embeds.
      */
     listenersFromTree: EntityListenerMetadata[] = []
 

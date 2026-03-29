@@ -216,7 +216,7 @@ describe("relations > eager relations > basic", () => {
                 // Build the query to inspect the generated SQL
                 const sql = dataSource.manager
                     .getRepository(Editor)
-                    .metadata.connection.createQueryBuilder(Editor, "Editor")
+                    .metadata.dataSource.createQueryBuilder(Editor, "Editor")
                     .setFindOptions({
                         where: { userId: 1 },
                         relations: {

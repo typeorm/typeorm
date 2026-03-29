@@ -426,7 +426,7 @@ describe("DataSource", () => {
 
                     const loadedSubject = await subjectRepo.findOne({
                         where: { id: subject.id },
-                        relations: ["professor", "assistant"],
+                        relations: { professor: true, assistant: true },
                     })
 
                     const site = siteRepo.create({ name: "Main Campus" })
@@ -440,7 +440,7 @@ describe("DataSource", () => {
 
                     const loadedSiteLocation = await siteLocationRepo.findOne({
                         where: { id: siteLocation.id },
-                        relations: ["site"],
+                        relations: { site: true },
                     })
 
                     expect(loadedSiteLocation).to.not.be.null

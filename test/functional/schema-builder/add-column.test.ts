@@ -40,8 +40,7 @@ describe("schema builder > add column", () => {
                 }
 
                 const columnMetadata1 = new ColumnMetadata({
-                    connection: dataSource,
-                    entityMetadata: postMetadata!,
+                    entityMetadata: postMetadata,
                     args: <ColumnMetadataArgs>{
                         target: Post,
                         propertyName: "secondId",
@@ -59,8 +58,7 @@ describe("schema builder > add column", () => {
                 columnMetadata1.build(dataSource)
 
                 const columnMetadata2 = new ColumnMetadata({
-                    connection: dataSource,
-                    entityMetadata: postMetadata!,
+                    entityMetadata: postMetadata,
                     args: <ColumnMetadataArgs>{
                         target: Post,
                         propertyName: "description",

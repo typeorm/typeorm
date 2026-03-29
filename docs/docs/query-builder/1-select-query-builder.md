@@ -798,18 +798,30 @@ const sql = dataSource
     .getSql()
 ```
 
-For debugging purposes you can use `logQuery`:
+For debugging purposes you can inspect the generated SQL using `getSql()` or `getQuery()`:
 
 ```typescript
-const users = await dataSource
+const qb = dataSource
     .createQueryBuilder("user")
     .where("user.firstName = :firstName", { firstName: "Timber" })
     .orWhere("user.lastName = :lastName", { lastName: "Saw" })
-    .logQuery()
-    .getMany()
+
+console.log(qb.getSql())
+// SELECT ... WHERE "user"."firstName" = $1 OR "user"."lastName" = $2
+
+const users = await qb.getMany()
 ```
 
-This query will return users and log the used sql statement through the configured logger.
+`getSql()` returns the SQL with parameter placeholders. `getQuery()` returns the same SQL string. To also see the parameter values, use `getQueryAndParameters()` which returns a `[sql, parameters]` tuple.
+
+All executed queries are also automatically logged through the configured logger when you enable query logging in your DataSource options:
+
+```typescript
+new DataSource({
+    // ...
+    logging: ["query"],
+})
+```
 
 ## Getting raw results
 

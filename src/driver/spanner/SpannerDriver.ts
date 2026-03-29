@@ -12,12 +12,14 @@ import { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { OrmUtils } from "../../util/OrmUtils"
-import type { Driver, ReturningType } from "../Driver"
+import type { Driver } from "../Driver"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { SpannerDataSourceOptions } from "./SpannerDataSourceOptions"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
@@ -27,13 +29,36 @@ import { SpannerQueryRunner } from "./SpannerQueryRunner"
  */
 export class SpannerDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     * @see https://cloud.google.com/spanner/docs/transactions
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Cloud Spanner underlying library.
@@ -60,7 +85,7 @@ export class SpannerDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: SpannerDataSourceOptions
 
@@ -176,9 +201,9 @@ export class SpannerDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as SpannerDataSourceOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as SpannerDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
 
         // load mysql package
@@ -215,7 +240,7 @@ export class SpannerDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**

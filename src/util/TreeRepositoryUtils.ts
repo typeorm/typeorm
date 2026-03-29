@@ -30,11 +30,11 @@ export class TreeRepositoryUtils {
             const id = rawResult[alias + "_" + referencedColumnName]
             const parentId = rawResult[alias + "_" + joinColumnName]
             return {
-                id: manager.connection.driver.prepareHydratedValue(
+                id: manager.dataSource.driver.prepareHydratedValue(
                     id,
                     referencedColumn,
                 ),
-                parentId: manager.connection.driver.prepareHydratedValue(
+                parentId: manager.dataSource.driver.prepareHydratedValue(
                     parentId,
                     joinColumn,
                 ),

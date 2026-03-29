@@ -33,11 +33,8 @@ describe("cascades > should insert by cascades from both sides", () => {
 
                 // now check
                 const posts = await connection.manager.find(Post, {
-                    join: {
-                        alias: "post",
-                        innerJoinAndSelect: {
-                            details: "post.details",
-                        },
+                    relations: {
+                        details: true,
                     },
                 })
 
@@ -68,11 +65,8 @@ describe("cascades > should insert by cascades from both sides", () => {
                 const loadedDetails = await connection.manager.find(
                     PostDetails,
                     {
-                        join: {
-                            alias: "details",
-                            innerJoinAndSelect: {
-                                post: "details.post",
-                            },
+                        relations: {
+                            post: true,
                         },
                     },
                 )

@@ -22,6 +22,7 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { MongoDataSourceOptions } from "./MongoDataSourceOptions"
 import { MongoQueryRunner } from "./MongoQueryRunner"
@@ -30,6 +31,15 @@ import { MongoQueryRunner } from "./MongoQueryRunner"
  * Organizes communication with MongoDB.
  */
 export class MongoDriver implements Driver {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -50,7 +60,7 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: MongoDataSourceOptions
 
@@ -203,11 +213,11 @@ export class MongoDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {
-        this.options = connection.options as MongoDataSourceOptions
+    constructor(protected dataSource: DataSource) {
+        this.options = dataSource.options as MongoDataSourceOptions
 
         // validate options to make sure everything is correct and driver will be able to establish connection
-        this.validateOptions(connection.options)
+        this.validateOptions(dataSource.options)
 
         // load mongodb package
         this.loadDependencies()
@@ -232,9 +242,9 @@ export class MongoDriver implements Driver {
             this.buildConnectionOptions(options),
         )
 
-        this.queryRunner = new MongoQueryRunner(this.connection, client)
+        this.queryRunner = new MongoQueryRunner(this.dataSource, client)
         ObjectUtils.assign(this.queryRunner, {
-            manager: this.connection.manager,
+            manager: this.dataSource.manager,
         })
     }
 
@@ -259,7 +269,7 @@ export class MongoDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new MongoSchemaBuilder(this.connection)
+        return new MongoSchemaBuilder(this.dataSource)
     }
 
     /**

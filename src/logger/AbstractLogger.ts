@@ -341,7 +341,7 @@ export abstract class AbstractLogger implements Logger {
                 if (options.formatSql) {
                     sql = PlatformTools.formatSql(
                         sql,
-                        queryRunner?.connection?.options.type,
+                        queryRunner?.dataSource?.options.type,
                     )
                 }
 
