@@ -34,12 +34,16 @@ describe("columns > vector type", () => {
                 const embedding_three_dimensions = [1.0, 2.0, 3.0]
                 const halfvec_embedding = [1.5, 2.5]
                 const halfvec_four_dimensions = [1.5, 2.5, 3.5, 4.5]
+                const bit_embedding = "10110101"
+                const sparse_embedding = "{1:0.5,3:0.7}/5"
 
                 const post = new Post()
                 post.embedding = embedding
                 post.embedding_three_dimensions = embedding_three_dimensions
                 post.halfvec_embedding = halfvec_embedding
                 post.halfvec_four_dimensions = halfvec_four_dimensions
+                post.bit_embedding = bit_embedding
+                post.sparse_embedding = sparse_embedding
 
                 await postRepository.save(post)
 
@@ -58,6 +62,8 @@ describe("columns > vector type", () => {
                 expect(loadedPost!.halfvec_four_dimensions).to.deep.equal(
                     halfvec_four_dimensions,
                 )
+                expect(loadedPost!.bit_embedding).to.equal(bit_embedding)
+                expect(loadedPost!.sparse_embedding).to.equal(sparse_embedding)
 
                 table!
                     .findColumnByName("embedding")!
@@ -77,6 +83,18 @@ describe("columns > vector type", () => {
                 table!
                     .findColumnByName("halfvec_four_dimensions")!
                     .length!.should.be.equal("4")
+                table!
+                    .findColumnByName("bit_embedding")!
+                    .type.should.be.equal("bit")
+                table!
+                    .findColumnByName("bit_embedding")!
+                    .length!.should.be.equal("8")
+                table!
+                    .findColumnByName("sparse_embedding")!
+                    .type.should.be.equal("sparsevec")
+                table!
+                    .findColumnByName("sparse_embedding")!
+                    .length!.should.be.equal("5")
             }),
         ))
 
@@ -105,6 +123,32 @@ describe("columns > vector type", () => {
                 expect(loadedPost!.embedding_three_dimensions).to.deep.equal([
                     7.0, 8.0, 9.0,
                 ])
+            }),
+        ))
+
+    it("should update bit and sparsevec values", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+
+                const post = new Post()
+                post.bit_embedding = "10101010"
+                post.sparse_embedding = "{1:0.5}/5"
+
+                await postRepository.save(post)
+
+                post.bit_embedding = "11001100"
+                post.sparse_embedding = "{2:0.3,4:0.9}/5"
+
+                await postRepository.save(post)
+
+                const loadedPost = await postRepository.findOne({
+                    where: { id: post.id },
+                })
+
+                expect(loadedPost).to.exist
+                expect(loadedPost!.bit_embedding).to.equal("11001100")
+                expect(loadedPost!.sparse_embedding).to.equal("{2:0.3,4:0.9}/5")
             }),
         ))
 })

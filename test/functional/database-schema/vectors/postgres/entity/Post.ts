@@ -18,4 +18,10 @@ export class Post {
 
     @Column("halfvec", { length: 4, nullable: true })
     halfvec_four_dimensions: number[]
+
+    @Column({ type: "bit", length: 8, nullable: true })
+    bit_embedding: string
+
+    @Column("sparsevec", { length: 5, nullable: true })
+    sparse_embedding: string
 }
