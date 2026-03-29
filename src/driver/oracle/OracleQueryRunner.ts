@@ -2482,13 +2482,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     if (parts.length >= 3) {
                         const [, schema, name] = parts
-                        return `("OWNER" = '${schema}' AND "TABLE_NAME" = '${name}')`
+                        return `("OWNER" = '${schema}' AND "TABLE_NAME" = UPPER('${name}'))`
                     } else if (parts.length === 2) {
                         const [schema, name] = parts
-                        return `("OWNER" = '${schema}' AND "TABLE_NAME" = '${name}')`
+                        return `("OWNER" = '${schema}' AND "TABLE_NAME" = UPPER('${name}'))`
                     } else if (parts.length === 1) {
                         const [name] = parts
-                        return `("TABLE_NAME" = '${name}')`
+                        return `("TABLE_NAME" = UPPER('${name}'))`
                     } else {
                         return `(1=0)`
                     }
