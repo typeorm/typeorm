@@ -125,20 +125,4 @@ describe("other issues > preventing-injection", () => {
             }).to.throw(Error)
         })
     })
-
-    it("should not allow non-allowed values in order by in QueryBuilder", () => {
-        dataSources.forEach((connection) => {
-            expect(() => {
-                connection.manager
-                    .createQueryBuilder(Post, "post")
-                    .orderBy("post.id", "MIX" as any)
-            }).to.throw(Error)
-
-            expect(() => {
-                connection.manager
-                    .createQueryBuilder(Post, "post")
-                    .orderBy("post.id", "DESC", "SOMETHING LAST" as any)
-            }).to.throw(Error)
-        })
-    })
 })

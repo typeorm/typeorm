@@ -124,7 +124,7 @@ export class MaterializedPathSubjectExecutor {
             .update(subject.metadata.target)
             .set({
                 [propertyPath]: () =>
-                    `REPLACE(${this.queryRunner.connection.driver.escape(
+                    `REPLACE(${this.queryRunner.dataSource.driver.escape(
                         propertyPath,
                     )}, '${oldParentPath}${entityPath}.', '${newParentPath}${entityPath}.')`,
             } as any)

@@ -204,7 +204,6 @@ export class RelationJoinColumnBuilder {
             )
             if (!relationalColumn) {
                 relationalColumn = new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: relation.entityMetadata,
                     embeddedMetadata: relation.embeddedMetadata,
                     args: {

@@ -27,7 +27,7 @@ export class ClosureJunctionEntityMetadataBuilder {
         // create entity metadata itself
         const entityMetadata = new EntityMetadata({
             parentClosureEntityMetadata: parentClosureEntityMetadata,
-            connection: this.dataSource,
+            dataSource: this.dataSource,
             args: {
                 target: "",
                 name:
@@ -47,7 +47,6 @@ export class ClosureJunctionEntityMetadataBuilder {
         parentClosureEntityMetadata.primaryColumns.forEach((primaryColumn) => {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     closureType: "ancestor",
                     referencedColumn: primaryColumn,
@@ -77,7 +76,6 @@ export class ClosureJunctionEntityMetadataBuilder {
             )
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     closureType: "descendant",
                     referencedColumn: primaryColumn,
@@ -130,7 +128,6 @@ export class ClosureJunctionEntityMetadataBuilder {
         if (parentClosureEntityMetadata.treeLevelColumn) {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     args: {
                         target: "",

@@ -276,7 +276,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
      */
     returning(returning: string | string[]): this {
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported("delete")) {
+        if (!this.dataSource.driver.isReturningSqlSupported("delete")) {
             throw new ReturningStatementNotSupportedError()
         }
 
@@ -299,10 +299,10 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
         if (returningExpression === "") {
             return `DELETE FROM ${tableName}${whereExpression}`
         }
-        if (this.connection.driver.options.type === "mssql") {
+        if (this.dataSource.driver.options.type === "mssql") {
             return `DELETE FROM ${tableName} OUTPUT ${returningExpression}${whereExpression}`
         }
-        if (this.connection.driver.options.type === "spanner") {
+        if (this.dataSource.driver.options.type === "spanner") {
             return `DELETE FROM ${tableName}${whereExpression} THEN RETURN ${returningExpression}`
         }
         return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`

@@ -21,9 +21,15 @@ import type { ReplicationMode } from "../driver/types/ReplicationMode"
  */
 export interface QueryRunner extends AsyncDisposable {
     /**
-     * Connection used by this query runner.
+     * DataSource used by this query runner.
      */
-    readonly connection: DataSource
+    readonly dataSource: DataSource
+
+    /**
+     * DataSource used by this query runner.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource
 
     /**
      * Broadcaster used on this query runner to broadcast entity events.

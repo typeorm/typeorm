@@ -212,18 +212,6 @@ export class JoinAttribute {
         }
 
         return undefined
-
-        /*if (typeof this.entityOrProperty === "string") { // entityOrProperty is a custom table
-
-            // first try to find entity with such name, this is needed when entity does not have a target class,
-            // and its target is a string name (scenario when plain old javascript is used or entity schema is loaded from files)
-            const metadata = this.connection.entityMetadatas.find(metadata => metadata.name === this.entityOrProperty);
-            if (metadata)
-                return metadata;
-
-            // check if we have entity with such table name, and use its metadata if found
-            return this.connection.entityMetadatas.find(metadata => metadata.tableName === this.entityOrProperty);
-        }*/
     }
 
     /**

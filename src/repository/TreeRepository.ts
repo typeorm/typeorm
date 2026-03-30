@@ -36,9 +36,9 @@ export class TreeRepository<
      */
     findRoots(options?: FindTreeOptions): Promise<Entity[]> {
         const escapeAlias = (alias: string) =>
-            this.manager.connection.driver.escape(alias)
+            this.manager.dataSource.driver.escape(alias)
         const escapeColumn = (column: string) =>
-            this.manager.connection.driver.escape(column)
+            this.manager.dataSource.driver.escape(column)
 
         const joinColumn = this.metadata.treeParentRelation!.joinColumns[0]
         const parentPropertyName =
@@ -139,7 +139,7 @@ export class TreeRepository<
     ): SelectQueryBuilder<Entity> {
         // create shortcuts for better readability
         const escape = (alias: string) =>
-            this.manager.connection.driver.escape(alias)
+            this.manager.dataSource.driver.escape(alias)
 
         if (this.metadata.treeType === "closure-table") {
             const joinCondition =
@@ -227,7 +227,7 @@ export class TreeRepository<
                     .whereInIds(this.metadata.getEntityIdMap(entity))
 
                 if (
-                    DriverUtils.isSQLiteFamily(this.manager.connection.driver)
+                    DriverUtils.isSQLiteFamily(this.manager.dataSource.driver)
                 ) {
                     return `${alias}.${
                         this.metadata.materializedPathColumn!.propertyPath
@@ -318,7 +318,7 @@ export class TreeRepository<
         entity: Entity,
     ): SelectQueryBuilder<Entity> {
         // create shortcuts for better readability
-        // const escape = (alias: string) => this.manager.connection.driver.escape(alias);
+        // const escape = (alias: string) => this.manager.dataSource.driver.escape(alias);
 
         if (this.metadata.treeType === "closure-table") {
             const joinCondition =
@@ -409,7 +409,7 @@ export class TreeRepository<
                     .whereInIds(this.metadata.getEntityIdMap(entity))
 
                 if (
-                    DriverUtils.isSQLiteFamily(this.manager.connection.driver)
+                    DriverUtils.isSQLiteFamily(this.manager.dataSource.driver)
                 ) {
                     return `${subQuery.getQuery()} LIKE ${alias}.${
                         this.metadata.materializedPathColumn!.propertyPath

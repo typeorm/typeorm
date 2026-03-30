@@ -38,12 +38,12 @@ export class ReturningResultsEntityUpdator {
             entities.map(async (entity, entityIndex) => {
                 // if database supports returning/output statement then we already should have updating values in the raw data returned by insert query
                 if (
-                    this.queryRunner.connection.driver.isReturningSqlSupported(
+                    this.queryRunner.dataSource.driver.isReturningSqlSupported(
                         "update",
                     )
                 ) {
                     if (
-                        this.queryRunner.connection.driver.options.type ===
+                        this.queryRunner.dataSource.driver.options.type ===
                             "oracle" &&
                         Array.isArray(updateResult.raw) &&
                         this.expressionMap.extraReturningColumns.length > 0
@@ -64,7 +64,7 @@ export class ReturningResultsEntityUpdator {
                         ? updateResult.raw[entityIndex]
                         : updateResult.raw
                     const returningColumns =
-                        this.queryRunner.connection.driver.createGeneratedMap(
+                        this.queryRunner.dataSource.driver.createGeneratedMap(
                             metadata,
                             result,
                         )
@@ -149,7 +149,7 @@ export class ReturningResultsEntityUpdator {
         // in the case if we have generated column and it's value returned by underlying driver
         // we remove this column from the insertionColumns list
         const needToCheckGenerated =
-            this.queryRunner.connection.driver.isReturningSqlSupported("insert")
+            this.queryRunner.dataSource.driver.isReturningSqlSupported("insert")
         insertionColumns = insertionColumns.filter((column) => {
             if (!column.isGenerated) return true
             return needToCheckGenerated === true
@@ -161,7 +161,7 @@ export class ReturningResultsEntityUpdator {
                 this.expressionMap.extraReturningColumns.length > 0
             ) {
                 if (
-                    this.queryRunner.connection.driver.options.type === "oracle"
+                    this.queryRunner.dataSource.driver.options.type === "oracle"
                 ) {
                     insertResult.raw = insertResult.raw.reduce(
                         (newRaw, rawItem, rawItemIndex) => {
@@ -175,7 +175,7 @@ export class ReturningResultsEntityUpdator {
                         {} as ObjectLiteral,
                     )
                 } else if (
-                    this.queryRunner.connection.driver.options.type ===
+                    this.queryRunner.dataSource.driver.options.type ===
                     "spanner"
                 ) {
                     insertResult.raw = insertResult.raw[0]
@@ -188,7 +188,7 @@ export class ReturningResultsEntityUpdator {
                 : insertResult.raw
 
             const generatedMap =
-                this.queryRunner.connection.driver.createGeneratedMap(
+                this.queryRunner.dataSource.driver.createGeneratedMap(
                     metadata,
                     result,
                     entityIndex,
@@ -216,7 +216,7 @@ export class ReturningResultsEntityUpdator {
         // for other drivers we have to re-select this data from the database
         if (
             insertionColumns.length > 0 &&
-            !this.queryRunner.connection.driver.isReturningSqlSupported(
+            !this.queryRunner.dataSource.driver.isReturningSqlSupported(
                 "insert",
             )
         ) {

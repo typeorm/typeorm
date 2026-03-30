@@ -22,7 +22,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
     constructor(driver: NativescriptDriver) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
     }
 
@@ -55,7 +55,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryRunnerAlreadyReleasedError()
         }
 
-        const connection = this.driver.connection
+        const connection = this.driver.dataSource
 
         const databaseConnection = await this.connect()
 

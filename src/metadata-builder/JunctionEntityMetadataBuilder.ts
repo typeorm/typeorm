@@ -53,7 +53,7 @@ export class JunctionEntityMetadataBuilder {
             )
 
         const entityMetadata = new EntityMetadata({
-            connection: this.dataSource,
+            dataSource: this.dataSource,
             args: {
                 target: "",
                 name: joinTableName,
@@ -88,7 +88,6 @@ export class JunctionEntityMetadataBuilder {
                       )
 
             return new ColumnMetadata({
-                connection: this.dataSource,
                 entityMetadata: entityMetadata,
                 referencedColumn: referencedColumn,
                 args: {
@@ -153,8 +152,7 @@ export class JunctionEntityMetadataBuilder {
                           )
 
                 return new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     referencedColumn: inverseReferencedColumn,
                     args: {
                         target: "",
