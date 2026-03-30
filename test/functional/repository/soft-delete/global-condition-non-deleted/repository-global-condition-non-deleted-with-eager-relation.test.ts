@@ -8,8 +8,8 @@ import {
 import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { PostWithRelation } from "./entity/PostWithRelation"
 
-// This test is neccessary because finding with eager relation will be run in the different way
-describe(`repository > the global condtion of "non-deleted" with eager relation`, () => {
+// This test is necessary because finding with eager relation will be run in the different way
+describe(`repository > the global condition of "non-deleted" with eager relation`, () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

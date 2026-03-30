@@ -29,9 +29,9 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
         // const settingRepo = dataSource.getRepository(Setting);
 
         const user = new User(1, "FooGuy")
-        const settingA = new Setting(1, "A", "foo")
+        const settings = new Setting(1, "A", "foo")
         const settingB = new Setting(1, "B", "bar")
-        user.settings = [settingA, settingB]
+        user.settings = [settings, settingB]
 
         return userRepo.save(user)
     }

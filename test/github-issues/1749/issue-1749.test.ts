@@ -19,7 +19,7 @@ describe("github issues > #1749 Can't delete tables in non-default schema", () =
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should delete entites from tables in different schemas", () =>
+    it("should delete entities from tables in different schemas", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const bar = new Bar()

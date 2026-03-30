@@ -135,7 +135,7 @@ export class PostgresQueryRunner
 
     /**
      * Release a connection back to the pool, optionally specifying an Error to release with.
-     * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
+     * Per pg-pool documentation this will prevent the pool from reusing the broken connection.
      * @param err
      */
     private async releasePostgresConnection(err?: Error) {
@@ -4465,7 +4465,7 @@ export class PostgresQueryRunner
      */
     async getVersion(): Promise<string> {
         // we use `SELECT version()` instead of `SHOW server_version` or `SHOW server_version_num`
-        // to maintain compatability with Amazon Redshift.
+        // to maintain compatibility with Amazon Redshift.
         //
         // see:
         //  - https://github.com/typeorm/typeorm/pull/9319

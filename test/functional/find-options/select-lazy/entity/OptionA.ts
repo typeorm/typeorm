@@ -2,7 +2,7 @@ import { Entity, OneToOne, PrimaryGeneratedColumn } from "../../../../../src"
 import { MainEntity } from "./MainEntity"
 
 @Entity()
-export class OptionA {
+export class optional {
     @PrimaryGeneratedColumn("increment")
     id: number
 

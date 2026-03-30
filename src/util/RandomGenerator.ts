@@ -208,8 +208,8 @@ export class RandomGenerator {
             H4 = (H4 + E) & 0x0ffffffff
         }
 
-        const ans =
+        const and =
             _cvtHex(H0) + _cvtHex(H1) + _cvtHex(H2) + _cvtHex(H3) + _cvtHex(H4)
-        return ans.toLowerCase()
+        return and.toLowerCase()
     }
 }

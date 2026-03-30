@@ -21,14 +21,14 @@ describe("github issues > #1680 Delete & Update applies to all entities in table
     it("Delete & Update should throw an error when supplied with an empty criteria", () =>
         Promise.all(
             dataSources.map(async (connection) => {
-                const userA = new User()
-                userA.name = "User A"
+                const users = new User()
+                users.name = "User A"
                 const userB = new User()
                 userB.name = "User B"
                 const userC = new User()
                 userC.name = "User C"
 
-                await connection.manager.save([userA, userB, userC])
+                await connection.manager.save([users, userB, userC])
 
                 const problematicCriterias: any[] = [null, undefined, [], ""]
 

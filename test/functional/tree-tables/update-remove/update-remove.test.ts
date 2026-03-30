@@ -119,7 +119,7 @@ describe("tree-tables > update-remove", () => {
                 entry11.parent = entry1
                 await repo.save(entry11)
 
-                // Assing entry11 from entry1 to entry2
+                // Assign entry11 from entry1 to entry2
                 entry11.parent = entry2
                 await repo.save(entry11)
 
@@ -153,7 +153,7 @@ describe("tree-tables > update-remove", () => {
                 entry1211.parent = entry121
                 await repo.save(entry1211)
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry121.parent = entry11
                 await repo.save(entry121)
 
@@ -187,7 +187,7 @@ describe("tree-tables > update-remove", () => {
                 entry1211.parent = entry121
                 await repo.save(entry1211)
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry11.children = [entry121]
                 await repo.save(entry11)
 
@@ -225,7 +225,7 @@ describe("tree-tables > update-remove", () => {
                 entry1211.parent = entry121
                 await repo.save(entry1211)
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 // And entry111 from entry11 to entry12
                 entry11.children = [entry121]
                 entry12.children = [entry111]
@@ -488,7 +488,7 @@ describe("tree-tables > update-remove", () => {
                 nestedSet = await repo.save(entry12)
                 ids.push({ id: nestedSet.id })
 
-                // Assing entry11 from entry1 to entry12
+                // Assign entry11 from entry1 to entry12
                 entry11.parent = entry12
                 await repo.save(entry11)
 
@@ -541,7 +541,7 @@ describe("tree-tables > update-remove", () => {
                 nestedSet = await repo.save(entry1211)
                 ids.push({ id: nestedSet.id })
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry121.parent = entry11
                 await repo.save(entry121)
 
@@ -594,7 +594,7 @@ describe("tree-tables > update-remove", () => {
                 nestedSet = await repo.save(entry1211)
                 ids.push({ id: nestedSet.id })
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry11.children = [entry121]
                 await repo.save(entry11)
 
@@ -653,7 +653,7 @@ describe("tree-tables > update-remove", () => {
                 nestedSet = await repo.save(entry1211)
                 ids.push({ id: nestedSet.id })
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 // And entry111 from entry11 to entry12
                 entry11.children = [entry121]
                 entry12.children = [entry111]
@@ -901,7 +901,7 @@ describe("tree-tables > update-remove", () => {
                 entry11.parent = entry1
                 await repo.save(entry11)
 
-                // Assing entry11 from entry1 to entry2
+                // Assign entry11 from entry1 to entry2
                 entry11.parent = entry2
                 await repo.save(entry11)
 
@@ -935,7 +935,7 @@ describe("tree-tables > update-remove", () => {
                 entry1211.parent = entry121
                 await repo.save(entry1211)
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry121.parent = entry11
                 await repo.save(entry121)
 
@@ -969,7 +969,7 @@ describe("tree-tables > update-remove", () => {
                 entry1211.parent = entry121
                 await repo.save(entry1211)
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry11.children = [entry121]
                 await repo.save(entry11)
 
@@ -1007,7 +1007,7 @@ describe("tree-tables > update-remove", () => {
                 entry1211.parent = entry121
                 await repo.save(entry1211)
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 // And entry111 from entry11 to entry12
                 entry11.children = [entry121]
                 entry12.children = [entry111]
@@ -1257,7 +1257,7 @@ describe("tree-tables > update-remove", () => {
                 nestedSet = await repo.save(entry12)
                 ids.push({ column: nestedSet.column, row: nestedSet.row })
 
-                // Assing entry11 from entry1 to entry12
+                // Assign entry11 from entry1 to entry12
                 entry11.parent = entry12
                 await repo.save(entry11)
 
@@ -1320,7 +1320,7 @@ describe("tree-tables > update-remove", () => {
                 nestedSet = await repo.save(entry1211)
                 ids.push({ column: nestedSet.column, row: nestedSet.row })
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry121.parent = entry11
                 await repo.save(entry121)
 
@@ -1383,7 +1383,7 @@ describe("tree-tables > update-remove", () => {
                 nestedSet = await repo.save(entry1211)
                 ids.push({ column: nestedSet.column, row: nestedSet.row })
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry11.children = [entry121]
                 await repo.save(entry11)
 
@@ -1454,7 +1454,7 @@ describe("tree-tables > update-remove", () => {
                 nestedSet = await repo.save(entry1211)
                 ids.push({ column: nestedSet.column, row: nestedSet.row })
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 // And entry111 from entry11 to entry12
                 entry11.children = [entry121]
                 entry12.children = [entry111]
@@ -1748,7 +1748,7 @@ describe("tree-tables > update-remove", () => {
                 entry11.parent = entry1
                 await repo.save(entry11)
 
-                // Assing entry11 from entry1 to entry2
+                // Assign entry11 from entry1 to entry2
                 entry11.parent = entry2
                 await repo.save(entry11)
 
@@ -1792,7 +1792,7 @@ describe("tree-tables > update-remove", () => {
                 entry1211.parent = entry121
                 await repo.save(entry1211)
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry121.parent = entry11
                 await repo.save(entry121)
 
@@ -1836,7 +1836,7 @@ describe("tree-tables > update-remove", () => {
                 entry1211.parent = entry121
                 await repo.save(entry1211)
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 entry11.children = [entry121]
                 await repo.save(entry11)
 
@@ -1886,7 +1886,7 @@ describe("tree-tables > update-remove", () => {
                 entry1211.parent = entry121
                 await repo.save(entry1211)
 
-                // Assing entry121 from entry12 to entry11
+                // Assign entry121 from entry12 to entry11
                 // And entry111 from entry11 to entry12
                 entry11.children = [entry121]
                 entry12.children = [entry111]

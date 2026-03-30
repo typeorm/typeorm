@@ -8,7 +8,7 @@ import {
 import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
-describe(`repository > the global condtion of "non-deleted"`, () => {
+describe(`repository > the global condition of "non-deleted"`, () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

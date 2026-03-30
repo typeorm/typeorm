@@ -23,7 +23,7 @@ describe.skip("github issues > #1545 Typeorm runs insert query instead of update
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should add intial validation data", () =>
+    it("should add initial validation data", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const validation1 = new ValidationModel()

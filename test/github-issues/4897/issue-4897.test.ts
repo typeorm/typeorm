@@ -6,7 +6,7 @@ import {
 } from "../../utils/test-utils"
 import { SomeEntity } from "./entity/SomeEntity"
 
-describe("github issues > #4897 [MSSQL] Enum column definition removes and recreates constraint overwritting existing data", () => {
+describe("github issues > #4897 [MSSQL] Enum column definition removes and recreates constraint overwriting existing data", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

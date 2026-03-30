@@ -26,7 +26,7 @@ describe("github issues > #9770 check for referencing foreign keys when altering
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("shouldn't loose dependant table data", () =>
+    it("shouldn't loose dependent table data", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.manager
@@ -73,7 +73,7 @@ describe("github issues > #9770 check for referencing foreign keys when altering
                 const migrations2 = await dataSource.showMigrations()
                 migrations2.should.be.equal(false)
 
-                // check if data still exists in dependant table
+                // check if data still exists in dependent table
                 barRecords = await queryRunner.query(`SELECT * FROM "bar"`)
                 expect(barRecords).to.have.lengthOf.above(0)
 

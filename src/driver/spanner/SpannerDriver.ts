@@ -148,7 +148,7 @@ export class SpannerDriver implements Driver {
 
     /**
      * ORM has special columns and we need to know what database column types should be for those columns.
-     * Column types are driver dependant.
+     * Column types are driver dependent.
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "timestamp",

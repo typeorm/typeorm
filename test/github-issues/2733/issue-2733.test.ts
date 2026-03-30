@@ -7,7 +7,7 @@ import {
 import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
-describe("github issues > #2733 should correctly handle function calls with upercase letters as default values", () => {
+describe("github issues > #2733 should correctly handle function calls with uppercase letters as default values", () => {
     let dataSources: DataSource[]
 
     it("MSSQL, Sqljs, Sqlite", async () => {

@@ -13,7 +13,7 @@ export class Cliente {
     id: number
 
     @Column()
-    nome: string
+    gnome: string
 
     @ManyToOne(() => TipoCliente, (tc) => tc.clientes)
     @JoinColumn({ name: "tipoCliente" })

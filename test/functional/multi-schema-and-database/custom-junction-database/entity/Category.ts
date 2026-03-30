@@ -3,7 +3,7 @@ import { Column } from "../../../../../src/decorator/columns/Column"
 import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 
 @Entity({
-    database: "yoman",
+    database: "yeoman",
 })
 export class Category {
     @PrimaryGeneratedColumn()

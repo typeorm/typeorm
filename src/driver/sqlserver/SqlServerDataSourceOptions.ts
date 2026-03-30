@@ -99,7 +99,7 @@ export interface SqlServerDataSourceOptions
 
         /**
          * The minimum amount of time that an object may sit idle in the pool before it is eligible for eviction due
-         * to idle time. Supercedes softIdleTimeoutMillis Default: 30000
+         * to idle time. Supersedes softIdleTimeoutMillis Default: 30000
          */
         readonly idleTimeoutMillis?: number
 

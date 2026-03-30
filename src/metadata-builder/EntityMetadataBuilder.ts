@@ -112,14 +112,14 @@ export class EntityMetadataBuilder {
             )
         })
 
-        // build entity metadata (step0), first for non-single-table-inherited entity metadatas (dependant)
+        // build entity metadata (step0), first for non-single-table-inherited entity metadatas (dependent)
         entityMetadatas
             .filter(
                 (entityMetadata) => entityMetadata.tableType !== "entity-child",
             )
             .forEach((entityMetadata) => entityMetadata.build())
 
-        // build entity metadata (step0), now for single-table-inherited entity metadatas (dependant)
+        // build entity metadata (step0), now for single-table-inherited entity metadatas (dependent)
         entityMetadatas
             .filter(
                 (entityMetadata) => entityMetadata.tableType === "entity-child",

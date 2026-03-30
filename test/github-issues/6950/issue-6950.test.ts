@@ -9,7 +9,7 @@ import {
 import { Post as Post1 } from "./entity/post_with_null_1.entity"
 import { Post as Post2 } from "./entity/post_with_null_2.entity"
 
-describe("github issues > #6950 postgres: Inappropiate migration generated for `default: null`", () => {
+describe("github issues > #6950 postgres: Inappropriate migration generated for `default: null`", () => {
     describe("null default", () => {
         let dataSources: DataSource[]
         before(async () => {

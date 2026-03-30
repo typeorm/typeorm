@@ -2,7 +2,7 @@ import type { ColumnType } from "./ColumnTypes"
 
 /**
  * Orm has special columns and we need to know what database column types should be for those types.
- * Column types are driver dependant.
+ * Column types are driver dependent.
  */
 export interface MappedColumnTypes {
     /**

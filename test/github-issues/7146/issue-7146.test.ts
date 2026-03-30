@@ -25,7 +25,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
         await connection.manager.save(savedPost)
     }
 
-    // The following 3 tests hilight the reported issue.
+    // The following 3 tests highlight the reported issue.
     // The remaining 6 tests were already succeeding before, but are included for completeness sake.
 
     describe("lazy-loaded relations", () => {

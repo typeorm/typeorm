@@ -232,7 +232,7 @@ export class EmbeddedMetadata {
             return [this.propertyName]
         }
 
-        // if prefix option was set to empty string or explicity set to false - disable prefix
+        // if prefix option was set to empty string or explicitly set to false - disable prefix
         if (this.customPrefix === "" || this.customPrefix === false) {
             return []
         }

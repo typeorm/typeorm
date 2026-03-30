@@ -3734,9 +3734,9 @@ export declare interface CreateIndexesOptions extends Omit<CommandOperationOptio
     textIndexVersion?: number;
     '2dsphereIndexVersion'?: number;
     bits?: number;
-    /** For geospatial indexes set the lower bound for the co-ordinates. */
+    /** For geospatial indexes set the lower bound for the coordinates. */
     min?: number;
-    /** For geospatial indexes set the high bound for the co-ordinates. */
+    /** For geospatial indexes set the high bound for the coordinates. */
     max?: number;
     bucketSize?: number;
     wildcardProjection?: Document;
@@ -4489,7 +4489,7 @@ export declare class FindCursor<TSchema = any> extends ExplainableCursor<TSchema
     /**
      * Modifies the output of a query by adding a field $recordId to matching documents. $recordId is the internal key which uniquely identifies a document in a collection.
      *
-     * @param value - The $showDiskLoc option has now been deprecated and replaced with the showRecordId field. $showDiskLoc will still be accepted for OP_QUERY stye find.
+     * @param value - The $showDiskLoc option has now been deprecated and replaced with the showRecordId field. $showDiskLoc will still be accepted for OP_QUERY style find.
      */
     showRecordId(value: boolean): this;
     /**
