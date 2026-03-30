@@ -2476,7 +2476,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const tablesSql = `SELECT "TABLE_NAME", "OWNER" FROM "ALL_TABLES"`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
-            // Build conditions with bind parameters to prevent SQL injection
             const conditions: string[] = []
             const parameters: string[] = []
             let paramIndex = 1
@@ -2486,19 +2485,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 if (parts.length >= 3) {
                     const [, schema, name] = parts
-                    // Support both exact case and UPPER case for table names
                     conditions.push(`("OWNER" = :${paramIndex} AND ("TABLE_NAME" = :${paramIndex + 1} OR "TABLE_NAME" = UPPER(:${paramIndex + 1})))`)
                     parameters.push(schema, name)
                     paramIndex += 2
                 } else if (parts.length === 2) {
                     const [schema, name] = parts
-                    // Support both exact case and UPPER case for table names
                     conditions.push(`("OWNER" = :${paramIndex} AND ("TABLE_NAME" = :${paramIndex + 1} OR "TABLE_NAME" = UPPER(:${paramIndex + 1})))`)
                     parameters.push(schema, name)
                     paramIndex += 2
                 } else if (parts.length === 1) {
                     const [name] = parts
-                    // Support both exact case and UPPER case for table names
                     conditions.push(`("TABLE_NAME" = :${paramIndex} OR "TABLE_NAME" = UPPER(:${paramIndex}))`)
                     parameters.push(name)
                     paramIndex += 1
@@ -2511,13 +2507,25 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
         }
 
+        // Deduplicate tables - prefer exact matches over UPPER matches
+        const seenTables = new Set<string>()
+        const uniqueDbTables: typeof dbTables = []
+        for (const table of dbTables) {
+            const key = `${table.OWNER}.${table.TABLE_NAME}`
+            if (!seenTables.has(key)) {
+                seenTables.add(key)
+                uniqueDbTables.push(table)
+            }
+        }
+        dbTables.length = 0
+        dbTables.push(...uniqueDbTables)
+
         // if tables were not found in the db, no need to proceed
         if (dbTables.length === 0) {
             return []
         }
 
         // load tables, columns, indices and foreign keys
-        // Build conditions with bind parameters to prevent SQL injection
         const columnsParameters: string[] = []
         let colParamIndex = 1
         const columnsConditions = dbTables.map(({ TABLE_NAME, OWNER }) => {

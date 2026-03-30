@@ -7,6 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 
+// GitHub issue #12230
 describe("database schema > getTable > oracle", () => {
     let dataSources: DataSource[]
     before(async () => {
@@ -22,15 +23,13 @@ describe("database schema > getTable > oracle", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                
-                // Test that getTable works with lowercase table name
-                const table = await queryRunner.getTable("post")
-                
-                // Verify table was found
-                table!.should.not.be.undefined
-                table!.name.toLowerCase().should.equal("post")
-                
-                await queryRunner.release()
+                try {
+                    const table = await queryRunner.getTable("post")
+                    table!.should.not.be.undefined
+                    table!.name.toLowerCase().should.equal("post")
+                } finally {
+                    await queryRunner.release()
+                }
             }),
         ))
 
@@ -38,15 +37,13 @@ describe("database schema > getTable > oracle", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                
-                // Test that getTable works with uppercase table name
-                const table = await queryRunner.getTable("POST")
-                
-                // Verify table was found
-                table!.should.not.be.undefined
-                table!.name.toLowerCase().should.equal("post")
-                
-                await queryRunner.release()
+                try {
+                    const table = await queryRunner.getTable("POST")
+                    table!.should.not.be.undefined
+                    table!.name.toLowerCase().should.equal("post")
+                } finally {
+                    await queryRunner.release()
+                }
             }),
         ))
 
@@ -54,15 +51,13 @@ describe("database schema > getTable > oracle", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                
-                // Test that getTable works with mixed-case table name
-                const table = await queryRunner.getTable("Post")
-                
-                // Verify table was found
-                table!.should.not.be.undefined
-                table!.name.toLowerCase().should.equal("post")
-                
-                await queryRunner.release()
+                try {
+                    const table = await queryRunner.getTable("Post")
+                    table!.should.not.be.undefined
+                    table!.name.toLowerCase().should.equal("post")
+                } finally {
+                    await queryRunner.release()
+                }
             }),
         ))
 
@@ -70,14 +65,12 @@ describe("database schema > getTable > oracle", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                
-                // Test that getTables works with multiple table names
-                const tables = await queryRunner.getTables(["post", "POST", "Post"])
-                
-                // Should find at least one table (they all refer to the same table)
-                tables.length.should.be.greaterThan(0)
-                
-                await queryRunner.release()
+                try {
+                    const tables = await queryRunner.getTables(["post", "POST", "Post"])
+                    tables.length.should.be.greaterThan(0)
+                } finally {
+                    await queryRunner.release()
+                }
             }),
         ))
 })
