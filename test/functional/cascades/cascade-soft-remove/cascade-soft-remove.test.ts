@@ -23,7 +23,9 @@ describe("cascades > soft-remove", () => {
     it("should soft-remove everything by cascades properly", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                await Photo.create({ name: "Photo #1" }).save()
+                await dataSource.manager.save(
+                    Photo.create({ name: "Photo #1" }),
+                )
 
                 const user = User.create({
                     id: 1,
