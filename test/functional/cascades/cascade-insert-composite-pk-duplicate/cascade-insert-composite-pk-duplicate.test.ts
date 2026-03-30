@@ -17,9 +17,6 @@ describe("cascades > insert with composite primary key duplicate constraint", ()
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [PostSchema, PostTagSchema, PostAttachmentSchema],
-            // Restricted to SQLite: composite FK join column order in EntitySchema
-            // causes schema creation failures on MySQL/MSSQL
-            enabledDrivers: ["better-sqlite3", "sqljs"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
