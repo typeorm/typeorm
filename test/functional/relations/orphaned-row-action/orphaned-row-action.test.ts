@@ -44,11 +44,10 @@ describe("relations > orphaned row action soft-delete", () => {
                 const categoryId = categoryToInsert.id
 
                 // Keep the first post
-                const categoryToUpdate = await categoryRepository.findOneBy({
-                    id: categoryId,
-                })
-                expect(categoryToUpdate).to.not.be.null
-                if (!categoryToUpdate) return
+                const categoryToUpdate =
+                    await categoryRepository.findOneByOrFail({
+                        id: categoryId,
+                    })
                 categoryToUpdate.posts = categoryToInsert.posts.filter(
                     (p) => p.id === 1,
                 )
