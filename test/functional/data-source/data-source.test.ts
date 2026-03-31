@@ -154,7 +154,7 @@ describe("DataSource", () => {
 
     describe("working with repositories after connection is established successfully", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
@@ -274,13 +274,13 @@ describe("DataSource", () => {
 
     describe("skip schema generation when synchronize option is set to false", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             dataSources = await createTestingConnections({
                 entities: [View],
                 dropSchema: true,
             })
         })
-        afterEach(() => closeTestingConnections(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("database should be empty after schema sync", () =>
             Promise.all(
@@ -297,7 +297,7 @@ describe("DataSource", () => {
 
     describe("different names of the same content of the schema", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             const dataSources1 = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
@@ -337,7 +337,7 @@ describe("DataSource", () => {
 
     describe("can change postgres default schema name", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             const dataSources1 = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
@@ -352,7 +352,7 @@ describe("DataSource", () => {
             })
             dataSources = [...dataSources1, ...dataSources2]
         })
-        afterEach(() => closeTestingConnections(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("schema name can be set", () =>
             Promise.all(
@@ -382,14 +382,14 @@ describe("DataSource", () => {
     // GitHub issue #7738
     describe("synchronize with multiple foreign keys to same table", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [Professor, Subject, Site, SiteLocation],
                 dropSchema: true,
             })
         })
-        afterEach(() => closeTestingConnections(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should not fail with constraint already exists error when synchronizing multiple times", () =>
             Promise.all(

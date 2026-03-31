@@ -15,11 +15,9 @@ describe("persistence > one-to-one", function () {
     // -------------------------------------------------------------------------
 
     let dataSources: DataSource[]
-    before(() => {
-        return createTestingConnections({
+    before(async () => {
+        dataSources = await createTestingConnections({
             entities: [User, AccessToken],
-        }).then((all) => {
-            dataSources = all
         })
     })
     after(() => closeTestingConnections(dataSources))
