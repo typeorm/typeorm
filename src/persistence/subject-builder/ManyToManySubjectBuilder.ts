@@ -178,10 +178,7 @@ export class ManyToManySubjectBuilder {
             // when recovering a soft-removed entity, junction rows are still intact
             // (soft-remove only sets deletedAt, it doesn't touch junction tables)
             // so skip inserting junction rows for soft-deleted related entities
-            if (
-                subject.canBeRecovered &&
-                relatedEntitySubject?.canBeRecovered
-            )
+            if (subject.canBeRecovered && relatedEntitySubject?.canBeRecovered)
                 return
 
             const ownerValue = relation.isOwning
