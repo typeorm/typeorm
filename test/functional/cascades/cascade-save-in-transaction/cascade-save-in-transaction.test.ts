@@ -5,9 +5,9 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource, EntityManager } from "../../../../src"
+import { In } from "../../../../src"
 import { Parent } from "./entity/Parent"
 import { Child } from "./entity/Child"
-import { xfail } from "../../../utils/xfail"
 import { expect } from "chai"
 
 describe("cascades > save in transaction", () => {
@@ -23,60 +23,51 @@ describe("cascades > save in transaction", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    xfail
-        .unless(() => dataSources.length > 0)
-        .it(
-            "error with cascading saves using EntityManager in a transaction",
-            () =>
-                Promise.all(
-                    dataSources.map(async function (connection) {
-                        let findChildOne
-                        let findChildTwo
+    it("should save with cascading using EntityManager in a transaction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const parentRepo = dataSource.getRepository(Parent)
+                const childRepo = dataSource.getRepository(Child)
 
-                        await expect(
-                            connection.manager.transaction(
-                                async (
-                                    transactionalEntityManager: EntityManager,
-                                ) => {
-                                    const parent = new Parent()
-                                    parent.children = [
-                                        new Child(1),
-                                        new Child(2),
-                                    ]
+                const parent = new Parent()
+                parent.children = [new Child(1), new Child(2)]
+                let firstChildIds: number[] = []
 
-                                    let newParent =
-                                        await transactionalEntityManager.save(
-                                            parent,
-                                        )
+                await expect(
+                    dataSource.manager.transaction(
+                        async (transactionalEntityManager: EntityManager) => {
+                            await transactionalEntityManager.save(parent)
+                            firstChildIds = parent.children.map(
+                                (child) => child.id,
+                            )
 
-                                    newParent.children = [
-                                        new Child(4),
-                                        new Child(5),
-                                    ]
-                                    newParent =
-                                        await transactionalEntityManager.save(
-                                            parent,
-                                        )
+                            // Replace children to orphan the previous ones
+                            parent.children = [new Child(4), new Child(5)]
+                            await transactionalEntityManager.save(parent)
+                        },
+                    ),
+                ).not.to.be.rejected
 
-                                    // Check that the correct children are persisted with the parent.
-                                    findChildOne = newParent.children.find(
-                                        (child) => {
-                                            return child.data === 4
-                                        },
-                                    )
+                // Verify final state after transaction
+                const loadedParent = await parentRepo.findOneOrFail({
+                    where: { id: parent.id },
+                    relations: { children: true },
+                })
 
-                                    findChildTwo = newParent.children.find(
-                                        (child) => {
-                                            return child.data === 5
-                                        },
-                                    )
-                                },
-                            ),
-                        ).not.to.be.rejected
+                expect(loadedParent.children).to.have.length(2)
+                expect(
+                    loadedParent.children.map((c) => c.data),
+                ).to.include.members([4, 5])
 
-                        expect(findChildOne).to.not.equal(undefined)
-                        expect(findChildTwo).to.not.equal(undefined)
-                    }),
-                ),
-        )
+                // Orphaned children should be deleted (FK is non-nullable)
+                const orphanedChildren = await childRepo.find({
+                    where: { id: In(firstChildIds) },
+                })
+                expect(orphanedChildren).to.be.empty
+
+                // Verify no other unexpected rows exist
+                const allChildrenCount = await childRepo.count()
+                expect(allChildrenCount).to.equal(2)
+            }),
+        ))
 })

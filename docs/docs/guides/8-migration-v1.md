@@ -449,6 +449,12 @@ For browser environments, `RandomGenerator.sha1` was fixed to the standard imple
 
 Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is mostly a drop-in replacement, but edge cases with brace expansion or platform-specific path separators may behave differently.
 
+### `orphanedRowAction: "nullify"` with non-nullable foreign keys
+
+When `orphanedRowAction` is `"nullify"` (the default) and the foreign key column is non-nullable, orphaned children are now **deleted** instead of throwing a database constraint violation. Previously, TypeORM would attempt to set the FK to `null`, which failed on non-nullable columns. Now it detects the constraint and removes the orphaned row instead.
+
+If you were relying on the error to prevent accidental child deletion, set `orphanedRowAction: "disable"` on the relation to preserve the old behavior.
+
 ## Columns
 
 ### `readonly` option removed
