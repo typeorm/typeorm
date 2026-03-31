@@ -3,17 +3,17 @@ import {
     Entity,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../src/index"
-import { Post } from "./Post"
+} from "../../../../../src"
+import type { Post } from "./Post"
 
-@Entity("sample2_post_image")
-export class PostImage {
+@Entity()
+export class Photo {
     @PrimaryGeneratedColumn()
     id: number
 
     @Column()
     url: string
 
-    @OneToOne(() => Post, (post) => post.image)
+    @OneToOne("Post", "photo")
     post: Post
 }
