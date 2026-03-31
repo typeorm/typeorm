@@ -200,24 +200,31 @@ export class OneToManySubjectBuilder {
                     identifier: removedRelatedEntityRelationId,
                 })
 
-                if (
-                    !relation.inverseRelation ||
-                    relation.inverseRelation.orphanedRowAction === "nullify"
-                ) {
-                    removedRelatedEntitySubject.canBeUpdated = true
-                    removedRelatedEntitySubject.changeMaps = [
-                        {
-                            relation: relation.inverseRelation!,
-                            value: null,
-                        },
-                    ]
-                } else if (
-                    relation.inverseRelation.orphanedRowAction === "delete"
-                ) {
+                const orphanedRowAction =
+                    relation.inverseRelation?.orphanedRowAction ?? "nullify"
+
+                if (orphanedRowAction === "nullify") {
+                    const allColumnsNullable =
+                        relation.inverseRelation?.joinColumns.every(
+                            (column) => column.isNullable,
+                        ) ?? true
+
+                    if (allColumnsNullable) {
+                        removedRelatedEntitySubject.canBeUpdated = true
+                        removedRelatedEntitySubject.changeMaps = [
+                            {
+                                relation: relation.inverseRelation!,
+                                value: null,
+                            },
+                        ]
+                    } else {
+                        // FK is not nullable — cannot set to null, so delete
+                        // the orphaned entity to keep DB consistent
+                        removedRelatedEntitySubject.mustBeRemoved = true
+                    }
+                } else if (orphanedRowAction === "delete") {
                     removedRelatedEntitySubject.mustBeRemoved = true
-                } else if (
-                    relation.inverseRelation.orphanedRowAction === "soft-delete"
-                ) {
+                } else if (orphanedRowAction === "soft-delete") {
                     removedRelatedEntitySubject.canBeSoftRemoved = true
                 }
 
