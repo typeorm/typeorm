@@ -2,10 +2,11 @@ import { RandomGenerator } from "./RandomGenerator"
 
 /**
  * Converts string into camelCase.
+ *
  * @param str String to be converted.
  * @param firstCapital If true, the first character will be capitalized.
- * @see http://stackoverflow.com/questions/2970525/converting-any-string-into-camel-case
  * @returns camelCase string
+ * @see http://stackoverflow.com/questions/2970525/converting-any-string-into-camel-case
  */
 export function camelCase(str: string, firstCapital: boolean = false): string {
     if (firstCapital) str = " " + str
@@ -17,6 +18,7 @@ export function camelCase(str: string, firstCapital: boolean = false): string {
 
 /**
  * Converts string into snake_case.
+ *
  * @param str String to be converted.
  * @returns snake_case string
  */
@@ -33,6 +35,7 @@ export function snakeCase(str: string): string {
 
 /**
  * Converts string into Title Case.
+ *
  * @param str String to be converted.
  * @returns Title Case string
  * @see http://stackoverflow.com/questions/196972/convert-string-to-title-case-with-javascript
@@ -46,6 +49,7 @@ export function titleCase(str: string): string {
 
 /**
  * Builds abbreviated string from given string;
+ *
  * @param str String to be abbreviated.
  * @param abbrLettersCount Number of letters to be used for abbreviation.
  * @returns abbreviated string
@@ -72,9 +76,7 @@ export interface IShortenOptions {
 /**
  * Shorten a given `input`. Useful for RDBMS imposing a limit on the
  * maximum length of aliases and column names in SQL queries.
- * @param input String to be shortened.
- * @param options Default to `4` for segments length, `2` for terms length, `'__'` as a separator.
- * @returns Shortened `input`.
+ *
  * @example
  * // returns: "UsShCa__orde__mark__dire"
  * shorten('UserShoppingCart__order__market__director')
@@ -87,6 +89,10 @@ export interface IShortenOptions {
  *
  * // equals: UsShCa__orde__mark_market_id
  * `${shorten('UserShoppingCart__order__market')}_market_id`
+ *
+ * @param input String to be shortened.
+ * @param options Default to `4` for segments length, `2` for terms length, `'__'` as a separator.
+ * @returns Shortened `input`.
  */
 export function shorten(input: string, options: IShortenOptions = {}): string {
     const { segmentLength = 4, separator = "__", termLength = 2 } = options
@@ -113,6 +119,7 @@ export function shorten(input: string, options: IShortenOptions = {}): string {
 
 /**
  * Checks if the current environment is Node.js.
+ *
  * @returns `true` if the current environment is Node.js, `false` otherwise.
  */
 function isNode(): boolean {
@@ -125,6 +132,7 @@ interface IHashOptions {
 
 /**
  * Returns a SHA-1 hex digest for internal IDs/aliases (not for cryptographic security)
+ *
  * @param input String to be hashed.
  * @param options - Options object.
  * @param options.length Optionally, shorten the output to desired length.

@@ -65,6 +65,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
@@ -76,6 +77,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Loads a database from a given file (Node.js), local storage key (browser) or array.
      * This will delete the current database!
+     *
      * @param fileNameOrLocalStorageOrData
      * @param checkIfFileOrLocalStorageExists
      */
@@ -151,6 +153,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Saved the current database to the given file (Node.js), local storage key (browser) or
      * indexedDB key (browser with enabled useLocalForage option).
      * If no location path is given, the location path in the options (if specified) will be used.
+     *
      * @param location
      */
     async save(location?: string) {
@@ -224,6 +227,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
      * @param metadata
      * @param insertResult
      */
@@ -277,6 +281,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with an optional database.
      * If database is specified it is loaded, otherwise a new empty database is created.
+     *
      * @param database
      */
     protected async createDatabaseConnectionWithImport(

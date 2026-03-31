@@ -115,6 +115,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
+     *
      * @param entityTarget
      * @param aliasName
      */
@@ -135,6 +136,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
+     *
      * @param where
      * @param parameters
      */
@@ -160,6 +162,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     *
      * @param where
      * @param parameters
      */
@@ -183,6 +186,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     *
      * @param where
      * @param parameters
      */
@@ -207,6 +211,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
      * Sets WHERE condition in the query builder with a condition for the given ids.
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
+     *
      * @param ids
      */
     whereInIds(ids: any | any[]): this {
@@ -215,6 +220,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
+     *
      * @param ids
      */
     andWhereInIds(ids: any | any[]): this {
@@ -223,6 +229,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
+     *
      * @param ids
      */
     orWhereInIds(ids: any | any[]): this {
@@ -247,6 +254,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     *
      * @param output
      */
     output(output: string | string[]): this {
@@ -272,6 +280,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     *
      * @param returning
      */
     returning(returning: string | string[]): this {

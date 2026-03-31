@@ -1,11 +1,12 @@
 /**
  * Special object that defines order condition for ORDER BY in sql.
  *
- * Example:
+ * @example
  * {
  *  "name": "ASC",
  *  "id": "DESC"
  * }
+ *
  */
 export type OrderByCondition = {
     [columnName: string]:

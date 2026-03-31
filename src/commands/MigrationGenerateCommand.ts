@@ -215,6 +215,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     /**
      * Formats query parameters for migration queries if parameters actually exist
+     *
      * @param parameters
      */
     protected static queryParams(parameters: any[] | undefined): string {
@@ -227,6 +228,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the migration file.
+     *
      * @param name
      * @param timestamp
      * @param upSqls
@@ -261,6 +263,7 @@ ${downSqls.join(`
 
     /**
      * Gets contents of the migration file in Javascript.
+     *
      * @param name
      * @param timestamp
      * @param upSqls

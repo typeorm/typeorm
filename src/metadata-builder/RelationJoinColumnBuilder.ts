@@ -56,6 +56,7 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Builds a foreign key of the many-to-one or one-to-one owner relations.
+     *
      * @param joinColumns
      * @param relation
      */
@@ -127,6 +128,7 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     *
      * @param joinColumns
      * @param relation
      */
@@ -169,6 +171,7 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects columns from the given join column args.
+     *
      * @param joinColumns
      * @param relation
      * @param referencedColumns
