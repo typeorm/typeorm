@@ -15,7 +15,6 @@ import "../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
-    reloadTestingDatabases,
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
 import { Category } from "./entity/Category"
