@@ -1461,9 +1461,10 @@ export class PostgresDriver implements Driver {
             if (column) {
                 OrmUtils.mergeDeep(
                     map,
-                    column.createValueMap(insertResult[key]),
+                    column.createValueMap(
+                        this.prepareHydratedValue(insertResult[key], column),
+                    ),
                 )
-                // OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column))); // TODO: probably should be like there, but fails on enums, fix later
             }
             return map
         }, {} as ObjectLiteral)
