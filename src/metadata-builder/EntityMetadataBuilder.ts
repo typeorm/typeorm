@@ -69,6 +69,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Builds a complete entity metadatas for the given entity classes.
+     *
      * @param entityClasses
      */
     build(entityClasses?: Function[]): EntityMetadata[] {
@@ -440,6 +441,7 @@ export class EntityMetadataBuilder {
     /**
      * Creates entity metadata from the given table args.
      * Creates column, relation, etc. metadatas for everything this entity metadata owns.
+     *
      * @param tableArgs
      */
     protected createEntityMetadata(
@@ -831,6 +833,7 @@ export class EntityMetadataBuilder {
     /**
      * Creates from the given embedded metadata args real embedded metadatas with its columns and relations,
      * and does the same for all its sub-embeddeds (goes recursively).
+     *
      * @param entityMetadata
      * @param embeddedArgs
      */
@@ -912,6 +915,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Computes all entity metadata's computed properties, and all its sub-metadatas (relations, columns, embeds, etc).
+     *
      * @param entityMetadata
      */
     protected computeEntityMetadataStep2(entityMetadata: EntityMetadata) {
@@ -1084,6 +1088,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Computes entity metadata's relations inverse side properties.
+     *
      * @param entityMetadata
      * @param entityMetadatas
      */
@@ -1124,6 +1129,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Creates indices for the table of single table inheritance.
+     *
      * @param entityMetadata
      */
     protected createKeysForTableInheritance(entityMetadata: EntityMetadata) {
@@ -1156,6 +1162,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Creates from the given foreign key metadata args real foreign key metadatas.
+     *
      * @param entityMetadata
      * @param entityMetadatas
      */

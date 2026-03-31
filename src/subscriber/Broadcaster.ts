@@ -121,6 +121,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -170,6 +171,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -229,6 +231,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -286,6 +289,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -343,6 +347,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -400,6 +405,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -447,6 +453,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_QUERY" event.
+     *
      * @param result
      * @param query
      * @param parameters
@@ -477,6 +484,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_QUERY" event.
+     *
      * @param result
      * @param query
      * @param parameters
@@ -519,6 +527,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_TRANSACTION_START" event.
+     *
      * @param result
      */
     broadcastBeforeTransactionStartEvent(result: BroadcasterResult): void {
@@ -541,6 +550,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_TRANSACTION_START" event.
+     *
      * @param result
      */
     broadcastAfterTransactionStartEvent(result: BroadcasterResult): void {
@@ -563,6 +573,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_TRANSACTION_COMMIT" event.
+     *
      * @param result
      */
     broadcastBeforeTransactionCommitEvent(result: BroadcasterResult): void {
@@ -585,6 +596,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_TRANSACTION_COMMIT" event.
+     *
      * @param result
      */
     broadcastAfterTransactionCommitEvent(result: BroadcasterResult): void {
@@ -607,6 +619,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_TRANSACTION_ROLLBACK" event.
+     *
      * @param result
      */
     broadcastBeforeTransactionRollbackEvent(result: BroadcasterResult): void {
@@ -630,6 +643,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_TRANSACTION_ROLLBACK" event.
+     *
      * @param result
      */
     broadcastAfterTransactionRollbackEvent(result: BroadcasterResult): void {
@@ -659,6 +673,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -717,6 +732,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -774,6 +790,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -831,6 +848,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -888,6 +906,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entities
@@ -975,6 +994,7 @@ export class Broadcaster {
     /**
      * Checks if subscriber's methods can be executed by checking if its don't listen to the particular entity,
      * or listens our entity.
+     *
      * @param subscriber
      * @param target
      */

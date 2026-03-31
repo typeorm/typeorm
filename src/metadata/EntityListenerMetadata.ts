@@ -60,6 +60,7 @@ export class EntityListenerMetadata {
 
     /**
      * Checks if entity listener is allowed to be executed on the given entity.
+     *
      * @param entity
      */
     isAllowed(entity: ObjectLiteral) {
@@ -74,6 +75,7 @@ export class EntityListenerMetadata {
 
     /**
      * Executes listener method of the given entity.
+     *
      * @param entity
      */
     execute(entity: ObjectLiteral) {
@@ -113,6 +115,7 @@ export class EntityListenerMetadata {
 
     /**
      * Calls embedded entity listener method no matter how nested it is.
+     *
      * @param entity
      * @param propertyPaths
      */

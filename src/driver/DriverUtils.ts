@@ -12,6 +12,7 @@ export class DriverUtils {
 
     /**
      * Returns true if given driver is SQLite-based driver.
+     *
      * @param driver
      */
     static isSQLiteFamily(driver: Driver): boolean {
@@ -28,6 +29,7 @@ export class DriverUtils {
 
     /**
      * Returns true if given driver is MySQL-based driver.
+     *
      * @param driver
      */
     static isMySQLFamily(driver: Driver): boolean {
@@ -47,6 +49,7 @@ export class DriverUtils {
     /**
      * Normalizes and builds a new driver options.
      * Extracts settings from connection url and sets to a new options object.
+     *
      * @param options
      * @param buildOptions
      * @param buildOptions.useSid
@@ -81,6 +84,7 @@ export class DriverUtils {
 
     /**
      * buildDriverOptions for MongodDB only to support replica set
+     *
      * @param options
      * @param buildOptions
      * @param buildOptions.useSid
@@ -119,6 +123,7 @@ export class DriverUtils {
      * If the alias length is greater than the limit allowed by the current
      * driver, replaces it with a shortend string, if the shortend string
      * is still too long, it will then hash the alias.
+     *
      * @param driver Current `Driver`.
      * @param driver.maxAliasLength
      * @param buildOptions Optional settings.
@@ -159,6 +164,7 @@ export class DriverUtils {
 
     /**
      * Extracts connection data from the connection url.
+     *
      * @param url
      */
     private static parseConnectionUrl(url: string) {
@@ -200,6 +206,7 @@ export class DriverUtils {
 
     /**
      * Extracts connection data from the connection url for MongoDB to support replica set.
+     *
      * @param url
      */
     private static parseMongoDBConnectionUrl(url: string) {

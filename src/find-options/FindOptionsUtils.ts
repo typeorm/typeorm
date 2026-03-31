@@ -20,6 +20,7 @@ export class FindOptionsUtils {
     /**
      * Throws if the removed `join` option is present on a find-options object.
      * This catches untyped/JS callers still passing `join` after its removal in v1.0.
+     *
      * @param options
      */
     static rejectJoinOption(options: unknown): void {
@@ -39,6 +40,7 @@ export class FindOptionsUtils {
     /**
      * Throws if the removed string-array `select` syntax is used.
      * This catches untyped/JS callers still passing `select: ["col"]` after its removal in v1.0.
+     *
      * @param options
      */
     static rejectStringArraySelect(options: unknown): void {
@@ -59,6 +61,7 @@ export class FindOptionsUtils {
     /**
      * Throws if the removed string-array `relations` syntax is used.
      * This catches untyped/JS callers still passing `relations: ["rel"]` after its removal in v1.0.
+     *
      * @param options
      */
     static rejectStringArrayRelations(options: unknown): void {
@@ -84,6 +87,7 @@ export class FindOptionsUtils {
      * - The relation is non-nullable (nullable=false)
      * - The relation owns the join column (ManyToOne or OneToOne owner)
      * - The target entity has no soft-delete column, or withDeleted is enabled
+     *
      * @param relation
      * @param withDeleted
      * @param parentJoinType
@@ -110,6 +114,7 @@ export class FindOptionsUtils {
 
     /**
      * Checks if given object is really instance of FindOneOptions interface.
+     *
      * @param obj
      */
     static isFindOneOptions<Entity = any>(
@@ -140,6 +145,7 @@ export class FindOptionsUtils {
 
     /**
      * Checks if given object is really instance of FindManyOptions interface.
+     *
      * @param obj
      */
     static isFindManyOptions<Entity = any>(
@@ -192,6 +198,7 @@ export class FindOptionsUtils {
 
     /**
      * Adds joins for all relations and sub-relations of the given relations provided in the find options.
+     *
      * @param qb
      * @param allRelations
      * @param alias

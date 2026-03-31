@@ -21,6 +21,7 @@ export class ClosureJunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the closure junction of the given closure entity.
+     *
      * @param parentClosureEntityMetadata
      */
     build(parentClosureEntityMetadata: EntityMetadata) {

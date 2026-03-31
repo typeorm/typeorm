@@ -15,11 +15,9 @@ describe("persistence > one-to-many", function () {
     // -------------------------------------------------------------------------
 
     let dataSources: DataSource[]
-    before(() => {
-        return createTestingConnections({
+    before(async () => {
+        dataSources = await createTestingConnections({
             entities: [Post, Category],
-        }).then((all) => {
-            dataSources = all
         })
     })
     after(() => closeTestingConnections(dataSources))

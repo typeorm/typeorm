@@ -94,6 +94,7 @@ export default defineConfig([
             "preserve-caught-error": "warn",
         },
     },
+
     jsdoc({
         files: ["src/**/*.ts"],
         config: "flat/recommended-typescript", // change to 'flat/recommended-typescript-error' once warnings are fixed
@@ -101,6 +102,14 @@ export default defineConfig([
         // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
         rules: {
             "jsdoc/valid-types": "error",
+            "jsdoc/tag-lines": [
+                "error",
+                "any",
+                {
+                    startLines: 1,
+                    tags: { example: { lines: "always", count: 1 } },
+                },
+            ],
         },
     }),
 
