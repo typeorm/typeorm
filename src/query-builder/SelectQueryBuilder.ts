@@ -3879,9 +3879,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const queryId =
             sql +
             " -- PARAMETERS: " +
-            JSON.stringify(parameters, (_, value) =>
-                typeof value === "bigint" ? value.toString() : value,
-            )
+            ObjectUtils.stringifyParams(parameters)
         const cacheOptions =
             typeof this.dataSource.options.cache === "object"
                 ? this.dataSource.options.cache

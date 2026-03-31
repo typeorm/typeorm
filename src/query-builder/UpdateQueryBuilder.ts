@@ -19,6 +19,7 @@ import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundErro
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
 import { isUint8Array } from "../util/Uint8ArrayUtils"
+import { ObjectUtils } from "../util/ObjectUtils"
 import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 
@@ -727,7 +728,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         }
 
         if (updateColumnAndValues.length <= 0) {
-            throw new UpdateValuesMissingError()
+            throw new UpdateValuesMissingError(
+                `Query with missing values while update: ${this.createComment()}UPDATE ${this.getTableName(this.getMainTableName())} SET (nothing)${this.createWhereExpression()} Parameters: ${ObjectUtils.stringifyParams(this.getParameters())}`,
+            )
         }
 
         // get a table name and all column database names
