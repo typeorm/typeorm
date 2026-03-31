@@ -21,7 +21,7 @@ describe("relations > composite foreign key with joinColumn order different from
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should create schema when joinColumn order differs from PK order", () =>
+    it("should create schema and persist when joinColumn order differs from PK order", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const parent = new Parent()
