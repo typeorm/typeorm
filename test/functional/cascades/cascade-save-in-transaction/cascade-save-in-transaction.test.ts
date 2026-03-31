@@ -52,7 +52,7 @@ describe("cascades > save in transaction", () => {
                 // Additional DB assertions to verify orphan handling
                 const loadedParent = await parentRepo.findOneOrFail({
                     where: { id: 1 },
-                    relations: ["children"],
+                    relations: { children: true },
                 })
 
                 expect(loadedParent.children).to.have.length(2)
