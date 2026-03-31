@@ -45,14 +45,14 @@ describe("cascades > cascade remove relation", () => {
                     .getOne()
 
                 expect(reloadedPost).to.not.be.null
-                expect(reloadedPost!.details).to.be.null
+                expect(reloadedPost?.details).to.be.null
 
                 // details entity should still exist in the database
                 const existingDetails = await detailsRepository.findOneBy({
                     id: details.id,
                 })
                 expect(existingDetails).to.not.be.null
-                expect(existingDetails!.comment).to.equal("this is a comment")
+                expect(existingDetails?.comment).to.equal("this is a comment")
             }),
         ))
 })
