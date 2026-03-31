@@ -136,6 +136,7 @@ export class PostgresQueryRunner
     /**
      * Release a connection back to the pool, optionally specifying an Error to release with.
      * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
+     *
      * @param err
      */
     private async releasePostgresConnection(err?: Error) {
@@ -166,6 +167,7 @@ export class PostgresQueryRunner
 
     /**
      * Starts transaction.
+     *
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
@@ -243,6 +245,7 @@ export class PostgresQueryRunner
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -342,6 +345,7 @@ export class PostgresQueryRunner
 
     /**
      * Returns raw data stream.
+     *
      * @param query
      * @param parameters
      * @param onEnd
@@ -377,6 +381,7 @@ export class PostgresQueryRunner
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     *
      * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
@@ -385,6 +390,7 @@ export class PostgresQueryRunner
 
     /**
      * Checks if database with the given name exist.
+     *
      * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
@@ -405,6 +411,7 @@ export class PostgresQueryRunner
 
     /**
      * Checks if schema with the given name exist.
+     *
      * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
@@ -425,6 +432,7 @@ export class PostgresQueryRunner
 
     /**
      * Checks if table with the given name exist in the database.
+     *
      * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
@@ -444,6 +452,7 @@ export class PostgresQueryRunner
 
     /**
      * Checks if column with the given name exist in the given table.
+     *
      * @param tableOrName
      * @param columnName
      */
@@ -469,6 +478,7 @@ export class PostgresQueryRunner
     /**
      * Creates a new database.
      * Note: Postgres does not support database creation inside a transaction block.
+     *
      * @param database
      * @param ifNotExists
      */
@@ -490,6 +500,7 @@ export class PostgresQueryRunner
     /**
      * Drops database.
      * Note: Postgres does not support database dropping inside a transaction block.
+     *
      * @param database
      * @param ifExists
      */
@@ -503,6 +514,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new table schema.
+     *
      * @param schemaPath
      * @param ifNotExists
      */
@@ -525,6 +537,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops table schema.
+     *
      * @param schemaPath
      * @param ifExists
      * @param isCascade
@@ -549,6 +562,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new table.
+     *
      * @param table
      * @param ifNotExists
      * @param createForeignKeys
@@ -661,6 +675,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops the table.
+     *
      * @param target
      * @param ifExists
      * @param dropForeignKeys
@@ -738,6 +753,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new view.
+     *
      * @param view
      * @param syncWithMetadata
      */
@@ -758,6 +774,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops the view.
+     *
      * @param target
      * @param ifExists
      */
@@ -786,6 +803,7 @@ export class PostgresQueryRunner
 
     /**
      * Renames the given table.
+     *
      * @param oldTableOrName
      * @param newTableName
      */
@@ -1042,6 +1060,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new column from the column in the table.
+     *
      * @param tableOrName
      * @param column
      */
@@ -1230,6 +1249,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new columns from the column in the table.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -1244,6 +1264,7 @@ export class PostgresQueryRunner
 
     /**
      * Renames column in the given table.
+     *
      * @param tableOrName
      * @param oldTableColumnOrName
      * @param newTableColumnOrName
@@ -1277,6 +1298,7 @@ export class PostgresQueryRunner
 
     /**
      * Changes a column in the table.
+     *
      * @param tableOrName
      * @param oldTableColumnOrName
      * @param newColumn
@@ -2448,6 +2470,7 @@ export class PostgresQueryRunner
 
     /**
      * Changes a column in the table.
+     *
      * @param tableOrName
      * @param changedColumns
      */
@@ -2462,6 +2485,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops column in the table.
+     *
      * @param tableOrName
      * @param columnOrName
      * @param ifExists
@@ -2669,6 +2693,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops the columns in the table.
+     *
      * @param tableOrName
      * @param columns
      * @param ifExists
@@ -2685,6 +2710,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new primary key.
+     *
      * @param tableOrName
      * @param columnNames
      * @param constraintName
@@ -2714,6 +2740,7 @@ export class PostgresQueryRunner
 
     /**
      * Updates composite primary keys.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -2798,6 +2825,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops a primary key.
+     *
      * @param tableOrName
      * @param constraintName
      * @param ifExists
@@ -2824,6 +2852,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new unique constraint.
+     *
      * @param tableOrName
      * @param uniqueConstraint
      */
@@ -2851,6 +2880,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      */
@@ -2865,6 +2895,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops unique constraint.
+     *
      * @param tableOrName
      * @param uniqueOrName
      * @param ifExists
@@ -2899,6 +2930,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      * @param ifExists
@@ -2919,6 +2951,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new check constraint.
+     *
      * @param tableOrName
      * @param checkConstraint
      */
@@ -2946,6 +2979,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      */
@@ -2961,6 +2995,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops check constraint.
+     *
      * @param tableOrName
      * @param checkOrName
      * @param ifExists
@@ -2991,6 +3026,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      * @param ifExists
@@ -3008,6 +3044,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionConstraint
      */
@@ -3035,6 +3072,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      */
@@ -3050,6 +3088,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionOrName
      * @param ifExists
@@ -3089,6 +3128,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      * @param ifExists
@@ -3110,6 +3150,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new foreign key.
+     *
      * @param tableOrName
      * @param foreignKey
      */
@@ -3138,6 +3179,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new foreign keys.
+     *
      * @param tableOrName
      * @param foreignKeys
      */
@@ -3152,6 +3194,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops a foreign key from the table.
+     *
      * @param tableOrName
      * @param foreignKeyOrName
      * @param ifExists
@@ -3191,6 +3234,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops a foreign keys from the table.
+     *
      * @param tableOrName
      * @param foreignKeys
      * @param ifExists
@@ -3207,6 +3251,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new index.
+     *
      * @param tableOrName
      * @param index
      */
@@ -3229,6 +3274,7 @@ export class PostgresQueryRunner
 
     /**
      * Create a new view index.
+     *
      * @param viewOrName
      * @param index
      */
@@ -3251,6 +3297,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new indices
+     *
      * @param tableOrName
      * @param indices
      */
@@ -3265,6 +3312,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new view indices
+     *
      * @param viewOrName
      * @param indices
      */
@@ -3279,6 +3327,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops an index from the table.
+     *
      * @param tableOrName
      * @param indexOrName
      * @param ifExists
@@ -3311,6 +3360,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops an index from a view.
+     *
      * @param viewOrName
      * @param indexOrName
      */
@@ -3339,6 +3389,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops an indices from the table.
+     *
      * @param tableOrName
      * @param indices
      * @param ifExists
@@ -3356,6 +3407,7 @@ export class PostgresQueryRunner
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     *
      * @param tableName
      * @param options
      * @param options.cascade
@@ -3577,6 +3629,7 @@ export class PostgresQueryRunner
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     *
      * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
@@ -3621,6 +3674,7 @@ export class PostgresQueryRunner
         /**
          * Uses standard SQL information_schema.columns table and postgres-specific
          * pg_catalog.pg_attribute table to get column information.
+         *
          * @see https://stackoverflow.com/a/19541865
          */
         const columnsCondition = dbTables
@@ -4309,6 +4363,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create table sql.
+     *
      * @param table
      * @param createForeignKeys
      */
@@ -4481,6 +4536,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop table sql.
+     *
      * @param tableOrPath
      */
     protected dropTableSql(tableOrPath: Table | string): Query {
@@ -4530,6 +4586,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop view sql.
+     *
      * @param view
      * @param ifExists
      */
@@ -4543,6 +4600,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds remove view sql.
+     *
      * @param view
      */
     protected async deleteViewDefinitionSql(view: View): Promise<Query> {
@@ -4562,6 +4620,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops ENUM type from given schemas.
+     *
      * @param schemaNames
      */
     protected async dropEnumTypes(schemaNames: string[]): Promise<void> {
@@ -4581,6 +4640,7 @@ export class PostgresQueryRunner
 
     /**
      * Checks if enum with the given name exist in the database.
+     *
      * @param table
      * @param column
      */
@@ -4605,6 +4665,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create ENUM type sql.
+     *
      * @param table
      * @param column
      * @param enumName
@@ -4623,6 +4684,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create ENUM type sql.
+     *
      * @param table
      * @param column
      * @param enumName
@@ -4650,6 +4712,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create index sql.
+     *
      * @param table
      * @param index
      */
@@ -4670,6 +4733,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create view index sql.
+     *
      * @param view
      * @param index
      */
@@ -4690,6 +4754,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop index sql.
+     *
      * @param table
      * @param indexOrName
      * @param ifExists
@@ -4722,6 +4787,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create primary key sql.
+     *
      * @param table
      * @param columnNames
      * @param constraintName
@@ -4748,6 +4814,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop primary key sql.
+     *
      * @param table
      * @param ifExists
      */
@@ -4771,6 +4838,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create unique constraint sql.
+     *
      * @param table
      * @param uniqueConstraint
      */
@@ -4791,6 +4859,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop unique constraint sql.
+     *
      * @param table
      * @param uniqueOrName
      * @param ifExists
@@ -4813,6 +4882,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create check constraint sql.
+     *
      * @param table
      * @param checkConstraint
      */
@@ -4829,6 +4899,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop check constraint sql.
+     *
      * @param table
      * @param checkOrName
      * @param ifExists
@@ -4851,6 +4922,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create exclusion constraint sql.
+     *
      * @param table
      * @param exclusionConstraint
      */
@@ -4870,6 +4942,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop exclusion constraint sql.
+     *
      * @param table
      * @param exclusionOrName
      * @param ifExists
@@ -4892,6 +4965,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create foreign key sql.
+     *
      * @param table
      * @param foreignKey
      */
@@ -4921,6 +4995,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop foreign key sql.
+     *
      * @param table
      * @param foreignKeyOrName
      * @param ifExists
@@ -4945,6 +5020,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds sequence name from given table and column.
+     *
      * @param table
      * @param columnOrName
      */
@@ -4984,6 +5060,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds ENUM type name from given table and column.
+     *
      * @param table
      * @param column
      * @param withSchema
@@ -5040,6 +5117,7 @@ export class PostgresQueryRunner
 
     /**
      * Escapes a given comment so it's safe to include in a query.
+     *
      * @param comment
      */
     protected escapeComment(comment?: string) {
@@ -5054,6 +5132,7 @@ export class PostgresQueryRunner
 
     /**
      * Escapes given table or view path.
+     *
      * @param target
      */
     protected escapePath(target: Table | View | string): string {
@@ -5069,6 +5148,7 @@ export class PostgresQueryRunner
     /**
      * Get the table name with table schema
      * Note: Without ' or "
+     *
      * @param target
      */
     protected async getTableNameWithSchema(target: Table | string) {
@@ -5084,6 +5164,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds a query for create column.
+     *
      * @param table
      * @param column
      */
@@ -5151,6 +5232,7 @@ export class PostgresQueryRunner
 
     /**
      * Change table comment.
+     *
      * @param tableOrName
      * @param newComment
      */

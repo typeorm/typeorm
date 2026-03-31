@@ -37,6 +37,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates all given entity metadatas.
+     *
      * @param entityMetadatas
      * @param driver
      */
@@ -50,6 +51,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates given entity metadata.
+     *
      * @param entityMetadata
      * @param allEntityMetadatas
      * @param driver
@@ -310,6 +312,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates dependencies of the entity metadatas.
+     *
      * @param entityMetadatas
      */
     protected validateDependencies(entityMetadatas: EntityMetadata[]) {
@@ -338,6 +341,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates eager relations to prevent circular dependency in them.
+     *
      * @param entityMetadatas
      */
     protected validateEagerRelations(entityMetadatas: EntityMetadata[]) {

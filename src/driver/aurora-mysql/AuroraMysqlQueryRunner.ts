@@ -88,6 +88,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Starts transaction on the current connection.
+     *
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
@@ -161,6 +162,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Executes a raw SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -195,6 +197,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Returns raw data stream.
+     *
      * @param query
      * @param parameters
      * @param onEnd
@@ -231,6 +234,7 @@ export class AuroraMysqlQueryRunner
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     *
      * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
@@ -239,6 +243,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Checks if database with the given name exist.
+     *
      * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
@@ -259,6 +264,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Checks if schema with the given name exist.
+     *
      * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
@@ -275,6 +281,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Checks if table with the given name exist in the database.
+     *
      * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
@@ -289,6 +296,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Checks if column with the given name exist in the given table.
+     *
      * @param tableOrName
      * @param column
      */
@@ -311,6 +319,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new database.
+     *
      * @param database
      * @param ifNotExists
      */
@@ -327,6 +336,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops database.
+     *
      * @param database
      * @param ifExists
      */
@@ -340,6 +350,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new table schema.
+     *
      * @param schemaPath
      * @param ifNotExists
      */
@@ -354,6 +365,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops table schema.
+     *
      * @param schemaPath
      * @param ifExists
      */
@@ -365,6 +377,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new table.
+     *
      * @param table
      * @param ifNotExists
      * @param createForeignKeys
@@ -405,6 +418,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drop the table.
+     *
      * @param target
      * @param ifExists
      * @param dropForeignKeys
@@ -445,6 +459,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new view.
+     *
      * @param view
      * @param syncWithMetadata
      */
@@ -465,6 +480,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops the view.
+     *
      * @param target
      * @param ifExists
      */
@@ -486,6 +502,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Renames a table.
+     *
      * @param oldTableOrName
      * @param newTableName
      */
@@ -611,6 +628,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new column from the column in the table.
+     *
      * @param tableOrName
      * @param column
      */
@@ -783,6 +801,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new columns from the column in the table.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -797,6 +816,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Renames column in the given table.
+     *
      * @param tableOrName
      * @param oldTableColumnOrName
      * @param newTableColumnOrName
@@ -830,6 +850,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Changes a column in the table.
+     *
      * @param tableOrName
      * @param oldColumnOrName
      * @param newColumn
@@ -1251,6 +1272,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Changes a column in the table.
+     *
      * @param tableOrName
      * @param changedColumns
      */
@@ -1265,6 +1287,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops column in the table.
+     *
      * @param tableOrName
      * @param columnOrName
      * @param ifExists
@@ -1478,6 +1501,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops the columns in the table.
+     *
      * @param tableOrName
      * @param columns
      * @param ifExists
@@ -1494,6 +1518,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new primary key.
+     *
      * @param tableOrName
      * @param columnNames
      */
@@ -1519,6 +1544,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Updates composite primary keys.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -1646,6 +1672,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops a primary key.
+     *
      * @param tableOrName
      * @param constraintName
      * @param ifExists
@@ -1675,6 +1702,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new unique constraint.
+     *
      * @param tableOrName
      * @param uniqueConstraint
      */
@@ -1689,6 +1717,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      */
@@ -1703,6 +1732,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops a unique constraint.
+     *
      * @param tableOrName
      * @param uniqueOrName
      * @param ifExists
@@ -1719,6 +1749,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops a unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      * @param ifExists
@@ -1735,6 +1766,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new check constraint.
+     *
      * @param tableOrName
      * @param checkConstraint
      */
@@ -1747,6 +1779,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      */
@@ -1759,6 +1792,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops check constraint.
+     *
      * @param tableOrName
      * @param checkOrName
      * @param ifExists
@@ -1773,6 +1807,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      * @param ifExists
@@ -1787,6 +1822,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionConstraint
      */
@@ -1799,6 +1835,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      */
@@ -1811,6 +1848,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionOrName
      * @param ifExists
@@ -1825,6 +1863,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      * @param ifExists
@@ -1839,6 +1878,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new foreign key.
+     *
      * @param tableOrName
      * @param foreignKey
      */
@@ -1865,6 +1905,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new foreign keys.
+     *
      * @param tableOrName
      * @param foreignKeys
      */
@@ -1880,6 +1921,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops a foreign key.
+     *
      * @param tableOrName
      * @param foreignKeyOrName
      * @param ifExists
@@ -1917,6 +1959,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops a foreign keys from the table.
+     *
      * @param tableOrName
      * @param foreignKeys
      * @param ifExists
@@ -1934,6 +1977,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new index.
+     *
      * @param tableOrName
      * @param index
      */
@@ -1956,6 +2000,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new indices
+     *
      * @param tableOrName
      * @param indices
      */
@@ -1971,6 +2016,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops an index.
+     *
      * @param tableOrName
      * @param indexOrName
      * @param ifExists
@@ -2004,6 +2050,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops an indices from the table.
+     *
      * @param tableOrName
      * @param indices
      * @param ifExists
@@ -2022,6 +2069,7 @@ export class AuroraMysqlQueryRunner
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     *
      * @param tableOrName
      * @param options
      * @param options.cascade
@@ -2041,6 +2089,7 @@ export class AuroraMysqlQueryRunner
      * Removes all tables from the currently connected database.
      * Be careful using this method and avoid using it in production or migrations
      * (because it can clear all your database).
+     *
      * @param database
      */
     async clearDatabase(database?: string): Promise<void> {
@@ -2149,6 +2198,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     *
      * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
@@ -2549,6 +2599,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds create table sql
+     *
      * @param table
      * @param createForeignKeys
      */
@@ -2675,6 +2726,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds drop table sql
+     *
      * @param tableOrName
      */
     protected dropTableSql(tableOrName: Table | string): Query {
@@ -2711,6 +2763,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds drop view sql.
+     *
      * @param viewOrPath
      * @param ifExists
      */
@@ -2726,6 +2779,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds remove view sql.
+     *
      * @param viewOrPath
      */
     protected async deleteViewDefinitionSql(
@@ -2744,6 +2798,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds create index sql.
+     *
      * @param table
      * @param index
      */
@@ -2764,6 +2819,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds drop index sql.
+     *
      * @param table
      * @param indexOrName
      */
@@ -2781,6 +2837,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds create primary key sql.
+     *
      * @param table
      * @param columnNames
      */
@@ -2797,6 +2854,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds drop primary key sql.
+     *
      * @param table
      */
     protected dropPrimaryKeySql(table: Table): Query {
@@ -2807,6 +2865,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds create foreign key sql.
+     *
      * @param table
      * @param foreignKey
      */
@@ -2835,6 +2894,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds drop foreign key sql.
+     *
      * @param table
      * @param foreignKeyOrName
      */
@@ -2856,6 +2916,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Escapes a given comment so it's safe to include in a query.
+     *
      * @param comment
      */
     protected escapeComment(comment?: string) {
@@ -2873,6 +2934,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Escapes given table or view path.
+     *
      * @param target
      */
     protected escapePath(target: Table | View | string): string {
@@ -2887,6 +2949,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds a part of query to create/change a column.
+     *
      * @param column
      * @param skipPrimary
      * @param skipName
@@ -2937,6 +3000,7 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Change table comment.
+     *
      * @param tableOrName
      * @param comment
      */

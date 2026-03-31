@@ -29,6 +29,7 @@ export class PlatformTools {
     /**
      * Reads the version string from package.json of the given package.
      * This operation is only supported in node.
+     *
      * @param name
      */
     static readPackageVersion(name: string): string {
@@ -45,6 +46,7 @@ export class PlatformTools {
     /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
+     *
      * @param name
      */
     static load(name: string): any {
@@ -151,6 +153,7 @@ export class PlatformTools {
 
     /**
      * Normalizes given path. Does "path.normalize" and replaces backslashes with forward slashes on Windows.
+     *
      * @param pathStr
      */
     static pathNormalize(pathStr: string): string {
@@ -162,6 +165,7 @@ export class PlatformTools {
 
     /**
      * Gets file extension. Does "path.extname".
+     *
      * @param pathStr
      */
     static pathExtname(pathStr: string): string {
@@ -170,6 +174,7 @@ export class PlatformTools {
 
     /**
      * Resolved given path. Does "path.resolve".
+     *
      * @param pathStr
      */
     static pathResolve(pathStr: string): string {
@@ -178,6 +183,7 @@ export class PlatformTools {
 
     /**
      * Synchronously checks if file exist. Does "fs.existsSync".
+     *
      * @param pathStr
      */
     static fileExist(pathStr: string): boolean {
@@ -198,6 +204,7 @@ export class PlatformTools {
 
     /**
      * Highlights sql string to be printed in the console.
+     *
      * @param sql
      */
     static highlightSql(sql: string) {
@@ -218,6 +225,7 @@ export class PlatformTools {
 
     /**
      * Pretty-print sql string to be print in the console.
+     *
      * @param sql
      * @param dataSourceType
      */
@@ -241,6 +249,7 @@ export class PlatformTools {
 
     /**
      * Logging functions needed by AdvancedConsoleLogger
+     *
      * @param prefix
      * @param info
      */
