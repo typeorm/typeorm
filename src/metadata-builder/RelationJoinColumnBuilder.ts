@@ -171,8 +171,7 @@ export class RelationJoinColumnBuilder {
             // Databases like MySQL, MSSQL, and SAP HANA require composite FK
             // columns to reference PK columns in the same index order.
             if (referencedColumns.length > 1) {
-                const pkColumns =
-                    relation.inverseEntityMetadata.primaryColumns
+                const pkColumns = relation.inverseEntityMetadata.primaryColumns
                 const orderMap = new Map(
                     pkColumns.map((col, idx) => [col, idx]),
                 )
