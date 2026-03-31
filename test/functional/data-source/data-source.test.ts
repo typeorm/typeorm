@@ -162,7 +162,6 @@ describe("DataSource", () => {
                 dropSchema: true,
             })
         })
-        beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
         it("should be able to get simple entity repository", () =>
