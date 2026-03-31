@@ -69,9 +69,7 @@ export class CascadesSubjectBuilder {
                         alreadyExistRelationEntitySubject.canBeUpdated =
                             relation.isCascadeUpdate === true &&
                             operationType === "save"
-                    if (
-                        !alreadyExistRelationEntitySubject.mustBeRemoved
-                    )
+                    if (!alreadyExistRelationEntitySubject.mustBeRemoved)
                         alreadyExistRelationEntitySubject.mustBeRemoved =
                             relation.isCascadeRemove === true &&
                             operationType === "remove"
