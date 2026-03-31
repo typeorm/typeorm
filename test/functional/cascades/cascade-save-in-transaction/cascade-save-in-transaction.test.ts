@@ -29,6 +29,7 @@ describe("cascades > save in transaction", () => {
                 const parentRepo = dataSource.getRepository(Parent)
                 const childRepo = dataSource.getRepository(Child)
 
+                let parentId: number
                 let firstChildIds: number[] = []
 
                 await expect(
@@ -38,6 +39,7 @@ describe("cascades > save in transaction", () => {
                             parent.children = [new Child(1), new Child(2)]
 
                             await transactionalEntityManager.save(parent)
+                            parentId = parent.id
                             firstChildIds = parent.children.map(
                                 (child) => child.id,
                             )
@@ -51,7 +53,7 @@ describe("cascades > save in transaction", () => {
 
                 // Additional DB assertions to verify orphan handling
                 const loadedParent = await parentRepo.findOneOrFail({
-                    where: { id: 1 },
+                    where: { id: parentId! },
                     relations: { children: true },
                 })
 

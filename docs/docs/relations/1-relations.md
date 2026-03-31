@@ -18,10 +18,10 @@ There are several options you can specify for relations:
 - `cascade: boolean | ("insert" | "update")[]` (default: `false`) - If set to true, the related object will be inserted and updated in the database. You can also specify an array of [cascade options](#cascade-options).
 - `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` (default: `RESTRICT`) - specifies how foreign key should behave when referenced object is deleted
 - `nullable: boolean` (default: `true`) - Indicates whether this relation's column is nullable or not. By default it is nullable. For `ManyToOne` and owning `OneToOne` relations, setting `nullable: false` also causes TypeORM to use `INNER JOIN` instead of `LEFT JOIN` when loading the relation, since the related entity is guaranteed to exist.
-- `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` (default: `disable`) - When a parent is saved (cascading enabled) without a child/children that still exists in database, this will control what shall happen to them.
+- `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` (default: `nullify`) - When a parent is saved (cascading enabled) without a child/children that still exists in database, this will control what shall happen to them.
+    - _nullify_ will remove the relation key. If the foreign key column is non-nullable, the orphaned row will be deleted instead since it cannot be set to `null`.
     - _delete_ will remove these children from database.
     - _soft-delete_ will mark children as soft-deleted.
-    - _nullify_ will remove the relation key.
     - _disable_ will keep the relation intact. To delete, one has to use their own repository.
 
 ## Cascades
