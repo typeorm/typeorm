@@ -29,17 +29,14 @@ describe("cascades > save in transaction", () => {
                 const parentRepo = dataSource.getRepository(Parent)
                 const childRepo = dataSource.getRepository(Child)
 
-                let parentId: number
+                const parent = new Parent()
+                parent.children = [new Child(1), new Child(2)]
                 let firstChildIds: number[] = []
 
                 await expect(
                     dataSource.manager.transaction(
                         async (transactionalEntityManager: EntityManager) => {
-                            const parent = new Parent()
-                            parent.children = [new Child(1), new Child(2)]
-
                             await transactionalEntityManager.save(parent)
-                            parentId = parent.id
                             firstChildIds = parent.children.map(
                                 (child) => child.id,
                             )
@@ -51,9 +48,9 @@ describe("cascades > save in transaction", () => {
                     ),
                 ).not.to.be.rejected
 
-                // Additional DB assertions to verify orphan handling
+                // Verify final state after transaction
                 const loadedParent = await parentRepo.findOneOrFail({
-                    where: { id: parentId! },
+                    where: { id: parent.id },
                     relations: { children: true },
                 })
 
@@ -62,14 +59,13 @@ describe("cascades > save in transaction", () => {
                     loadedParent.children.map((c) => c.data),
                 ).to.include.members([4, 5])
 
-                // validate that orphaned children are removed from the database
-                // since parent_id is non-nullable, TypeORM should delete them
+                // Orphaned children should be deleted (FK is non-nullable)
                 const orphanedChildren = await childRepo.find({
                     where: { id: In(firstChildIds) },
                 })
                 expect(orphanedChildren).to.be.empty
 
-                // verify no other unexpected rows exist
+                // Verify no other unexpected rows exist
                 const allChildrenCount = await childRepo.count()
                 expect(allChildrenCount).to.equal(2)
             }),
