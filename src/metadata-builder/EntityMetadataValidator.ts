@@ -239,57 +239,6 @@ export class EntityMetadataValidator {
                     `OnUpdateType "${relation.onUpdate}" is not valid for ${driver.options.type}!`,
                 )
             }
-
-            // check join tables:
-            // using JoinTable is possible only on one side of the many-to-many relation
-            // todo(dima): fix
-            // if (relation.joinTable) {
-            //     if (!relation.isManyToMany)
-            //         throw new UsingJoinTableIsNotAllowedError(entityMetadata, relation);
-            //     // if there is inverse side of the relation, then check if it does not have join table too
-            //     if (relation.hasInverseSide && relation.inverseRelation.joinTable)
-            //         throw new UsingJoinTableOnlyOnOneSideAllowedError(entityMetadata, relation);
-            // }
-            // check join columns:
-            // using JoinColumn is possible only on one side of the relation and on one-to-one, many-to-one relation types
-            // first check if relation is one-to-one or many-to-one
-            // todo(dima): fix
-            /*if (relation.joinColumn) {
-
-                // join column can be applied only on one-to-one and many-to-one relations
-                if (!relation.isOneToOne && !relation.isManyToOne)
-                    throw new UsingJoinColumnIsNotAllowedError(entityMetadata, relation);
-
-                // if there is inverse side of the relation, then check if it does not have join table too
-                if (relation.hasInverseSide && relation.inverseRelation.joinColumn && relation.isOneToOne)
-                    throw new UsingJoinColumnOnlyOnOneSideAllowedError(entityMetadata, relation);
-
-                // check if join column really has referenced column
-                if (relation.joinColumn && !relation.joinColumn.referencedColumn)
-                    throw new TypeORMError(`Join column does not have referenced column set`);
-
-            }
-
-            // if its a one-to-one relation and JoinColumn is missing on both sides of the relation
-            // or its one-side relation without JoinColumn we should give an error
-            if (!relation.joinColumn && relation.isOneToOne && (!relation.hasInverseSide || !relation.inverseRelation.joinColumn))
-                throw new MissingJoinColumnError(entityMetadata, relation);*/
-            // if its a many-to-many relation and JoinTable is missing on both sides of the relation
-            // or its one-side relation without JoinTable we should give an error
-            // todo(dima): fix it
-            // if (!relation.joinTable && relation.isManyToMany && (!relation.hasInverseSide || !relation.inverseRelation.joinTable))
-            //     throw new MissingJoinTableError(entityMetadata, relation);
-            // todo: validate if its one-to-one and side which does not have join column MUST have inverse side
-            // todo: validate if its many-to-many and side which does not have join table MUST have inverse side
-            // todo: if there is a relation, and inverse side is specified only on one side, shall we give error
-            // todo: with message like: "Inverse side is specified only on one side of the relationship. Specify on other side too to prevent confusion".
-            // todo: add validation if there two entities with the same target, and show error message with description of the problem (maybe file was renamed/moved but left in output directory)
-            // todo: check if there are multiple columns on the same column applied.
-            // todo: check column type if is missing in relational databases (throw new TypeORMError(`Column type of ${type} cannot be determined.`);)
-            // todo: include driver-specific checks. for example in mongodb empty prefixes are not allowed
-            // todo: if multiple columns with same name - throw exception, including cases when columns are in embeds with same prefixes or without prefix at all
-            // todo: if multiple primary key used, at least one of them must be unique or @Index decorator must be set on entity
-            // todo: check if entity with duplicate names, some decorators exist
         })
 
         // make sure cascade remove is not set for both sides of relationships (can be set in OneToOne decorators)

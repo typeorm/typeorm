@@ -312,11 +312,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Rename tables
      */
-    protected async renameTables(): Promise<void> {
-        // for (const metadata of this.entityToSyncMetadatas) {
-        //     const table = this.tables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
-        // }
-    }
+    protected async renameTables(): Promise<void> {}
 
     /**
      * Renames columns.
