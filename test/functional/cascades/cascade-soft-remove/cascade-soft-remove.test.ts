@@ -111,8 +111,7 @@ describe("cascades > soft-remove", () => {
             }),
         ))
 
-    // recovery fails with "QueryFailedError: duplicate key value violates unique constraint"
-    it.skip("recovers many-many relations after soft-remove cascade", async () =>
+    it("recovers many-many relations after soft-remove cascade", async () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const user = User.create({
@@ -133,7 +132,7 @@ describe("cascades > soft-remove", () => {
                 const allPhotos = await dataSource.manager.find(Photo, {
                     withDeleted: true,
                 })
-                expect(allPhotos.length).to.equal(1)
+                expect(allPhotos.length).to.equal(2)
 
                 // recover user..
                 await dataSource.manager.recover(user)
