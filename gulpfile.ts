@@ -77,7 +77,13 @@ async function nodeCreateEsmIndex() {
 async function copyPackageFile() {
     const pkg = JSON.parse(await fs.readFile("./package.json", "utf8"))
 
-    delete pkg.devDependencies
+    // Preserve devDependencies used by `typeorm init` to generate project package.json
+    const initDevDeps = ["@types/node", "ts-node", "typescript"]
+    pkg.devDependencies = Object.fromEntries(
+        initDevDeps
+            .filter((dep) => dep in (pkg.devDependencies ?? {}))
+            .map((dep) => [dep, pkg.devDependencies[dep]]),
+    )
     delete pkg.devEngines
     delete pkg.packageManager
     delete pkg.pnpm
