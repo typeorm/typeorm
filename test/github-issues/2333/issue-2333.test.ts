@@ -1,4 +1,4 @@
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -6,21 +6,20 @@ import {
 import { Test } from "./entity/Test"
 
 describe("github issues > #2333 datetime column showing changed on every schema:sync run", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["mysql", "mariadb"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [Test],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["mysql", "mariadb"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [Test],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -31,7 +30,7 @@ describe("github issues > #2333 datetime column showing changed on every schema:
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()

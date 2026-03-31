@@ -1,8 +1,8 @@
-import { RelationMetadata } from "../../metadata/RelationMetadata"
+import type { RelationMetadata } from "../../metadata/RelationMetadata"
 import { QueryBuilderUtils } from "../QueryBuilderUtils"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { QueryExpressionMap } from "../QueryExpressionMap"
-import { SelectQueryBuilder } from "../SelectQueryBuilder"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { QueryExpressionMap } from "../QueryExpressionMap"
+import type { SelectQueryBuilder } from "../SelectQueryBuilder"
 import { ObjectUtils } from "../../util/ObjectUtils"
 import { TypeORMError } from "../../error/TypeORMError"
 

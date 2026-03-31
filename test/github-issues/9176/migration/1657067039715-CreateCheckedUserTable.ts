@@ -1,4 +1,5 @@
-import { MigrationInterface, QueryRunner, Table } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
+import { Table } from "../../../../src"
 
 export class CreateCheckedUserTable1657067039715 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {

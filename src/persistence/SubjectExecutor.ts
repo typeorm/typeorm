@@ -1,19 +1,19 @@
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { Subject } from "./Subject"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { Subject } from "./Subject"
 import { SubjectTopologicalSorter } from "./SubjectTopologicalSorter"
 import { SubjectChangedColumnsComputer } from "./SubjectChangedColumnsComputer"
 import { SubjectWithoutIdentifierError } from "../error/SubjectWithoutIdentifierError"
 import { SubjectRemovedAndUpdatedError } from "../error/SubjectRemovedAndUpdatedError"
-import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { SaveOptions } from "../repository/SaveOptions"
-import { RemoveOptions } from "../repository/RemoveOptions"
+import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { SaveOptions } from "../repository/SaveOptions"
+import type { RemoveOptions } from "../repository/RemoveOptions"
 import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { NestedSetSubjectExecutor } from "./tree/NestedSetSubjectExecutor"
 import { ClosureSubjectExecutor } from "./tree/ClosureSubjectExecutor"
 import { MaterializedPathSubjectExecutor } from "./tree/MaterializedPathSubjectExecutor"
 import { OrmUtils } from "../util/OrmUtils"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 
@@ -364,7 +364,7 @@ export class SubjectExecutor {
             const bulkInsertMaps: ObjectLiteral[] = []
             const bulkInsertSubjects: Subject[] = []
             const singleInsertSubjects: Subject[] = []
-            if (this.queryRunner.connection.driver.options.type === "mongodb") {
+            if (this.queryRunner.dataSource.driver.options.type === "mongodb") {
                 subjects.forEach((subject) => {
                     if (subject.metadata.createDateColumn && subject.entity) {
                         subject.entity[
@@ -384,7 +384,7 @@ export class SubjectExecutor {
                     bulkInsertMaps.push(subject.entity!)
                 })
             } else if (
-                this.queryRunner.connection.driver.options.type === "oracle"
+                this.queryRunner.dataSource.driver.options.type === "oracle"
             ) {
                 subjects.forEach((subject) => {
                     singleInsertSubjects.push(subject)
@@ -398,9 +398,9 @@ export class SubjectExecutor {
                     if (
                         subject.changeMaps.length === 0 ||
                         subject.metadata.treeType ||
-                        this.queryRunner.connection.driver.options.type ===
+                        this.queryRunner.dataSource.driver.options.type ===
                             "oracle" ||
-                        this.queryRunner.connection.driver.options.type ===
+                        this.queryRunner.dataSource.driver.options.type ===
                             "sap"
                     ) {
                         singleInsertSubjects.push(subject)
@@ -506,7 +506,7 @@ export class SubjectExecutor {
                         )
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -622,7 +622,7 @@ export class SubjectExecutor {
                         const value = column.getEntityValue(updateGeneratedMap!)
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -834,7 +834,7 @@ export class SubjectExecutor {
                         )
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -957,7 +957,7 @@ export class SubjectExecutor {
                         )
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -1053,6 +1053,7 @@ export class SubjectExecutor {
     /**
      * Updates all special columns of the saving entities (create date, update date, version, etc.).
      * Also updates nullable columns and columns with default values.
+     *
      * @param subjects
      */
     protected updateSpecialColumnsInInsertedAndUpdatedEntities(
@@ -1143,6 +1144,7 @@ export class SubjectExecutor {
      *
      * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
      * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
+     *
      * @param subjects
      * @param type
      */
@@ -1157,7 +1159,7 @@ export class SubjectExecutor {
         })
         const groupingAllowed =
             type === "delete" ||
-            this.queryRunner.connection.driver.isReturningSqlSupported(
+            this.queryRunner.dataSource.driver.isReturningSqlSupported(
                 "insert",
             ) ||
             hasReturningDependColumns === false

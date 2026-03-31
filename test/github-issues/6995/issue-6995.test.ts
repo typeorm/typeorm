@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -7,22 +7,21 @@ import {
 import { DefaultUpdateDate } from "./entity/default-update-date"
 
 describe("github issues > #6995 Generating migrations for UpdateDateColumn should generate on update clause", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                migrations: [],
-                enabledDrivers: ["mysql", "mariadb"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [DefaultUpdateDate],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            enabledDrivers: ["mysql", "mariadb"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [DefaultUpdateDate],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should create migration with default ON UPDATE clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()

@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
@@ -15,15 +15,14 @@ describe("persistence > partial persist", () => {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -31,9 +30,9 @@ describe("persistence > partial persist", () => {
 
     it("should persist partial entities without data loss", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 // save a new category
                 const newCategory = new Category()
@@ -59,11 +58,8 @@ describe("persistence > partial persist", () => {
                     where: {
                         id: newPost.id,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            categories: "post.categories",
-                        },
+                    relations: {
+                        categories: true,
                     },
                 })
 
@@ -93,11 +89,8 @@ describe("persistence > partial persist", () => {
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                categories: "post.categories",
-                            },
+                        relations: {
+                            categories: true,
                         },
                     },
                 )
@@ -137,11 +130,8 @@ describe("persistence > partial persist", () => {
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                categories: "post.categories",
-                            },
+                        relations: {
+                            categories: true,
                         },
                     },
                 )
@@ -181,11 +171,8 @@ describe("persistence > partial persist", () => {
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                categories: "post.categories",
-                            },
+                        relations: {
+                            categories: true,
                         },
                     })
 

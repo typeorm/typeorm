@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Author } from "./entity/Author"
 import { Post } from "./entity/Post"
 import { CheckedUser, User } from "./entity/User"
@@ -19,20 +19,19 @@ import { expect } from "chai"
 describe("github issues > #9176 The names of foreign keys created by queryRunner.createForeignKey and schema:sync are different with SQLite", () => {
     describe("github issues > #9176 foreign keys", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [Author, Post],
-                    enabledDrivers: ["sqlite"],
-                    migrations: [
-                        CreatePostTable1656926770819,
-                        CreateAuthorTable1656939116999,
-                        AddAuthorIdColumn1656939646470,
-                    ],
-                    schemaCreate: false,
-                    dropSchema: true,
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Author, Post],
+                enabledDrivers: ["better-sqlite3"],
+                migrations: [
+                    CreatePostTable1656926770819,
+                    CreateAuthorTable1656939116999,
+                    AddAuthorIdColumn1656939646470,
+                ],
+                schemaCreate: false,
+                dropSchema: true,
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should not generate queries when created foreign key with queryRunnner.createForeignKey", () =>
@@ -51,19 +50,18 @@ describe("github issues > #9176 The names of foreign keys created by queryRunner
 
     describe("github issues > #9176 unique constraint", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [User],
-                    enabledDrivers: ["sqlite"],
-                    migrations: [
-                        CreateUserTable1657066872930,
-                        CreateUniqueConstraintToUser1657067039714,
-                    ],
-                    schemaCreate: false,
-                    dropSchema: true,
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [User],
+                enabledDrivers: ["better-sqlite3"],
+                migrations: [
+                    CreateUserTable1657066872930,
+                    CreateUniqueConstraintToUser1657067039714,
+                ],
+                schemaCreate: false,
+                dropSchema: true,
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should not generate queries when created unique constraint with queryRunnner.createUniqueConstraint", () =>
@@ -82,19 +80,18 @@ describe("github issues > #9176 The names of foreign keys created by queryRunner
 
     describe("github issues > #9176 check constraint", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [CheckedUser],
-                    enabledDrivers: ["sqlite"],
-                    migrations: [
-                        CreateCheckedUserTable1657067039715,
-                        CreateCheckConstraintToUser1657067039716,
-                    ],
-                    schemaCreate: false,
-                    dropSchema: true,
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [CheckedUser],
+                enabledDrivers: ["better-sqlite3"],
+                migrations: [
+                    CreateCheckedUserTable1657067039715,
+                    CreateCheckConstraintToUser1657067039716,
+                ],
+                schemaCreate: false,
+                dropSchema: true,
+            })
+        })
         after(() => closeTestingConnections(dataSources))
 
         it("should not generate queries when created check constraint with queryRunnner.createCheckConstraint", () =>

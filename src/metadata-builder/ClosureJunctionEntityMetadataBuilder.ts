@@ -1,7 +1,7 @@
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
-import { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source/DataSource"
 import { IndexMetadata } from "../metadata/IndexMetadata"
 
 /**
@@ -21,13 +21,14 @@ export class ClosureJunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the closure junction of the given closure entity.
+     *
      * @param parentClosureEntityMetadata
      */
     build(parentClosureEntityMetadata: EntityMetadata) {
         // create entity metadata itself
         const entityMetadata = new EntityMetadata({
             parentClosureEntityMetadata: parentClosureEntityMetadata,
-            connection: this.dataSource,
+            dataSource: this.dataSource,
             args: {
                 target: "",
                 name:
@@ -37,6 +38,8 @@ export class ClosureJunctionEntityMetadataBuilder {
                               .closureTableName
                         : parentClosureEntityMetadata.tableNameWithoutPrefix,
                 type: "closure-junction",
+                schema: parentClosureEntityMetadata.schema,
+                database: parentClosureEntityMetadata.database,
             },
         })
         entityMetadata.build()
@@ -45,7 +48,6 @@ export class ClosureJunctionEntityMetadataBuilder {
         parentClosureEntityMetadata.primaryColumns.forEach((primaryColumn) => {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     closureType: "ancestor",
                     referencedColumn: primaryColumn,
@@ -65,10 +67,8 @@ export class ClosureJunctionEntityMetadataBuilder {
                             length: primaryColumn.length,
                             type: primaryColumn.type,
                             unsigned: primaryColumn.unsigned,
-                            width: primaryColumn.width,
                             precision: primaryColumn.precision,
                             scale: primaryColumn.scale,
-                            zerofill: primaryColumn.zerofill,
                             charset: primaryColumn.charset,
                             collation: primaryColumn.collation,
                         },
@@ -77,7 +77,6 @@ export class ClosureJunctionEntityMetadataBuilder {
             )
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     closureType: "descendant",
                     referencedColumn: primaryColumn,
@@ -97,10 +96,8 @@ export class ClosureJunctionEntityMetadataBuilder {
                             length: primaryColumn.length,
                             type: primaryColumn.type,
                             unsigned: primaryColumn.unsigned,
-                            width: primaryColumn.width,
                             precision: primaryColumn.precision,
                             scale: primaryColumn.scale,
-                            zerofill: primaryColumn.zerofill,
                             charset: primaryColumn.charset,
                             collation: primaryColumn.collation,
                         },
@@ -132,7 +129,6 @@ export class ClosureJunctionEntityMetadataBuilder {
         if (parentClosureEntityMetadata.treeLevelColumn) {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     args: {
                         target: "",

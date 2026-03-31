@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import sinon from "sinon"
 import { expect } from "chai"
 
@@ -14,13 +14,12 @@ describe("persistence > persistence options > transaction", () => {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({ __dirname })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({ __dirname })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -28,12 +27,12 @@ describe("persistence > persistence options > transaction", () => {
 
     it("should disable transaction when option is specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.title = "Bakhrom"
                 post.description = "Hello"
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 const startTransactionFn = sinon.spy(
                     queryRunner,
@@ -44,7 +43,7 @@ describe("persistence > persistence options > transaction", () => {
                     "commitTransaction",
                 )
 
-                await connection
+                await dataSource
                     .createEntityManager(queryRunner)
                     .getRepository(Post)
                     .save(post, { transaction: false })
@@ -60,7 +59,7 @@ describe("persistence > persistence options > transaction", () => {
 
     it("should disable transaction when the drivers transactionSupport setting equals `none`", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.title = "Bakhrom"
                 post.description = "Hello"
@@ -68,10 +67,10 @@ describe("persistence > persistence options > transaction", () => {
                 // Storing initial driver setting of the `transactionSupport` property
                 // in order to be able to restore it later
                 const transactionSupportInitial =
-                    connection.driver.transactionSupport
-                connection.driver.transactionSupport = "none"
+                    dataSource.driver.transactionSupport
+                dataSource.driver.transactionSupport = "none"
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 const startTransactionFn = sinon.spy(
                     queryRunner,
@@ -82,7 +81,7 @@ describe("persistence > persistence options > transaction", () => {
                     "commitTransaction",
                 )
 
-                await connection
+                await dataSource
                     .createEntityManager(queryRunner)
                     .getRepository(Post)
                     .save(post)
@@ -93,7 +92,7 @@ describe("persistence > persistence options > transaction", () => {
                 // Cleanup
                 await queryRunner.release()
                 sinon.restore()
-                connection.driver.transactionSupport = transactionSupportInitial
+                dataSource.driver.transactionSupport = transactionSupportInitial
             }),
         ))
 })

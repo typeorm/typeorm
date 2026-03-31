@@ -4,33 +4,32 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Item, NEW_COLLATION } from "./entity/item.entity"
 
 describe("github issues > #8647 Collation changes are not synced to RDBMS", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                driverSpecific: {
-                    applicationName: "collation-detection-test",
-                },
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            driverSpecific: {
+                applicationName: "collation-detection-test",
+            },
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     const COLUMN_NAME = "name"
 
     it("ALTER ... COLLATE query should be created", async () => {
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // change metadata
                 const meta = connection.getMetadata(Item)
                 const col = meta.columns.find(

@@ -1,7 +1,7 @@
-import { NamingStrategyInterface } from "./NamingStrategyInterface"
+import type { NamingStrategyInterface } from "./NamingStrategyInterface"
 import { RandomGenerator } from "../util/RandomGenerator"
 import { camelCase, snakeCase, titleCase } from "../util/StringUtils"
-import { Table } from "../schema-builder/table/Table"
+import type { Table } from "../schema-builder/table/Table"
 
 /**
  * Naming strategy that is used by default.
@@ -18,7 +18,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
      * Normalizes table name.
      *
      * @param targetName Name of the target entity that can be used to generate a table name.
-     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. @Entity("name")
+     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. `@Entity("name")`
      */
     tableName(
         targetName: string,
@@ -204,6 +204,9 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
      * This method is executed no matter if prefix was set or not.
      * Table name is either user's given table name, either name generated from entity target.
      * Note that table name comes here already normalized by #tableName method.
+     *
+     * @param prefix
+     * @param tableName
      */
     prefixTableName(prefix: string, tableName: string): string {
         return prefix + tableName

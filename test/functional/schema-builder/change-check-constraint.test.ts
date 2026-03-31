@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,39 +11,39 @@ import { CheckMetadata } from "../../../src/metadata/CheckMetadata"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > change check constraint", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly add new check constraint", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Mysql does not support check constraints.
-                if (DriverUtils.isMySQLFamily(connection.driver)) return
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) return
 
-                const teacherMetadata = connection.getMetadata(Teacher)
+                const teacherMetadata = dataSource.getMetadata(Teacher)
                 const checkMetadata = new CheckMetadata({
                     entityMetadata: teacherMetadata,
                     args: {
                         target: Teacher,
-                        expression: `${connection.driver.escape(
+                        expression: `${dataSource.driver.escape(
                             "name",
                         )} <> 'asd'`,
                     },
                 })
-                checkMetadata.build(connection.namingStrategy)
+                checkMetadata.build(dataSource.namingStrategy)
                 teacherMetadata.checks.push(checkMetadata)
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("teacher")
                 await queryRunner.release()
 
@@ -53,19 +53,19 @@ describe("schema builder > change check constraint", () => {
 
     it("should correctly change check", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Mysql does not support check constraints.
-                if (DriverUtils.isMySQLFamily(connection.driver)) return
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) return
 
-                const postMetadata = connection.getMetadata(Post)
-                postMetadata.checks[0].expression = `${connection.driver.escape(
+                const postMetadata = dataSource.getMetadata(Post)
+                postMetadata.checks[0].expression = `${dataSource.driver.escape(
                     "likesCount",
                 )} < 2000`
-                postMetadata.checks[0].build(connection.namingStrategy)
+                postMetadata.checks[0].build(dataSource.namingStrategy)
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -77,16 +77,16 @@ describe("schema builder > change check constraint", () => {
 
     it("should correctly drop removed check", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Mysql does not support check constraints.
-                if (DriverUtils.isMySQLFamily(connection.driver)) return
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) return
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = dataSource.getMetadata(Post)
                 postMetadata.checks = []
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 

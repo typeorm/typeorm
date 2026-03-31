@@ -1,19 +1,22 @@
 import { Subject } from "../Subject"
 import { OrmUtils } from "../../util/OrmUtils"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { RelationMetadata } from "../../metadata/RelationMetadata"
+import type { RelationMetadata } from "../../metadata/RelationMetadata"
 
 /**
  * Builds operations needs to be executed for one-to-many relations of the given subjects.
  *
- * by example: post contains one-to-many relation with category in the property called "categories", e.g.
- *             @OneToMany(type => Category, category => category.post) categories: Category[]
- *             If user adds categories into the post and saves post we need to bind them.
- *             This operation requires updation of category table since its owner of the relation and contains a join column.
+ * Note: this class shares lot of things with OneToOneInverseSideOperationBuilder,
+ * so when you change this class make sure to reflect changes there as well.
  *
- * note: this class shares lot of things with OneToOneInverseSideOperationBuilder, so when you change this class
- *       make sure to reflect changes there as well.
+ * @example
+ * // Post contains one-to-many relation with Category in the property called "categories".
+ * // If user adds categories into the post and saves post we need to bind them.
+ * // This operation requires updating the category table since it's the owner of
+ * // the relation and contains a join column.
+ * \@OneToMany(type => Category, category => category.post) categories: Category[]
+ *
  */
 export class OneToManySubjectBuilder {
     // ---------------------------------------------------------------------
@@ -48,6 +51,7 @@ export class OneToManySubjectBuilder {
      * Builds operations for a given subject and relation.
      *
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
+     *
      * @param subject
      * @param relation
      */
@@ -180,7 +184,7 @@ export class OneToManySubjectBuilder {
         })
 
         // find what related entities were added and what were removed based on difference between what we save and what database has
-        if (relation.inverseRelation!.orphanedRowAction !== "disable") {
+        if (relation.inverseRelation?.orphanedRowAction !== "disable") {
             EntityMetadata.difference(
                 relatedEntityDatabaseRelationIds,
                 relatedPersistedEntityRelationIds,
@@ -196,13 +200,16 @@ export class OneToManySubjectBuilder {
                     identifier: removedRelatedEntityRelationId,
                 })
 
-                if (relation.inverseRelation!.orphanedRowAction === "nullify") {
-                    // if the relation is nullable, we just set it to null
-                    if (
-                        relation.inverseRelation!.joinColumns.every(
+                const orphanedRowAction =
+                    relation.inverseRelation?.orphanedRowAction ?? "nullify"
+
+                if (orphanedRowAction === "nullify") {
+                    const allColumnsNullable =
+                        relation.inverseRelation?.joinColumns.every(
                             (column) => column.isNullable,
-                        )
-                    ) {
+                        ) ?? true
+
+                    if (allColumnsNullable) {
                         removedRelatedEntitySubject.canBeUpdated = true
                         removedRelatedEntitySubject.changeMaps = [
                             {
@@ -211,20 +218,13 @@ export class OneToManySubjectBuilder {
                             },
                         ]
                     } else {
-                        // if the relation is not nullable, we delete the entity
-                        // this is because if we don't delete it, it will stay in the database with the old relation
-                        // creating an inconsistency between the object in memory and the database
-                        // and we cannot set it to null because the column is not nullable
+                        // FK is not nullable — cannot set to null, so delete
+                        // the orphaned entity to keep DB consistent
                         removedRelatedEntitySubject.mustBeRemoved = true
                     }
-                } else if (
-                    relation.inverseRelation!.orphanedRowAction === "delete"
-                ) {
+                } else if (orphanedRowAction === "delete") {
                     removedRelatedEntitySubject.mustBeRemoved = true
-                } else if (
-                    relation.inverseRelation!.orphanedRowAction ===
-                    "soft-delete"
-                ) {
+                } else if (orphanedRowAction === "soft-delete") {
                     removedRelatedEntitySubject.canBeSoftRemoved = true
                 }
 

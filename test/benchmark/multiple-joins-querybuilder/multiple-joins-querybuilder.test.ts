@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,19 +12,18 @@ import { One } from "./entity/One"
  * any actual queries.
  */
 describe("benchmark > QueryBuilder > wide join", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                __dirname,
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            enabledDrivers: ["postgres"],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("testing query builder with join to 10 relations with 10 columns each", () => {
         for (let i = 1; i <= 10_000; i++) {
-            connections.forEach((connection) =>
+            dataSources.forEach((connection) =>
                 connection.manager
                     .createQueryBuilder(One, "ones")
                     .setFindOptions({

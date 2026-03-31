@@ -1,13 +1,14 @@
-import { DataSource } from "../data-source/DataSource"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { RelationMetadata } from "../metadata/RelationMetadata"
+import type { DataSource } from "../data-source/DataSource"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
+import { DriverUtils } from "../driver/DriverUtils"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import { SelectQueryBuilder } from "./SelectQueryBuilder"
+import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 
 /**
- * Wraps entities and creates getters/setters for their relations
- * to be able to lazily load relations when accessing these relations.
+ * Loads relation data for entities and provides lazy-load wrappers
+ * via getters/setters.
  */
 export class RelationLoader {
     // -------------------------------------------------------------------------
@@ -22,16 +23,19 @@ export class RelationLoader {
 
     /**
      * Loads relation data for the given entity and its relation.
+     *
      * @param relation
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     load(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any[]> {
         // todo: check all places where it uses non array
         if (queryRunner && queryRunner.isReleased) queryRunner = undefined // get new one if already closed
@@ -41,6 +45,7 @@ export class RelationLoader {
                 entityOrEntities,
                 queryRunner,
                 queryBuilder,
+                loadEagerRelations,
             )
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
             return this.loadOneToManyOrOneToOneNotOwner(
@@ -48,6 +53,7 @@ export class RelationLoader {
                 entityOrEntities,
                 queryRunner,
                 queryBuilder,
+                loadEagerRelations,
             )
         } else if (relation.isManyToManyOwner) {
             return this.loadManyToManyOwner(
@@ -55,6 +61,7 @@ export class RelationLoader {
                 entityOrEntities,
                 queryRunner,
                 queryBuilder,
+                loadEagerRelations,
             )
         } else {
             // many-to-many non owner
@@ -63,6 +70,7 @@ export class RelationLoader {
                 entityOrEntities,
                 queryRunner,
                 queryBuilder,
+                loadEagerRelations,
             )
         }
     }
@@ -72,39 +80,64 @@ export class RelationLoader {
      *
      * (ow) post.category<=>category.post
      * loaded: category from post
-     * example: SELECT category.id AS category_id, category.name AS category_name FROM category category
-     *              INNER JOIN post Post ON Post.category=category.id WHERE Post.id=1
+     *
+     * @example
+     * SELECT category.id AS category_id, category.name AS category_name FROM category category
+     *     INNER JOIN post Post ON Post.category=category.id WHERE Post.id=1
+     *
      * @param relation
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     loadManyToOneOrOneToOneOwner(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any> {
         const entities = Array.isArray(entityOrEntities)
             ? entityOrEntities
             : [entityOrEntities]
 
-        const joinAliasName = relation.entityMetadata.name
         const qb = queryBuilder
             ? queryBuilder
             : this.dataSource
                   .createQueryBuilder(queryRunner)
-                  .select(relation.propertyName) // category
+                  .select(relation.propertyName)
                   .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
+
+        // For self-referencing relations the entity name already exists
+        // as an alias, so we need to generate a unique join alias name.
+        const baseName = relation.entityMetadata.name
+        let joinAliasName = DriverUtils.buildAlias(
+            this.dataSource.driver,
+            { shorten: true },
+            baseName,
+        )
+        let suffix = 1
+        while (
+            qb.expressionMap.aliases.some(({ name }) => name === joinAliasName)
+        ) {
+            joinAliasName = DriverUtils.buildAlias(
+                this.dataSource.driver,
+                { shorten: true },
+                baseName,
+                String(suffix++),
+            )
+        }
+
         const columns = relation.entityMetadata.primaryColumns
         const joinColumns = relation.isOwning
             ? relation.joinColumns
             : relation.inverseRelation!.joinColumns
         const conditions = joinColumns
             .map((joinColumn) => {
-                return `${relation.entityMetadata.name}.${
+                return `${joinAliasName}.${
                     joinColumn.propertyName
                 } = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`
             })
@@ -158,11 +191,7 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        FindOptionsUtils.joinEagerRelations(
-            qb,
-            qb.alias,
-            qb.expressionMap.mainAlias!.metadata,
-        )
+        this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
         // return qb.getOne(); todo: fix all usages
@@ -174,16 +203,19 @@ export class RelationLoader {
      * SELECT post
      * FROM post post
      * WHERE post.[joinColumn.name] = entity[joinColumn.referencedColumn]
+     *
      * @param relation
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     loadOneToManyOrOneToOneNotOwner(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any> {
         const entities = Array.isArray(entityOrEntities)
             ? entityOrEntities
@@ -246,11 +278,7 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        FindOptionsUtils.joinEagerRelations(
-            qb,
-            qb.alias,
-            qb.expressionMap.mainAlias!.metadata,
-        )
+        this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
         // return relation.isOneToMany ? qb.getMany() : qb.getOne(); todo: fix all usages
@@ -264,16 +292,19 @@ export class RelationLoader {
      * INNER JOIN post_categories post_categories
      * ON post_categories.postId = :postId
      * AND post_categories.categoryId = category.id
+     *
      * @param relation
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     loadManyToManyOwner(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any> {
         const entities = Array.isArray(entityOrEntities)
             ? entityOrEntities
@@ -318,11 +349,7 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        FindOptionsUtils.joinEagerRelations(
-            qb,
-            qb.alias,
-            qb.expressionMap.mainAlias!.metadata,
-        )
+        this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
     }
@@ -335,16 +362,19 @@ export class RelationLoader {
      * INNER JOIN post_categories post_categories
      * ON post_categories.postId = post.id
      * AND post_categories.categoryId = post_categories.categoryId
+     *
      * @param relation
      * @param entityOrEntities
      * @param queryRunner
      * @param queryBuilder
+     * @param loadEagerRelations
      */
     loadManyToManyNotOwner(
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         queryRunner?: QueryRunner,
         queryBuilder?: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
     ): Promise<any> {
         const entities = Array.isArray(entityOrEntities)
             ? entityOrEntities
@@ -390,18 +420,42 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        FindOptionsUtils.joinEagerRelations(
-            qb,
-            qb.alias,
-            qb.expressionMap.mainAlias!.metadata,
-        )
+        this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
     }
 
     /**
+     * Applies eager relation loading to the given query builder based on the
+     * configured relation load strategy.
+     *
+     * @param qb
+     * @param loadEagerRelations
+     */
+    private applyEagerRelations(
+        qb: SelectQueryBuilder<any>,
+        loadEagerRelations?: boolean,
+    ): void {
+        if (loadEagerRelations === false) return
+
+        const mainAlias = qb.expressionMap.mainAlias
+        if (!mainAlias) return
+
+        if (qb.expressionMap.relationLoadStrategy === "query") {
+            qb.concatRelationMetadata(...mainAlias.metadata.eagerRelations)
+        } else {
+            FindOptionsUtils.joinEagerRelations(
+                qb,
+                qb.alias,
+                mainAlias.metadata,
+            )
+        }
+    }
+
+    /**
      * Wraps given entity and creates getters/setters for its given relation
      * to be able to lazily load data when accessing this relation.
+     *
      * @param relation
      * @param entity
      * @param queryRunner

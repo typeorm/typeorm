@@ -32,7 +32,9 @@
     "@mdx-js/react": "^3.1.1",
     "@signalwire/docusaurus-plugin-llms-txt": "^1.2.2",
     "clsx": "^2.1.1",
-    "docusaurus-theme-search-typesense": "^0.26.0",
+    "docusaurus-lunr-search": "^3.6.0",
+    "lucide-react": "^0.577.0",
+    "lunr": "^2.3.9",
     "prism-react-renderer": "^2.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -49,7 +51,6 @@
   },
   "pnpm": {
     "ignoredBuiltDependencies": [
-      "typesense-instantsearch-adapter",
       "core-js-pure",
       "core-js"
     ]

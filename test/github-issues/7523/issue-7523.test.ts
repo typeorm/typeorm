@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -7,21 +7,20 @@ import {
 import { ChildEntity1, ChildEntity2 } from "./entity/Test"
 
 describe("github issues > #7523 Do not create duplicate CREATE TYPE migration query when same 'enumName's are exists", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [ChildEntity1, ChildEntity2],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [ChildEntity1, ChildEntity2],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -32,7 +31,7 @@ describe("github issues > #7523 Do not create duplicate CREATE TYPE migration qu
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()

@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -7,22 +7,21 @@ import {
 import { User } from "./entity/User"
 
 describe("github issues > #1532 Array type default value doesnt work. PostgreSQL", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                migrations: [],
-                enabledDrivers: ["postgres"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [User],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            enabledDrivers: ["postgres"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [User],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("can recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -33,7 +32,7 @@ describe("github issues > #1532 Array type default value doesnt work. PostgreSQL
 
     it("does not generate when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const sqlInMemory = await connection.driver

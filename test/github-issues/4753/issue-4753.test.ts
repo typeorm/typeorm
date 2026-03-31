@@ -1,10 +1,10 @@
 import { expect } from "chai"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
+import type { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
+import type { TestingConnectionOptions } from "../../utils/test-utils"
 import {
     closeTestingConnections,
     getTypeOrmConfig,
-    TestingConnectionOptions,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 
