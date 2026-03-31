@@ -3771,6 +3771,29 @@ export class PostgresQueryRunner
                                 }
                             }
 
+                            // PostgreSQL's regtype includes the length in the type name (e.g., "character varying(50)").
+                            // Strip the length for types that support length, so the type matches what normalizeType returns
+                            // and can be properly compared. This also ensures the length is extracted separately.
+                            const isArrayType = tableColumn.type.endsWith("[]")
+                            const typeToCheck = isArrayType
+                                ? tableColumn.type.slice(0, -2)
+                                : tableColumn.type
+                            const lengthTypeMatch =
+                                typeToCheck.match(/^(.+)\((\d+)\)$/)
+                            if (lengthTypeMatch) {
+                                const baseType = lengthTypeMatch[1]
+                                if (
+                                    this.driver.withLengthColumnTypes.indexOf(
+                                        baseType as ColumnType,
+                                    ) !== -1
+                                ) {
+                                    tableColumn.length = lengthTypeMatch[2]
+                                    tableColumn.type = isArrayType
+                                        ? baseType + "[]"
+                                        : baseType
+                                }
+                            }
+
                             if (
                                 tableColumn.type === "numeric" ||
                                 tableColumn.type === "numeric[]" ||
