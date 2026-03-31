@@ -145,6 +145,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Replaces all previous selections if they exist.
      * Accepts an object map of selection to alias.
      * Example: .select({ "user.name": "name", "user.email": "email" })
+     *
+     * Note: Custom aliases change the column names in the result set.
+     * Use getRawMany() / getRawOne() when using aliases.
+     * getMany() / getOne() with custom aliases will produce entities with
+     * undefined fields, because entity hydration relies on TypeORM's
+     * internal column naming.
      */
     select(selection: Record<string, string>): this
 
@@ -193,6 +199,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Adds new selection to the SELECT query.
      * Accepts an object map of selection to alias.
      * Example: .addSelect({ "user.name": "name", "user.email": "email" })
+     *
+     * Note: Custom aliases change the column names in the result set.
+     * Use getRawMany() / getRawOne() when using aliases.
+     * getMany() / getOne() with custom aliases will produce entities with
+     * undefined fields, because entity hydration relies on TypeORM's
+     * internal column naming.
      */
     addSelect(selection: Record<string, string>): this
 
@@ -2201,9 +2213,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (Array.isArray(selection)) {
             return selection.map((s) => ({ selection: s }))
         } else if (typeof selection === "object" && selection !== null) {
-            const entries = Object.entries(selection)
-            if (entries.length === 0) return undefined
-            return entries.map(([sel, alias]) => ({
+            return Object.entries(selection).map(([sel, alias]) => ({
                 selection: sel,
                 aliasName: alias,
             }))

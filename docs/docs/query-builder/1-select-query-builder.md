@@ -239,6 +239,10 @@ const users = await dataSource
     .getRawMany()
 ```
 
+:::note
+Custom aliases change the column names in the result set. Use `getRawMany()` / `getRawOne()` when using aliases. Using `getMany()` / `getOne()` with custom aliases will result in entities with undefined fields, because entity hydration relies on TypeORM's internal column naming.
+:::
+
 This also works with `addSelect`:
 
 ```typescript
