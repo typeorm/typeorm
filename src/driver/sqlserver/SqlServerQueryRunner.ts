@@ -3181,6 +3181,8 @@ export class SqlServerQueryRunner
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
                     `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
                     `LEFT JOIN "sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "column_name" ` +
+                    `AND OBJECT_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_NAME" ` +
+                    `AND OBJECT_SCHEMA_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_SCHEMA" ` +
                     `WHERE (${condition})`
                 )
             })
