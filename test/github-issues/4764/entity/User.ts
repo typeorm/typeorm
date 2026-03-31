@@ -20,6 +20,6 @@ export class User {
     @Column()
     ModifiedDate!: Date
 
-    @OneToOne((type) => Cart, (t) => t.User)
+    @OneToOne(() => Cart, (t) => t.User)
     Cart?: Cart
 }

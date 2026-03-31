@@ -12,7 +12,7 @@ export class Image {
     @Column()
     name: string
 
-    @ManyToMany((type) => Category, (category) => category.images)
+    @ManyToMany(() => Category, (category) => category.images)
     categories: Category[]
 
     categoryIds: number[]

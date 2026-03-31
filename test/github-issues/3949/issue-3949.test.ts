@@ -1,0 +1,60 @@
+import "reflect-metadata"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
+import { Post } from "./entity/Post"
+
+describe("github issues > #3949 sqlite date hydration is susceptible to corruption", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["better-sqlite3", "sqljs"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    const testDateString =
+        (sqlDateString: string, jsDateString: string) =>
+        async (connection: DataSource) => {
+            const queryRunner = connection.createQueryRunner()
+            const repo = connection.getRepository(Post)
+
+            await queryRunner.query(
+                `INSERT INTO "POST"("id", "date") VALUES (?, ?)`,
+                [1, sqlDateString],
+            )
+
+            const post = await repo.findOneBy({ id: 1 })
+
+            post!.date.should.eql(new Date(jsDateString))
+        }
+
+    it("should correctly read date column that was inserted raw in canonical format", () =>
+        // Append UTC to javascript date string, because while sqlite assumes naive date strings are UTC,
+        // javascript assumes they are in local system time.
+        Promise.all(
+            dataSources.map(
+                testDateString(
+                    "2018-03-14 02:33:33.906",
+                    "2018-03-14T02:33:33.906Z",
+                ),
+            ),
+        ))
+
+    it("should correctly read date column that was inserted raw in iso 8601 format", () =>
+        Promise.all(
+            dataSources.map(
+                testDateString(
+                    "2018-03-14T02:33:33.906+00:00",
+                    "2018-03-14T02:33:33.906Z",
+                ),
+            ),
+        ))
+})

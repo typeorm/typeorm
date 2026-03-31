@@ -12,6 +12,6 @@ export class Specialization {
     @Column()
     name: string
 
-    @ManyToMany((type) => Teacher, (teacher) => teacher.specializations)
+    @ManyToMany(() => Teacher, (teacher) => teacher.specializations)
     teachers: Teacher[]
 }

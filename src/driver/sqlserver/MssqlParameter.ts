@@ -49,7 +49,12 @@ export class MssqlParameter {
     constructor(value: any, type: "geography")
     constructor(value: any, type: "geometry")
     constructor(value: any, type: "rowversion")
-    constructor(public value: any, public type: string, ...params: number[]) {
+    constructor(value: any, type: "vector", length: number)
+    constructor(
+        public value: any,
+        public type: string,
+        ...params: number[]
+    ) {
         this.params = params || []
     }
 }

@@ -10,7 +10,7 @@ export class Author {
     @Column()
     name: string
 
-    @OneToMany((type) => Post, (post) => post.author, {
+    @OneToMany(() => Post, (post) => post.author, {
         cascade: true,
     })
     posts: Post[]

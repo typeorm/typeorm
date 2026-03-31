@@ -1,4 +1,4 @@
-import { Logger } from "../../../src/logger/Logger"
+import type { Logger } from "../../../src/logger/Logger"
 
 export class MemoryLogger implements Logger {
     constructor(public enabled = true) {}
@@ -14,15 +14,15 @@ export class MemoryLogger implements Logger {
         }
     }
 
-    logQueryError(error: string, query: string) {}
+    logQueryError() {}
 
-    logQuerySlow(time: number, query: string) {}
+    logQuerySlow() {}
 
-    logSchemaBuild(message: string) {}
+    logSchemaBuild() {}
 
-    logMigration(message: string) {}
+    logMigration() {}
 
-    log(level: "log" | "info" | "warn", message: any) {}
+    log() {}
 
     clear() {
         this._queries = []

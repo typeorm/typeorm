@@ -13,7 +13,7 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToMany((type) => Category, {
+    @ManyToMany(() => Category, {
         cascade: ["insert"],
     })
     @JoinTable()

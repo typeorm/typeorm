@@ -14,11 +14,11 @@ export class Post {
     @Column()
     title: string
 
-    @OneToOne((type) => Category, { cascade: true })
+    @OneToOne(() => Category, { cascade: true })
     @JoinColumn()
     category: Category | null
 
-    @OneToOne((type) => PostMetadata, (metadata) => metadata.post, {
+    @OneToOne(() => PostMetadata, (metadata) => metadata.post, {
         cascade: true,
     })
     @JoinColumn()

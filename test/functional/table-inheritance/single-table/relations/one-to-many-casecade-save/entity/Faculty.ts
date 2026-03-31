@@ -12,7 +12,7 @@ export class Faculty {
     @Column()
     name: string
 
-    @OneToMany((type) => Staff, (staff) => staff.faculty, {
+    @OneToMany(() => Staff, (staff) => staff.faculty, {
         cascade: true,
         eager: true,
     })

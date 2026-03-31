@@ -1,8 +1,8 @@
-import { QueryResultCache } from "./QueryResultCache"
-import { QueryResultCacheOptions } from "./QueryResultCacheOptions"
+import type { QueryResultCache } from "./QueryResultCache"
+import type { QueryResultCacheOptions } from "./QueryResultCacheOptions"
 import { PlatformTools } from "../platform/PlatformTools"
-import { DataSource } from "../data-source/DataSource"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { DataSource } from "../data-source/DataSource"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { TypeORMError } from "../error/TypeORMError"
 
 /**
@@ -33,7 +33,7 @@ export class RedisQueryResultCache implements QueryResultCache {
     // -------------------------------------------------------------------------
 
     constructor(
-        protected connection: DataSource,
+        protected dataSource: DataSource,
         clientType: "redis" | "ioredis" | "ioredis/cluster",
     ) {
         this.clientType = clientType
@@ -48,23 +48,24 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Creates a connection with given cache provider.
      */
     async connect(): Promise<void> {
-        const cacheOptions: any = this.connection.options.cache
+        const cacheOptions: any = this.dataSource.options.cache
         if (this.clientType === "redis") {
-            this.client = this.redis.createClient({
+            const clientOptions = {
                 ...cacheOptions?.options,
-                legacyMode: true,
-            })
+            }
+
+            this.client = this.redis.createClient(clientOptions)
+
             if (
-                typeof this.connection.options.cache === "object" &&
-                this.connection.options.cache.ignoreErrors
+                typeof this.dataSource.options.cache === "object" &&
+                this.dataSource.options.cache.ignoreErrors
             ) {
                 this.client.on("error", (err: any) => {
-                    this.connection.logger.log("warn", err)
+                    this.dataSource.logger.log("warn", err)
                 })
             }
-            if ("connect" in this.client) {
-                await this.client.connect()
-            }
+
+            await this.client.connect()
         } else if (this.clientType === "ioredis") {
             if (cacheOptions && cacheOptions.port) {
                 if (cacheOptions.options) {
@@ -108,17 +109,15 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Disconnects the connection
      */
     async disconnect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            this.client.quit((err: any, result: any) => {
-                if (err) return fail(err)
-                ok()
-                this.client = undefined
-            })
-        })
+        const client = this.client
+        this.client = undefined
+        await client.quit()
     }
 
     /**
      * Creates table for storing cache if it does not exist yet.
+     *
+     * @param queryRunner
      */
     async synchronize(queryRunner: QueryRunner): Promise<void> {}
 
@@ -126,94 +125,84 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Get data from cache.
      * Returns cache result if found.
      * Returns undefined if result is not cached.
+     *
+     * @param options
+     * @param queryRunner
      */
-    getFromCache(
+    async getFromCache(
         options: QueryResultCacheOptions,
         queryRunner?: QueryRunner,
     ): Promise<QueryResultCacheOptions | undefined> {
-        return new Promise<QueryResultCacheOptions | undefined>((ok, fail) => {
-            if (options.identifier) {
-                this.client.get(options.identifier, (err: any, result: any) => {
-                    if (err) return fail(err)
-                    ok(JSON.parse(result))
-                })
-            } else if (options.query) {
-                this.client.get(options.query, (err: any, result: any) => {
-                    if (err) return fail(err)
-                    ok(JSON.parse(result))
-                })
-            } else {
-                ok(undefined)
-            }
-        })
+        const key = options.identifier || options.query
+        if (!key) return undefined
+
+        const result = await this.client.get(key)
+        return result ? JSON.parse(result) : undefined
     }
 
     /**
      * Checks if cache is expired or not.
+     *
+     * @param savedCache
      */
     isExpired(savedCache: QueryResultCacheOptions): boolean {
-        return savedCache.time! + savedCache.duration < new Date().getTime()
+        return savedCache.time! + savedCache.duration < Date.now()
     }
 
     /**
      * Stores given query result in the cache.
+     *
+     * @param options
+     * @param savedCache
+     * @param queryRunner
      */
     async storeInCache(
         options: QueryResultCacheOptions,
         savedCache: QueryResultCacheOptions,
         queryRunner?: QueryRunner,
     ): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            if (options.identifier) {
-                this.client.set(
-                    options.identifier,
-                    JSON.stringify(options),
-                    "PX",
-                    options.duration,
-                    (err: any, result: any) => {
-                        if (err) return fail(err)
-                        ok()
-                    },
-                )
-            } else if (options.query) {
-                this.client.set(
-                    options.query,
-                    JSON.stringify(options),
-                    "PX",
-                    options.duration,
-                    (err: any, result: any) => {
-                        if (err) return fail(err)
-                        ok()
-                    },
-                )
-            }
-        })
+        const key = options.identifier || options.query
+        if (!key) return
+
+        const value = JSON.stringify(options)
+        const duration = options.duration
+
+        if (this.isNodeRedisClient()) {
+            await this.client.set(key, value, {
+                expiration: {
+                    type: "PX",
+                    value: duration,
+                },
+            })
+        } else {
+            await this.client.set(key, value, "PX", duration)
+        }
     }
 
     /**
      * Clears everything stored in the cache.
+     *
+     * @param queryRunner
      */
     async clear(queryRunner?: QueryRunner): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            this.client.flushdb((err: any, result: any) => {
-                if (err) return fail(err)
-                ok()
-            })
-        })
+        if (this.isNodeRedisClient()) {
+            await this.client.flushDb()
+        } else {
+            await this.client.flushdb()
+        }
     }
 
     /**
      * Removes all cached results by given identifiers from cache.
+     *
+     * @param identifiers
+     * @param queryRunner
      */
     async remove(
         identifiers: string[],
         queryRunner?: QueryRunner,
     ): Promise<void> {
-        await Promise.all(
-            identifiers.map((identifier) => {
-                return this.deleteKey(identifier)
-            }),
-        )
+        await this.client.del(identifiers)
     }
 
     // -------------------------------------------------------------------------
@@ -222,14 +211,11 @@ export class RedisQueryResultCache implements QueryResultCache {
 
     /**
      * Removes a single key from redis database.
+     *
+     * @param key
      */
-    protected deleteKey(key: string): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            this.client.del(key, (err: any, result: any) => {
-                if (err) return fail(err)
-                ok()
-            })
-        })
+    protected async deleteKey(key: string): Promise<void> {
+        await this.client.del([key])
     }
 
     /**
@@ -242,10 +228,14 @@ export class RedisQueryResultCache implements QueryResultCache {
             } else {
                 return PlatformTools.load(this.clientType)
             }
-        } catch (e) {
+        } catch {
             throw new TypeORMError(
-                `Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType} --save".`,
+                `Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType}".`,
             )
         }
+    }
+
+    private isNodeRedisClient(): boolean {
+        return this.clientType === "redis"
     }
 }

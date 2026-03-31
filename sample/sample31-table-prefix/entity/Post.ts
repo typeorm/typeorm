@@ -20,12 +20,12 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToOne((type) => Author, {
+    @ManyToOne(() => Author, {
         cascade: ["insert"],
     })
     author: Author
 
-    @ManyToMany((type) => Category, {
+    @ManyToMany(() => Category, {
         cascade: ["insert"],
     })
     @JoinTable()

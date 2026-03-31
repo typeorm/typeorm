@@ -1,9 +1,9 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
 import { Item } from "../entity/item.entity"
 
 export class UpdateContacts1566560354098 implements MigrationInterface {
-    public async up({ connection }: QueryRunner): Promise<any> {
-        const repo = connection.getMongoRepository(Item)
+    public async up({ manager }: QueryRunner): Promise<any> {
+        const repo = manager.getMongoRepository(Item)
         const items: Array<Item> = await repo.find()
 
         items.forEach((item) => {
@@ -15,8 +15,8 @@ export class UpdateContacts1566560354098 implements MigrationInterface {
         await repo.save(items)
     }
 
-    public async down({ connection }: QueryRunner): Promise<any> {
-        const repo = connection.getMongoRepository(Item)
+    public async down({ manager }: QueryRunner): Promise<any> {
+        const repo = manager.getMongoRepository(Item)
         const items: Array<Item> = await repo.find()
 
         items.forEach((item) => {

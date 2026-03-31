@@ -1,6 +1,6 @@
 import { AbstractLogger } from "./AbstractLogger"
-import { LogLevel, LogMessage } from "./Logger"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { LogLevel, LogMessage } from "./Logger"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Performs logging of the events in TypeORM.
@@ -9,6 +9,10 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 export class SimpleConsoleLogger extends AbstractLogger {
     /**
      * Write log to specific output.
+     *
+     * @param level
+     * @param logMessage
+     * @param queryRunner
      */
     protected writeLog(
         level: LogLevel,
@@ -19,7 +23,7 @@ export class SimpleConsoleLogger extends AbstractLogger {
             highlightSql: false,
         })
 
-        for (let message of messages) {
+        for (const message of messages) {
             switch (message.type ?? level) {
                 case "log":
                 case "schema-build":

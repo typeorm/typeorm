@@ -16,7 +16,7 @@ export class Post {
     @Column({ nullable: true })
     categoryName: string
 
-    @OneToOne((type) => Category, (category) => category.post)
+    @OneToOne(() => Category, (category) => category.post)
     @JoinColumn({ name: "categoryName", referencedColumnName: "name" })
     category: Category
 }

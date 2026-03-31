@@ -15,13 +15,13 @@ export class Post {
     @Column()
     title: string
 
-    @OneToMany((type) => Category, (category) => category.post)
+    @OneToMany(() => Category, (category) => category.post)
     categories: Category[]
 
     @RelationId((post: Post) => post.categories)
     categoryIds: { firstId: number; secondId: number }[]
 
-    @ManyToMany((type) => Category, (category) => category.manyPosts)
+    @ManyToMany(() => Category, (category) => category.manyPosts)
     @JoinTable()
     manyCategories: Category[]
 

@@ -12,6 +12,6 @@ export class Passport {
     @Column()
     passportNumber: string
 
-    @OneToOne((type) => Person, (person) => person.passport)
+    @OneToOne(() => Person, (person) => person.passport)
     owner: Person
 }

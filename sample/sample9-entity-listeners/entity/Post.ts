@@ -1,24 +1,26 @@
+import crypto from "node:crypto"
+
+import { AfterInsert } from "../../../src/decorator/listeners/AfterInsert"
+import { AfterLoad } from "../../../src/decorator/listeners/AfterLoad"
+import { AfterRecover } from "../../../src/decorator/listeners/AfterRecover"
+import { AfterRemove } from "../../../src/decorator/listeners/AfterRemove"
+import { AfterSoftRemove } from "../../../src/decorator/listeners/AfterSoftRemove"
+import { AfterUpdate } from "../../../src/decorator/listeners/AfterUpdate"
+import { BeforeInsert } from "../../../src/decorator/listeners/BeforeInsert"
+import { BeforeRecover } from "../../../src/decorator/listeners/BeforeRecover"
+import { BeforeRemove } from "../../../src/decorator/listeners/BeforeRemove"
+import { BeforeSoftRemove } from "../../../src/decorator/listeners/BeforeSoftRemove"
+import { BeforeUpdate } from "../../../src/decorator/listeners/BeforeUpdate"
+import { JoinTable } from "../../../src/decorator/relations/JoinTable"
+import { ManyToOne } from "../../../src/decorator/relations/ManyToOne"
 import {
     Column,
     Entity,
     ManyToMany,
     PrimaryGeneratedColumn,
 } from "../../../src/index"
-import { PostCategory } from "./PostCategory"
 import { PostAuthor } from "./PostAuthor"
-import { ManyToOne } from "../../../src/decorator/relations/ManyToOne"
-import { AfterLoad } from "../../../src/decorator/listeners/AfterLoad"
-import { AfterInsert } from "../../../src/decorator/listeners/AfterInsert"
-import { BeforeInsert } from "../../../src/decorator/listeners/BeforeInsert"
-import { BeforeUpdate } from "../../../src/decorator/listeners/BeforeUpdate"
-import { AfterUpdate } from "../../../src/decorator/listeners/AfterUpdate"
-import { BeforeRemove } from "../../../src/decorator/listeners/BeforeRemove"
-import { AfterRemove } from "../../../src/decorator/listeners/AfterRemove"
-import { AfterRecover } from "../../../src/decorator/listeners/AfterRecover"
-import { BeforeRecover } from "../../../src/decorator/listeners/BeforeRecover"
-import { AfterSoftRemove } from "../../../src/decorator/listeners/AfterSoftRemove"
-import { BeforeSoftRemove } from "../../../src/decorator/listeners/BeforeSoftRemove"
-import { JoinTable } from "../../../src/decorator/relations/JoinTable"
+import { PostCategory } from "./PostCategory"
 
 @Entity("sample9_post")
 export class Post {
@@ -31,12 +33,12 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToOne((type) => PostAuthor, (post) => post.posts, {
+    @ManyToOne(() => PostAuthor, (post) => post.posts, {
         cascade: true,
     })
     author: PostAuthor
 
-    @ManyToMany((type) => PostCategory, (category) => category.posts, {
+    @ManyToMany(() => PostCategory, (category) => category.posts, {
         cascade: true,
     })
     @JoinTable()
@@ -49,7 +51,7 @@ export class Post {
         console.log(
             `event: Post "${this.title}" entity has been loaded and callback executed`,
         )
-        this.uid = Math.ceil(Math.random() * 1000)
+        this.uid = crypto.randomInt(0, 1000)
     }
 
     @BeforeInsert()

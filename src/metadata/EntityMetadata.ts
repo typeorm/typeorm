@@ -1,28 +1,28 @@
-import { QueryRunner, SelectQueryBuilder } from ".."
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { DataSource } from "../data-source/DataSource"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { DataSource } from "../data-source/DataSource"
 import { CannotCreateEntityIdMapError } from "../error/CannotCreateEntityIdMapError"
-import { OrderByCondition } from "../find-options/OrderByCondition"
-import { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
-import { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
+import type { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
+import type { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
 import { OrmUtils } from "../util/OrmUtils"
-import { CheckMetadata } from "./CheckMetadata"
-import { ColumnMetadata } from "./ColumnMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
-import { EntityListenerMetadata } from "./EntityListenerMetadata"
-import { ExclusionMetadata } from "./ExclusionMetadata"
-import { ForeignKeyMetadata } from "./ForeignKeyMetadata"
-import { IndexMetadata } from "./IndexMetadata"
-import { RelationCountMetadata } from "./RelationCountMetadata"
-import { RelationIdMetadata } from "./RelationIdMetadata"
-import { RelationMetadata } from "./RelationMetadata"
-import { TableType } from "./types/TableTypes"
-import { TreeType } from "./types/TreeTypes"
-import { UniqueMetadata } from "./UniqueMetadata"
-import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
+import type { CheckMetadata } from "./CheckMetadata"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { EntityListenerMetadata } from "./EntityListenerMetadata"
+import type { ExclusionMetadata } from "./ExclusionMetadata"
+import type { ForeignKeyMetadata } from "./ForeignKeyMetadata"
+import type { IndexMetadata } from "./IndexMetadata"
+import type { RelationIdMetadata } from "./RelationIdMetadata"
+import type { RelationMetadata } from "./RelationMetadata"
+import type { TableType } from "./types/TableTypes"
+import type { TreeType } from "./types/TreeTypes"
+import type { UniqueMetadata } from "./UniqueMetadata"
+import type { ClosureTreeOptions } from "./types/ClosureTreeOptions"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { shorten } from "../util/StringUtils"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Contains all entity metadata.
@@ -35,9 +35,18 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection where this entity metadata is created.
+     * DataSource where this entity metadata is created.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource where this entity metadata is created.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Metadata arguments used to build this entity metadata.
@@ -99,7 +108,7 @@ export class EntityMetadata {
      * View's expression.
      * Used in views
      */
-    expression?: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression?: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     /**
      * View's dependencies.
@@ -393,11 +402,6 @@ export class EntityMetadata {
     relationIds: RelationIdMetadata[] = []
 
     /**
-     * Entity's relation id metadatas.
-     */
-    relationCounts: RelationCountMetadata[] = []
-
-    /**
      * Entity's foreign key metadatas.
      */
     foreignKeys: ForeignKeyMetadata[] = []
@@ -526,14 +530,14 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
-        connection: DataSource
+        dataSource: DataSource
         inheritanceTree?: Function[]
         inheritancePattern?: "STI" /*|"CTI"*/
         tableTree?: TreeMetadataArgs
         parentClosureEntityMetadata?: EntityMetadata
         args: TableMetadataArgs
     }) {
-        this.connection = options.connection
+        this.dataSource = options.dataSource
         this.inheritanceTree = options.inheritanceTree || []
         this.inheritancePattern = options.inheritancePattern
         this.treeType = options.tableTree ? options.tableTree.type : undefined
@@ -555,6 +559,11 @@ export class EntityMetadata {
 
     /**
      * Creates a new entity.
+     *
+     * @param queryRunner
+     * @param options
+     * @param options.fromDeserializer
+     * @param options.pojo
      */
     create(
         queryRunner?: QueryRunner,
@@ -575,12 +584,12 @@ export class EntityMetadata {
         }
 
         // add "typename" property
-        if (this.connection.options.typename) {
-            ret[this.connection.options.typename] = this.targetName
+        if (this.dataSource.options.typename) {
+            ret[this.dataSource.options.typename] = this.targetName
         }
 
         this.lazyRelations.forEach((relation) =>
-            this.connection.relationLoader.enableLazyLoad(
+            this.dataSource.relationLoader.enableLazyLoad(
                 relation,
                 ret,
                 queryRunner,
@@ -591,6 +600,8 @@ export class EntityMetadata {
 
     /**
      * Checks if given entity has an id.
+     *
+     * @param entity
      */
     hasId(entity: ObjectLiteral): boolean {
         if (!entity) return false
@@ -604,6 +615,8 @@ export class EntityMetadata {
     /**
      * Checks if given entity / object contains ALL primary keys entity must have.
      * Returns true if it contains all of them, false if at least one of them is not defined.
+     *
+     * @param entity
      */
     hasAllPrimaryKeys(entity: ObjectLiteral): boolean {
         return this.primaryColumns.every((primaryColumn) => {
@@ -617,6 +630,8 @@ export class EntityMetadata {
      * If given id is an object then it means its already id map.
      * If given id isn't an object then it means its a value of the id column
      * and it creates a new id map with this value and name of the primary column.
+     *
+     * @param id
      */
     ensureEntityIdMap(id: any): ObjectLiteral {
         if (ObjectUtils.isObject(id)) return id
@@ -632,6 +647,8 @@ export class EntityMetadata {
      * For example, for Post{ id: 1, title: "hello" } where id is primary it will return { id: 1 }
      * For multiple primary keys it returns multiple keys in object.
      * For primary keys inside embeds it returns complex object literal with keys in them.
+     *
+     * @param entity
      */
     getEntityIdMap(
         entity: ObjectLiteral | undefined,
@@ -648,6 +665,8 @@ export class EntityMetadata {
      * If entity has multiple primary keys (ids) then it will return just regular id map, like what getEntityIdMap returns.
      * But if entity has a single primary key then it will return just value of the id column of the entity, just value.
      * This is called mixed id map.
+     *
+     * @param entity
      */
     getEntityIdMixedMap(
         entity: ObjectLiteral | undefined,
@@ -667,6 +686,9 @@ export class EntityMetadata {
     /**
      * Compares two different entities by their ids.
      * Returns true if they match, false otherwise.
+     *
+     * @param firstEntity
+     * @param secondEntity
      */
     compareEntities(
         firstEntity: ObjectLiteral,
@@ -683,6 +705,8 @@ export class EntityMetadata {
 
     /**
      * Finds column with a given property name.
+     *
+     * @param propertyName
      */
     findColumnWithPropertyName(
         propertyName: string,
@@ -694,6 +718,8 @@ export class EntityMetadata {
 
     /**
      * Finds column with a given database name.
+     *
+     * @param databaseName
      */
     findColumnWithDatabaseName(
         databaseName: string,
@@ -705,6 +731,8 @@ export class EntityMetadata {
 
     /**
      * Checks if there is a column or relationship with a given property path.
+     *
+     * @param propertyPath
      */
     hasColumnWithPropertyPath(propertyPath: string): boolean {
         const hasColumn = this.columns.some(
@@ -715,6 +743,8 @@ export class EntityMetadata {
 
     /**
      * Finds column with a given property path.
+     *
+     * @param propertyPath
      */
     findColumnWithPropertyPath(
         propertyPath: string,
@@ -738,6 +768,8 @@ export class EntityMetadata {
     /**
      * Finds column with a given property path.
      * Does not search in relation unlike findColumnWithPropertyPath.
+     *
+     * @param propertyPath
      */
     findColumnWithPropertyPathStrict(
         propertyPath: string,
@@ -750,6 +782,8 @@ export class EntityMetadata {
     /**
      * Finds columns with a given property path.
      * Property path can match a relation, and relations can contain multiple columns.
+     *
+     * @param propertyPath
      */
     findColumnsWithPropertyPath(propertyPath: string): ColumnMetadata[] {
         const column = this.columns.find(
@@ -767,6 +801,8 @@ export class EntityMetadata {
 
     /**
      * Checks if there is a relation with the given property path.
+     *
+     * @param propertyPath
      */
     hasRelationWithPropertyPath(propertyPath: string): boolean {
         return this.relations.some(
@@ -776,6 +812,8 @@ export class EntityMetadata {
 
     /**
      * Finds relation with the given property path.
+     *
+     * @param propertyPath
      */
     findRelationWithPropertyPath(
         propertyPath: string,
@@ -787,6 +825,8 @@ export class EntityMetadata {
 
     /**
      * Checks if there is an embedded with a given property path.
+     *
+     * @param propertyPath
      */
     hasEmbeddedWithPropertyPath(propertyPath: string): boolean {
         return this.allEmbeddeds.some(
@@ -796,6 +836,8 @@ export class EntityMetadata {
 
     /**
      * Finds embedded with a given property path.
+     *
+     * @param propertyPath
      */
     findEmbeddedWithPropertyPath(
         propertyPath: string,
@@ -807,6 +849,8 @@ export class EntityMetadata {
 
     /**
      * Returns an array of databaseNames mapped from provided propertyPaths
+     *
+     * @param propertyPaths
      */
     mapPropertyPathsToColumns(propertyPaths: string[]) {
         return propertyPaths.map((propertyPath) => {
@@ -821,6 +865,9 @@ export class EntityMetadata {
     /**
      * Iterates through entity and finds and extracts all values from relations in the entity.
      * If relation value is an array its being flattened.
+     *
+     * @param entity
+     * @param relations
      */
     extractRelationValuesFromEntity(
         entity: ObjectLiteral,
@@ -902,38 +949,11 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a property paths for a given entity.
-     *
-     * @deprecated
-     */
-    static createPropertyPath(
-        metadata: EntityMetadata,
-        entity: ObjectLiteral,
-        prefix: string = "",
-    ) {
-        const paths: string[] = []
-        Object.keys(entity).forEach((key) => {
-            // check for function is needed in the cases when createPropertyPath used on values contain a function as a value
-            // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
-            const parentPath = prefix ? prefix + "." + key : key
-            if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {
-                const subPaths = this.createPropertyPath(
-                    metadata,
-                    entity[key],
-                    parentPath,
-                )
-                paths.push(...subPaths)
-            } else {
-                const path = prefix ? prefix + "." + key : key
-                paths.push(path)
-            }
-        })
-        return paths
-    }
-
-    /**
      * Finds difference between two entity id maps.
      * Returns items that exist in the first array and absent in the second array.
+     *
+     * @param firstIdMaps
+     * @param secondIdMaps
      */
     static difference(
         firstIdMaps: ObjectLiteral[],
@@ -949,21 +969,29 @@ export class EntityMetadata {
     /**
      * Creates value map from the given values and columns.
      * Examples of usages are primary columns map and join columns map.
+     *
+     * @param entity
+     * @param columns
+     * @param options
+     * @param options.skipNulls
      */
     static getValueMap(
         entity: ObjectLiteral,
         columns: ColumnMetadata[],
         options?: { skipNulls?: boolean },
     ): ObjectLiteral | undefined {
-        return columns.reduce((map, column) => {
-            const value = column.getEntityValueMap(entity, options)
+        return columns.reduce(
+            (map, column) => {
+                const value = column.getEntityValueMap(entity, options)
 
-            // make sure that none of the values of the columns are not missing
-            if (map === undefined || value === null || value === undefined)
-                return undefined
+                // make sure that none of the values of the columns are not missing
+                if (map === undefined || value === null || value === undefined)
+                    return undefined
 
-            return OrmUtils.mergeDeep(map, value)
-        }, {} as ObjectLiteral | undefined)
+                return OrmUtils.mergeDeep(map, value)
+            },
+            {} as ObjectLiteral | undefined,
+        )
     }
 
     // ---------------------------------------------------------------------
@@ -971,10 +999,10 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     build() {
-        const namingStrategy = this.connection.namingStrategy
-        const entityPrefix = this.connection.options.entityPrefix
+        const namingStrategy = this.dataSource.namingStrategy
+        const entityPrefix = this.dataSource.options.entityPrefix
         const entitySkipConstructor =
-            this.connection.options.entitySkipConstructor
+            this.dataSource.options.entitySkipConstructor
 
         this.engine = this.tableMetadataArgs.engine
         this.database =
@@ -989,8 +1017,8 @@ export class EntityMetadata {
             this.parentEntityMetadata
         ) {
             this.schema = this.parentEntityMetadata.schema
-        } else if (this.connection.options?.hasOwnProperty("schema")) {
-            this.schema = (this.connection.options as any).schema
+        } else if (this.dataSource.options?.hasOwnProperty("schema")) {
+            this.schema = (this.dataSource.options as any).schema
         }
         this.givenTableName =
             this.tableMetadataArgs.type === "entity-child" &&
@@ -1022,10 +1050,10 @@ export class EntityMetadata {
 
             if (
                 this.tableMetadataArgs.type === "junction" &&
-                this.connection.driver.maxAliasLength &&
-                this.connection.driver.maxAliasLength > 0 &&
+                this.dataSource.driver.maxAliasLength &&
+                this.dataSource.driver.maxAliasLength > 0 &&
                 this.tableNameWithoutPrefix.length >
-                    this.connection.driver.maxAliasLength
+                    this.dataSource.driver.maxAliasLength
             ) {
                 // note: we are not using DriverUtils.buildAlias here because we would like to avoid
                 // hashed table names. However, current algorithm also isn't perfect, but we cannot
@@ -1047,7 +1075,7 @@ export class EntityMetadata {
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid =
             this.tableMetadataArgs.withoutRowid === true ? true : false
-        this.tablePath = this.connection.driver.buildTableName(
+        this.tablePath = this.dataSource.driver.buildTableName(
             this.tableName,
             this.schema,
             this.database,
@@ -1072,6 +1100,8 @@ export class EntityMetadata {
 
     /**
      * Registers a new column in the entity and recomputes all depend properties.
+     *
+     * @param column
      */
     registerColumn(column: ColumnMetadata) {
         if (this.ownColumns.indexOf(column) !== -1) return

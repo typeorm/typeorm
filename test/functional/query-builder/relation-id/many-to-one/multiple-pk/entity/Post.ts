@@ -18,10 +18,10 @@ export class Post {
     @Column()
     isRemoved: boolean = false
 
-    @ManyToOne((type) => Category, (category) => category.posts)
+    @ManyToOne(() => Category, (category) => category.posts)
     category: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     subcategory: Category
 
     categoryId: number

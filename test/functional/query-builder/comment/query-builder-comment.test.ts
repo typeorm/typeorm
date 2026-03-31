@@ -1,0 +1,123 @@
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import { Test } from "./entity/Test"
+import { expect } from "chai"
+
+describe("query builder > comment", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Test],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should scrub end comment pattern from string", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .comment("Hello World */ */")
+                    .getSql()
+
+                expect(sql).to.match(/^\/\* Hello World {3}\*\/ /)
+            }),
+        ))
+
+    it("should not allow an empty comment", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .comment("")
+                    .getSql()
+
+                expect(sql).to.not.match(/^\/\* Hello World {2}\*\/ /)
+            }),
+        ))
+
+    it("should allow a comment with just whitespaces", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .comment(" ")
+                    .getSql()
+
+                expect(sql).to.match(/^\/\* {3}\*\/ /)
+            }),
+        ))
+
+    it("should allow a multi-line comment", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .comment("Hello World\nIt's a beautiful day!")
+                    .getSql()
+
+                expect(sql).to.match(
+                    /^\/\* Hello World\nIt's a beautiful day! \*\/ /,
+                )
+            }),
+        ))
+
+    it("should include comment in select", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .comment("Hello World")
+                    .getSql()
+
+                expect(sql).to.match(/^\/\* Hello World \*\/ /)
+            }),
+        ))
+
+    it("should include comment in update", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .update()
+                    .set({ id: 2 })
+                    .comment("Hello World")
+                    .getSql()
+
+                expect(sql).to.match(/^\/\* Hello World \*\/ /)
+            }),
+        ))
+
+    it("should include comment in insert", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .insert()
+                    .values({ id: 1 })
+                    .comment("Hello World")
+                    .getSql()
+
+                expect(sql).to.match(/^\/\* Hello World \*\/ /)
+            }),
+        ))
+
+    it("should include comment in delete", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .delete()
+                    .comment("Hello World")
+                    .getSql()
+
+                expect(sql).to.match(/^\/\* Hello World \*\/ /)
+            }),
+        ))
+})

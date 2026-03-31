@@ -13,7 +13,7 @@ export class Ticket {
     @Column()
     name: string
 
-    @OneToOne((type) => Request, {
+    @OneToOne(() => Request, {
         cascade: true,
     })
     @JoinColumn()

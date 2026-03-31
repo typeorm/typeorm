@@ -1,0 +1,65 @@
+import "reflect-metadata"
+import { JsonPathExample } from "./entity/JsonPathExample"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
+
+describe("database schema > column types > postgres > jsonpath", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
+
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    // Based on:
+    // * https://www.postgresql.org/docs/current/datatype-json.html#DATATYPE-JSONPATH
+    // * https://www.postgresql.org/docs/current/functions-json.html#FUNCTIONS-SQLJSON-PATH
+    ;[
+        ["$"], // the whole JSON document (context item)
+        ["$foo", `$"foo"`], // variable "foo"
+        ['"bar"'], // string literal
+        ["12.345"], // numeric literal
+        ["true"], // boolean literal
+        ["null"], // null
+        ["$.floor", `$."floor"`], // field accessor on $
+        ["$.floor[*]", `$."floor"[*]`], // the same, followed by wildcard array accessor
+
+        // complex path with filters and variables
+        [
+            "$.floor[*] ? (@.level < $max_level).apt[*] ? (@.area > $min_area).no",
+            `$."floor"[*]?(@."level" < $"max_level")."apt"[*]?(@."area" > $"min_area")."no"`,
+        ],
+
+        // arithmetic expressions:
+        ["-$.a[*]", `(-$."a"[*])`], // unary
+        ["$.a + 3", `($."a" + 3)`], // binary
+        ["2 * $.a - (3 / $.b + $x.y)", `(2 * $."a" - (3 / $."b" + $"x"."y"))`], // complex expression with variables
+    ].forEach(([path, canonical]) => {
+        it(`should insert and retrieve jsonpath values as strings for: ${path}`, () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(JsonPathExample)
+                    const example = new JsonPathExample()
+
+                    example.path = path
+
+                    await repository.save(example)
+
+                    const loaded = await repository.findOneByOrFail({
+                        id: example.id,
+                    })
+
+                    loaded.path.should.be.equal(canonical ?? path)
+                }),
+            ))
+    })
+})

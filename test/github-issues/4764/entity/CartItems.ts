@@ -30,7 +30,7 @@ export class CartItems {
     @Column()
     ModifiedDate!: Date
 
-    @ManyToOne((type) => Cart, (t) => t.CartItems)
+    @ManyToOne(() => Cart, (t) => t.CartItems)
     @JoinColumn({ name: "CartID" })
     Cart?: Cart
 }

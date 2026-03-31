@@ -16,7 +16,7 @@ export class Category {
     @Column()
     name: string
 
-    @ManyToOne((type) => Post, (post) => post.categories)
+    @ManyToOne(() => Post, (post) => post.categories)
     post: Post
 
     @RelationId((category: Category) => category.post)

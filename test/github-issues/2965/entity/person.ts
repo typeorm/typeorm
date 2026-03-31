@@ -14,6 +14,6 @@ export class Person {
     @Column()
     public name: string
 
-    @OneToMany((type) => Note, (note) => note.owner, { lazy: true })
+    @OneToMany(() => Note, (note) => note.owner, { lazy: true })
     public notes: Promise<Note[]> | Note[]
 }

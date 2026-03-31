@@ -6,7 +6,7 @@ export class PostInformation {
     @Column({ nullable: true })
     description?: string
 
-    @Column((type) => PostCounter, { prefix: "counters" })
+    @Column(() => PostCounter, { prefix: "counters" })
     counters?: PostCounter
 
     @BeforeInsert()

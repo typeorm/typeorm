@@ -12,6 +12,6 @@ export class Department {
     @Column()
     name: string
 
-    @ManyToMany((type) => Accountant, (accountant) => accountant.departments)
+    @ManyToMany(() => Accountant, (accountant) => accountant.departments)
     accountants: Accountant[]
 }

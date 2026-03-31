@@ -1,11 +1,11 @@
-import { TlsOptions } from "tls"
+import type { TlsOptions } from "tls"
 
 /**
  * Cockroachdb specific connection credential options.
  */
 export interface CockroachConnectionCredentialsOptions {
     /**
-     * Connection url where perform connection to.
+     * Connection url where the connection is performed.
      */
     readonly url?: string
 

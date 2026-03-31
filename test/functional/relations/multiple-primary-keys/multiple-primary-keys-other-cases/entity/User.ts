@@ -12,6 +12,6 @@ export class User {
     @Column()
     name: string
 
-    @OneToMany((type) => EventMember, (member) => member.user)
+    @OneToMany(() => EventMember, (member) => member.user)
     members: EventMember[]
 }

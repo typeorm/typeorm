@@ -1,0 +1,50 @@
+{
+  "name": "@typeorm/codemod",
+  "version": "1.0.0",
+  "description": "Codemods for migrating between TypeORM versions",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/typeorm/typeorm.git",
+    "directory": "packages/codemod"
+  },
+  "license": "MIT",
+  "bin": {
+    "typeorm-codemod": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint",
+    "start": "ts-node src/index.ts",
+    "test": "mocha"
+  },
+  "dependencies": {
+    "jscodeshift": "^17.1.2",
+    "semver": "^7.7.2",
+    "tinyglobby": "^0.2.15"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@types/chai": "^4.3.0",
+    "@types/jscodeshift": "^17.3.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.33",
+    "@types/semver": "^7.7.0",
+    "@types/sinon": "^21.0.0",
+    "chai": "^4.5.0",
+    "eslint": "^10.0.0",
+    "eslint-plugin-chai-friendly": "^1.1.0",
+    "globals": "^17.4.0",
+    "mocha": "^11.0.0",
+    "prettier": "^3.8.1",
+    "sinon": "^21.0.3",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

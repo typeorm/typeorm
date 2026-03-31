@@ -11,6 +11,6 @@ export class SimpleCounters {
     @Column()
     favorites: number
 
-    @Column((type) => Information, { prefix: "info" })
+    @Column(() => Information, { prefix: "info" })
     information: Information
 }

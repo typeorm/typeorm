@@ -17,15 +17,15 @@ export class Image {
     @Column()
     name: string
 
-    @ManyToOne((type) => Post, (post) => post.images)
+    @ManyToOne(() => Post, (post) => post.images)
     post: Post
 
-    @ManyToOne((type) => Post, (post) => post.secondaryImages, {
+    @ManyToOne(() => Post, (post) => post.secondaryImages, {
         cascade: ["insert"],
     })
     secondaryPost: Post
 
-    @OneToOne((type) => ImageDetails, (details) => details.image, {
+    @OneToOne(() => ImageDetails, (details) => details.image, {
         cascade: true,
     })
     @JoinColumn()

@@ -1,11 +1,11 @@
-import { TlsOptions } from "tls"
+import type { TlsOptions } from "tls"
 
 /**
  * Postgres specific connection credential options.
  */
 export interface PostgresConnectionCredentialsOptions {
     /**
-     * Connection url where perform connection to.
+     * Connection url where the connection is performed.
      */
     readonly url?: string
 

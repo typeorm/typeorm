@@ -6,8 +6,7 @@ import { TypeORMError } from "./TypeORMError"
 export class DriverPackageNotInstalledError extends TypeORMError {
     constructor(driverName: string, packageName: string) {
         super(
-            `${driverName} package has not been found installed. ` +
-                `Try to install it: npm install ${packageName} --save`,
+            `${driverName} package has not been found installed. Please run "npm install ${packageName}".`,
         )
     }
 }

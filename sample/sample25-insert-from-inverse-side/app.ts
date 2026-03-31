@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 
@@ -18,8 +19,8 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let postRepository = dataSource.getRepository(Post)
-        let authorRepository = dataSource.getRepository(Author)
+        const postRepository = dataSource.getRepository(Post)
+        const authorRepository = dataSource.getRepository(Author)
 
         const authorPromise = authorRepository
             .findOneBy({ id: 1 })
@@ -27,7 +28,7 @@ dataSource.initialize().then(
                 if (!author) {
                     author = new Author()
                     author.name = "Umed"
-                    return authorRepository.save(author).then((savedAuthor) => {
+                    return authorRepository.save(author).then(() => {
                         return authorRepository.findOneBy({ id: 1 })
                     })
                 }
@@ -39,7 +40,7 @@ dataSource.initialize().then(
                 post = new Post()
                 post.title = "Hello post"
                 post.text = "This is post contents"
-                return postRepository.save(post).then((savedPost) => {
+                return postRepository.save(post).then(() => {
                     return postRepository.findOneBy({ id: 1 })
                 })
             }

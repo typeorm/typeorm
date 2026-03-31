@@ -25,7 +25,7 @@ export class User {
     @Column({ name: "updated_by" })
     public updatedById: number
 
-    @ManyToOne((type) => User)
+    @ManyToOne(() => User)
     @JoinColumn([
         { name: "client_id", referencedColumnName: "clientId" },
         { name: "updated_by", referencedColumnName: "key" },

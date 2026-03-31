@@ -14,7 +14,7 @@ export class PostWithRelation {
     @Column()
     title: string
 
-    @OneToOne((type) => CategoryWithRelation, (category) => category.post, {
+    @OneToOne(() => CategoryWithRelation, (category) => category.post, {
         eager: true,
     })
     @JoinColumn()

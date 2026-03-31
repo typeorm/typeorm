@@ -12,7 +12,7 @@ export class Category {
     @Column()
     name: string
 
-    @OneToOne((type) => Post, (post) => post.category2)
+    @OneToOne(() => Post, (post) => post.category2)
     post: Post
 
     postId: number

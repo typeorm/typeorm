@@ -11,7 +11,7 @@ export class AccessToken {
     @Generated()
     primaryKey: number
 
-    @OneToOne((type) => User, (user) => user.access_token)
+    @OneToOne(() => User, (user) => user.access_token)
     @JoinColumn()
     user: User
 }

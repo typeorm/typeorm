@@ -14,6 +14,6 @@ export class User {
     @Column({ unique: true })
     email: string
 
-    @OneToMany((type) => Order, (recurringOrder) => recurringOrder.user)
+    @OneToMany(() => Order, (recurringOrder) => recurringOrder.user)
     recurringOrders: Order[]
 }

@@ -213,10 +213,10 @@ export class Post {
     // -------------------------------------------------------------------------
 
     @Column("jsonb")
-    jsonb: Object
+    jsonb: object
 
     @Column("json")
-    json: Object
+    json: object
 
     // -------------------------------------------------------------------------
     // Array Type

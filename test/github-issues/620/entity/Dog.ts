@@ -8,6 +8,6 @@ export class Dog {
     @PrimaryColumn()
     DogID: string
 
-    @OneToMany((type) => Cat, (cat) => cat.dog)
+    @OneToMany(() => Cat, (cat) => cat.dog)
     cats: Cat[]
 }

@@ -18,7 +18,7 @@ export class Post {
     @Column("int")
     authorId: number
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 

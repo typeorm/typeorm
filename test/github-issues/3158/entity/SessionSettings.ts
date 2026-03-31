@@ -8,7 +8,7 @@ export class SessionSettings {
     @PrimaryColumn()
     sessionId: number
 
-    @OneToOne((type) => Session, (session) => session.id)
+    @OneToOne(() => Session, (session) => session.id)
     @JoinColumn({ name: "sessionId", referencedColumnName: "id" })
     session?: Session
 }

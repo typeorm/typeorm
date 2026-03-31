@@ -20,6 +20,6 @@ export class Photo {
     @Column()
     userId: number
 
-    @ManyToOne((type) => User, (user) => user.photos)
+    @ManyToOne(() => User, (user) => user.photos)
     user: User
 }

@@ -32,10 +32,10 @@ export class Cart {
     @Column()
     ModifiedDate!: Date
 
-    @OneToMany((type) => CartItems, (t) => t.Cart)
+    @OneToMany(() => CartItems, (t) => t.Cart)
     CartItems?: CartItems[]
 
-    @OneToOne((type) => User, (t) => t.Cart)
+    @OneToOne(() => User, (t) => t.Cart)
     @JoinColumn({ name: "UNID" })
     User?: User
 }

@@ -17,6 +17,6 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToOne((type) => Account)
+    @ManyToOne(() => Account)
     owner: Account
 }

@@ -17,18 +17,18 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToMany((type) => Category, { eager: true })
+    @ManyToMany(() => Category, { eager: true })
     @JoinTable()
     categories1: Category[]
 
-    @ManyToMany((type) => Category, (category) => category.posts2, {
+    @ManyToMany(() => Category, (category) => category.posts2, {
         eager: true,
     })
     categories2: Category[]
 
-    @ManyToOne((type) => User, { eager: true })
+    @ManyToOne(() => User, { eager: true })
     author: User
 
-    @OneToMany((type) => Editor, (editor) => editor.post, { eager: true })
+    @OneToMany(() => Editor, (editor) => editor.post, { eager: true })
     editors: Editor[]
 }

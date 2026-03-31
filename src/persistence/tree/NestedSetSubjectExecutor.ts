@@ -1,9 +1,9 @@
-import { Subject } from "../Subject"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { Subject } from "../Subject"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
 import { NestedSetMultipleRootError } from "../../error/NestedSetMultipleRootError"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 
 class NestedSetIds {
     left: number
@@ -26,10 +26,12 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     *
+     * @param subject
      */
     async insert(subject: Subject): Promise<void> {
         const escape = (alias: string) =>
-            this.queryRunner.connection.driver.escape(alias)
+            this.queryRunner.dataSource.driver.escape(alias)
         const tableName = this.getTableName(subject.metadata.tablePath)
         const leftColumnName = escape(
             subject.metadata.nestedSetLeftColumn!.databaseName,
@@ -101,6 +103,8 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     *
+     * @param subject
      */
     async update(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
@@ -139,7 +143,7 @@ export class NestedSetSubjectExecutor {
 
         if (parent) {
             const escape = (alias: string) =>
-                this.queryRunner.connection.driver.escape(alias)
+                this.queryRunner.dataSource.driver.escape(alias)
             const tableName = this.getTableName(subject.metadata.tablePath)
             const leftColumnName = escape(
                 subject.metadata.nestedSetLeftColumn!.databaseName,
@@ -235,6 +239,8 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being removed.
+     *
+     * @param subjects
      */
     async remove(subjects: Subject | Subject[]): Promise<void> {
         if (!Array.isArray(subjects)) subjects = [subjects]
@@ -242,7 +248,7 @@ export class NestedSetSubjectExecutor {
         const metadata = subjects[0].metadata
 
         const escape = (alias: string) =>
-            this.queryRunner.connection.driver.escape(alias)
+            this.queryRunner.dataSource.driver.escape(alias)
         const tableName = this.getTableName(metadata.tablePath)
         const leftColumnName = escape(
             metadata.nestedSetLeftColumn!.databaseName,
@@ -251,7 +257,7 @@ export class NestedSetSubjectExecutor {
             metadata.nestedSetRightColumn!.databaseName,
         )
 
-        let entitiesIds: ObjectLiteral[] = []
+        const entitiesIds: ObjectLiteral[] = []
         for (const subject of subjects) {
             const entityId = metadata.getEntityIdMap(subject.entity)
 
@@ -260,7 +266,7 @@ export class NestedSetSubjectExecutor {
             }
         }
 
-        let entitiesNs = await this.getNestedSetIds(metadata, entitiesIds)
+        const entitiesNs = await this.getNestedSetIds(metadata, entitiesIds)
 
         for (const entity of entitiesNs) {
             const treeSize = entity.right - entity.left + 1
@@ -281,6 +287,9 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Get the nested set ids for a given entity
+     *
+     * @param metadata
+     * @param ids
      */
     protected getNestedSetIds(
         metadata: EntityMetadata,
@@ -330,7 +339,7 @@ export class NestedSetSubjectExecutor {
         parent: any,
     ): Promise<boolean> {
         const escape = (alias: string) =>
-            this.queryRunner.connection.driver.escape(alias)
+            this.queryRunner.dataSource.driver.escape(alias)
         const tableName = this.getTableName(subject.metadata.tablePath)
         const parameters: any[] = []
         const whereCondition = subject.metadata
@@ -344,7 +353,7 @@ export class NestedSetSubjectExecutor {
 
                 parameters.push(parameter)
                 const parameterName =
-                    this.queryRunner.connection.driver.createParameter(
+                    this.queryRunner.dataSource.driver.createParameter(
                         "entity_" + column.databaseName,
                         parameters.length - 1,
                     )
@@ -367,6 +376,8 @@ export class NestedSetSubjectExecutor {
     /**
      * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
      * schema name, otherwise returns escaped table name.
+     *
+     * @param tablePath
      */
     protected getTableName(tablePath: string): string {
         return tablePath
@@ -375,7 +386,7 @@ export class NestedSetSubjectExecutor {
                 // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
                 return i === ""
                     ? i
-                    : this.queryRunner.connection.driver.escape(i)
+                    : this.queryRunner.dataSource.driver.escape(i)
             })
             .join(".")
     }

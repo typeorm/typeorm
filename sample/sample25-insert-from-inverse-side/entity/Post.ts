@@ -13,6 +13,6 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToOne((type) => Author, (author) => author.posts)
+    @ManyToOne(() => Author, (author) => author.posts)
     author: Author
 }

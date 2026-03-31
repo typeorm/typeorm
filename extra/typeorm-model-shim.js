@@ -197,11 +197,6 @@ exports.OneToMany = OneToMany;
 }
 exports.OneToOne = OneToOne;
 
-/* export */ function RelationCount() {
-    return noop
-}
-exports.RelationCount = RelationCount;
-
 /* export */ function RelationId() {
     return noop
 }
@@ -267,6 +262,11 @@ exports.Tree = Tree;
 }
 exports.Index = Index;
 
+/* export */ function ForeignKey() {
+    return noop
+}
+exports.ForeignKey = ForeignKey;
+
 /* export */ function Unique() {
     return noop
 }
@@ -287,9 +287,7 @@ exports.Exclusion = Exclusion;
 }
 exports.Generated = Generated;
 
-/* export */ function EntityRepository() {
+/* export */ function VirtualColumn() {
     return noop
 }
-exports.EntityRepository = EntityRepository;
-
-
+exports.VirtualColumn = VirtualColumn;

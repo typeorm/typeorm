@@ -13,7 +13,7 @@ export class Question {
     @Column()
     title: string
 
-    @ManyToMany((type) => Category, { persistence: false })
+    @ManyToMany(() => Category, { persistence: false })
     @JoinTable()
     categories: Category[] = []
 }

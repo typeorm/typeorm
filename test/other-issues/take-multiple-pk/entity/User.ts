@@ -13,7 +13,7 @@ export class User {
 
     @Column() handedness: string
 
-    @ManyToMany((type) => Role, {
+    @ManyToMany(() => Role, {
         cascade: ["insert"],
     })
     @JoinTable()

@@ -12,6 +12,6 @@ export class CategoryWithRelation {
     @Column({ unique: true })
     name: string
 
-    @OneToOne((type) => PostWithRelation, (post) => post.category)
+    @OneToOne(() => PostWithRelation, (post) => post.category)
     post: PostWithRelation
 }

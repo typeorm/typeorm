@@ -1,7 +1,7 @@
-import { FileLoggerOptions, LoggerOptions } from "./LoggerOptions"
-import { LogLevel, LogMessage } from "./Logger"
+import type { FileLoggerOptions, LoggerOptions } from "./LoggerOptions"
+import type { LogLevel, LogMessage } from "./Logger"
 import appRootPath from "app-root-path"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { PlatformTools } from "../platform/PlatformTools"
 import { AbstractLogger } from "./AbstractLogger"
 
@@ -27,6 +27,10 @@ export class FileLogger extends AbstractLogger {
 
     /**
      * Write log to specific output.
+     *
+     * @param level
+     * @param logMessage
+     * @param queryRunner
      */
     protected writeLog(
         level: LogLevel,
@@ -40,7 +44,7 @@ export class FileLogger extends AbstractLogger {
 
         const strings: string[] = []
 
-        for (let message of messages) {
+        for (const message of messages) {
             switch (message.type ?? level) {
                 case "log":
                     strings.push(`[LOG]: ${message.message}`)
@@ -91,6 +95,8 @@ export class FileLogger extends AbstractLogger {
 
     /**
      * Writes given strings into the log file.
+     *
+     * @param strings
      */
     protected write(strings: string | string[]) {
         strings = Array.isArray(strings) ? strings : [strings]

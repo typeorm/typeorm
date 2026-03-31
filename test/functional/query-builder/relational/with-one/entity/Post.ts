@@ -15,10 +15,10 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     category: Category
 
-    @OneToOne((type) => Image, (image) => image.post)
+    @OneToOne(() => Image, (image) => image.post)
     @JoinColumn()
     image: Image
 }

@@ -1,4 +1,4 @@
-import { Driver } from "./Driver"
+import type { Driver } from "./Driver"
 import { hash, shorten } from "../util/StringUtils"
 import { VersionUtils } from "../util/VersionUtils"
 
@@ -12,32 +12,32 @@ export class DriverUtils {
 
     /**
      * Returns true if given driver is SQLite-based driver.
+     *
+     * @param driver
      */
     static isSQLiteFamily(driver: Driver): boolean {
         return [
-            "sqlite",
-            "cordova",
-            "react-native",
-            "nativescript",
-            "sqljs",
-            "expo",
             "better-sqlite3",
             "capacitor",
+            "cordova",
+            "expo",
+            "nativescript",
+            "react-native",
+            "sqljs",
         ].includes(driver.options.type)
     }
 
     /**
      * Returns true if given driver is MySQL-based driver.
+     *
+     * @param driver
      */
     static isMySQLFamily(driver: Driver): boolean {
         return ["mysql", "mariadb"].includes(driver.options.type)
     }
 
     static isReleaseVersionOrGreater(driver: Driver, version: string): boolean {
-        return (
-            driver.version != null &&
-            VersionUtils.isGreaterOrEqual(driver.version, version)
-        )
+        return VersionUtils.isGreaterOrEqual(driver.version, version)
     }
 
     static isPostgresFamily(driver: Driver): boolean {
@@ -49,6 +49,10 @@ export class DriverUtils {
     /**
      * Normalizes and builds a new driver options.
      * Extracts settings from connection url and sets to a new options object.
+     *
+     * @param options
+     * @param buildOptions
+     * @param buildOptions.useSid
      */
     static buildDriverOptions(
         options: any,
@@ -80,6 +84,10 @@ export class DriverUtils {
 
     /**
      * buildDriverOptions for MongodDB only to support replica set
+     *
+     * @param options
+     * @param buildOptions
+     * @param buildOptions.useSid
      */
     static buildMongoDBDriverOptions(
         options: any,
@@ -117,10 +125,10 @@ export class DriverUtils {
      * is still too long, it will then hash the alias.
      *
      * @param driver Current `Driver`.
+     * @param driver.maxAliasLength
      * @param buildOptions Optional settings.
      * @param alias Alias parts.
-     *
-     * @return An alias that is no longer than the divers max alias length.
+     * @returns An alias that is no longer than the divers max alias length.
      */
     static buildAlias(
         { maxAliasLength }: Driver,
@@ -130,7 +138,7 @@ export class DriverUtils {
         const joiner =
             buildOptions && buildOptions.joiner ? buildOptions.joiner : "_"
 
-        let newAlias = alias.length === 1 ? alias[0] : alias.join(joiner)
+        const newAlias = alias.length === 1 ? alias[0] : alias.join(joiner)
 
         if (
             maxAliasLength &&
@@ -150,36 +158,14 @@ export class DriverUtils {
         return newAlias
     }
 
-    /**
-     * @deprecated use `buildAlias` instead.
-     */
-    static buildColumnAlias(
-        { maxAliasLength }: Driver,
-        buildOptions: { shorten?: boolean; joiner?: string } | string,
-        ...alias: string[]
-    ) {
-        if (typeof buildOptions === "string") {
-            alias.unshift(buildOptions)
-            buildOptions = { shorten: false, joiner: "_" }
-        } else {
-            buildOptions = Object.assign(
-                { shorten: false, joiner: "_" },
-                buildOptions,
-            )
-        }
-        return this.buildAlias(
-            { maxAliasLength } as Driver,
-            buildOptions,
-            ...alias,
-        )
-    }
-
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------
 
     /**
      * Extracts connection data from the connection url.
+     *
+     * @param url
      */
     private static parseConnectionUrl(url: string) {
         const type = url.split(":")[0]
@@ -220,6 +206,8 @@ export class DriverUtils {
 
     /**
      * Extracts connection data from the connection url for MongoDB to support replica set.
+     *
+     * @param url
      */
     private static parseMongoDBConnectionUrl(url: string) {
         const type = url.split(":")[0]
@@ -230,13 +218,13 @@ export class DriverUtils {
             secondSlash !== -1 ? preBase.substr(0, secondSlash) : preBase
         let afterBase =
             secondSlash !== -1 ? preBase.substr(secondSlash + 1) : undefined
-        let afterQuestionMark = ""
+        let afterQuestionMark: string
         let host = undefined
         let port = undefined
         let hostReplicaSet = undefined
         let replicaSet = undefined
 
-        let optionsObject: any = {}
+        const optionsObject: any = {}
 
         if (afterBase && afterBase.indexOf("?") !== -1) {
             // split params
@@ -280,7 +268,7 @@ export class DriverUtils {
             ;[host, port] = hostAndPort.split(":")
         }
 
-        let connectionUrl: any = {
+        const connectionUrl: any = {
             type: type,
             host: host,
             hostReplicaSet: hostReplicaSet,

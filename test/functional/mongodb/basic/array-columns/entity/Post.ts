@@ -1,8 +1,6 @@
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { ObjectIdColumn } from "../../../../../../src/decorator/columns/ObjectIdColumn"
+import { ObjectId } from "mongodb"
+import { Column, Entity, ObjectIdColumn } from "../../../../../../src"
 import { Counters } from "./Counters"
-import { ObjectId } from "../../../../../../src/driver/mongodb/typings"
 
 @Entity()
 export class Post {
@@ -12,7 +10,7 @@ export class Post {
     @Column()
     title: string
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters: Counters[]
 
     @Column()
@@ -24,9 +22,9 @@ export class Post {
     @Column()
     booleans: boolean[]
 
-    @Column((type) => Counters, { array: true })
+    @Column(() => Counters, { array: true })
     other1: Counters[]
 
-    @Column((type) => Counters, { array: true })
+    @Column(() => Counters, { array: true })
     other2: Counters[]
 }

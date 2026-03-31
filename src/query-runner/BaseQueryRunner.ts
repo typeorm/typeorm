@@ -1,31 +1,41 @@
-import { PostgresConnectionOptions } from "../driver/postgres/PostgresConnectionOptions"
+import type { PostgresDataSourceOptions } from "../driver/postgres/PostgresDataSourceOptions"
 import { Query } from "../driver/Query"
 import { SqlInMemory } from "../driver/SqlInMemory"
-import { SqlServerConnectionOptions } from "../driver/sqlserver/SqlServerConnectionOptions"
-import { TableIndex } from "../schema-builder/table/TableIndex"
-import { View } from "../schema-builder/view/View"
-import { DataSource } from "../data-source/DataSource"
-import { Table } from "../schema-builder/table/Table"
-import { EntityManager } from "../entity-manager/EntityManager"
-import { TableColumn } from "../schema-builder/table/TableColumn"
-import { Broadcaster } from "../subscriber/Broadcaster"
-import { ReplicationMode } from "../driver/types/ReplicationMode"
+import type { SqlServerDataSourceOptions } from "../driver/sqlserver/SqlServerDataSourceOptions"
+import type { TableIndex } from "../schema-builder/table/TableIndex"
+import type { View } from "../schema-builder/view/View"
+import type { DataSource } from "../data-source/DataSource"
+import type { Table } from "../schema-builder/table/Table"
+import type { EntityManager } from "../entity-manager/EntityManager"
+import type { TableColumn } from "../schema-builder/table/TableColumn"
+import type { Broadcaster } from "../subscriber/Broadcaster"
+import type { ReplicationMode } from "../driver/types/ReplicationMode"
 import { TypeORMError } from "../error/TypeORMError"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { OrmUtils } from "../util/OrmUtils"
-import { MetadataTableType } from "../driver/types/MetadataTableType"
+import type { MetadataTableType } from "../driver/types/MetadataTableType"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { buildSqlTag } from "../util/SqlTagUtils"
 
-export abstract class BaseQueryRunner {
+export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by this query runner.
+     * DataSource used by this query runner.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by this query runner.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Entity manager working only with current query runner.
@@ -103,6 +113,29 @@ export abstract class BaseQueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Releases used database connection.
+     * You cannot use query runner methods after connection is released.
+     */
+    abstract release(): Promise<void>
+
+    async [Symbol.asyncDispose](): Promise<void> {
+        try {
+            if (this.isTransactionActive) {
+                this.transactionDepth = 1 // ignore all savepoints and commit directly
+                await this.commitTransaction()
+            }
+        } finally {
+            await this.release()
+        }
+    }
+
+    /**
+     * Commits transaction.
+     * Error will be thrown if transaction was not started.
+     */
+    abstract commitTransaction(): Promise<void>
+
+    /**
      * Executes a given SQL query.
      */
     abstract query(
@@ -110,6 +143,31 @@ export abstract class BaseQueryRunner {
         parameters?: any[],
         useStructuredResult?: boolean,
     ): Promise<any>
+
+    /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     *
+     * @example
+     * queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @param strings
+     * @param values
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.dataSource.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
+    }
 
     // -------------------------------------------------------------------------
     // Protected Abstract Methods
@@ -139,6 +197,8 @@ export abstract class BaseQueryRunner {
 
     /**
      * Loads given table's data from the database.
+     *
+     * @param tablePath
      */
     async getTable(tablePath: string): Promise<Table | undefined> {
         this.loadedTables = await this.loadTables([tablePath])
@@ -147,6 +207,8 @@ export abstract class BaseQueryRunner {
 
     /**
      * Loads all tables (with given names) from the database.
+     *
+     * @param tableNames
      */
     async getTables(tableNames?: string[]): Promise<Table[]> {
         if (!tableNames) {
@@ -161,6 +223,8 @@ export abstract class BaseQueryRunner {
 
     /**
      * Loads given view's data from the database.
+     *
+     * @param viewPath
      */
     async getView(viewPath: string): Promise<View | undefined> {
         this.loadedViews = await this.loadViews([viewPath])
@@ -169,6 +233,8 @@ export abstract class BaseQueryRunner {
 
     /**
      * Loads given view's data from the database.
+     *
+     * @param viewPaths
      */
     async getViews(viewPaths?: string[]): Promise<View[]> {
         this.loadedViews = await this.loadViews(viewPaths)
@@ -241,6 +307,8 @@ export abstract class BaseQueryRunner {
 
     /**
      * Gets view from previously loaded views, otherwise loads it from database.
+     *
+     * @param viewName
      */
     protected async getCachedView(viewName: string): Promise<View> {
         const view = this.loadedViews.find((view) => view.name === viewName)
@@ -257,6 +325,8 @@ export abstract class BaseQueryRunner {
 
     /**
      * Gets table from previously loaded tables, otherwise loads it from database.
+     *
+     * @param tableName
      */
     protected async getCachedTable(tableName: string): Promise<Table> {
         if (tableName in this.cachedTablePaths) {
@@ -295,6 +365,9 @@ export abstract class BaseQueryRunner {
 
     /**
      * Replaces loaded table with given changed table.
+     *
+     * @param table
+     * @param changedTable
      */
     protected replaceCachedTable(table: Table, changedTable: Table): void {
         const oldTablePath = this.getTablePath(table)
@@ -327,9 +400,9 @@ export abstract class BaseQueryRunner {
     protected getTablePath(
         target: EntityMetadata | Table | View | TableForeignKey | string,
     ): string {
-        const parsed = this.connection.driver.parseTableName(target)
+        const parsed = this.dataSource.driver.parseTableName(target)
 
-        return this.connection.driver.buildTableName(
+        return this.dataSource.driver.buildTableName(
             parsed.tableName,
             parsed.schema,
             parsed.database,
@@ -338,10 +411,10 @@ export abstract class BaseQueryRunner {
 
     protected getTypeormMetadataTableName(): string {
         const options = <
-            SqlServerConnectionOptions | PostgresConnectionOptions
-        >this.connection.driver.options
-        return this.connection.driver.buildTableName(
-            this.connection.metadataTableName,
+            SqlServerDataSourceOptions | PostgresDataSourceOptions
+        >this.dataSource.driver.options
+        return this.dataSource.driver.buildTableName(
+            this.dataSource.metadataTableName,
             options.schema,
             options.database,
         )
@@ -349,6 +422,13 @@ export abstract class BaseQueryRunner {
 
     /**
      * Generates SQL query to select record from typeorm metadata table.
+     *
+     * @param root0
+     * @param root0.database
+     * @param root0.schema
+     * @param root0.table
+     * @param root0.type
+     * @param root0.name
      */
     protected selectTypeormMetadataSql({
         database,
@@ -363,7 +443,7 @@ export abstract class BaseQueryRunner {
         type: MetadataTableType
         name: string
     }): Query {
-        const qb = this.connection.createQueryBuilder()
+        const qb = this.dataSource.createQueryBuilder()
         const selectQb = qb
             .select()
             .from(this.getTypeormMetadataTableName(), "t")
@@ -390,6 +470,14 @@ export abstract class BaseQueryRunner {
 
     /**
      * Generates SQL query to insert a record into typeorm metadata table.
+     *
+     * @param root0
+     * @param root0.database
+     * @param root0.schema
+     * @param root0.table
+     * @param root0.type
+     * @param root0.name
+     * @param root0.value
      */
     protected insertTypeormMetadataSql({
         database,
@@ -406,7 +494,7 @@ export abstract class BaseQueryRunner {
         name: string
         value?: string
     }): Query {
-        const [query, parameters] = this.connection
+        const [query, parameters] = this.dataSource
             .createQueryBuilder()
             .insert()
             .into(this.getTypeormMetadataTableName())
@@ -425,6 +513,13 @@ export abstract class BaseQueryRunner {
 
     /**
      * Generates SQL query to delete a record from typeorm metadata table.
+     *
+     * @param root0
+     * @param root0.database
+     * @param root0.schema
+     * @param root0.table
+     * @param root0.type
+     * @param root0.name
      */
     protected deleteTypeormMetadataSql({
         database,
@@ -439,7 +534,7 @@ export abstract class BaseQueryRunner {
         type: MetadataTableType
         name: string
     }): Query {
-        const qb = this.connection.createQueryBuilder()
+        const qb = this.dataSource.createQueryBuilder()
         const deleteQb = qb
             .delete()
             .from(this.getTypeormMetadataTableName())
@@ -467,6 +562,12 @@ export abstract class BaseQueryRunner {
     /**
      * Checks if at least one of column properties was changed.
      * Does not checks column type, length and autoincrement, because these properties changes separately.
+     *
+     * @param oldColumn
+     * @param newColumn
+     * @param checkDefault
+     * @param checkComment
+     * @param checkEnum
      */
     protected isColumnChanged(
         oldColumn: TableColumn,
@@ -507,8 +608,6 @@ export abstract class BaseQueryRunner {
             oldColumn.collation !== newColumn.collation ||
             oldColumn.precision !== newColumn.precision ||
             oldColumn.scale !== newColumn.scale ||
-            oldColumn.width !== newColumn.width || // MySQL only
-            oldColumn.zerofill !== newColumn.zerofill || // MySQL only
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only
             oldColumn.asExpression !== newColumn.asExpression ||
             (checkDefault && oldColumn.default !== newColumn.default) ||
@@ -528,6 +627,10 @@ export abstract class BaseQueryRunner {
 
     /**
      * Checks if column length is by default.
+     *
+     * @param table
+     * @param column
+     * @param length
      */
     protected isDefaultColumnLength(
         table: Table,
@@ -535,26 +638,26 @@ export abstract class BaseQueryRunner {
         length: string,
     ): boolean {
         // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
+        if (this.dataSource.hasMetadata(table.name)) {
+            const metadata = this.dataSource.getMetadata(table.name)
             const columnMetadata = metadata.findColumnWithDatabaseName(
                 column.name,
             )
 
             if (columnMetadata) {
                 const columnMetadataLength =
-                    this.connection.driver.getColumnLength(columnMetadata)
+                    this.dataSource.driver.getColumnLength(columnMetadata)
                 if (columnMetadataLength) return false
             }
         }
 
         if (
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].length
+            this.dataSource.driver.dataTypeDefaults &&
+            this.dataSource.driver.dataTypeDefaults[column.type] &&
+            this.dataSource.driver.dataTypeDefaults[column.type].length
         ) {
             return (
-                this.connection.driver.dataTypeDefaults[
+                this.dataSource.driver.dataTypeDefaults[
                     column.type
                 ].length!.toString() === length.toString()
             )
@@ -565,6 +668,10 @@ export abstract class BaseQueryRunner {
 
     /**
      * Checks if column precision is by default.
+     *
+     * @param table
+     * @param column
+     * @param precision
      */
     protected isDefaultColumnPrecision(
         table: Table,
@@ -572,8 +679,8 @@ export abstract class BaseQueryRunner {
         precision: number,
     ): boolean {
         // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
+        if (this.dataSource.hasMetadata(table.name)) {
+            const metadata = this.dataSource.getMetadata(table.name)
             const columnMetadata = metadata.findColumnWithDatabaseName(
                 column.name,
             )
@@ -586,15 +693,15 @@ export abstract class BaseQueryRunner {
         }
 
         if (
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].precision !==
+            this.dataSource.driver.dataTypeDefaults &&
+            this.dataSource.driver.dataTypeDefaults[column.type] &&
+            this.dataSource.driver.dataTypeDefaults[column.type].precision !==
                 null &&
-            this.connection.driver.dataTypeDefaults[column.type].precision !==
+            this.dataSource.driver.dataTypeDefaults[column.type].precision !==
                 undefined
         )
             return (
-                this.connection.driver.dataTypeDefaults[column.type]
+                this.dataSource.driver.dataTypeDefaults[column.type]
                     .precision === precision
             )
 
@@ -603,6 +710,10 @@ export abstract class BaseQueryRunner {
 
     /**
      * Checks if column scale is by default.
+     *
+     * @param table
+     * @param column
+     * @param scale
      */
     protected isDefaultColumnScale(
         table: Table,
@@ -610,8 +721,8 @@ export abstract class BaseQueryRunner {
         scale: number,
     ): boolean {
         // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
+        if (this.dataSource.hasMetadata(table.name)) {
+            const metadata = this.dataSource.getMetadata(table.name)
             const columnMetadata = metadata.findColumnWithDatabaseName(
                 column.name,
             )
@@ -624,15 +735,15 @@ export abstract class BaseQueryRunner {
         }
 
         if (
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].scale !==
+            this.dataSource.driver.dataTypeDefaults &&
+            this.dataSource.driver.dataTypeDefaults[column.type] &&
+            this.dataSource.driver.dataTypeDefaults[column.type].scale !==
                 null &&
-            this.connection.driver.dataTypeDefaults[column.type].scale !==
+            this.dataSource.driver.dataTypeDefaults[column.type].scale !==
                 undefined
         )
             return (
-                this.connection.driver.dataTypeDefaults[column.type].scale ===
+                this.dataSource.driver.dataTypeDefaults[column.type].scale ===
                 scale
             )
 
@@ -641,6 +752,9 @@ export abstract class BaseQueryRunner {
 
     /**
      * Executes sql used special for schema build.
+     *
+     * @param upQueries
+     * @param downQueries
      */
     protected async executeQueries(
         upQueries: Query | Query[],
@@ -663,13 +777,16 @@ export abstract class BaseQueryRunner {
 
     /**
      * Generated an index name for a table and index
+     *
+     * @param table
+     * @param index
      */
     protected generateIndexName(
         table: Table | View,
         index: TableIndex,
     ): string {
         // new index may be passed without name. In this case we generate index name manually.
-        return this.connection.namingStrategy.indexName(
+        return this.dataSource.namingStrategy.indexName(
             table,
             index.columnNames,
             index.where,

@@ -7,7 +7,7 @@ import { Specialization } from "./Specialization"
 @ChildEntity()
 export class Teacher extends Employee {
     @ManyToMany(
-        (type) => Specialization,
+        () => Specialization,
         (specialization) => specialization.teachers,
     )
     @JoinTable({ name: "person_specs" })

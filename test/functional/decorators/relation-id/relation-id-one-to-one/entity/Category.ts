@@ -13,7 +13,7 @@ export class Category {
     @Column({ unique: true })
     name: string
 
-    @OneToOne((type) => Post, (post) => post.category2)
+    @OneToOne(() => Post, (post) => post.category2)
     post: Post
 
     @RelationId((category: Category) => category.post)

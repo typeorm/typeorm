@@ -15,9 +15,9 @@ export class Student {
     @Column()
     name: string
 
-    @ManyToOne((type) => Faculty)
+    @ManyToOne(() => Faculty)
     faculty: Faculty
 
-    @ManyToOne((type) => Teacher)
+    @ManyToOne(() => Teacher)
     teacher: Teacher
 }

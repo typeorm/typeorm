@@ -6,6 +6,6 @@ export class User {
     @PrimaryColumn()
     public username: string
 
-    @OneToMany((type) => UserMonth, (userMonth) => userMonth.user)
+    @OneToMany(() => UserMonth, (userMonth) => userMonth.user)
     public userMonths: UserMonth[]
 }

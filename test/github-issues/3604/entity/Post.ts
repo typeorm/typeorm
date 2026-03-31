@@ -9,7 +9,7 @@ export class Post {
     @PrimaryGeneratedColumn("uuid")
     id: string
 
-    @ManyToOne((type) => Author)
+    @ManyToOne(() => Author)
     @JoinColumn()
     author: Author
 }

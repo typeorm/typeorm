@@ -1,0 +1,75 @@
+import "reflect-metadata"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { CreatePost0000000000001 } from "./0000000000001-CreatePost"
+
+describe("migrations > vector type", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: false,
+            dropSchema: true,
+            migrations: [CreatePost0000000000001],
+        })
+    })
+
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should run vector migration and create table with vector columns", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.runMigrations()
+
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                await queryRunner.release()
+
+                table!
+                    .findColumnByName("embedding")!
+                    .type.should.be.equal("vector")
+                table!
+                    .findColumnByName("embedding_three_dimensions")!
+                    .type.should.be.equal("vector")
+                table!
+                    .findColumnByName("embedding_three_dimensions")!
+                    .length!.should.be.equal("3")
+                table!
+                    .findColumnByName("halfvec_embedding")!
+                    .type.should.be.equal("halfvec")
+                table!
+                    .findColumnByName("halfvec_four_dimensions")!
+                    .type.should.be.equal("halfvec")
+                table!
+                    .findColumnByName("halfvec_four_dimensions")!
+                    .length!.should.be.equal("4")
+            }),
+        ))
+
+    it("should handle vector data after migration", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.runMigrations()
+
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.query(
+                    'INSERT INTO "post"("embedding", "embedding_three_dimensions", "halfvec_embedding", "halfvec_four_dimensions") VALUES (\'[1,2,3,4]\', \'[4,5,6]\', \'[1.5,2.5]\', \'[1,2,3,4]\')',
+                )
+
+                const result = await queryRunner.query('SELECT * FROM "post"')
+                await queryRunner.release()
+
+                result.length.should.be.equal(1)
+                result[0].embedding.should.equal("[1,2,3,4]")
+                result[0].embedding_three_dimensions.should.equal("[4,5,6]")
+                result[0].halfvec_embedding.should.equal("[1.5,2.5]")
+                result[0].halfvec_four_dimensions.should.equal("[1,2,3,4]")
+            }),
+        ))
+})

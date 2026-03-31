@@ -12,6 +12,6 @@ export class ImageInfo {
     @Column()
     name: string
 
-    @ManyToOne((type) => Image, (image) => image.informations)
+    @ManyToOne(() => Image, (image) => image.informations)
     image: Image
 }

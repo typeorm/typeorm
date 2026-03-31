@@ -13,15 +13,28 @@ export class TestMigration1610975184784 implements MigrationInterface {
     }
 
 }`,
-    javascript: `const { MigrationInterface, QueryRunner } = require("typeorm");
+    javascript: `/**
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
+ */
 
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
 module.exports = class TestMigration1610975184784 {
     name = 'TestMigration1610975184784'
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async up(queryRunner) {
         await queryRunner.query(\`CREATE TABLE \\\`post\\\` (\\\`id\\\` int NOT NULL AUTO_INCREMENT, \\\`title\\\` varchar(255) NOT NULL, \\\`createdAt\\\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), PRIMARY KEY (\\\`id\\\`)) ENGINE=InnoDB\`);
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async down(queryRunner) {
         await queryRunner.query(\`DROP TABLE \\\`post\\\`\`);
     }

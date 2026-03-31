@@ -1,11 +1,12 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { SubjectChangeMap } from "./SubjectChangeMap"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { SubjectChangeMap } from "./SubjectChangeMap"
 import { OrmUtils } from "../util/OrmUtils"
-import { RelationMetadata } from "../metadata/RelationMetadata"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { isUint8Array } from "../util/Uint8ArrayUtils"
 
 /**
  * Subject is a subject of persistence.
@@ -266,7 +267,7 @@ export class Subject {
                 // or value can be a null or direct relation id, e.g. post.question = 1
                 // if its a direction relation id then we just set it to the valueMap,
                 // however if its an object then we need to extract its relation id map and set it to the valueMap
-                if (ObjectUtils.isObject(value) && !Buffer.isBuffer(value)) {
+                if (ObjectUtils.isObject(value) && !isUint8Array(value)) {
                     // get relation id, e.g. referenced column name and its value,
                     // for example: { id: 1 } which then will be set to relation, e.g. post.category = { id: 1 }
                     const relationId =

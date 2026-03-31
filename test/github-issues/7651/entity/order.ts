@@ -4,6 +4,7 @@ export enum Order {
     THIRD = "third",
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Order {
     export function from(value: string): Order {
         switch (value) {

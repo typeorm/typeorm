@@ -1,10 +1,10 @@
-import { CommandUtils } from "./CommandUtils"
-import * as path from "path"
-import * as yargs from "yargs"
-import chalk from "chalk"
+import ansi from "ansis"
 import { exec } from "child_process"
+import path from "path"
+import type yargs from "yargs"
 import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Generates a new project with TypeORM.
@@ -25,6 +25,17 @@ export class InitCommand implements yargs.CommandModule {
             .option("db", {
                 alias: "database",
                 describe: "Database type you'll use in your project.",
+                choices: [
+                    "postgres",
+                    "mysql",
+                    "mariadb",
+                    "better-sqlite3",
+                    "mssql",
+                    "oracle",
+                    "mongodb",
+                    "cockroachdb",
+                    "spanner",
+                ],
             })
             .option("express", {
                 describe:
@@ -85,7 +96,7 @@ export class InitCommand implements yargs.CommandModule {
                 InitCommand.getTsConfigTemplate(projectIsEsm),
             )
             await CommandUtils.createFile(
-                basePath + "/src/entity/User.ts",
+                basePath + "/src/entities/User.ts",
                 InitCommand.getUserEntityTemplate(database),
             )
             await CommandUtils.createFile(
@@ -96,7 +107,7 @@ export class InitCommand implements yargs.CommandModule {
                 basePath + "/src/index.ts",
                 InitCommand.getAppIndexTemplate(isExpress, projectIsEsm),
             )
-            await CommandUtils.createDirectories(basePath + "/src/migration")
+            await CommandUtils.createDirectories(basePath + "/src/migrations")
 
             // generate extra files for express application
             if (isExpress) {
@@ -105,7 +116,7 @@ export class InitCommand implements yargs.CommandModule {
                     InitCommand.getRoutesTemplate(projectIsEsm),
                 )
                 await CommandUtils.createFile(
-                    basePath + "/src/controller/UserController.ts",
+                    basePath + "/src/controllers/UserController.ts",
                     InitCommand.getControllerTemplate(projectIsEsm),
                 )
             }
@@ -115,7 +126,7 @@ export class InitCommand implements yargs.CommandModule {
             )
             await CommandUtils.createFile(
                 basePath + "/package.json",
-                InitCommand.appendPackageJson(
+                await InitCommand.appendPackageJson(
                     packageJsonContents,
                     database,
                     isExpress,
@@ -125,26 +136,24 @@ export class InitCommand implements yargs.CommandModule {
 
             if (args.name) {
                 console.log(
-                    chalk.green(
-                        `Project created inside ${chalk.blue(
-                            basePath,
-                        )} directory.`,
-                    ),
+                    ansi.green`Project created inside ${ansi.blue(
+                        basePath,
+                    )} directory.`,
                 )
             } else {
                 console.log(
-                    chalk.green(`Project created inside current directory.`),
+                    ansi.green`Project created inside current directory.`,
                 )
             }
 
-            console.log(chalk.green(`Please wait, installing dependencies...`))
+            console.log(ansi.green`Please wait, installing dependencies...`)
             if (args.pm && installNpm) {
                 await InitCommand.executeCommand("npm install", basePath)
             } else {
                 await InitCommand.executeCommand("yarn install", basePath)
             }
 
-            console.log(chalk.green(`Done! Start playing with a new project!`))
+            console.log(ansi.green`Done! Start playing with a new project!`)
         } catch (err) {
             PlatformTools.logCmdErr("Error during project initialization:", err)
             process.exit(1)
@@ -168,85 +177,112 @@ export class InitCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the ormconfig file.
+     *
+     * @param isEsm
+     * @param database
      */
     protected static getAppDataSourceTemplate(
         isEsm: boolean,
         database: string,
     ): string {
-        let dbSettings = ""
+        let dbSettings: string[]
+
         switch (database) {
             case "mysql":
-                dbSettings = `type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",`
+                dbSettings = [
+                    'type: "mysql"',
+                    'host: "localhost"',
+                    "port: 3306",
+                    'username: "root"',
+                    'password: "password"',
+                    'database: "typeorm"',
+                ]
                 break
+
             case "mariadb":
-                dbSettings = `type: "mariadb",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",`
+                dbSettings = [
+                    'type: "mariadb"',
+                    'host: "localhost"',
+                    "port: 3306",
+                    'username: "root"',
+                    'password: "password"',
+                    'database: "typeorm"',
+                ]
                 break
-            case "sqlite":
-                dbSettings = `type: "sqlite",
-    database: "database.sqlite",`
-                break
+
             case "better-sqlite3":
-                dbSettings = `type: "better-sqlite3",
-    database: "database.sqlite",`
+                dbSettings = [
+                    'type: "better-sqlite3"',
+                    'database: "database.sqlite"',
+                ]
                 break
+
             case "postgres":
-                dbSettings = `type: "postgres",
-    host: "localhost",
-    port: 5432,
-    username: "test",
-    password: "test",
-    database: "test",`
+                dbSettings = [
+                    'type: "postgres"',
+                    'host: "localhost"',
+                    "port: 5432",
+                    'username: "root"',
+                    'password: "password"',
+                    'database: "typeorm"',
+                ]
                 break
+
             case "cockroachdb":
-                dbSettings = `type: "cockroachdb",
-    host: "localhost",
-    port: 26257,
-    username: "root",
-    password: "",
-    database: "defaultdb",`
+                dbSettings = [
+                    'type: "cockroachdb"',
+                    'host: "localhost"',
+                    "port: 26257",
+                    'username: "root"',
+                    'password: ""',
+                    'database: "defaultdb"',
+                ]
                 break
+
             case "mssql":
-                dbSettings = `type: "mssql",
-    host: "localhost",
-    username: "sa",
-    password: "Admin12345",
-    database: "tempdb",`
+                dbSettings = [
+                    'type: "mssql"',
+                    'host: "localhost"',
+                    'username: "sa"',
+                    'password: "Admin12345"',
+                    'database: "tempdb"',
+                ]
                 break
+
             case "oracle":
-                dbSettings = `type: "oracle",
-host: "localhost",
-username: "system",
-password: "oracle",
-port: 1521,
-sid: "xe.oracle.docker",`
+                dbSettings = [
+                    'type: "oracle"',
+                    'host: "localhost"',
+                    'username: "system"',
+                    'password: "oracle"',
+                    "port: 1521",
+                    'sid: "xe.oracle.docker"',
+                ]
                 break
+
             case "mongodb":
-                dbSettings = `type: "mongodb",
-    database: "test",`
+                dbSettings = ['type: "mongodb"', 'database: "test"']
                 break
+
             case "spanner":
-                dbSettings = `type: "spanner",
-    projectId: "test",
-    instanceId: "test",
-    databaseId: "test",`
+                dbSettings = [
+                    'type: "spanner"',
+                    'projectId: "test"',
+                    'instanceId: "test"',
+                    'databaseId: "test"',
+                ]
                 break
+
+            default:
+                throw new Error(`Unknown database "${database}"`)
         }
+
         return `import "reflect-metadata"
 import { DataSource } from "typeorm"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 export const AppDataSource = new DataSource({
-    ${dbSettings}
+${dbSettings.map((s) => `    ${s},`).join("\n")}
     synchronize: true,
     logging: false,
     entities: [User],
@@ -258,14 +294,16 @@ export const AppDataSource = new DataSource({
 
     /**
      * Gets contents of the ormconfig file.
+     *
+     * @param esmModule
      */
     protected static getTsConfigTemplate(esmModule: boolean): string {
         if (esmModule)
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es2021"],
-                        target: "es2021",
+                        lib: ["es2023"],
+                        target: "es2022",
                         module: "es2022",
                         moduleResolution: "node",
                         allowSyntheticDefaultImports: true,
@@ -282,8 +320,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es5", "es6"],
-                        target: "es5",
+                        lib: ["es2023"],
+                        target: "es2022",
                         module: "commonjs",
                         moduleResolution: "node",
                         outDir: "./build",
@@ -311,13 +349,15 @@ temp/`
 
     /**
      * Gets contents of the user entity.
+     *
+     * @param database
      */
     protected static getUserEntityTemplate(database: string): string {
-        return `import { Entity, ${
+        return `${
             database === "mongodb"
-                ? "ObjectIdColumn, ObjectId"
-                : "PrimaryGeneratedColumn"
-        }, Column } from "typeorm"
+                ? `import { Entity, ObjectIdColumn, Column } from "typeorm"\nimport { ObjectId } from "mongodb"`
+                : `import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"`
+        }
 
 @Entity()
 export class User {
@@ -344,9 +384,11 @@ export class User {
 
     /**
      * Gets contents of the route file (used when express is enabled).
+     *
+     * @param isEsm
      */
     protected static getRoutesTemplate(isEsm: boolean): string {
-        return `import { UserController } from "./controller/UserController${
+        return `import { UserController } from "./controllers/UserController${
             isEsm ? ".js" : ""
         }"
 
@@ -375,13 +417,15 @@ export const Routes = [{
 
     /**
      * Gets contents of the user controller file (used when express is enabled).
+     *
+     * @param isEsm
      */
     protected static getControllerTemplate(isEsm: boolean): string {
         return `import { AppDataSource } from "../data-source${
             isEsm ? ".js" : ""
         }"
 import { NextFunction, Request, Response } from "express"
-import { User } from "../entity/User${isEsm ? ".js" : ""}"
+import { User } from "../entities/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
@@ -436,6 +480,9 @@ export class UserController {
 
     /**
      * Gets contents of the main (index) application file.
+     *
+     * @param express
+     * @param isEsm
      */
     protected static getAppIndexTemplate(
         express: boolean,
@@ -447,7 +494,7 @@ import ${!isEsm ? "* as " : ""}bodyParser from "body-parser"
 import { Request, Response } from "express"
 import { AppDataSource } from "./data-source${isEsm ? ".js" : ""}"
 import { Routes } from "./routes${isEsm ? ".js" : ""}"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
@@ -499,7 +546,7 @@ AppDataSource.initialize().then(async () => {
             return `import { AppDataSource } from "./data-source${
                 isEsm ? ".js" : ""
             }"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
@@ -524,6 +571,9 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new package.json file.
+     *
+     * @param projectName
+     * @param projectIsEsm
      */
     protected static getPackageJsonTemplate(
         projectName?: string,
@@ -546,104 +596,94 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new docker-compose.yml file.
+     *
+     * @param database
      */
     protected static getDockerComposeTemplate(database: string): string {
         switch (database) {
             case "mysql":
-                return `version: '3'
-services:
+                return `services:
 
   mysql:
-    image: "mysql:8.0.30"
+    image: "mysql:9.2.0"
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
 `
             case "mariadb":
-                return `version: '3'
-services:
+                return `services:
 
   mariadb:
-    image: "mariadb:10.8.4"
+    image: "mariadb:11.7.2"
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
 `
             case "postgres":
-                return `version: '3'
-services:
+                return `services:
 
   postgres:
-    image: "postgres:14.5"
+    image: "postgres:17.2"
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "root"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "typeorm"
 
 `
             case "cockroachdb":
-                return `version: '3'
-services:
+                return `services:
 
   cockroachdb:
-    image: "cockroachdb/cockroach:v22.1.6"
+    image: "cockroachdb/cockroach:v25.1.2"
     command: start --insecure
     ports:
       - "26257:26257"
 
 `
-            case "sqlite":
             case "better-sqlite3":
-                return `version: '3'
-services:
-`
+                throw new TypeORMError(`SQLite does not require docker`)
+
             case "oracle":
                 throw new TypeORMError(
                     `You cannot initialize a project with docker for Oracle driver yet.`,
                 ) // todo: implement for oracle as well
 
             case "mssql":
-                return `version: '3'
-services:
+                return `services:
 
   mssql:
-    image: "microsoft/mssql-server-linux:rc2"
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
     ports:
       - "1433:1433"
     environment:
       SA_PASSWORD: "Admin12345"
       ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
 
 `
             case "mongodb":
-                return `version: '3'
-services:
+                return `services:
 
   mongodb:
-    image: "mongo:5.0.12"
+    image: "mongo:8"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
 
 `
             case "spanner":
-                return `version: '3'
-services:
+                return `services:
 
   spanner:
-    image: gcr.io/cloud-spanner-emulator/emulator:1.4.1
+    image: gcr.io/cloud-spanner-emulator/emulator:1.5.30
     ports:
       - "9010:9010"
       - "9020:9020"
@@ -655,6 +695,9 @@ services:
 
     /**
      * Gets contents of the new readme.md file.
+     *
+     * @param options
+     * @param options.docker
      */
     protected static getReadmeTemplate(options: { docker: boolean }): string {
         let template = `# Awesome Project Build with TypeORM
@@ -679,63 +722,74 @@ Steps to run this project:
 
     /**
      * Appends to a given package.json template everything needed.
+     *
+     * @param packageJsonContents
+     * @param database
+     * @param express
+     * @param projectIsEsm
      */
-    protected static appendPackageJson(
+    protected static async appendPackageJson(
         packageJsonContents: string,
         database: string,
         express: boolean,
         projectIsEsm: boolean /*, docker: boolean*/,
-    ): string {
+    ): Promise<string> {
         const packageJson = JSON.parse(packageJsonContents)
+        const ourPackageJson = JSON.parse(
+            await CommandUtils.readFile(`${__dirname}/../package.json`),
+        )
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
-        Object.assign(packageJson.devDependencies, {
-            "ts-node": "10.9.1",
-            "@types/node": "^16.11.10",
-            typescript: "4.5.2",
-        })
+        packageJson.devDependencies = {
+            "@types/node": ourPackageJson.devDependencies["@types/node"],
+            "ts-node": ourPackageJson.devDependencies["ts-node"],
+            typescript: ourPackageJson.devDependencies.typescript,
+            ...packageJson.devDependencies,
+        }
 
         if (!packageJson.dependencies) packageJson.dependencies = {}
-        Object.assign(packageJson.dependencies, {
-            typeorm:
-                require("../package.json").version !== "0.0.0"
-                    ? require("../package.json").version // install version from package.json if present
-                    : require("../package.json").installFrom, // else use custom source
-            "reflect-metadata": "^0.1.13",
-        })
+        packageJson.dependencies = {
+            ...packageJson.dependencies,
+            "reflect-metadata": ourPackageJson.dependencies["reflect-metadata"],
+            typeorm: ourPackageJson.version,
+        }
 
         switch (database) {
             case "mysql":
             case "mariadb":
-                packageJson.dependencies["mysql"] = "^2.14.1"
+                packageJson.dependencies["mysql2"] =
+                    ourPackageJson.devDependencies.mysql2
                 break
             case "postgres":
             case "cockroachdb":
-                packageJson.dependencies["pg"] = "^8.4.0"
-                break
-            case "sqlite":
-                packageJson.dependencies["sqlite3"] = "^5.0.2"
+                packageJson.dependencies["pg"] =
+                    ourPackageJson.devDependencies.pg
                 break
             case "better-sqlite3":
-                packageJson.dependencies["better-sqlite3"] = "^7.0.0"
+                packageJson.dependencies["better-sqlite3"] =
+                    ourPackageJson.devDependencies["better-sqlite3"]
                 break
             case "oracle":
-                packageJson.dependencies["oracledb"] = "^5.1.0"
+                packageJson.dependencies["oracledb"] =
+                    ourPackageJson.devDependencies.oracledb
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^9.1.1"
+                packageJson.dependencies["mssql"] =
+                    ourPackageJson.devDependencies.mssql
                 break
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^5.2.0"
+                packageJson.dependencies["mongodb"] =
+                    ourPackageJson.devDependencies.mongodb
                 break
             case "spanner":
-                packageJson.dependencies["@google-cloud/spanner"] = "^5.18.0"
+                packageJson.dependencies["@google-cloud/spanner"] =
+                    ourPackageJson.devDependencies["@google-cloud/spanner"]
                 break
         }
 
         if (express) {
-            packageJson.dependencies["express"] = "^4.17.2"
-            packageJson.dependencies["body-parser"] = "^1.19.1"
+            packageJson.dependencies["express"] = "^4.21.2"
+            packageJson.dependencies["body-parser"] = "^1.20.3"
         }
 
         if (!packageJson.scripts) packageJson.scripts = {}

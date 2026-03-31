@@ -25,8 +25,8 @@ import type { NotBrackets } from "../query-builder/NotBrackets"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
-import { DataSource } from "../data-source"
-import { BaseEntity } from "../repository/BaseEntity"
+import type { DataSource } from "../data-source"
+import type { BaseEntity } from "../repository/BaseEntity"
 
 export class InstanceChecker {
     static isMssqlParameter(obj: unknown): obj is MssqlParameter {
@@ -132,7 +132,7 @@ export class InstanceChecker {
         return (
             typeof obj === "object" &&
             obj !== null &&
-            (obj as { "@instanceof": Symbol })["@instanceof"] ===
+            (obj as { "@instanceof": symbol })["@instanceof"] ===
                 Symbol.for(name)
         )
     }

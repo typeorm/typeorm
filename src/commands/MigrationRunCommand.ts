@@ -1,8 +1,8 @@
 import path from "path"
-import * as process from "process"
-import * as yargs from "yargs"
+import process from "process"
+import type * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
-import { DataSource } from "../data-source"
+import type { DataSource } from "../data-source"
 import { CommandUtils } from "./CommandUtils"
 
 /**

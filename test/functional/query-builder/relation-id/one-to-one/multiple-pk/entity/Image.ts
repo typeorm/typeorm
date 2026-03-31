@@ -12,7 +12,7 @@ export class Image {
     @Column()
     name: string
 
-    @OneToOne((type) => Category, (category) => category.image)
+    @OneToOne(() => Category, (category) => category.image)
     category: Category
 
     categoryId: number

@@ -1,0 +1,2 @@
+[ -x .git/hooks/pre-commit ] && .git/hooks/pre-commit
+pnpm exec lint-staged

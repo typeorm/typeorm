@@ -1,4 +1,4 @@
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Performs logging of the events in TypeORM.
@@ -98,6 +98,7 @@ export type LogMessageType =
  */
 export type PrepareLogMessagesOptions = {
     highlightSql: boolean
+    formatSql: boolean
     appendParameterAsComment: boolean
     addColonToPrefix: boolean
 }

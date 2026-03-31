@@ -5,6 +5,6 @@ import { Faculty } from "./Faculty"
 
 @ChildEntity()
 export class Student extends Person {
-    @OneToMany((type) => Faculty, (faculty) => faculty.student)
+    @OneToMany(() => Faculty, (faculty) => faculty.student)
     faculties: Faculty[]
 }

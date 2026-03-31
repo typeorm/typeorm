@@ -1,11 +1,11 @@
 import appRootPath from "app-root-path"
 import path from "path"
-import { DataSourceOptions } from "../data-source/DataSourceOptions"
-import { PlatformTools } from "../platform/PlatformTools"
-import { ConnectionOptionsEnvReader } from "./options-reader/ConnectionOptionsEnvReader"
+
+import type { DataSourceOptions } from "../data-source/DataSourceOptions"
 import { TypeORMError } from "../error"
-import { isAbsolute } from "../util/PathUtils"
+import { PlatformTools } from "../platform/PlatformTools"
 import { importOrRequireFile } from "../util/ImportUtils"
+import { isAbsolute } from "../util/PathUtils"
 
 /**
  * Reads connection options from the ormconfig.
@@ -37,7 +37,7 @@ export class ConnectionOptionsReader {
     /**
      * Returns all connection options read from the ormconfig.
      */
-    async all(): Promise<DataSourceOptions[]> {
+    async get(): Promise<DataSourceOptions[]> {
         const options = await this.load()
         if (!options)
             throw new TypeORMError(
@@ -45,38 +45,6 @@ export class ConnectionOptionsReader {
             )
 
         return options
-    }
-
-    /**
-     * Gets a connection with a given name read from ormconfig.
-     * If connection with such name would not be found then it throw error.
-     */
-    async get(name: string): Promise<DataSourceOptions> {
-        const allOptions = await this.all()
-        const targetOptions = allOptions.find(
-            (options) =>
-                options.name === name || (name === "default" && !options.name),
-        )
-        if (!targetOptions)
-            throw new TypeORMError(
-                `Cannot find connection ${name} because its not defined in any orm configuration files.`,
-            )
-
-        return targetOptions
-    }
-
-    /**
-     * Checks if there is a TypeORM configuration file.
-     */
-    async has(name: string): Promise<boolean> {
-        const allOptions = await this.load()
-        if (!allOptions) return false
-
-        const targetOptions = allOptions.find(
-            (options) =>
-                options.name === name || (name === "default" && !options.name),
-        )
-        return !!targetOptions
     }
 
     // -------------------------------------------------------------------------
@@ -94,16 +62,7 @@ export class ConnectionOptionsReader {
             | DataSourceOptions[]
             | undefined = undefined
 
-        const fileFormats = [
-            "env",
-            "js",
-            "mjs",
-            "cjs",
-            "ts",
-            "mts",
-            "cts",
-            "json",
-        ]
+        const fileFormats = ["js", "mjs", "cjs", "ts", "mts", "cts", "json"]
 
         // Detect if baseFilePath contains file extension
         const possibleExtension = this.baseFilePath.substr(
@@ -125,20 +84,8 @@ export class ConnectionOptionsReader {
             ? this.baseFilePath
             : this.baseFilePath + "." + foundFileFormat
 
-        // if .env file found then load all its variables into process.env using dotenv package
-        if (foundFileFormat === "env") {
-            PlatformTools.dotenv(configFile)
-        } else if (PlatformTools.fileExist(this.baseDirectory + "/.env")) {
-            PlatformTools.dotenv(this.baseDirectory + "/.env")
-        }
-
         // try to find connection options from any of available sources of configuration
         if (
-            PlatformTools.getEnvVariable("TYPEORM_CONNECTION") ||
-            PlatformTools.getEnvVariable("TYPEORM_URL")
-        ) {
-            connectionOptions = await new ConnectionOptionsEnvReader().read()
-        } else if (
             foundFileFormat === "js" ||
             foundFileFormat === "mjs" ||
             foundFileFormat === "cjs" ||
@@ -146,22 +93,36 @@ export class ConnectionOptionsReader {
             foundFileFormat === "mts" ||
             foundFileFormat === "cts"
         ) {
-            const [importOrRequireResult, moduleSystem] =
-                await importOrRequireFile(configFile)
-            const configModule = await importOrRequireResult
+            try {
+                const [importOrRequireResult, moduleSystem] =
+                    await importOrRequireFile(configFile)
+                const configModule = await importOrRequireResult
 
-            if (
-                moduleSystem === "esm" ||
-                (configModule &&
-                    "__esModule" in configModule &&
-                    "default" in configModule)
-            ) {
-                connectionOptions = configModule.default
-            } else {
-                connectionOptions = configModule
+                if (
+                    moduleSystem === "esm" ||
+                    (configModule &&
+                        "__esModule" in configModule &&
+                        "default" in configModule)
+                ) {
+                    connectionOptions = configModule.default
+                } else {
+                    connectionOptions = configModule
+                }
+            } catch (err) {
+                PlatformTools.logWarn(
+                    `Warning: Could not load ormconfig file at ${configFile}`,
+                    err instanceof Error ? err.message : String(err),
+                )
             }
         } else if (foundFileFormat === "json") {
-            connectionOptions = require(configFile)
+            try {
+                connectionOptions = require(configFile)
+            } catch (err) {
+                PlatformTools.logWarn(
+                    `Warning: Could not load ormconfig file at ${configFile}`,
+                    err instanceof Error ? err.message : String(err),
+                )
+            }
         }
 
         // normalize and return connection options
@@ -174,6 +135,8 @@ export class ConnectionOptionsReader {
 
     /**
      * Normalize connection options.
+     *
+     * @param connectionOptions
      */
     protected normalizeConnectionOptions(
         connectionOptions: DataSourceOptions | DataSourceOptions[],
@@ -225,10 +188,7 @@ export class ConnectionOptionsReader {
             }
 
             // make database path file in sqlite relative to package.json
-            if (
-                options.type === "sqlite" ||
-                options.type === "better-sqlite3"
-            ) {
+            if (options.type === "better-sqlite3") {
                 if (
                     typeof options.database === "string" &&
                     !isAbsolute(options.database) &&
@@ -257,18 +217,13 @@ export class ConnectionOptionsReader {
      * Gets directory where configuration file should be located.
      */
     protected get baseDirectory(): string {
-        if (this.options && this.options.root) return this.options.root
-
-        return appRootPath.path
+        return this.options?.root ?? appRootPath.path
     }
 
     /**
      * Gets configuration file name.
      */
     protected get baseConfigName(): string {
-        if (this.options && this.options.configName)
-            return this.options.configName
-
-        return "ormconfig"
+        return this.options?.configName ?? "ormconfig"
     }
 }

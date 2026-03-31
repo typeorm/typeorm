@@ -1,0 +1,61 @@
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
+import type { DataSource } from "../../../src"
+import { Table } from "../../../src"
+import { View } from "../../../src/schema-builder/view/View"
+import { expect } from "chai"
+
+describe("github issues > #9173 missing typeorm_metadata", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mysql", "postgres", "better-sqlite3"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should create a view without view entity", async () => {
+        for (const connection of dataSources) {
+            await connection.runMigrations({
+                transaction: "all",
+            })
+            await connection.createQueryRunner().createTable(
+                new Table({
+                    name: "test_table",
+                    columns: [
+                        {
+                            name: "id",
+                            type: "integer",
+                            isGenerated: true,
+                            isPrimary: true,
+                            generationStrategy: "increment",
+                        },
+                        {
+                            name: "name",
+                            type: "text",
+                        },
+                    ],
+                }),
+            )
+
+            // create a test view
+            await connection.createQueryRunner().createView(
+                new View({
+                    name: "test_view",
+                    expression: "SELECT * FROM test_table",
+                }),
+            )
+
+            const view = await connection.query("SELECT * FROM test_view")
+            expect(view).to.be.exist
+        }
+    })
+})

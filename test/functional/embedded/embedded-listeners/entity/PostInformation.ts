@@ -8,7 +8,7 @@ export class PostInformation {
     @Index()
     description: string
 
-    @Column((type) => PostCounter, { prefix: "counters" })
+    @Column(() => PostCounter, { prefix: "counters" })
     counters: PostCounter = new PostCounter()
 
     @BeforeInsert()

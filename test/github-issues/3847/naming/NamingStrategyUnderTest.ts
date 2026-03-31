@@ -1,6 +1,6 @@
 import { DefaultNamingStrategy } from "../../../../src/naming-strategy/DefaultNamingStrategy"
-import { NamingStrategyInterface } from "../../../../src/naming-strategy/NamingStrategyInterface"
-import { Table } from "../../../../src"
+import type { NamingStrategyInterface } from "../../../../src/naming-strategy/NamingStrategyInterface"
+import type { Table } from "../../../../src"
 
 export class NamingStrategyUnderTest
     extends DefaultNamingStrategy
@@ -10,7 +10,6 @@ export class NamingStrategyUnderTest
         tableOrName: Table | string,
         columnNames: string[],
         referencedTablePath?: string,
-        referencedColumnNames?: string[],
     ): string {
         tableOrName =
             typeof tableOrName === "string" ? tableOrName : tableOrName.name

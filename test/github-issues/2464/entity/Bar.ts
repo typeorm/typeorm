@@ -14,6 +14,6 @@ export class Bar extends BaseEntity {
 
     @Column() description: string
 
-    @ManyToMany((type) => Foo, (foo) => foo.bars)
+    @ManyToMany(() => Foo, (foo) => foo.bars)
     foos?: Foo[]
 }

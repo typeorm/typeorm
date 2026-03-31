@@ -9,7 +9,7 @@ export class Post {
     @PrimaryColumn()
     categoryId: number
 
-    @ManyToOne((type) => Category, (category) => category.posts, {
+    @ManyToOne(() => Category, (category) => category.posts, {
         cascade: ["insert"],
     })
     category: Category

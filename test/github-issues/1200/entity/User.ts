@@ -14,10 +14,10 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column((type) => Group)
+    @Column(() => Group)
     group: Group
 
-    @Column((type) => Post)
+    @Column(() => Post)
     post: Post
 
     @Column()

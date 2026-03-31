@@ -1,0 +1,161 @@
+name: Tests
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.detect-changes.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dorny/paths-filter@v4
+        id: detect-changes
+        with:
+          filters: |
+            package-json: &package-json
+              - package.json
+              - package-lock.json
+
+            ci: &ci
+              - .github/**/*
+              - .pr_agent.toml
+              - pr_compliance_checklist.yaml
+
+            docs: &docs
+              - docs/**/*
+
+            src: &src
+              - *package-json
+              - extra/**/*.js
+              - src/**/*.ts
+              - gulpfile.ts
+              - tsconfig.json
+              - tsconfig.browser.json
+              - tsconfig.node.json
+
+            src-or-tests: &src-or-tests
+              - *src
+              - .github/actions/setup-node/**
+              - .github/workflows/test*.yml
+              - docker-compose.yml
+              - docker/**/*
+              - test/**/*
+              - .c8rc.json
+              - .mocharc.json
+              - ormconfig.sample.json
+
+            lint:
+              - *src-or-tests
+              - eslint.config.mjs
+              - packages/codemod/**/*
+
+            codemod:
+              - packages/codemod/**/*
+
+  docs:
+    if: contains(needs.detect-changes.outputs.changes, 'docs')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build-docs
+
+  build:
+    if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node
+      - run: pnpm run compile
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build
+          path: build/
+          retention-days: 1
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node
+      - run: pnpm run format:ci
+
+  lint:
+    if: contains(needs.detect-changes.outputs.changes, 'lint')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node
+      - run: pnpm run lint
+      - run: pnpm install --frozen-lockfile
+        working-directory: packages/codemod
+      - run: pnpm run lint
+        working-directory: packages/codemod
+
+  tests-linux:
+    if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
+    needs: [detect-changes, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 24]
+    uses: ./.github/workflows/tests-linux.yml
+    with:
+      node-version: ${{matrix.node-version}}
+
+  tests-windows:
+    if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
+    needs: [detect-changes, build]
+    uses: ./.github/workflows/tests-windows.yml
+    with:
+      node-version: 22
+
+  tests-codemod:
+    if: contains(needs.detect-changes.outputs.changes, 'codemod')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node
+        with:
+          working-directory: packages/codemod
+      - run: pnpm test
+        working-directory: packages/codemod
+
+  coverage:
+    if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
+    runs-on: ubuntu-latest
+    needs: [detect-changes, tests-linux, tests-windows]
+    steps:
+      - uses: coverallsapp/github-action@v2
+        with:
+          parallel-finished: true
+
+  all-passed:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - build
+      - coverage
+      - detect-changes
+      - docs
+      - format
+      - lint
+      - tests-codemod
+      - tests-linux
+      - tests-windows
+    steps:
+      - run: exit ${{ contains(needs.*.result, 'failure') && 1 || 0 }}

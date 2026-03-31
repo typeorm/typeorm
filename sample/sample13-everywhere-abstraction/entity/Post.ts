@@ -9,7 +9,7 @@ export class Post extends BaseObject {
     @Column()
     text: string
 
-    @ManyToMany((type) => PostCategory, (category) => category.posts, {
+    @ManyToMany(() => PostCategory, (category) => category.posts, {
         cascade: true,
     })
     @JoinTable()

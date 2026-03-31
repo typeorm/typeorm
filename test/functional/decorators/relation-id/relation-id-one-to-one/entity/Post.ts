@@ -14,15 +14,15 @@ export class Post {
     @Column()
     title: string
 
-    @OneToOne((type) => Category)
+    @OneToOne(() => Category)
     @JoinColumn()
     category: Category
 
-    @OneToOne((type) => Category)
+    @OneToOne(() => Category)
     @JoinColumn({ referencedColumnName: "name" })
     categoryByName: Category
 
-    @OneToOne((type) => Category, (category) => category.post)
+    @OneToOne(() => Category, (category) => category.post)
     @JoinColumn()
     category2: Category
 

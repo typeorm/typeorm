@@ -12,6 +12,6 @@ export class Category {
     @Column()
     name: string
 
-    @ManyToMany((type) => Note, (note) => note.categories)
+    @ManyToMany(() => Note, (note) => note.categories)
     notes: Note[]
 }

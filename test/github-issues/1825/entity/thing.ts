@@ -13,6 +13,6 @@ export class Thing {
     @PrimaryGeneratedColumn()
     public id: number
 
-    @Column((type) => EmbeddedInThing)
+    @Column(() => EmbeddedInThing)
     public embeddedThing: EmbeddedInThing
 }

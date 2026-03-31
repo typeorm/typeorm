@@ -1,8 +1,7 @@
-import { MigrationInterface, QueryRunner, TableUnique } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
+import { TableUnique } from "../../../../src"
 
-export class CreateUniqueConstraintToUser1657067039714
-    implements MigrationInterface
-{
+export class CreateUniqueConstraintToUser1657067039714 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.createUniqueConstraint(
             "user",

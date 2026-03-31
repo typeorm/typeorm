@@ -1,0 +1,67 @@
+import { expect } from "chai"
+import "reflect-metadata"
+import type { DataSource } from "../../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { Example } from "./entity/Example"
+
+describe("query builder > parameters > sqlite", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Example],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should replace basic parameters when executing", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
+
+                await repo.save({ id: "bar" })
+
+                const example = await repo
+                    .createQueryBuilder()
+                    .setParameter("foo", "bar")
+                    .where("example.id = :foo")
+                    .getOne()
+
+                expect(example?.id).to.be.equal("bar")
+            }),
+        ))
+
+    it("should prevent invalid characters from being used as identifiers", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const b = dataSource.createQueryBuilder()
+
+                expect(() => b.setParameter(":foo", "bar")).to.throw()
+                expect(() => b.setParameter("@foo", "bar")).to.throw()
+                expect(() => b.setParameter("😋", "bar")).to.throw()
+                expect(() => b.setParameter("foo bar", "bar")).to.throw()
+            }),
+        ))
+
+    it("should allow periods in parameters", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
+
+                await repo.save({ id: "bar" })
+
+                const example = await repo
+                    .createQueryBuilder()
+                    .setParameter("f.o.o", "bar")
+                    .where("example.id = :f.o.o")
+                    .getOne()
+
+                expect(example?.id).to.be.equal("bar")
+            }),
+        ))
+})

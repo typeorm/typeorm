@@ -17,6 +17,6 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToOne((type) => Author, { cascade: true, nullable: false })
+    @ManyToOne(() => Author, { cascade: true, nullable: false })
     author: Author
 }

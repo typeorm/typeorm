@@ -6,7 +6,7 @@ export class Post {
         this.category = new Category()
     }
 
-    @Column((type) => Category)
+    @Column(() => Category)
     category: Category
 
     @Column()

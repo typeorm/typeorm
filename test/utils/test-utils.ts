@@ -1,21 +1,19 @@
-import {
+import type {
     DatabaseType,
-    DataSource,
     DataSourceOptions,
     Driver,
     EntitySchema,
     EntitySubscriberInterface,
-    getMetadataArgsStorage,
     InsertEvent,
     Logger,
     NamingStrategyInterface,
     QueryRunner,
-    Table,
 } from "../../src"
-import { QueryResultCache } from "../../src/cache/QueryResultCache"
+import { DataSource, getMetadataArgsStorage, Table } from "../../src"
+import type { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
-import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
+import type { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -41,12 +39,6 @@ export interface TestingOptions {
      * If specified, entities will be loaded from that directory.
      */
     __dirname?: string
-
-    /**
-     * Connection name to be overridden.
-     * This can be used to create multiple connections with single connection configuration.
-     */
-    name?: string
 
     /**
      * List of enabled drivers for the given test suite.
@@ -146,7 +138,7 @@ export interface TestingOptions {
      * Options that may be specific to a driver.
      * They are passed down to the enabled drivers.
      */
-    driverSpecific?: Object
+    driverSpecific?: object
 
     /**
      * Factory to create a logger for each test connection.
@@ -154,6 +146,7 @@ export interface TestingOptions {
     createLogger?: () =>
         | "advanced-console"
         | "simple-console"
+        | "formatted-console"
         | "file"
         | "debug"
         | Logger
@@ -175,7 +168,6 @@ export function setupSingleTestingConnection(
     options: TestingOptions,
 ): DataSourceOptions | undefined {
     const testingConnections = setupTestingConnections({
-        name: options.name ? options.name : undefined,
         entities: options.entities ? options.entities : [],
         subscribers: options.subscribers ? options.subscribers : [],
         dropSchema: options.dropSchema ? options.dropSchema : false,
@@ -201,14 +193,14 @@ function getOrmFilepath(): string {
             // first checks build/compiled
             // useful for docker containers in order to provide a custom config
             return require.resolve(__dirname + "/../../ormconfig.json")
-        } catch (err) {
+        } catch {
             // fallbacks to the root config
             return require.resolve(__dirname + "/../../../../ormconfig.json")
         }
-    } catch (err) {
+    } catch {
         throw new Error(
             `Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
-                ` in the root of the project (near ormconfig.json.dist, you need to copy ormconfig.json.dist into ormconfig.json` +
+                ` in the root of the project (near ormconfig.sample.json, you need to copy ormconfig.sample.json into ormconfig.json` +
                 ` and change all database settings to match your local environment settings).`,
         )
     }
@@ -256,10 +248,6 @@ export function setupTestingConnections(
                 {},
                 connectionOptions as DataSourceOptions,
                 {
-                    name:
-                        options && options.name
-                            ? options.name
-                            : connectionOptions.name,
                     entities:
                         options && options.entities ? options.entities : [],
                     migrations:
@@ -389,7 +377,7 @@ export async function createTestingConnections(
 ): Promise<DataSource[]> {
     const dataSourceOptions = setupTestingConnections(options)
     const dataSources: DataSource[] = []
-    for (let options of dataSourceOptions) {
+    for (const options of dataSourceOptions) {
         const dataSource = createDataSource(options)
         await dataSource.initialize()
         dataSources.push(dataSource)
@@ -441,6 +429,22 @@ export async function createTestingConnections(
                 await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
                 )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING sql.txn.repeatable_read_isolation.enabled = 'true';`,
+                )
+            }
+
+            if (connection.driver.options.type === "mysql") {
+                await queryRunner.query(
+                    `UPDATE performance_schema.setup_instruments
+                        SET ENABLED = 'YES', TIMED = 'YES'
+                        WHERE NAME = 'transaction'`,
+                )
+                await queryRunner.query(
+                    `UPDATE performance_schema.setup_consumers
+                        SET ENABLED = 'YES'
+                        WHERE NAME LIKE 'events_transactions%'`,
+                )
             }
 
             // create new schemas
@@ -468,7 +472,7 @@ export async function createTestingConnections(
             for (const schemaPath of schemaPaths) {
                 try {
                     await queryRunner.createSchema(schemaPath, true)
-                } catch (e) {
+                } catch {
                     // Do nothing
                 }
             }
@@ -483,22 +487,26 @@ export async function createTestingConnections(
 /**
  * Closes testing connections if they are connected.
  */
-export function closeTestingConnections(connections: DataSource[]) {
-    return Promise.all(
-        connections.map((connection) =>
-            connection && connection.isInitialized
-                ? connection.destroy()
-                : undefined,
-        ),
+export async function closeTestingConnections(connections: DataSource[]) {
+    if (!connections || connections.length === 0) {
+        return
+    }
+
+    await Promise.all(
+        connections.map(async (connection) => {
+            if (connection?.isInitialized) {
+                await connection.destroy()
+            }
+        }),
     )
 }
 
 /**
  * Reloads all databases for all given connections.
  */
-export function reloadTestingDatabases(connections: DataSource[]) {
+export async function reloadTestingDatabases(connections: DataSource[]) {
     GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
-    return Promise.all(
+    await Promise.all(
         connections.map((connection) => connection.synchronize(true)),
     )
 }
@@ -515,12 +523,6 @@ export function generateRandomText(length: number): string {
         text += characters.charAt(Math.floor(Math.random() * characters.length))
 
     return text
-}
-
-export function sleep(ms: number): Promise<void> {
-    return new Promise<void>((ok) => {
-        setTimeout(ok, ms)
-    })
 }
 
 /**
@@ -590,4 +592,22 @@ export async function createTypeormMetadataTable(
         }),
         true,
     )
+}
+
+export function withPlatform<R>(platform: string, fn: () => R): R {
+    const realPlatform = process.platform
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: platform,
+    })
+
+    const result = fn()
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: realPlatform,
+    })
+
+    return result
 }

@@ -1,0 +1,30 @@
+import "reflect-metadata"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils"
+
+describe("github issues > #736 ClosureEntity should set (composite) primary/unique key in the closure table", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    it("should create composite primary key on closure ancestor and descendant", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const queryRunner = connection.createQueryRunner()
+                const table = await queryRunner.getTable("category_closure")
+                table!.findColumnByName("id_ancestor")!.isPrimary.should.be.true
+                table!.findColumnByName("id_descendant")!.isPrimary.should.be
+                    .true
+                await queryRunner.release()
+            }),
+        ))
+})

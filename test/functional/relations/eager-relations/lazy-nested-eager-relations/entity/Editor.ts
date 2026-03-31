@@ -13,10 +13,10 @@ export class Editor {
     @PrimaryGeneratedColumn()
     id: number
 
-    @OneToOne((type) => User, { eager: true })
+    @OneToOne(() => User, { eager: true })
     @JoinColumn()
     user: User
 
-    @ManyToOne((type) => Post, { lazy: true })
+    @ManyToOne(() => Post, { lazy: true })
     post: Promise<Post>
 }

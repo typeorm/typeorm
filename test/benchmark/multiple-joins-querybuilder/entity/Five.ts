@@ -9,7 +9,7 @@ export class Five {
     @PrimaryGeneratedColumn()
     id: number
 
-    @ManyToOne((type) => One)
+    @ManyToOne(() => One)
     one: One
 
     @Column({ type: "text" })

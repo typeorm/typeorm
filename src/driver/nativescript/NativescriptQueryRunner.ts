@@ -1,10 +1,10 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryFailedError } from "../../error/QueryFailedError"
-import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { NativescriptDriver } from "./NativescriptDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
+import type { NativescriptDriver } from "./NativescriptDriver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -22,7 +22,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
     constructor(driver: NativescriptDriver) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
     }
 
@@ -42,6 +42,10 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -52,10 +56,11 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryRunnerAlreadyReleasedError()
         }
 
-        const connection = this.driver.connection
+        const connection = this.driver.dataSource
 
-        return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect()
+        const databaseConnection = await this.connect()
+
+        return new Promise((ok, fail) => {
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
             connection.logger.logQuery(query, parameters, this)
 
@@ -63,7 +68,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime =
                     this.driver.options.maxQueryExecutionTime
-                const queryEndTime = +new Date()
+                const queryEndTime = Date.now()
                 const queryExecutionTime = queryEndTime - queryStartTime
 
                 if (
@@ -101,7 +106,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                     ok(result.raw)
                 }
             }
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
 
             if (isInsertQuery) {
                 databaseConnection.execSQL(query, parameters, handler)
@@ -117,6 +122,9 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     *
+     * @param objectLiteral
+     * @param startIndex
      */
     protected parametrize(
         objectLiteral: ObjectLiteral,

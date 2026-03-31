@@ -1,8 +1,6 @@
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { ObjectIdColumn } from "../../../../../../src/decorator/columns/ObjectIdColumn"
+import { ObjectId } from "mongodb"
+import { Column, Entity, ObjectIdColumn } from "../../../../../../src"
 import { Counters } from "./Counters"
-import { ObjectId } from "../../../../../../src/driver/mongodb/typings"
 import { Tags } from "./Tags"
 
 @Entity()
@@ -16,9 +14,9 @@ export class Post {
     @Column()
     text: string
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters?: Counters
 
-    @Column((type) => Tags)
+    @Column(() => Tags)
     tags?: Tags[]
 }

@@ -14,6 +14,6 @@ export class Note {
     @Column()
     public label: string
 
-    @ManyToOne((type) => Person, (person) => person.notes, { lazy: true })
+    @ManyToOne(() => Person, (person) => person.notes, { lazy: true })
     public owner: Promise<Person> | Person
 }

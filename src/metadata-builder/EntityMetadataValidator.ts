@@ -1,10 +1,10 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { MissingPrimaryColumnError } from "../error/MissingPrimaryColumnError"
 import { CircularRelationsError } from "../error/CircularRelationsError"
 import { DepGraph } from "../util/DepGraph"
-import { Driver } from "../driver/Driver"
+import type { Driver } from "../driver/Driver"
 import { DataTypeNotSupportedError } from "../error/DataTypeNotSupportedError"
-import { ColumnType } from "../driver/types/ColumnTypes"
+import type { ColumnType } from "../driver/types/ColumnTypes"
 import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
@@ -37,6 +37,9 @@ export class EntityMetadataValidator {
 
     /**
      * Validates all given entity metadatas.
+     *
+     * @param entityMetadatas
+     * @param driver
      */
     validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
         entityMetadatas.forEach((entityMetadata) =>
@@ -48,6 +51,10 @@ export class EntityMetadataValidator {
 
     /**
      * Validates given entity metadata.
+     *
+     * @param entityMetadata
+     * @param allEntityMetadatas
+     * @param driver
      */
     validate(
         entityMetadata: EntityMetadata,
@@ -112,16 +119,6 @@ export class EntityMetadataValidator {
                 )
         }
 
-        entityMetadata.relationCounts.forEach((relationCount) => {
-            if (
-                relationCount.relation.isManyToOne ||
-                relationCount.relation.isOneToOne
-            )
-                throw new TypeORMError(
-                    `Relation count can not be implemented on ManyToOne or OneToOne relations.`,
-                )
-        })
-
         if (!(driver.options.type === "mongodb")) {
             entityMetadata.columns
                 .filter((column) => !column.isVirtualProperty)
@@ -129,10 +126,7 @@ export class EntityMetadataValidator {
                     const normalizedColumn = driver.normalizeType(
                         column,
                     ) as ColumnType
-                    if (
-                        driver.supportedDataTypes.indexOf(normalizedColumn) ===
-                        -1
-                    )
+                    if (!driver.supportedDataTypes.includes(normalizedColumn))
                         throw new DataTypeNotSupportedError(
                             column,
                             normalizedColumn,
@@ -140,9 +134,7 @@ export class EntityMetadataValidator {
                         )
                     if (
                         column.length &&
-                        driver.withLengthColumnTypes.indexOf(
-                            normalizedColumn,
-                        ) === -1
+                        !driver.withLengthColumnTypes.includes(normalizedColumn)
                     )
                         throw new TypeORMError(
                             `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
@@ -316,12 +308,12 @@ export class EntityMetadataValidator {
                         `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`,
                 )
         }) // todo: maybe better just deny removal from one to one relation without join column?
-
-        entityMetadata.eagerRelations.forEach((relation) => {})
     }
 
     /**
      * Validates dependencies of the entity metadatas.
+     *
+     * @param entityMetadatas
      */
     protected validateDependencies(entityMetadatas: EntityMetadata[]) {
         const graph = new DepGraph()
@@ -349,6 +341,8 @@ export class EntityMetadataValidator {
 
     /**
      * Validates eager relations to prevent circular dependency in them.
+     *
+     * @param entityMetadatas
      */
     protected validateEagerRelations(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach((entityMetadata) => {

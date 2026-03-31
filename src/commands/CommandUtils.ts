@@ -1,8 +1,7 @@
-import * as fs from "fs"
-import * as path from "path"
-import mkdirp from "mkdirp"
+import fs from "fs/promises"
+import path from "path"
 import { TypeORMError } from "../error"
-import { DataSource } from "../data-source"
+import type { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { importOrRequireFile } from "../util/ImportUtils"
 
@@ -15,12 +14,12 @@ export class CommandUtils {
     ): Promise<DataSource> {
         let dataSourceFileExports
         try {
-            ;[dataSourceFileExports] = await importOrRequireFile(
-                dataSourceFilePath,
-            )
+            ;[dataSourceFileExports] =
+                await importOrRequireFile(dataSourceFilePath)
         } catch (err) {
             throw new Error(
                 `Unable to open file: "${dataSourceFilePath}". ${err.message}`,
+                { cause: err },
             )
         }
 
@@ -65,13 +64,19 @@ export class CommandUtils {
 
     /**
      * Creates directories recursively.
+     *
+     * @param directory
      */
-    static createDirectories(directory: string) {
-        return mkdirp(directory)
+    static async createDirectories(directory: string): Promise<void> {
+        await fs.mkdir(directory, { recursive: true })
     }
 
     /**
      * Creates a file with the given content in the given path.
+     *
+     * @param filePath
+     * @param content
+     * @param override
      */
     static async createFile(
         filePath: string,
@@ -79,30 +84,36 @@ export class CommandUtils {
         override: boolean = true,
     ): Promise<void> {
         await CommandUtils.createDirectories(path.dirname(filePath))
-        return new Promise<void>((ok, fail) => {
-            if (override === false && fs.existsSync(filePath)) return ok()
-
-            fs.writeFile(filePath, content, (err) => (err ? fail(err) : ok()))
-        })
+        if (override === false && (await CommandUtils.fileExists(filePath))) {
+            return
+        }
+        await fs.writeFile(filePath, content)
     }
 
     /**
      * Reads everything from a given file and returns its content as a string.
+     *
+     * @param filePath
      */
     static async readFile(filePath: string): Promise<string> {
-        return new Promise<string>((ok, fail) => {
-            fs.readFile(filePath, (err, data) =>
-                err ? fail(err) : ok(data.toString()),
-            )
-        })
+        const file = await fs.readFile(filePath)
+
+        return file.toString()
     }
 
     static async fileExists(filePath: string) {
-        return fs.existsSync(filePath)
+        try {
+            await fs.access(filePath, fs.constants.F_OK)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /**
      * Gets migration timestamp and validates argument (if sent)
+     *
+     * @param timestampOptionArgument
      */
     static getTimestamp(timestampOptionArgument: any): number {
         if (

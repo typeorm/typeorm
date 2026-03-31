@@ -111,7 +111,10 @@ export class Post {
     // -------------------------------------------------------------------------
 
     @Column("json")
-    json: Object
+    json: object
+
+    @Column("jsonb")
+    jsonb: object
 
     // -------------------------------------------------------------------------
     // TypeOrm Specific Types
