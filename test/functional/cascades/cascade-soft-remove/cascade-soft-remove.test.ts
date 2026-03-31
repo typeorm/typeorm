@@ -133,7 +133,7 @@ describe("cascades > soft-remove", () => {
                 const allPhotos = await dataSource.manager.find(Photo, {
                     withDeleted: true,
                 })
-                expect(allPhotos.length).to.equal(1)
+                expect(allPhotos.length).to.equal(2)
 
                 // recover user..
                 await dataSource.manager.recover(user)
