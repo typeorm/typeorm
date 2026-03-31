@@ -736,7 +736,9 @@ Steps to run this project:
     ): Promise<string> {
         const packageJson = JSON.parse(packageJsonContents)
         const ourPackageJson = JSON.parse(
-            await CommandUtils.readFile(`${__dirname}/../package.json`),
+            await CommandUtils.readFile(
+                path.resolve(__dirname, "..", "package.json"),
+            ),
         )
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
