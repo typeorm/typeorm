@@ -231,7 +231,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.dropOldChecks()
         await this.dropOldExclusions()
         await this.dropCompositeUniqueConstraints()
-        // await this.renameTables();
         await this.renameColumns()
         await this.changeTableComment()
         await this.createNewTables()
@@ -308,11 +307,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
         }
     }
-
-    /**
-     * Rename tables
-     */
-    protected async renameTables(): Promise<void> {}
 
     /**
      * Renames columns.
