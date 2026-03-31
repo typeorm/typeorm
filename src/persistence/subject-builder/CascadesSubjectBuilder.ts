@@ -39,6 +39,7 @@ export class CascadesSubjectBuilder {
                     relationEntity === null ||
                     (!relation.isCascadeInsert &&
                         !relation.isCascadeUpdate &&
+                        !relation.isCascadeRemove &&
                         !relation.isCascadeSoftRemove &&
                         !relation.isCascadeRecover)
                 )
@@ -59,22 +60,25 @@ export class CascadesSubjectBuilder {
                         alreadyExistRelationEntitySubject.canBeInserted ===
                         false
                     )
-                        // if its not marked for insertion yet
                         alreadyExistRelationEntitySubject.canBeInserted =
                             relation.isCascadeInsert === true &&
                             operationType === "save"
                     if (
                         alreadyExistRelationEntitySubject.canBeUpdated === false
                     )
-                        // if its not marked for update yet
                         alreadyExistRelationEntitySubject.canBeUpdated =
                             relation.isCascadeUpdate === true &&
                             operationType === "save"
                     if (
+                        !alreadyExistRelationEntitySubject.mustBeRemoved
+                    )
+                        alreadyExistRelationEntitySubject.mustBeRemoved =
+                            relation.isCascadeRemove === true &&
+                            operationType === "remove"
+                    if (
                         alreadyExistRelationEntitySubject.canBeSoftRemoved ===
                         false
                     )
-                        // if its not marked for removal yet
                         alreadyExistRelationEntitySubject.canBeSoftRemoved =
                             relation.isCascadeSoftRemove === true &&
                             operationType === "soft-remove"
@@ -82,7 +86,6 @@ export class CascadesSubjectBuilder {
                         alreadyExistRelationEntitySubject.canBeRecovered ===
                         false
                     )
-                        // if its not marked for recovery yet
                         alreadyExistRelationEntitySubject.canBeRecovered =
                             relation.isCascadeRecover === true &&
                             operationType === "recover"
@@ -101,6 +104,9 @@ export class CascadesSubjectBuilder {
                     canBeUpdated:
                         relation.isCascadeUpdate === true &&
                         operationType === "save",
+                    mustBeRemoved:
+                        relation.isCascadeRemove === true &&
+                        operationType === "remove",
                     canBeSoftRemoved:
                         relation.isCascadeSoftRemove === true &&
                         operationType === "soft-remove",
