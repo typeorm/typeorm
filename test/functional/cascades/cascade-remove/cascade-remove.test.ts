@@ -9,13 +9,11 @@ import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
 
-// todo: fix later
-describe.skip("cascades > remove", () => {
+describe("cascades > remove", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
             __dirname,
-            enabledDrivers: ["mysql"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -71,7 +69,7 @@ describe.skip("cascades > remove", () => {
                 expect(manyToManyPhotoNames).to.deep.include("many-to-many #2")
                 expect(manyToManyPhotoNames).to.deep.include("many-to-many #3")
 
-                await dataSource.manager.remove(user)
+                await dataSource.manager.remove(loadedUser!)
 
                 const allPhotos = await dataSource.manager.find(Photo)
                 expect(allPhotos.length).to.equal(1)
