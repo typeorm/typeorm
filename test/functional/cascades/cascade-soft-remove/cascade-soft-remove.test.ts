@@ -7,6 +7,7 @@ import {
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Photo } from "./entity/Photo"
+import { Tag } from "./entity/Tag"
 import { User } from "./entity/User"
 import { IsNull } from "../../../../src"
 
@@ -139,6 +140,41 @@ describe("cascades > soft-remove", () => {
                 // photos should be recovered as well
                 const allRecoveredPhotos = await dataSource.manager.find(Photo)
                 expect(allRecoveredPhotos.length).to.equal(2)
+            }),
+        ))
+
+    it("recovers user without duplicate junction inserts when M2M has no cascade recover", async () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // tags relation has cascade: ["insert"] only, no recover
+                const user = User.create({
+                    id: 3,
+                    name: "Mr. No Cascade Recover",
+                    tags: [
+                        Tag.create({ name: "tag-1" }),
+                        Tag.create({ name: "tag-2" }),
+                    ],
+                })
+                await dataSource.manager.save(user)
+
+                // soft-remove only the user (tags stay because no cascade remove)
+                await dataSource.manager.softRemove(user)
+
+                // tags should still be active (no cascade soft-remove)
+                const activeTags = await dataSource.manager.find(Tag)
+                expect(activeTags.length).to.equal(2)
+
+                // recover the user — junction rows still exist, should not
+                // attempt duplicate inserts for the existing M2M bindings
+                await dataSource.manager.recover(user)
+
+                // verify junction rows are intact by loading user with tags
+                const recovered = await dataSource.manager.findOne(User, {
+                    where: { id: 3 },
+                    relations: { tags: true },
+                })
+                expect(recovered).to.not.be.null
+                expect(recovered?.tags.length).to.equal(2)
             }),
         ))
 })
