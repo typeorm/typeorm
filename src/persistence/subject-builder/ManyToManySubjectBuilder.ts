@@ -175,12 +175,6 @@ export class ManyToManySubjectBuilder {
             // if entity is found then don't do anything - it means binding in junction table already exist, we don't need to add anything
             if (relatedEntityExistInDatabase) return
 
-            // when recovering a soft-removed entity, junction rows are still intact
-            // (soft-remove only sets deletedAt, it doesn't touch junction tables)
-            // so skip inserting junction rows for soft-deleted related entities
-            if (subject.canBeRecovered && relatedEntitySubject?.canBeRecovered)
-                return
-
             const ownerValue = relation.isOwning
                 ? subject
                 : relatedEntitySubject || relatedEntity // by example: ownerEntityMap is post from subject here

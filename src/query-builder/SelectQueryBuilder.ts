@@ -3501,6 +3501,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.dataSource,
             queryRunner,
             this.expressionMap.relationIdAttributes,
+            this.expressionMap.withDeleted,
         )
         const relationIdMetadataTransformer =
             new RelationIdMetadataToAttributeTransformer(this.expressionMap)

@@ -16,6 +16,7 @@ export class RelationIdLoader {
         protected dataSource: DataSource,
         protected queryRunner: QueryRunner | undefined,
         protected relationIdAttributes: RelationIdAttribute[],
+        protected withDeleted: boolean = false,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -215,6 +216,8 @@ export class RelationIdLoader {
                         .where("(" + condition + ")") // need brackets because if we have additional condition and no brackets, it looks like (a = 1) OR (a = 2) AND b = 1, that is incorrect
                         .setParameters(parameters)
 
+                    if (this.withDeleted) qb.withDeleted()
+
                     // apply condition (custom query builder factory)
                     if (relationIdAttr.queryBuilderFactory)
                         relationIdAttr.queryBuilderFactory(qb)
@@ -384,6 +387,8 @@ export class RelationIdLoader {
                     qb.from(inverseSideTableName, inverseSideTableAlias)
                         .innerJoin(junctionTableName, junctionAlias, condition)
                         .setParameters(parameters)
+
+                    if (this.withDeleted) qb.withDeleted()
 
                     // apply condition (custom query builder factory)
                     if (relationIdAttr.queryBuilderFactory)
