@@ -1,8 +1,12 @@
-# Migration to v1
+---
+sidebar_label: Upgrading from 0.3
+---
 
-This is the migration guide for upgrading from version `0.3.x` to `1.0`.
+# Upgrading from 0.3 to 1.0
 
-## Automated migration
+This is the upgrading guide from version `0.3.x` to `1.0`.
+
+## Automated upgrade
 
 The `@typeorm/codemod` package can automate most of the breaking changes described in this guide:
 

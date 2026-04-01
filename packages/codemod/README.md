@@ -56,4 +56,4 @@ Transforms that rename properties or methods (e.g. `.connection` to `.dataSource
 
 See the full migration guide for details on all breaking changes:
 
-- [v1](https://typeorm.io/docs/guides/migration-v1)
+- [v1](https://typeorm.io/docs/releases/1.0/upgrading-from-0.3)

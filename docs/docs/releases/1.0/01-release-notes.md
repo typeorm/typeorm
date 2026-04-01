@@ -1,10 +1,14 @@
-# TypeORM 1.0 Release Notes
+---
+sidebar_label: Release Notes
+---
+
+# Release Notes 1.0
 
 TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes platform requirements, and ships dozens of bug fixes and new features accumulated during the 0.3.x cycle.
 
 ## Breaking changes
 
-> See the [Migration Guide](./8-migration-v1.md) for detailed upgrade instructions.
+> See the [Upgrading Guide](./02-upgrading-from-0.3.md) for detailed upgrade instructions.
 
 ### Platform requirements
 
@@ -114,6 +118,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 ### Relations & Eager loading
 
+- **Orphaned one-to-many children with non-nullable FK are now deleted** — when saving a one-to-many relation with cascade and replacing children, orphaned rows with a non-nullable FK are now deleted instead of failing with a constraint violation; nullable FK rows are still nullified as before ([#11982](https://github.com/typeorm/typeorm/pull/11982) by [@naorpeled](https://github.com/naorpeled))
 - **Eager relations now respect `relationLoadStrategy: "query"`** — eager relations are loaded via separate queries when the `"query"` strategy is set, instead of always using JOINs ([#11326](https://github.com/typeorm/typeorm/pull/11326) by [@SharkSharp](https://github.com/SharkSharp))
 - **Self-referencing relation alias collision** — self-referencing relations with `relationLoadStrategy: "query"` no longer produce incorrect SQL due to alias collision ([#11066](https://github.com/typeorm/typeorm/pull/11066) by [@campmarc](https://github.com/campmarc))
 - **Eager relations no longer joined twice** — explicitly specifying an eager relation in `relations` no longer causes duplicate JOINs ([#11991](https://github.com/typeorm/typeorm/pull/11991) by [@veeceey](https://github.com/veeceey))
