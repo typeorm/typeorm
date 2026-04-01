@@ -163,10 +163,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
             for (const s of selection) {
-                if (s.includes(";"))
-                    throw new TypeORMError(
-                        `Semicolons are not allowed in select() to prevent SQL injection. Use parameter binding instead.`,
-                    )
+                this.assertNoSemicolon(s, "select")
             }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
@@ -179,10 +176,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
-            if (selection.includes(";"))
-                throw new TypeORMError(
-                    `Semicolons are not allowed in select() to prevent SQL injection. Use parameter binding instead.`,
-                )
+            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -226,10 +220,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (Array.isArray(selection)) {
             for (const s of selection) {
-                if (s.includes(";"))
-                    throw new TypeORMError(
-                        `Semicolons are not allowed in addSelect() to prevent SQL injection. Use parameter binding instead.`,
-                    )
+                this.assertNoSemicolon(s, "addSelect")
             }
             this.expressionMap.selects = this.expressionMap.selects.concat(
                 selection.map((selection) => ({ selection: selection })),
@@ -242,10 +233,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
-            if (selection.includes(";"))
-                throw new TypeORMError(
-                    `Semicolons are not allowed in addSelect() to prevent SQL injection. Use parameter binding instead.`,
-                )
+            this.assertNoSemicolon(selection, "addSelect")
             this.expressionMap.selects.push({
                 selection: selection,
                 aliasName: selectionAliasName,
@@ -1408,10 +1396,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     groupBy(groupBy?: string): this {
         if (groupBy) {
-            if (groupBy.includes(";"))
-                throw new TypeORMError(
-                    `Semicolons are not allowed in groupBy() to prevent SQL injection. Use parameter binding instead.`,
-                )
+            this.assertNoSemicolon(groupBy, "groupBy")
             this.expressionMap.groupBys = [groupBy]
         } else {
             this.expressionMap.groupBys = []
@@ -1425,10 +1410,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param groupBy
      */
     addGroupBy(groupBy: string): this {
-        if (groupBy.includes(";"))
-            throw new TypeORMError(
-                `Semicolons are not allowed in addGroupBy() to prevent SQL injection. Use parameter binding instead.`,
-            )
+        this.assertNoSemicolon(groupBy, "addGroupBy")
         this.expressionMap.groupBys.push(groupBy)
         return this
     }

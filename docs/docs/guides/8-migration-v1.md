@@ -747,7 +747,7 @@ The removed type is `FindOptionsRelationByString`.
 
 ### Semicolons rejected in raw SQL expression methods
 
-The `select()`, `addSelect()`, `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on `SelectQueryBuilder`, `UpdateQueryBuilder`, and `SoftDeleteQueryBuilder` now reject inputs containing semicolons at runtime to prevent SQL statement stacking attacks. If you have legitimate SQL expressions that contain semicolons (e.g., inside string literals), use parameter binding instead:
+The `select()`, `addSelect()`, `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all query builders (`SelectQueryBuilder`, `UpdateQueryBuilder`, `SoftDeleteQueryBuilder`, and base `QueryBuilder`) now reject inputs containing semicolons at runtime to prevent SQL statement stacking attacks. The `orderBy()` methods also validate that order direction values are `"ASC"` or `"DESC"` and nulls values are `"NULLS FIRST"` or `"NULLS LAST"`. If you have legitimate SQL expressions that contain semicolons (e.g., inside string literals), use parameter binding instead:
 
 ```typescript
 // This now throws
