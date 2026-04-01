@@ -1,3 +1,4 @@
+// GitHub issue: https://github.com/typeorm/typeorm/issues/12019
 import "reflect-metadata"
 import type { DataSource } from "../../../../../src"
 import {
