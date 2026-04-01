@@ -33,17 +33,23 @@ export class CascadesSubjectBuilder {
                 subject.metadata.relations,
             ) // todo: we can create EntityMetadata.cascadeRelations
             .forEach(([relation, relationEntity, relationEntityMetadata]) => {
-                // we need only defined values and insert, update, soft-remove or recover cascades of the relation should be set
-                if (
-                    relationEntity === undefined ||
-                    relationEntity === null ||
-                    (!relation.isCascadeInsert &&
-                        !relation.isCascadeUpdate &&
-                        !relation.isCascadeRemove &&
-                        !relation.isCascadeSoftRemove &&
-                        !relation.isCascadeRecover)
-                )
+                // skip undefined/null values and relations whose cascade flags
+                // don't match the current operation type
+                if (relationEntity === undefined || relationEntity === null)
                     return
+
+                const shouldCascade =
+                    operationType === "save"
+                        ? relation.isCascadeInsert || relation.isCascadeUpdate
+                        : operationType === "remove"
+                          ? relation.isCascadeRemove
+                          : operationType === "soft-remove"
+                            ? relation.isCascadeSoftRemove
+                            : operationType === "recover"
+                              ? relation.isCascadeRecover
+                              : false
+
+                if (!shouldCascade) return
 
                 // if relation entity is just a relation id set (for example post.tag = 1)
                 // then we don't really need to check cascades since there is no object to insert or update
