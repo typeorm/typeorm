@@ -102,8 +102,13 @@ export class SubjectDatabaseEntityLoader {
                         relations: loadRelationPropertyPaths,
                         disableMixedMap: true,
                     },
-                    // the soft-deleted entities should be included in the loaded entities for recover operation
-                    withDeleted: true,
+                    // withDeleted is needed for recover so the top-level find returns
+                    // the soft-deleted entity AND relation-id sub-queries include
+                    // soft-deleted related entities (preventing duplicate junction inserts).
+                    // For other operations, withDeleted would cause the DB-side relation IDs
+                    // to include soft-deleted rows that the in-memory entity doesn't have,
+                    // leading to spurious junction row deletions.
+                    withDeleted: operationType === "recover",
                 }
 
                 // load database entities for all given ids
