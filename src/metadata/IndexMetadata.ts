@@ -188,6 +188,7 @@ export class IndexMetadata {
     /**
      * Builds some depend index properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     *
      * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {

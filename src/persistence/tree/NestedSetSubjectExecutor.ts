@@ -26,6 +26,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     *
      * @param subject
      */
     async insert(subject: Subject): Promise<void> {
@@ -102,6 +103,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     *
      * @param subject
      */
     async update(subject: Subject): Promise<void> {
@@ -237,6 +239,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being removed.
+     *
      * @param subjects
      */
     async remove(subjects: Subject | Subject[]): Promise<void> {
@@ -284,6 +287,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Get the nested set ids for a given entity
+     *
      * @param metadata
      * @param ids
      */
@@ -372,6 +376,7 @@ export class NestedSetSubjectExecutor {
     /**
      * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
      * schema name, otherwise returns escaped table name.
+     *
      * @param tablePath
      */
     protected getTableName(tablePath: string): string {

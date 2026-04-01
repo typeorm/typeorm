@@ -135,6 +135,7 @@ export class ConnectionOptionsReader {
 
     /**
      * Normalize connection options.
+     *
      * @param connectionOptions
      */
     protected normalizeConnectionOptions(

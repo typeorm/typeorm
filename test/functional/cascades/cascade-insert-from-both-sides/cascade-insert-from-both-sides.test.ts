@@ -1,3 +1,4 @@
+import { expect } from "chai"
 import "reflect-metadata"
 import {
     closeTestingConnections,
@@ -38,7 +39,7 @@ describe("cascades > should insert by cascades from both sides", () => {
                     },
                 })
 
-                posts.should.be.eql([
+                expect(posts).to.eql([
                     {
                         key: post.key,
                         title: post.title,
@@ -71,7 +72,7 @@ describe("cascades > should insert by cascades from both sides", () => {
                     },
                 )
 
-                loadedDetails.should.be.eql([
+                expect(loadedDetails).to.eql([
                     {
                         keyword: "post-1",
                         post: {

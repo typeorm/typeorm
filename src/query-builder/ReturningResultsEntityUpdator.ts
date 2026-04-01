@@ -25,6 +25,7 @@ export class ReturningResultsEntityUpdator {
 
     /**
      * Updates entities with a special columns after updation query execution.
+     *
      * @param updateResult
      * @param entities
      */
@@ -135,6 +136,7 @@ export class ReturningResultsEntityUpdator {
 
     /**
      * Updates entities with a special columns after insertion query execution.
+     *
      * @param insertResult
      * @param entities
      */

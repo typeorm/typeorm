@@ -368,6 +368,7 @@ export class RelationMetadata {
 
     /**
      * Creates join column ids map from the given related entity ids array.
+     *
      * @param entity
      */
     getRelationIdMap(entity: ObjectLiteral): ObjectLiteral | undefined {
@@ -387,6 +388,7 @@ export class RelationMetadata {
      * If given id is an object then it means its already id map.
      * If given id isn't an object then it means its a value of the id column
      * and it creates a new id map with this value and name of the primary column.
+     *
      * @param id
      */
     ensureRelationIdMap(id: any): ObjectLiteral {
@@ -410,6 +412,7 @@ export class RelationMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
+     *
      * @param entity
      * @param getLazyRelationsPromiseValue
      */
@@ -490,6 +493,7 @@ export class RelationMetadata {
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
      *
      * If merge is set to true, it merges given value into currently
+     *
      * @param entity
      * @param value
      */
@@ -537,6 +541,7 @@ export class RelationMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
+     *
      * @param value
      */
     createValueMap(value: any) {
@@ -589,6 +594,7 @@ export class RelationMetadata {
     /**
      * Registers given foreign keys in the relation.
      * This builder method should be used to register foreign key in the relation.
+     *
      * @param foreignKeys
      */
     registerForeignKeys(...foreignKeys: ForeignKeyMetadata[]) {
@@ -598,6 +604,7 @@ export class RelationMetadata {
     /**
      * Registers given join columns in the relation.
      * This builder method should be used to register join column in the relation.
+     *
      * @param joinColumns
      * @param inverseJoinColumns
      */
@@ -621,6 +628,7 @@ export class RelationMetadata {
     /**
      * Registers a given junction entity metadata.
      * This builder method can be called after junction entity metadata for the many-to-many relation was created.
+     *
      * @param junctionEntityMetadata
      */
     registerJunctionEntityMetadata(junctionEntityMetadata: EntityMetadata) {

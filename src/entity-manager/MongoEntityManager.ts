@@ -92,6 +92,7 @@ export class MongoEntityManager extends EntityManager {
      */
     /**
      * Finds entities that match given find options or conditions.
+     *
      * @param entityClassOrName
      * @param optionsOrConditions
      */
@@ -142,6 +143,7 @@ export class MongoEntityManager extends EntityManager {
      * Finds entities that match given find options or conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
      * @param entityClassOrName
      * @param options
      */
@@ -154,6 +156,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Finds entities that match given where conditions.
+     *
      * @param entityClassOrName
      * @param where
      */
@@ -166,6 +169,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Finds entities that match given WHERE conditions.
+     *
      * @param entityClassOrName
      * @param where
      */
@@ -179,6 +183,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Finds entities by ids.
      * Optionally find options can be applied.
+     *
      * @param entityClassOrName
      * @param ids
      * @param optionsOrConditions
@@ -239,6 +244,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Finds first entity that matches given conditions and/or find options.
+     *
      * @param entityClassOrName
      * @param options
      */
@@ -251,6 +257,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Finds first entity that matches given WHERE conditions.
+     *
      * @param entityClassOrName
      * @param where
      */
@@ -267,6 +274,7 @@ export class MongoEntityManager extends EntityManager {
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      * You can execute bulk inserts using this method.
+     *
      * @param target
      * @param entity
      */
@@ -319,6 +327,7 @@ export class MongoEntityManager extends EntityManager {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
+     *
      * @param target
      * @param criteria
      * @param partialEntity
@@ -374,6 +383,7 @@ export class MongoEntityManager extends EntityManager {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
+     *
      * @param target
      * @param criteria
      */
@@ -425,6 +435,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
+     *
      * @param entityClassOrName
      * @param query
      */
@@ -439,6 +450,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      * This returns modified version of cursor that transforms each result into Entity model.
+     *
      * @param entityClassOrName
      * @param query
      */
@@ -454,6 +466,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Execute an aggregation framework pipeline against the collection.
+     *
      * @param entityClassOrName
      * @param pipeline
      * @param options
@@ -474,6 +487,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Execute an aggregation framework pipeline against the collection.
      * This returns modified version of cursor that transforms each result into Entity model.
+     *
      * @param entityClassOrName
      * @param pipeline
      * @param options
@@ -495,6 +509,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Perform a bulkWrite operation without a fluent API.
+     *
      * @param entityClassOrName
      * @param operations
      * @param options
@@ -514,6 +529,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Count number of matching documents in the db to a query.
+     *
      * @param entityClassOrName
      * @param query
      * @param options
@@ -529,6 +545,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Count number of matching documents in the db to a query.
+     *
      * @param entityClassOrName
      * @param query
      * @param options
@@ -548,6 +565,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Count number of matching documents in the db to a query.
+     *
      * @param entityClassOrName
      * @param query
      * @param options
@@ -562,6 +580,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Creates an index on the db and collection.
+     *
      * @param entityClassOrName
      * @param fieldOrSpec
      * @param options
@@ -583,6 +602,7 @@ export class MongoEntityManager extends EntityManager {
      * Creates multiple indexes in the collection, this method is only supported for MongoDB 2.6 or higher.
      * Earlier version of MongoDB will throw a command not supported error.
      * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+     *
      * @param entityClassOrName
      * @param indexSpecs
      */
@@ -599,6 +619,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Delete multiple documents on MongoDB.
+     *
      * @param entityClassOrName
      * @param query
      * @param options
@@ -618,6 +639,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Delete a document on MongoDB.
+     *
      * @param entityClassOrName
      * @param query
      * @param options
@@ -637,6 +659,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
+     *
      * @param entityClassOrName
      * @param key
      * @param query
@@ -659,6 +682,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Drops an index from this collection.
+     *
      * @param entityClassOrName
      * @param indexName
      * @param options
@@ -678,6 +702,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Drops all indexes from the collection.
+     *
      * @param entityClassOrName
      */
     dropCollectionIndexes<Entity>(
@@ -689,6 +714,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
+     *
      * @param entityClassOrName
      * @param query
      * @param options
@@ -708,6 +734,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
+     *
      * @param entityClassOrName
      * @param query
      * @param replacement
@@ -730,6 +757,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
+     *
      * @param entityClassOrName
      * @param query
      * @param update
@@ -752,6 +780,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Retrieve all the indexes on the collection.
+     *
      * @param entityClassOrName
      */
     collectionIndexes<Entity>(
@@ -763,6 +792,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Retrieve all the indexes on the collection.
+     *
      * @param entityClassOrName
      * @param indexes
      */
@@ -779,6 +809,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Retrieves this collections index info.
+     *
      * @param entityClassOrName
      * @param options
      */
@@ -795,6 +826,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
+     *
      * @param entityClassOrName
      * @param options
      */
@@ -811,6 +843,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
+     *
      * @param entityClassOrName
      * @param options
      */
@@ -827,6 +860,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Inserts an array of documents into MongoDB.
+     *
      * @param entityClassOrName
      * @param docs
      * @param options
@@ -846,6 +880,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Inserts a single document into MongoDB.
+     *
      * @param entityClassOrName
      * @param doc
      * @param options
@@ -861,6 +896,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Returns if the collection is a capped collection.
+     *
      * @param entityClassOrName
      */
     isCapped<Entity>(entityClassOrName: EntityTarget<Entity>): Promise<any> {
@@ -870,6 +906,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Get the list of all indexes information for the collection.
+     *
      * @param entityClassOrName
      * @param options
      */
@@ -886,6 +923,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
+     *
      * @param entityClassOrName
      * @param newName
      * @param options
@@ -905,6 +943,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Replace a document on MongoDB.
+     *
      * @param entityClassOrName
      * @param query
      * @param doc
@@ -940,6 +979,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Update multiple documents on MongoDB.
+     *
      * @param entityClassOrName
      * @param query
      * @param update
@@ -962,6 +1002,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Update a single document on MongoDB.
+     *
      * @param entityClassOrName
      * @param query
      * @param update
@@ -989,6 +1030,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Replaces the entity's ObjectId property name (e.g. "id") with "_id" in a
      * query object so that `findOneBy({ id: value })` works as expected.
+     *
      * @param metadata
      * @param query
      */
@@ -1018,6 +1060,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Recursively rewrites a query object, renaming the given property to
      * "_id" and converting values to ObjectId instances. Walks into $or/$and.
+     *
      * @param obj
      * @param propertyName
      * @param objectIdClass
@@ -1054,6 +1097,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Converts a query value to ObjectId, handling scalars, arrays, and
      * MongoDB operator objects (e.g. { $in: [...] }, { $ne: ... }).
+     *
      * @param value
      * @param objectIdClass
      */
@@ -1079,6 +1123,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Converts FindManyOptions to mongodb query.
+     *
      * @param optionsOrConditions
      */
     protected convertFindManyOptionsOrConditionsToMongodbQuery<Entity>(
@@ -1107,6 +1152,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Converts FindOneOptions to mongodb query.
+     *
      * @param optionsOrConditions
      */
     protected convertFindOneOptionsOrConditionsToMongodbQuery<Entity>(
@@ -1133,6 +1179,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Converts FindOptions into mongodb order by criteria.
+     *
      * @param order
      */
     protected convertFindOptionsOrderToOrderCriteria(order: ObjectLiteral) {
@@ -1153,6 +1200,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Converts FindOptions into mongodb select by criteria.
+     *
      * @param selects
      */
     protected convertFindOptionsSelectToProjectCriteria(
@@ -1164,6 +1212,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Ensures given id is an id for query.
+     *
      * @param metadata
      * @param idMap
      */
@@ -1202,6 +1251,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Overrides cursor's toArray and next methods to convert results to entity automatically.
+     *
      * @param metadata
      * @param cursor
      */
@@ -1261,6 +1311,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Finds first entity that matches given conditions and/or find options.
+     *
      * @param entityClassOrName
      * @param optionsOrConditions
      * @param maybeOptions
@@ -1362,6 +1413,7 @@ export class MongoEntityManager extends EntityManager {
 
     /**
      * Finds entities that match given find options or conditions.
+     *
      * @param entityClassOrName
      * @param optionsOrConditions
      */

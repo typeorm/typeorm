@@ -27,6 +27,7 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids of the given entity or entities.
+     *
      * @param relation
      * @param entityOrEntities
      * @param relatedEntityOrRelatedEntities
@@ -68,6 +69,7 @@ export class RelationIdLoader {
      * Loads relation ids of the given entities and groups them into the object with parent and children.
      *
      * todo: extract this method?
+     *
      * @param relation
      * @param entitiesOrEntities
      * @param relatedEntityOrEntities
@@ -205,48 +207,13 @@ export class RelationIdLoader {
         })
     }
 
-    /**
-     * Loads relation ids of the given entities and maps them into the given entity property.
-     async loadManyToManyRelationIdsAndMap(
-     relation: RelationMetadata,
-     entityOrEntities: ObjectLiteral|ObjectLiteral[],
-     mapToEntityOrEntities: ObjectLiteral|ObjectLiteral[],
-     propertyName: string
-     ): Promise<void> {
-        const relationIds = await this.loadManyToManyRelationIds(relation, entityOrEntities, mapToEntityOrEntities);
-        const mapToEntities = mapToEntityOrEntities instanceof Array ? mapToEntityOrEntities : [mapToEntityOrEntities];
-        const junctionMetadata = relation.junctionEntityMetadata!;
-        const mainAlias = junctionMetadata.name;
-        const columns = relation.isOwning ? junctionMetadata.inverseColumns : junctionMetadata.ownerColumns;
-        const inverseColumns = relation.isOwning ? junctionMetadata.ownerColumns : junctionMetadata.inverseColumns;
-        mapToEntities.forEach(mapToEntity => {
-            mapToEntity[propertyName] = [];
-            relationIds.forEach(relationId => {
-                const match = inverseColumns.every(column => {
-                    return column.referencedColumn!.getEntityValue(mapToEntity) === relationId[mainAlias + "_" + column.propertyName];
-                });
-                if (match) {
-                    if (columns.length === 1) {
-                        mapToEntity[propertyName].push(relationId[mainAlias + "_" + columns[0].propertyName]);
-                    } else {
-                        const value = {};
-                        columns.forEach(column => {
-                            column.referencedColumn!.setEntityValue(value, relationId[mainAlias + "_" + column.propertyName]);
-                        });
-                        mapToEntity[propertyName].push(value);
-                    }
-                }
-            });
-        });
-    }
-     */
-
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
 
     /**
      * Loads relation ids for the many-to-many relation.
+     *
      * @param relation
      * @param entities
      * @param relatedEntities
@@ -434,6 +401,7 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids for the many-to-one and one-to-one owner relations.
+     *
      * @param relation
      * @param entities
      * @param relatedEntities
@@ -615,6 +583,7 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids for the one-to-many and one-to-one not owner relations.
+     *
      * @param relation
      * @param entities
      * @param relatedEntities
@@ -780,6 +749,7 @@ export class RelationIdLoader {
     /**
      * Executes a raw query and hydrates the results using driver-specific
      * value preparation based on the column metadata.
+     *
      * @param qb
      * @param target
      * @param mainAlias

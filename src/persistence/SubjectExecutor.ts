@@ -1053,6 +1053,7 @@ export class SubjectExecutor {
     /**
      * Updates all special columns of the saving entities (create date, update date, version, etc.).
      * Also updates nullable columns and columns with default values.
+     *
      * @param subjects
      */
     protected updateSpecialColumnsInInsertedAndUpdatedEntities(
@@ -1143,6 +1144,7 @@ export class SubjectExecutor {
      *
      * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
      * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
+     *
      * @param subjects
      * @param type
      */

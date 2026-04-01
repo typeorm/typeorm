@@ -66,6 +66,7 @@ export class MongoRepository<
     /**
      * Raw SQL query execution is not supported by MongoDB.
      * Calling this method will return an error.
+     *
      * @param query
      * @param parameters
      */
@@ -76,6 +77,7 @@ export class MongoRepository<
     /**
      * Using Query Builder with MongoDB is not supported yet.
      * Calling this method will return an error.
+     *
      * @param alias
      * @param queryRunner
      */
@@ -88,6 +90,7 @@ export class MongoRepository<
 
     /**
      * Finds entities that match given find options or conditions.
+     *
      * @param options
      */
     find(
@@ -101,6 +104,7 @@ export class MongoRepository<
 
     /**
      * Finds entities that match given find options or conditions.
+     *
      * @param where
      */
     findBy(where: any): Promise<Entity[]> {
@@ -111,6 +115,7 @@ export class MongoRepository<
      * Finds entities that match given find options or conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
      * @param options
      */
     findAndCount(
@@ -123,6 +128,7 @@ export class MongoRepository<
      * Finds entities that match given find options or conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
      * @param where
      */
     findAndCountBy(where: any): Promise<[Entity[], number]> {
@@ -132,6 +138,7 @@ export class MongoRepository<
     /**
      * Finds entities by ids.
      * Optionally find options can be applied.
+     *
      * @param ids
      * @param options
      */
@@ -141,6 +148,7 @@ export class MongoRepository<
 
     /**
      * Finds first entity that matches given find options.
+     *
      * @param options
      */
     async findOne(
@@ -151,6 +159,7 @@ export class MongoRepository<
 
     /**
      * Finds first entity that matches given WHERE conditions.
+     *
      * @param where
      */
     async findOneBy(where: any): Promise<Entity | null> {
@@ -160,6 +169,7 @@ export class MongoRepository<
     /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
+     *
      * @param options
      */
     async findOneOrFail(options: FindOneOptions<Entity>): Promise<Entity> {
@@ -169,6 +179,7 @@ export class MongoRepository<
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - rejects with error.
+     *
      * @param where
      */
     async findOneByOrFail(where: any): Promise<Entity> {
@@ -177,6 +188,7 @@ export class MongoRepository<
 
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
+     *
      * @param query
      */
     createCursor<T = any>(query?: Filter<Entity>): FindCursor<T> {
@@ -186,6 +198,7 @@ export class MongoRepository<
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      * This returns modified version of cursor that transforms each result into Entity model.
+     *
      * @param query
      */
     createEntityCursor(query?: Filter<Entity>): FindCursor<Entity> {
@@ -194,6 +207,7 @@ export class MongoRepository<
 
     /**
      * Execute an aggregation framework pipeline against the collection.
+     *
      * @param pipeline
      * @param options
      */
@@ -211,6 +225,7 @@ export class MongoRepository<
     /**
      * Execute an aggregation framework pipeline against the collection.
      * This returns modified version of cursor that transforms each result into Entity model.
+     *
      * @param pipeline
      * @param options
      */
@@ -226,6 +241,7 @@ export class MongoRepository<
     }
     /**
      * Perform a bulkWrite operation without a fluent API.
+     *
      * @param operations
      * @param options
      */
@@ -238,6 +254,7 @@ export class MongoRepository<
 
     /**
      * Count number of matching documents in the db to a query.
+     *
      * @param query
      * @param options
      */
@@ -247,6 +264,7 @@ export class MongoRepository<
 
     /**
      * Count number of matching documents in the db to a query.
+     *
      * @param query
      * @param options
      */
@@ -263,6 +281,7 @@ export class MongoRepository<
 
     /**
      * Count number of matching documents in the db to a query.
+     *
      * @param query
      * @param options
      */
@@ -272,6 +291,7 @@ export class MongoRepository<
 
     /**
      * Creates an index on the db and collection.
+     *
      * @param fieldOrSpec
      * @param options
      */
@@ -290,6 +310,7 @@ export class MongoRepository<
      * Creates multiple indexes in the collection, this method is only supported for MongoDB 2.6 or higher.
      * Earlier version of MongoDB will throw a command not supported error.
      * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+     *
      * @param indexSpecs
      */
     createCollectionIndexes(indexSpecs: IndexDescription[]): Promise<string[]> {
@@ -301,6 +322,7 @@ export class MongoRepository<
 
     /**
      * Delete multiple documents on MongoDB.
+     *
      * @param query
      * @param options
      */
@@ -313,6 +335,7 @@ export class MongoRepository<
 
     /**
      * Delete a document on MongoDB.
+     *
      * @param query
      * @param options
      */
@@ -325,6 +348,7 @@ export class MongoRepository<
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
+     *
      * @param key
      * @param query
      * @param options
@@ -344,6 +368,7 @@ export class MongoRepository<
 
     /**
      * Drops an index from this collection.
+     *
      * @param indexName
      * @param options
      */
@@ -367,6 +392,7 @@ export class MongoRepository<
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
+     *
      * @param query
      * @param options
      */
@@ -383,6 +409,7 @@ export class MongoRepository<
 
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
+     *
      * @param query
      * @param replacement
      * @param options
@@ -402,6 +429,7 @@ export class MongoRepository<
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
+     *
      * @param query
      * @param update
      * @param options
@@ -428,6 +456,7 @@ export class MongoRepository<
 
     /**
      * Retrieve all the indexes on the collection.
+     *
      * @param indexes
      */
     collectionIndexExists(indexes: string | string[]): Promise<boolean> {
@@ -439,6 +468,7 @@ export class MongoRepository<
 
     /**
      * Retrieves this collections index info.
+     *
      * @param options
      * @param options.full
      */
@@ -451,6 +481,7 @@ export class MongoRepository<
 
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
+     *
      * @param options
      */
     initializeOrderedBulkOp(options?: BulkWriteOptions): OrderedBulkOperation {
@@ -462,6 +493,7 @@ export class MongoRepository<
 
     /**
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
+     *
      * @param options
      */
     initializeUnorderedBulkOp(
@@ -475,6 +507,7 @@ export class MongoRepository<
 
     /**
      * Inserts an array of documents into MongoDB.
+     *
      * @param docs
      * @param options
      */
@@ -487,6 +520,7 @@ export class MongoRepository<
 
     /**
      * Inserts a single document into MongoDB.
+     *
      * @param doc
      * @param options
      */
@@ -506,6 +540,7 @@ export class MongoRepository<
 
     /**
      * Get the list of all indexes information for the collection.
+     *
      * @param options
      */
     listCollectionIndexes(options?: ListIndexesOptions): ListIndexesCursor {
@@ -517,6 +552,7 @@ export class MongoRepository<
 
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
+     *
      * @param newName
      * @param options
      * @param options.dropTarget
@@ -530,6 +566,7 @@ export class MongoRepository<
 
     /**
      * Replace a document on MongoDB.
+     *
      * @param query
      * @param doc
      * @param options
@@ -549,6 +586,7 @@ export class MongoRepository<
 
     /**
      * Update multiple documents on MongoDB.
+     *
      * @param query
      * @param update
      * @param options
@@ -568,6 +606,7 @@ export class MongoRepository<
 
     /**
      * Update a single document on MongoDB.
+     *
      * @param query
      * @param update
      * @param options
