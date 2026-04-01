@@ -102,16 +102,8 @@ export class SubjectDatabaseEntityLoader {
                         relations: loadRelationPropertyPaths,
                         disableMixedMap: true,
                     },
-                    // withDeleted must be true for all operations:
-                    // - recover: find the soft-deleted entity and include soft-deleted
-                    //   related entities in relation-id sub-queries (so junction rows
-                    //   are detected and not re-inserted)
-                    // - save/soft-remove: find soft-deleted entities by PK so they can
-                    //   be updated instead of triggering a duplicate-PK insert
-                    // - remove: find soft-deleted entities so junction cleanup works
-                    // Relation IDs are only loaded for relations present on the entity
-                    // (undefined relations are skipped above), so withDeleted on
-                    // relation-id sub-queries won't cause spurious junction deletions.
+                    // include soft-deleted entities so recover, save, and remove
+                    // can find them by PK and load their relation IDs correctly
                     withDeleted: true,
                 }
 
