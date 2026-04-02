@@ -239,6 +239,14 @@ export class EntityMetadataValidator {
                     `OnUpdateType "${relation.onUpdate}" is not valid for ${driver.options.type}!`,
                 )
             }
+            // todo: validate if its one-to-one and side which does not have join column MUST have inverse side
+            // todo: validate if its many-to-many and side which does not have join table MUST have inverse side
+            // todo: if there is a relation, and inverse side is specified only on one side, shall we give error
+            // todo: add validation if there two entities with the same target, and show error message with description of the problem (maybe file was renamed/moved but left in output directory)
+            // todo: check if there are multiple columns on the same column applied.
+            // todo: check column type if is missing in relational databases (throw new TypeORMError(`Column type of ${type} cannot be determined.`);)
+            // todo: if multiple columns with same name - throw exception, including cases when columns are in embeds with same prefixes or without prefix at all
+            // todo: check if entity with duplicate names, some decorators exist
         })
 
         // make sure cascade remove is not set for both sides of relationships (can be set in OneToOne decorators)
