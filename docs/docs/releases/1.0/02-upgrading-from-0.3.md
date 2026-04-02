@@ -1,8 +1,12 @@
-# Migration to v1
+---
+sidebar_label: Upgrading from 0.3
+---
 
-This is the migration guide for upgrading from version `0.3.x` to `1.0`.
+# Upgrading from 0.3 to 1.0
 
-## Automated migration
+This is the upgrading guide from version `0.3.x` to `1.0`.
+
+## Automated upgrade
 
 The `@typeorm/codemod` package can automate most of the breaking changes described in this guide:
 
@@ -435,7 +439,7 @@ new DataSource({
 })
 ```
 
-This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The rest of the QueryBuilder methods (`.where()`, `.andWhere()`, `.orWhere()`) are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
+This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The rest of the QueryBuilder methods (`.where()`, `.andWhere()`, `.orWhere()`) are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../../data-source/5-null-and-undefined-handling.md) for full details.
 
 ### Hashing
 
@@ -448,6 +452,12 @@ For browser environments, `RandomGenerator.sha1` was fixed to the standard imple
 ### Glob patterns
 
 Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is mostly a drop-in replacement, but edge cases with brace expansion or platform-specific path separators may behave differently.
+
+### `orphanedRowAction: "nullify"` with non-nullable foreign keys
+
+When `orphanedRowAction` is `"nullify"` (the default) and the foreign key column is non-nullable, orphaned children are now **deleted** instead of throwing a database constraint violation. Previously, TypeORM would attempt to set the FK to `null`, which failed on non-nullable columns. Now it detects the constraint and removes the orphaned row instead.
+
+If you were relying on the error to prevent accidental child deletion, set `orphanedRowAction: "disable"` on the relation to preserve the old behavior.
 
 ## Columns
 
