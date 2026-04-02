@@ -603,14 +603,10 @@ export class ColumnMetadata {
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
      *
      * @param entity
-     * @param options
-     * @param options.skipNulls
      */
     getEntityValueMap(
         entity: ObjectLiteral,
-        options?: { skipNulls?: boolean },
     ): ObjectLiteral | undefined {
-        const returnNulls = false // options && options.skipNulls === false ? false : true; // todo: remove if current will not bring problems, uncomment if it will.
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -676,10 +672,7 @@ export class ColumnMetadata {
                     }))
                 }
 
-                if (
-                    value[this.propertyName] !== undefined &&
-                    (returnNulls === false || value[this.propertyName] !== null)
-                ) {
+                if (value[this.propertyName] !== undefined) {
                     return { [this.propertyName]: value[this.propertyName] }
                 }
 
@@ -731,11 +724,7 @@ export class ColumnMetadata {
 
                 return undefined
             } else {
-                if (
-                    entity[this.propertyName] !== undefined &&
-                    (returnNulls === false ||
-                        entity[this.propertyName] !== null)
-                ) {
+                if (entity[this.propertyName] !== undefined) {
                     return { [this.propertyName]: entity[this.propertyName] }
                 }
 
