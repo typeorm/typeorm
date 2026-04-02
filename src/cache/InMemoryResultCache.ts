@@ -19,6 +19,7 @@ type LRUCacheOptions = LRUCache.Options<
  * - `options.maxSize` - Maximum 10 MB total size
  * - `options.ttl` - 24-hour TTL (Time To Live)
  * - `options.sizeCalculation` - Size calculation based on JSON serialized UTF-8 byte length
+ *
  * @example
  * // Using custom options
  * const inMemoryCache = new InMemoryResultCache({
@@ -27,6 +28,7 @@ type LRUCacheOptions = LRUCache.Options<
  *   ttl: 12 * 60 * 60 * 1000,
  *   sizeCalculation: (value) => 1,
  * })
+ *
  */
 export class InMemoryResultCache implements QueryResultCache {
     private inMemoryCache: LRUCache<string, QueryResultCacheOptions>
@@ -44,6 +46,7 @@ export class InMemoryResultCache implements QueryResultCache {
 
     /**
      * Clears all entries from the inMemoryCache.
+     *
      * @returns A promise that resolves when the inMemoryCache has been cleared
      */
     clear(): Promise<void> {
@@ -53,6 +56,7 @@ export class InMemoryResultCache implements QueryResultCache {
 
     /**
      * Establishes connection to the inMemoryCache (no-op for in-memory inMemoryCache).
+     *
      * @returns A promise that resolves immediately
      */
     connect(): Promise<void> {
@@ -61,6 +65,7 @@ export class InMemoryResultCache implements QueryResultCache {
 
     /**
      * Closes the inMemoryCache connection (no-op for in-memory inMemoryCache).
+     *
      * @returns A promise that resolves immediately
      */
     disconnect(): Promise<void> {
@@ -69,6 +74,7 @@ export class InMemoryResultCache implements QueryResultCache {
 
     /**
      * Retrieves a cached query result if it exists and has not expired.
+     *
      * @param options - The inMemoryCache options containing the query and identifier
      * @returns A promise resolving to the cached result or undefined if not found or expired
      */
@@ -81,6 +87,7 @@ export class InMemoryResultCache implements QueryResultCache {
 
     /**
      * Determines whether a cached entry has expired based on its TTL.
+     *
      * @param savedCache - The cached entry to check for expiration
      * @returns True if the inMemoryCache entry has expired, false otherwise
      */
@@ -90,6 +97,7 @@ export class InMemoryResultCache implements QueryResultCache {
 
     /**
      * Removes one or more entries from the inMemoryCache by their identifiers.
+     *
      * @param identifiers - Array of inMemoryCache identifiers to remove
      * @returns A promise that resolves when all entries have been removed
      */
@@ -102,6 +110,7 @@ export class InMemoryResultCache implements QueryResultCache {
 
     /**
      * Stores a query result in the inMemoryCache.
+     *
      * @param options - The inMemoryCache options containing the query result and metadata
      * @returns A promise that resolves when the result has been stored
      */
@@ -114,6 +123,7 @@ export class InMemoryResultCache implements QueryResultCache {
 
     /**
      * Synchronizes the inMemoryCache state (no-op for in-memory inMemoryCache).
+     *
      * @returns A promise that resolves immediately
      */
     synchronize(): Promise<void> {
@@ -132,6 +142,6 @@ export class InMemoryResultCache implements QueryResultCache {
     }
 
     private generateIdentifier(query: string | undefined): string | undefined {
-        return query && `${createHash("md5").update(query).digest("hex")}`
+        return query && `${createHash("sha512").update(query).digest("hex")}`
     }
 }
