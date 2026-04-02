@@ -1057,29 +1057,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     */
-    // selectAndMap(mapToProperty: string, property: string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this;
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, entity: Function|string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this;
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, tableName: string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this;
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this {
-    //     const select = new SelectAttribute(this.expressionMap);
-    //     select.mapToProperty = mapToProperty;
-    //     select.entityOrProperty = entityOrProperty;
-    //     select.aliasName = aliasName;
-    //     select.qbFactory = qbFactory;
-    //     return this;
-    // }
-
-    /**
      * LEFT JOINs relation id and maps it into some entity's property.
      * Optionally, you can add condition and parameters used in condition.
      */
@@ -3432,22 +3409,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (this.findOptions.transaction === true) {
                 this.expressionMap.useTransaction = true
             }
-
-            // if (this.orderBys.length) {
-            //     this.orderBys.forEach(orderBy => {
-            //         this.addOrderBy(orderBy.alias, orderBy.direction, orderBy.nulls);
-            //     });
-            // }
-
-            // todo
-            // if (this.options.options && this.options.options.eagerRelations) {
-            //     this.queryBuilder
-            // }
-
-            // todo
-            // if (this.findOptions.options && this.findOptions.listeners === false) {
-            //     this.callListeners(false);
-            // }
         }
     }
 
@@ -4344,10 +4305,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     alias,
                     joinAlias,
                 )
-                // console.log("joinAlias", joinAlias, joinAlias.length, this.dataSource.driver.maxAliasLength)
-                // todo: use expressionMap.joinAttributes, and create a new one using
-                //  const joinAttribute = new JoinAttribute(this.dataSource, this.expressionMap);
-
                 const existJoin = this.joins.find(
                     (join) => join.alias === joinAlias,
                 )
@@ -4484,11 +4441,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 parameterValue,
                             ),
                         ),
-                        // parameterValue.toSql(this.dataSource, aliasPath, parameters));
                     )
-
-                    // this.conditions.push(`${alias}.${propertyPath} = :${paramName}`);
-                    // this.expressionMap.parameters[paramName] = where[key]; // todo: handle functions and other edge cases
                 } else if (embed) {
                     const condition = this.buildWhere(
                         where[key],

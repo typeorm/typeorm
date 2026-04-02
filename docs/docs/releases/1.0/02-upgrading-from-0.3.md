@@ -1009,6 +1009,7 @@ The following internal APIs have been removed. These only affect you if you were
 | Removed                                        | Replacement                                       |
 | ---------------------------------------------- | ------------------------------------------------- |
 | `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                |
+| `RdbmsSchemaBuilder.renameTables()`            | Removed — was an empty no-op, never called        |
 | `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                    |
 | `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers |
 | `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`               |
