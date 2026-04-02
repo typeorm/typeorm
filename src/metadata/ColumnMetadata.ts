@@ -604,10 +604,7 @@ export class ColumnMetadata {
      *
      * @param entity
      */
-    getEntityValueMap(
-        entity: ObjectLiteral,
-    ): ObjectLiteral | undefined {
-
+    getEntityValueMap(entity: ObjectLiteral): ObjectLiteral | undefined {
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
             // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
