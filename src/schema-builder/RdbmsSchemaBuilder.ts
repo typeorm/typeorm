@@ -309,11 +309,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Rename tables. No-op by default, can be overridden by subclasses.
-     */
-    protected async renameTables(): Promise<void> {}
-
-    /**
      * Renames columns.
      * Works if only one column per table was changed.
      * Changes only column name. If something besides name was changed, these changes will be ignored.
