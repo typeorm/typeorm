@@ -3,7 +3,7 @@ import type { TransformModule } from "./transformer"
 
 export interface VersionInfo {
     description: string
-    migrationGuide: string
+    upgradingGuide: string
     transforms: TransformModule[]
 }
 

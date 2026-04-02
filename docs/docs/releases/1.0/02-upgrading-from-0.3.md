@@ -1,8 +1,12 @@
-# Migration to v1
+---
+sidebar_label: Upgrading from 0.3
+---
 
-This is the migration guide for upgrading from version `0.3.x` to `1.0`.
+# Upgrading from 0.3 to 1.0
 
-## Automated migration
+This is the upgrading guide from version `0.3.x` to `1.0`.
+
+## Automated upgrade
 
 The `@typeorm/codemod` package can automate most of the breaking changes described in this guide:
 
@@ -435,7 +439,7 @@ new DataSource({
 })
 ```
 
-This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The rest of the QueryBuilder methods (`.where()`, `.andWhere()`, `.orWhere()`) are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../data-source/5-null-and-undefined-handling.md) for full details.
+This setting guards all high-level APIs — find operations, repository/manager mutation methods, and `queryBuilder.setFindOptions()` (the only QueryBuilder method that is affected). The rest of the QueryBuilder methods (`.where()`, `.andWhere()`, `.orWhere()`) are **not** affected — null and undefined values pass through as-is. See [Null and undefined handling](../../data-source/5-null-and-undefined-handling.md) for full details.
 
 ### Hashing
 

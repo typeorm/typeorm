@@ -1,10 +1,14 @@
-# TypeORM 1.0 Release Notes
+---
+sidebar_label: Release Notes
+---
+
+# Release Notes 1.0
 
 TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes platform requirements, and ships dozens of bug fixes and new features accumulated during the 0.3.x cycle.
 
 ## Breaking changes
 
-> See the [Migration Guide](./8-migration-v1.md) for detailed upgrade instructions.
+> See the [Upgrading Guide](./02-upgrading-from-0.3.md) for detailed upgrade instructions.
 
 ### Platform requirements
 
@@ -94,6 +98,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 ### Other
 
+- **Automated codemod for v1 migration** — the new `@typeorm/codemod` package automates most breaking changes: run `npx @typeorm/codemod v1 src/` to update imports, API renames, find option syntax, and more ([#12233](https://github.com/typeorm/typeorm/pull/12233) by [@pkuczynski](https://github.com/pkuczynski))
 - **Improved ormconfig error handling** — loading failures now log warnings instead of silently failing ([#11871](https://github.com/typeorm/typeorm/pull/11871) by [@Cprakhar](https://github.com/Cprakhar))
 
 ## Bug fixes
@@ -114,7 +119,8 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 ### Relations & Eager loading
 
-- **Eager relations now respect `relationLoadStrategy: "query"`** — eager relations are loaded via separate queries when the `"query"` strategy is set, instead of always using JOINs ([#11326](https://github.com/typeorm/typeorm/pull/11326) by [@SharkSharp](https://github.com/SharkSharp))
+- **Orphaned one-to-many children with non-nullable FK are now deleted** — when saving a one-to-many relation with cascade and replacing children, orphaned rows with a non-nullable FK are now deleted instead of failing with a constraint violation; nullable FK rows are still nullified as before ([#11982](https://github.com/typeorm/typeorm/pull/11982) by [@naorpeled](https://github.com/naorpeled))
+- **Eager relations now respect `relationLoadStrategy: "query"`** — eager relations are loaded via separate queries when the `"query"` strategy is set, instead of always using JOINs ([#11326](https://github.com/typeorm/typeorm/pull/11326) by [@SharkSharp](https://github.com/SharkSharp), [#12256](https://github.com/typeorm/typeorm/pull/12256) by [@pkuczynski](https://github.com/pkuczynski))
 - **Self-referencing relation alias collision** — self-referencing relations with `relationLoadStrategy: "query"` no longer produce incorrect SQL due to alias collision ([#11066](https://github.com/typeorm/typeorm/pull/11066) by [@campmarc](https://github.com/campmarc))
 - **Eager relations no longer joined twice** — explicitly specifying an eager relation in `relations` no longer causes duplicate JOINs ([#11991](https://github.com/typeorm/typeorm/pull/11991) by [@veeceey](https://github.com/veeceey))
 - **Save with eagerly loaded relations** — fixed save failures when an entity has eagerly loaded relations ([#11975](https://github.com/typeorm/typeorm/pull/11975) by [@gioboa](https://github.com/gioboa))
@@ -154,7 +160,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 ### Other
 
-- **CLI `init` command** — no longer crashes when `package.json` does not exist ([#11947](https://github.com/typeorm/typeorm/pull/11947) by [@gioboa](https://github.com/gioboa))
+- **CLI `init` command** — no longer crashes when `package.json` does not exist ([#11947](https://github.com/typeorm/typeorm/pull/11947) by [@gioboa](https://github.com/gioboa)); published package now correctly includes `devDependencies` needed for scaffolding ([#12281](https://github.com/typeorm/typeorm/pull/12281) by [@pkuczynski](https://github.com/pkuczynski))
 - **Deno `process` import** — fixed incorrect import for the `process` dependency on Deno ([#11248](https://github.com/typeorm/typeorm/pull/11248) by [@yohannpoli](https://github.com/yohannpoli))
 
 ## Security fixes
@@ -166,4 +172,4 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 - **PostgreSQL / CockroachDB: batched DROP in `clearDatabase()`** — consolidates individual DROP statements into single batched queries, significantly reducing round-trips during test setup ([#12164](https://github.com/typeorm/typeorm/pull/12164), [#12159](https://github.com/typeorm/typeorm/pull/12159) by [@pkuczynski](https://github.com/pkuczynski))
 
-<!-- Built against 50ba2dba8 -->
+<!-- Built against 7d2ea607a -->
