@@ -2,6 +2,18 @@
 
 This is the migration guide for upgrading from version `0.3.x` to `1.0`.
 
+## Automated migration
+
+The `@typeorm/codemod` package can automate most of the breaking changes described in this guide:
+
+```bash
+npx @typeorm/codemod v1 src/
+```
+
+This will update your code in place — use `--dry` to preview changes without writing. The codemod handles import renames, API replacements, find option syntax, dependency upgrades, and more. Changes that cannot be automated are left as `TODO` comments for manual review.
+
+See the [codemod README](https://github.com/typeorm/typeorm/tree/master/packages/codemod) for full usage and options.
+
 ## Platform requirements
 
 ### Node.js 20+
@@ -199,6 +211,34 @@ new DataSource({
             userName: "user",
             password: "pass",
         },
+    },
+    // ...
+})
+```
+
+#### `options.isolation` and `options.connectionIsolationLevel`
+
+The `options.isolation` option on `SqlServerDataSourceOptions` was renamed to `options.isolationLevel` as was not the correct option in the first place. Also note that the value format has changed from `READ_COMMITTED` to `READ COMMITTED` (underscore replaced with space) to match the expected format used by the TypeORM throughout the codebase. Update your DataSource options accordingly:
+
+```typescript
+// Before
+new DataSource({
+    type: "mssql",
+    options: {
+        isolation: "READ_COMMITTED",
+        connectionIsolationLevel: "READ_COMMITTED",
+        // ...
+    },
+    // ...
+})
+
+// After
+new DataSource({
+    type: "mssql",
+    options: {
+        isolationLevel: "READ COMMITTED",
+        connectionIsolationLevel: "READ COMMITTED",
+        // ...
     },
     // ...
 })
@@ -408,6 +448,12 @@ For browser environments, `RandomGenerator.sha1` was fixed to the standard imple
 ### Glob patterns
 
 Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is mostly a drop-in replacement, but edge cases with brace expansion or platform-specific path separators may behave differently.
+
+### `orphanedRowAction: "nullify"` with non-nullable foreign keys
+
+When `orphanedRowAction` is `"nullify"` (the default) and the foreign key column is non-nullable, orphaned children are now **deleted** instead of throwing a database constraint violation. Previously, TypeORM would attempt to set the FK to `null`, which failed on non-nullable columns. Now it detects the constraint and removes the orphaned row instead.
+
+If you were relying on the error to prevent accidental child deletion, set `orphanedRowAction: "disable"` on the relation to preserve the old behavior.
 
 ## Columns
 

@@ -25,6 +25,7 @@ import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import type { CockroachDataSourceOptions } from "./CockroachDataSourceOptions"
@@ -34,6 +35,22 @@ import { CockroachQueryRunner } from "./CockroachQueryRunner"
  * Organizes communication with Cockroach DBMS.
  */
 export class CockroachDriver implements Driver {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://www.cockroachlabs.com/docs/stable/transactions#isolation-levels
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -45,6 +62,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * DataSource used by the driver.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -118,6 +136,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://www.cockroachlabs.com/docs/stable/data-types.html
      */
     supportedDataTypes: ColumnType[] = [
@@ -373,6 +392,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
@@ -381,6 +401,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -427,6 +448,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -518,6 +540,7 @@ export class CockroachDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
      * @param sql
      * @param parameters
      */
@@ -569,6 +592,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
      * @param columnName
      */
     escape(columnName: string): string {
@@ -578,6 +602,7 @@ export class CockroachDriver implements Driver {
     /**
      * Build full table name with schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
      * @param tableName
      * @param schema
      */
@@ -593,6 +618,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
      * @param target
      */
     parseTableName(
@@ -648,6 +674,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
      * @param column
      * @param column.type
      * @param column.length
@@ -723,6 +750,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -790,6 +818,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Compares "default" value of the column.
+     *
      * @param columnMetadata
      * @param tableColumn
      */
@@ -820,6 +849,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Compares json/jsonb default values of the column.
+     *
      * @param columnMetadata
      * @param tableColumn
      */
@@ -865,6 +895,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
      * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -875,6 +906,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     *
      * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
@@ -883,6 +915,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     *
      * @param column
      */
     createFullType(column: TableColumn): string {
@@ -965,6 +998,7 @@ export class CockroachDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      *
      * todo: slow. optimize Object.keys(), OrmUtils.mergeDeep and column.createValueMap parts
+     *
      * @param metadata
      * @param insertResult
      */
@@ -988,6 +1022,7 @@ export class CockroachDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
      * @param tableColumns
      * @param columnMetadatas
      */
@@ -1048,6 +1083,7 @@ export class CockroachDriver implements Driver {
     }
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
      * @param _returningType
      */
     isReturningSqlSupported(_returningType: ReturningType): boolean {
@@ -1070,6 +1106,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
      * @param parameterName
      * @param index
      */
@@ -1120,6 +1157,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
      * @param options
      * @param credentials
      */
@@ -1175,6 +1213,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Closes connection pool.
+     *
      * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
@@ -1190,6 +1229,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     *
      * @param comment
      */
     protected escapeComment(comment?: string) {
@@ -1202,6 +1242,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Builds ENUM type name from given table and column.
+     *
      * @param column
      */
     protected buildEnumName(column: ColumnMetadata): string {

@@ -21,6 +21,8 @@ import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
@@ -35,6 +37,23 @@ import { SqlServerQueryRunner } from "./SqlServerQueryRunner"
  */
 export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://learn.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+        "SNAPSHOT",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -45,6 +64,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * DataSource used by the driver.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -113,6 +133,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql
      */
     supportedDataTypes: ColumnType[] = [
@@ -254,6 +275,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Max length allowed by MSSQL Server for aliases (identifiers).
+     *
      * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
      */
     maxAliasLength = 128
@@ -352,6 +374,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Closes connection pool.
+     *
      * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
@@ -369,6 +392,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
@@ -378,6 +402,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
      * @param sql
      * @param parameters
      */
@@ -429,6 +454,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
      * @param columnName
      */
     escape(columnName: string): string {
@@ -438,6 +464,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
      * @param tableName
      * @param schema
      * @param database
@@ -466,6 +493,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
      * @param target
      */
     parseTableName(
@@ -533,6 +561,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -581,6 +610,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -639,6 +669,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
      * @param column
      * @param column.type
      * @param column.length
@@ -686,6 +717,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -720,6 +752,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
      * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -730,6 +763,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     *
      * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
@@ -747,6 +781,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     *
      * @param column
      */
     createFullType(column: TableColumn): string {
@@ -809,6 +844,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
      * @param metadata
      * @param insertResult
      */
@@ -832,6 +868,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
      * @param tableColumns
      * @param columnMetadatas
      */
@@ -948,6 +985,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
      * @param returningType
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
@@ -976,6 +1014,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
      * @param parameterName
      * @param index
      */
@@ -990,6 +1029,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps given value into MssqlParameter based on its column definition.
+     *
      * @param column
      * @param value
      */
@@ -1046,6 +1086,7 @@ export class SqlServerDriver implements Driver {
      *
      * This ensures SQL Server receives properly typed parameters for queries involving operators like
      * In, MoreThan, Between, etc.
+     *
      * @param column
      * @param value
      */
@@ -1067,6 +1108,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps all values of the given object into MssqlParameter based on their column definitions in the given table.
+     *
      * @param tablePath
      * @param map
      */
@@ -1167,6 +1209,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
      * @param options
      * @param credentials
      */
@@ -1180,15 +1223,40 @@ export class SqlServerDriver implements Driver {
             DriverUtils.buildDriverOptions(credentials),
         ) // todo: do it better way
 
+        let isolationLevel: number | undefined
+        if (options.options?.isolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.isolationLevel,
+            )
+            isolationLevel = this.convertIsolationLevel(
+                options.options.isolationLevel,
+            )
+        }
+        let connectionIsolationLevel: number | undefined
+        if (options.options?.connectionIsolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.connectionIsolationLevel,
+            )
+            connectionIsolationLevel = this.convertIsolationLevel(
+                options.options.connectionIsolationLevel,
+            )
+        }
+
         // build connection options for the driver
         const connectionOptions = Object.assign(
             {},
             {
-                connectionTimeout: this.options.connectionTimeout,
-                requestTimeout: this.options.requestTimeout,
-                stream: this.options.stream,
-                pool: this.options.pool,
-                options: this.options.options,
+                connectionTimeout: options.connectionTimeout,
+                requestTimeout: options.requestTimeout,
+                stream: options.stream,
+                pool: options.pool,
+                options: {
+                    ...options.options,
+                    isolationLevel,
+                    connectionIsolationLevel,
+                },
             },
             {
                 server: credentials.host,
@@ -1234,5 +1302,30 @@ export class SqlServerDriver implements Driver {
                 ok(connection)
             })
         })
+    }
+
+    /**
+     * Converts string literal of isolation level to enum.
+     * The underlying mssql driver requires an enum for the isolation level.
+     *
+     * @param isolation
+     */
+    convertIsolationLevel(isolation: IsolationLevel): number {
+        const ISOLATION_LEVEL = this.mssql.ISOLATION_LEVEL
+        switch (isolation) {
+            case "READ UNCOMMITTED":
+                return ISOLATION_LEVEL.READ_UNCOMMITTED
+            case "REPEATABLE READ":
+                return ISOLATION_LEVEL.REPEATABLE_READ
+            case "SERIALIZABLE":
+                return ISOLATION_LEVEL.SERIALIZABLE
+            case "SNAPSHOT":
+                return ISOLATION_LEVEL.SNAPSHOT
+
+            case "READ COMMITTED":
+                return ISOLATION_LEVEL.READ_COMMITTED
+            default:
+                throw new TypeORMError(`Unknown isolation level "${isolation}"`)
+        }
     }
 }

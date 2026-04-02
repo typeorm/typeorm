@@ -7,7 +7,7 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { View } from "../../schema-builder/view/View"
 import { Query } from "../Query"
-import type { AbstractSqliteDriver } from "./AbstractSqliteDriver"
+import { AbstractSqliteDriver } from "./AbstractSqliteDriver"
 import type { ReadStream } from "../../platform/PlatformTools"
 import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -15,6 +15,7 @@ import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TransactionAlreadyStartedError, TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
@@ -70,9 +71,15 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Starts transaction.
+     *
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        validateIsolationLevel(
+            AbstractSqliteDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
+
         if (this.driver.transactionSupport === "none")
             throw new TypeORMError(
                 `Transactions aren't supported by ${this.dataSource.driver.options.type}.`,
@@ -83,15 +90,6 @@ export abstract class AbstractSqliteQueryRunner
             this.driver.transactionSupport === "simple"
         )
             throw new TransactionAlreadyStartedError()
-
-        if (
-            isolationLevel &&
-            isolationLevel !== "READ UNCOMMITTED" &&
-            isolationLevel !== "SERIALIZABLE"
-        )
-            throw new TypeORMError(
-                `SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`,
-            )
 
         this.isTransactionActive = true
         try {
@@ -164,6 +162,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Returns raw data stream.
+     *
      * @param query
      * @param parameters
      * @param onEnd
@@ -188,6 +187,7 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     *
      * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
@@ -196,6 +196,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Checks if database with the given name exist.
+     *
      * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
@@ -211,6 +212,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Checks if schema with the given name exist.
+     *
      * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
@@ -226,6 +228,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Checks if table with the given name exist in the database.
+     *
      * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
@@ -239,6 +242,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Checks if column with the given name exist in the given table.
+     *
      * @param tableOrName
      * @param columnName
      */
@@ -256,6 +260,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new database.
+     *
      * @param database
      * @param ifNotExists
      */
@@ -268,6 +273,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops database.
+     *
      * @param database
      * @param ifExists
      */
@@ -277,6 +283,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new table schema.
+     *
      * @param schemaPath
      * @param ifNotExists
      */
@@ -289,6 +296,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops table schema.
+     *
      * @param schemaPath
      * @param ifExists
      */
@@ -298,6 +306,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new table.
+     *
      * @param table
      * @param ifNotExists
      * @param createForeignKeys
@@ -362,6 +371,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops the table.
+     *
      * @param tableOrName
      * @param ifExists
      * @param dropForeignKeys
@@ -424,6 +434,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new view.
+     *
      * @param view
      * @param syncWithMetadata
      */
@@ -443,6 +454,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops the view.
+     *
      * @param target
      * @param ifExists
      */
@@ -461,6 +473,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Renames the given table.
+     *
      * @param oldTableOrName
      * @param newTableName
      */
@@ -553,6 +566,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new column from the column in the table.
+     *
      * @param tableOrName
      * @param column
      */
@@ -568,6 +582,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new columns from the column in the table.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -585,6 +600,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Renames column in the given table.
+     *
      * @param tableOrName
      * @param oldTableColumnOrName
      * @param newTableColumnOrName
@@ -646,6 +662,7 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Changes a column in the table.
      * Changed column looses all its keys in the db.
+     *
      * @param tableOrName
      * @param changedColumns
      */
@@ -765,6 +782,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops column in the table.
+     *
      * @param tableOrName
      * @param columnOrName
      * @param ifExists
@@ -792,6 +810,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops the columns in the table.
+     *
      * @param tableOrName
      * @param columns
      * @param ifExists
@@ -837,6 +856,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new primary key.
+     *
      * @param tableOrName
      * @param columnNames
      */
@@ -864,6 +884,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Updates composite primary keys.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -876,6 +897,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops a primary key.
+     *
      * @param tableOrName
      * @param constraintName
      * @param ifExists
@@ -906,6 +928,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new unique constraint.
+     *
      * @param tableOrName
      * @param uniqueConstraint
      */
@@ -918,6 +941,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      */
@@ -939,6 +963,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops a unique constraint.
+     *
      * @param tableOrName
      * @param uniqueOrName
      * @param ifExists
@@ -966,6 +991,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      * @param ifExists
@@ -990,6 +1016,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates new check constraint.
+     *
      * @param tableOrName
      * @param checkConstraint
      */
@@ -1002,6 +1029,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates new check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      */
@@ -1023,6 +1051,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops check constraint.
+     *
      * @param tableOrName
      * @param checkOrName
      * @param ifExists
@@ -1050,6 +1079,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      * @param ifExists
@@ -1074,6 +1104,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionConstraint
      */
@@ -1086,6 +1117,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      */
@@ -1098,6 +1130,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionOrName
      * @param ifExists
@@ -1112,6 +1145,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      * @param ifExists
@@ -1126,6 +1160,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new foreign key.
+     *
      * @param tableOrName
      * @param foreignKey
      */
@@ -1138,6 +1173,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new foreign keys.
+     *
      * @param tableOrName
      * @param foreignKeys
      */
@@ -1159,6 +1195,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops a foreign key from the table.
+     *
      * @param tableOrName
      * @param foreignKeyOrName
      * @param ifExists
@@ -1186,6 +1223,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops a foreign keys from the table.
+     *
      * @param tableOrName
      * @param foreignKeys
      * @param ifExists
@@ -1210,6 +1248,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new index.
+     *
      * @param tableOrName
      * @param index
      */
@@ -1232,6 +1271,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Creates a new indices
+     *
      * @param tableOrName
      * @param indices
      */
@@ -1247,6 +1287,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops an index from the table.
+     *
      * @param tableOrName
      * @param indexOrName
      * @param ifExists
@@ -1280,6 +1321,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Drops an indices from the table.
+     *
      * @param tableOrName
      * @param indices
      * @param ifExists
@@ -1298,6 +1340,7 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     *
      * @param tableName
      * @param options
      * @param options.cascade
@@ -1316,6 +1359,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Removes all tables from the currently connected database.
+     *
      * @param database
      */
     async clearDatabase(database?: string): Promise<void> {
@@ -1430,6 +1474,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     *
      * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
@@ -1854,6 +1899,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Builds create table sql.
+     *
      * @param table
      * @param createForeignKeys
      * @param temporaryTable
@@ -2008,6 +2054,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Builds drop table sql.
+     *
      * @param tableOrName
      * @param ifExists
      */
@@ -2050,6 +2097,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Builds drop view sql.
+     *
      * @param viewOrPath
      * @param ifExists
      */
@@ -2068,6 +2116,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Builds remove view sql.
+     *
      * @param viewOrPath
      */
     protected deleteViewDefinitionSql(viewOrPath: View | string): Query {
@@ -2082,6 +2131,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Builds create index sql.
+     *
      * @param table
      * @param index
      */
@@ -2101,6 +2151,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Builds drop index sql.
+     *
      * @param indexOrName
      * @param ifExists
      */
@@ -2123,6 +2174,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Builds a query for create column.
+     *
      * @param column
      * @param skipPrimary
      */
@@ -2396,6 +2448,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * tablePath e.g. "myDB.myTable", "myTable"
+     *
      * @param tablePath
      */
     protected splitTablePath(tablePath: string): [string | undefined, string] {
@@ -2408,6 +2461,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Escapes given table or view path. Tolerates leading/trailing dots
+     *
      * @param target
      * @param disableEscape
      */
@@ -2428,6 +2482,7 @@ export abstract class AbstractSqliteQueryRunner
 
     /**
      * Change table comment.
+     *
      * @param tableOrName
      * @param comment
      */

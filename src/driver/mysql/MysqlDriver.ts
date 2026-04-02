@@ -24,6 +24,7 @@ import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 import type { MysqlDataSourceOptions } from "./MysqlDataSourceOptions"
@@ -33,6 +34,22 @@ import { MysqlQueryRunner } from "./MysqlQueryRunner"
  * Organizes communication with MySQL DBMS.
  */
 export class MysqlDriver implements Driver {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -44,6 +61,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * DataSource used by the driver.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -102,6 +120,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://www.tutorialspoint.com/mysql/mysql-data-types.htm
      * @see https://dev.mysql.com/doc/refman/8.0/en/data-types.html
      */
@@ -288,6 +307,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Max length allowed by MySQL for aliases.
+     *
      * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
      */
     maxAliasLength = 63
@@ -447,6 +467,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
@@ -456,6 +477,7 @@ export class MysqlDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
      * @param sql
      * @param parameters
      */
@@ -501,6 +523,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
      * @param columnName
      */
     escape(columnName: string): string {
@@ -510,6 +533,7 @@ export class MysqlDriver implements Driver {
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
      * @param tableName
      * @param schema
      * @param database
@@ -530,6 +554,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
      * @param target
      */
     parseTableName(
@@ -584,6 +609,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -633,6 +659,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -708,6 +735,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
      * @param column
      * @param column.type
      * @param column.length
@@ -782,6 +810,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -826,6 +855,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
      * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -839,6 +869,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     *
      * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
@@ -869,6 +900,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     *
      * @param column
      */
     createFullType(column: TableColumn): string {
@@ -956,6 +988,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
      * @param metadata
      * @param insertResult
      * @param entityIndex
@@ -1012,6 +1045,7 @@ export class MysqlDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
      * @param tableColumns
      * @param columnMetadatas
      */
@@ -1063,6 +1097,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
      * @param returningType
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
@@ -1085,6 +1120,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
      * @param parameterName
      * @param index
      */
@@ -1109,6 +1145,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
      * @param options
      * @param credentials
      */
@@ -1164,6 +1201,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
      * @param connectionOptions
      */
     protected createPool(connectionOptions: any): Promise<any> {
@@ -1185,6 +1223,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Attaches all required base handlers to a database connection, such as the unhandled error handler.
+     *
      * @param connection
      */
     private prepareDbConnection(connection: any): any {
@@ -1206,6 +1245,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
+     *
      * @param columnMetadataValue
      * @param databaseValue
      */
@@ -1242,6 +1282,7 @@ export class MysqlDriver implements Driver {
     /**
      * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
      * Otherwise returns original input.
+     *
      * @param value
      */
     protected normalizeDatetimeFunction(value?: string) {
@@ -1271,6 +1312,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     *
      * @param comment
      */
     protected escapeComment(comment?: string) {
@@ -1285,6 +1327,7 @@ export class MysqlDriver implements Driver {
      * A helper to check if column data types have changed
      * This can be used to manage checking any types the
      * database may alias
+     *
      * @param tableColumn
      * @param columnMetadata
      */

@@ -7,6 +7,7 @@ export class MetadataUtils {
      * Gives in order from parents to children.
      * For example Post extends ContentModel which extends Unit it will give
      * [Unit, ContentModel, Post]
+     *
      * @param entity
      */
     static getInheritanceTree(entity: Function): Function[] {
@@ -24,6 +25,7 @@ export class MetadataUtils {
 
     /**
      * Checks if this table is inherited from another table.
+     *
      * @param target1
      * @param target2
      */
@@ -34,6 +36,7 @@ export class MetadataUtils {
     /**
      * Filters given array of targets by a given classes.
      * If classes are not given, then it returns array itself.
+     *
      * @param array
      * @param classes
      */

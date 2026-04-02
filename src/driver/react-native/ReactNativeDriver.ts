@@ -19,6 +19,7 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { ReactNativeDataSourceOptions } from "./ReactNativeDataSourceOptions"
 import { ReactNativeQueryRunner } from "./ReactNativeQueryRunner"
@@ -37,6 +38,20 @@ type DatabasesMap = Record<
  */
 export class ReactNativeDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://www.sqlite.org/isolation.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
@@ -47,6 +62,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * DataSource used by the driver.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -99,6 +115,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://www.tutorialspoint.com/sqlite/sqlite_data_types.htm
      * @see https://sqlite.org/datatype3.html
      */
@@ -265,6 +282,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
@@ -327,6 +345,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -370,6 +389,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Prepares given value to a value to be hydrated, based on its column type or metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -449,6 +469,7 @@ export class ReactNativeDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
      * @param sql
      * @param parameters
      */
@@ -517,6 +538,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
      * @param columnName
      */
     escape(columnName: string): string {
@@ -528,6 +550,7 @@ export class ReactNativeDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      *
      * Returns only simple table name because all inherited drivers does not supports schema and database.
+     *
      * @param tableName
      * @param schema
      * @param database
@@ -542,6 +565,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
      * @param target
      */
     parseTableName(
@@ -616,6 +640,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
      * @param column
      * @param column.type
      * @param column.length
@@ -651,6 +676,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -681,6 +707,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
      * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -691,6 +718,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Calculates column length taking into account the default length values.
+     *
      * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
@@ -699,6 +727,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param column
      */
     createFullType(column: TableColumn): string {
@@ -747,6 +776,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
      * @param metadata
      * @param insertResult
      * @param entityIndex
@@ -787,6 +817,7 @@ export class ReactNativeDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
      * @param tableColumns
      * @param columnMetadatas
      */
@@ -919,6 +950,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
      * @param parameterName
      * @param index
      */
@@ -930,6 +962,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Wraps key with json/jsonb function.
+     *
      * @param value
      * @param column
      * @param jsonb

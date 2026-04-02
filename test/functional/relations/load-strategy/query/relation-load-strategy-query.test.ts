@@ -387,6 +387,32 @@ describe("relations > load-strategy > query", () => {
                     expect(results[1].books[0].title).to.equal("ds-book2")
                 }),
             ))
+
+        it("should propagate DataSource-level strategy for self-referencing relations", () =>
+            Promise.all(
+                dsLevelDataSources.map(async (dataSource) => {
+                    const manager = dataSource.manager
+
+                    const grandparent = await manager.save(new Category())
+
+                    const parent = new Category()
+                    parent.parent = grandparent
+                    await manager.save(parent)
+
+                    const child = new Category()
+                    child.parent = parent
+                    await manager.save(child)
+
+                    const loaded = await manager.findOne(Category, {
+                        where: { id: child.id },
+                        relations: { parent: { parent: true } },
+                    })
+
+                    expect(loaded).to.not.be.null
+                    expect(loaded?.parent?.id).to.equal(parent.id)
+                    expect(loaded?.parent?.parent?.id).to.equal(grandparent.id)
+                }),
+            ))
     })
 
     describe("loadEagerRelations", () => {
