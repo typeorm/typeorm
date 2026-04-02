@@ -6,72 +6,9 @@ import Link from "@docusaurus/Link"
 import { GitHubIcon } from "../components/icons/github-icon"
 import { LinkedInIcon } from "../components/icons/linkedin-icon"
 import styles from "./maintainers.module.css"
+import maintainers from "./maintainers.json"
 
-interface Maintainer {
-    name: string
-    github: string
-    role: string
-    linkedin?: string
-}
-
-const maintainers: Maintainer[] = [
-    {
-        name: "Michael Bromley",
-        github: "michaelbromley",
-        role: "Steering, Technical Liaison",
-    },
-    {
-        name: "David Höck",
-        github: "dlhck",
-        role: "Steering, External Relations",
-    },
-    {
-        name: "Lucian Mocanu",
-        github: "alumni",
-        role: "Technical Lead",
-    },
-    {
-        name: "Naor Peled",
-        github: "naorpeled",
-        role: "Maintainer",
-    },
-    {
-        name: "Giorgio Boa",
-        github: "gioboa",
-        role: "Maintainer",
-    },
-    {
-        name: "Piotr Kuczynski",
-        github: "pkuczynski",
-        role: "Maintainer",
-        linkedin: "https://www.linkedin.com/in/piotrkuczynski",
-    },
-    {
-        name: "Mohammed Gomaa",
-        github: "G0maa",
-        role: "Maintainer",
-    },
-    {
-        name: "Julian Pufler",
-        github: "pujux",
-        role: "Maintainer",
-    },
-    {
-        name: "Simon Garner",
-        github: "sgarner",
-        role: "Maintainer",
-    },
-    {
-        name: "Pieter Wigboldus",
-        github: "w3nl",
-        role: "Maintainer",
-    },
-    {
-        name: "Mike Guida",
-        github: "mguida22",
-        role: "Maintainer",
-    },
-]
+type Maintainer = (typeof maintainers)[number]
 
 const SocialLink = ({
     href,
@@ -108,11 +45,14 @@ const MaintainerCard = ({ name, github, role, linkedin }: Maintainer) => {
                     loading="lazy"
                 />
             </SocialLink>
+
             <div className={styles.cardInfo}>
                 <SocialLink href={profileUrl} className={styles.cardName}>
                     {name}
                 </SocialLink>
+
                 <span className={styles.cardRole}>{role}</span>
+
                 <div className={styles.socialLinks}>
                     <SocialLink
                         href={`https://github.com/${github}`}
