@@ -99,6 +99,14 @@ const config: Config = {
     themeConfig: {
         // Replace with your project's social card
         image: "img/typeorm-social-card.jpg",
+        announcementBar: {
+            id: "v1_release",
+            content:
+                'TypeORM 1.0 is here! Check the <a href="/docs/releases/1.0/release-notes">release notes</a> and <a href="/docs/releases/1.0/upgrading-from-0.3">upgrading guide</a>.',
+            backgroundColor: "#d94400",
+            textColor: "#ffffff",
+            isCloseable: true,
+        },
         colorMode: {
             defaultMode: "light",
             disableSwitch: false,
