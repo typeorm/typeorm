@@ -31,7 +31,7 @@ type LRUCacheOptions = LRUCache.Options<
  *
  */
 export class InMemoryResultCache implements QueryResultCache {
-    private inMemoryCache: LRUCache<string, QueryResultCacheOptions>
+    private readonly inMemoryCache: LRUCache<string, QueryResultCacheOptions>
 
     constructor(options?: LRUCacheOptions) {
         this.inMemoryCache = new LRUCache({
