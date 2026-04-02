@@ -3,10 +3,18 @@ import React from "react"
 import Layout from "@theme/Layout"
 import Heading from "@theme/Heading"
 import Link from "@docusaurus/Link"
-
+import { GitHubIcon } from "../components/icons/github-icon"
+import { LinkedInIcon } from "../components/icons/linkedin-icon"
 import styles from "./maintainers.module.css"
 
-const maintainers = [
+interface Maintainer {
+    name: string
+    github: string
+    role: string
+    linkedin?: string
+}
+
+const maintainers: Maintainer[] = [
     {
         name: "Michael Bromley",
         github: "michaelbromley",
@@ -36,6 +44,7 @@ const maintainers = [
         name: "Piotr Kuczynski",
         github: "pkuczynski",
         role: "Maintainer",
+        linkedin: "https://www.linkedin.com/in/piotrkuczynski",
     },
     {
         name: "Mohammed Gomaa",
@@ -64,25 +73,61 @@ const maintainers = [
     },
 ]
 
-function MaintainerCard({ name, github, role }) {
+const SocialLink = ({
+    href,
+    title,
+    className,
+    children,
+}: {
+    href: string
+    title?: string
+    className?: string
+    children: ReactNode
+}) => (
+    <Link
+        href={href}
+        target="_blank"
+        rel="noopener"
+        title={title}
+        aria-label={title}
+        className={className}
+    >
+        {children}
+    </Link>
+)
+
+function MaintainerCard({ name, github, role, linkedin }: Maintainer) {
+    const profileUrl = linkedin || `https://github.com/${github}`
     return (
-        <Link
-            href={`https://github.com/${github}`}
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-        >
-            <img
-                src={`https://avatars.githubusercontent.com/${github}?s=150`}
-                alt={name}
-                className={styles.avatar}
-                loading="lazy"
-            />
+        <div className={styles.card}>
+            <SocialLink href={profileUrl}>
+                <img
+                    src={`https://avatars.githubusercontent.com/${github}?s=150`}
+                    alt={name}
+                    className={styles.avatar}
+                    loading="lazy"
+                />
+            </SocialLink>
             <div className={styles.cardInfo}>
-                <span className={styles.cardName}>{name}</span>
+                <SocialLink href={profileUrl} className={styles.cardName}>
+                    {name}
+                </SocialLink>
                 <span className={styles.cardRole}>{role}</span>
+                <div className={styles.socialLinks}>
+                    <SocialLink
+                        href={`https://github.com/${github}`}
+                        title="GitHub"
+                    >
+                        <GitHubIcon />
+                    </SocialLink>
+                    {linkedin && (
+                        <SocialLink href={linkedin} title="LinkedIn">
+                            <LinkedInIcon />
+                        </SocialLink>
+                    )}
+                </div>
             </div>
-        </Link>
+        </div>
     )
 }
 
@@ -97,7 +142,7 @@ export default function Maintainers(): ReactNode {
                         <Link
                             href="https://github.com/pleerock"
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel="noopener"
                         >
                             Umed Khudoiberdiev
                         </Link>{" "}
@@ -112,9 +157,17 @@ export default function Maintainers(): ReactNode {
                 <section className={styles.teamSection}>
                     <div className="container">
                         <div className={styles.grid}>
-                            {maintainers.map((m) => (
-                                <MaintainerCard key={m.github} {...m} />
-                            ))}
+                            {maintainers.map(
+                                ({ name, github, role, linkedin }) => (
+                                    <MaintainerCard
+                                        key={github}
+                                        name={name}
+                                        github={github}
+                                        role={role}
+                                        linkedin={linkedin}
+                                    />
+                                ),
+                            )}
                         </div>
                     </div>
                 </section>
