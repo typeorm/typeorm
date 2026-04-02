@@ -11,7 +11,7 @@ import { User } from "./entity/User"
 describe("github issues > #9903 json data type", () => {
     let dataSources: DataSource[]
 
-    afterEach(() => closeTestingConnections(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("json supported type for mariadb", () => {
         const expectedJsonString = JSON.stringify({

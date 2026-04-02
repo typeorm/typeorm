@@ -30,6 +30,7 @@ export class SubjectDatabaseEntityLoader {
      *
      * loadAllRelations flag is used to load all relation ids of the object, no matter if they present in subject entity or not.
      * This option is used for deletion.
+     *
      * @param operationType
      */
     async load(
@@ -108,7 +109,7 @@ export class SubjectDatabaseEntityLoader {
                 // load database entities for all given ids
                 let entities: any[]
                 if (
-                    this.queryRunner.connection.driver.options.type ===
+                    this.queryRunner.dataSource.driver.options.type ===
                     "mongodb"
                 ) {
                     const mongoRepo =

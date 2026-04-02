@@ -130,10 +130,10 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
             if (
                 returningColumns.length > 0 &&
-                this.connection.driver.options.type === "mssql"
+                this.dataSource.driver.options.type === "mssql"
             ) {
                 declareSql = (
-                    this.connection.driver as SqlServerDriver
+                    this.dataSource.driver as SqlServerDriver
                 ).buildTableVariableDeclaration(
                     "@OutputTable",
                     returningColumns,
@@ -202,6 +202,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Values needs to be updated.
+     *
      * @param values
      */
     set(values: QueryDeepPartialEntity<Entity>): this {
@@ -214,6 +215,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
+     *
      * @param where
      * @param parameters
      */
@@ -239,6 +241,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     *
      * @param where
      * @param parameters
      */
@@ -262,6 +265,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     *
      * @param where
      * @param parameters
      */
@@ -286,6 +290,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Sets WHERE condition in the query builder with a condition for the given ids.
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
+     *
      * @param ids
      */
     whereInIds(ids: any | any[]): this {
@@ -294,6 +299,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
+     *
      * @param ids
      */
     andWhereInIds(ids: any | any[]): this {
@@ -302,6 +308,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
+     *
      * @param ids
      */
     orWhereInIds(ids: any | any[]): this {
@@ -326,6 +333,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     *
      * @param output
      */
     output(output: string | string[]): this {
@@ -351,11 +359,12 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     *
      * @param returning
      */
     returning(returning: string | string[]): this {
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported("update")) {
+        if (!this.dataSource.driver.isReturningSqlSupported("update")) {
             throw new ReturningStatementNotSupportedError()
         }
 
@@ -394,6 +403,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Sets ORDER BY condition in the query builder.
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
+     *
      * @param sort
      * @param order
      * @param nulls
@@ -405,7 +415,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         if (sort) {
             if (typeof sort === "object") {
-                this.expressionMap.orderBys = sort as OrderByCondition
+                this.validateOrderByCondition(sort)
+                this.expressionMap.orderBys = sort
             } else {
                 if (nulls) {
                     this.expressionMap.orderBys = {
@@ -423,6 +434,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds ORDER BY condition in the query builder.
+     *
      * @param sort
      * @param order
      * @param nulls
@@ -442,6 +454,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets LIMIT - maximum number of rows to be selected.
+     *
      * @param limit
      */
     limit(limit?: number): this {
@@ -453,6 +466,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Indicates if entity must be updated after update operation.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
+     *
      * @param entity
      */
     whereEntity(entity: Entity | Entity[]): this {
@@ -482,6 +496,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Indicates if entity must be updated after update operation.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
+     *
      * @param enabled
      */
     updateEntity(enabled: boolean): this {
@@ -550,7 +565,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                 column.referencedColumn.getEntityValue(value)
                         } else if (!(typeof value === "function")) {
                             value =
-                                this.connection.driver.preparePersistentValue(
+                                this.dataSource.driver.preparePersistentValue(
                                     value,
                                     column,
                                 )
@@ -565,8 +580,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     value(),
                             )
                         } else if (
-                            (this.connection.driver.options.type === "sap" ||
-                                this.connection.driver.options.type ===
+                            (this.dataSource.driver.options.type === "sap" ||
+                                this.dataSource.driver.options.type ===
                                     "spanner") &&
                             value === null
                         ) {
@@ -575,10 +590,10 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             )
                         } else {
                             if (
-                                this.connection.driver.options.type === "mssql"
+                                this.dataSource.driver.options.type === "mssql"
                             ) {
                                 value = (
-                                    this.connection.driver as SqlServerDriver
+                                    this.dataSource.driver as SqlServerDriver
                                 ).parametrizeValue(column, value)
                             }
 
@@ -587,16 +602,16 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             let expression: string
                             if (
                                 (DriverUtils.isMySQLFamily(
-                                    this.connection.driver,
+                                    this.dataSource.driver,
                                 ) ||
-                                    this.connection.driver.options.type ===
+                                    this.dataSource.driver.options.type ===
                                         "aurora-mysql") &&
-                                this.connection.driver.spatialTypes.indexOf(
+                                this.dataSource.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1
                             ) {
                                 const useLegacy = (
-                                    this.connection.driver as
+                                    this.dataSource.driver as
                                         | MysqlDriver
                                         | AuroraMysqlDriver
                                 ).options.legacySpatialSupport
@@ -610,9 +625,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                 }
                             } else if (
                                 DriverUtils.isPostgresFamily(
-                                    this.connection.driver,
+                                    this.dataSource.driver,
                                 ) &&
-                                this.connection.driver.spatialTypes.indexOf(
+                                this.dataSource.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1
                             ) {
@@ -622,9 +637,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`
                                 }
                             } else if (
-                                this.connection.driver.options.type ===
+                                this.dataSource.driver.options.type ===
                                     "mssql" &&
-                                this.connection.driver.spatialTypes.indexOf(
+                                this.dataSource.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1
                             ) {
@@ -637,11 +652,11 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     ")"
                             } else if (
                                 DriverUtils.isSQLiteFamily(
-                                    this.connection.driver,
+                                    this.dataSource.driver,
                                 )
                             ) {
                                 expression = (
-                                    this.connection.driver as
+                                    this.dataSource.driver as
                                         | AbstractSqliteDriver
                                         | ReactNativeDriver
                                 ).wrapWithJsonFunction(paramName, column, true)
@@ -693,8 +708,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                         this.escape(key) + " = " + value(),
                     )
                 } else if (
-                    (this.connection.driver.options.type === "sap" ||
-                        this.connection.driver.options.type === "spanner") &&
+                    (this.dataSource.driver.options.type === "sap" ||
+                        this.dataSource.driver.options.type === "spanner") &&
                     value === null
                 ) {
                     updateColumnAndValues.push(this.escape(key) + " = NULL")
@@ -724,14 +739,14 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(", ")}${whereExpression}` // todo: how do we replace aliases in where to nothing?
         }
-        if (this.connection.driver.options.type === "mssql") {
+        if (this.dataSource.driver.options.type === "mssql") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(
                 ", ",
             )} OUTPUT ${returningExpression}${whereExpression}`
         }
-        if (this.connection.driver.options.type === "spanner") {
+        if (this.dataSource.driver.options.type === "spanner") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(
@@ -782,8 +797,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
         if (limit) {
             if (
-                DriverUtils.isMySQLFamily(this.connection.driver) ||
-                this.connection.driver.options.type === "aurora-mysql"
+                DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+                this.dataSource.driver.options.type === "aurora-mysql"
             ) {
                 return " LIMIT " + limit
             } else {

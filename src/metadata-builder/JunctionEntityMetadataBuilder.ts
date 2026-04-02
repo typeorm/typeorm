@@ -25,6 +25,7 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the junction of the given many-to-many relation.
+     *
      * @param relation
      * @param joinTable
      */
@@ -53,7 +54,7 @@ export class JunctionEntityMetadataBuilder {
             )
 
         const entityMetadata = new EntityMetadata({
-            connection: this.dataSource,
+            dataSource: this.dataSource,
             args: {
                 target: "",
                 name: joinTableName,
@@ -88,7 +89,6 @@ export class JunctionEntityMetadataBuilder {
                       )
 
             return new ColumnMetadata({
-                connection: this.dataSource,
                 entityMetadata: entityMetadata,
                 referencedColumn: referencedColumn,
                 args: {
@@ -153,8 +153,7 @@ export class JunctionEntityMetadataBuilder {
                           )
 
                 return new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     referencedColumn: inverseReferencedColumn,
                     args: {
                         target: "",
@@ -287,6 +286,7 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     *
      * @param relation
      * @param joinTable
      */
@@ -324,6 +324,7 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects inverse referenced columns from the given join column args.
+     *
      * @param relation
      * @param joinTable
      */

@@ -1,5 +1,5 @@
-import fs from "fs/promises"
-import path from "path"
+import fs from "node:fs/promises"
+import path from "node:path"
 import type { DataSource } from "../../data-source"
 import { DriverPackageNotInstalledError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
@@ -20,7 +20,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: BetterSqlite3DataSourceOptions
 
@@ -28,11 +28,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
-        this.connection = connection
-        this.options = connection.options as BetterSqlite3DataSourceOptions
         this.database = this.options.database
 
         // load sqlite package
@@ -53,6 +51,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
@@ -84,6 +83,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * For SQLite, the database may be added in the decorator metadata. It will be a filepath to a database file.
+     *
      * @param tableName
      * @param _schema
      * @param database
@@ -187,6 +187,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * Auto creates database directory if it does not exist.
+     *
      * @param dbPath
      */
     protected async createDatabaseDirectory(dbPath: string): Promise<void> {
@@ -207,7 +208,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             await this.createDatabaseDirectory(
                 path.dirname(attachFilepathAbsolute),
             )
-            await this.connection.query(
+            await this.dataSource.query(
                 `ATTACH "${attachFilepathAbsolute}" AS "${attachHandle}"`,
             )
         }

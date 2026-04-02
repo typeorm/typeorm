@@ -145,6 +145,7 @@ export interface BaseDataSourceOptions {
 
     /**
      * Holds reference to the baseDirectory where configuration file are expected.
+     *
      * @internal
      */
     baseDirectory?: string

@@ -22,6 +22,7 @@ export class MaterializedPathSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     *
      * @param subject
      */
     async insert(subject: Subject): Promise<void> {
@@ -62,6 +63,7 @@ export class MaterializedPathSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     *
      * @param subject
      */
     async update(subject: Subject): Promise<void> {
@@ -124,7 +126,7 @@ export class MaterializedPathSubjectExecutor {
             .update(subject.metadata.target)
             .set({
                 [propertyPath]: () =>
-                    `REPLACE(${this.queryRunner.connection.driver.escape(
+                    `REPLACE(${this.queryRunner.dataSource.driver.escape(
                         propertyPath,
                     )}, '${oldParentPath}${entityPath}.', '${newParentPath}${entityPath}.')`,
             } as any)

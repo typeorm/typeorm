@@ -14,6 +14,7 @@ publish_output = true
 comments_location_policy = "summary"
 final_update_message = false
 persistent_comment = true
+persistent_comment_notification = false
 
 [checks]
 enable_auto_checks_feedback = false

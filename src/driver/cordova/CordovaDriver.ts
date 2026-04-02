@@ -22,11 +22,9 @@ export class CordovaDriver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
-        // this.connection = connection;
-        // this.options = connection.options as CordovaConnectionOptions;
         this.database = this.options.database
 
         // load sqlite package
@@ -50,6 +48,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {

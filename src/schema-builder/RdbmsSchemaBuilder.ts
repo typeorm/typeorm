@@ -72,7 +72,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     async build(): Promise<void> {
         this.queryRunner = this.dataSource.createQueryRunner()
 
-        // this.connection.driver.database || this.currentDatabase;
         this.currentDatabase = this.dataSource.driver.database
         this.currentSchema = this.dataSource.driver.schema
 
@@ -132,6 +131,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Create the typeorm_metadata table if necessary.
+     *
      * @param queryRunner
      */
     async createMetadataTableIfNecessary(
@@ -1230,6 +1230,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Drops all foreign keys where given column of the given table is being used.
+     *
      * @param tablePath
      * @param columnName
      */
@@ -1293,6 +1294,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Drops all composite indices, related to given column.
+     *
      * @param tablePath
      * @param columnName
      */
@@ -1322,6 +1324,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Drops all composite uniques, related to given column.
+     *
      * @param tablePath
      * @param columnName
      */
@@ -1351,6 +1354,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Creates new columns from the given column metadatas.
+     *
      * @param columns
      */
     protected metadataColumnsToTableColumnOptions(
@@ -1366,6 +1370,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Creates typeorm service table for storing user defined Views and generate columns.
+     *
      * @param queryRunner
      */
     protected async createTypeormMetadataTable(queryRunner: QueryRunner) {

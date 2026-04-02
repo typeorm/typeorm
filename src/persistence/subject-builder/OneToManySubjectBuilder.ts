@@ -7,18 +7,16 @@ import type { RelationMetadata } from "../../metadata/RelationMetadata"
 /**
  * Builds operations needs to be executed for one-to-many relations of the given subjects.
  *
- * Example:
- *
- * `Post` contains one-to-many relation with `Category` in the property called `categories`, e.g.:
- *
- * `@OneToMany(type => Category, category => category.post) categories: Category[]`
- *
- * If user adds categories into the post and saves post we need to bind them.
- * This operation requires updating the category table since it's the owner of
- * the relation and contains a join column.
- *
  * Note: this class shares lot of things with OneToOneInverseSideOperationBuilder,
  * so when you change this class make sure to reflect changes there as well.
+ *
+ * @example
+ * // Post contains one-to-many relation with Category in the property called "categories".
+ * // If user adds categories into the post and saves post we need to bind them.
+ * // This operation requires updating the category table since it's the owner of
+ * // the relation and contains a join column.
+ * \@OneToMany(type => Category, category => category.post) categories: Category[]
+ *
  */
 export class OneToManySubjectBuilder {
     // ---------------------------------------------------------------------
@@ -53,6 +51,7 @@ export class OneToManySubjectBuilder {
      * Builds operations for a given subject and relation.
      *
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
+     *
      * @param subject
      * @param relation
      */
@@ -201,24 +200,31 @@ export class OneToManySubjectBuilder {
                     identifier: removedRelatedEntityRelationId,
                 })
 
-                if (
-                    !relation.inverseRelation ||
-                    relation.inverseRelation.orphanedRowAction === "nullify"
-                ) {
-                    removedRelatedEntitySubject.canBeUpdated = true
-                    removedRelatedEntitySubject.changeMaps = [
-                        {
-                            relation: relation.inverseRelation!,
-                            value: null,
-                        },
-                    ]
-                } else if (
-                    relation.inverseRelation.orphanedRowAction === "delete"
-                ) {
+                const orphanedRowAction =
+                    relation.inverseRelation?.orphanedRowAction ?? "nullify"
+
+                if (orphanedRowAction === "nullify") {
+                    const allColumnsNullable =
+                        relation.inverseRelation?.joinColumns.every(
+                            (column) => column.isNullable,
+                        ) ?? true
+
+                    if (allColumnsNullable) {
+                        removedRelatedEntitySubject.canBeUpdated = true
+                        removedRelatedEntitySubject.changeMaps = [
+                            {
+                                relation: relation.inverseRelation!,
+                                value: null,
+                            },
+                        ]
+                    } else {
+                        // FK is not nullable — cannot set to null, so delete
+                        // the orphaned entity to keep DB consistent
+                        removedRelatedEntitySubject.mustBeRemoved = true
+                    }
+                } else if (orphanedRowAction === "delete") {
                     removedRelatedEntitySubject.mustBeRemoved = true
-                } else if (
-                    relation.inverseRelation.orphanedRowAction === "soft-delete"
-                ) {
+                } else if (orphanedRowAction === "soft-delete") {
                     removedRelatedEntitySubject.canBeSoftRemoved = true
                 }
 
