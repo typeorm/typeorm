@@ -169,9 +169,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         selectionAliasName?: string,
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
-        const parsed = this.parseSelectInput(selection, selectionAliasName)
-        if (parsed !== undefined) {
-            this.expressionMap.selects = parsed
+        if (typeof selection === "function") {
+            const subQueryBuilder = selection(this.subQuery())
+            this.setParameters(subQueryBuilder.getParameters())
+            this.expressionMap.selects.push({
+                selection: subQueryBuilder.getQuery(),
+                aliasName: selectionAliasName,
+            })
+        } else {
+            const parsed = this.parseSelectInput(
+                selection,
+                selectionAliasName,
+            )
+            if (parsed !== undefined) {
+                this.expressionMap.selects = parsed
+            }
         }
 
         return this
@@ -223,10 +235,22 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         if (!selection) return this
 
-        const parsed = this.parseSelectInput(selection, selectionAliasName)
-        if (parsed !== undefined) {
-            this.expressionMap.selects =
-                this.expressionMap.selects.concat(parsed)
+        if (typeof selection === "function") {
+            const subQueryBuilder = selection(this.subQuery())
+            this.setParameters(subQueryBuilder.getParameters())
+            this.expressionMap.selects.push({
+                selection: subQueryBuilder.getQuery(),
+                aliasName: selectionAliasName,
+            })
+        } else {
+            const parsed = this.parseSelectInput(
+                selection,
+                selectionAliasName,
+            )
+            if (parsed !== undefined) {
+                this.expressionMap.selects =
+                    this.expressionMap.selects.concat(parsed)
+            }
         }
 
         return this
@@ -2206,7 +2230,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             | string
             | string[]
             | Record<string, string>
-            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)
             | undefined,
         selectionAliasName?: string,
     ): SelectQuery[] | undefined {
@@ -2217,15 +2240,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 selection: sel,
                 aliasName: alias,
             }))
-        } else if (typeof selection === "function") {
-            const subQueryBuilder = selection(this.subQuery())
-            this.setParameters(subQueryBuilder.getParameters())
-            return [
-                {
-                    selection: subQueryBuilder.getQuery(),
-                    aliasName: selectionAliasName,
-                },
-            ]
         } else if (selection) {
             return [
                 {

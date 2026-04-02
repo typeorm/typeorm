@@ -914,6 +914,25 @@ describe("query builder > select", () => {
                     expect(sql).to.contain('AS "select"')
                 }),
             ))
+
+        it("should append subquery selection when select is called with a function", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select((qb) =>
+                            qb
+                                .subQuery()
+                                .select("post.id")
+                                .from(Post, "post"),
+                        )
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.contain("SELECT")
+                    expect(sql).to.contain("FROM post post")
+                }),
+            ))
     })
 
     describe("column order in select statement", () => {
