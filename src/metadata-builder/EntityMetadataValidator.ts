@@ -242,11 +242,13 @@ export class EntityMetadataValidator {
             // todo: validate if its one-to-one and side which does not have join column MUST have inverse side
             // todo: validate if its many-to-many and side which does not have join table MUST have inverse side
             // todo: if there is a relation, and inverse side is specified only on one side, shall we give error
+            // todo: with message like: "Inverse side is specified only on one side of the relationship. Specify on other side too to prevent confusion".
             // todo: add validation if there two entities with the same target, and show error message with description of the problem (maybe file was renamed/moved but left in output directory)
             // todo: check if there are multiple columns on the same column applied.
             // todo: check column type if is missing in relational databases (throw new TypeORMError(`Column type of ${type} cannot be determined.`);)
             // todo: include driver-specific checks. for example in mongodb empty prefixes are not allowed
             // todo: if multiple columns with same name - throw exception, including cases when columns are in embeds with same prefixes or without prefix at all
+            // todo: if multiple primary key used, at least one of them must be unique or @Index decorator must be set on entity
             // todo: check if entity with duplicate names, some decorators exist
         })
 
