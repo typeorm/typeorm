@@ -1470,15 +1470,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (typeof sort === "object") {
             this.validateOrderByCondition(sort)
-            this.expressionMap.orderBys = sort as OrderByCondition
+            this.expressionMap.orderBys = sort
             return this
         }
 
         this.assertNoSemicolon(sort, "orderBy sort key")
 
         this.expressionMap.orderBys = nulls
-            ? { [sort as string]: { order, nulls } }
-            : { [sort as string]: order }
+            ? { [sort]: { order, nulls } }
+            : { [sort]: order }
 
         return this
     }
