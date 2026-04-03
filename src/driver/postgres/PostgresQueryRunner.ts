@@ -28,7 +28,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { PostgresDriver } from "./PostgresDriver"
+import { PostgresDriver } from "./PostgresDriver"
 import {
     isSafeAlter,
     normalizeColumnLength,
@@ -1630,83 +1630,6 @@ export class PostgresQueryRunner
                     newColumn,
                     upQueries,
                     downQueries,
-                    Query, // from "../Query"
-                    escapePath: (t) => this.escapePath(t),
-                    executeQueries: (up, down) => this.executeQueries(up, down),
-                    replaceCachedTable: (t, ct) =>
-                        this.replaceCachedTable(t, ct),
-
-                    // your widening/safety rule you shared earlier
-                    isSafeAlter,
-
-                    // derive a Postgres TYPE fragment directly from TableColumn
-                    buildColumnType: (col) => {
-                        const t = String(col.type ?? "").toLowerCase()
-                        const len = col.length
-                            ? parseInt(String(col.length), 10)
-                            : undefined
-                        const prec = col.precision
-                        const scale = col.scale
-
-                        const withLen = (base: string) =>
-                            len ? `${base}(${len})` : base
-                        const withPS = (base: string) => {
-                            if (prec == null) return base
-                            if (scale == null) return `${base}(${prec})`
-                            return `${base}(${prec},${scale})`
-                        }
-                        const withTimePrec = (base: string) =>
-                            prec != null ? `${base}(${prec})` : base
-
-                        // strings
-                        if (t === "varchar" || t === "character varying")
-                            return withLen("varchar")
-                        if (t === "char" || t === "character")
-                            return withLen("char")
-                        if (t === "text" || t === "string") return "text"
-
-                        // numerics
-                        if (
-                            t === "decimal" ||
-                            t === "numeric" ||
-                            t === "number"
-                        )
-                            return withPS("numeric")
-                        if (t === "int" || t === "integer" || t === "int4")
-                            return "integer"
-                        if (t === "bigint" || t === "int8") return "bigint"
-                        if (t === "smallint" || t === "int2") return "smallint"
-                        if (t === "real" || t === "float4") return "real"
-                        if (
-                            t === "double" ||
-                            t === "double precision" ||
-                            t === "float8"
-                        )
-                            return "double precision"
-
-                        // temporals
-                        if (
-                            t === "timestamp" ||
-                            t === "timestamp without time zone"
-                        )
-                            return withTimePrec("timestamp without time zone")
-                        if (
-                            t === "timestamptz" ||
-                            t === "timestamp with time zone"
-                        )
-                            return withTimePrec("timestamp with time zone")
-                        if (t === "time" || t === "time without time zone")
-                            return withTimePrec("time without time zone")
-                        if (t === "timetz" || t === "time with time zone")
-                            return withTimePrec("time with time zone")
-                        if (t === "date") return "date"
-
-                        // bytes / other
-                        if (t === "bytea" || t === "bytes") return "bytea"
-
-                        // fallback
-                        return t
-                    },
                 })
             } else if (
                 oldColumn?.type === newColumn?.type &&
@@ -1725,9 +1648,6 @@ export class PostgresQueryRunner
                     newColumn,
                     upQueries,
                     downQueries,
-                    driver: this.driver,
-                    escapePath: (t) => this.escapePath(t),
-                    Query, // pass the Query class/ctor you already use
                 })
                 // END length-only fast path
             }
@@ -5356,6 +5276,7 @@ export class PostgresQueryRunner
     /**
      * Handles length-only fast path changes for PostgreSQL.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -5476,6 +5397,7 @@ export class PostgresQueryRunner
     /**
      * Handles safe ALTER COLUMN changes for PostgreSQL.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable

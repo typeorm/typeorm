@@ -25,7 +25,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { OracleDriver } from "./OracleDriver"
+import { OracleDriver } from "./OracleDriver"
 import {
     isSafeAlter,
     normalizeColumnLength,
@@ -3473,6 +3473,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Handles length-only fast path changes for Oracle.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -3541,6 +3542,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Handles safe ALTER COLUMN changes for Oracle.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable

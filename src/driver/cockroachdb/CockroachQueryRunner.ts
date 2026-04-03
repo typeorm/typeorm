@@ -179,6 +179,7 @@ export class CockroachQueryRunner
     /**
      * Handles length-only fast path changes for CockroachDB.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -292,6 +293,7 @@ export class CockroachQueryRunner
     /**
      * Handles safe ALTER COLUMN changes for CockroachDB.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -500,6 +502,17 @@ export class CockroachQueryRunner
         // enable experimental alter column type support (we need it to alter enum types)
         await this.query(
             "SET enable_experimental_alter_column_type_general = true",
+        )
+    }
+
+    /**
+     * Called after migrations are run.
+     * Resets experimental alter column type support in CockroachDB.
+     */
+    async afterMigration(): Promise<void> {
+        // reset experimental alter column type support
+        await this.query(
+            "SET enable_experimental_alter_column_type_general = false",
         )
     }
 

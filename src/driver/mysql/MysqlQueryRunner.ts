@@ -27,7 +27,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { MysqlDriver } from "./MysqlDriver"
+import { MysqlDriver } from "./MysqlDriver"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
@@ -116,6 +116,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Handles length-only fast path changes for MySQL family.
      * Returns true if the change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.oldColumn
@@ -186,6 +187,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Handles safe ALTER COLUMN changes for MySQL family.
      * Returns true if the change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable

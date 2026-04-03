@@ -92,6 +92,22 @@ describe("schema builder > change column", () => {
                     nameColumn.build(connection)
                     await connection.synchronize()
 
+                    // Insert data BEFORE migration to test survival
+                    const repo = connection.getRepository(Post)
+                    const testData = "test data"
+                    await repo.save({
+                        name: testData,
+                        version: "1.0",
+                        text: "Some content",
+                    })
+
+                    // Verify data exists before migration
+                    const beforeChange = await repo.findOne({
+                        where: { name: testData },
+                    })
+                    expect(beforeChange).to.not.be.undefined
+                    expect(beforeChange?.name).to.equal(testData)
+
                     // Step 2: Switch to VARCHAR(N) and capture SQL
                     nameColumn.type = varcharTypeByDriver[driver]
                     nameColumn.length = originalLength
@@ -157,6 +173,19 @@ describe("schema builder > change column", () => {
                     await qr.release()
                     const col = postTable!.findColumnByName("name")!
                     if (col.length) expect(col.length).to.equal(originalLength)
+
+                    // Verify data still exists after migration (data survived)
+                    const afterChange = await repo.findOne({
+                        where: { name: testData },
+                    })
+                    expect(afterChange).to.not.be.undefined
+                    expect(afterChange?.name).to.equal(
+                        testData,
+                        "Data should survive CHAR->VARCHAR migration",
+                    )
+
+                    // Cleanup inserted data
+                    await repo.delete({ name: testData })
                 } finally {
                     // Revert
                     nameColumn.type = originalType
@@ -249,6 +278,22 @@ describe("schema builder > change column", () => {
                     versionCol.build(connection)
                     await connection.synchronize()
 
+                    // Insert data BEFORE migration to test survival
+                    const repo = connection.getRepository(Post)
+                    const testValue = 1.5
+                    await repo.save({
+                        name: "test",
+                        version: testValue.toString(),
+                        text: "content",
+                    })
+
+                    // Verify data exists before migration
+                    const beforeChange = await repo.findOne({
+                        where: { name: "test" },
+                    })
+                    expect(beforeChange).to.not.be.undefined
+                    expect(beforeChange?.version).to.equal(testValue.toString())
+
                     // Step 2: change to DOUBLE (or higher-precision float)
                     versionCol.type = doubleBy[driver]
                     if (driver === "mssql") versionCol.precision = 53
@@ -314,6 +359,19 @@ describe("schema builder > change column", () => {
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+"version"/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+"version"/i)
                     }
+
+                    // Verify data still exists after migration (data survived)
+                    const afterChange = await repo.findOne({
+                        where: { name: "test" },
+                    })
+                    expect(afterChange).to.not.be.undefined
+                    expect(afterChange?.version).to.equal(
+                        testValue.toString(),
+                        "Data should survive FLOAT->DOUBLE migration",
+                    )
+
+                    // Cleanup inserted data
+                    await repo.delete({ name: "test" })
                 } finally {
                     // Revert & clean up the isolated connection
                     versionCol.type = originalType
@@ -406,6 +464,21 @@ describe("schema builder > change column", () => {
                     nameCol.build(connection)
                     await connection.synchronize()
 
+                    // Insert data BEFORE migration to test survival
+                    const repo = connection.getRepository(Post)
+                    await repo.save({
+                        name: "test",
+                        version: "1.0",
+                        text: "content",
+                    })
+
+                    // Verify data exists before migration
+                    const beforeChange = await repo.findOne({
+                        where: { name: "test" },
+                    })
+                    expect(beforeChange).to.not.be.undefined
+                    expect(beforeChange?.name).to.equal("test")
+
                     // STEP 2: datetime-like -> timestamp-like, record SQL
                     nameCol.type = timestampBy[driver]
 
@@ -461,6 +534,19 @@ describe("schema builder > change column", () => {
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
                     }
+
+                    // Verify data still exists after migration (data survived)
+                    const afterChange = await repo.findOne({
+                        where: { name: "test" },
+                    })
+                    expect(afterChange).to.not.be.undefined
+                    expect(afterChange?.name).to.equal(
+                        "test",
+                        "Data should survive DATETIME->TIMESTAMP migration",
+                    )
+
+                    // Cleanup inserted data
+                    await repo.delete({ name: "test" })
                 } finally {
                     // Revert everything
                     nameCol.type = originalType
@@ -476,6 +562,7 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when increasing varchar length", () =>
         Promise.all(
             dataSources.map(async (connection: DataSource) => {
+                // SQLite does not support ALTER COLUMN operations; requires recreating table
                 if (DriverUtils.isSQLiteFamily(connection.driver)) return
                 const queryRunner = connection.createQueryRunner()
                 const repo = connection.getRepository("post")
@@ -519,7 +606,82 @@ describe("schema builder > change column", () => {
                     const preCol = preTable!.findColumnByName("name")!
                     if (preCol.length) expect(preCol.length).to.equal("50")
 
-                    // 2) Widen to 80 and capture the SQL used by synchronize()
+                    // 2) Insert a 45-char value BEFORE schema change (to test data survival)
+                    const fortyFive = "x".repeat(45)
+                    const meta = repo.metadata
+                    const requiredNoDefault = meta.columns.filter(
+                        (c: ColumnMetadata) =>
+                            !c.isNullable && !c.default && !c.isGenerated,
+                    )
+
+                    const payload: any = { name: fortyFive }
+
+                    for (const c of requiredNoDefault) {
+                        switch (c.propertyName) {
+                            case "id": {
+                                const t = String(c.type ?? "").toLowerCase()
+                                const isBigInt =
+                                    /\bbigint\b|^int8$|^bigserial$/.test(t) ||
+                                    (typeof (c as { width?: number }).width ===
+                                        "number" &&
+                                        (c as { width?: number }).width! >= 20)
+
+                                if (isBigInt) {
+                                    payload.id ??= Math.min(
+                                        Number.MAX_SAFE_INTEGER,
+                                        9_000_000_000_000 +
+                                            Math.floor(
+                                                Math.random() * 1_000_000, // NOSONAR - non-security test data
+                                            ),
+                                    )
+                                } else {
+                                    payload.id ??=
+                                        Math.floor(Math.random() * 1_000_000) +
+                                        1 // NOSONAR - non-security test data
+                                }
+                                break
+                            }
+                            case "version":
+                                payload.version ??= `v_${Date.now()}_${
+                                    connection.options.type
+                                }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
+                                break
+                            case "tag":
+                                payload.tag ??= `t_${Math.random() // NOSONAR - non-security test data
+                                    .toString(36)
+                                    .slice(2, 6)}`
+                                break
+                            case "likesCount":
+                                payload.likesCount ??= 1
+                                break
+                            default: {
+                                const t = String(c.type ?? "").toLowerCase()
+                                const isNumeric =
+                                    /(int|numeric|float|double|decimal|real)/.test(
+                                        t,
+                                    )
+                                payload[c.propertyName] ??= isNumeric ? 0 : ""
+                                break
+                            }
+                        }
+                    }
+
+                    let insertErr, row
+                    try {
+                        row = await repo.save(payload)
+                        insertedRowId = (row as any)?.id
+                    } catch (e) {
+                        insertErr = e
+                    }
+                    expect(insertErr).to.be.undefined
+
+                    // Verify data exists before migration
+                    const beforeMigration = await repo.findOneByOrFail({
+                        id: (row as any).id,
+                    })
+                    expect(beforeMigration.name.length).to.equal(45)
+
+                    // 3) Widen to 80 and capture the SQL used by synchronize()
                     nameColumnMetadata.length = "80"
                     nameColumnMetadata.build(connection)
 
@@ -538,6 +700,13 @@ describe("schema builder > change column", () => {
                     const postTable = await queryRunner.getTable("post")
                     const postCol = postTable!.findColumnByName("name")!
                     if (postCol.length) expect(postCol.length).to.equal("80")
+
+                    // 4) Verify data still exists with original value after ALTER (data survived migration)
+                    const afterMigration = await repo.findOneByOrFail({
+                        id: (row as any).id,
+                    })
+                    expect(afterMigration.name.length).to.equal(45)
+                    expect(afterMigration.name).to.equal(fortyFive)
 
                     // 2b) Assert ALTER (driver-scoped)
                     const driver = connection.driver.options.type
@@ -598,19 +767,19 @@ describe("schema builder > change column", () => {
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
                     }
 
-                    // 3) Insert a 51-char value (should succeed)
+                    // 5) Insert a 51-char value (should succeed with new length)
                     const fiftyOne = "x".repeat(51)
                     // Build a payload that satisfies NOT NULL columns that lack defaults/generation
-                    const meta = repo.metadata
-                    const requiredNoDefault = meta.columns.filter(
+                    const meta2 = repo.metadata
+                    const requiredNoDefault2 = meta2.columns.filter(
                         (c: ColumnMetadata) =>
                             !c.isNullable && !c.default && !c.isGenerated,
                     )
 
                     // Start with the test's target value
-                    const payload: any = { name: fiftyOne }
+                    const payload2: any = { name: fiftyOne }
 
-                    for (const c of requiredNoDefault) {
+                    for (const c of requiredNoDefault2) {
                         switch (c.propertyName) {
                             case "id": {
                                 // Prefer a small int by default (works everywhere).
@@ -627,7 +796,7 @@ describe("schema builder > change column", () => {
 
                                 if (isBigInt) {
                                     // still keep it in JS safe integer range
-                                    payload.id ??= Math.min(
+                                    payload2.id ??= Math.min(
                                         Number.MAX_SAFE_INTEGER,
                                         // a "big" but safe number
                                         9_000_000_000_000 +
@@ -637,24 +806,24 @@ describe("schema builder > change column", () => {
                                     )
                                 } else {
                                     // safe 32-bit signed int to avoid MySQL overflow
-                                    payload.id ??=
+                                    payload2.id ??=
                                         Math.floor(Math.random() * 1_000_000) + // NOSONAR - non-security test data
                                         1 /* 1..1,000,000 */
                                 }
                                 break
                             }
                             case "version":
-                                payload.version ??= `v_${Date.now()}_${
+                                payload2.version ??= `v_${Date.now()}_${
                                     connection.options.type
                                 }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
                                 break
                             case "tag":
-                                payload.tag ??= `t_${Math.random() // NOSONAR - non-security test data
+                                payload2.tag ??= `t_${Math.random() // NOSONAR - non-security test data
                                     .toString(36)
                                     .slice(2, 6)}`
                                 break
                             case "likesCount":
-                                payload.likesCount ??= 1
+                                payload2.likesCount ??= 1
                                 break
                             default: {
                                 // generic fallback
@@ -663,24 +832,23 @@ describe("schema builder > change column", () => {
                                     /(int|numeric|float|double|decimal|real)/.test(
                                         t,
                                     )
-                                payload[c.propertyName] ??= isNumeric ? 0 : ""
+                                payload2[c.propertyName] ??= isNumeric ? 0 : ""
                                 break
                             }
                         }
                     }
 
-                    let insertErr, row
+                    let insertErr2, row2
                     try {
-                        row = await repo.save(payload)
-                        insertedRowId = (row as any)?.id
+                        row2 = await repo.save(payload2)
                     } catch (e) {
-                        insertErr = e
+                        insertErr2 = e
                     }
-                    expect(insertErr).to.be.undefined
+                    expect(insertErr2).to.be.undefined
 
-                    // 4) Round-trip length check
+                    // 6) Verify new data works with increased length
                     const rt = await repo.findOneByOrFail({
-                        id: (row as any).id,
+                        id: (row2 as any).id,
                     })
                     expect(rt.name.length).to.equal(51)
                 } finally {
@@ -705,6 +873,7 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when reducing varchar length", () =>
         Promise.all(
             dataSources.map(async (connection: DataSource) => {
+                // SQLite does not support ALTER COLUMN operations; requires recreating table
                 if (DriverUtils.isSQLiteFamily(connection.driver)) return
                 const queryRunner = connection.createQueryRunner()
                 const repo = connection.getRepository("post")
@@ -748,7 +917,81 @@ describe("schema builder > change column", () => {
                     const preCol = preTable!.findColumnByName("name")!
                     if (preCol.length) expect(preCol.length).to.equal("50")
 
-                    // 2) Reduce to 40 and capture the SQL used by synchronize()
+                    // 2) Insert a 30-char value BEFORE schema change (will survive reduction to 40)
+                    const thirty = "x".repeat(30)
+                    const meta = repo.metadata
+                    const requiredNoDefault = meta.columns.filter(
+                        (c: ColumnMetadata) =>
+                            !c.isNullable && !c.default && !c.isGenerated,
+                    )
+
+                    const payload: any = { name: thirty }
+
+                    for (const c of requiredNoDefault) {
+                        switch (c.propertyName) {
+                            case "id": {
+                                const t = String(c.type ?? "").toLowerCase()
+                                const isBigInt =
+                                    /\bbigint\b|^int8$|^bigserial$/.test(t) ||
+                                    (typeof (c as any).width === "number" &&
+                                        (c as any).width! >= 20)
+
+                                if (isBigInt) {
+                                    payload.id ??= Math.min(
+                                        Number.MAX_SAFE_INTEGER,
+                                        9_000_000_000_000 +
+                                            Math.floor(
+                                                Math.random() * 1_000_000, // NOSONAR - non-security test data
+                                            ),
+                                    )
+                                } else {
+                                    payload.id ??=
+                                        Math.floor(Math.random() * 1_000_000) +
+                                        1 // NOSONAR - non-security test data
+                                }
+                                break
+                            }
+                            case "version":
+                                payload.version ??= `v_${Date.now()}_${
+                                    connection.options.type
+                                }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
+                                break
+                            case "tag":
+                                payload.tag ??= `t_${Math.random() // NOSONAR - non-security test data
+                                    .toString(36)
+                                    .slice(2, 6)}`
+                                break
+                            case "likesCount":
+                                payload.likesCount ??= 1
+                                break
+                            default: {
+                                const t = String(c.type ?? "").toLowerCase()
+                                const isNumeric =
+                                    /(int|numeric|float|double|decimal|real)/.test(
+                                        t,
+                                    )
+                                payload[c.propertyName] ??= isNumeric ? 0 : ""
+                                break
+                            }
+                        }
+                    }
+
+                    let insertErr, row
+                    try {
+                        row = await repo.save(payload)
+                        insertedRowId = (row as any)?.id
+                    } catch (e) {
+                        insertErr = e
+                    }
+                    expect(insertErr).to.be.undefined
+
+                    // Verify data exists before migration
+                    const beforeMigration = await repo.findOneByOrFail({
+                        id: (row as any).id,
+                    })
+                    expect(beforeMigration.name.length).to.equal(30)
+
+                    // 3) Reduce to 40 and capture the SQL used by synchronize()
                     nameColumnMetadata.length = "40"
                     nameColumnMetadata.build(connection)
 
@@ -774,6 +1017,13 @@ describe("schema builder > change column", () => {
                     const postTable = await queryRunner.getTable("post")
                     const postCol = postTable!.findColumnByName("name")!
                     if (postCol.length) expect(postCol.length).to.equal("40")
+
+                    // 4) Verify data still exists with original value after ALTER (data survived migration)
+                    const afterMigration = await repo.findOneByOrFail({
+                        id: (row as any).id,
+                    })
+                    expect(afterMigration.name.length).to.equal(30)
+                    expect(afterMigration.name).to.equal(thirty)
 
                     // 2b) Assert ALTER (driver-scoped)
                     const driver = connection.driver.options.type
@@ -833,19 +1083,19 @@ describe("schema builder > change column", () => {
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
                     }
-                    // 3) Insert a 40-char value (should succeed)
+                    // 5) Insert a 40-char value (should succeed with new reduced length)
                     const forty = "x".repeat(40)
                     // Build a payload that satisfies NOT NULL columns that lack defaults/generation
-                    const meta = repo.metadata
-                    const requiredNoDefault = meta.columns.filter(
+                    const meta2 = repo.metadata
+                    const requiredNoDefault2 = meta2.columns.filter(
                         (c: ColumnMetadata) =>
                             !c.isNullable && !c.default && !c.isGenerated,
                     )
 
                     // Start with the test's target value
-                    const payload: any = { name: forty }
+                    const payload2: any = { name: forty }
 
-                    for (const c of requiredNoDefault) {
+                    for (const c of requiredNoDefault2) {
                         switch (c.propertyName) {
                             case "id": {
                                 // Prefer a small int by default (works everywhere).
@@ -861,7 +1111,7 @@ describe("schema builder > change column", () => {
 
                                 if (isBigInt) {
                                     // still keep it in JS safe integer range
-                                    payload.id ??= Math.min(
+                                    payload2.id ??= Math.min(
                                         Number.MAX_SAFE_INTEGER,
                                         // a "big" but safe number
                                         9_000_000_000_000 +
@@ -871,24 +1121,24 @@ describe("schema builder > change column", () => {
                                     )
                                 } else {
                                     // safe 32-bit signed int to avoid MySQL overflow
-                                    payload.id ??=
+                                    payload2.id ??=
                                         Math.floor(Math.random() * 1_000_000) + // NOSONAR - non-security test data
                                         1 /* 1..1,000,000 */
                                 }
                                 break
                             }
                             case "version":
-                                payload.version ??= `v_${Date.now()}_${
+                                payload2.version ??= `v_${Date.now()}_${
                                     connection.options.type
                                 }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
                                 break
                             case "tag":
-                                payload.tag ??= `t_${Math.random() // NOSONAR - non-security test data
+                                payload2.tag ??= `t_${Math.random() // NOSONAR - non-security test data
                                     .toString(36)
                                     .slice(2, 6)}`
                                 break
                             case "likesCount":
-                                payload.likesCount ??= 1
+                                payload2.likesCount ??= 1
                                 break
                             default: {
                                 // generic fallback
@@ -897,24 +1147,23 @@ describe("schema builder > change column", () => {
                                     /(int|numeric|float|double|decimal|real)/.test(
                                         t,
                                     )
-                                payload[c.propertyName] ??= isNumeric ? 0 : ""
+                                payload2[c.propertyName] ??= isNumeric ? 0 : ""
                                 break
                             }
                         }
                     }
 
-                    let insertErr, row
+                    let insertErr2, row2
                     try {
-                        row = await repo.save(payload)
-                        insertedRowId = (row as any)?.id
+                        row2 = await repo.save(payload2)
                     } catch (e) {
-                        insertErr = e
+                        insertErr2 = e
                     }
-                    expect(insertErr).to.be.undefined
+                    expect(insertErr2).to.be.undefined
 
-                    // 4) Round-trip length check
+                    // 6) Verify new data works with reduced length
                     const rt = await repo.findOneByOrFail({
-                        id: (row as any).id,
+                        id: (row2 as any).id,
                     })
                     expect(rt.name.length).to.equal(40)
                 } finally {
@@ -1350,7 +1599,11 @@ describe("schema builder > change column", () => {
     it("should correctly change column type when FK relationships impact it", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                await dataSource.getRepository(Post).insert({
+                const postRepo = dataSource.getRepository(Post)
+                const postVersionRepo = dataSource.getRepository(PostVersion)
+
+                // Insert data BEFORE synchronize()
+                await postRepo.insert({
                     id: 1234,
                     version: "5",
                     text: "a",
@@ -1358,15 +1611,23 @@ describe("schema builder > change column", () => {
                     likesCount: 45,
                 })
 
-                const post = await dataSource
-                    .getRepository(Post)
-                    .findOneByOrFail({ id: 1234 })
+                const post = await postRepo.findOneByOrFail({ id: 1234 })
 
-                await dataSource.getRepository(PostVersion).insert({
+                await postVersionRepo.insert({
                     id: 1,
                     post,
                     details: "Example",
                 })
+
+                // Verify data exists before migration
+                const postBefore = await postRepo.findOneByOrFail({ id: 1234 })
+                expect(postBefore.text).to.equal("a")
+                expect(postBefore.tag).to.equal("b")
+
+                const postVersionBefore = await postVersionRepo.findOneByOrFail(
+                    { id: 1 },
+                )
+                expect(postVersionBefore.details).to.equal("Example")
 
                 const postMetadata = dataSource.getMetadata(Post)
                 const nameColumn =
@@ -1374,6 +1635,25 @@ describe("schema builder > change column", () => {
                 nameColumn.length = "500"
 
                 await dataSource.synchronize()
+
+                // Verify data still exists AFTER migration (data survived)
+                const postAfter = await postRepo.findOneByOrFail({ id: 1234 })
+                expect(postAfter.text).to.equal(
+                    "a",
+                    "Post data should survive migration",
+                )
+                expect(postAfter.tag).to.equal(
+                    "b",
+                    "Post data should survive migration",
+                )
+
+                const postVersionAfter = await postVersionRepo.findOneByOrFail({
+                    id: 1,
+                })
+                expect(postVersionAfter.details).to.equal(
+                    "Example",
+                    "PostVersion data should survive migration",
+                )
 
                 const queryRunner = dataSource.createQueryRunner()
                 const postVersionTable =
@@ -1384,6 +1664,10 @@ describe("schema builder > change column", () => {
 
                 // revert changes
                 nameColumn.length = "255"
+
+                // Cleanup
+                await postVersionRepo.delete({ id: 1 })
+                await postRepo.delete({ id: 1234 })
             }),
         ))
 
