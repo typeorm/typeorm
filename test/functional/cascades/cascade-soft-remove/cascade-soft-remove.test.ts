@@ -226,4 +226,57 @@ describe("cascades > soft-remove", () => {
                 expect(photosAfterSave[0].deletedAt).to.not.be.null
             }),
         ))
+
+    it("save removes many-to-many junction row when soft-deleted entity is excluded from relation array", async () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // create photos and user with many-to-many binding
+                const photo1 = new Photo()
+                photo1.name = "active-photo"
+                const photo2 = new Photo()
+                photo2.name = "photo-to-soft-delete"
+                await dataSource.manager.save(Photo, [photo1, photo2])
+
+                const user = new User()
+                user.id = 5
+                user.name = "Mr. ManyToMany Save Test"
+                user.manyToManyPhotos = [photo1, photo2]
+                await dataSource.manager.save(user)
+
+                // soft-delete photo2 independently (not via user cascade)
+                await dataSource.manager.softRemove(Photo, photo2)
+
+                // verify photo2 is soft-deleted
+                const activePhotos = await dataSource.manager.find(Photo)
+                expect(activePhotos.length).to.equal(1)
+                expect(activePhotos[0].name).to.equal("active-photo")
+
+                // save user with only photo1 — photo2 is explicitly excluded
+                // the junction row for soft-deleted photo2 should be removed
+                // because the relation array no longer includes it
+                const loadedUser = await dataSource.manager.findOneOrFail(
+                    User,
+                    {
+                        where: { id: 5 },
+                        relations: { manyToManyPhotos: true },
+                    },
+                )
+                loadedUser.manyToManyPhotos = [photo1]
+                await dataSource.manager.save(loadedUser)
+
+                // verify junction: user should only have photo1
+                const userWithPhotos = await dataSource.manager.findOneOrFail(
+                    User,
+                    {
+                        where: { id: 5 },
+                        relations: { manyToManyPhotos: true },
+                        withDeleted: true,
+                    },
+                )
+                expect(userWithPhotos.manyToManyPhotos.length).to.equal(1)
+                expect(userWithPhotos.manyToManyPhotos[0].name).to.equal(
+                    "active-photo",
+                )
+            }),
+        ))
 })

@@ -102,8 +102,8 @@ export class SubjectDatabaseEntityLoader {
                         relations: loadRelationPropertyPaths,
                         disableMixedMap: true,
                     },
-                    // include soft-deleted entities so recover, save, and remove
-                    // can find them by PK and load their relation IDs correctly
+                    // include soft-deleted entities so save, soft-remove, recover,
+                    // and remove can find them by PK and load their relation IDs
                     withDeleted: true,
                 }
 
