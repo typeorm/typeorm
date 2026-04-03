@@ -1328,7 +1328,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1621,6 +1620,33 @@ export class PostgresQueryRunner
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            }
+
+            // For types that support a length parameter, use ALTER COLUMN TYPE to change
+            // the length. This preserves existing data instead of silently dropping and
+            // recreating the column (which causes data loss).
+            // PostgreSQL will raise an error if existing data does not fit the new length,
+            // giving the user an explicit signal rather than silent data loss.
+            if (
+                oldColumn.length !== newColumn.length &&
+                this.driver.withLengthColumnTypes.includes(
+                    newColumn.type as any,
+                )
             ) {
                 upQueries.push(
                     new Query(
