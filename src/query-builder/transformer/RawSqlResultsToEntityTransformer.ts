@@ -527,14 +527,6 @@ export class RawSqlResultsToEntityTransformer {
         }, {} as ObjectLiteral)
     }
 
-    /*private removeVirtualColumns(entity: ObjectLiteral, alias: Alias) {
-        const virtualColumns = this.expressionMap.selects
-            .filter(select => select.virtual)
-            .map(select => select.selection.replace(alias.name + ".", ""));
-
-        virtualColumns.forEach(virtualColumn => delete entity[virtualColumn]);
-    }*/
-
     /** Prepare data to run #transformRelationIds, as a lot of result independent data is needed in every call */
     private prepareDataForTransformRelationIds() {
         // Return early if the relationIdMaps were already calculated

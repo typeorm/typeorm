@@ -40,21 +40,21 @@ describe("tree-tables > closure-table", () => {
                 const rootCategories = await categoryRepository.findRoots()
                 rootCategories.should.be.eql([
                     {
-                        id: 1,
-                        name: "a1",
+                        id: a1.id,
+                        name: a1.name,
                     },
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
                 a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                a11Parent.should.deep.include({ id: a1.id, name: a1.name })
+                a11Parent.should.deep.include({ id: a11.id, name: a11.name })
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                a1Children.should.deep.include({ id: a1.id, name: a1.name })
+                a1Children.should.deep.include({ id: a11.id, name: a11.name })
+                a1Children.should.deep.include({ id: a12.id, name: a12.name })
             }),
         ))
 
@@ -80,21 +80,21 @@ describe("tree-tables > closure-table", () => {
                 const rootCategories = await categoryRepository.findRoots()
                 rootCategories.should.be.eql([
                     {
-                        id: 1,
-                        name: "a1",
+                        id: a1.id,
+                        name: a1.name,
                     },
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
                 a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                a11Parent.should.deep.include({ id: a1.id, name: a1.name })
+                a11Parent.should.deep.include({ id: a11.id, name: a11.name })
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                a1Children.should.deep.include({ id: a1.id, name: a1.name })
+                a1Children.should.deep.include({ id: a11.id, name: a11.name })
+                a1Children.should.deep.include({ id: a12.id, name: a12.name })
             }),
         ))
 
@@ -126,24 +126,24 @@ describe("tree-tables > closure-table", () => {
                 const rootCategories = await categoryRepository.findRoots()
                 rootCategories.should.be.eql([
                     {
-                        id: 1,
-                        name: "a1",
+                        id: a1.id,
+                        name: a1.name,
                     },
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
                 a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                a11Parent.should.deep.include({ id: a1.id, name: a1.name })
+                a11Parent.should.deep.include({ id: a11.id, name: a11.name })
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 const a1ChildrenNames = a1Children.map((child) => child.name)
                 a1ChildrenNames.length.should.be.equal(5)
-                a1ChildrenNames.should.deep.include("a1")
-                a1ChildrenNames.should.deep.include("a11")
-                a1ChildrenNames.should.deep.include("a12")
-                a1ChildrenNames.should.deep.include("a111")
-                a1ChildrenNames.should.deep.include("a112")
+                a1ChildrenNames.should.deep.include(a1.name)
+                a1ChildrenNames.should.deep.include(a11.name)
+                a1ChildrenNames.should.deep.include(a12.name)
+                a1ChildrenNames.should.deep.include(a111.name)
+                a1ChildrenNames.should.deep.include(a112.name)
             }),
         ))
 
@@ -166,9 +166,9 @@ describe("tree-tables > closure-table", () => {
                 const a1Children1 = await categoryRepository.findDescendants(a1)
                 const a1ChildrenNames1 = a1Children1.map((child) => child.name)
                 a1ChildrenNames1.length.should.be.equal(3)
-                a1ChildrenNames1.should.deep.include("a1")
-                a1ChildrenNames1.should.deep.include("a11")
-                a1ChildrenNames1.should.deep.include("a12")
+                a1ChildrenNames1.should.deep.include(a1.name)
+                a1ChildrenNames1.should.deep.include(a11.name)
+                a1ChildrenNames1.should.deep.include(a12.name)
 
                 // a1.childCategories = [a11];
                 // await categoryRepository.save(a1);
@@ -201,9 +201,9 @@ describe("tree-tables > closure-table", () => {
                 const a1Children1 = await categoryRepository.findDescendants(a1)
                 const a1ChildrenNames1 = a1Children1.map((child) => child.name)
                 a1ChildrenNames1.length.should.be.equal(3)
-                a1ChildrenNames1.should.deep.include("a1")
-                a1ChildrenNames1.should.deep.include("a11")
-                a1ChildrenNames1.should.deep.include("a12")
+                a1ChildrenNames1.should.deep.include(a1.name)
+                a1ChildrenNames1.should.deep.include(a11.name)
+                a1ChildrenNames1.should.deep.include(a12.name)
 
                 await categoryRepository.remove(a1)
 
@@ -258,27 +258,27 @@ describe("tree-tables > closure-table", () => {
                     categoriesTree.should.be.eql([
                         {
                             id: a1.id,
-                            name: "a1",
+                            name: a1.name,
                             childCategories: [
                                 {
                                     id: a11.id,
-                                    name: "a11",
+                                    name: a11.name,
                                     childCategories: [
                                         {
                                             id: a111.id,
-                                            name: "a111",
+                                            name: a111.name,
                                             childCategories: [],
                                         },
                                         {
                                             id: a112.id,
-                                            name: "a112",
+                                            name: a112.name,
                                             childCategories: [],
                                         },
                                     ],
                                 },
                                 {
                                     id: a12.id,
-                                    name: "a12",
+                                    name: a12.name,
                                     childCategories: [],
                                 },
                             ],
@@ -343,43 +343,43 @@ describe("tree-tables > closure-table", () => {
                     categoriesTree.should.be.eql([
                         {
                             id: a1.id,
-                            name: "a1",
+                            name: a1.name,
                             childCategories: [
                                 {
                                     id: a11.id,
-                                    name: "a11",
+                                    name: a11.name,
                                     childCategories: [
                                         {
                                             id: a111.id,
-                                            name: "a111",
+                                            name: a111.name,
                                             childCategories: [],
                                         },
                                         {
                                             id: a112.id,
-                                            name: "a112",
+                                            name: a112.name,
                                             childCategories: [],
                                         },
                                     ],
                                 },
                                 {
                                     id: a12.id,
-                                    name: "a12",
+                                    name: a12.name,
                                     childCategories: [],
                                 },
                             ],
                         },
                         {
                             id: b1.id,
-                            name: "b1",
+                            name: b1.name,
                             childCategories: [
                                 {
                                     id: b11.id,
-                                    name: "b11",
+                                    name: b11.name,
                                     childCategories: [],
                                 },
                                 {
                                     id: b12.id,
-                                    name: "b12",
+                                    name: b12.name,
                                     childCategories: [],
                                 },
                             ],
@@ -426,27 +426,27 @@ describe("tree-tables > closure-table", () => {
                     categoriesTree.should.be.eql([
                         {
                             id: a1.id,
-                            name: "a1",
+                            name: a1.name,
                             childCategories: [
                                 {
                                     id: a11.id,
-                                    name: "a11",
+                                    name: a11.name,
                                     childCategories: [
                                         {
                                             id: a111.id,
-                                            name: "a111",
+                                            name: a111.name,
                                             childCategories: [],
                                         },
                                         {
                                             id: a112.id,
-                                            name: "a112",
+                                            name: a112.name,
                                             childCategories: [],
                                         },
                                     ],
                                 },
                                 {
                                     id: a12.id,
-                                    name: "a12",
+                                    name: a12.name,
                                     childCategories: [],
                                 },
                             ],
@@ -467,27 +467,27 @@ describe("tree-tables > closure-table", () => {
                     categoriesTreeWithEmptyOptions.should.be.eql([
                         {
                             id: a1.id,
-                            name: "a1",
+                            name: a1.name,
                             childCategories: [
                                 {
                                     id: a11.id,
-                                    name: "a11",
+                                    name: a11.name,
                                     childCategories: [
                                         {
                                             id: a111.id,
-                                            name: "a111",
+                                            name: a111.name,
                                             childCategories: [],
                                         },
                                         {
                                             id: a112.id,
-                                            name: "a112",
+                                            name: a112.name,
                                             childCategories: [],
                                         },
                                     ],
                                 },
                                 {
                                     id: a12.id,
-                                    name: "a12",
+                                    name: a12.name,
                                     childCategories: [],
                                 },
                             ],
@@ -499,7 +499,7 @@ describe("tree-tables > closure-table", () => {
                     categoriesTreeWithDepthZero.should.be.eql([
                         {
                             id: a1.id,
-                            name: "a1",
+                            name: a1.name,
                             childCategories: [],
                         },
                     ])
@@ -515,16 +515,16 @@ describe("tree-tables > closure-table", () => {
                     categoriesTreeWithDepthOne.should.be.eql([
                         {
                             id: a1.id,
-                            name: "a1",
+                            name: a1.name,
                             childCategories: [
                                 {
                                     id: a11.id,
-                                    name: "a11",
+                                    name: a11.name,
                                     childCategories: [],
                                 },
                                 {
                                     id: a12.id,
-                                    name: "a12",
+                                    name: a12.name,
                                     childCategories: [],
                                 },
                             ],
@@ -571,27 +571,27 @@ describe("tree-tables > closure-table", () => {
 
                     categoriesTree.should.be.eql({
                         id: a1.id,
-                        name: "a1",
+                        name: a1.name,
                         childCategories: [
                             {
                                 id: a11.id,
-                                name: "a11",
+                                name: a11.name,
                                 childCategories: [
                                     {
                                         id: a111.id,
-                                        name: "a111",
+                                        name: a111.name,
                                         childCategories: [],
                                     },
                                     {
                                         id: a112.id,
-                                        name: "a112",
+                                        name: a112.name,
                                         childCategories: [],
                                     },
                                 ],
                             },
                             {
                                 id: a12.id,
-                                name: "a12",
+                                name: a12.name,
                                 childCategories: [],
                             },
                         ],
@@ -635,27 +635,27 @@ describe("tree-tables > closure-table", () => {
 
                     categoriesTree.should.be.eql({
                         id: a1.id,
-                        name: "a1",
+                        name: a1.name,
                         childCategories: [
                             {
                                 id: a11.id,
-                                name: "a11",
+                                name: a11.name,
                                 childCategories: [
                                     {
                                         id: a111.id,
-                                        name: "a111",
+                                        name: a111.name,
                                         childCategories: [],
                                     },
                                     {
                                         id: a112.id,
-                                        name: "a112",
+                                        name: a112.name,
                                         childCategories: [],
                                     },
                                 ],
                             },
                             {
                                 id: a12.id,
-                                name: "a12",
+                                name: a12.name,
                                 childCategories: [],
                             },
                         ],
@@ -674,27 +674,27 @@ describe("tree-tables > closure-table", () => {
 
                     categoriesTreeWithEmptyOptions.should.be.eql({
                         id: a1.id,
-                        name: "a1",
+                        name: a1.name,
                         childCategories: [
                             {
                                 id: a11.id,
-                                name: "a11",
+                                name: a11.name,
                                 childCategories: [
                                     {
                                         id: a111.id,
-                                        name: "a111",
+                                        name: a111.name,
                                         childCategories: [],
                                     },
                                     {
                                         id: a112.id,
-                                        name: "a112",
+                                        name: a112.name,
                                         childCategories: [],
                                     },
                                 ],
                             },
                             {
                                 id: a12.id,
-                                name: "a12",
+                                name: a12.name,
                                 childCategories: [],
                             },
                         ],
@@ -706,7 +706,7 @@ describe("tree-tables > closure-table", () => {
                         })
                     categoriesTreeWithDepthZero.should.be.eql({
                         id: a1.id,
-                        name: "a1",
+                        name: a1.name,
                         childCategories: [],
                     })
 
@@ -722,16 +722,16 @@ describe("tree-tables > closure-table", () => {
 
                     categoriesTreeWithDepthOne.should.be.eql({
                         id: a1.id,
-                        name: "a1",
+                        name: a1.name,
                         childCategories: [
                             {
                                 id: a11.id,
-                                name: "a11",
+                                name: a11.name,
                                 childCategories: [],
                             },
                             {
                                 id: a12.id,
-                                name: "a12",
+                                name: a12.name,
                                 childCategories: [],
                             },
                         ],
