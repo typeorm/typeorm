@@ -38,16 +38,24 @@ export class CascadesSubjectBuilder {
                 if (relationEntity === undefined || relationEntity === null)
                     return
 
-                const shouldCascade =
-                    operationType === "save"
-                        ? relation.isCascadeInsert || relation.isCascadeUpdate
-                        : operationType === "remove"
-                          ? relation.isCascadeRemove
-                          : operationType === "soft-remove"
-                            ? relation.isCascadeSoftRemove
-                            : operationType === "recover"
-                              ? relation.isCascadeRecover
-                              : false
+                let shouldCascade: boolean
+                switch (operationType) {
+                    case "save":
+                        shouldCascade =
+                            relation.isCascadeInsert || relation.isCascadeUpdate
+                        break
+                    case "remove":
+                        shouldCascade = relation.isCascadeRemove
+                        break
+                    case "soft-remove":
+                        shouldCascade = relation.isCascadeSoftRemove
+                        break
+                    case "recover":
+                        shouldCascade = relation.isCascadeRecover
+                        break
+                    default:
+                        shouldCascade = false
+                }
 
                 if (!shouldCascade) return
 
