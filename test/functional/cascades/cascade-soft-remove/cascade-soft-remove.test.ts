@@ -178,6 +178,50 @@ describe("cascades > soft-remove", () => {
             }),
         ))
 
+    it("recovers user when a many-to-many related entity is independently soft-deleted", async () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // create user with two tags (cascade: ["insert"] only)
+                const tag1 = new Tag()
+                tag1.name = "active-tag"
+                const tag2 = new Tag()
+                tag2.name = "soft-deleted-tag"
+                await dataSource.manager.save(Tag, [tag1, tag2])
+
+                const user = User.create({
+                    id: 6,
+                    name: "Mr. Independent Soft Delete",
+                    tags: [tag1, tag2],
+                })
+                await dataSource.manager.save(user)
+
+                // soft-remove the user (tags stay active — no cascade)
+                await dataSource.manager.softRemove(user)
+
+                // independently soft-delete tag2 (not via user cascade)
+                await dataSource.manager.softRemove(Tag, tag2)
+
+                // tag2 is now soft-deleted but its junction row still exists
+                const activeTags = await dataSource.manager.find(Tag)
+                expect(activeTags.length).to.equal(1)
+
+                // recover the user — the relation ID loader must use
+                // withDeleted to see the junction row for soft-deleted tag2,
+                // otherwise it would attempt a duplicate junction INSERT
+                await dataSource.manager.recover(
+                    User.create({ id: 6, name: user.name }),
+                )
+
+                // verify both junction rows are intact
+                const recovered = await dataSource.manager.findOneOrFail(User, {
+                    where: { id: 6 },
+                    relations: { tags: true },
+                    withDeleted: true,
+                })
+                expect(recovered.tags.length).to.equal(2)
+            }),
+        ))
+
     it("save does not interfere with soft-deleted one-to-many relations", async () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
