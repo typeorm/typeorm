@@ -194,7 +194,6 @@ export class RelationLoader {
         this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
-        // return qb.getOne(); todo: fix all usages
     }
 
     /**
@@ -281,7 +280,6 @@ export class RelationLoader {
         this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
-        // return relation.isOneToMany ? qb.getMany() : qb.getOne(); todo: fix all usages
     }
 
     /**
