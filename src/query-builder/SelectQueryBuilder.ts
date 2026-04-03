@@ -162,6 +162,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                this.assertNoSemicolon(s, "select")
+            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
@@ -173,6 +176,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
+            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -215,6 +219,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (!selection) return this
 
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                this.assertNoSemicolon(s, "addSelect")
+            }
             this.expressionMap.selects = this.expressionMap.selects.concat(
                 selection.map((selection) => ({ selection: selection })),
             )
@@ -226,6 +233,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
+            this.assertNoSemicolon(selection, "addSelect")
             this.expressionMap.selects.push({
                 selection: selection,
                 aliasName: selectionAliasName,
@@ -1057,29 +1065,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     */
-    // selectAndMap(mapToProperty: string, property: string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this;
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, entity: Function|string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this;
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, tableName: string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this;
-
-    /**
-     */
-    // selectAndMap(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, qbFactory: ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>)): this {
-    //     const select = new SelectAttribute(this.expressionMap);
-    //     select.mapToProperty = mapToProperty;
-    //     select.entityOrProperty = entityOrProperty;
-    //     select.aliasName = aliasName;
-    //     select.qbFactory = qbFactory;
-    //     return this;
-    // }
-
-    /**
      * LEFT JOINs relation id and maps it into some entity's property.
      * Optionally, you can add condition and parameters used in condition.
      */
@@ -1388,6 +1373,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     groupBy(groupBy?: string): this {
         if (groupBy) {
+            this.assertNoSemicolon(groupBy, "groupBy")
             this.expressionMap.groupBys = [groupBy]
         } else {
             this.expressionMap.groupBys = []
@@ -1401,6 +1387,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param groupBy
      */
     addGroupBy(groupBy: string): this {
+        this.assertNoSemicolon(groupBy, "addGroupBy")
         this.expressionMap.groupBys.push(groupBy)
         return this
     }
@@ -1476,22 +1463,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
             )
 
-        if (sort) {
-            if (typeof sort === "object") {
-                this.validateOrderByCondition(sort)
-                this.expressionMap.orderBys = sort
-            } else {
-                if (nulls) {
-                    this.expressionMap.orderBys = {
-                        [sort as string]: { order, nulls },
-                    }
-                } else {
-                    this.expressionMap.orderBys = { [sort as string]: order }
-                }
-            }
-        } else {
+        if (!sort) {
             this.expressionMap.orderBys = {}
+            return this
         }
+
+        if (typeof sort === "object") {
+            this.validateOrderByCondition(sort)
+            this.expressionMap.orderBys = sort
+            return this
+        }
+
+        this.assertNoSemicolon(sort, "orderBy sort key")
+
+        this.expressionMap.orderBys = nulls
+            ? { [sort]: { order, nulls } }
+            : { [sort]: order }
+
         return this
     }
 
@@ -1519,6 +1507,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             throw new TypeORMError(
                 `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
             )
+
+        this.assertNoSemicolon(sort, "orderBy sort key")
 
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }
@@ -3124,7 +3114,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )}`,
                 )
-                .join(", '|;|', ")
+                .join(", '|:|', ")
 
             if (primaryColumns.length === 1) {
                 return `COUNT(DISTINCT(${columnsExpression}))`
@@ -3150,7 +3140,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )} AS STRING)`,
                 )
-                .join(", '|;|', ")
+                .join(", '|:|', ")
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
 
@@ -3165,7 +3155,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             `COUNT(DISTINCT(` +
             primaryColumns
                 .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
-                .join(" || '|;|' || ") +
+                .join(" || '|:|' || ") +
             "))"
         )
     }
@@ -3432,22 +3422,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (this.findOptions.transaction === true) {
                 this.expressionMap.useTransaction = true
             }
-
-            // if (this.orderBys.length) {
-            //     this.orderBys.forEach(orderBy => {
-            //         this.addOrderBy(orderBy.alias, orderBy.direction, orderBy.nulls);
-            //     });
-            // }
-
-            // todo
-            // if (this.options.options && this.options.options.eagerRelations) {
-            //     this.queryBuilder
-            // }
-
-            // todo
-            // if (this.findOptions.options && this.findOptions.listeners === false) {
-            //     this.callListeners(false);
-            // }
         }
     }
 
@@ -3501,6 +3475,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.dataSource,
             queryRunner,
             this.expressionMap.relationIdAttributes,
+            this.expressionMap.withDeleted,
         )
         const relationIdMetadataTransformer =
             new RelationIdMetadataToAttributeTransformer(this.expressionMap)
@@ -4344,10 +4319,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     alias,
                     joinAlias,
                 )
-                // console.log("joinAlias", joinAlias, joinAlias.length, this.dataSource.driver.maxAliasLength)
-                // todo: use expressionMap.joinAttributes, and create a new one using
-                //  const joinAttribute = new JoinAttribute(this.dataSource, this.expressionMap);
-
                 const existJoin = this.joins.find(
                     (join) => join.alias === joinAlias,
                 )
@@ -4484,11 +4455,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 parameterValue,
                             ),
                         ),
-                        // parameterValue.toSql(this.dataSource, aliasPath, parameters));
                     )
-
-                    // this.conditions.push(`${alias}.${propertyPath} = :${paramName}`);
-                    // this.expressionMap.parameters[paramName] = where[key]; // todo: handle functions and other edge cases
                 } else if (embed) {
                     const condition = this.buildWhere(
                         where[key],
