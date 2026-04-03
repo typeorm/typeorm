@@ -145,7 +145,7 @@ describe("cascades > insert with composite primary keys", () => {
                 const message = await connection.manager.findOneOrFail(
                     Message,
                     {
-                        where: {},
+                        where: { content: "I should buy a boat" },
                         relations: { recipients: true },
                     },
                 )
