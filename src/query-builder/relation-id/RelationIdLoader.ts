@@ -216,8 +216,6 @@ export class RelationIdLoader {
                         .where("(" + condition + ")") // need brackets because if we have additional condition and no brackets, it looks like (a = 1) OR (a = 2) AND b = 1, that is incorrect
                         .setParameters(parameters)
 
-                    if (this.withDeleted) qb.withDeleted()
-
                     // apply condition (custom query builder factory)
                     if (relationIdAttr.queryBuilderFactory)
                         relationIdAttr.queryBuilderFactory(qb)

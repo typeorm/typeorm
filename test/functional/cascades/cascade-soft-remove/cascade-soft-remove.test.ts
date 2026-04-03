@@ -112,7 +112,7 @@ describe("cascades > soft-remove", () => {
             }),
         ))
 
-    it("recovers many-many relations after soft-remove cascade", async () =>
+    it("recovers many-to-many relations after soft-remove cascade", async () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const user = User.create({
@@ -143,7 +143,7 @@ describe("cascades > soft-remove", () => {
             }),
         ))
 
-    it("recovers user without duplicate junction inserts when M2M has no cascade recover", async () =>
+    it("recovers user without duplicate junction inserts when many-to-many has no cascade recover", async () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 // tags relation has cascade: ["insert"] only, no recover
@@ -165,7 +165,7 @@ describe("cascades > soft-remove", () => {
                 expect(activeTags.length).to.equal(2)
 
                 // recover the user — junction rows still exist, should not
-                // attempt duplicate inserts for the existing M2M bindings
+                // attempt duplicate inserts for the existing many-to-many bindings
                 await dataSource.manager.recover(user)
 
                 // verify junction rows are intact by loading user with tags
@@ -175,6 +175,55 @@ describe("cascades > soft-remove", () => {
                 })
                 expect(recovered).to.not.be.null
                 expect(recovered?.tags.length).to.equal(2)
+            }),
+        ))
+
+    it("save does not interfere with soft-deleted one-to-many relations", async () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // create user with one-to-many photos (cascade: true)
+                const user = User.create({
+                    id: 4,
+                    name: "Mr. OneToMany Test",
+                    manyPhotos: [
+                        Photo.create({ name: "photo-to-soft-delete" }),
+                    ],
+                })
+                await dataSource.manager.save(user)
+
+                // soft-remove the user (cascades to photo)
+                await dataSource.manager.softRemove(user)
+
+                // verify photo is soft-deleted
+                const activePhotos = await dataSource.manager.find(Photo)
+                expect(activePhotos.length).to.equal(0)
+
+                // recover only the user, without cascade to photo
+                // by passing a plain object without the relation populated
+                await dataSource.manager.recover(
+                    User.create({ id: 4, name: user.name }),
+                )
+
+                // photo should still be soft-deleted
+                const photosStillDeleted = await dataSource.manager.find(Photo)
+                expect(photosStillDeleted.length).to.equal(0)
+
+                // now save the user with an empty manyPhotos array —
+                // the soft-deleted photo should NOT be "seen" by the
+                // relation-id loader and should not trigger orphan handling
+                const recoveredUser = await dataSource.manager.findOneByOrFail(
+                    User,
+                    { id: 4 },
+                )
+                recoveredUser.manyPhotos = []
+                await dataSource.manager.save(recoveredUser)
+
+                // the soft-deleted photo should remain untouched
+                const photosAfterSave = await dataSource.manager.find(Photo, {
+                    withDeleted: true,
+                })
+                expect(photosAfterSave.length).to.equal(1)
+                expect(photosAfterSave[0].deletedAt).to.not.be.null
             }),
         ))
 })
