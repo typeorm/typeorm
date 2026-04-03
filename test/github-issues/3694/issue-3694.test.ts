@@ -26,26 +26,34 @@ describe("github issues > #3694 Sync enums on schema sync", () => {
                 const fruitColumn = metadata.columns.find(
                     (column) => column.propertyName === "fruit",
                 )
-                const originalEnum = fruitColumn!.enum
+                if (!fruitColumn) throw new Error("fruit column not found")
+                const originalEnum = fruitColumn.enum
 
                 // simulate changing the enum at runtime: rename Banana,
                 // add Cherry — use a fresh array instead of mutating the
                 // shared FruitEnum object to avoid polluting other tests
-                fruitColumn!.enum = ["apple", "pineapple", "BANANA", "cherry"]
+                fruitColumn.enum = ["apple", "pineapple", "BANANA", "cherry"]
 
                 try {
                     await connection.synchronize()
 
                     const queryRunner = connection.createQueryRunner()
-                    const table = await queryRunner.getTable("post")
-                    await queryRunner.release()
+                    try {
+                        const table = await queryRunner.getTable("post")
+                        const fruitCol = table?.findColumnByName("fruit")
 
-                    expect(
-                        table!.findColumnByName("fruit")!.enum,
-                    ).to.deep.equal(["apple", "pineapple", "BANANA", "cherry"])
+                        expect(fruitCol?.enum).to.deep.equal([
+                            "apple",
+                            "pineapple",
+                            "BANANA",
+                            "cherry",
+                        ])
+                    } finally {
+                        await queryRunner.release()
+                    }
                 } finally {
                     // restore original enum to avoid polluting other tests
-                    fruitColumn!.enum = originalEnum
+                    fruitColumn.enum = originalEnum
                 }
             }),
         ))
