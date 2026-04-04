@@ -1297,6 +1297,53 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Checks if a type change can be safely performed using ALTER COLUMN.
+     * This prevents data loss by avoiding unnecessary drop + add operations.
+     *
+     * @param oldType - The old column type
+     * @param newType - The new column type
+     * @returns true if the type change is safe, false otherwise
+     */
+    private isTypeAlterable(oldType: string, newType: string): boolean {
+        // Define safe type conversions
+        const safeConversions: Record<string, string[]> = {
+            varchar: ["text", "char"],
+            char: ["varchar", "text"],
+            text: ["varchar", "char"],
+            int: ["bigint", "smallint"],
+            bigint: ["int", "smallint"],
+            smallint: ["int", "bigint"],
+            numeric: ["decimal", "real", "double precision"],
+            decimal: ["numeric", "real", "double precision"],
+            real: ["numeric", "decimal", "double precision"],
+            "double precision": ["numeric", "decimal", "real"],
+            date: ["timestamp", "timestamptz"],
+            timestamp: ["date", "timestamptz"],
+            timestamptz: ["date", "timestamp"],
+        }
+
+        // Normalize types
+        const normalizedOldType = oldType
+            .toLowerCase()
+            .replace(/\([^)]*\)/g, "")
+        const normalizedNewType = newType
+            .toLowerCase()
+            .replace(/\([^)]*\)/g, "")
+
+        // Check if the conversion is safe
+        if (safeConversions[normalizedOldType]?.includes(normalizedNewType)) {
+            return true
+        }
+
+        // If types are the same, it's safe
+        if (normalizedOldType === normalizedNewType) {
+            return true
+        }
+
+        return false
+    }
+
+    /**
      * Changes a column in the table.
      *
      * @param tableOrName
@@ -1335,12 +1382,56 @@ export class PostgresQueryRunner
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
-            await this.dropColumn(table, oldColumn)
-            await this.addColumn(table, newColumn)
+            // For type and length changes, prefer ALTER COLUMN to avoid data loss
+            // Only use dropColumn + addColumn as a fallback
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length &&
+                !newColumn.isArray &&
+                !oldColumn.isArray
+            ) {
+                // Safe to use ALTER COLUMN for length changes
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            } else if (
+                oldColumn.type !== newColumn.type &&
+                this.isTypeAlterable(oldColumn.type, newColumn.type)
+            ) {
+                // Safe to use ALTER COLUMN for type changes
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            } else {
+                // Fallback to dropColumn + addColumn for complex changes
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
 
-            // update cloned table
-            clonedTable = table.clone()
+                // update cloned table
+                clonedTable = table.clone()
+            }
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
