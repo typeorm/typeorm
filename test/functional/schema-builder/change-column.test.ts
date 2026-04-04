@@ -1,5 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
+import { randomBytes } from "crypto"
 import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
@@ -11,6 +12,23 @@ import { PostVersion } from "./entity/PostVersion"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 import type { ColumnType } from "../../../src/driver/types/ColumnTypes"
 import type { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
+
+// Helper functions for cryptographically secure random number generation
+// Replaces Math.random() which is flagged as weak cryptography
+function secureRandomInt(max: number): number {
+    const bytes = randomBytes(4)
+    const value = bytes.readUInt32BE(0)
+    return Math.floor((value / 0xffffffff) * max)
+}
+
+function secureRandomBase36String(length: number): string {
+    const bytes = randomBytes(Math.ceil(length / 2))
+    let result = ""
+    for (let i = 0; i < bytes.length && result.length < length; i++) {
+        result += bytes[i].toString(36)
+    }
+    return result.slice(0, length)
+}
 
 describe("schema builder > change column", () => {
     let dataSources: DataSource[]
@@ -631,13 +649,12 @@ describe("schema builder > change column", () => {
                                         Number.MAX_SAFE_INTEGER,
                                         9_000_000_000_000 +
                                             Math.floor(
-                                                Math.random() * 1_000_000, // NOSONAR - non-security test data
+                                                secureRandomInt(1_000_000),
                                             ),
                                     )
                                 } else {
                                     payload.id ??=
-                                        // NOSONAR - non-security test data
-                                        Math.floor(Math.random() * 1_000_000) +
+                                        Math.floor(secureRandomInt(1_000_000)) +
                                         1
                                 }
                                 break
@@ -645,12 +662,10 @@ describe("schema builder > change column", () => {
                             case "version":
                                 payload.version ??= `v_${Date.now()}_${
                                     connection.options.type
-                                }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
+                                }_${secureRandomBase36String(7)}`
                                 break
                             case "tag":
-                                payload.tag ??= `t_${Math.random() // NOSONAR - non-security test data
-                                    .toString(36)
-                                    .slice(2, 6)}`
+                                payload.tag ??= `t_${secureRandomBase36String(4)}`
                                 break
                             case "likesCount":
                                 payload.likesCount ??= 1
@@ -802,13 +817,13 @@ describe("schema builder > change column", () => {
                                         // a "big" but safe number
                                         9_000_000_000_000 +
                                             Math.floor(
-                                                Math.random() * 1_000_000, // NOSONAR - non-security test data
+                                                secureRandomInt(1_000_000),
                                             ),
                                     )
                                 } else {
                                     // safe 32-bit signed int to avoid MySQL overflow
                                     payload2.id ??=
-                                        Math.floor(Math.random() * 1_000_000) + // NOSONAR - non-security test data
+                                        Math.floor(secureRandomInt(1_000_000)) +
                                         1 /* 1..1,000,000 */
                                 }
                                 break
@@ -816,12 +831,10 @@ describe("schema builder > change column", () => {
                             case "version":
                                 payload2.version ??= `v_${Date.now()}_${
                                     connection.options.type
-                                }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
+                                }_${secureRandomBase36String(7)}`
                                 break
                             case "tag":
-                                payload2.tag ??= `t_${Math.random() // NOSONAR - non-security test data
-                                    .toString(36)
-                                    .slice(2, 6)}`
+                                payload2.tag ??= `t_${secureRandomBase36String(4)}`
                                 break
                             case "likesCount":
                                 payload2.likesCount ??= 1
@@ -942,13 +955,12 @@ describe("schema builder > change column", () => {
                                         Number.MAX_SAFE_INTEGER,
                                         9_000_000_000_000 +
                                             Math.floor(
-                                                Math.random() * 1_000_000, // NOSONAR - non-security test data
+                                                secureRandomInt(1_000_000),
                                             ),
                                     )
                                 } else {
                                     payload.id ??=
-                                        // NOSONAR - non-security test data
-                                        Math.floor(Math.random() * 1_000_000) +
+                                        Math.floor(secureRandomInt(1_000_000)) +
                                         1
                                 }
                                 break
@@ -956,12 +968,10 @@ describe("schema builder > change column", () => {
                             case "version":
                                 payload.version ??= `v_${Date.now()}_${
                                     connection.options.type
-                                }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
+                                }_${secureRandomBase36String(7)}`
                                 break
                             case "tag":
-                                payload.tag ??= `t_${Math.random() // NOSONAR - non-security test data
-                                    .toString(36)
-                                    .slice(2, 6)}`
+                                payload.tag ??= `t_${secureRandomBase36String(4)}`
                                 break
                             case "likesCount":
                                 payload.likesCount ??= 1
@@ -1118,13 +1128,13 @@ describe("schema builder > change column", () => {
                                         // a "big" but safe number
                                         9_000_000_000_000 +
                                             Math.floor(
-                                                Math.random() * 1_000_000, // NOSONAR - non-security test data
+                                                secureRandomInt(1_000_000),
                                             ),
                                     )
                                 } else {
                                     // safe 32-bit signed int to avoid MySQL overflow
                                     payload2.id ??=
-                                        Math.floor(Math.random() * 1_000_000) + // NOSONAR - non-security test data
+                                        Math.floor(secureRandomInt(1_000_000)) +
                                         1 /* 1..1,000,000 */
                                 }
                                 break
@@ -1132,12 +1142,10 @@ describe("schema builder > change column", () => {
                             case "version":
                                 payload2.version ??= `v_${Date.now()}_${
                                     connection.options.type
-                                }_${Math.random().toString(36).slice(2)}` // NOSONAR - non-security test data
+                                }_${secureRandomBase36String(7)}`
                                 break
                             case "tag":
-                                payload2.tag ??= `t_${Math.random() // NOSONAR - non-security test data
-                                    .toString(36)
-                                    .slice(2, 6)}`
+                                payload2.tag ??= `t_${secureRandomBase36String(4)}`
                                 break
                             case "likesCount":
                                 payload2.likesCount ??= 1
