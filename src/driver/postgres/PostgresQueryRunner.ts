@@ -1305,30 +1305,54 @@ export class PostgresQueryRunner
      * @returns true if the type change is safe, false otherwise
      */
     private isTypeAlterable(oldType: string, newType: string): boolean {
-        // Define safe type conversions
+        // Define safe type conversions with both aliases and canonical names
         const safeConversions: Record<string, string[]> = {
-            varchar: ["text", "char"],
-            char: ["varchar", "text"],
-            text: ["varchar", "char"],
-            int: ["bigint", "smallint"],
-            bigint: ["int", "smallint"],
-            smallint: ["int", "bigint"],
+            // varchar / character varying
+            varchar: ["text", "char", "character varying", "character"],
+            "character varying": ["text", "char", "varchar", "character"],
+            // char / character
+            char: ["varchar", "text", "character varying", "character"],
+            character: ["varchar", "text", "character varying", "varchar"],
+            // text
+            text: ["varchar", "char", "character varying", "character"],
+            // int / integer / int4
+            int: ["bigint", "smallint", "integer", "int4", "int8", "int2"],
+            integer: ["bigint", "smallint", "int", "int4", "int8", "int2"],
+            int4: ["bigint", "smallint", "int", "integer", "int8", "int2"],
+            // bigint / int8
+            bigint: ["int", "smallint", "integer", "int4", "int2", "int8"],
+            int8: ["int", "smallint", "integer", "int4", "int2", "bigint"],
+            // smallint / int2
+            smallint: ["int", "bigint", "integer", "int4", "int8", "int2"],
+            int2: ["int", "bigint", "integer", "int4", "int8", "smallint"],
+            // numeric / decimal
             numeric: ["decimal", "real", "double precision"],
             decimal: ["numeric", "real", "double precision"],
-            real: ["numeric", "decimal", "double precision"],
-            "double precision": ["numeric", "decimal", "real"],
-            date: ["timestamp", "timestamptz"],
-            timestamp: ["date", "timestamptz"],
-            timestamptz: ["date", "timestamp"],
+            // real / float4
+            real: ["numeric", "decimal", "double precision", "float4", "float8"],
+            float4: ["numeric", "decimal", "double precision", "real", "float8"],
+            // double precision / float8
+            "double precision": ["numeric", "decimal", "real", "float4", "float8"],
+            float8: ["numeric", "decimal", "real", "float4", "double precision"],
+            // date
+            date: ["timestamp", "timestamptz", "timestamp without time zone", "timestamp with time zone"],
+            // timestamp / timestamp without time zone
+            timestamp: ["date", "timestamptz", "timestamp without time zone", "timestamp with time zone"],
+            "timestamp without time zone": ["date", "timestamptz", "timestamp", "timestamp with time zone"],
+            // timestamptz / timestamp with time zone
+            timestamptz: ["date", "timestamp", "timestamp without time zone", "timestamp with time zone"],
+            "timestamp with time zone": ["date", "timestamp", "timestamp without time zone", "timestamptz"],
         }
 
-        // Normalize types
+        // Normalize types - remove length/precision/scale and convert to lowercase
         const normalizedOldType = oldType
             .toLowerCase()
             .replace(/\([^)]*\)/g, "")
+            .trim()
         const normalizedNewType = newType
             .toLowerCase()
             .replace(/\([^)]*\)/g, "")
+            .trim()
 
         // Check if the conversion is safe
         if (safeConversions[normalizedOldType]?.includes(normalizedNewType)) {
@@ -1394,6 +1418,18 @@ export class PostgresQueryRunner
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                // Update clonedTable to reflect the new column type/length
+                const tableColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                if (tableColumn) {
+                    tableColumn.type = newColumn.type
+                    tableColumn.length = newColumn.length
+                    tableColumn.isArray = newColumn.isArray
+                    tableColumn.precision = newColumn.precision
+                    tableColumn.scale = newColumn.scale
+                }
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
                         }" TYPE ${this.driver.createFullType(newColumn)}`,
                     ),
@@ -1412,6 +1448,18 @@ export class PostgresQueryRunner
                 // Safe to use ALTER COLUMN for type changes
                 upQueries.push(
                     new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                // Update clonedTable to reflect the new column type
+                const tableColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                if (tableColumn) {
+                    tableColumn.type = newColumn.type
+                    tableColumn.length = newColumn.length
+                    tableColumn.isArray = newColumn.isArray
+                    tableColumn.precision = newColumn.precision
+                    tableColumn.scale = newColumn.scale
+                }
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
                         }" TYPE ${this.driver.createFullType(newColumn)}`,
