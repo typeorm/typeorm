@@ -636,8 +636,9 @@ describe("schema builder > change column", () => {
                                     )
                                 } else {
                                     payload.id ??=
+                                        // NOSONAR - non-security test data
                                         Math.floor(Math.random() * 1_000_000) +
-                                        1 // NOSONAR - non-security test data
+                                        1
                                 }
                                 break
                             }
@@ -946,8 +947,9 @@ describe("schema builder > change column", () => {
                                     )
                                 } else {
                                     payload.id ??=
+                                        // NOSONAR - non-security test data
                                         Math.floor(Math.random() * 1_000_000) +
-                                        1 // NOSONAR - non-security test data
+                                        1
                                 }
                                 break
                             }
