@@ -28,7 +28,7 @@ import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { MssqlParameter } from "./MssqlParameter"
-import type { SqlServerDriver } from "./SqlServerDriver"
+import { SqlServerDriver } from "./SqlServerDriver"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
@@ -1386,6 +1386,9 @@ export class SqlServerQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Track whether a rename occurred to avoid conflicting with fast paths
+            let columnRenamed = false
+
             if (newColumn.name !== oldColumn.name) {
                 // we need database name and schema name to rename FK constraints
                 let dbName: string | undefined = undefined
@@ -1707,6 +1710,7 @@ export class SqlServerQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+                columnRenamed = true
             }
             if (oldColumn.type !== newColumn.type) {
                 // SQL Server refuses ALTER COLUMN when a unique constraint or index
@@ -1770,6 +1774,7 @@ export class SqlServerQueryRunner
                     )
                 }
             } else if (
+                !columnRenamed &&
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
             ) {
@@ -1822,6 +1827,7 @@ export class SqlServerQueryRunner
                             true,
                             false,
                             true,
+                            true,
                         )}`,
                     ),
                 )
@@ -1834,6 +1840,7 @@ export class SqlServerQueryRunner
                             oldColumn,
                             true,
                             false,
+                            true,
                             true,
                         )}`,
                     ),
@@ -4406,6 +4413,7 @@ export class SqlServerQueryRunner
      * @param skipIdentity
      * @param createDefault
      * @param skipEnum
+     * @param skipName
      */
     protected buildCreateColumnSql(
         table: Table,
@@ -4413,10 +4421,16 @@ export class SqlServerQueryRunner
         skipIdentity: boolean,
         createDefault: boolean,
         skipEnum?: boolean,
+        skipName: boolean = false,
     ) {
-        let c = `"${column.name}" ${this.dataSource.driver.createFullType(
-            column,
-        )}`
+        let c: string
+        if (skipName) {
+            c = this.dataSource.driver.createFullType(column)
+        } else {
+            c = `"${column.name}" ${this.dataSource.driver.createFullType(
+                column,
+            )}`
+        }
 
         if (!skipEnum && column.enum) {
             const expression = this.getEnumExpression(column)
@@ -4606,6 +4620,7 @@ export class SqlServerQueryRunner
 
     /**
      * Handles column length changes for SQL Server.
+     *
      * @param root0
      * @param root0.oldColumn
      * @param root0.newColumn
@@ -4693,6 +4708,7 @@ export class SqlServerQueryRunner
     /**
      * Handles safe ALTER COLUMN changes for SQL Server.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -4791,6 +4807,15 @@ export class SqlServerQueryRunner
                     `ALTER TABLE ${tableSql} DROP CONSTRAINT "${defName}"`,
                 ),
             )
+        }
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
         }
 
         return true

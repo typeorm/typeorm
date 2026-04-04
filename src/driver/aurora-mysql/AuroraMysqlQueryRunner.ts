@@ -94,6 +94,7 @@ export class AuroraMysqlQueryRunner
     /**
      * Handles length-only fast path changes for MySQL family.
      * Returns true if the change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -199,12 +200,22 @@ export class AuroraMysqlQueryRunner
             ),
         )
 
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
+
         return true
     }
 
     /**
      * Handles safe ALTER COLUMN changes for MySQL family.
      * Returns true if the change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -241,13 +252,13 @@ export class AuroraMysqlQueryRunner
         // Build FULL MySQL definition strings to preserve attributes (nullability, default, collation, etc.)
         const newDef = this.buildCreateColumnSql(
             newColumn,
-            /*skipDefault*/ true,
-            /*skipOnUpdate*/ true,
+            /*skipPrimary*/ true,
+            /*skipName*/ true,
         )
         const oldDef = this.buildCreateColumnSql(
             oldColumn,
-            /*skipDefault*/ true,
-            /*skipOnUpdate*/ true,
+            /*skipPrimary*/ true,
+            /*skipName*/ true,
         )
 
         // Aurora MySQL prefers MODIFY COLUMN for type/width/precision changes
@@ -260,6 +271,15 @@ export class AuroraMysqlQueryRunner
 
         upQueries.push(new Query(upSql))
         downQueries.push(new Query(downSql))
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
 
         return true
     }
@@ -1070,6 +1090,9 @@ export class AuroraMysqlQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Track whether a rename occurred to avoid conflicting with fast paths
+            let columnRenamed = false
+
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
                 upQueries.push(
@@ -1208,10 +1231,25 @@ export class AuroraMysqlQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+                columnRenamed = true
             }
 
             if (oldColumn.type !== newColumn.type) {
-                const handled = await this.handleSafeAlterMysql({
+                const handled = await this.handleSafeAlter({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                })
+                if (handled) return
+            } else if (
+                !columnRenamed &&
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length
+            ) {
+                const handled = await this.handleMysqlLengthOnlyFastPath({
                     table,
                     clonedTable,
                     oldColumn,

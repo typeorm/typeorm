@@ -119,6 +119,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      *
      * @param root0
      * @param root0.table
+     * @param root0.clonedTable
      * @param root0.oldColumn
      * @param root0.newColumn
      * @param root0.upQueries
@@ -126,12 +127,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     private handleMysqlLengthOnlyFastPathChangeColumn({
         table,
+        clonedTable,
         oldColumn,
         newColumn,
         upQueries,
         downQueries,
     }: {
         table: Table
+        clonedTable: Table
         oldColumn: TableColumn
         newColumn: TableColumn
         upQueries: Query[]
@@ -173,13 +176,22 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // Use CHANGE COLUMN so that emitted SQL matches tests expecting "MODIFY/CHANGE COLUMN"
         const up = `ALTER TABLE ${this.escapePath(table)} CHANGE COLUMN \`${
             oldColumn.name
-        }\` ${this.buildCreateColumnSql(newColDef, true)}`
+        }\` ${this.buildCreateColumnSql(newColDef, true, true)}`
         const down = `ALTER TABLE ${this.escapePath(table)} CHANGE COLUMN \`${
             oldColumn.name
-        }\` ${this.buildCreateColumnSql(oldColDef, true)}`
+        }\` ${this.buildCreateColumnSql(oldColDef, true, true)}`
 
         upQueries.push(new Query(up))
         downQueries.push(new Query(down))
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
 
         return true
     }
@@ -222,8 +234,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const q = (i: string) => `\`${i.replace(/`/g, "``")}\``
 
         // Build full definitions to preserve attributes (NULL/DEFAULT/ON UPDATE/COLLATION/etc.)
-        const newDef = this.buildCreateColumnSql(newColumn, true)
-        const oldDef = this.buildCreateColumnSql(oldColumn, true)
+        const newDef = this.buildCreateColumnSql(newColumn, true, true)
+        const oldDef = this.buildCreateColumnSql(oldColumn, true, true)
 
         // MySQL syntax for type/width/precision changes
         const upSql = `ALTER TABLE ${tableSql} MODIFY COLUMN ${q(
@@ -235,6 +247,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         upQueries.push(new Query(upSql))
         downQueries.push(new Query(downSql))
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
 
         return true
     }
@@ -1289,6 +1310,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Track whether a rename occurred to avoid conflicting with fast paths
+            let columnRenamed = false
+
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
                 upQueries.push(
@@ -1454,6 +1478,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+                columnRenamed = true
             }
 
             // Track whether safe alter handlers already handled the column change
@@ -1469,6 +1494,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     downQueries,
                 })
             } else if (
+                !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length
             ) {
@@ -1476,6 +1502,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 safeAlterHandled =
                     this.handleMysqlLengthOnlyFastPathChangeColumn({
                         table,
+                        clonedTable,
                         oldColumn,
                         newColumn,
                         upQueries,

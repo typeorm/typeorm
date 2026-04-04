@@ -28,7 +28,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { SapDriver } from "./SapDriver"
+import { SapDriver } from "./SapDriver"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
@@ -3765,6 +3765,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Handles length-only fast path changes for SAP HANA.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -4084,6 +4085,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Handles safe ALTER COLUMN changes for SAP HANA.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -4169,6 +4171,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         upQueries.push(new Query(upSql))
         downQueries.push(new Query(downSql))
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
 
         return true
     }

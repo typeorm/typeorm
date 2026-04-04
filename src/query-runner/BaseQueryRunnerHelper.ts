@@ -13,10 +13,13 @@ import type { TableColumn } from "../schema-builder/table/TableColumn"
  * varchar → nvarchar      true
  * varchar → varbinary     true
  * varchar(50) → varchar(100)  false
+ *
  * @param oldColumn
  * @param newColumn
  */
-export function isFormalTypeChange(
+// Note: This function is not currently exported as it's not used in the codebase.
+// It can be made export if needed in the future.
+function isFormalTypeChange(
     oldColumn: TableColumn,
     newColumn: TableColumn,
 ): boolean {
@@ -150,8 +153,8 @@ export function isFormalTypeChange(
 }
 
 /*
-Here are concrete “safe ALTER” examples that this function would return true for.
-Grouped by category, showing which type changes are considered safe.
+Note: The examples below show concrete "safe ALTER" scenarios for reference.
+They illustrate which type changes are considered safe by `isSafeAlter()`.
 
 Strings (widening only)
 -----------------------
@@ -179,8 +182,6 @@ Temporals
   DATETIME → TIMESTAMP / DATETIME2 / DATETIMEOFFSET
   DATETIME2 → DATETIMEOFFSET
 */
-
-// Keep the same signature / export used in your project
 /**
  *
  * @param oldColumn
@@ -474,7 +475,9 @@ export function normalizeColumnLength(
     return Number.isFinite(parsed) ? parsed : undefined
 }
 
-export type DriverCreateFullTypeLengthOnlyFastPathArgs = {
+// Note: This type is not currently exported as it's not used in the codebase.
+// It can be made export if needed in the future.
+type DriverCreateFullTypeLengthOnlyFastPathArgs = {
     table: Table
     clonedTable: Table
     oldColumn: TableColumn

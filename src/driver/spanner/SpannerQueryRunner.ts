@@ -25,7 +25,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { SpannerDriver } from "./SpannerDriver"
+import { SpannerDriver } from "./SpannerDriver"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
@@ -937,6 +937,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             ) {
                 await this.handleSpannerLengthOnlyFastPath({
                     table,
+                    clonedTable,
                     oldColumn,
                     newColumn,
                     upQueries,
@@ -2472,8 +2473,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Handles length-only fast path changes for Spanner.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
+     * @param root0.clonedTable
      * @param root0.oldColumn
      * @param root0.newColumn
      * @param root0.upQueries
@@ -2481,12 +2484,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     private async handleSpannerLengthOnlyFastPath({
         table,
+        clonedTable,
         oldColumn,
         newColumn,
         upQueries,
         downQueries,
     }: {
         table: Table
+        clonedTable: Table
         oldColumn: TableColumn
         newColumn: TableColumn
         upQueries: Query[]
@@ -2529,12 +2534,22 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             ),
         )
 
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
+
         return true
     }
 
     /**
      * Handles safe ALTER COLUMN changes for Spanner.
      * Returns true if change was handled.
+     *
      * @param root0
      * @param root0.table
      * @param root0.clonedTable
@@ -2618,6 +2633,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         upQueries.push(new Query(upSql))
         downQueries.push(new Query(downSql))
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
 
         return true
     }

@@ -1346,6 +1346,9 @@ export class PostgresQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Track whether a rename occurred to avoid conflicting with fast paths
+            let columnRenamed = false
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1620,6 +1623,7 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+                columnRenamed = true
             }
 
             if (oldColumn.type !== newColumn.type) {
@@ -1632,6 +1636,7 @@ export class PostgresQueryRunner
                     downQueries,
                 })
             } else if (
+                !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length &&
                 !newColumn?.isArray &&

@@ -27,7 +27,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { CockroachDriver } from "./CockroachDriver"
+import { CockroachDriver } from "./CockroachDriver"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
@@ -392,6 +392,15 @@ export class CockroachQueryRunner
 
         upQueries.push(new Query(upSql))
         downQueries.push(new Query(downSql))
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
 
         return true
     }
@@ -1662,6 +1671,9 @@ export class CockroachQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Track whether a rename occurred to avoid conflicting with fast paths
+            let columnRenamed = false
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1901,6 +1913,7 @@ export class CockroachQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+                columnRenamed = true
             }
 
             if (oldColumn.type !== newColumn.type) {
@@ -1915,6 +1928,7 @@ export class CockroachQueryRunner
             }
 
             if (
+                !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length &&
                 !newColumn?.isArray &&

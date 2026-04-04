@@ -1163,6 +1163,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Track whether a rename occurred to avoid conflicting with fast paths
+            let columnRenamed = false
+
             if (newColumn.name !== oldColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1373,6 +1376,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+                columnRenamed = true
             }
             if (oldColumn.type !== newColumn.type) {
                 const handled = await this.handleSafeAlterOracle({
@@ -1396,6 +1400,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     }
                 }
             } else if (
+                !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length &&
                 // ensure *only* the length changed – everything else must be identical
