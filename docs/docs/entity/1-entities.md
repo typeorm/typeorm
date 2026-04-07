@@ -214,7 +214,7 @@ name: string
 
 ### Column Type Inference
 
-When no explicit type is provided in the `@Column()` decorator, TypeORM automatically infers the database column type based on the TypeScript property type.
+When no explicit type is provided in the `@Column()` decorator, TypeORM attempts to infer the database column type from the TypeScript property type metadata.
 
 ```typescript
 @Column()
@@ -222,6 +222,9 @@ name: string
 ```
 
 The inferred type depends on the database driver and its internal implementation.
+
+> ⚠️ **Important:**
+> The following table represents common mappings, but it is not guaranteed to be accurate for all configurations or drivers.
 
 | TypeScript Type | PostgreSQL | MySQL / MariaDB | SQLite | SQL Server |
 |----------------|------------|-----------------|--------|------------|
@@ -234,8 +237,8 @@ The inferred type depends on the database driver and its internal implementation
 >
 > - The exact mapping is determined internally by each database driver implementation.
 > - The actual column type may vary depending on configuration and driver-specific behavior.
-> - In some databases, types like `varchar` without length behave similarly to `text`.
-> - If TypeORM cannot infer a suitable database column type from the TypeScript property type, you must explicitly specify the column type in `@Column()`.
+> - Inference relies on TypeScript metadata and may not work for all types.
+> - If TypeORM cannot infer a suitable database column type, you must explicitly specify it in `@Column()`.
 > - For production systems, it is recommended to explicitly define column types.
 
 When the type cannot be inferred, you must specify it explicitly:
@@ -258,7 +261,7 @@ Using typescript enums:
 export enum UserRole {
     ADMIN = "admin",
     EDITOR = "editor",
-    GHOST = "ghost",
+    GHOST = "ghost"
 }
 
 @Entity()
@@ -280,7 +283,7 @@ export class User {
 Using array with enum values:
 
 ```typescript
-export type UserRoleType = "admin" | "editor" | "ghost",
+export type UserRoleType = "admin" | "editor" | "ghost"
 
 @Entity()
 export class User {
@@ -295,6 +298,7 @@ export class User {
     })
     role: UserRoleType
 }
+```
 
 ### `simple-array` column type
 
