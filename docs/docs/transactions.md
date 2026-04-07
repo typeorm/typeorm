@@ -59,7 +59,7 @@ Isolation level implementations are _not_ agnostic across all databases. Each dr
 
 \* SQLite's `READ UNCOMMITTED` only takes effect when [shared-cache mode](https://www.sqlite.org/sharedcache.html) is enabled. In the default mode, SQLite always uses `SERIALIZABLE` isolation regardless of the setting.
 
-SQL Server also supports setting a default isolation level via data source options (`isolationLevel` and `connectionIsolationLevel`), but these are subject to an [upstream pool limitation](../drivers/microsoft-sqlserver.md#connection-pool-does-not-reset-isolation-level). Per-transaction isolation levels are not affected.
+SQL Server also supports setting a default isolation level via data source options (`isolationLevel` and `connectionIsolationLevel`), but these are subject to an [upstream pool limitation](./drivers/microsoft-sqlserver.md#connection-pool-does-not-reset-isolation-level). Per-transaction isolation levels are not affected.
 
 ## Using `QueryRunner` to create and control state of single database connection
 
@@ -108,4 +108,4 @@ There are 3 methods to control transactions in `QueryRunner`:
 - `commitTransaction` - commits all changes made using the query runner instance.
 - `rollbackTransaction` - rolls all changes made using the query runner instance back.
 
-Learn more about [Query Runner](../query-runner.md).
+Learn more about [Query Runner](./query-runner.md).
