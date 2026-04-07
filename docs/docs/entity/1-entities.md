@@ -205,7 +205,48 @@ For example:
 @Column("varchar", { length: 200 })
 ```
 
+```typescript
+@Column({ type: "varchar", length: 255 })
+name: string
+```
+
 > Note about `bigint` type: `bigint` column type, used in SQL databases, doesn't fit into the regular `number` type and maps property to a `string` instead.
+
+### Column Type Inference
+
+When no explicit type is provided in the `@Column()` decorator, TypeORM automatically infers the database column type based on the TypeScript property type.
+
+```typescript
+@Column()
+name: string
+```
+
+The inferred type depends on the database driver and its internal implementation.
+
+| TypeScript Type | PostgreSQL | MySQL / MariaDB | SQLite | SQL Server |
+|----------------|------------|-----------------|--------|------------|
+| `string` | `varchar` / `text` | `varchar` | `text` | `nvarchar` |
+| `number` | `int` | `int` | `integer` | `int` |
+| `boolean` | `boolean` | `tinyint` | `boolean` | `bit` |
+| `Date` | `timestamp` | `datetime` | `datetime` | `datetime` |
+
+> **Note:**
+>
+> - The exact mapping is determined internally by each database driver implementation.
+> - The actual column type may vary depending on configuration and driver-specific behavior.
+> - In some databases, types like `varchar` without length behave similarly to `text`.
+> - If TypeORM cannot infer a suitable database column type from the TypeScript property type, you must explicitly specify the column type in `@Column()`.
+> - For production systems, it is recommended to explicitly define column types.
+
+When the type cannot be inferred, you must specify it explicitly:
+
+```typescript
+@Column({ type: "varchar", length: 255 })
+name: string
+
+@Column({ type: "simple-json" })
+profile: { name: string; nickname: string }
+```
 
 ### `enum` column type
 
@@ -254,7 +295,6 @@ export class User {
     })
     role: UserRoleType
 }
-```
 
 ### `simple-array` column type
 
