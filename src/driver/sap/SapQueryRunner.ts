@@ -223,7 +223,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         try {
             const queryStartTime = Date.now()
-            const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
+            const isInsertQuery = query.startsWith("INSERT INTO")
 
             if (parameters?.some(Array.isArray)) {
                 statement = await promisify(databaseConnection.prepare).call(
