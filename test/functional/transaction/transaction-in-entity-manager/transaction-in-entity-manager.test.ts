@@ -111,17 +111,14 @@ describe("transaction > transaction with entity manager", () => {
                     /* skip error */
                 }
 
-                const post = await dataSource.manager.findOneOrFail(Post, {
+                const post = await dataSource.manager.findOne(Post, {
                     where: { title: "Post #1" },
                 })
                 expect(post).to.be.null
 
-                const category = await dataSource.manager.findOneOrFail(
-                    Category,
-                    {
-                        where: { name: "Category #1" },
-                    },
-                )
+                const category = await dataSource.manager.findOne(Category, {
+                    where: { name: "Category #1" },
+                })
                 expect(category).to.be.null
             }),
         ))
