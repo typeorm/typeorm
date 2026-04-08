@@ -103,7 +103,7 @@ export const redirects = [
 
     { from: "/migrations", to: "/docs/migrations/why" },
     { from: "/transactions", to: "/docs/transactions" },
-    { from: "/indices", to: "/docs/indices" },
+    { from: "/indices", to: "/docs/indexes" },
     {
         from: "/docs/performance-optimization/3-using-indices",
         to: "/docs/performance-optimization/3-using-indexes",
@@ -122,7 +122,12 @@ export const redirects = [
         from: "/docs/advanced-topics/transactions",
         to: "/docs/transactions",
     },
-    { from: "/docs/advanced-topics/indices", to: "/docs/indices" },
+    { from: "/docs/indices", to: "/docs/indexes" },
+    { from: "/docs/advanced-topics/indices", to: "/docs/indexes" },
+    {
+        from: "/docs/performance-optimization/3-using-indices",
+        to: "/docs/performance-optimization/3-using-indexes",
+    },
     {
         from: "/docs/advanced-topics/listeners-and-subscribers",
         to: "/docs/listeners-and-subscribers",
