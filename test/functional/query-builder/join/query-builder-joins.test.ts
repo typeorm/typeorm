@@ -357,7 +357,7 @@ describe("query builder > joins", () => {
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndSelect("post.tag", "tag")
                         .where("post.id = :id", { id: post.id })
-                        .getOneOrFail()
+                        .getOne()
 
                     expect(loadedPost).to.be.null
                 }),
@@ -1082,7 +1082,7 @@ describe("query builder > joins", () => {
                             Tag,
                         )
                         .where("post.id = :id", { id: post.id })
-                        .getOneOrFail()
+                        .getOne()
 
                     expect(loadedPost).to.be.null
                 }),
@@ -1352,7 +1352,7 @@ describe("query builder > joins", () => {
                         )
                         .where("post.id = :id", { id: 1 })
                         .setParameters({ userId: 1 })
-                        .getOneOrFail()
+                        .getOne()
 
                     expect(loadedPost1).to.be.null
 
@@ -1366,7 +1366,7 @@ describe("query builder > joins", () => {
                         )
                         .where("post.id = :id", { id: 1 })
                         .setParameters({ categoryId: 1 })
-                        .getOneOrFail()
+                        .getOne()
 
                     expect(loadedPost2).to.be.null
                 }),
