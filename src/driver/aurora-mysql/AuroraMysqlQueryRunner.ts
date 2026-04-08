@@ -2377,10 +2377,7 @@ export class AuroraMysqlQueryRunner
 
                     if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
                         tableColumn.onUpdate = dbColumn["EXTRA"].slice(
-                            Math.max(
-                                0,
-                                dbColumn["EXTRA"].indexOf("on update") + 10,
-                            ),
+                            dbColumn["EXTRA"].indexOf("on update") + 10,
                         )
                     }
 

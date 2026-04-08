@@ -2928,12 +2928,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 // uppercase so the comparison in MysqlDriver#compareExtraValues does not fail.
                                 tableColumn.onUpdate = dbColumn["EXTRA"]
                                     .slice(
-                                        Math.max(
-                                            0,
-                                            dbColumn["EXTRA"].indexOf(
-                                                "on update",
-                                            ) + 10,
-                                        ),
+                                        dbColumn["EXTRA"].indexOf("on update") +
+                                            10,
                                     )
                                     .toUpperCase()
                             }
