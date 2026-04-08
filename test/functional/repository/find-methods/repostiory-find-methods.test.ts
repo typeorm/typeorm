@@ -655,9 +655,9 @@ describe("repository > find methods", () => {
                         await userRepository.save(user)
                     }
 
-                    let loadedUser = (await userRepository.findOneByOrFail({
+                    let loadedUser = await userRepository.findOneByOrFail({
                         id: 0,
-                    }))!
+                    })
                     loadedUser.id.should.be.equal(0)
                     loadedUser.firstName.should.be.equal("name #0")
                     loadedUser.secondName.should.be.equal("Doe")

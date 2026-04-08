@@ -160,9 +160,9 @@ describe("relations > eager relations > basic", () => {
                 nestedProfile.about = "I am nested!"
                 await dataSource.manager.save(nestedProfile)
 
-                const user = (await dataSource.manager.findOneBy(User, {
+                const user = await dataSource.manager.findOneByOrFail(User, {
                     id: 1,
-                }))!
+                })
                 user.nestedProfile = nestedProfile
                 await dataSource.manager.save(user)
 
@@ -210,9 +210,9 @@ describe("relations > eager relations > basic", () => {
                 nestedProfile.about = "I am nested!"
                 await dataSource.manager.save(nestedProfile)
 
-                const user = (await dataSource.manager.findOneBy(User, {
+                const user = await dataSource.manager.findOneByOrFail(User, {
                     id: 1,
-                }))!
+                })
                 user.nestedProfile = nestedProfile
                 await dataSource.manager.save(user)
 
