@@ -39,8 +39,8 @@ describe("transaction > transaction with entity manager", () => {
                     categoryId = category.id
                 })
 
-                const post = await dataSource.manager.findOneOrFail(Post, {
-                    where: { title: "Post #1" },
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
                 post.should.be.eql({
@@ -83,8 +83,8 @@ describe("transaction > transaction with entity manager", () => {
                             categoryId = category.id
 
                             const loadedPost =
-                                await entityManager.findOneOrFail(Post, {
-                                    where: { title: "Post #1" },
+                                await entityManager.findOneByOrFail(Post, {
+                                    title: "Post #1",
                                 })
                             expect(loadedPost).not.to.be.null
                             loadedPost.should.be.eql({
@@ -93,8 +93,8 @@ describe("transaction > transaction with entity manager", () => {
                             })
 
                             const loadedCategory =
-                                await entityManager.findOneOrFail(Category, {
-                                    where: { name: "Category #1" },
+                                await entityManager.findOneByOrFail(Category, {
+                                    name: "Category #1",
                                 })
                             expect(loadedCategory).not.to.be.null
                             loadedCategory.should.be.eql({
@@ -111,13 +111,13 @@ describe("transaction > transaction with entity manager", () => {
                     /* skip error */
                 }
 
-                const post = await dataSource.manager.findOne(Post, {
-                    where: { title: "Post #1" },
+                const post = await dataSource.manager.findOneBy(Post, {
+                    title: "Post #1",
                 })
                 expect(post).to.be.null
 
-                const category = await dataSource.manager.findOne(Category, {
-                    where: { name: "Category #1" },
+                const category = await dataSource.manager.findOneBy(Category, {
+                    name: "Category #1",
                 })
                 expect(category).to.be.null
             }),

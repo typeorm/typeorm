@@ -32,10 +32,8 @@ describe("uuid-mssql", () => {
 
                 const post = new Post()
                 await postRepository.save(post)
-                const loadedPost = await postRepository.findOneOrFail({
-                    where: {
-                        id: 1,
-                    },
+                const loadedPost = await postRepository.findOneByOrFail({
+                    id: 1,
                 })
                 expect(loadedPost.uuid).to.be.exist
                 postTable!
@@ -45,10 +43,8 @@ describe("uuid-mssql", () => {
                 const post2 = new Post()
                 post2.uuid = "FD357B8F-8838-42F6-B7A2-AE027444E895"
                 await postRepository.save(post2)
-                const loadedPost2 = await postRepository.findOneOrFail({
-                    where: {
-                        id: 2,
-                    },
+                const loadedPost2 = await postRepository.findOneByOrFail({
+                    id: 2,
                 })
                 expect(loadedPost2.uuid).to.equal(
                     "FD357B8F-8838-42F6-B7A2-AE027444E895",
@@ -56,11 +52,11 @@ describe("uuid-mssql", () => {
 
                 const question = new Question()
                 const savedQuestion = await questionRepository.save(question)
-                const loadedQuestion = await questionRepository.findOneOrFail({
-                    where: {
+                const loadedQuestion = await questionRepository.findOneByOrFail(
+                    {
                         id: savedQuestion.id,
                     },
-                })
+                )
                 expect(loadedQuestion.id).to.be.exist
                 expect(loadedQuestion.uuid).to.be.exist
                 expect(loadedQuestion.uuid2).to.be.null
@@ -84,11 +80,10 @@ describe("uuid-mssql", () => {
                 question2.uuid2 = null
                 question2.uuid3 = null
                 await questionRepository.save(question2)
-                const loadedQuestion2 = await questionRepository.findOneOrFail({
-                    where: {
+                const loadedQuestion2 =
+                    await questionRepository.findOneByOrFail({
                         id: "1ECAD7F6-23EE-453E-BB44-16ECA26D5189",
-                    },
-                })
+                    })
                 expect(loadedQuestion2.id).to.equal(
                     "1ECAD7F6-23EE-453E-BB44-16ECA26D5189",
                 )

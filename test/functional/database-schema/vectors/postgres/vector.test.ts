@@ -43,8 +43,8 @@ describe("columns > vector type", () => {
 
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneOrFail({
-                    where: { id: post.id },
+                const loadedPost = await postRepository.findOneByOrFail({
+                    id: post.id,
                 })
 
                 expect(loadedPost).to.exist
@@ -96,8 +96,8 @@ describe("columns > vector type", () => {
 
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneOrFail({
-                    where: { id: post.id },
+                const loadedPost = await postRepository.findOneByOrFail({
+                    id: post.id,
                 })
 
                 expect(loadedPost).to.exist

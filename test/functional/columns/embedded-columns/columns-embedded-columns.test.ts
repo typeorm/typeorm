@@ -175,8 +175,8 @@ describe("columns > embedded columns", () => {
                 parent.department = new Department()
                 parent.department.account = account
                 await parentRepository.save(parent)
-                const loadedParent = await parentRepository.findOneOrFail({
-                    where: { id: parent.id },
+                const loadedParent = await parentRepository.findOneByOrFail({
+                    id: parent.id,
                 })
 
                 loadedParent.should.be.eql({
@@ -192,8 +192,8 @@ describe("columns > embedded columns", () => {
                 parent.department.account.name = "Updated Account #1"
                 await parentRepository.save(parent)
 
-                const loadedParent1 = await parentRepository.findOneOrFail({
-                    where: { id: parent.id },
+                const loadedParent1 = await parentRepository.findOneByOrFail({
+                    id: parent.id,
                 })
 
                 loadedParent1.should.be.eql({

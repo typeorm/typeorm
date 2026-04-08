@@ -27,10 +27,8 @@ describe("github issues > #4947 beforeUpdate subscriber entity argument is undef
                 const newPost = new Post()
                 await repo.save(newPost)
 
-                const createdPost = await repo.findOneOrFail({
-                    where: {
-                        id: newPost.id,
-                    },
+                const createdPost = await repo.findOneByOrFail({
+                    id: newPost.id,
                 })
 
                 // test that the newly inserted post was touched by beforeInsert PostSubscriber event
@@ -42,10 +40,8 @@ describe("github issues > #4947 beforeUpdate subscriber entity argument is undef
                 // change the entity
                 await repo.update(createdPost.id, { colToUpdate: 1 })
 
-                const updatedPost = await repo.findOneOrFail({
-                    where: {
-                        id: createdPost.id,
-                    },
+                const updatedPost = await repo.findOneByOrFail({
+                    id: createdPost.id,
                 })
 
                 // test that the updated post was touched by beforeUpdate PostSubscriber event

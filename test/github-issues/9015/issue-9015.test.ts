@@ -53,9 +53,7 @@ describe("github issues > #9015 @UpdateDateColumn not updating on upsert", () =>
                 skipUpdateIfNoValuesChanged: true,
             },
         )
-        const postReloaded = await repository.findOneOrFail({
-            where: { id: post.id },
-        })
+        const postReloaded = await repository.findOneByOrFail({ id: post.id })
 
         expect(postReloaded).to.exist
         expect(postReloaded.description).to.be.equal("Some new description")

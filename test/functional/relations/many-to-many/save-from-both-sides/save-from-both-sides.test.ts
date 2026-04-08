@@ -44,7 +44,7 @@ describe("relations > many-to-many > save from both sides", () => {
 
                 const loadedPlatform = await connection
                     .getRepository(Platform)
-                    .findOne({ where: { slug: "windows" } })
+                    .findOneBy({ slug: "windows" })
 
                 const jediAcademy = new Game()
                 jediAcademy.name = "SW Jedi Academy"

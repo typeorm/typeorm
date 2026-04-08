@@ -49,10 +49,8 @@ describe("pgcrypto", () => {
                 const record = new Record()
                 record.id = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 const persistedRecord = await recordRepo.save(record)
-                const foundRecord = await recordRepo.findOneOrFail({
-                    where: {
-                        id: persistedRecord.id,
-                    },
+                const foundRecord = await recordRepo.findOneByOrFail({
+                    id: persistedRecord.id,
                 })
                 expect(foundRecord).to.be.exist
                 expect(foundRecord.id).to.eq(
@@ -84,10 +82,8 @@ describe("pgcrypto", () => {
                 const post2 = new Post()
                 post2.uuid = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 await postRepository.save(post2)
-                const loadedPost2 = await postRepository.findOneOrFail({
-                    where: {
-                        id: post2.id,
-                    },
+                const loadedPost2 = await postRepository.findOneByOrFail({
+                    id: post2.id,
                 })
                 expect(loadedPost2.uuid).to.equal(
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
@@ -105,11 +101,11 @@ describe("pgcrypto", () => {
                 expect(savedQuestion!.uuid3).to.be.null
                 expect(savedQuestion!.uuid4).to.be.exist
 
-                const loadedQuestion = await questionRepository.findOneOrFail({
-                    where: {
+                const loadedQuestion = await questionRepository.findOneByOrFail(
+                    {
                         id: savedQuestion.id,
                     },
-                })
+                )
                 expect(loadedQuestion.id).to.be.exist
                 expect(loadedQuestion.uuid).to.be.exist
                 expect(loadedQuestion.uuid2).to.equal(
@@ -137,11 +133,10 @@ describe("pgcrypto", () => {
                 question2.uuid3 = null
                 question2.uuid4 = null
                 await questionRepository.save(question2)
-                const loadedQuestion2 = await questionRepository.findOneOrFail({
-                    where: {
+                const loadedQuestion2 =
+                    await questionRepository.findOneByOrFail({
                         id: "1ecad7f6-23ee-453e-bb44-16eca26d5189",
-                    },
-                })
+                    })
                 expect(loadedQuestion2.id).to.equal(
                     "1ecad7f6-23ee-453e-bb44-16eca26d5189",
                 )

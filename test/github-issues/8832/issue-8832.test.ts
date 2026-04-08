@@ -62,12 +62,12 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
                     inet6: "2001:0db8:0000:0000:0000:ff00:0042:8329",
                 })
 
-                const savedUser = await userRepository.findOneOrFail({
-                    where: { uuid: newUser.uuid },
+                const savedUser = await userRepository.findOneByOrFail({
+                    uuid: newUser.uuid,
                 })
 
-                const foundUser = await userRepository.findOneOrFail({
-                    where: { id: savedUser.id },
+                const foundUser = await userRepository.findOneByOrFail({
+                    id: savedUser.id,
                 })
 
                 expect(foundUser.uuid).to.deep.equal(newUser.uuid)

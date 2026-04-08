@@ -42,8 +42,8 @@ describe("transaction > return data from transaction", () => {
                         }
                     })
 
-                const post = await dataSource.manager.findOneOrFail(Post, {
-                    where: { title: "Post #1" },
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
                 post.should.be.eql({
@@ -86,8 +86,8 @@ describe("transaction > return data from transaction", () => {
                         },
                     )
 
-                const post = await dataSource.manager.findOneOrFail(Post, {
-                    where: { title: "Post #1" },
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
                 post.should.be.eql({

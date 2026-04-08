@@ -53,8 +53,8 @@ describe("columns > vector type > sqlserver", () => {
 
                 await repository.save(chunk)
 
-                const loadedChunk = await repository.findOneOrFail({
-                    where: { id: chunk.id },
+                const loadedChunk = await repository.findOneByOrFail({
+                    id: chunk.id,
                 })
 
                 expect(loadedChunk).to.exist
@@ -82,8 +82,8 @@ describe("columns > vector type > sqlserver", () => {
                 point.coords = [4.0, 5.0, 6.0]
                 await repository.save(point)
 
-                const loadedPoint = await repository.findOneOrFail({
-                    where: { id: point.id },
+                const loadedPoint = await repository.findOneByOrFail({
+                    id: point.id,
                 })
 
                 expect(loadedPoint).to.exist
@@ -211,8 +211,8 @@ describe("columns > vector type > sqlserver", () => {
 
                 await repository.save(chunk)
 
-                const loadedChunk = await repository.findOneOrFail({
-                    where: { id: chunk.id },
+                const loadedChunk = await repository.findOneByOrFail({
+                    id: chunk.id,
                 })
 
                 expect(loadedChunk).to.exist

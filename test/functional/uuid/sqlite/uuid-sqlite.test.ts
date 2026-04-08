@@ -53,11 +53,11 @@ describe("uuid-sqlite", () => {
                 const question = new Question()
                 question.uuid2 = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 const savedQuestion = await questionRepository.save(question)
-                const loadedQuestion = await questionRepository.findOneOrFail({
-                    where: {
+                const loadedQuestion = await questionRepository.findOneByOrFail(
+                    {
                         id: savedQuestion.id,
                     },
-                })
+                )
                 expect(loadedQuestion.id).to.be.exist
                 expect(loadedQuestion.uuid).to.be.exist
                 expect(loadedQuestion.uuid2).to.equal(
@@ -85,11 +85,10 @@ describe("uuid-sqlite", () => {
                 question2.uuid3 = null
                 question2.uuid4 = null
                 await questionRepository.save(question2)
-                const loadedQuestion2 = await questionRepository.findOneOrFail({
-                    where: {
+                const loadedQuestion2 =
+                    await questionRepository.findOneByOrFail({
                         id: "1ecad7f6-23ee-453e-bb44-16eca26d5189",
-                    },
-                })
+                    })
                 expect(loadedQuestion2.id).to.equal(
                     "1ecad7f6-23ee-453e-bb44-16eca26d5189",
                 )

@@ -49,8 +49,8 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
                     },
                 )
 
-                const post = await connection.manager.findOneOrFail(Post, {
-                    where: { title: "Post #1" },
+                const post = await connection.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
                 post.should.be.eql({
@@ -103,8 +103,8 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
                     },
                 )
 
-                const post = await connection.manager.findOneOrFail(Post, {
-                    where: { title: "Post #1" },
+                const post = await connection.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
                 post.should.be.eql({
