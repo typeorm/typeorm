@@ -202,7 +202,7 @@ describe("transaction > nested transaction", () => {
                 }).should.be.rejected
 
                 for (const condition of conditions) {
-                    const post = await dataSource.manager.findOneOrFail(Post, {
+                    const post = await dataSource.manager.findOne(Post, {
                         where: { title: condition.title },
                     })
                     expect(post).to.be.null

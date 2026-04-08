@@ -495,7 +495,7 @@ describe("query builder > select", () => {
                     const entity = await dataSource
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: "2" })
-                        .getOneOrFail()
+                        .getOne()
 
                     expect(entity).to.be.null
                 }),
