@@ -4,16 +4,16 @@ import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 
 const databases = {
-    cockroachdb: { label: "CockroachDB", icon: "/img/databases/cockroachdb.png" },
+    cockroachdb: { label: "CockroachDB", icon: "/img/databases/cockroachdb.svg" },
     spanner: { label: "Google Spanner", icon: "/img/databases/spanner.svg" },
-    mariadb: { label: "MariaDB", icon: "/img/databases/mariadb.png" },
-    mongodb: { label: "MongoDB", icon: "/img/databases/mongodb.png" },
-    mysql: { label: "MySQL", icon: "/img/databases/mysql.png" },
-    oracle: { label: "Oracle", icon: "/img/databases/oracle.png" },
-    postgres: { label: "PostgreSQL", icon: "/img/databases/postgresql.png" },
-    sap: { label: "SAP HANA", icon: "/img/databases/sap.png" },
-    mssql: { label: "SQL Server", icon: "/img/databases/mssql.png" },
-    sqlite: { label: "SQLite", icon: "/img/databases/sqlite.png" },
+    mariadb: { label: "MariaDB", icon: "/img/databases/mariadb.svg" },
+    mongodb: { label: "MongoDB", icon: "/img/databases/mongodb.svg" },
+    mysql: { label: "MySQL", icon: "/img/databases/mysql.svg" },
+    oracle: { label: "Oracle", icon: "/img/databases/oracle.svg" },
+    postgres: { label: "PostgreSQL", icon: "/img/databases/postgresql.svg" },
+    sap: { label: "SAP HANA", icon: "/img/databases/sap.svg" },
+    mssql: { label: "SQL Server", icon: "/img/databases/mssql.svg" },
+    sqlite: { label: "SQLite", icon: "/img/databases/sqlite.svg" },
 } as const
 
 type DatabaseName = keyof typeof databases
@@ -37,8 +37,8 @@ export const DatabaseTabs = ({ children }: PropsWithChildren) => {
                         src={db.icon}
                         alt={db.label}
                         aria-label={db.label}
-                        width={20}
-                        height={20}
+                        width={40}
+                        height={40}
                         style={{ verticalAlign: "middle" }}
                     />
                 ),
