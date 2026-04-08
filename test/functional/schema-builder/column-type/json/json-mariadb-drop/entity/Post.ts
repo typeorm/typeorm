@@ -10,5 +10,5 @@ export class Post {
     @Column({
         type: "json",
     })
-    data: any
+    data: Record<string, unknown>
 }

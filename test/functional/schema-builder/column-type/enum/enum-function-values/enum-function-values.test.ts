@@ -88,7 +88,7 @@ describe("schema builder > column type > enum > enum function values", () => {
                         .createSchemaBuilder()
                         .log()
 
-                    sqlInMemory!.upQueries.length.should.be.greaterThan(0)
+                    sqlInMemory.upQueries.length.should.be.greaterThan(0)
                     sqlInMemory.upQueries.forEach((query) => {
                         // there should be no function string in query when our ENUM TYPE is provided
                         query.query.should.not.contain("function")
