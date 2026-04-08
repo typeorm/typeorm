@@ -589,7 +589,7 @@ export class MigrationExecutor {
             const migrationClassName =
                 migration.name || (migration.constructor as any).name
             const migrationTimestamp = parseInt(
-                migrationClassName.substr(-13),
+                migrationClassName.slice(-13),
                 10,
             )
             if (!migrationTimestamp || isNaN(migrationTimestamp)) {

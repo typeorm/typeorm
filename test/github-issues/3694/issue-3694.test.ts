@@ -1,13 +1,12 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import type { DataSource, ObjectLiteral } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { FruitEnum } from "./enum/FruitEnum"
 
 describe("github issues > #3694 Sync enums on schema sync", () => {
     let dataSources: DataSource[]
@@ -23,29 +22,39 @@ describe("github issues > #3694 Sync enums on schema sync", () => {
     it("should change schema when enum definition changes", () =>
         Promise.all(
             dataSources.map(async (connection) => {
-                const fruitEnum = FruitEnum
-                ;(fruitEnum as any).Banana = "BANANA"
-                Object.assign(fruitEnum, { Cherry: "cherry" })
                 const metadata = connection.getMetadata(Post)
                 const fruitColumn = metadata.columns.find(
                     (column) => column.propertyName === "fruit",
                 )
-                fruitColumn!.enum = Object.keys(fruitEnum).map(
-                    (key) => (fruitEnum as ObjectLiteral)[key],
-                )
+                if (!fruitColumn) throw new Error("fruit column not found")
+                const originalEnum = fruitColumn.enum
 
-                await connection.synchronize()
+                // simulate changing the enum at runtime: rename Banana,
+                // add Cherry — use a fresh array instead of mutating the
+                // shared FruitEnum object to avoid polluting other tests
+                fruitColumn.enum = ["apple", "pineapple", "BANANA", "cherry"]
 
-                const queryRunner = connection.createQueryRunner()
-                const table = await queryRunner.getTable("post")
-                await queryRunner.release()
+                try {
+                    await connection.synchronize()
 
-                expect(table!.findColumnByName("fruit")!.enum).to.deep.equal([
-                    "apple",
-                    "pineapple",
-                    "BANANA",
-                    "cherry",
-                ])
+                    const queryRunner = connection.createQueryRunner()
+                    try {
+                        const table = await queryRunner.getTable("post")
+                        const fruitCol = table?.findColumnByName("fruit")
+
+                        expect(fruitCol?.enum).to.deep.equal([
+                            "apple",
+                            "pineapple",
+                            "BANANA",
+                            "cherry",
+                        ])
+                    } finally {
+                        await queryRunner.release()
+                    }
+                } finally {
+                    // restore original enum to avoid polluting other tests
+                    fruitColumn.enum = originalEnum
+                }
             }),
         ))
 })
