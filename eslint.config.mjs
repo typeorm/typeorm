@@ -40,6 +40,9 @@ export default defineConfig([
             "@typescript-eslint/consistent-type-exports": "error",
             "@typescript-eslint/consistent-type-imports": "error",
 
+            "unicorn/prefer-string-slice": "error",
+            "unicorn/prefer-string-starts-ends-with": "error",
+
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",
             "@typescript-eslint/no-empty-object-type": "warn",
@@ -93,8 +96,6 @@ export default defineConfig([
             "no-prototype-builtins": "warn",
             "no-regex-spaces": "warn",
             "no-return-assign": ["error", "always"],
-            "unicorn/prefer-string-slice": "error",
-            "unicorn/prefer-string-starts-ends-with": "error",
             "preserve-caught-error": "warn",
         },
     },
