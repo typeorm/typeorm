@@ -26,7 +26,9 @@ export async function importOrRequireFile(
         return [require(filePath), "commonjs"]
     }
 
-    const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
+    const extension = filePath.slice(
+        Math.max(0, filePath.lastIndexOf(".") + ".".length),
+    )
 
     if (extension === "mjs" || extension === "mts") return tryToImport()
     else if (extension === "cjs" || extension === "cts") return tryToRequire()

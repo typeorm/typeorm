@@ -72,7 +72,10 @@ export class RelationIdAttribute {
                 `Given value must be a string representation of alias property`,
             )
 
-        return this.relationName.substring(0, this.relationName.indexOf("."))
+        return this.relationName.slice(
+            0,
+            Math.max(0, this.relationName.indexOf(".")),
+        )
     }
 
     /**
@@ -88,7 +91,9 @@ export class RelationIdAttribute {
                 `Given value must be a string representation of alias property`,
             )
 
-        return this.relationName.substring(this.relationName.indexOf(".") + 1)
+        return this.relationName.slice(
+            Math.max(0, this.relationName.indexOf(".") + 1),
+        )
     }
 
     /**
@@ -133,10 +138,15 @@ export class RelationIdAttribute {
     }
 
     get mapToPropertyParentAlias(): string {
-        return this.mapToProperty.substring(0, this.mapToProperty.indexOf("."))
+        return this.mapToProperty.slice(
+            0,
+            Math.max(0, this.mapToProperty.indexOf(".")),
+        )
     }
 
     get mapToPropertyPropertyPath(): string {
-        return this.mapToProperty.substring(this.mapToProperty.indexOf(".") + 1)
+        return this.mapToProperty.slice(
+            Math.max(0, this.mapToProperty.indexOf(".") + 1),
+        )
     }
 }

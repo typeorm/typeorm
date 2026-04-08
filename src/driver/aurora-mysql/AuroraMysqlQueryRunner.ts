@@ -2376,8 +2376,11 @@ export class AuroraMysqlQueryRunner
                     }
 
                     if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
-                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(
-                            dbColumn["EXTRA"].indexOf("on update") + 10,
+                        tableColumn.onUpdate = dbColumn["EXTRA"].slice(
+                            Math.max(
+                                0,
+                                dbColumn["EXTRA"].indexOf("on update") + 10,
+                            ),
                         )
                     }
 
@@ -2482,13 +2485,13 @@ export class AuroraMysqlQueryRunner
                     ) {
                         const colType = dbColumn["COLUMN_TYPE"]
                         const items = colType
-                            .substring(
+                            .slice(
                                 colType.indexOf("(") + 1,
                                 colType.lastIndexOf(")"),
                             )
                             .split(",")
                         tableColumn.enum = (items as string[]).map((item) => {
-                            return item.substring(1, item.length - 1)
+                            return item.slice(1, -1)
                         })
                         tableColumn.length = ""
                     }

@@ -1571,36 +1571,46 @@ export abstract class AbstractSqliteQueryRunner
                     .toUpperCase()
                     .indexOf("AUTOINCREMENT")
                 if (autoIncrementIndex !== -1) {
-                    autoIncrementColumnName = tableSql.substring(
+                    autoIncrementColumnName = tableSql.slice(
                         0,
-                        autoIncrementIndex,
+                        Math.max(0, autoIncrementIndex),
                     )
                     const comma = autoIncrementColumnName.lastIndexOf(",")
                     const bracket = autoIncrementColumnName.lastIndexOf("(")
                     if (comma !== -1) {
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(comma)
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            Math.max(0, comma),
+                        )
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            0,
+                            Math.max(
                                 0,
                                 autoIncrementColumnName.lastIndexOf('"'),
-                            )
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(
+                            ),
+                        )
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            Math.max(
+                                0,
                                 autoIncrementColumnName.indexOf('"') + 1,
-                            )
+                            ),
+                        )
                     } else if (bracket !== -1) {
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(bracket)
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            Math.max(0, bracket),
+                        )
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            0,
+                            Math.max(
                                 0,
                                 autoIncrementColumnName.lastIndexOf('"'),
-                            )
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(
+                            ),
+                        )
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            Math.max(
+                                0,
                                 autoIncrementColumnName.indexOf('"') + 1,
-                            )
+                            ),
+                        )
                     }
                 }
 
@@ -1661,17 +1671,14 @@ export abstract class AbstractSqliteQueryRunner
                         const pos = tableColumn.type.indexOf("(")
                         if (pos !== -1) {
                             const fullType = tableColumn.type
-                            const dataType = fullType.substring(0, pos)
+                            const dataType = fullType.slice(0, Math.max(0, pos))
                             if (
                                 this.driver.withLengthColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
                                 const len = parseInt(
-                                    fullType.substring(
-                                        pos + 1,
-                                        fullType.length - 1,
-                                    ),
+                                    fullType.slice(pos + 1, -1),
                                 )
                                 if (len) {
                                     tableColumn.length = len.toString()

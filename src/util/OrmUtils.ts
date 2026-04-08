@@ -322,8 +322,8 @@ export class OrmUtils {
         )
 
         if (enumMatch && enumMatch.index) {
-            const afterMatch = sql.substring(
-                enumMatch.index + enumMatch[0].length,
+            const afterMatch = sql.slice(
+                Math.max(0, enumMatch.index + enumMatch[0].length),
             )
 
             // This is an enum

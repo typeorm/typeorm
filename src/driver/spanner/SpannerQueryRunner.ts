@@ -1954,16 +1954,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 dbColumn["SPANNER_TYPE"].toLowerCase()
                             if (fullType.indexOf("array") !== -1) {
                                 tableColumn.isArray = true
-                                fullType = fullType.substring(
+                                fullType = fullType.slice(
                                     fullType.indexOf("<") + 1,
                                     fullType.indexOf(">"),
                                 )
                             }
 
                             if (fullType.indexOf("(") !== -1) {
-                                tableColumn.type = fullType.substring(
+                                tableColumn.type = fullType.slice(
                                     0,
-                                    fullType.indexOf("("),
+                                    Math.max(0, fullType.indexOf("(")),
                                 )
                             } else {
                                 tableColumn.type = fullType
@@ -1974,7 +1974,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                     tableColumn.type as ColumnType,
                                 ) !== -1
                             ) {
-                                tableColumn.length = fullType.substring(
+                                tableColumn.length = fullType.slice(
                                     fullType.indexOf("(") + 1,
                                     fullType.indexOf(")"),
                                 )
