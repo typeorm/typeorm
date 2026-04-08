@@ -1327,15 +1327,13 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // For array or generated column changes, recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1616,6 +1614,90 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+            ) {
+                // Use ALTER COLUMN ... TYPE instead of DROP+ADD to preserve data (#3357)
+                const isNewEnum =
+                    newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum"
+                const isOldEnum =
+                    oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum"
+
+                let upType = this.driver.createFullType(newColumn)
+                let downType = this.driver.createFullType(oldColumn)
+
+                if (isNewEnum && !isOldEnum) {
+                    // Transitioning to enum type: create enum first, then alter
+                    const newEnumName = this.buildEnumName(table, newColumn)
+                    const arraySuffix = newColumn.isArray ? "[]" : ""
+                    upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
+                    upQueries.push(
+                        this.createEnumTypeSql(table, newColumn, newEnumName),
+                    )
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${upType}`,
+                        ),
+                    )
+                    downQueries.push(
+                        this.dropEnumTypeSql(table, newColumn, newEnumName),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                oldColumn.name
+                            }" TYPE ${downType}`,
+                        ),
+                    )
+                } else if (isOldEnum && !isNewEnum) {
+                    // Transitioning from enum type: alter column, then drop old enum
+                    const oldEnumName = this.buildEnumName(table, oldColumn)
+                    const arraySuffix = oldColumn.isArray ? "[]" : ""
+                    downType = `${oldEnumName}${arraySuffix} USING "${oldColumn.name}"::"text"::${oldEnumName}${arraySuffix}`
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${upType}`,
+                        ),
+                    )
+                    upQueries.push(
+                        this.dropEnumTypeSql(table, oldColumn, oldEnumName),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                oldColumn.name
+                            }" TYPE ${downType}`,
+                        ),
+                    )
+                    downQueries.push(
+                        this.createEnumTypeSql(table, oldColumn, oldEnumName),
+                    )
+                } else {
+                    // Regular type/length change - use USING clause for safe casting
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${upType} USING "${newColumn.name}"::${upType}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${downType} USING "${newColumn.name}"::${downType}`,
+                        ),
+                    )
+                }
             }
 
             if (
