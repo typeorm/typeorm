@@ -1,10 +1,10 @@
-import { Subject } from "../Subject"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { Subject } from "../Subject"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { CannotAttachTreeChildrenEntityError } from "../../error/CannotAttachTreeChildrenEntityError"
-import { DeleteQueryBuilder } from "../../query-builder/DeleteQueryBuilder"
+import type { DeleteQueryBuilder } from "../../query-builder/DeleteQueryBuilder"
 import { OrmUtils } from "../../util/OrmUtils"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
 
 /**
  * Executes subject operations for closure entities.
@@ -22,6 +22,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     *
      * @param subject
      */
     async insert(subject: Subject): Promise<void> {
@@ -61,7 +62,7 @@ export class ClosureSubjectExecutor {
 
         if (parent) {
             const escape = (alias: string) =>
-                this.queryRunner.connection.driver.escape(alias)
+                this.queryRunner.dataSource.driver.escape(alias)
             const tableName = this.getTableName(
                 subject.metadata.closureJunctionTable.tablePath,
             )
@@ -88,7 +89,7 @@ export class ClosureSubjectExecutor {
                                 : subject.entity!,
                         ),
                     )
-                    return this.queryRunner.connection.driver.createParameter(
+                    return this.queryRunner.dataSource.driver.createParameter(
                         "child_entity_" + column.databaseName,
                         queryParams.length - 1,
                     )
@@ -109,7 +110,7 @@ export class ClosureSubjectExecutor {
 
                         queryParams.push(parentId)
                         const parameterName =
-                            this.queryRunner.connection.driver.createParameter(
+                            this.queryRunner.dataSource.driver.createParameter(
                                 "parent_entity_" +
                                     column.referencedColumn!.databaseName,
                                 queryParams.length - 1,
@@ -135,6 +136,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     *
      * @param subject
      */
     async update(subject: Subject): Promise<void> {
@@ -173,7 +175,7 @@ export class ClosureSubjectExecutor {
         }
 
         const escape = (alias: string) =>
-            this.queryRunner.connection.driver.escape(alias)
+            this.queryRunner.dataSource.driver.escape(alias)
         const closureTable = subject.metadata.closureJunctionTable
 
         const ancestorColumnNames = closureTable.ancestorColumns.map(
@@ -271,7 +273,7 @@ export class ClosureSubjectExecutor {
 
                         queryParams.push(entityId)
                         const parameterName =
-                            this.queryRunner.connection.driver.createParameter(
+                            this.queryRunner.dataSource.driver.createParameter(
                                 "entity_" +
                                     column.referencedColumn!.databaseName,
                                 queryParams.length - 1,
@@ -294,7 +296,7 @@ export class ClosureSubjectExecutor {
 
                         queryParams.push(parentId)
                         const parameterName =
-                            this.queryRunner.connection.driver.createParameter(
+                            this.queryRunner.dataSource.driver.createParameter(
                                 "parent_entity_" +
                                     column.referencedColumn!.databaseName,
                                 queryParams.length - 1,
@@ -321,18 +323,19 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being removed.
+     *
      * @param subjects
      */
     async remove(subjects: Subject | Subject[]): Promise<void> {
         // Only mssql need to execute deletes for the juntion table as it doesn't support multi cascade paths.
-        if (!(this.queryRunner.connection.driver.options.type === "mssql")) {
+        if (!(this.queryRunner.dataSource.driver.options.type === "mssql")) {
             return
         }
 
         if (!Array.isArray(subjects)) subjects = [subjects]
 
         const escape = (alias: string) =>
-            this.queryRunner.connection.driver.escape(alias)
+            this.queryRunner.dataSource.driver.escape(alias)
         const identifiers = subjects.map((subject) => subject.identifier)
         const closureTable = subjects[0].metadata.closureJunctionTable
 
@@ -365,6 +368,7 @@ export class ClosureSubjectExecutor {
     /**
      * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
      * schema name, otherwise returns escaped table name.
+     *
      * @param tablePath
      */
     protected getTableName(tablePath: string): string {
@@ -374,7 +378,7 @@ export class ClosureSubjectExecutor {
                 // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
                 return i === ""
                     ? i
-                    : this.queryRunner.connection.driver.escape(i)
+                    : this.queryRunner.dataSource.driver.escape(i)
             })
             .join(".")
     }

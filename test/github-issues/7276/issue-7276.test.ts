@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,21 +9,20 @@ import { ClusterCluster as ClusterClusterMssql } from "./entity/TestMssql"
 
 describe("github issues > #7276 Schema sync not able to find diff correctly and executes same queries on every run", () => {
     describe("postgres", () => {
-        let connections: DataSource[]
-        before(
-            async () =>
-                (connections = await createTestingConnections({
-                    enabledDrivers: ["postgres"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [ClusterClusterPg],
-                })),
-        )
-        after(() => closeTestingConnections(connections))
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["postgres"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [ClusterClusterPg],
+            })
+        })
+        after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()
@@ -34,7 +33,7 @@ describe("github issues > #7276 Schema sync not able to find diff correctly and 
 
         it("should not generate queries when no model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.driver.createSchemaBuilder().build()
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
@@ -46,21 +45,20 @@ describe("github issues > #7276 Schema sync not able to find diff correctly and 
     })
 
     describe("mssql", () => {
-        let connections: DataSource[]
-        before(
-            async () =>
-                (connections = await createTestingConnections({
-                    enabledDrivers: ["mssql"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    entities: [ClusterClusterMssql],
-                })),
-        )
-        after(() => closeTestingConnections(connections))
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["mssql"],
+                schemaCreate: false,
+                dropSchema: true,
+                entities: [ClusterClusterMssql],
+            })
+        })
+        after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()
@@ -71,7 +69,7 @@ describe("github issues > #7276 Schema sync not able to find diff correctly and 
 
         it("should not generate queries when no model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.driver.createSchemaBuilder().build()
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()

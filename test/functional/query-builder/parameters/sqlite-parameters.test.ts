@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,21 +9,20 @@ import {
 import { Example } from "./entity/Example"
 
 describe("query builder > parameters > sqlite", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Example],
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Example],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should replace basic parameters when executing", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save({ id: "bar" })
 
@@ -39,8 +38,8 @@ describe("query builder > parameters > sqlite", () => {
 
     it("should prevent invalid characters from being used as identifiers", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const b = connection.createQueryBuilder()
+            dataSources.map(async (dataSource) => {
+                const b = dataSource.createQueryBuilder()
 
                 expect(() => b.setParameter(":foo", "bar")).to.throw()
                 expect(() => b.setParameter("@foo", "bar")).to.throw()
@@ -51,8 +50,8 @@ describe("query builder > parameters > sqlite", () => {
 
     it("should allow periods in parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save({ id: "bar" })
 

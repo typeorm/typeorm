@@ -1,7 +1,7 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { JoinTableMetadataArgs } from "../../metadata-args/JoinTableMetadataArgs"
-import { JoinTableMultipleColumnsOptions } from "../options/JoinTableMultipleColumnsOptions"
-import { JoinTableOptions } from "../options/JoinTableOptions"
+import type { JoinTableMetadataArgs } from "../../metadata-args/JoinTableMetadataArgs"
+import type { JoinTableMultipleColumnsOptions } from "../options/JoinTableMultipleColumnsOptions"
+import type { JoinTableOptions } from "../options/JoinTableOptions"
 
 /**
  * JoinTable decorator is used in many-to-many relationship to specify owner side of relationship.
@@ -12,6 +12,7 @@ export function JoinTable(): PropertyDecorator
 /**
  * JoinTable decorator is used in many-to-many relationship to specify owner side of relationship.
  * Its also used to set a custom junction table's name, column names and referenced columns.
+ *
  * @param options
  */
 export function JoinTable(options: JoinTableOptions): PropertyDecorator
@@ -19,6 +20,7 @@ export function JoinTable(options: JoinTableOptions): PropertyDecorator
 /**
  * JoinTable decorator is used in many-to-many relationship to specify owner side of relationship.
  * Its also used to set a custom junction table's name, column names and referenced columns.
+ *
  * @param options
  */
 export function JoinTable(
@@ -28,6 +30,7 @@ export function JoinTable(
 /**
  * JoinTable decorator is used in many-to-many relationship to specify owner side of relationship.
  * Its also used to set a custom junction table's name, column names and referenced columns.
+ *
  * @param options
  */
 export function JoinTable(

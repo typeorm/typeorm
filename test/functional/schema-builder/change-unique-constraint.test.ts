@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { IndexMetadata } from "../../../src/metadata/IndexMetadata"
 import { UniqueMetadata } from "../../../src/metadata/UniqueMetadata"
 import {
@@ -12,21 +12,21 @@ import { Teacher } from "./entity/Teacher"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > change unique constraint", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly add new unique constraint", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const teacherMetadata = connection.getMetadata(Teacher)
+            dataSources.map(async (dataSource) => {
+                const teacherMetadata = dataSource.getMetadata(Teacher)
                 const nameColumn =
                     teacherMetadata.findColumnWithPropertyName("name")!
                 let uniqueIndexMetadata: IndexMetadata | undefined = undefined
@@ -34,9 +34,9 @@ describe("schema builder > change unique constraint", () => {
 
                 // Mysql and SAP stores unique constraints as unique indices.
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     uniqueIndexMetadata = new IndexMetadata({
                         entityMetadata: teacherMetadata,
@@ -47,7 +47,7 @@ describe("schema builder > change unique constraint", () => {
                             synchronize: true,
                         },
                     })
-                    uniqueIndexMetadata.build(connection.namingStrategy)
+                    uniqueIndexMetadata.build(dataSource.namingStrategy)
                     teacherMetadata.indices.push(uniqueIndexMetadata)
                 } else {
                     uniqueMetadata = new UniqueMetadata({
@@ -57,20 +57,20 @@ describe("schema builder > change unique constraint", () => {
                             target: Teacher,
                         },
                     })
-                    uniqueMetadata.build(connection.namingStrategy)
+                    uniqueMetadata.build(dataSource.namingStrategy)
                     teacherMetadata.uniques.push(uniqueMetadata)
                 }
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("teacher")
                 await queryRunner.release()
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     table!.indices.length.should.be.equal(1)
                     table!.indices[0].isUnique!.should.be.true
@@ -94,17 +94,17 @@ describe("schema builder > change unique constraint", () => {
 
     it("should correctly change unique constraint", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Sqlite does not store unique constraint name
-                if (DriverUtils.isSQLiteFamily(connection.driver)) return
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = dataSource.getMetadata(Post)
 
                 // Mysql and SAP stores unique constraints as unique indices.
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     const uniqueIndexMetadata = postMetadata.indices.find(
                         (i) => i.columns.length === 2 && i.isUnique === true,
@@ -117,16 +117,16 @@ describe("schema builder > change unique constraint", () => {
                     uniqueMetadata!.name = "changed_unique"
                 }
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     const tableIndex = table!.indices.find(
                         (index) =>
@@ -140,7 +140,7 @@ describe("schema builder > change unique constraint", () => {
                         (i) => i.name === "changed_unique",
                     )
                     uniqueIndexMetadata!.name =
-                        connection.namingStrategy.indexName(
+                        dataSource.namingStrategy.indexName(
                             table!,
                             uniqueIndexMetadata!.columns.map(
                                 (c) => c.databaseName,
@@ -157,7 +157,7 @@ describe("schema builder > change unique constraint", () => {
                         (i) => i.name === "changed_unique",
                     )
                     uniqueMetadata!.name =
-                        connection.namingStrategy.uniqueConstraintName(
+                        dataSource.namingStrategy.uniqueConstraintName(
                             table!,
                             uniqueMetadata!.columns.map((c) => c.databaseName),
                         )
@@ -167,14 +167,14 @@ describe("schema builder > change unique constraint", () => {
 
     it("should correctly drop removed unique constraint", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const postMetadata = dataSource.getMetadata(Post)
 
                 // Mysql and SAP stores unique constraints as unique indices.
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     const index = postMetadata!.indices.find(
                         (i) => i.columns.length === 2 && i.isUnique === true,
@@ -193,16 +193,16 @@ describe("schema builder > change unique constraint", () => {
                     )
                 }
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     table!.indices.length.should.be.equal(1)
                 } else {

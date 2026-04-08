@@ -3,20 +3,19 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/index.js"
+import type { DataSource } from "../../../src/index.js"
 
 describe("github issues > #10567 Postgres: Gist index on daterange column recreated every migration", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: false,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: false,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
 
     after(() => closeTestingConnections(dataSources))
 

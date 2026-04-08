@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import {
@@ -14,14 +14,14 @@ describe("persistence > one-to-many", function () {
     // Setup
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
-    before(() => {
-        return createTestingConnections({
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
             entities: [Post, Category],
-        }).then((all) => (connections = all))
+        })
     })
-    after(() => closeTestingConnections(connections))
-    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(dataSources))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -29,9 +29,9 @@ describe("persistence > one-to-many", function () {
 
     it("should add exist element to exist object with empty one-to-many relation and save it", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const newCategory = categoryRepository.create()
                 newCategory.id = 1
@@ -62,9 +62,9 @@ describe("persistence > one-to-many", function () {
 
     it("should add exist element to new object with empty one-to-many relation and save it", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const newCategory = categoryRepository.create()
                 newCategory.id = 1
@@ -93,9 +93,9 @@ describe("persistence > one-to-many", function () {
 
     it("should remove exist element from one-to-many relation and save it", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const firstNewCategory = categoryRepository.create()
                 firstNewCategory.id = 1
@@ -122,11 +122,8 @@ describe("persistence > one-to-many", function () {
                     where: {
                         id: newPost.id,
                     },
-                    join: {
-                        alias: "post",
-                        innerJoinAndSelect: {
-                            categories: "post.categories",
-                        },
+                    relations: {
+                        categories: true,
                     },
                 })
                 expect(loadedPost).not.to.be.null
@@ -138,9 +135,9 @@ describe("persistence > one-to-many", function () {
 
     it("should remove all elements from one-to-many relation and save it", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const firstNewCategory = categoryRepository.create()
                 firstNewCategory.id = 1
@@ -167,11 +164,8 @@ describe("persistence > one-to-many", function () {
                     where: {
                         id: newPost.id,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            categories: "post.categories",
-                        },
+                    relations: {
+                        categories: true,
                     },
                 })
                 expect(loadedPost).not.to.be.null
@@ -181,9 +175,9 @@ describe("persistence > one-to-many", function () {
 
     it("set relation to null (elements exist there) from one-to-many relation and save it", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
 
                 const firstNewCategory = categoryRepository.create()
                 firstNewCategory.id = 1
@@ -210,11 +204,8 @@ describe("persistence > one-to-many", function () {
                     where: {
                         id: newPost.id,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            categories: "post.categories",
-                        },
+                    relations: {
+                        categories: true,
                     },
                 }))!
                 expect(loadedPost).not.to.be.null

@@ -5,7 +5,8 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource, In, IsNull, Raw } from "../../../../src"
+import type { DataSource } from "../../../../src"
+import { In, IsNull, Raw } from "../../../../src"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
@@ -14,21 +15,20 @@ import { ExternalPost } from "./entity/ExternalPost"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > select", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Category, Post, Tag, HeroImage, ExternalPost],
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category, Post, Tag, HeroImage, ExternalPost],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should append all entity mapped columns from main selection to select statement", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const sql = connection.manager
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .disableEscaping()
                     .getSql()
@@ -48,8 +48,8 @@ describe("query builder > select", () => {
 
     it("should append all entity mapped columns from main selection to SELECT DISTINCT statement", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const sql = connection.manager
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .distinct()
                     .disableEscaping()
@@ -70,8 +70,8 @@ describe("query builder > select", () => {
 
     it("should append all entity mapped columns from both main selection and join selections to select statement", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const sql = connection
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("category", "category")
                     .disableEscaping()
@@ -96,8 +96,8 @@ describe("query builder > select", () => {
 
     it("should append entity mapped columns from both main alias and join aliases to select statement", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const sql = connection
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
                     .createQueryBuilder(Post, "post")
                     .select("post.id")
                     .addSelect("category.name")
@@ -115,8 +115,8 @@ describe("query builder > select", () => {
 
     it("should append entity mapped columns to select statement, if they passed as array", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const sql = connection
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
                     .createQueryBuilder(Post, "post")
                     .select(["post.id", "post.title"])
                     .disableEscaping()
@@ -130,8 +130,8 @@ describe("query builder > select", () => {
 
     it("should append raw sql to select statement", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const sql = connection
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
                     .createQueryBuilder(Post, "post")
                     .select("COUNT(*) as cnt")
                     .disableEscaping()
@@ -143,8 +143,8 @@ describe("query builder > select", () => {
 
     it("should append raw sql and entity mapped column to select statement", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const sql = connection
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
                     .createQueryBuilder(Post, "post")
                     .select(["COUNT(*) as cnt", "post.title"])
                     .disableEscaping()
@@ -158,8 +158,8 @@ describe("query builder > select", () => {
 
     it("should not create alias for selection, which is not entity mapped column", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const sql = connection
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
                     .createQueryBuilder(Post, "post")
                     .select("post.name")
                     .disableEscaping()
@@ -173,10 +173,10 @@ describe("query builder > select", () => {
         describe("many-to-one", () => {
             it("should craft query with exact value", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
+                    dataSources.map(async (dataSource) => {
                         // For github issues #2707
 
-                        const [sql, params] = connection
+                        const [sql, params] = dataSource
                             .createQueryBuilder(Post, "post")
                             .select("post.id")
                             .leftJoin("post.category", "category_join")
@@ -199,8 +199,8 @@ describe("query builder > select", () => {
 
             it("should craft query with FindOperator", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
-                        const [sql, params] = connection
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
                             .createQueryBuilder(Post, "post")
                             .select("post.id")
                             .leftJoin("post.category", "category_join")
@@ -223,9 +223,9 @@ describe("query builder > select", () => {
 
             it("should craft query with Raw", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
+                    dataSources.map(async (dataSource) => {
                         // For github issue #6264
-                        const [sql, params] = connection
+                        const [sql, params] = dataSource
                             .createQueryBuilder(Post, "post")
                             .select("post.id")
                             .leftJoin("post.category", "category_join")
@@ -252,8 +252,8 @@ describe("query builder > select", () => {
         describe("one-to-many", () => {
             it("should craft query with exact value", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
-                        const [sql, params] = connection
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
                             .createQueryBuilder(Category, "category")
                             .select("category.id")
                             .leftJoin("category.posts", "posts")
@@ -275,8 +275,8 @@ describe("query builder > select", () => {
 
             it("should craft query with FindOperator", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
-                        const [sql, params] = connection
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
                             .createQueryBuilder(Category, "category")
                             .select("category.id")
                             .leftJoin("category.posts", "posts")
@@ -300,8 +300,8 @@ describe("query builder > select", () => {
         describe("many-to-many", () => {
             it("should craft query with exact value", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
-                        const [sql, params] = connection
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
                             .createQueryBuilder(Post, "post")
                             .select("post.id")
                             .leftJoin("post.tags", "tags_join")
@@ -324,8 +324,8 @@ describe("query builder > select", () => {
 
             it("should craft query with FindOperator", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
-                        const [sql, params] = connection
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
                             .createQueryBuilder(Post, "post")
                             .select("post.id")
                             .leftJoin("post.tags", "tags_join")
@@ -350,8 +350,8 @@ describe("query builder > select", () => {
         describe("one-to-one", () => {
             it("should craft query with exact value", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
-                        const [sql, params] = connection
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
                             .createQueryBuilder(Post, "post")
                             .select("post.id")
                             .leftJoin("post.heroImage", "hero_join")
@@ -374,8 +374,8 @@ describe("query builder > select", () => {
 
             it("should craft query with FindOperator", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
-                        const [sql, params] = connection
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
                             .createQueryBuilder(Post, "post")
                             .select("post.id")
                             .leftJoin("post.heroImage", "hero_join")
@@ -400,10 +400,10 @@ describe("query builder > select", () => {
         describe("deeply nested relations", () => {
             it("should craft query with exact value", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
+                    dataSources.map(async (dataSource) => {
                         // For github issue #7251
 
-                        const [sql, params] = connection
+                        const [sql, params] = dataSource
                             .createQueryBuilder(HeroImage, "hero")
                             .leftJoin("hero.post", "posts")
                             .leftJoin("posts.category", "category")
@@ -430,10 +430,10 @@ describe("query builder > select", () => {
 
             it("should craft query with FindOperator", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
+                    dataSources.map(async (dataSource) => {
                         // For github issue #4906
 
-                        const [sql, params] = connection
+                        const [sql, params] = dataSource
                             .createQueryBuilder(HeroImage, "hero")
                             .leftJoin("hero.post", "posts")
                             .leftJoin("posts.category", "category")
@@ -463,15 +463,15 @@ describe("query builder > select", () => {
     describe("query execution and retrieval", () => {
         it("should return a single entity for getOne when found", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    await connection.getRepository(Post).save({
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save({
                         id: "1",
                         title: "Hello",
                         description: "World",
                         rating: 0,
                     })
 
-                    const entity = await connection
+                    const entity = await dataSource
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: "1" })
                         .getOne()
@@ -484,15 +484,15 @@ describe("query builder > select", () => {
 
         it("should return undefined for getOne when not found", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    await connection.getRepository(Post).save({
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save({
                         id: "1",
                         title: "Hello",
                         description: "World",
                         rating: 0,
                     })
 
-                    const entity = await connection
+                    const entity = await dataSource
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: "2" })
                         .getOne()
@@ -503,15 +503,15 @@ describe("query builder > select", () => {
 
         it("should return a single entity for getOneOrFail when found", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    await connection.getRepository(Post).save({
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save({
                         id: "1",
                         title: "Hello",
                         description: "World",
                         rating: 0,
                     })
 
-                    const entity = await connection
+                    const entity = await dataSource
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: "1" })
                         .getOneOrFail()
@@ -523,8 +523,8 @@ describe("query builder > select", () => {
 
         it("should throw an Error for getOneOrFail when not found", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    await connection.getRepository(Post).save({
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save({
                         id: "1",
                         title: "Hello",
                         description: "World",
@@ -532,7 +532,7 @@ describe("query builder > select", () => {
                     })
 
                     await expect(
-                        connection
+                        dataSource
                             .createQueryBuilder(Post, "post")
                             .where("post.id = :id", { id: "2" })
                             .getOneOrFail(),
@@ -544,8 +544,8 @@ describe("query builder > select", () => {
     describe("where-in-ids", () => {
         it("should create expected query with simple primary keys", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const [sql, params] = connection
+                dataSources.map(async (dataSource) => {
+                    const [sql, params] = dataSource
                         .createQueryBuilder(Post, "post")
                         .select("post.id")
                         .whereInIds(["1", "2", "5", "9"])
@@ -561,8 +561,8 @@ describe("query builder > select", () => {
 
         it("should create expected query with composite primary keys", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const [sql, params] = connection
+                dataSources.map(async (dataSource) => {
+                    const [sql, params] = dataSource
                         .createQueryBuilder(ExternalPost, "post")
                         .select("post.id")
                         .whereInIds([
@@ -585,8 +585,8 @@ describe("query builder > select", () => {
 
         it("should create expected query with composite primary keys with missing value", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const [sql, params] = connection
+                dataSources.map(async (dataSource) => {
+                    const [sql, params] = dataSource
                         .createQueryBuilder(ExternalPost, "post")
                         .select("post.id")
                         .whereInIds([
@@ -610,11 +610,11 @@ describe("query builder > select", () => {
 
     it("Support max execution time", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // MAX_EXECUTION_TIME supports only in MySQL
-                if (!DriverUtils.isMySQLFamily(connection.driver)) return
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
 
-                const sql = connection
+                const sql = dataSource
                     .createQueryBuilder(Post, "post")
                     .maxExecutionTime(1000)
                     .getSql()
@@ -625,13 +625,13 @@ describe("query builder > select", () => {
 
     it("Support using certain index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // `USE INDEX` is only supported in MySQL
-                if (!DriverUtils.isMySQLFamily(connection.driver)) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
                     return
                 }
 
-                const sql = connection
+                const sql = dataSource
                     .createQueryBuilder(Post, "post")
                     .useIndex("my_index")
                     .getSql()
@@ -643,8 +643,8 @@ describe("query builder > select", () => {
     describe("limit and offset handling", () => {
         it("should generate LIMIT 0 when limit is set to 0", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const sql = connection
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .limit(0)
                         .disableEscaping()
@@ -665,8 +665,8 @@ describe("query builder > select", () => {
 
         it("should generate LIMIT 0 OFFSET 5 when limit is 0 and offset is 5", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const sql = connection
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .limit(0)
                         .offset(5)
@@ -688,8 +688,8 @@ describe("query builder > select", () => {
 
         it("should generate OFFSET 0 when offset is set to 0", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const sql = connection
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .limit(10)
                         .offset(0)
@@ -711,8 +711,8 @@ describe("query builder > select", () => {
 
         it("should work correctly with non-zero limits and offsets", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const sql = connection
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .limit(5)
                         .offset(10)
@@ -725,8 +725,8 @@ describe("query builder > select", () => {
 
         it("should handle limit(0) with offset(0)", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const sql = connection
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .limit(0)
                         .offset(0)
@@ -739,8 +739,8 @@ describe("query builder > select", () => {
 
         it("should generate LIMIT 0 when take is set to 0 without joins", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const sql = connection
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .take(0)
                         .disableEscaping()
@@ -761,8 +761,8 @@ describe("query builder > select", () => {
 
         it("should generate OFFSET 0 when skip is set to 0 without joins", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const sql = connection
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .take(10)
                         .skip(0)
@@ -784,9 +784,9 @@ describe("query builder > select", () => {
 
         it("should return empty array when limit(0) is used in actual query execution", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // Insert some test data
-                    await connection.getRepository(Post).save([
+                    await dataSource.getRepository(Post).save([
                         {
                             id: "1",
                             title: "Post 1",
@@ -801,7 +801,7 @@ describe("query builder > select", () => {
                         },
                     ])
 
-                    const posts = await connection
+                    const posts = await dataSource
                         .createQueryBuilder(Post, "post")
                         .limit(0)
                         .getMany()
@@ -813,9 +813,9 @@ describe("query builder > select", () => {
 
         it("should return empty array when take(0) is used in actual query execution without joins", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     // Insert some test data
-                    await connection.getRepository(Post).save([
+                    await dataSource.getRepository(Post).save([
                         {
                             id: "1",
                             title: "Post 1",
@@ -830,7 +830,7 @@ describe("query builder > select", () => {
                         },
                     ])
 
-                    const posts = await connection
+                    const posts = await dataSource
                         .createQueryBuilder(Post, "post")
                         .take(0)
                         .getMany()
@@ -844,8 +844,8 @@ describe("query builder > select", () => {
     describe("column order in select statement", () => {
         it("should return columns in the order they were specified in select statement", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const query1 = connection
+                dataSources.map(async (dataSource) => {
+                    const query1 = dataSource
                         .createQueryBuilder(Post, "post")
                         .select("post.description", "post_description")
                         .addSelect("post.title", "post_title")
@@ -860,7 +860,7 @@ describe("query builder > select", () => {
                             "FROM post post",
                     )
 
-                    const query2 = connection
+                    const query2 = dataSource
                         .createQueryBuilder(Post, "post")
                         .select(["post.description", "post.title", "post.id"])
                         .disableEscaping()
@@ -877,8 +877,8 @@ describe("query builder > select", () => {
 
         it("works with joins and subqueries", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const sub = connection
+                dataSources.map(async (dataSource) => {
+                    const sub = dataSource
                         .createQueryBuilder(Category, "c")
                         .select("c.id")
                         .where("c.name = :name", { name: "Cat" })
@@ -888,7 +888,7 @@ describe("query builder > select", () => {
                         "SELECT c.id AS c_id FROM category c WHERE c.name = ?",
                     )
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .select("post")
                         .addSelect("category.description")

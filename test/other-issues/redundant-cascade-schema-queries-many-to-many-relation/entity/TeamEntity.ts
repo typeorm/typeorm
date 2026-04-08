@@ -1,5 +1,5 @@
 import { EntitySchema } from "../../../../src"
-import { User } from "./UserEntity"
+import type { User } from "./UserEntity"
 
 export type Team = {
     id: number

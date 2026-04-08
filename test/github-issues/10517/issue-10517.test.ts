@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -13,15 +13,14 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Post],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -29,7 +28,7 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
 
     it("update by array of condition objects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new posts
@@ -89,7 +88,7 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
 
     it("delete by array of condition objects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new posts
@@ -138,7 +137,7 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
 
     it("soft delete by array of condition objects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new posts
@@ -187,7 +186,7 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
 
     it("restore by array of condition objects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new posts

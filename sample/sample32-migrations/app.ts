@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 
@@ -41,7 +42,6 @@ dataSource
         // now re-initialize data source
         dataSource = new DataSource({
             type: "mysql",
-            name: "mysql",
             host: "localhost",
             port: 3306,
             username: "test",

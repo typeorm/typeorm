@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -13,21 +13,20 @@ import { EditHistory } from "./entity/EditHistory"
 import { expect } from "chai"
 
 describe("mongodb > embedded columns", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Post, Counters, Information],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, Counters, Information],
+            enabledDrivers: ["mongodb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert / update / remove entity with embedded correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save few posts
                 const post = new Post()
@@ -103,8 +102,8 @@ describe("mongodb > embedded columns", () => {
 
     it("should store results in correct camelCase format", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const post = new Post()
@@ -134,8 +133,8 @@ describe("mongodb > embedded columns", () => {
 
     it("should transform results to correct boolean value", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const post = new Post()
@@ -166,8 +165,8 @@ describe("mongodb > embedded columns", () => {
 
     it("should transform entity with nested embedded columns correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
 
                 // save few posts
                 const post = new Post()

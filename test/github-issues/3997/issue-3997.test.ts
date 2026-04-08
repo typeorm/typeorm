@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,28 +8,27 @@ import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
 
 describe("github issues > #3997 synchronize=true always failing when using decimal column type with a foreign key constraint", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: [
-                    "postgres",
-                    "oracle",
-                    "cockroachdb",
-                    "mssql",
-                    "mysql",
-                    "better-sqlite3",
-                ],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [User, Photo],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: [
+                "postgres",
+                "oracle",
+                "cockroachdb",
+                "mssql",
+                "mysql",
+                "better-sqlite3",
+            ],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [User, Photo],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -40,7 +39,7 @@ describe("github issues > #3997 synchronize=true always failing when using decim
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()

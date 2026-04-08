@@ -1,10 +1,10 @@
-import { DataSource } from "../../data-source/DataSource"
+import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ColumnType } from "../types/ColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { NativescriptDataSourceOptions } from "./NativescriptDataSourceOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { NativescriptDataSourceOptions } from "./NativescriptDataSourceOptions"
 import { NativescriptQueryRunner } from "./NativescriptQueryRunner"
 
 /**
@@ -16,7 +16,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: NativescriptDataSourceOptions
 
@@ -31,11 +31,9 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
-        this.connection = connection
-        this.options = connection.options as NativescriptDataSourceOptions
         this.database = this.options.database
         this.driver = this.options.driver
 
@@ -59,6 +57,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
@@ -75,7 +74,10 @@ export class NativescriptDriver extends AbstractSqliteDriver {
         precision?: number | null
         scale?: number
     }): string {
-        if ((column.type as any) === Buffer) {
+        if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         }
 

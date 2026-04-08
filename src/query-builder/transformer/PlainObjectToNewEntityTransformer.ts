@@ -1,5 +1,5 @@
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ObjectUtils } from "../../util/ObjectUtils"
 
 /**
@@ -36,6 +36,7 @@ export class PlainObjectToNewEntityTransformer {
     /**
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
+     *
      * @param entity
      * @param object
      * @param metadata

@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,22 +9,21 @@ import {
 import { TestEntity } from "./entity/TestEntity"
 
 describe('github issues > #9341 "bigNumberStrings:false" is not working for postgres', () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-                driverSpecific: {
-                    parseInt8: true,
-                },
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+            driverSpecific: {
+                parseInt8: true,
+            },
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should fetch big int as number not string when using parseInt8=true", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const origin = await connection.getRepository(TestEntity).save({
                 big_int: Number.MAX_SAFE_INTEGER,
                 big_decimal: 1.23456789,

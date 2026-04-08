@@ -159,6 +159,10 @@ export class Question {
 }
 ```
 
+### Recovering soft-deleted entities
+
+When you call `recover` on a soft-deleted entity that has many-to-many relations, the junction table rows are preserved — `softRemove` only sets `deletedAt` on the entity, it does not touch junction table entries. TypeORM correctly detects these existing junction rows during recovery and avoids duplicate inserts.
+
 ## Loading many-to-many relations
 
 To load questions with categories inside you must specify the relation in `FindOptions`:

@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
 
 export class CreateTableWithMissingValues1719925118381 implements MigrationInterface {
     name = "CreateTableWithMissingValues1719925118381"

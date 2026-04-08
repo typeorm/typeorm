@@ -1,9 +1,10 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { DateUtils } from "../util/DateUtils"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { OrmUtils } from "../util/OrmUtils"
-import { Subject } from "./Subject"
+import type { Subject } from "./Subject"
+import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -15,6 +16,7 @@ export class SubjectChangedColumnsComputer {
 
     /**
      * Finds what columns are changed in the subject entities.
+     *
      * @param subjects List of subjects for which to compute changed columns.
      */
     compute(subjects: Subject[]) {
@@ -30,6 +32,7 @@ export class SubjectChangedColumnsComputer {
 
     /**
      * Differentiate columns from the updated entity and entity stored in the database.
+     *
      * @param subject Subject for which to compute differentiated columns.
      */
     protected computeDiffColumns(subject: Subject): void {
@@ -201,10 +204,10 @@ export class SubjectChangedColumnsComputer {
                     if (OrmUtils.deepCompare(normalizedValue, databaseValue))
                         return
                 } else if (
-                    Buffer.isBuffer(normalizedValue) &&
-                    Buffer.isBuffer(databaseValue)
+                    isUint8Array(normalizedValue) &&
+                    isUint8Array(databaseValue)
                 ) {
-                    if (normalizedValue.equals(databaseValue)) {
+                    if (areUint8ArraysEqual(normalizedValue, databaseValue)) {
                         return
                     }
                 } else {
@@ -224,6 +227,7 @@ export class SubjectChangedColumnsComputer {
 
     /**
      * Difference columns of the owning one-to-one and many-to-one columns.
+     *
      * @param allSubjects List of all subjects in the current operation.
      * @param subject Subject for which to compute differentiated relational columns.
      */
