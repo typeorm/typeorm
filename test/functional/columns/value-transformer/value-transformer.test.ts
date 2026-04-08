@@ -151,8 +151,9 @@ describe("columns > value-transformer functionality", () => {
                     "complex",
                     "actually",
                 ])
-                expect(loadedPost.complex!.x).to.eq(3)
-                expect(loadedPost.complex!.y).to.eq(2.5)
+                expect(loadedPost.complex).to.not.be.null
+                expect(loadedPost.complex?.x).to.eq(3)
+                expect(loadedPost.complex?.y).to.eq(2.5)
 
                 // then update all its properties and save again
                 post.title = "Complex transformers3!"
@@ -174,8 +175,9 @@ describe("columns > value-transformer functionality", () => {
                 loadedPost = await postRepository.findOneByOrFail({
                     id: post.id,
                 })
-                expect(loadedPost.complex!.x).to.eq(0.5)
-                expect(loadedPost.complex!.y).to.eq(0.5)
+                expect(loadedPost.complex).to.not.be.null
+                expect(loadedPost.complex?.x).to.eq(0.5)
+                expect(loadedPost.complex?.y).to.eq(0.5)
 
                 // then update all its properties and save again
                 post.title = "Complex transformers5!"
@@ -186,8 +188,9 @@ describe("columns > value-transformer functionality", () => {
                 loadedPost = await postRepository.findOneByOrFail({
                     id: post.id,
                 })
-                expect(loadedPost.complex!.x).to.eq(1.05)
-                expect(loadedPost.complex!.y).to.eq(2.3)
+                expect(loadedPost.complex).to.not.be.null
+                expect(loadedPost.complex?.x).to.eq(1.05)
+                expect(loadedPost.complex?.y).to.eq(2.3)
             }),
         ))
 })

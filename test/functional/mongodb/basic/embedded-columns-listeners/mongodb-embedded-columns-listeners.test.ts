@@ -53,11 +53,11 @@ describe("mongodb > embedded columns listeners", () => {
                 })
 
                 expect(loadedUpdatedPost.counters).to.be.not.empty
-                expect(loadedUpdatedPost.counters!.likes).to.be.eq(100)
+                expect(loadedUpdatedPost.counters?.likes).to.be.eq(100)
                 expect(
-                    loadedUpdatedPost.counters!.information!.comments,
+                    loadedUpdatedPost.counters?.information?.comments,
                 ).to.be.eq(1)
-                expect(loadedUpdatedPost.counters!.information!.description).to
+                expect(loadedUpdatedPost.counters?.information?.description).to
                     .be.not.empty
                 loadedUpdatedPost.should.be.instanceOf(Post)
                 loadedUpdatedPost.title.should.be.equal("Updated post")
