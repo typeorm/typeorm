@@ -112,7 +112,7 @@ You can create a new entity using CLI:
 typeorm entity:create path-to-entity-dir/entity
 ```
 
-Learn more about [entities](../entity/1-entities.md).
+Learn more about [entities](./entity/1-entities.md).
 
 ## Create a new subscriber
 
@@ -122,17 +122,17 @@ You can create a new subscriber using CLI:
 typeorm subscriber:create path-to-subscriber-dir/subscriber
 ```
 
-Learn more about [Subscribers](./4-listeners-and-subscribers.md).
+Learn more about [Subscribers](./listeners-and-subscribers.md).
 
 ## Manage migrations
 
-- `typeorm migration:create` - [create](../migrations/03-creating.md) empty migration
-- `typeorm migration:generate` - [generate](../migrations/04-generating.md) migration comparing entities with actual database schema
-- `typeorm migration:run` - [execute](../migrations/05-executing.md) all migrations
-- `typeorm migration:revert` - [revert](../migrations/06-reverting.md) last migration
-- `typeorm migration:show` - [list](../migrations/07-status.md) all migrations with their execution status
+- `typeorm migration:create` - [create](./migrations/03-creating.md) empty migration
+- `typeorm migration:generate` - [generate](./migrations/04-generating.md) migration comparing entities with actual database schema
+- `typeorm migration:run` - [execute](./migrations/05-executing.md) all migrations
+- `typeorm migration:revert` - [revert](./migrations/06-reverting.md) last migration
+- `typeorm migration:show` - [list](./migrations/07-status.md) all migrations with their execution status
 
-Learn more about [Migrations](../migrations/01-why.md).
+Learn more about [Migrations](./migrations/01-why.md).
 
 ## Sync database schema
 
