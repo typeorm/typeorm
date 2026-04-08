@@ -145,7 +145,7 @@ const users = await dataSource
     .from(User, "user")
     .addFrom(Photo, "photo")
     .andWhere("photo.userId = user.id")
-    .getMany() // userId is a foreign key since its cross-schema request
+    .getMany() 
 ```
 
 This code will produce following SQL query (depend on database type):
