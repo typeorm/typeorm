@@ -181,17 +181,7 @@ export class DriverUtils {
             afterBase = afterBase.slice(0, afterBase.indexOf("?"))
         }
 
-        const lastAtSign = base.lastIndexOf("@")
-        const usernameAndPassword = base.slice(0, lastAtSign)
-        const hostAndPort = base.slice(lastAtSign + 1)
-
-        let username = usernameAndPassword
-        let password = ""
-        const firstColon = usernameAndPassword.indexOf(":")
-        if (firstColon !== -1) {
-            username = usernameAndPassword.slice(0, firstColon)
-            password = usernameAndPassword.slice(firstColon + 1)
-        }
+        const { username, password, hostAndPort } = this.parseCredentials(base)
         const [host, port] = hostAndPort.split(":")
 
         return {
@@ -246,17 +236,7 @@ export class DriverUtils {
             afterBase = afterBase.slice(0, afterBase.indexOf("?"))
         }
 
-        const lastAtSign = base.lastIndexOf("@")
-        const usernameAndPassword = base.slice(0, lastAtSign)
-        const hostAndPort = base.slice(lastAtSign + 1)
-
-        let username = usernameAndPassword
-        let password = ""
-        const firstColon = usernameAndPassword.indexOf(":")
-        if (firstColon !== -1) {
-            username = usernameAndPassword.slice(0, firstColon)
-            password = usernameAndPassword.slice(firstColon + 1)
-        }
+        const { username, password, hostAndPort } = this.parseCredentials(base)
 
         // If replicaSet have value set It as hostlist, If not set like standalone host
         if (replicaSet) {
@@ -281,5 +261,28 @@ export class DriverUtils {
         }
 
         return connectionUrl
+    }
+
+    private static parseCredentials(base: string): {
+        username: string
+        password: string
+        hostAndPort: string
+    } {
+        const lastAtSign = base.lastIndexOf("@")
+        if (lastAtSign === -1) {
+            return { username: "", password: "", hostAndPort: base }
+        }
+
+        const hostAndPort = base.slice(lastAtSign + 1)
+        const credentials = base.slice(0, lastAtSign)
+        const colonIndex = credentials.indexOf(":")
+
+        return colonIndex !== -1
+            ? {
+                  username: credentials.slice(0, colonIndex),
+                  password: credentials.slice(colonIndex + 1),
+                  hostAndPort,
+              }
+            : { username: credentials, password: "", hostAndPort }
     }
 }
