@@ -443,21 +443,31 @@ This setting guards all high-level APIs — find operations, repository/manager 
 
 ### Hashing
 
-TypeORM previously used the `sha.js` npm package for SHA-1 hashing (a non-standard implementation). This has been replaced with the built-in `crypto` module from Node.js, and the `uuid` package has been replaced with `crypto.randomUUID()`.
-
-For browser environments, `RandomGenerator.sha1` was fixed to the standard implementation.
-
-**Impact:** If you use TypeORM's query result cache, existing cached entries will be invalidated after upgrading because the hash function produces different output. This is harmless — caches will be rebuilt automatically — but you may see a brief increase in cache misses.
+The internal hashing implementation has been replaced with Node.js built-in `crypto`. If you use TypeORM's query result cache, existing cached entries will be invalidated after upgrading because the hash function produces different output. Caches will be rebuilt automatically — you may see a brief increase in cache misses.
 
 ### Glob patterns
 
-Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is mostly a drop-in replacement, but edge cases with brace expansion or platform-specific path separators may behave differently.
+Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is a drop-in replacement for most projects.
 
 ### `orphanedRowAction: "nullify"` with non-nullable foreign keys
 
-When `orphanedRowAction` is `"nullify"` (the default) and the foreign key column is non-nullable, orphaned children are now **deleted** instead of throwing a database constraint violation. Previously, TypeORM would attempt to set the FK to `null`, which failed on non-nullable columns. Now it detects the constraint and removes the orphaned row instead.
+When `orphanedRowAction` is `"nullify"` (the default) and the foreign key column is non-nullable, orphaned children are now **deleted** instead of throwing a database constraint violation. Previously, TypeORM would attempt to set the FK to `null`, which failed on non-nullable columns.
 
 If you were relying on the error to prevent accidental child deletion, set `orphanedRowAction: "disable"` on the relation to preserve the old behavior.
+
+### Many-to-many junction rows and soft-deleted entities
+
+Calling `recover()` on a soft-deleted entity with many-to-many relations no longer throws a duplicate key violation. Junction table rows are not touched by `softRemove`, but TypeORM previously couldn't see them when loading the entity for recovery, causing it to attempt duplicate inserts.
+
+As a side effect, many-to-many junction comparisons during `save()` now include soft-deleted related entities. If you explicitly set a relation array that excludes a soft-deleted entity, its junction row will be removed:
+
+```typescript
+// photo2 was independently soft-deleted but its junction row exists
+user.manyToManyPhotos = [photo1] // photo2 excluded
+await manager.save(user) // junction row for photo2 is now removed
+```
+
+This only applies when the relation property is explicitly set. If it is `undefined`, no comparison is performed and junction rows are left intact.
 
 ## Columns
 
@@ -749,6 +759,18 @@ The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
 
+### Semicolons rejected in raw SQL expression methods
+
+The `select()`, `addSelect()`, `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all query builders (`SelectQueryBuilder`, `UpdateQueryBuilder`, `SoftDeleteQueryBuilder`, and base `QueryBuilder`) now reject inputs containing semicolons at runtime to prevent SQL statement stacking attacks. The `orderBy()` methods also validate that order direction values are `"ASC"` or `"DESC"` and nulls values are `"NULLS FIRST"` or `"NULLS LAST"`. If you have legitimate SQL expressions that contain semicolons (e.g., inside string literals), use parameter binding instead:
+
+```typescript
+// This now throws
+qb.select("col; DROP TABLE post")
+
+// Use parameter binding for values
+qb.where("post.title = :title", { title: "value;with;semicolons" })
+```
+
 ### `printSql` removed
 
 The `printSql()` method on query builders has been removed. It was redundant because all executed queries are already automatically logged through the configured logger when query logging is enabled. Use `getSql()` or `getQueryAndParameters()` to inspect the generated SQL instead:
@@ -848,8 +870,6 @@ qb.setNativeParameters({ key: "value" })
 qb.setParameters({ key: "value" })
 ```
 
-The internal `QueryExpressionMap.nativeParameters` property has also been removed. If you have a custom QueryBuilder subclass that accesses `expressionMap.nativeParameters`, switch to `expressionMap.parameters`.
-
 ### `WhereExpression` type alias removed
 
 ```typescript
@@ -862,7 +882,7 @@ import { WhereExpressionBuilder } from "typeorm"
 
 ### `replacePropertyNames` removed
 
-The deprecated `replacePropertyNames()` protected method has been removed. It was a no-op since property name replacement was moved to end-of-query processing via `replacePropertyNamesForTheWholeQuery()`. If you were overriding this method in a custom QueryBuilder subclass, the override is no longer called.
+The deprecated `replacePropertyNames()` protected method on QueryBuilder has been removed. If you were overriding it in a custom subclass, the override is no longer called.
 
 ### Deprecated lock modes removed
 
@@ -1008,8 +1028,8 @@ The following internal APIs have been removed. These only affect you if you were
 
 | Removed                                        | Replacement                                       |
 | ---------------------------------------------- | ------------------------------------------------- |
-| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                |
-| `RdbmsSchemaBuilder.renameTables()`            | Removed — was an empty no-op, never called        |
-| `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                    |
 | `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers |
+| `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                    |
+| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                |
 | `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`               |
+| `RdbmsSchemaBuilder.renameTables()`            | Removed                                           |

@@ -196,10 +196,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                this.assertNoSemicolon(s, "select")
+            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
         } else if (selection) {
+            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -1689,11 +1693,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return this.expressionMap.commonTableExpressions.length > 0
     }
 
+    protected assertNoSemicolon(value: string, context: string): void {
+        if (value.includes(";")) {
+            throw new TypeORMError(
+                `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
+            )
+        }
+    }
+
     protected validateOrderByCondition(sort: OrderByCondition): void {
         const validOrders = ["ASC", "DESC"]
         const validNulls = ["NULLS FIRST", "NULLS LAST"]
 
         for (const [key, value] of Object.entries(sort)) {
+            this.assertNoSemicolon(key, "orderBy sort key")
             if (typeof value === "string") {
                 if (!validOrders.includes(value))
                     throw new TypeORMError(
