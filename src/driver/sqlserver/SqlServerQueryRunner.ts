@@ -4275,11 +4275,10 @@ export class SqlServerQueryRunner
      * @param defaultValue
      */
     protected removeParenthesisFromDefault(defaultValue: string): any {
-        if (defaultValue.substr(0, 1) !== "(") return defaultValue
-        const normalizedDefault = defaultValue.substr(
-            1,
-            defaultValue.lastIndexOf(")") - 1,
-        )
+        if (!defaultValue.startsWith("(")) return defaultValue
+        const end = defaultValue.lastIndexOf(")")
+        if (!defaultValue.endsWith(")") || end <= 0) return defaultValue
+        const normalizedDefault = defaultValue.substring(1, end)
         return this.removeParenthesisFromDefault(normalizedDefault)
     }
 
