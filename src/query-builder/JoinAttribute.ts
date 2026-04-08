@@ -129,7 +129,7 @@ export class JoinAttribute {
 
         return this.entityOrProperty.slice(
             0,
-            Math.max(0, this.entityOrProperty.indexOf(".")),
+            this.entityOrProperty.indexOf("."),
         )
     }
 
@@ -145,7 +145,7 @@ export class JoinAttribute {
             return undefined
 
         return this.entityOrProperty.slice(
-            Math.max(0, this.entityOrProperty.indexOf(".") + 1),
+            this.entityOrProperty.indexOf(".") + 1,
         )
     }
 
@@ -229,7 +229,7 @@ export class JoinAttribute {
 
         const aliasProperty = this.entityOrProperty.slice(
             0,
-            Math.max(0, this.entityOrProperty.indexOf(".")),
+            this.entityOrProperty.indexOf("."),
         )
 
         if (this.relation.isOwning) {

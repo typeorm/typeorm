@@ -59,7 +59,7 @@ export function abbreviate(str: string, abbrLettersCount: number = 1): string {
         .replace(/([a-z\xE0-\xFF])([A-Z\xC0\xDF])/g, "$1 $2")
         .split(" ")
     return words.reduce((res, word) => {
-        res += word.slice(0, Math.max(0, abbrLettersCount))
+        res += word.slice(0, abbrLettersCount)
         return res
     }, "")
 }
@@ -107,7 +107,7 @@ export function shorten(input: string, options: IShortenOptions = {}): string {
         // "OrderItemList" becomes "OrItLi", while "company" becomes "comp"
         const length = segmentTerms.length > 1 ? termLength : segmentLength
         const shortSegment = segmentTerms
-            .map((term) => term.slice(0, Math.max(0, length)))
+            .map((term) => term.slice(0, length))
             .join("")
 
         acc.push(shortSegment)

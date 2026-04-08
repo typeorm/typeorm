@@ -170,31 +170,27 @@ export class DriverUtils {
     private static parseConnectionUrl(url: string) {
         const type = url.split(":")[0]
         const firstSlashes = url.indexOf("//")
-        const preBase = url.slice(Math.max(0, firstSlashes + 2))
+        const preBase = url.slice(firstSlashes + 2)
         const secondSlash = preBase.indexOf("/")
         const base =
-            secondSlash !== -1
-                ? preBase.slice(0, Math.max(0, secondSlash))
-                : preBase
+            secondSlash !== -1 ? preBase.slice(0, secondSlash) : preBase
         let afterBase =
-            secondSlash !== -1
-                ? preBase.slice(Math.max(0, secondSlash + 1))
-                : undefined
+            secondSlash !== -1 ? preBase.slice(secondSlash + 1) : undefined
         // remove mongodb query params
         if (afterBase && afterBase.indexOf("?") !== -1) {
-            afterBase = afterBase.slice(0, Math.max(0, afterBase.indexOf("?")))
+            afterBase = afterBase.slice(0, afterBase.indexOf("?"))
         }
 
         const lastAtSign = base.lastIndexOf("@")
-        const usernameAndPassword = base.slice(0, Math.max(0, lastAtSign))
-        const hostAndPort = base.slice(Math.max(0, lastAtSign + 1))
+        const usernameAndPassword = base.slice(0, lastAtSign)
+        const hostAndPort = base.slice(lastAtSign + 1)
 
         let username = usernameAndPassword
         let password = ""
         const firstColon = usernameAndPassword.indexOf(":")
         if (firstColon !== -1) {
-            username = usernameAndPassword.slice(0, Math.max(0, firstColon))
-            password = usernameAndPassword.slice(Math.max(0, firstColon + 1))
+            username = usernameAndPassword.slice(0, firstColon)
+            password = usernameAndPassword.slice(firstColon + 1)
         }
         const [host, port] = hostAndPort.split(":")
 
@@ -216,16 +212,12 @@ export class DriverUtils {
     private static parseMongoDBConnectionUrl(url: string) {
         const type = url.split(":")[0]
         const firstSlashes = url.indexOf("//")
-        const preBase = url.slice(Math.max(0, firstSlashes + 2))
+        const preBase = url.slice(firstSlashes + 2)
         const secondSlash = preBase.indexOf("/")
         const base =
-            secondSlash !== -1
-                ? preBase.slice(0, Math.max(0, secondSlash))
-                : preBase
+            secondSlash !== -1 ? preBase.slice(0, secondSlash) : preBase
         let afterBase =
-            secondSlash !== -1
-                ? preBase.slice(Math.max(0, secondSlash + 1))
-                : undefined
+            secondSlash !== -1 ? preBase.slice(secondSlash + 1) : undefined
         let afterQuestionMark: string
         let host = undefined
         let port = undefined
@@ -251,19 +243,19 @@ export class DriverUtils {
 
             // specific replicaSet value to set options about hostReplicaSet
             replicaSet = optionsObject["replicaSet"]
-            afterBase = afterBase.slice(0, Math.max(0, afterBase.indexOf("?")))
+            afterBase = afterBase.slice(0, afterBase.indexOf("?"))
         }
 
         const lastAtSign = base.lastIndexOf("@")
-        const usernameAndPassword = base.slice(0, Math.max(0, lastAtSign))
-        const hostAndPort = base.slice(Math.max(0, lastAtSign + 1))
+        const usernameAndPassword = base.slice(0, lastAtSign)
+        const hostAndPort = base.slice(lastAtSign + 1)
 
         let username = usernameAndPassword
         let password = ""
         const firstColon = usernameAndPassword.indexOf(":")
         if (firstColon !== -1) {
-            username = usernameAndPassword.slice(0, Math.max(0, firstColon))
-            password = usernameAndPassword.slice(Math.max(0, firstColon + 1))
+            username = usernameAndPassword.slice(0, firstColon)
+            password = usernameAndPassword.slice(firstColon + 1)
         }
 
         // If replicaSet have value set It as hostlist, If not set like standalone host

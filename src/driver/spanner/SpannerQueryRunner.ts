@@ -1963,7 +1963,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                             if (fullType.indexOf("(") !== -1) {
                                 tableColumn.type = fullType.slice(
                                     0,
-                                    Math.max(0, fullType.indexOf("(")),
+                                    fullType.indexOf("("),
                                 )
                             } else {
                                 tableColumn.type = fullType

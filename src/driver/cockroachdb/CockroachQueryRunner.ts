@@ -3374,19 +3374,16 @@ export class CockroachQueryRunner
                                 )
                                 tableColumn.type = tableColumn.type.slice(
                                     0,
-                                    Math.max(
-                                        0,
-                                        dbColumn["crdb_sql_type"].indexOf(
-                                            "COLLATE",
-                                        ) - 1,
-                                    ),
+                                    dbColumn["crdb_sql_type"].indexOf(
+                                        "COLLATE",
+                                    ) - 1,
                                 )
                             }
 
                             if (tableColumn.type.indexOf("(") !== -1)
                                 tableColumn.type = tableColumn.type.slice(
                                     0,
-                                    Math.max(0, tableColumn.type.indexOf("(")),
+                                    tableColumn.type.indexOf("("),
                                 )
 
                             if (

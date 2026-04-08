@@ -1573,43 +1573,29 @@ export abstract class AbstractSqliteQueryRunner
                 if (autoIncrementIndex !== -1) {
                     autoIncrementColumnName = tableSql.slice(
                         0,
-                        Math.max(0, autoIncrementIndex),
+                        autoIncrementIndex,
                     )
                     const comma = autoIncrementColumnName.lastIndexOf(",")
                     const bracket = autoIncrementColumnName.lastIndexOf("(")
                     if (comma !== -1) {
-                        autoIncrementColumnName = autoIncrementColumnName.slice(
-                            Math.max(0, comma),
-                        )
+                        autoIncrementColumnName =
+                            autoIncrementColumnName.slice(comma)
                         autoIncrementColumnName = autoIncrementColumnName.slice(
                             0,
-                            Math.max(
-                                0,
-                                autoIncrementColumnName.lastIndexOf('"'),
-                            ),
+                            autoIncrementColumnName.lastIndexOf('"'),
                         )
                         autoIncrementColumnName = autoIncrementColumnName.slice(
-                            Math.max(
-                                0,
-                                autoIncrementColumnName.indexOf('"') + 1,
-                            ),
+                            autoIncrementColumnName.indexOf('"') + 1,
                         )
                     } else if (bracket !== -1) {
-                        autoIncrementColumnName = autoIncrementColumnName.slice(
-                            Math.max(0, bracket),
-                        )
+                        autoIncrementColumnName =
+                            autoIncrementColumnName.slice(bracket)
                         autoIncrementColumnName = autoIncrementColumnName.slice(
                             0,
-                            Math.max(
-                                0,
-                                autoIncrementColumnName.lastIndexOf('"'),
-                            ),
+                            autoIncrementColumnName.lastIndexOf('"'),
                         )
                         autoIncrementColumnName = autoIncrementColumnName.slice(
-                            Math.max(
-                                0,
-                                autoIncrementColumnName.indexOf('"') + 1,
-                            ),
+                            autoIncrementColumnName.indexOf('"') + 1,
                         )
                     }
                 }
@@ -1671,7 +1657,7 @@ export abstract class AbstractSqliteQueryRunner
                         const pos = tableColumn.type.indexOf("(")
                         if (pos !== -1) {
                             const fullType = tableColumn.type
-                            const dataType = fullType.slice(0, Math.max(0, pos))
+                            const dataType = fullType.slice(0, pos)
                             if (
                                 this.driver.withLengthColumnTypes.find(
                                     (col) => col === dataType,

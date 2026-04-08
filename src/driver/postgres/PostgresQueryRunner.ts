@@ -5040,7 +5040,7 @@ export class PostgresQueryRunner
             // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
             seqName = `${tableName.slice(0, 29)}_${columnName.slice(
                 0,
-                Math.max(0, Math.max(29, 63 - table.name.length - 5)),
+                Math.max(29, 63 - table.name.length - 5),
             )}_seq`
         }
 

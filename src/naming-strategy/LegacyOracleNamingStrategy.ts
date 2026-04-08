@@ -56,14 +56,14 @@ export class LegacyOracleNamingStrategy
             prefix +
             RandomGenerator.sha1(input).slice(
                 0,
-                Math.max(0, this.IDENTIFIER_MAX_SIZE - prefix.length),
+                this.IDENTIFIER_MAX_SIZE - prefix.length,
             )
         )
     }
 
     protected truncateIdentifier(input: string): string {
         if (input.length > this.IDENTIFIER_MAX_SIZE) {
-            return input.slice(0, Math.max(0, this.IDENTIFIER_MAX_SIZE))
+            return input.slice(0, this.IDENTIFIER_MAX_SIZE)
         } else {
             return input
         }
