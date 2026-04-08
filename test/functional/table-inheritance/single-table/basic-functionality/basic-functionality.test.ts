@@ -142,76 +142,76 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 let loadedStudent = await dataSource.manager
                     .createQueryBuilder(Student, "student")
                     .where("student.name = :name", { name: "Bob" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedStudent!.faculty = "Chemistry"
-                await dataSource.getRepository(Student).save(loadedStudent!)
+                loadedStudent.faculty = "Chemistry"
+                await dataSource.getRepository(Student).save(loadedStudent)
 
                 loadedStudent = await dataSource.manager
                     .createQueryBuilder(Student, "student")
                     .where("student.name = :name", { name: "Bob" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedStudent!.should.have.all.keys("id", "name", "faculty")
-                loadedStudent!.id.should.equal(2)
-                loadedStudent!.name.should.equal("Bob")
-                loadedStudent!.faculty.should.equal("Chemistry")
+                loadedStudent.should.have.all.keys("id", "name", "faculty")
+                loadedStudent.id.should.equal(2)
+                loadedStudent.name.should.equal("Bob")
+                loadedStudent.faculty.should.equal("Chemistry")
 
                 let loadedTeacher = await dataSource.manager
                     .createQueryBuilder(Teacher, "teacher")
                     .where("teacher.name = :name", { name: "Mr. Adler" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedTeacher!.salary = 1000
-                await dataSource.getRepository(Teacher).save(loadedTeacher!)
+                loadedTeacher.salary = 1000
+                await dataSource.getRepository(Teacher).save(loadedTeacher)
 
                 loadedTeacher = await dataSource.manager
                     .createQueryBuilder(Teacher, "teacher")
                     .where("teacher.name = :name", { name: "Mr. Adler" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedTeacher!.should.have.all.keys(
+                loadedTeacher.should.have.all.keys(
                     "id",
                     "name",
                     "specialization",
                     "salary",
                 )
-                loadedTeacher!.id.should.equal(4)
-                loadedTeacher!.name.should.equal("Mr. Adler")
-                loadedTeacher!.specialization.should.equal("Mathematics")
-                loadedTeacher!.salary.should.equal(1000)
+                loadedTeacher.id.should.equal(4)
+                loadedTeacher.name.should.equal("Mr. Adler")
+                loadedTeacher.specialization.should.equal("Mathematics")
+                loadedTeacher.salary.should.equal(1000)
 
                 let loadedAccountant = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountant")
                     .where("accountant.name = :name", { name: "Mr. Trump" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedAccountant!.salary = 1000
+                loadedAccountant.salary = 1000
                 await dataSource
                     .getRepository(Accountant)
-                    .save(loadedAccountant!)
+                    .save(loadedAccountant)
 
                 loadedAccountant = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountant")
                     .where("accountant.name = :name", { name: "Mr. Trump" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedAccountant!.should.have.all.keys(
+                loadedAccountant.should.have.all.keys(
                     "id",
                     "name",
                     "department",
                     "salary",
                 )
-                loadedAccountant!.id.should.equal(6)
-                loadedAccountant!.name.should.equal("Mr. Trump")
-                loadedAccountant!.department.should.equal("Director")
-                loadedAccountant!.salary.should.equal(1000)
+                loadedAccountant.id.should.equal(6)
+                loadedAccountant.name.should.equal("Mr. Trump")
+                loadedAccountant.department.should.equal("Director")
+                loadedAccountant.salary.should.equal(1000)
 
                 // -------------------------------------------------------------------------
                 // Delete
                 // -------------------------------------------------------------------------
 
-                await dataSource.getRepository(Student).remove(loadedStudent!)
+                await dataSource.getRepository(Student).remove(loadedStudent)
 
                 loadedStudents = await dataSource.manager
                     .createQueryBuilder(Student, "students")
@@ -224,7 +224,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedStudents[0].name.should.equal("Alice")
                 loadedStudents[0].faculty.should.equal("Economics")
 
-                await dataSource.getRepository(Teacher).remove(loadedTeacher!)
+                await dataSource.getRepository(Teacher).remove(loadedTeacher)
 
                 loadedTeachers = await dataSource.manager
                     .createQueryBuilder(Teacher, "teachers")
@@ -245,7 +245,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
                 await dataSource
                     .getRepository(Accountant)
-                    .remove(loadedAccountant!)
+                    .remove(loadedAccountant)
 
                 loadedAccountants = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountants")

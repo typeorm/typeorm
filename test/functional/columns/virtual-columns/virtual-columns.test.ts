@@ -281,9 +281,9 @@ describe("column > virtual columns", () => {
                     //    "employees.timesheets.id": "DESC",
                     //    //"employees.timesheets.totalActivityHours": "ASC",
                     //})
-                    .getOne()
+                    .getOneOrFail()
 
-                const foundEmployee = companyQueryData!.employees.find(
+                const foundEmployee = companyQueryData.employees.find(
                     (e) => e.name === company.employees[0].name,
                 )!
                 const [foundEmployeeTimeSheet] = foundEmployee.timesheets
