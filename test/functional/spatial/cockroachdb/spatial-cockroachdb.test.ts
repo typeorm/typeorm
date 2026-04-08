@@ -99,13 +99,13 @@ describe("spatial-cockroachdb", () => {
                 const post = new Post()
                 post.geom = geom
                 const persistedPost = await recordRepo.save(post)
-                const foundPost = await recordRepo.findOne({
+                const foundPost = await recordRepo.findOneOrFail({
                     where: {
                         id: persistedPost.id,
                     },
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.geom).to.deep.equal(geom)
+                expect(foundPost.geom).to.deep.equal(geom)
             }),
         ))
 
@@ -120,13 +120,13 @@ describe("spatial-cockroachdb", () => {
                 const post = new Post()
                 post.geog = geom
                 const persistedPost = await recordRepo.save(post)
-                const foundPost = await recordRepo.findOne({
+                const foundPost = await recordRepo.findOneOrFail({
                     where: {
                         id: persistedPost.id,
                     },
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.geog).to.deep.equal(geom)
+                expect(foundPost.geog).to.deep.equal(geom)
             }),
         ))
 
@@ -155,13 +155,13 @@ describe("spatial-cockroachdb", () => {
                     },
                 )
 
-                const foundPost = await recordRepo.findOne({
+                const foundPost = await recordRepo.findOneOrFail({
                     where: {
                         id: persistedPost.id,
                     },
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.geom).to.deep.equal(geom2)
+                expect(foundPost.geom).to.deep.equal(geom2)
             }),
         ))
 
@@ -184,13 +184,13 @@ describe("spatial-cockroachdb", () => {
                 persistedPost.geom = geom2
                 await recordRepo.save(persistedPost)
 
-                const foundPost = await recordRepo.findOne({
+                const foundPost = await recordRepo.findOneOrFail({
                     where: {
                         id: persistedPost.id,
                     },
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.geom).to.deep.equal(geom2)
+                expect(foundPost.geom).to.deep.equal(geom2)
             }),
         ))
 

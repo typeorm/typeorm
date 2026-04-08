@@ -130,12 +130,12 @@ describe("transaction > nested transaction", () => {
                 }).should.not.be.rejected
 
                 for (const condition of conditions) {
-                    const post = await dataSource.manager.findOne(Post, {
+                    const post = await dataSource.manager.findOneOrFail(Post, {
                         where: { title: condition.title },
                     })
                     if (condition.shouldExist) {
                         expect(post).not.to.be.null
-                        post!.should.be.eql({
+                        post.should.be.eql({
                             id: condition.id,
                             title: condition.title,
                         })
@@ -202,7 +202,7 @@ describe("transaction > nested transaction", () => {
                 }).should.be.rejected
 
                 for (const condition of conditions) {
-                    const post = await dataSource.manager.findOne(Post, {
+                    const post = await dataSource.manager.findOneOrFail(Post, {
                         where: { title: condition.title },
                     })
                     expect(post).to.be.null

@@ -67,15 +67,18 @@ describe("relations > eager relations > basic", () => {
             dataSources.map(async (dataSource) => {
                 await prepareData(dataSource)
 
-                const loadedPost = await dataSource.manager.findOne(Post, {
-                    where: {
-                        id: 1,
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 1,
+                        },
                     },
-                })
+                )
 
                 // sort arrays because some drivers returns arrays in wrong order, e.g. categoryIds: [2, 1]
-                loadedPost!.categories1.sort((a, b) => a.id - b.id)
-                loadedPost!.categories2.sort((a, b) => a.id - b.id)
+                loadedPost.categories1.sort((a, b) => a.id - b.id)
+                loadedPost.categories2.sort((a, b) => a.id - b.id)
 
                 expect(loadedPost).to.deep.equal({
                     id: 1,

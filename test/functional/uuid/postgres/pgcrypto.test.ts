@@ -49,13 +49,13 @@ describe("pgcrypto", () => {
                 const record = new Record()
                 record.id = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 const persistedRecord = await recordRepo.save(record)
-                const foundRecord = await recordRepo.findOne({
+                const foundRecord = await recordRepo.findOneOrFail({
                     where: {
                         id: persistedRecord.id,
                     },
                 })
                 expect(foundRecord).to.be.exist
-                expect(foundRecord!.id).to.eq(
+                expect(foundRecord.id).to.eq(
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
                 )
             }),
@@ -73,10 +73,10 @@ describe("pgcrypto", () => {
 
                 const post = new Post()
                 await postRepository.save(post)
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     id: post.id,
                 })
-                expect(loadedPost!.uuid).to.be.exist
+                expect(loadedPost.uuid).to.be.exist
                 postTable!
                     .findColumnByName("uuid")!
                     .type.should.be.equal("uuid")
@@ -84,12 +84,12 @@ describe("pgcrypto", () => {
                 const post2 = new Post()
                 post2.uuid = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 await postRepository.save(post2)
-                const loadedPost2 = await postRepository.findOne({
+                const loadedPost2 = await postRepository.findOneOrFail({
                     where: {
                         id: post2.id,
                     },
                 })
-                expect(loadedPost2!.uuid).to.equal(
+                expect(loadedPost2.uuid).to.equal(
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
                 )
 
@@ -105,18 +105,18 @@ describe("pgcrypto", () => {
                 expect(savedQuestion!.uuid3).to.be.null
                 expect(savedQuestion!.uuid4).to.be.exist
 
-                const loadedQuestion = await questionRepository.findOne({
+                const loadedQuestion = await questionRepository.findOneOrFail({
                     where: {
                         id: savedQuestion.id,
                     },
                 })
-                expect(loadedQuestion!.id).to.be.exist
-                expect(loadedQuestion!.uuid).to.be.exist
-                expect(loadedQuestion!.uuid2).to.equal(
+                expect(loadedQuestion.id).to.be.exist
+                expect(loadedQuestion.uuid).to.be.exist
+                expect(loadedQuestion.uuid2).to.equal(
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
                 )
-                expect(loadedQuestion!.uuid3).to.be.null
-                expect(loadedQuestion!.uuid4).to.be.exist
+                expect(loadedQuestion.uuid3).to.be.null
+                expect(loadedQuestion.uuid4).to.be.exist
                 questionTable!
                     .findColumnByName("id")!
                     .type.should.be.equal("uuid")
@@ -137,22 +137,22 @@ describe("pgcrypto", () => {
                 question2.uuid3 = null
                 question2.uuid4 = null
                 await questionRepository.save(question2)
-                const loadedQuestion2 = await questionRepository.findOne({
+                const loadedQuestion2 = await questionRepository.findOneOrFail({
                     where: {
                         id: "1ecad7f6-23ee-453e-bb44-16eca26d5189",
                     },
                 })
-                expect(loadedQuestion2!.id).to.equal(
+                expect(loadedQuestion2.id).to.equal(
                     "1ecad7f6-23ee-453e-bb44-16eca26d5189",
                 )
-                expect(loadedQuestion2!.uuid).to.equal(
+                expect(loadedQuestion2.uuid).to.equal(
                     "35b44650-b2cd-44ec-aa54-137fbdf1c373",
                 )
-                expect(loadedQuestion2!.uuid2).to.equal(
+                expect(loadedQuestion2.uuid2).to.equal(
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
                 )
-                expect(loadedQuestion2!.uuid3).to.be.null
-                expect(loadedQuestion2!.uuid4).to.be.null
+                expect(loadedQuestion2.uuid3).to.be.null
+                expect(loadedQuestion2.uuid4).to.be.null
             }),
         ))
 })

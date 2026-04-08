@@ -32,12 +32,12 @@ describe("uuid-mssql", () => {
 
                 const post = new Post()
                 await postRepository.save(post)
-                const loadedPost = await postRepository.findOne({
+                const loadedPost = await postRepository.findOneOrFail({
                     where: {
                         id: 1,
                     },
                 })
-                expect(loadedPost!.uuid).to.be.exist
+                expect(loadedPost.uuid).to.be.exist
                 postTable!
                     .findColumnByName("uuid")!
                     .type.should.be.equal("uniqueidentifier")
@@ -45,26 +45,26 @@ describe("uuid-mssql", () => {
                 const post2 = new Post()
                 post2.uuid = "FD357B8F-8838-42F6-B7A2-AE027444E895"
                 await postRepository.save(post2)
-                const loadedPost2 = await postRepository.findOne({
+                const loadedPost2 = await postRepository.findOneOrFail({
                     where: {
                         id: 2,
                     },
                 })
-                expect(loadedPost2!.uuid).to.equal(
+                expect(loadedPost2.uuid).to.equal(
                     "FD357B8F-8838-42F6-B7A2-AE027444E895",
                 )
 
                 const question = new Question()
                 const savedQuestion = await questionRepository.save(question)
-                const loadedQuestion = await questionRepository.findOne({
+                const loadedQuestion = await questionRepository.findOneOrFail({
                     where: {
                         id: savedQuestion.id,
                     },
                 })
-                expect(loadedQuestion!.id).to.be.exist
-                expect(loadedQuestion!.uuid).to.be.exist
-                expect(loadedQuestion!.uuid2).to.be.null
-                expect(loadedQuestion!.uuid3).to.be.exist
+                expect(loadedQuestion.id).to.be.exist
+                expect(loadedQuestion.uuid).to.be.exist
+                expect(loadedQuestion.uuid2).to.be.null
+                expect(loadedQuestion.uuid3).to.be.exist
                 questionTable!
                     .findColumnByName("id")!
                     .type.should.be.equal("uniqueidentifier")
@@ -84,19 +84,19 @@ describe("uuid-mssql", () => {
                 question2.uuid2 = null
                 question2.uuid3 = null
                 await questionRepository.save(question2)
-                const loadedQuestion2 = await questionRepository.findOne({
+                const loadedQuestion2 = await questionRepository.findOneOrFail({
                     where: {
                         id: "1ECAD7F6-23EE-453E-BB44-16ECA26D5189",
                     },
                 })
-                expect(loadedQuestion2!.id).to.equal(
+                expect(loadedQuestion2.id).to.equal(
                     "1ECAD7F6-23EE-453E-BB44-16ECA26D5189",
                 )
-                expect(loadedQuestion2!.uuid).to.equal(
+                expect(loadedQuestion2.uuid).to.equal(
                     "35B44650-B2CD-44EC-AA54-137FBDF1C373",
                 )
-                expect(loadedQuestion2!.uuid2).to.be.null
-                expect(loadedQuestion2!.uuid3).to.be.null
+                expect(loadedQuestion2.uuid2).to.be.null
+                expect(loadedQuestion2.uuid3).to.be.null
             }),
         ))
 })

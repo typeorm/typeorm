@@ -208,10 +208,10 @@ describe("column > virtual columns", () => {
 
                 // find one
                 let foundCompany =
-                    await companyRepository.findOne(findOneOptions)
-                expect(foundCompany!.totalEmployeesCount).to.equal(4)
+                    await companyRepository.findOneOrFail(findOneOptions)
+                expect(foundCompany.totalEmployeesCount).to.equal(4)
 
-                let [foundTimesheet] = foundCompany!.employees.find(
+                let [foundTimesheet] = foundCompany.employees.find(
                     (e) => e.name === company.employees[0].name,
                 )!.timesheets
                 expect(foundTimesheet.totalActivityHours).to.equal(9)

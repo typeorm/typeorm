@@ -50,11 +50,11 @@ describe("github issues > #2331 undefined value is nulling column on update", ()
                 author: undefined,
             },
         )
-        const postReloaded = await repository.findOne({
+        const postReloaded = await repository.findOneOrFail({
             where: { id: post.id },
         })
 
         expect(postReloaded).to.exist
-        expect(postReloaded!.author).to.be.equal("Some author")
+        expect(postReloaded.author).to.be.equal("Some author")
     })
 })
