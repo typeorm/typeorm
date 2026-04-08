@@ -8,5 +8,5 @@ export class Dummy {
     id: number
 
     @Column({ nullable: true, default: () => "NOW()" })
-    UploadDate: string
+    uploadDate: string
 }

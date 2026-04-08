@@ -73,7 +73,7 @@ describe("schema builder > change unique constraint", () => {
                     dataSource.driver.options.type === "spanner"
                 ) {
                     table!.indices.length.should.be.equal(1)
-                    table!.indices[0].isUnique!.should.be.true
+                    table!.indices[0].isUnique.should.be.true
 
                     // revert changes
                     teacherMetadata.indices.splice(
@@ -176,19 +176,19 @@ describe("schema builder > change unique constraint", () => {
                     dataSource.driver.options.type === "sap" ||
                     dataSource.driver.options.type === "spanner"
                 ) {
-                    const index = postMetadata!.indices.find(
+                    const index = postMetadata.indices.find(
                         (i) => i.columns.length === 2 && i.isUnique === true,
                     )
-                    postMetadata!.indices.splice(
-                        postMetadata!.indices.indexOf(index!),
+                    postMetadata.indices.splice(
+                        postMetadata.indices.indexOf(index!),
                         1,
                     )
                 } else {
-                    const unique = postMetadata!.uniques.find(
+                    const unique = postMetadata.uniques.find(
                         (u) => u.columns.length === 2,
                     )
-                    postMetadata!.uniques.splice(
-                        postMetadata!.uniques.indexOf(unique!),
+                    postMetadata.uniques.splice(
+                        postMetadata.uniques.indexOf(unique!),
                         1,
                     )
                 }
