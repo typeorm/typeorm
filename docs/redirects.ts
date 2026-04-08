@@ -121,6 +121,10 @@ export const redirects = [
     { from: "/docs/indices", to: "/docs/indexes" },
     { from: "/docs/advanced-topics/indices", to: "/docs/indexes" },
     {
+        from: "/docs/performance-optimization/3-using-indices",
+        to: "/docs/performance-optimization/3-using-indexes",
+    },
+    {
         from: "/docs/advanced-topics/listeners-and-subscribers",
         to: "/docs/listeners-and-subscribers",
     },
