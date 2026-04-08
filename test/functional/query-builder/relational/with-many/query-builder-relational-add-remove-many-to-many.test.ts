@@ -52,26 +52,26 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of(post1)
                     .add(image1)
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1.images).to.deep.include({
                     id: 1,
                     url: "image #1",
                 })
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2.images).to.be.eql([])
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.be.eql([])
+                expect(loadedPost3.images).to.be.eql([])
 
                 await dataSource
                     .createQueryBuilder()
@@ -79,26 +79,26 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of(post1)
                     .remove(image1)
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.not.contain({
+                expect(loadedPost1.images).to.not.contain({
                     id: 1,
                     url: "image #1",
                 })
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2.images).to.be.eql([])
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.be.eql([])
+                expect(loadedPost3.images).to.be.eql([])
             }),
         ))
 
@@ -135,26 +135,26 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of(2) // post id
                     .add(2) // image id
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1.images).to.be.eql([])
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.deep.include({
+                expect(loadedPost2.images).to.deep.include({
                     id: 2,
                     url: "image #2",
                 })
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.be.eql([])
+                expect(loadedPost3.images).to.be.eql([])
 
                 await dataSource
                     .createQueryBuilder()
@@ -162,26 +162,26 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of(2) // post id
                     .remove(2) // image id
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1.images).to.be.eql([])
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.not.contain({
+                expect(loadedPost2.images).to.not.contain({
                     id: 2,
                     url: "image #2",
                 })
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.be.eql([])
+                expect(loadedPost3.images).to.be.eql([])
             }),
         ))
 
@@ -218,23 +218,23 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of({ id: 3 }) // post id
                     .add({ id: 3 }) // image id
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1.images).to.be.eql([])
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2.images).to.be.eql([])
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.deep.include({
+                expect(loadedPost3.images).to.deep.include({
                     id: 3,
                     url: "image #3",
                 })
@@ -245,23 +245,23 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of({ id: 3 }) // post id
                     .remove({ id: 3 }) // image id
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1.images).to.be.eql([])
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2.images).to.be.eql([])
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.not.contain({
+                expect(loadedPost3.images).to.not.contain({
                     id: 3,
                     url: "image #3",
                 })
@@ -301,26 +301,26 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of([{ id: 1 }, { id: 3 }]) // posts
                     .add({ id: 3 }) // image
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1.images).to.deep.include({
                     id: 3,
                     url: "image #3",
                 })
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2.images).to.be.eql([])
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.deep.include({
+                expect(loadedPost3.images).to.deep.include({
                     id: 3,
                     url: "image #3",
                 })
@@ -331,26 +331,26 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of([{ id: 1 }, { id: 3 }]) // posts
                     .remove({ id: 3 }) // image
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.not.contain({
+                expect(loadedPost1.images).to.not.contain({
                     id: 3,
                     url: "image #3",
                 })
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2.images).to.be.eql([])
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.not.not.contain({
+                expect(loadedPost3.images).to.not.not.contain({
                     id: 3,
                     url: "image #3",
                 })
@@ -390,27 +390,27 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of({ id: 3 }) // post
                     .add([{ id: 1 }, { id: 3 }]) // images
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1.images).to.be.eql([])
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2.images).to.be.eql([])
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.deep.include({
+                expect(loadedPost3.images).to.deep.include({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost3!.images).to.deep.include({
+                expect(loadedPost3.images).to.deep.include({
                     id: 3,
                     url: "image #3",
                 })
@@ -421,27 +421,27 @@ describe("query builder > relational with many > add and remove many to many", (
                     .of({ id: 3 }) // post
                     .remove([{ id: 1 }, { id: 3 }]) // images
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1.images).to.be.eql([])
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2.images).to.be.eql([])
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.not.contain({
+                expect(loadedPost3.images).to.not.contain({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost3!.images).to.not.contain({
+                expect(loadedPost3.images).to.not.contain({
                     id: 3,
                     url: "image #3",
                 })

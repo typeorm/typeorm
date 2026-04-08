@@ -140,10 +140,10 @@ describe("query builder > relation-id > one-to-one > embedded-with-multiple-pk",
                     .andWhere("post.counters.subcounters.version = :version", {
                         version: 1,
                     })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(
-                    loadedPost!.should.be.eql({
+                    loadedPost.should.be.eql({
                         id: 1,
                         title: "About BMW",
                         counters: {

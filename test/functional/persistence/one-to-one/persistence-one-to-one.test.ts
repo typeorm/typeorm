@@ -43,13 +43,13 @@ describe("persistence > one-to-one", function () {
                     newAccessToken.user = newUser
                     await accessTokenRepository.save(newAccessToken)
 
-                    const loadedUser = await userRepository.findOne({
+                    const loadedUser = await userRepository.findOneOrFail({
                         where: { email: "mwelnick@test.com" },
                         relations: { access_token: true },
                     })
 
                     expect(loadedUser).not.to.be.null
-                    expect(loadedUser!.access_token).not.to.be.undefined
+                    expect(loadedUser.access_token).not.to.be.undefined
                 }),
             ))
     })

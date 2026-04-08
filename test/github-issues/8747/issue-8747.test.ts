@@ -38,13 +38,11 @@ describe("github issues > #8747 QueryBuilder update handles Date objects wrong o
                 { latestRecordTimestamp: record.timestamp },
             )
 
-            const carReloaded = await Car.findOne({
-                where: { uuid: car.uuid },
-            })
+            const carReloaded = await Car.findOneByOrFail({ uuid: car.uuid })
 
             expect(carReloaded).to.exist
             expect(record.timestamp?.getTime()).to.be.equal(
-                carReloaded!.latestRecordTimestamp?.getTime(),
+                carReloaded.latestRecordTimestamp?.getTime(),
             )
         }
     })
