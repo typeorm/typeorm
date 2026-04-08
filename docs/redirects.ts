@@ -105,10 +105,6 @@ export const redirects = [
     { from: "/transactions", to: "/docs/transactions" },
     { from: "/indices", to: "/docs/indexes" },
     {
-        from: "/docs/performance-optimization/3-using-indices",
-        to: "/docs/performance-optimization/3-using-indexes",
-    },
-    {
         from: "/listeners-and-subscribers",
         to: "/docs/listeners-and-subscribers",
     },
