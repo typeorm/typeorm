@@ -1,17 +1,17 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import { randomBytes } from "crypto"
-import type { DataSource } from "../../../src"
+import type { DataSource } from "../../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { PostVersion } from "./entity/PostVersion"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
-import type { ColumnType } from "../../../src/driver/types/ColumnTypes"
-import type { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
+import { DriverUtils } from "../../../../../../src/driver/DriverUtils"
+import type { ColumnType } from "../../../../../../src/driver/types/ColumnTypes"
+import type { ColumnMetadata } from "../../../../../../src/metadata/ColumnMetadata"
 
 // Helper functions for cryptographically secure random number generation
 // Replaces Math.random() which is flagged as weak cryptography
