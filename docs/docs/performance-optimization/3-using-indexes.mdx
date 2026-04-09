@@ -15,7 +15,7 @@ Indexes are data structures that allow the database to locate rows without scann
 
 Indexes accelerate read operations but add overhead to writes (inserts, updates, deletes) since the index must be kept in sync, so they should be created carefully and only when needed.
 
-Good candidates for indexes are columns frequently used in `WHERE` clauses, joins, and sorting. When more than one column is used as a filter, it might make sense to create a [composite index](../indices.md#indices-with-multiple-columns), however bear in mind that column order matters — place the most selective (most unique values) columns first.
+Good candidates for indexes are columns frequently used in `WHERE` clauses, joins, and sorting. When more than one column is used as a filter, it might make sense to create a [composite index](../indexes.md#indexes-with-multiple-columns), however bear in mind that column order matters — place the most selective (most unique values) columns first.
 
 ## Analyzing query performance
 
@@ -291,6 +291,6 @@ export class Post {
 </TabItem>
 </Tabs>
 
-For a comprehensive overview of different index types (unique, spatial, fulltext, concurrent, and more), read the [Indexes](../indices.md) guide.
+For a comprehensive overview of different index types (unique, spatial, fulltext, concurrent, and more), read the [Indexes](../indexes.md) guide.
 
 Proper indexing is often the single biggest performance improvement you can make — start by analyzing your slowest queries with the execution plan tools above, then add indexes where they matter most.
