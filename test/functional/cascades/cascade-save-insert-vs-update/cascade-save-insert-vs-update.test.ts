@@ -15,6 +15,18 @@ describe("cascades > save insert vs update", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
+            // SAP HANA does not support DEFAULT VALUES for tables with only an identity column
+            enabledDrivers: [
+                "mysql",
+                "mariadb",
+                "postgres",
+                "cockroachdb",
+                "mssql",
+                "oracle",
+                "spanner",
+                "better-sqlite3",
+                "sqljs",
+            ],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
