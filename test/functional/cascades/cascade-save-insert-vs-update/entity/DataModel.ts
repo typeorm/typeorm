@@ -32,9 +32,6 @@ export class DataModel {
     })
     main: MainModel
 
-    @Column({
-        type: "boolean",
-        default: false,
-    })
+    @Column({ default: false })
     active: boolean
 }
