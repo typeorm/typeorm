@@ -117,7 +117,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                         }
 
                         // return id of inserted row, if query was insert statement.
-                        if (query.substr(0, 11) === "INSERT INTO") {
+                        if (query.startsWith("INSERT INTO")) {
                             result.raw = raw.insertId
                         }
 

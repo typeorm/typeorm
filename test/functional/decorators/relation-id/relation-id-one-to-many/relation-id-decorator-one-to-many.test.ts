@@ -64,11 +64,11 @@ describe("decorators > relation-id > one-to-many", () => {
                 const loadedCategory = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.postIds.length).to.be.equal(2)
-                expect(loadedCategory!.postIds[0]).to.be.equal(1)
-                expect(loadedCategory!.postIds[1]).to.be.equal(2)
+                expect(loadedCategory.postIds.length).to.be.equal(2)
+                expect(loadedCategory.postIds[0]).to.be.equal(1)
+                expect(loadedCategory.postIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -120,11 +120,11 @@ describe("decorators > relation-id > one-to-many", () => {
                 const loadedCategory = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.removedPostIds).to.not.be.eql([])
-                expect(loadedCategory!.removedPostIds.length).to.be.equal(1)
-                expect(loadedCategory!.removedPostIds[0]).to.be.equal(2)
+                expect(loadedCategory.removedPostIds).to.not.be.eql([])
+                expect(loadedCategory.removedPostIds.length).to.be.equal(1)
+                expect(loadedCategory.removedPostIds[0]).to.be.equal(2)
             }),
         ))
 })

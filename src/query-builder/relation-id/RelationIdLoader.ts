@@ -16,6 +16,7 @@ export class RelationIdLoader {
         protected dataSource: DataSource,
         protected queryRunner: QueryRunner | undefined,
         protected relationIdAttributes: RelationIdAttribute[],
+        protected withDeleted: boolean = false,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -384,6 +385,8 @@ export class RelationIdLoader {
                     qb.from(inverseSideTableName, inverseSideTableAlias)
                         .innerJoin(junctionTableName, junctionAlias, condition)
                         .setParameters(parameters)
+
+                    if (this.withDeleted) qb.withDeleted()
 
                     // apply condition (custom query builder factory)
                     if (relationIdAttr.queryBuilderFactory)

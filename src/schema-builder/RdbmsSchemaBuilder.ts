@@ -231,7 +231,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.dropOldChecks()
         await this.dropOldExclusions()
         await this.dropCompositeUniqueConstraints()
-        // await this.renameTables();
         await this.renameColumns()
         await this.changeTableComment()
         await this.createNewTables()
@@ -307,15 +306,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 tableForeignKeysToDrop,
             )
         }
-    }
-
-    /**
-     * Rename tables
-     */
-    protected async renameTables(): Promise<void> {
-        // for (const metadata of this.entityToSyncMetadatas) {
-        //     const table = this.tables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
-        // }
     }
 
     /**

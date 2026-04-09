@@ -40,11 +40,14 @@ describe("github issues > #2779 Could we add support for the MySQL/MariaDB SET d
                 await connection.manager.save(post)
                 post.roles.should.be.deep.equal(targetValue)
 
-                const loadedPost = await connection.manager.findOneBy(Post, {
-                    id: post.id,
-                })
+                const loadedPost = await connection.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: post.id,
+                    },
+                )
                 expect(loadedPost).not.to.be.null
-                loadedPost!.roles.should.be.deep.equal(targetValue)
+                loadedPost.roles.should.be.deep.equal(targetValue)
             }),
         ))
 })

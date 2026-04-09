@@ -88,40 +88,40 @@ describe("embedded > embedded-with-special-columns", () => {
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.id")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(
-                    loadedPost!.counters.createdDate.should.be.instanceof(Date),
+                    loadedPost.counters.createdDate.should.be.instanceof(Date),
                 )
                 expect(
-                    loadedPost!.counters.updatedDate.should.be.instanceof(Date),
+                    loadedPost.counters.updatedDate.should.be.instanceof(Date),
                 )
-                expect(loadedPost!.counters.deletedDate).to.be.null
+                expect(loadedPost.counters.deletedDate).to.be.null
                 expect(
-                    loadedPost!.counters.subcounters.version.should.be.equal(1),
+                    loadedPost.counters.subcounters.version.should.be.equal(1),
                 )
 
-                const prevUpdateDate = loadedPost!.counters.updatedDate
+                const prevUpdateDate = loadedPost.counters.updatedDate
 
-                loadedPost!.title = "About cars #2"
+                loadedPost.title = "About cars #2"
 
                 // wait a second
                 await scheduler.wait(1010)
 
-                await dataSource.getRepository(Post).save(loadedPost!)
+                await dataSource.getRepository(Post).save(loadedPost)
 
                 loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(
-                    loadedPost!.counters.updatedDate
+                    loadedPost.counters.updatedDate
                         .valueOf()
                         .should.be.greaterThan(prevUpdateDate.valueOf()),
                 )
                 expect(
-                    loadedPost!.counters.subcounters.version.should.be.equal(2),
+                    loadedPost.counters.subcounters.version.should.be.equal(2),
                 )
             }),
         ))

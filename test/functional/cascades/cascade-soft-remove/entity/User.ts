@@ -2,6 +2,7 @@ import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColum
 import { Entity } from "../../../../../src/decorator/entity/Entity"
 import { ManyToMany } from "../../../../../src/decorator/relations/ManyToMany"
 import { Photo } from "./Photo"
+import { Tag } from "./Tag"
 import { OneToMany } from "../../../../../src/decorator/relations/OneToMany"
 import { JoinTable } from "../../../../../src/decorator/relations/JoinTable"
 import { Column } from "../../../../../src/decorator/columns/Column"
@@ -27,4 +28,8 @@ export class User extends BaseEntity {
     @ManyToMany(() => Photo, { cascade: true })
     @JoinTable()
     manyToManyPhotos: Photo[]
+
+    @ManyToMany(() => Tag, { cascade: ["insert"] })
+    @JoinTable()
+    tags: Tag[]
 }

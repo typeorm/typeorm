@@ -40,16 +40,16 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
                     .orderBy("post.id")
                     .getMany()
 
-                loadedPosts!.length.should.be.equal(2)
-                loadedPosts![0].title.should.be.equals("title#2")
-                loadedPosts![1].title.should.be.equals("title#3")
+                loadedPosts.length.should.be.equal(2)
+                loadedPosts[0].title.should.be.equals("title#2")
+                loadedPosts[1].title.should.be.equals("title#3")
 
                 const loadedPost = await dataSource
                     .createQueryBuilder()
                     .select("post")
                     .from(Post, "post")
                     .orderBy("post.id")
-                    .getOne()
+                    .getOneOrFail()
                 loadedPost!.title.should.be.equals("title#2")
             }),
         ))
@@ -78,10 +78,10 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
                     .orderBy("post.id")
                     .getMany()
 
-                loadedPosts!.length.should.be.equal(3)
-                loadedPosts![0].title.should.be.equals("title#1")
-                loadedPosts![1].title.should.be.equals("title#2")
-                loadedPosts![2].title.should.be.equals("title#3")
+                loadedPosts.length.should.be.equal(3)
+                loadedPosts[0].title.should.be.equals("title#1")
+                loadedPosts[1].title.should.be.equals("title#2")
+                loadedPosts[2].title.should.be.equals("title#3")
 
                 const loadedPost = await dataSource
                     .createQueryBuilder()
@@ -89,7 +89,7 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
                     .from(Post, "post")
                     .withDeleted()
                     .orderBy("post.id")
-                    .getOne()
+                    .getOneOrFail()
                 loadedPost!.title.should.be.equals("title#1")
             }),
         ))

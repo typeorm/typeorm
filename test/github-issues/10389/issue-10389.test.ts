@@ -163,10 +163,12 @@ describe("github issues > #10389 softDelete should not update already deleted ro
                 // Both have company "comp1".
 
                 // Get current state of user 2
-                const user2Before = await manager.findOneBy(User, { id: 2 })
+                const user2Before = await manager.findOneByOrFail(User, {
+                    id: 2,
+                })
                 expect(user2Before).to.exist
-                const updatedAtBefore = user2Before!.updatedAt
-                const versionBefore = user2Before!.version
+                const updatedAtBefore = user2Before.updatedAt
+                const versionBefore = user2Before.version
 
                 // wait a bit to ensure CURRENT_TIMESTAMP will be different if updated
                 await scheduler.wait(1000)
@@ -179,14 +181,18 @@ describe("github issues > #10389 softDelete should not update already deleted ro
                 // only user1 should be restored
                 expect(restoreResult.affected).to.be.eql(1)
 
-                const user1After = await manager.findOneBy(User, { id: 1 })
-                expect(user1After!.deletedAt).to.be.null
+                const user1After = await manager.findOneByOrFail(User, {
+                    id: 1,
+                })
+                expect(user1After.deletedAt).to.be.null
 
-                const user2After = await manager.findOneBy(User, { id: 2 })
-                expect(user2After!.deletedAt).to.be.null
+                const user2After = await manager.findOneByOrFail(User, {
+                    id: 2,
+                })
+                expect(user2After.deletedAt).to.be.null
                 // updateDate and version should NOT have changed for user 2
-                expect(user2After!.updatedAt).to.be.eql(updatedAtBefore)
-                expect(user2After!.version).to.be.eql(versionBefore)
+                expect(user2After.updatedAt).to.be.eql(updatedAtBefore)
+                expect(user2After.version).to.be.eql(versionBefore)
             }),
         ))
 })

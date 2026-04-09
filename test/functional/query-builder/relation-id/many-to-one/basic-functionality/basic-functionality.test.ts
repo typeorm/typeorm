@@ -79,12 +79,12 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
                         "post.categoryByName",
                     )
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryId).to.not.be.undefined
-                expect(loadedPost!.categoryId).to.be.equal(1)
-                expect(loadedPost!.categoryName).to.not.be.undefined
-                expect(loadedPost!.categoryName).to.be.equal("BMW")
+                expect(loadedPost.categoryId).to.not.be.undefined
+                expect(loadedPost.categoryId).to.be.equal(1)
+                expect(loadedPost.categoryName).to.not.be.undefined
+                expect(loadedPost.categoryName).to.be.equal("BMW")
             }),
         ))
 
@@ -114,12 +114,12 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
                         "postCategory.categoryId",
                         "postCategory.category",
                     )
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPostCategory!.categoryId).to.not.be.undefined
-                expect(loadedPostCategory!.categoryId).to.be.equal(1)
-                expect(loadedPostCategory!.postId).to.not.be.undefined
-                expect(loadedPostCategory!.postId).to.be.equal(1)
+                expect(loadedPostCategory.categoryId).to.not.be.undefined
+                expect(loadedPostCategory.categoryId).to.be.equal(1)
+                expect(loadedPostCategory.postId).to.not.be.undefined
+                expect(loadedPostCategory.postId).to.be.equal(1)
             }),
         ))
 
@@ -150,9 +150,9 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
                         "postCategory.imageId",
                         "postCategory.image",
                     )
-                    .getOne()
-                expect(loadedPostCategory!.imageId).to.not.be.undefined
-                expect(loadedPostCategory!.imageId).to.be.equal(1)
+                    .getOneOrFail()
+                expect(loadedPostCategory.imageId).to.not.be.undefined
+                expect(loadedPostCategory.imageId).to.be.equal(1)
             }),
         ))
 })
