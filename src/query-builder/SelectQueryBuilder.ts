@@ -1143,11 +1143,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }): this {
         // todo: add skip relations
         this.expressionMap.mainAlias!.metadata.relations.forEach((relation) => {
-            if (
-                options !== undefined &&
-                options.relations !== undefined &&
-                options.relations.indexOf(relation.propertyPath) === -1
-            )
+            if (options?.relations?.indexOf(relation.propertyPath) === -1)
                 return
 
             this.loadRelationIdAndMap(
@@ -2207,10 +2203,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 metadata: joinAttributeMetadata,
                 subQuery: isSubQuery ? subQuery : undefined,
             })
-            if (
-                joinAttribute.relation &&
-                joinAttribute.relation.junctionEntityMetadata
-            ) {
+            if (joinAttribute.relation?.junctionEntityMetadata) {
                 this.expressionMap.createAlias({
                     type: "join",
                     name: joinAttribute.junctionAlias,
@@ -2606,8 +2599,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Creates "GROUP BY" part of SQL query.
      */
     protected createGroupByExpression() {
-        if (!this.expressionMap.groupBys || !this.expressionMap.groupBys.length)
-            return ""
+        if (!this.expressionMap.groupBys?.length) return ""
         return " GROUP BY " + this.expressionMap.groupBys.join(", ")
     }
 
@@ -2891,8 +2883,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Creates "HAVING" part of SQL query.
      */
     protected createHavingExpression() {
-        if (!this.expressionMap.havings || !this.expressionMap.havings.length)
-            return ""
+        if (!this.expressionMap.havings?.length) return ""
         const conditions = this.expressionMap.havings
             .map((having, index) => {
                 switch (having.type) {
@@ -3176,7 +3167,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .setOption("disable-global-order")
             .loadRawResults(queryRunner)
 
-        if (!results || !results[0] || !results[0]["cnt"]) return 0
+        if (!results?.[0]?.["cnt"]) return 0
 
         return parseInt(results[0]["cnt"])
     }

@@ -2512,7 +2512,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -2814,7 +2814,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                                     asExpressionQuery.query,
                                     asExpressionQuery.parameters,
                                 )
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""

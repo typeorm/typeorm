@@ -313,9 +313,9 @@ export class Subject {
             if (this.parentSubject) {
                 this.metadata.primaryColumns.forEach((primaryColumn) => {
                     if (
-                        primaryColumn.relationMetadata &&
-                        primaryColumn.relationMetadata.inverseEntityMetadata ===
-                            this.parentSubject!.metadata
+                        primaryColumn.relationMetadata
+                            ?.inverseEntityMetadata ===
+                        this.parentSubject!.metadata
                     ) {
                         const value =
                             primaryColumn.referencedColumn!.getEntityValue(

@@ -668,10 +668,7 @@ export class RelationMetadata {
      * Builds relation's property path based on its embedded tree.
      */
     buildPropertyPath(): string {
-        if (
-            !this.embeddedMetadata ||
-            !this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (!this.embeddedMetadata?.parentPropertyNames.length)
             return this.propertyName
 
         return (

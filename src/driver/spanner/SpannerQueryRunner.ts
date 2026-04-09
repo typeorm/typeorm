@@ -253,7 +253,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             result.raw = rawResult
             result.records = rawResult ? rawResult[0] : []
-            if (rawResult && rawResult[1] && rawResult[1].rowCountExact) {
+            if (rawResult?.[1]?.rowCountExact) {
                 result.affected = parseInt(rawResult[1].rowCountExact)
             }
 
@@ -1803,13 +1803,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
         const dbTables: { TABLE_NAME: string }[] = []
 
-        if (!tableNames || !tableNames.length) {
+        if (!tableNames?.length) {
             // Since we don't have any of this data we have to do a scan
             const tablesSql =
                 `SELECT \`TABLE_NAME\` ` +
@@ -1923,8 +1923,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 )
                             const hasIgnoredIndex =
                                 columnUniqueIndices.length > 0 &&
-                                tableMetadata &&
-                                tableMetadata.indices.some((index) => {
+                                tableMetadata?.indices.some((index) => {
                                     return columnUniqueIndices.some(
                                         (uniqueIndex) => {
                                             return (
@@ -1998,7 +1997,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                     asExpressionQuery.parameters,
                                 )
 
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""

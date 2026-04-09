@@ -989,10 +989,7 @@ export class SqlServerDriver implements Driver {
      * @param returningType
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
-        if (
-            this.options.options &&
-            this.options.options.disableOutputReturning
-        ) {
+        if (this.options.options?.disableOutputReturning) {
             return false
         }
         return true
@@ -1288,7 +1285,7 @@ export class SqlServerDriver implements Driver {
             const { logger } = this.dataSource
 
             const poolErrorHandler =
-                (options.pool && options.pool.errorHandler) ||
+                options.pool?.errorHandler ||
                 ((error: any) =>
                     logger.log("warn", `MSSQL pool raised an error. ${error}`))
             /**

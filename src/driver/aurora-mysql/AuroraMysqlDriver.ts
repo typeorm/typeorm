@@ -545,10 +545,7 @@ export class AuroraMysqlDriver implements Driver {
                 value,
             )
 
-        if (
-            !this.options.formatOptions ||
-            this.options.formatOptions.castParameters !== false
-        ) {
+        if (this.options.formatOptions?.castParameters !== false) {
             return this.client.preparePersistentValue(value, columnMetadata)
         }
 
@@ -602,10 +599,7 @@ export class AuroraMysqlDriver implements Driver {
                   )
                 : value
 
-        if (
-            !this.options.formatOptions ||
-            this.options.formatOptions.castParameters !== false
-        ) {
+        if (this.options.formatOptions?.castParameters !== false) {
             return this.client.prepareHydratedValue(value, columnMetadata)
         }
 

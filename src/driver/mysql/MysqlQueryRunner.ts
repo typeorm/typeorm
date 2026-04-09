@@ -2598,7 +2598,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -2855,8 +2855,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 )
                             const hasIgnoredIndex =
                                 columnUniqueIndices.length > 0 &&
-                                tableMetadata &&
-                                tableMetadata.indices.some((index) => {
+                                tableMetadata?.indices.some((index) => {
                                     return columnUniqueIndices.some(
                                         (uniqueIndex) => {
                                             return (
@@ -2953,7 +2952,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                     asExpressionQuery.query,
                                     asExpressionQuery.parameters,
                                 )
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""

@@ -58,7 +58,7 @@ export function ManyToOne<T>(
         if (!options) options = {} as RelationOptions
 
         // Now try to determine if it is a lazy relation.
-        let isLazy = options && options.lazy === true
+        let isLazy = options?.lazy === true
         if (!isLazy && Reflect && (Reflect as any).getMetadata) {
             // automatic determination
             const reflectedType = (Reflect as any).getMetadata(

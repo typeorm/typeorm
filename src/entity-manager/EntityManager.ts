@@ -147,7 +147,7 @@ export class EntityManager {
             )
         }
 
-        if (this.queryRunner && this.queryRunner.isReleased)
+        if (this.queryRunner?.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection

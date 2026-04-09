@@ -38,7 +38,7 @@ export class RelationLoader {
         loadEagerRelations?: boolean,
     ): Promise<any[]> {
         // todo: check all places where it uses non array
-        if (queryRunner && queryRunner.isReleased) queryRunner = undefined // get new one if already closed
+        if (queryRunner?.isReleased) queryRunner = undefined // get new one if already closed
         if (relation.isManyToOne || relation.isOneToOneOwner) {
             return this.loadManyToOneOrOneToOneOwner(
                 relation,

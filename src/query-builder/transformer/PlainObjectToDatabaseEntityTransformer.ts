@@ -159,8 +159,7 @@ export class PlainObjectToDatabaseEntityTransformer {
             if (
                 !loadMapItem.relation ||
                 !loadMapItem.entity ||
-                !loadMapItem.parentLoadMapItem ||
-                !loadMapItem.parentLoadMapItem.entity
+                !loadMapItem.parentLoadMapItem?.entity
             )
                 return
 

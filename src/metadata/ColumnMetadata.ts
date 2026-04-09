@@ -964,10 +964,7 @@ export class ColumnMetadata {
 
     protected buildPropertyPath(): string {
         let path = ""
-        if (
-            this.embeddedMetadata &&
-            this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (this.embeddedMetadata?.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + "."
 
         path += this.propertyName
@@ -988,10 +985,7 @@ export class ColumnMetadata {
 
     protected buildDatabasePath(): string {
         let path = ""
-        if (
-            this.embeddedMetadata &&
-            this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (this.embeddedMetadata?.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + "."
 
         path += this.databaseName

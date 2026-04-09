@@ -79,14 +79,13 @@ export class JunctionEntityMetadataBuilder {
                       )
                   })
                 : undefined
-            const columnName =
-                joinColumn && joinColumn.name
-                    ? joinColumn.name
-                    : this.dataSource.namingStrategy.joinTableColumnName(
-                          relation.entityMetadata.tableNameWithoutPrefix,
-                          referencedColumn.propertyName,
-                          referencedColumn.databaseName,
-                      )
+            const columnName = joinColumn?.name
+                ? joinColumn.name
+                : this.dataSource.namingStrategy.joinTableColumnName(
+                      relation.entityMetadata.tableNameWithoutPrefix,
+                      referencedColumn.propertyName,
+                      referencedColumn.databaseName,
+                  )
 
             return new ColumnMetadata({
                 entityMetadata: entityMetadata,
@@ -142,15 +141,13 @@ export class JunctionEntityMetadataBuilder {
                           )
                       })
                     : undefined
-                const columnName =
-                    joinColumn && joinColumn.name
-                        ? joinColumn.name
-                        : this.dataSource.namingStrategy.joinTableInverseColumnName(
-                              relation.inverseEntityMetadata
-                                  .tableNameWithoutPrefix,
-                              inverseReferencedColumn.propertyName,
-                              inverseReferencedColumn.databaseName,
-                          )
+                const columnName = joinColumn?.name
+                    ? joinColumn.name
+                    : this.dataSource.namingStrategy.joinTableInverseColumnName(
+                          relation.inverseEntityMetadata.tableNameWithoutPrefix,
+                          inverseReferencedColumn.propertyName,
+                          inverseReferencedColumn.databaseName,
+                      )
 
                 return new ColumnMetadata({
                     entityMetadata,

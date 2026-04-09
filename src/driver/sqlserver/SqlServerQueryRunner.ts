@@ -232,7 +232,7 @@ export class SqlServerQueryRunner
             const request = new this.driver.mssql.Request(
                 this.isTransactionActive ? this.databaseConnection : pool,
             )
-            if (parameters && parameters.length) {
+            if (parameters?.length) {
                 parameters.forEach((parameter, index) => {
                     const parameterName = index.toString()
                     if (InstanceChecker.isMssqlParameter(parameter)) {
@@ -367,7 +367,7 @@ export class SqlServerQueryRunner
         const request = new this.driver.mssql.Request(
             this.isTransactionActive ? this.databaseConnection : pool,
         )
-        if (parameters && parameters.length) {
+        if (parameters?.length) {
             parameters.forEach((parameter, index) => {
                 const parameterName = index.toString()
                 if (InstanceChecker.isMssqlParameter(parameter)) {
@@ -2661,8 +2661,7 @@ export class SqlServerQueryRunner
             : undefined
 
         if (
-            metadata &&
-            metadata.treeParentRelation &&
+            metadata?.treeParentRelation &&
             metadata.treeParentRelation!.isTreeParent &&
             metadata.foreignKeys.find(
                 (foreignKey) => foreignKey.onDelete !== "NO ACTION",
@@ -3073,7 +3072,7 @@ export class SqlServerQueryRunner
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -3619,7 +3618,7 @@ export class SqlServerQueryRunner
                                     asExpressionQuery.query,
                                     asExpressionQuery.parameters,
                                 )
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""

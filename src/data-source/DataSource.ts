@@ -364,7 +364,7 @@ export class DataSource {
             options?.transaction ||
             this.options?.migrationsTransactionMode ||
             "all"
-        migrationExecutor.fake = (options && options.fake) || false
+        migrationExecutor.fake = options?.fake || false
 
         const successMigrations =
             await migrationExecutor.executePendingMigrations()
@@ -386,9 +386,8 @@ export class DataSource {
         if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
-        migrationExecutor.transaction =
-            (options && options.transaction) || "all"
-        migrationExecutor.fake = (options && options.fake) || false
+        migrationExecutor.transaction = options?.transaction || "all"
+        migrationExecutor.fake = options?.fake || false
 
         await migrationExecutor.undoLastMigration()
     }
@@ -506,7 +505,7 @@ export class DataSource {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Queries aren't supported by MongoDB.`)
 
-        if (queryRunner && queryRunner.isReleased)
+        if (queryRunner?.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
         const usedQueryRunner = queryRunner || this.createQueryRunner()

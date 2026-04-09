@@ -37,6 +37,7 @@ export default defineConfig([
             // custom rules
             "@typescript-eslint/consistent-type-exports": "error",
             "@typescript-eslint/consistent-type-imports": "error",
+            "@typescript-eslint/prefer-optional-chain": "error",
 
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",

@@ -67,7 +67,7 @@ export class RedisQueryResultCache implements QueryResultCache {
 
             await this.client.connect()
         } else if (this.clientType === "ioredis") {
-            if (cacheOptions && cacheOptions.port) {
+            if (cacheOptions?.port) {
                 if (cacheOptions.options) {
                     this.client = new this.redis(
                         cacheOptions.port,
@@ -76,23 +76,15 @@ export class RedisQueryResultCache implements QueryResultCache {
                 } else {
                     this.client = new this.redis(cacheOptions.port)
                 }
-            } else if (cacheOptions && cacheOptions.options) {
+            } else if (cacheOptions?.options) {
                 this.client = new this.redis(cacheOptions.options)
             } else {
                 this.client = new this.redis()
             }
         } else if (this.clientType === "ioredis/cluster") {
-            if (
-                cacheOptions &&
-                cacheOptions.options &&
-                Array.isArray(cacheOptions.options)
-            ) {
+            if (cacheOptions?.options && Array.isArray(cacheOptions.options)) {
                 this.client = new this.redis.Cluster(cacheOptions.options)
-            } else if (
-                cacheOptions &&
-                cacheOptions.options &&
-                cacheOptions.options.startupNodes
-            ) {
+            } else if (cacheOptions?.options?.startupNodes) {
                 this.client = new this.redis.Cluster(
                     cacheOptions.options.startupNodes,
                     cacheOptions.options.options,

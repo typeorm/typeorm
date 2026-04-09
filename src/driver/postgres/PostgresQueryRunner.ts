@@ -3634,7 +3634,7 @@ export class PostgresQueryRunner
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -3820,7 +3820,7 @@ export class PostgresQueryRunner
                                 const lengthMatch = dbColumn[
                                     "format_type"
                                 ].match(/^(?:vector|halfvec)\((\d+)\)$/)
-                                if (lengthMatch && lengthMatch[1]) {
+                                if (lengthMatch?.[1]) {
                                     tableColumn.length = lengthMatch[1]
                                 }
                             }
@@ -4170,7 +4170,7 @@ export class PostgresQueryRunner
                                     asExpressionQuery.query,
                                     asExpressionQuery.parameters,
                                 )
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""

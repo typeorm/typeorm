@@ -1478,7 +1478,7 @@ export abstract class AbstractSqliteQueryRunner
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -1643,7 +1643,7 @@ export abstract class AbstractSqliteQueryRunner
                                 asExpressionQuery.query,
                                 asExpressionQuery.parameters,
                             )
-                            if (results[0] && results[0].value) {
+                            if (results[0]?.value) {
                                 tableColumn.asExpression = results[0].value
                             } else {
                                 tableColumn.asExpression = ""
@@ -1687,7 +1687,7 @@ export abstract class AbstractSqliteQueryRunner
                                     `^${dataType}\\((\\d+),?\\s?(\\d+)?\\)`,
                                 )
                                 const matches = fullType.match(re)
-                                if (matches && matches[1]) {
+                                if (matches?.[1]) {
                                     tableColumn.precision = +matches[1]
                                 }
                                 if (
@@ -1695,7 +1695,7 @@ export abstract class AbstractSqliteQueryRunner
                                         (col) => col === dataType,
                                     )
                                 ) {
-                                    if (matches && matches[2]) {
+                                    if (matches?.[2]) {
                                         tableColumn.scale = +matches[2]
                                     }
                                 }
@@ -2255,7 +2255,7 @@ export abstract class AbstractSqliteQueryRunner
                         const oldColumn = oldTable.columns.find(
                             (c) => c.name === column.name,
                         )
-                        if (oldColumn && oldColumn.generatedType) return false
+                        if (oldColumn?.generatedType) return false
                         return !column.generatedType && oldColumn
                     })
                     .map((column) => `"${column.name}"`)
