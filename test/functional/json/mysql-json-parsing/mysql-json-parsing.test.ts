@@ -27,10 +27,9 @@ describe("mysql json parsing", () => {
                 entity.jsonObject = { foo: "bar", nested: { value: 123 } }
 
                 const saved = await repo.save(entity)
-                const loaded = await repo.findOneBy({ id: saved.id })
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
 
-                expect(loaded).to.be.not.undefined
-                expect(loaded!.jsonObject).to.deep.equal({
+                expect(loaded.jsonObject).to.deep.equal({
                     foo: "bar",
                     nested: { value: 123 },
                 })
@@ -45,10 +44,9 @@ describe("mysql json parsing", () => {
                 entity.jsonArray = [1, "two", { three: 3 }, null, true]
 
                 const saved = await repo.save(entity)
-                const loaded = await repo.findOneBy({ id: saved.id })
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
 
-                expect(loaded).to.be.not.undefined
-                expect(loaded!.jsonArray).to.deep.equal([
+                expect(loaded.jsonArray).to.deep.equal([
                     1,
                     "two",
                     { three: 3 },
@@ -66,11 +64,10 @@ describe("mysql json parsing", () => {
                 entity.jsonString = "hello world"
 
                 const saved = await repo.save(entity)
-                const loaded = await repo.findOneBy({ id: saved.id })
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
 
-                expect(loaded).to.be.not.undefined
-                expect(loaded!.jsonString).to.be.a("string")
-                expect(loaded!.jsonString).to.equal("hello world")
+                expect(loaded.jsonString).to.be.a("string")
+                expect(loaded.jsonString).to.equal("hello world")
             }),
         ))
 
@@ -82,11 +79,10 @@ describe("mysql json parsing", () => {
                 entity.jsonNumber = 42.5
 
                 const saved = await repo.save(entity)
-                const loaded = await repo.findOneBy({ id: saved.id })
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
 
-                expect(loaded).to.be.not.undefined
-                expect(loaded!.jsonNumber).to.be.a("number")
-                expect(loaded!.jsonNumber).to.equal(42.5)
+                expect(loaded.jsonNumber).to.be.a("number")
+                expect(loaded.jsonNumber).to.equal(42.5)
             }),
         ))
 
@@ -98,11 +94,10 @@ describe("mysql json parsing", () => {
                 entity.jsonBoolean = true
 
                 const saved = await repo.save(entity)
-                const loaded = await repo.findOneBy({ id: saved.id })
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
 
-                expect(loaded).to.be.not.undefined
-                expect(loaded!.jsonBoolean).to.be.a("boolean")
-                expect(loaded!.jsonBoolean).to.equal(true)
+                expect(loaded.jsonBoolean).to.be.a("boolean")
+                expect(loaded.jsonBoolean).to.equal(true)
             }),
         ))
 
@@ -114,10 +109,9 @@ describe("mysql json parsing", () => {
                 entity.jsonNull = null
 
                 const saved = await repo.save(entity)
-                const loaded = await repo.findOneBy({ id: saved.id })
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
 
-                expect(loaded).to.be.not.undefined
-                expect(loaded!.jsonNull).to.be.null
+                expect(loaded.jsonNull).to.be.null
             }),
         ))
 
@@ -143,10 +137,9 @@ describe("mysql json parsing", () => {
                 }
 
                 const saved = await repo.save(entity)
-                const loaded = await repo.findOneBy({ id: saved.id })
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
 
-                expect(loaded).to.be.not.undefined
-                expect(loaded!.complexJson).to.deep.equal(entity.complexJson)
+                expect(loaded.complexJson).to.deep.equal(entity.complexJson)
             }),
         ))
 
@@ -158,11 +151,10 @@ describe("mysql json parsing", () => {
                 entity.jsonString = 'string with "quotes" inside'
 
                 const saved = await repo.save(entity)
-                const loaded = await repo.findOneBy({ id: saved.id })
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
 
-                expect(loaded).to.be.not.undefined
-                expect(loaded!.jsonString).to.be.a("string")
-                expect(loaded!.jsonString).to.equal(
+                expect(loaded.jsonString).to.be.a("string")
+                expect(loaded.jsonString).to.equal(
                     'string with "quotes" inside',
                 )
             }),
@@ -176,11 +168,10 @@ describe("mysql json parsing", () => {
                 entity.jsonString = ""
 
                 const saved = await repo.save(entity)
-                const loaded = await repo.findOneBy({ id: saved.id })
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
 
-                expect(loaded).to.be.not.undefined
-                expect(loaded!.jsonString).to.be.a("string")
-                expect(loaded!.jsonString).to.equal("")
+                expect(loaded.jsonString).to.be.a("string")
+                expect(loaded.jsonString).to.equal("")
             }),
         ))
 })

@@ -172,22 +172,22 @@ describe("mongodb > basic repository actions", () => {
                 await postRepository.save(posts)
 
                 // assert.findOne method
-                const loadedPost1 = await postRepository.findOneBy({
+                const loadedPost1 = await postRepository.findOneByOrFail({
                     _id: post1.id,
                 })
-                expect(loadedPost1!.id).to.be.eql(post1.id)
-                expect(loadedPost1!.title).to.be.equal("First Post")
-                expect(loadedPost1!.text).to.be.equal(
+                expect(loadedPost1.id).to.be.eql(post1.id)
+                expect(loadedPost1.title).to.be.equal("First Post")
+                expect(loadedPost1.text).to.be.equal(
                     "Everything about first post",
                 )
 
                 // assert findOne method
-                const loadedPost2 = await postRepository.findOneBy({
+                const loadedPost2 = await postRepository.findOneByOrFail({
                     title: "Second Post",
                 })
-                expect(loadedPost2!.id).to.be.eql(post2.id)
-                expect(loadedPost2!.title).to.be.equal("Second Post")
-                expect(loadedPost2!.text).to.be.equal(
+                expect(loadedPost2.id).to.be.eql(post2.id)
+                expect(loadedPost2.title).to.be.equal("Second Post")
+                expect(loadedPost2.text).to.be.equal(
                     "Everything about second post",
                 )
 
@@ -319,10 +319,10 @@ describe("mongodb > basic repository actions", () => {
                 post2.text = "Everything about second post"
                 await postRepository.save(post2)
 
-                const loadedPost1 = await postRepository.findOneBy({
+                const loadedPost1 = await postRepository.findOneByOrFail({
                     _id: post1.id,
                 })
-                await postRepository.remove(loadedPost1!)
+                await postRepository.remove(loadedPost1)
                 await postRepository.remove(post2)
 
                 const [loadedPostsAfterClear, postsCountAfterClear] =

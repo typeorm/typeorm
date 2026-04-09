@@ -66,10 +66,10 @@ describe("mongodb > object id columns", () => {
 
                 expect(post._id).to.be.not.undefined
 
-                const loadedPost = await postMongoRepository.findOneBy({
+                const loadedPost = await postMongoRepository.findOneByOrFail({
                     _id: post._id,
                 })
-                expect(loadedPost!._id).to.be.not.undefined
+                expect(loadedPost._id).to.be.not.undefined
             }),
         ))
 
@@ -82,10 +82,9 @@ describe("mongodb > object id columns", () => {
                 post.title = "Post"
                 await postMongoRepository.save(post)
 
-                const loadedPost = await postMongoRepository.findOneBy({
+                const loadedPost = await postMongoRepository.findOneByOrFail({
                     nonIdNameOfObjectId: post.nonIdNameOfObjectId,
                 })
-                expect(loadedPost).to.be.not.null
                 expect(loadedPost?.title).to.be.equal("Post")
                 expect(loadedPost?.nonIdNameOfObjectId.toString()).to.be.equal(
                     post.nonIdNameOfObjectId.toString(),
@@ -138,10 +137,12 @@ describe("mongodb > object id columns", () => {
                 post.title = "Post"
                 await dataSource.manager.save(post)
 
-                const loadedPost = await dataSource.manager.findOneBy(Post, {
-                    nonIdNameOfObjectId: post.nonIdNameOfObjectId,
-                })
-                expect(loadedPost).to.be.not.null
+                const loadedPost = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        nonIdNameOfObjectId: post.nonIdNameOfObjectId,
+                    },
+                )
                 expect(loadedPost?.title).to.be.equal("Post")
             }),
         ))
