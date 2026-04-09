@@ -1,3 +1,4 @@
+import { expect } from "chai"
 import "reflect-metadata"
 import "../../../utils/test-setup"
 import type { DataSource } from "../../../../src/data-source/DataSource"
@@ -20,7 +21,7 @@ describe("cascades > save insert vs update", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should add intial validation data", () =>
+    it("should update rather than insert on second save", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const validation1 = new ValidationModel()
@@ -44,7 +45,16 @@ describe("cascades > save insert vs update", () => {
                 main1.dataModel[0].active = false
                 await connection.manager.save(main1)
 
-                return true
+                const loadedMain = await connection.manager.findOneOrFail(
+                    MainModel,
+                    {
+                        where: { id: main1.id },
+                        relations: { dataModel: true },
+                    },
+                )
+
+                expect(loadedMain.dataModel).to.have.length(1)
+                expect(loadedMain.dataModel[0].active).to.be.false
             }),
         ))
 })
