@@ -151,6 +151,19 @@ export class Post {
 }
 ```
 
+:::note Cascade remove
+When using `cascade: ["remove"]` or `cascade: true`, calling `manager.remove(entity)` will also remove related entities that are loaded on the entity instance. TypeORM only traverses relations that are populated on the object — if a relation is not loaded, its children will not be cascade-removed. Make sure to load relations before removing:
+
+```typescript
+const post = await manager.findOne(Post, {
+    where: { id: 1 },
+    relations: { categories: true },
+})
+await manager.remove(post) // categories will also be removed
+```
+
+:::
+
 ## `@JoinColumn` options
 
 `@JoinColumn` not only defines which side of the relation contains the join column with a foreign key,
