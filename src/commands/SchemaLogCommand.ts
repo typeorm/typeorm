@@ -61,12 +61,13 @@ export class SchemaLogCommand implements yargs.CommandModule {
                 )
                 const header = `-- Schema synchronization will execute following sql queries (${sqlInMemory.upQueries.length}):`
 
-                if (dataSource.options.logger) {
+                if (
                     CommandUtils.logDataSourceMessage(
                         dataSource,
                         lineSeparator,
                         "schema-build",
                     )
+                ) {
                     CommandUtils.logDataSourceMessage(
                         dataSource,
                         header,

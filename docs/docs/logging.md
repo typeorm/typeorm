@@ -99,6 +99,8 @@ You can enable any of them in data source options:
 }
 ```
 
+CLI commands that initialize a data source, such as `schema:sync`, `schema:log`, `migration:generate`, `query`, and `cache:clear`, also route their status output through the configured logger when possible. When using the `debug` logger, enable the matching `typeorm:*` namespaces if you want those CLI messages to be handled by `debug`; otherwise the CLI falls back to its standard console output for those status lines.
+
 ## Using custom logger
 
 You can create your own logger class by implementing the `Logger` interface:

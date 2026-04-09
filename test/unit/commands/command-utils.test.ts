@@ -1,4 +1,5 @@
 import { expect } from "chai"
+import debug from "debug"
 import * as sinon from "sinon"
 import type { DataSource } from "../../../src/data-source/DataSource"
 import type { Logger } from "../../../src/logger/Logger"
@@ -12,13 +13,14 @@ describe("CommandUtils", () => {
     })
 
     afterEach(() => {
+        debug.disable()
         sandbox.restore()
     })
 
     it("returns false when no logger is configured", () => {
         const dataSource = {
             options: {},
-        } as Pick<DataSource, "options">
+        } satisfies { options: Pick<DataSource["options"], "logger"> }
 
         expect(
             CommandUtils.logDataSourceMessage(
@@ -37,12 +39,12 @@ describe("CommandUtils", () => {
             logSchemaBuild: sandbox.stub(),
             logMigration: sandbox.stub(),
             log: sandbox.stub(),
-        } as unknown as Logger
+        } satisfies Logger
         const dataSource = {
             options: {
                 logger,
             },
-        } as Pick<DataSource, "options">
+        } satisfies { options: Pick<DataSource["options"], "logger"> }
 
         expect(
             CommandUtils.logDataSourceMessage(
@@ -64,7 +66,7 @@ describe("CommandUtils", () => {
             options: {
                 logger: "simple-console",
             },
-        } as Pick<DataSource, "options">
+        } satisfies { options: Pick<DataSource["options"], "logger"> }
 
         expect(
             CommandUtils.logDataSourceMessage(
@@ -75,5 +77,23 @@ describe("CommandUtils", () => {
         ).to.be.true
         expect(consoleLogStub.calledOnceWithExactly("schema message")).to.be
             .true
+    })
+
+    it("falls back when the debug logger does not emit the requested namespace", () => {
+        debug.disable()
+
+        const dataSource = {
+            options: {
+                logger: "debug",
+            },
+        } satisfies { options: Pick<DataSource["options"], "logger"> }
+
+        expect(
+            CommandUtils.logDataSourceMessage(
+                dataSource,
+                "schema message",
+                "schema-build",
+            ),
+        ).to.be.false
     })
 })
