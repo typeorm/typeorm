@@ -802,12 +802,13 @@ export class InsertQueryBuilder<
                     return false
 
                 // if user did not specified such list then return all columns except auto-increment one
-                // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
+                // for Oracle and SAP HANA we return auto-increment column as well because they do not support DEFAULT VALUES expression
                 if (
                     column.isGenerated &&
                     column.generationStrategy === "increment" &&
                     !(this.dataSource.driver.options.type === "spanner") &&
                     !(this.dataSource.driver.options.type === "oracle") &&
+                    !(this.dataSource.driver.options.type === "sap") &&
                     !DriverUtils.isSQLiteFamily(this.dataSource.driver) &&
                     !DriverUtils.isMySQLFamily(this.dataSource.driver) &&
                     !(this.dataSource.driver.options.type === "aurora-mysql") &&
@@ -1587,8 +1588,9 @@ export class InsertQueryBuilder<
             if (
                 (this.dataSource.driver.options.type === "oracle" &&
                     valueSets.length > 1) ||
+                (this.dataSource.driver.options.type === "sap" &&
+                    valueSets.length > 1) ||
                 DriverUtils.isSQLiteFamily(this.dataSource.driver) ||
-                this.dataSource.driver.options.type === "sap" ||
                 this.dataSource.driver.options.type === "spanner"
             ) {
                 // unfortunately sqlite does not support DEFAULT expression in INSERT queries
