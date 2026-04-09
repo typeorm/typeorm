@@ -4,11 +4,56 @@ import { TypeORMError } from "../error"
 import type { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { importOrRequireFile } from "../util/ImportUtils"
+import { LoggerFactory } from "../logger/LoggerFactory"
+import type { LoggerOptions } from "../logger/LoggerOptions"
 
 /**
  * Command line utils functions.
  */
 export class CommandUtils {
+    static logDataSourceMessage(
+        dataSource: Pick<DataSource, "options"> | undefined,
+        message: string,
+        loggerType:
+            | "query"
+            | "schema-build"
+            | "migration"
+            | "log"
+            | "info"
+            | "warn",
+    ): boolean {
+        if (!dataSource?.options.logger) {
+            return false
+        }
+
+        const logger = new LoggerFactory().create(
+            dataSource.options.logger,
+            CommandUtils.getLoggerOptionsForCliMessage(loggerType),
+        )
+
+        switch (loggerType) {
+            case "query":
+                logger.logQuery(message)
+                break
+
+            case "schema-build":
+                logger.logSchemaBuild(message)
+                break
+
+            case "migration":
+                logger.logMigration(message)
+                break
+
+            case "log":
+            case "info":
+            case "warn":
+                logger.log(loggerType, message)
+                break
+        }
+
+        return true
+    }
+
     static async loadDataSource(
         dataSourceFilePath: string,
     ): Promise<DataSource> {
@@ -127,5 +172,31 @@ export class CommandUtils {
         return timestampOptionArgument
             ? new Date(Number(timestampOptionArgument)).getTime()
             : Date.now()
+    }
+
+    private static getLoggerOptionsForCliMessage(
+        loggerType:
+            | "query"
+            | "schema-build"
+            | "migration"
+            | "log"
+            | "info"
+            | "warn",
+    ): LoggerOptions {
+        switch (loggerType) {
+            case "query":
+                return ["query"]
+
+            case "schema-build":
+                return ["schema"]
+
+            case "migration":
+                return ["migration"]
+
+            case "log":
+            case "info":
+            case "warn":
+                return [loggerType]
+        }
     }
 }
