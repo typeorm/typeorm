@@ -1,4 +1,5 @@
 import {
+    Column,
     Entity,
     PrimaryGeneratedColumn,
     OneToMany,
@@ -9,6 +10,9 @@ import { DataModel } from "./DataModel"
 export class MainModel {
     @PrimaryGeneratedColumn()
     id: number
+
+    @Column({ default: "" })
+    name: string
 
     @OneToMany(() => DataModel, (dataModel) => dataModel.main, {
         cascade: true,
