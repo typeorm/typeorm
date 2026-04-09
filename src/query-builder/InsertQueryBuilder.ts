@@ -519,6 +519,19 @@ export class InsertQueryBuilder<
                 ) {
                     // special syntax for mysql DEFAULT VALUES insertion
                     query += " VALUES ()"
+                } else if (this.dataSource.driver.options.type === "sap") {
+                    // SAP HANA does not support DEFAULT VALUES syntax
+                    const identityColumn =
+                        this.expressionMap.mainAlias!.metadata.columns.find(
+                            (c) =>
+                                c.isGenerated &&
+                                c.generationStrategy === "increment",
+                        )
+                    if (identityColumn) {
+                        query += ` (${this.escape(identityColumn.databaseName)}) VALUES (DEFAULT)`
+                    } else {
+                        query += ` DEFAULT VALUES`
+                    }
                 } else {
                     query += ` DEFAULT VALUES`
                 }
