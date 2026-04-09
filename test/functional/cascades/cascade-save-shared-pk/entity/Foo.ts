@@ -11,8 +11,8 @@ import { Bar } from "./Bar"
 
 @Entity()
 export class Foo {
-    @PrimaryGeneratedColumn()
-    id: number
+    @PrimaryGeneratedColumn("uuid")
+    id: string
 
     @PrimaryColumn()
     barId: number

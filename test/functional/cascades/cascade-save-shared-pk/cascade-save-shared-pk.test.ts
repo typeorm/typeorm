@@ -15,17 +15,6 @@ describe("cascades > save with shared primary key", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-            // SQLite does not support AUTOINCREMENT on composite primary keys
-            enabledDrivers: [
-                "mysql",
-                "mariadb",
-                "postgres",
-                "cockroachdb",
-                "mssql",
-                "oracle",
-                "sap",
-                "spanner",
-            ],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
