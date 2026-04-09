@@ -35,9 +35,16 @@ export class AuroraMysqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Aurora Data API does not support setting transaction isolation levels.
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Reference.IsolationLevels.html
      */
-    static readonly supportedIsolationLevels: IsolationLevel[] = []
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
 
     // -------------------------------------------------------------------------
     // Public Properties

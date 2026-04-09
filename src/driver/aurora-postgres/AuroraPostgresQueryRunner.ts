@@ -2,6 +2,7 @@ import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyR
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
 import type { QueryRunner } from "../../query-runner/QueryRunner"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import type { AuroraPostgresDriver } from "./AuroraPostgresDriver"
 import { PostgresQueryRunner } from "../postgres/PostgresQueryRunner"
 import type { ReplicationMode } from "../types/ReplicationMode"
@@ -96,11 +97,10 @@ export class AuroraPostgresQueryRunner
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         isolationLevel ??= this.dataSource.options.isolationLevel
 
-        if (isolationLevel) {
-            throw new TypeORMError(
-                `Setting transaction isolation level is not supported by the Aurora Data API`,
-            )
-        }
+        validateIsolationLevel(
+            this.driver.supportedIsolationLevels,
+            isolationLevel,
+        )
 
         this.isTransactionActive = true
         try {
@@ -111,6 +111,11 @@ export class AuroraPostgresQueryRunner
         }
 
         if (this.transactionDepth === 0) {
+            if (isolationLevel) {
+                await this.query(
+                    `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
+                )
+            }
             await this.client.startTransaction()
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)

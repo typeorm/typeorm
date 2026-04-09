@@ -46,16 +46,18 @@ await myDataSource.manager.transaction(
 
 Isolation level implementations are _not_ agnostic across all databases. Each driver declares which levels it supports, and TypeORM will throw an error if you request an unsupported level.
 
-| Driver          | Supported isolation levels                                                          |
-| --------------- | ----------------------------------------------------------------------------------- |
-| MySQL / MariaDB | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
-| PostgreSQL      | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
-| CockroachDB     | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
-| SQL Server      | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`, `SNAPSHOT` |
-| Oracle          | `READ COMMITTED`, `SERIALIZABLE`                                                    |
-| SAP HANA        | `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`                                 |
-| SQLite          | `READ UNCOMMITTED`\*, `SERIALIZABLE`                                                |
-| Spanner         | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| Driver            | Supported isolation levels                                                          |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| Aurora MySQL      | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| Aurora PostgreSQL | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| CockroachDB       | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| MySQL / MariaDB   | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| Oracle            | `READ COMMITTED`, `SERIALIZABLE`                                                    |
+| PostgreSQL        | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| SAP HANA          | `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`                                 |
+| Spanner           | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| SQL Server        | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`, `SNAPSHOT` |
+| SQLite            | `READ UNCOMMITTED`\*, `SERIALIZABLE`                                                |
 
 \* SQLite's `READ UNCOMMITTED` only takes effect when [shared-cache mode](https://www.sqlite.org/sharedcache.html) is enabled. In the default mode, SQLite always uses `SERIALIZABLE` isolation regardless of the setting.
 

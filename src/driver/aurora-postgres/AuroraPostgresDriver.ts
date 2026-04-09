@@ -21,9 +21,16 @@ export class AuroraPostgresDriver extends PostgresWrapper {
     // -------------------------------------------------------------------------
 
     /**
-     * Aurora Data API does not support setting transaction isolation levels.
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://www.postgresql.org/docs/current/transaction-iso.html
      */
-    static readonly supportedIsolationLevels: IsolationLevel[] = []
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
 
     // -------------------------------------------------------------------------
     // Public Properties
