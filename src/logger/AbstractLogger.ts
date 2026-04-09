@@ -22,6 +22,7 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs query and parameters used in it.
+     *
      * @param query
      * @param parameters
      * @param queryRunner
@@ -46,6 +47,7 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs query that is failed.
+     *
      * @param error
      * @param query
      * @param parameters
@@ -83,6 +85,7 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs query that is slow.
+     *
      * @param time
      * @param query
      * @param parameters
@@ -123,6 +126,7 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs events from the schema build process.
+     *
      * @param message
      * @param queryRunner
      */
@@ -143,6 +147,7 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs events from the migration run process.
+     *
      * @param message
      * @param queryRunner
      */
@@ -164,6 +169,7 @@ export abstract class AbstractLogger implements Logger {
     /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
+     *
      * @param level
      * @param message
      * @param queryRunner
@@ -228,6 +234,7 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Check is logging for level or message type is enabled.
+     *
      * @param type
      */
     protected isLogEnabledFor(type?: LogLevel | LogMessageType) {
@@ -304,6 +311,7 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Prepare and format log messages
+     *
      * @param logMessage
      * @param options
      * @param queryRunner
@@ -373,6 +381,7 @@ export abstract class AbstractLogger implements Logger {
     /**
      * Converts parameters to a string.
      * Sometimes parameters can have circular objects and therefor we are handle this case too.
+     *
      * @param parameters
      */
     protected stringifyParams(parameters: any[]) {

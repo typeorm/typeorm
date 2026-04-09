@@ -318,6 +318,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets.
+     *
      * @param array
      * @param target
      */
@@ -334,6 +335,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate property names.
+     *
      * @param array
      * @param target
      */
@@ -359,6 +361,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate relation property names.
+     *
      * @param array
      * @param target
      */
@@ -393,6 +396,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate embedded property names.
+     *
      * @param array
      * @param target
      */

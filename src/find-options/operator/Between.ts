@@ -2,7 +2,10 @@ import { FindOperator } from "../FindOperator"
 
 /**
  * Find Options Operator.
- * Example: { someField: Between(x, y) }
+ *
+ * @example
+ * { someField: Between(x, y) }
+ *
  * @param from
  * @param to
  */

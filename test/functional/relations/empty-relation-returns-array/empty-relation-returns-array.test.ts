@@ -42,10 +42,10 @@ describe("relations > empty relation returns array", () => {
                         title: "post with categories",
                     })
                     .addOrderBy("categories.id")
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "post with categories",
                     categories: [
@@ -87,10 +87,10 @@ describe("relations > empty relation returns array", () => {
                     .where("post.title = :title", {
                         title: "post without categories",
                     })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "post without categories",
                     categories: [],
@@ -120,10 +120,10 @@ describe("relations > empty relation returns array", () => {
                         "secondaryCategories",
                     )
                     .where("post.title = :title", { title: "just post" })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "just post",
                     secondaryCategories: [],

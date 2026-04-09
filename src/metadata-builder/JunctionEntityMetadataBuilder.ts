@@ -25,6 +25,7 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the junction of the given many-to-many relation.
+     *
      * @param relation
      * @param joinTable
      */
@@ -230,6 +231,7 @@ export class JunctionEntityMetadataBuilder {
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.onUpdate || "CASCADE",
+                      deferrable: relation.deferrable,
                   }),
                   new ForeignKeyMetadata({
                       entityMetadata: entityMetadata,
@@ -250,6 +252,9 @@ export class JunctionEntityMetadataBuilder {
                               : relation.inverseRelation
                                 ? relation.inverseRelation.onUpdate
                                 : "CASCADE",
+                      deferrable: relation.inverseRelation
+                          ? relation.inverseRelation.deferrable
+                          : relation.deferrable,
                   }),
               ]
             : []
@@ -285,6 +290,7 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     *
      * @param relation
      * @param joinTable
      */
@@ -322,6 +328,7 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects inverse referenced columns from the given join column args.
+     *
      * @param relation
      * @param joinTable
      */

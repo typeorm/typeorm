@@ -35,8 +35,8 @@ const prepareDataAndTest = async (dataSource: DataSource) => {
     category.name = "Category #1"
     await dataSource.manager.save(category)
 
-    const loadedPost = await dataSource.manager.findOne(Post, {
-        where: { title: "Post #1" },
+    const loadedPost = await dataSource.manager.findOneBy(Post, {
+        title: "Post #1",
     })
 
     expect(loadedPost).to.eql({
@@ -44,8 +44,8 @@ const prepareDataAndTest = async (dataSource: DataSource) => {
         title: "Post #1",
     })
 
-    const loadedCategory = await dataSource.manager.findOne(Category, {
-        where: { name: "Category #1" },
+    const loadedCategory = await dataSource.manager.findOneBy(Category, {
+        name: "Category #1",
     })
     expect(loadedCategory).to.eql({
         id: category.id,

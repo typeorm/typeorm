@@ -44,6 +44,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Transaction isolation levels supported by this driver.
+     *
      * @see https://www.postgresql.org/docs/current/transaction-iso.html
      */
     static readonly supportedIsolationLevels: IsolationLevel[] = [
@@ -69,6 +70,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * DataSource used by the driver.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -148,6 +150,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://www.postgresql.org/docs/current/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
@@ -334,6 +337,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Max length allowed by Postgres for aliases.
+     *
      * @see https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
      */
     maxAliasLength = 63
@@ -744,6 +748,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
@@ -752,6 +757,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -867,6 +873,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -1007,6 +1014,7 @@ export class PostgresDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
      * @param sql
      * @param parameters
      */
@@ -1058,6 +1066,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
      * @param columnName
      */
     escape(columnName: string): string {
@@ -1067,6 +1076,7 @@ export class PostgresDriver implements Driver {
     /**
      * Build full table name with schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
      * @param tableName
      * @param schema
      */
@@ -1082,6 +1092,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
      * @param target
      */
     parseTableName(
@@ -1135,6 +1146,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
      * @param column
      * @param column.type
      * @param column.length
@@ -1194,6 +1206,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -1236,6 +1249,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Compares "default" value of the column.
+     *
      * @param columnMetadata
      * @param tableColumn
      */
@@ -1266,6 +1280,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Compares json/jsonb default values of the column.
+     *
      * @param columnMetadata
      * @param tableColumn
      */
@@ -1303,6 +1318,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
      * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -1313,6 +1329,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     *
      * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
@@ -1321,6 +1338,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     *
      * @param column
      */
     createFullType(column: TableColumn): string {
@@ -1436,6 +1454,7 @@ export class PostgresDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      *
      * todo: slow. optimize Object.keys(), OrmUtils.mergeDeep and column.createValueMap parts
+     *
      * @param metadata
      * @param insertResult
      */
@@ -1458,6 +1477,7 @@ export class PostgresDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
      * @param tableColumns
      * @param columnMetadatas
      */
@@ -1621,6 +1641,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
      * @param _returningType
      */
     isReturningSqlSupported(_returningType: ReturningType): boolean {
@@ -1649,6 +1670,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
      * @param parameterName
      * @param index
      */
@@ -1706,6 +1728,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
      * @param options
      * @param credentials
      */
@@ -1794,6 +1817,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Closes connection pool.
+     *
      * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
@@ -1808,6 +1832,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Executes given query.
+     *
      * @param connection
      * @param query
      */
@@ -1824,6 +1849,7 @@ export class PostgresDriver implements Driver {
     /**
      * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
      * Otherwise returns original input.
+     *
      * @param value
      */
     protected normalizeDatetimeFunction(value: string) {
@@ -1866,6 +1892,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     *
      * @param comment
      */
     protected escapeComment(comment?: string) {

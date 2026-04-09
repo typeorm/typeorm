@@ -237,6 +237,7 @@ export class InsertQueryBuilder<
 
     /**
      * Specifies INTO which entity's table insertion will be executed.
+     *
      * @param entityTarget
      * @param columns
      */
@@ -255,6 +256,7 @@ export class InsertQueryBuilder<
 
     /**
      * Values needs to be inserted into table.
+     *
      * @param values
      */
     values(
@@ -285,6 +287,7 @@ export class InsertQueryBuilder<
     /**
      * Specifies a SELECT query to use as the source of values for the INSERT.
      * This creates an INSERT INTO ... SELECT FROM statement.
+     *
      * @param queryBuilderOrFactory
      */
     valuesFromSelect(
@@ -324,6 +327,7 @@ export class InsertQueryBuilder<
 
     /**
      * Optional returning/output clause.
+     *
      * @param output
      */
     output(output: string | string[]): this {
@@ -349,6 +353,7 @@ export class InsertQueryBuilder<
 
     /**
      * Optional returning/output clause.
+     *
      * @param returning
      */
     returning(returning: string | string[]): this {
@@ -365,6 +370,7 @@ export class InsertQueryBuilder<
      * Indicates if entity must be updated after insertion operations.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
+     *
      * @param enabled
      */
     updateEntity(enabled: boolean): this {
@@ -374,6 +380,7 @@ export class InsertQueryBuilder<
 
     /**
      * Adds additional ignore statement supported in databases.
+     *
      * @param statement
      */
     orIgnore(statement: string | boolean = true): this {
@@ -384,6 +391,7 @@ export class InsertQueryBuilder<
     /**
      * Adds an "upsert" clause to the insert query — when a row with the same
      * conflict target already exists the listed columns are updated instead.
+     *
      * @param overwrite - Column names to overwrite on conflict.
      * @param conflictTarget - Column name(s) or constraint name used to detect
      *   conflicts. When an array is given the columns form a composite key;
@@ -992,6 +1000,7 @@ export class InsertQueryBuilder<
 
     /**
      * Checks if column is an auto-generated primary key, but the current insertion specifies a value for it.
+     *
      * @param column
      */
     protected isOverridingAutoIncrementBehavior(
@@ -1235,6 +1244,7 @@ export class InsertQueryBuilder<
 
     /**
      * Creates list of values needs to be inserted in the VALUES expression.
+     *
      * @param mergeSourceAlias
      */
     protected createMergeIntoSourceExpression(
@@ -1400,6 +1410,7 @@ export class InsertQueryBuilder<
 
     /**
      * Creates list of values needs to be inserted in the VALUES expression.
+     *
      * @param mergeSourceAlias
      */
     protected createMergeIntoInsertValuesExpression(
@@ -1446,6 +1457,7 @@ export class InsertQueryBuilder<
 
     /**
      * Create upsert search condition expression.
+     *
      * @param mainTableOrAlias
      */
     protected createUpsertConditionExpression(mainTableOrAlias: string) {
@@ -1518,13 +1530,6 @@ export class InsertQueryBuilder<
 
         // extract real value from the entity
         let value = column.getEntityValue(valueSet)
-
-        // if column is relational and value is an object then get real referenced column value from this object
-        // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
-        // and we extract "1" from this object
-        /*if (column.referencedColumn && value instanceof Object && !(typeof value === "function")) { // todo: check if we still need it since getEntityValue already has similar code
-            value = column.referencedColumn.getEntityValue(value);
-        }*/
 
         if (!(typeof value === "function")) {
             // make sure our value is normalized by a driver

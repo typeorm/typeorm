@@ -168,7 +168,9 @@ export class QueryExpressionMap {
     /**
      * Use certain index for the query.
      *
+     * @example
      * SELECT * FROM table_name USE INDEX (col1_index, col2_index) WHERE col1=1 AND col2=2 AND col3=3;
+     *
      */
     useIndex?: string
 
@@ -376,6 +378,7 @@ export class QueryExpressionMap {
 
     /**
      * Creates a main alias and adds it to the current expression map.
+     *
      * @param alias
      */
     setMainAlias(alias: Alias): Alias {
@@ -391,6 +394,7 @@ export class QueryExpressionMap {
 
     /**
      * Creates a new alias and adds it to the current expression map.
+     *
      * @param options
      * @param options.type
      * @param options.name
@@ -430,6 +434,7 @@ export class QueryExpressionMap {
     /**
      * Finds alias with the given name.
      * If alias was not found it throw an exception.
+     *
      * @param aliasName
      */
     findAliasByName(aliasName: string): Alias {

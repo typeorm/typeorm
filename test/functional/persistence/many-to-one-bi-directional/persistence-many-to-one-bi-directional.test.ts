@@ -29,7 +29,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 category.post = post
                 await dataSource.manager.save(category)
 
-                const loadedCategory = await dataSource.manager.findOne(
+                const loadedCategory = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -41,7 +41,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory).not.to.be.undefined
-                loadedCategory!.should.be.eql({
+                loadedCategory.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
@@ -57,7 +57,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 category.post = post
                 await dataSource.manager.save(category)
 
-                const loadedCategory = await dataSource.manager.findOne(
+                const loadedCategory = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -69,7 +69,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory).not.to.be.undefined
-                loadedCategory!.should.be.eql({
+                loadedCategory.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
@@ -92,7 +92,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 // save once again, just for fun
                 await dataSource.manager.save(category)
 
-                const loadedCategory1 = await dataSource.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -104,17 +104,17 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Updated post" },
                 })
 
                 // update post from loaded category
-                ;(loadedCategory1!.post as Post).title = "Again Updated post"
+                ;(loadedCategory1.post as Post).title = "Again Updated post"
                 await dataSource.manager.save(loadedCategory1)
 
-                const loadedCategory2 = await dataSource.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -126,7 +126,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Again Updated post" },
@@ -146,7 +146,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 await dataSource.manager.save(category)
 
                 // load and check if it was correctly saved
-                const loadedCategory1 = await dataSource.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -158,17 +158,17 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
                 })
 
                 // remove post from loaded category
-                loadedCategory1!.post = undefined
+                loadedCategory1.post = undefined
                 await dataSource.manager.save(loadedCategory1)
 
-                const loadedCategory2 = await dataSource.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -180,19 +180,22 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
                 })
 
-                const loadedPost = await dataSource.manager.findOne(Post, {
-                    where: {
-                        id: 1,
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 1,
+                        },
                     },
-                })
+                )
                 expect(loadedPost).not.to.be.undefined
-                loadedPost!.should.be.eql({ id: 1, title: "Hello Post" })
+                loadedPost.should.be.eql({ id: 1, title: "Hello Post" })
             }),
         ))
 
@@ -207,7 +210,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 category.post = post
                 await dataSource.manager.save(category)
 
-                const loadedCategory1 = await dataSource.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -219,17 +222,17 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
                 })
 
                 // remove post from loaded category
-                loadedCategory1!.post = null
+                loadedCategory1.post = null
                 await dataSource.manager.save(loadedCategory1)
 
-                const loadedCategory2 = await dataSource.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -241,7 +244,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: null,
@@ -263,7 +266,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 category.post = post
                 await dataSource.manager.save(category)
 
-                const loadedCategory1 = await dataSource.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -275,7 +278,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
@@ -285,7 +288,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 await dataSource.manager.remove(post)
 
                 // now lets load category and make sure post isn't set there
-                const loadedCategory2 = await dataSource.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -297,7 +300,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: null,
@@ -320,7 +323,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 await dataSource.manager.save(category)
 
                 // check if category is saved with post set
-                const loadedCategory1 = await dataSource.manager.findOne(
+                const loadedCategory1 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -332,7 +335,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post #1" },
@@ -343,7 +346,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                 await dataSource.manager.save(category)
 
                 // and check again if category is saved with new post
-                const loadedCategory2 = await dataSource.manager.findOne(
+                const loadedCategory2 = await dataSource.manager.findOneOrFail(
                     Category,
                     {
                         where: {
@@ -355,7 +358,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2.should.be.eql({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 2, title: "Hello Post #2" },

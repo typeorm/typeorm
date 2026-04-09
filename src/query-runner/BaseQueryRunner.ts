@@ -30,6 +30,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * DataSource used by this query runner.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -148,7 +149,10 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      * Template expressions are automatically transformed into database parameters.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
-     * Example: queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @example
+     * queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
      * @param strings
      * @param values
      */
@@ -193,6 +197,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Loads given table's data from the database.
+     *
      * @param tablePath
      */
     async getTable(tablePath: string): Promise<Table | undefined> {
@@ -202,6 +207,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Loads all tables (with given names) from the database.
+     *
      * @param tableNames
      */
     async getTables(tableNames?: string[]): Promise<Table[]> {
@@ -217,6 +223,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Loads given view's data from the database.
+     *
      * @param viewPath
      */
     async getView(viewPath: string): Promise<View | undefined> {
@@ -226,6 +233,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Loads given view's data from the database.
+     *
      * @param viewPaths
      */
     async getViews(viewPaths?: string[]): Promise<View[]> {
@@ -299,6 +307,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Gets view from previously loaded views, otherwise loads it from database.
+     *
      * @param viewName
      */
     protected async getCachedView(viewName: string): Promise<View> {
@@ -316,6 +325,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Gets table from previously loaded tables, otherwise loads it from database.
+     *
      * @param tableName
      */
     protected async getCachedTable(tableName: string): Promise<Table> {
@@ -355,6 +365,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Replaces loaded table with given changed table.
+     *
      * @param table
      * @param changedTable
      */
@@ -411,6 +422,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Generates SQL query to select record from typeorm metadata table.
+     *
      * @param root0
      * @param root0.database
      * @param root0.schema
@@ -458,6 +470,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Generates SQL query to insert a record into typeorm metadata table.
+     *
      * @param root0
      * @param root0.database
      * @param root0.schema
@@ -500,6 +513,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Generates SQL query to delete a record from typeorm metadata table.
+     *
      * @param root0
      * @param root0.database
      * @param root0.schema
@@ -548,6 +562,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     /**
      * Checks if at least one of column properties was changed.
      * Does not checks column type, length and autoincrement, because these properties changes separately.
+     *
      * @param oldColumn
      * @param newColumn
      * @param checkDefault
@@ -561,33 +576,6 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         checkComment?: boolean,
         checkEnum = true,
     ): boolean {
-        // this logs need to debug issues in column change detection. Do not delete it!
-
-        // console.log("charset ---------------");
-        // console.log(oldColumn.charset !== newColumn.charset);
-        // console.log(oldColumn.charset, newColumn.charset);
-        // console.log("collation ---------------");
-        // console.log(oldColumn.collation !== newColumn.collation);
-        // console.log(oldColumn.collation, newColumn.collation);
-        // console.log("precision ---------------");
-        // console.log(oldColumn.precision !== newColumn.precision);
-        // console.log(oldColumn.precision, newColumn.precision);
-        // console.log("scale ---------------");
-        // console.log(oldColumn.scale !== newColumn.scale);
-        // console.log(oldColumn.scale, newColumn.scale);
-        // console.log("default ---------------");
-        // console.log((checkDefault && oldColumn.default !== newColumn.default));
-        // console.log(oldColumn.default, newColumn.default);
-        // console.log("isNullable ---------------");
-        // console.log(oldColumn.isNullable !== newColumn.isNullable);
-        // console.log(oldColumn.isNullable, newColumn.isNullable);
-        // console.log("comment ---------------");
-        // console.log((checkComment && oldColumn.comment !== newColumn.comment));
-        // console.log(oldColumn.comment, newColumn.comment);
-        // console.log("enum ---------------");
-        // console.log(!OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []));
-        // console.log(oldColumn.enum, newColumn.enum);
-
         return (
             oldColumn.charset !== newColumn.charset ||
             oldColumn.collation !== newColumn.collation ||
@@ -612,6 +600,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Checks if column length is by default.
+     *
      * @param table
      * @param column
      * @param length
@@ -652,6 +641,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Checks if column precision is by default.
+     *
      * @param table
      * @param column
      * @param precision
@@ -693,6 +683,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Checks if column scale is by default.
+     *
      * @param table
      * @param column
      * @param scale
@@ -734,6 +725,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Executes sql used special for schema build.
+     *
      * @param upQueries
      * @param downQueries
      */
@@ -758,6 +750,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Generated an index name for a table and index
+     *
      * @param table
      * @param index
      */

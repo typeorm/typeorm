@@ -7,6 +7,7 @@ import { ObjectUtils } from "../util/ObjectUtils"
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
  * @param options
  */
 export function Index(
@@ -17,6 +18,7 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
  * @param name
  * @param options
  */
@@ -29,6 +31,7 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
  * @param name
  * @param options
  * @param options.synchronize
@@ -42,6 +45,7 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
  * @param name
  * @param fields
  * @param options
@@ -56,6 +60,7 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
  * @param fields
  * @param options
  */
@@ -68,6 +73,7 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
  * @param fields
  * @param options
  */
@@ -80,6 +86,7 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
  * @param name
  * @param fields
  * @param options
@@ -94,6 +101,7 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
  * @param nameOrFieldsOrOptions
  * @param maybeFieldsOrOptions
  * @param maybeOptions
