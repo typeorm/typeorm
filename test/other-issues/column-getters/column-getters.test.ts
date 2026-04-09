@@ -29,13 +29,13 @@ describe("other issues > column with getter / setter should work", () => {
                 const loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.title).not.to.be.undefined
-                expect(loadedPost!.text).not.to.be.undefined
-                loadedPost!.title.should.be.equal("Super title")
-                loadedPost!.text.should.be.equal("About this post")
+                expect(loadedPost.title).not.to.be.undefined
+                expect(loadedPost.text).not.to.be.undefined
+                loadedPost.title.should.be.equal("Super title")
+                loadedPost.text.should.be.equal("About this post")
             }),
         ))
 })

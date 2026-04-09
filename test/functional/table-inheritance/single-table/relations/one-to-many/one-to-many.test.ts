@@ -85,14 +85,14 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     .leftJoinAndSelect("student.faculties", "faculty")
                     .where("student.name = :name", { name: "Alice" })
                     .orderBy("student.id, faculty.id")
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedStudent!.should.have.all.keys("id", "name", "faculties")
-                loadedStudent!.id.should.equal(1)
-                loadedStudent!.name.should.equal("Alice")
-                loadedStudent!.faculties.length.should.equal(2)
-                loadedStudent!.faculties[0].name.should.be.equal("Economics")
-                loadedStudent!.faculties[1].name.should.be.equal("Programming")
+                loadedStudent.should.have.all.keys("id", "name", "faculties")
+                loadedStudent.id.should.equal(1)
+                loadedStudent.name.should.equal("Alice")
+                loadedStudent.faculties.length.should.equal(2)
+                loadedStudent.faculties[0].name.should.be.equal("Economics")
+                loadedStudent.faculties[1].name.should.be.equal("Programming")
 
                 const loadedTeacher = await dataSource.manager
                     .createQueryBuilder(Teacher, "teacher")
@@ -102,46 +102,46 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     )
                     .where("teacher.name = :name", { name: "Mr. Garrison" })
                     .orderBy("teacher.id, specialization.id")
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedTeacher!.should.have.all.keys(
+                loadedTeacher.should.have.all.keys(
                     "id",
                     "name",
                     "specializations",
                     "salary",
                 )
-                loadedTeacher!.id.should.equal(2)
-                loadedTeacher!.name.should.equal("Mr. Garrison")
-                loadedTeacher!.specializations.length.should.equal(2)
-                loadedTeacher!.specializations[0].name.should.be.equal(
+                loadedTeacher.id.should.equal(2)
+                loadedTeacher.name.should.equal("Mr. Garrison")
+                loadedTeacher.specializations.length.should.equal(2)
+                loadedTeacher.specializations[0].name.should.be.equal(
                     "Geography",
                 )
-                loadedTeacher!.specializations[1].name.should.be.equal(
+                loadedTeacher.specializations[1].name.should.be.equal(
                     "Economist",
                 )
-                loadedTeacher!.salary.should.equal(2000)
+                loadedTeacher.salary.should.equal(2000)
 
                 const loadedAccountant = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountant")
                     .leftJoinAndSelect("accountant.departments", "department")
                     .where("accountant.name = :name", { name: "Mr. Burns" })
                     .orderBy("accountant.id, department.id")
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedAccountant!.should.have.all.keys(
+                loadedAccountant.should.have.all.keys(
                     "id",
                     "name",
                     "departments",
                     "salary",
                 )
-                loadedAccountant!.id.should.equal(3)
-                loadedAccountant!.name.should.equal("Mr. Burns")
-                loadedAccountant!.departments.length.should.equal(2)
-                loadedAccountant!.departments[0].name.should.be.equal(
+                loadedAccountant.id.should.equal(3)
+                loadedAccountant.name.should.equal("Mr. Burns")
+                loadedAccountant.departments.length.should.equal(2)
+                loadedAccountant.departments[0].name.should.be.equal(
                     "Bookkeeping",
                 )
-                loadedAccountant!.departments[1].name.should.be.equal("HR")
-                loadedAccountant!.salary.should.equal(3000)
+                loadedAccountant.departments[1].name.should.be.equal("HR")
+                loadedAccountant.salary.should.equal(3000)
 
                 const loadedEmployees = await dataSource.manager
                     .createQueryBuilder(Employee, "employee")

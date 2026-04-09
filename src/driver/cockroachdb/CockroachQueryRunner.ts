@@ -3652,7 +3652,7 @@ export class CockroachQueryRunner
                             ) {
                                 tableColumn.collation = dbColumn[
                                     "crdb_sql_type"
-                                ].substr(
+                                ].substring(
                                     dbColumn["crdb_sql_type"].indexOf(
                                         "COLLATE",
                                     ) +
@@ -3660,7 +3660,7 @@ export class CockroachQueryRunner
                                         1,
                                     dbColumn["crdb_sql_type"].length,
                                 )
-                                tableColumn.type = tableColumn.type.substr(
+                                tableColumn.type = tableColumn.type.substring(
                                     0,
                                     dbColumn["crdb_sql_type"].indexOf(
                                         "COLLATE",
@@ -3669,7 +3669,7 @@ export class CockroachQueryRunner
                             }
 
                             if (tableColumn.type.indexOf("(") !== -1)
-                                tableColumn.type = tableColumn.type.substr(
+                                tableColumn.type = tableColumn.type.substring(
                                     0,
                                     tableColumn.type.indexOf("("),
                                 )
@@ -3729,7 +3729,7 @@ export class CockroachQueryRunner
                             // so, we must remove this underscore character from enum type name
                             let udtName = dbColumn["udt_name"]
                             if (udtName.indexOf("_") === 0) {
-                                udtName = udtName.substr(1, udtName.length)
+                                udtName = udtName.substring(1, udtName.length)
                             }
 
                             const enumType = dbEnums.find((dbEnum) => {
@@ -4743,7 +4743,7 @@ export class CockroachQueryRunner
         // so, we must remove this underscore character from enum type name
         let udtName = result[0]["udt_name"]
         if (udtName.indexOf("_") === 0) {
-            udtName = udtName.substr(1, udtName.length)
+            udtName = udtName.substring(1, udtName.length)
         }
         return {
             schema: result[0]["udt_schema"],
