@@ -86,7 +86,8 @@ export class CascadesSubjectBuilder {
                     if (!alreadyExistRelationEntitySubject.mustBeRemoved)
                         alreadyExistRelationEntitySubject.mustBeRemoved =
                             relation.isCascadeRemove === true &&
-                            operationType === "remove"
+                            operationType === "remove" &&
+                            !!alreadyExistRelationEntitySubject.identifier
                     if (
                         alreadyExistRelationEntitySubject.canBeSoftRemoved ===
                         false
@@ -116,9 +117,6 @@ export class CascadesSubjectBuilder {
                     canBeUpdated:
                         relation.isCascadeUpdate === true &&
                         operationType === "save",
-                    mustBeRemoved:
-                        relation.isCascadeRemove === true &&
-                        operationType === "remove",
                     canBeSoftRemoved:
                         relation.isCascadeSoftRemove === true &&
                         operationType === "soft-remove",
@@ -126,6 +124,17 @@ export class CascadesSubjectBuilder {
                         relation.isCascadeRecover === true &&
                         operationType === "recover",
                 })
+
+                // only mark for removal if the subject has an identifier,
+                // otherwise SubjectExecutor will throw SubjectWithoutIdentifierError
+                if (
+                    relation.isCascadeRemove === true &&
+                    operationType === "remove" &&
+                    relationEntitySubject.identifier
+                ) {
+                    relationEntitySubject.mustBeRemoved = true
+                }
+
                 this.allSubjects.push(relationEntitySubject)
 
                 // go recursively and find other entities we need to insert/update

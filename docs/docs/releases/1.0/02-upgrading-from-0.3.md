@@ -453,6 +453,18 @@ Glob patterns (used in entity/migration file discovery) are now handled by `tiny
 
 When `orphanedRowAction` is `"nullify"` (the default) and the foreign key column is non-nullable, orphaned children are now **deleted** instead of throwing a database constraint violation. Previously, TypeORM would attempt to set the FK to `null`, which failed on non-nullable columns.
 
+This only applies when the relation is loaded on the entity instance. TypeORM does not automatically load relations — it only traverses relation values that are already populated on the object. To ensure orphaned children are handled, load the relation before calling `remove` or `save`:
+
+```typescript
+const parent = await manager.findOne(Parent, {
+    where: { id: 1 },
+    relations: { children: true },
+})
+await manager.remove(parent)
+```
+
+If the relation is not loaded (i.e. the property is `undefined`), TypeORM will not detect or delete orphaned children, which may result in foreign key constraint violations.
+
 If you were relying on the error to prevent accidental child deletion, set `orphanedRowAction: "disable"` on the relation to preserve the old behavior.
 
 ### Cascade remove now works for one-to-many relations
