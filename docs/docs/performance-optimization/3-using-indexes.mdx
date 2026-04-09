@@ -4,7 +4,10 @@ sidebar_label: Indexes
 
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
-import { DatabaseTabs, DatabaseTab } from "@site/src/components/tabs/database-tabs"
+import {
+    DatabaseTabs,
+    DatabaseTab,
+} from "@site/src/components/tabs/database-tabs"
 
 # Using indexes
 
@@ -30,9 +33,10 @@ EXPLAIN ANALYZE SELECT * FROM "user" WHERE "firstName" = 'Timber';
 Look for `full scan` (no index) vs `scan` with a specific index name.
 
 :::info Learn more
+
 - [Indexes](https://www.cockroachlabs.com/docs/stable/indexes.html)
 - [EXPLAIN](https://www.cockroachlabs.com/docs/stable/explain.html)
-:::
+  :::
 
 </DatabaseTab>
 
@@ -47,9 +51,10 @@ EXPLAIN SELECT * FROM user WHERE firstName = 'Timber';
 Look for `full scan` (no index) vs `index scan` in the output.
 
 :::info Learn more
+
 - [Secondary Indexes](https://cloud.google.com/spanner/docs/secondary-indexes)
 - [Query Execution Plans](https://cloud.google.com/spanner/docs/query-execution-plans)
-:::
+  :::
 
 </DatabaseTab>
 
@@ -64,10 +69,11 @@ ANALYZE SELECT * FROM user WHERE firstName = 'Timber';
 Check the `type` column — `ALL` means a full table scan, while `ref`, `range`, or `index` indicate index usage. The `key` column shows which index was chosen.
 
 :::info Learn more
+
 - [Optimization and Indexes](https://mariadb.com/kb/en/optimization-and-indexes/)
 - [EXPLAIN](https://mariadb.com/kb/en/explain/)
 - [ANALYZE Statement](https://mariadb.com/kb/en/analyze-statement/)
-:::
+  :::
 
 </DatabaseTab>
 
@@ -82,9 +88,10 @@ db.user.find({ firstName: "Timber" }).explain("executionStats")
 Look for `COLLSCAN` (collection scan — no index) vs `IXSCAN` (index scan).
 
 :::info Learn more
+
 - [Indexes](https://www.mongodb.com/docs/manual/indexes/)
 - [Explain Results](https://www.mongodb.com/docs/manual/reference/explain-results/)
-:::
+  :::
 
 </DatabaseTab>
 
@@ -103,9 +110,10 @@ This also applies to Amazon Aurora MySQL, which uses the same query engine and E
 :::
 
 :::info Learn more
+
 - [Optimization and Indexes](https://dev.mysql.com/doc/refman/en/optimization-indexes.html)
 - [EXPLAIN Output Format](https://dev.mysql.com/doc/refman/en/explain-output.html)
-:::
+  :::
 
 </DatabaseTab>
 
@@ -121,9 +129,10 @@ SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
 Look for `TABLE ACCESS FULL` (no index) vs `INDEX RANGE SCAN` or `INDEX UNIQUE SCAN`.
 
 :::info Learn more
+
 - [Indexes and Index-Organized Tables](https://docs.oracle.com/en/database/oracle/oracle-database/23/cncpt/indexes-and-index-organized-tables.html)
 - [Generating and Displaying Execution Plans](https://docs.oracle.com/en/database/oracle/oracle-database/23/tgsql/generating-and-displaying-execution-plans.html)
-:::
+  :::
 
 </DatabaseTab>
 
@@ -142,10 +151,11 @@ This also applies to Amazon Aurora PostgreSQL, which uses the same query engine 
 :::
 
 :::info Learn more
+
 - [Indexes](https://www.postgresql.org/docs/current/indexes.html)
 - [EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html)
 - [Using EXPLAIN](https://www.postgresql.org/docs/current/using-explain.html)
-:::
+  :::
 
 </DatabaseTab>
 
@@ -161,9 +171,10 @@ SELECT * FROM EXPLAIN_PLAN_TABLE;
 Look for `TABLE SCAN` (no index) vs `INDEX SCAN` or `INDEX SEEK` in the operator column.
 
 :::info Learn more
+
 - [Indexes](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/indexes)
 - [EXPLAIN PLAN](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/explain-plan-statement-data-manipulation)
-:::
+  :::
 
 </DatabaseTab>
 
@@ -180,9 +191,10 @@ SET STATISTICS IO OFF;
 Look for `Table Scan` (no index) vs `Index Seek` or `Index Scan` in the execution plan.
 
 :::info Learn more
+
 - [Indexes](https://learn.microsoft.com/en-us/sql/relational-databases/indexes/indexes)
 - [Execution Plans](https://learn.microsoft.com/en-us/sql/relational-databases/performance/execution-plans)
-:::
+  :::
 
 </DatabaseTab>
 
@@ -197,9 +209,10 @@ EXPLAIN QUERY PLAN SELECT * FROM user WHERE firstName = 'Timber';
 Look for `SCAN` (no index) vs `SEARCH` (index used) in the output.
 
 :::info Learn more
+
 - [Query Planning](https://www.sqlite.org/queryplanner.html)
 - [EXPLAIN QUERY PLAN](https://www.sqlite.org/eqp.html)
-:::
+  :::
 
 </DatabaseTab>
 </DatabaseTabs>
@@ -252,7 +265,13 @@ export class User {
 <TabItem value="join" label="Join column">
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index } from "typeorm"
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToOne,
+    Index,
+} from "typeorm"
 import { User } from "./User"
 
 @Entity()
