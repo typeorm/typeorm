@@ -265,40 +265,40 @@ function CodeExampleSection() {
 
 function SupportedDatabases() {
     const databases = [
-        { name: "MySQL", icon: "/img/databases/mysql.png", category: "core" },
-        {
-            name: "PostgreSQL",
-            icon: "/img/databases/postgresql.png",
-            category: "core",
-        },
-        {
-            name: "MariaDB",
-            icon: "/img/databases/mariadb.png",
-            category: "core",
-        },
-        { name: "SQLite", icon: "/img/databases/sqlite.png", category: "core" },
-        {
-            name: "MS SQL Server",
-            icon: "/img/databases/mssql.png",
-            category: "core",
-        },
-        { name: "Oracle", icon: "/img/databases/oracle.png", category: "core" },
-        {
-            name: "MongoDB",
-            icon: "/img/databases/mongodb.png",
-            category: "core",
-        },
         {
             name: "CockroachDB",
-            icon: "/img/databases/cockroachdb.png",
+            icon: "/img/databases/cockroachdb.svg",
             category: "core",
         },
-        { name: "SAP HANA", icon: "/img/databases/sap.png", category: "core" },
         {
             name: "Google Spanner",
             icon: "/img/databases/spanner.svg",
             category: "core",
         },
+        {
+            name: "MariaDB",
+            icon: "/img/databases/mariadb.svg",
+            category: "core",
+        },
+        {
+            name: "MongoDB",
+            icon: "/img/databases/mongodb.svg",
+            category: "core",
+        },
+        {
+            name: "MS SQL Server",
+            icon: "/img/databases/mssql.svg",
+            category: "core",
+        },
+        { name: "MySQL", icon: "/img/databases/mysql.svg", category: "core" },
+        { name: "Oracle", icon: "/img/databases/oracle.svg", category: "core" },
+        {
+            name: "PostgreSQL",
+            icon: "/img/databases/postgresql.svg",
+            category: "core",
+        },
+        { name: "SAP HANA", icon: "/img/databases/sap.svg", category: "core" },
+        { name: "SQLite", icon: "/img/databases/sqlite.svg", category: "core" },
     ]
 
     return (
