@@ -55,7 +55,7 @@ Isolation level implementations are _not_ agnostic across all databases. Each dr
 | Oracle          | `READ COMMITTED`, `SERIALIZABLE`                                                    |
 | SAP HANA        | `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`                                 |
 | SQLite          | `READ UNCOMMITTED`\*, `SERIALIZABLE`                                                |
-| Spanner         | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| Spanner         | `REPEATABLE READ`, `SERIALIZABLE`                                                   |
 
 \* SQLite's `READ UNCOMMITTED` only takes effect when [shared-cache mode](https://www.sqlite.org/sharedcache.html) is enabled. In the default mode, SQLite always uses `SERIALIZABLE` isolation regardless of the setting.
 

@@ -116,6 +116,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         await this.connect()
+        if (isolationLevel) {
+            this.sessionTransaction.setReadWriteTransactionOptions({
+                isolationLevel:
+                    isolationLevel === "REPEATABLE READ"
+                        ? 2 // REPEATABLE_READ
+                        : 1, // SERIALIZABLE
+            })
+        }
         await this.sessionTransaction.begin()
         this.dataSource.logger.logQuery("START TRANSACTION")
 
