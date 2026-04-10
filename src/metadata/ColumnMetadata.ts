@@ -720,16 +720,19 @@ export class ColumnMetadata {
                     if (Object.keys(map).length > 0)
                         return { [this.propertyName]: map }
                 } else {
-                    let value =
-                        this.relationMetadata.joinColumns[0].referencedColumn!.getEntityValue(
-                            entity[this.relationMetadata!.propertyName],
-                        )
-                    if (value) {
-                        // Ensure bigint values are preserved as strings to prevent
-                        // JS Number precision loss for values > Number.MAX_SAFE_INTEGER.
-                        // See: https://github.com/typeorm/typeorm/issues/12337
+                    const referencedColumn =
+                        this.relationMetadata.joinColumns[0]
+                            .referencedColumn!
+                    let value = referencedColumn.getEntityValue(
+                        entity[this.relationMetadata!.propertyName],
+                    )
+                    if (
+                        value !== undefined &&
+                        value !== null
+                    ) {
+                        // bigint precision fix (#12337)
                         if (
-                            this.type === "bigint" &&
+                            referencedColumn.type === "bigint" &&
                             typeof value === "number"
                         ) {
                             value = String(value)
