@@ -32,7 +32,9 @@ export class DbQueryResultCache implements QueryResultCache {
             typeof this.dataSource.options.cache === "object"
                 ? this.dataSource.options.cache
                 : {}
-        const cacheTableName = cacheOptions.tableName ?? "query-result-cache"
+        const tableName =
+            cacheOptions.tableName === "" ? undefined : cacheOptions.tableName
+        const cacheTableName = tableName ?? "query-result-cache"
 
         this.queryResultCacheDatabase = database
         this.queryResultCacheSchema = schema
