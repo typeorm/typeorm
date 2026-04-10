@@ -570,9 +570,7 @@ export class MongoDriver implements Driver {
         if (options.replicaSet) {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${
                 options.hostReplicaSet ??
-                (options.host != null
-                    ? options.host + portUrlPart
-                    : "127.0.0.1" + portUrlPart)
+                `${options.host ?? "127.0.0.1"}${portUrlPart}`
             }/${options.database ?? ""}`
         } else {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${
