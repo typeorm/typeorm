@@ -110,9 +110,9 @@ describe("mongodb > select projection", () => {
                 })
 
                 expect(product).to.not.be.null
-                expect(product!.name).to.equal("test2")
-                expect(product!.label).to.equal("label2")
-                expect(product!.price).to.be.undefined
+                expect(product?.name).to.equal("test2")
+                expect(product?.label).to.equal("label2")
+                expect(product?.price).to.be.undefined
             }),
         ))
 
@@ -132,7 +132,7 @@ describe("mongodb > select projection", () => {
                 }
 
                 expect(error).to.not.be.undefined
-                expect(error!.message).to.contain("nonExistentField")
+                expect(error?.message).to.contain("nonExistentField")
             }),
         ))
 
@@ -152,7 +152,7 @@ describe("mongodb > select projection", () => {
                 }
 
                 expect(error).to.not.be.undefined
-                expect(error!.message).to.contain("nmae")
+                expect(error?.message).to.contain("nmae")
             }),
         ))
 })
