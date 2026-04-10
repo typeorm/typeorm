@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { randomBytes } from "crypto"
+import { randomBytes } from "node:crypto"
 import type { DataSource } from "../../../../../../src"
 import {
     closeTestingConnections,
@@ -637,7 +637,8 @@ describe("schema builder > change column", () => {
                                     /\bbigint\b|^int8$|^bigserial$/.test(t) ||
                                     (typeof (c as { width?: number }).width ===
                                         "number" &&
-                                        (c as { width?: number }).width! >= 20)
+                                        ((c as { width?: number }).width ??
+                                            0) >= 20)
 
                                 if (isBigInt) {
                                     payload.id ??= Math.min(
@@ -709,8 +710,8 @@ describe("schema builder > change column", () => {
 
                     // Confirm column length changed
                     const postTable = await queryRunner.getTable("post")
-                    const postCol = postTable!.findColumnByName("name")!
-                    if (postCol.length) expect(postCol.length).to.equal("80")
+                    const postCol = postTable?.findColumnByName("name")
+                    if (postCol?.length) expect(postCol.length).to.equal("80")
 
                     // 4) Verify data still exists with original value after ALTER (data survived migration)
                     const afterMigration = await repo.findOneByOrFail({
@@ -803,7 +804,8 @@ describe("schema builder > change column", () => {
                                     // If metadata has width info suggestive of bigint, treat as bigint (rare in this test schema).
                                     (typeof (c as { width?: number }).width ===
                                         "number" &&
-                                        (c as { width?: number }).width! >= 20)
+                                        ((c as { width?: number }).width ??
+                                            0) >= 20)
 
                                 if (isBigInt) {
                                     // still keep it in JS safe integer range
@@ -857,7 +859,7 @@ describe("schema builder > change column", () => {
 
                     // 6) Verify new data works with increased length
                     const rt = await repo.findOneByOrFail({
-                        id: (row2 as any).id,
+                        id: (row2 as any)?.id,
                     })
                     expect(rt.name.length).to.equal(51)
                 } finally {
@@ -1022,8 +1024,8 @@ describe("schema builder > change column", () => {
 
                     // Confirm column length changed
                     const postTable = await queryRunner.getTable("post")
-                    const postCol = postTable!.findColumnByName("name")!
-                    if (postCol.length) expect(postCol.length).to.equal("40")
+                    const postCol = postTable?.findColumnByName("name")
+                    if (postCol?.length) expect(postCol.length).to.equal("40")
 
                     // 4) Verify data still exists with original value after ALTER (data survived migration)
                     const afterMigration = await repo.findOneByOrFail({
@@ -1168,7 +1170,7 @@ describe("schema builder > change column", () => {
 
                     // 6) Verify new data works with reduced length
                     const rt = await repo.findOneByOrFail({
-                        id: (row2 as any).id,
+                        id: (row2 as any)?.id,
                     })
                     expect(rt.name.length).to.equal(40)
                 } finally {

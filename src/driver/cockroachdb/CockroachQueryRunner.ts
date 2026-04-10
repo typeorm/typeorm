@@ -242,9 +242,9 @@ export class CockroachQueryRunner
 
             // --- DOWN (revert): only add USING if oldLen existed; otherwise no USING
             const usingOld =
-                oldLen !== undefined
-                    ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
-                    : ""
+                oldLen === undefined
+                    ? ""
+                    : ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
             downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -326,12 +326,12 @@ export class CockroachQueryRunner
 
         const tableSql = this.escapePath(table)
         const colName = String(oldColumn.name)
-        const q = (i: string) => `"${i.replace(/"/g, '""')}"`
+        const q = (i: string) => `"${i.replaceAll('"', '""')}"`
 
         const buildColumnType = (column: TableColumn): string => {
             const t = String(column.type ?? "").toLowerCase()
             const len = column.length
-                ? parseInt(String(column.length), 10)
+                ? Number.parseInt(String(column.length), 10)
                 : undefined
             const prec = column.precision
             const scale = column.scale

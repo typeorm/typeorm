@@ -152,13 +152,13 @@ export class AuroraMysqlQueryRunner
         }
 
         const oldLenRaw =
-            oldColumn.length != null
-                ? parseInt(String(oldColumn.length), 10)
-                : NaN
+            oldColumn.length == null
+                ? Number.NaN
+                : Number.parseInt(String(oldColumn.length), 10)
         const newLenRaw =
-            newColumn.length != null
-                ? parseInt(String(newColumn.length), 10)
-                : NaN
+            newColumn.length == null
+                ? Number.NaN
+                : Number.parseInt(String(newColumn.length), 10)
 
         const haveFiniteLengths =
             Number.isFinite(oldLenRaw) && Number.isFinite(newLenRaw)

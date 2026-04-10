@@ -142,13 +142,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }): boolean {
         // Parse lengths as integers if present
         const oldLen =
-            oldColumn.length != null
-                ? parseInt(String(oldColumn.length), 10)
-                : undefined
+            oldColumn.length == null
+                ? undefined
+                : Number.parseInt(String(oldColumn.length), 10)
         const newLen =
-            newColumn.length != null
-                ? parseInt(String(newColumn.length), 10)
-                : undefined
+            newColumn.length == null
+                ? undefined
+                : Number.parseInt(String(newColumn.length), 10)
         const col = oldColumn.name
 
         // If shrinking, proactively truncate values that exceed new length
@@ -231,7 +231,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const tableSql = this.escapePath(table)
         const colName = String(oldColumn.name)
-        const q = (i: string) => `\`${i.replace(/`/g, "``")}\``
+        const q = (i: string) => `\`${i.replaceAll("`", "``")}\``
 
         // Build full definitions to preserve attributes (NULL/DEFAULT/ON UPDATE/COLLATION/etc.)
         const newDef = this.buildCreateColumnSql(newColumn, true, true)

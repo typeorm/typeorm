@@ -5268,19 +5268,19 @@ export class PostgresQueryRunner
         downQueries: Query[]
     }): boolean {
         const oldLen = normalizeColumnLength(
-            oldColumn.length != null
-                ? parseInt(String(oldColumn.length), 10)
-                : undefined,
+            oldColumn.length == null
+                ? undefined
+                : Number.parseInt(String(oldColumn.length), 10),
         )
         const newLen = normalizeColumnLength(
-            newColumn.length != null
-                ? parseInt(String(newColumn.length), 10)
-                : undefined,
+            newColumn.length == null
+                ? undefined
+                : Number.parseInt(String(newColumn.length), 10),
         )
 
         // Length change never implies a rename; guard identifier
-        const colName: string = (newColumn?.name ?? oldColumn?.name) as string
-        const qCol = `"${colName.replace(/"/g, '""')}"`
+        const colName = newColumn?.name ?? oldColumn?.name ?? ""
+        const qCol = `"${colName.replaceAll('"', '""')}"`
 
         const isStringType =
             /^(varchar|character varying|text|char|character)$/i.test(
@@ -5309,9 +5309,9 @@ export class PostgresQueryRunner
 
             // --- DOWN: revert; ONLY add USING if oldLen exists; otherwise no USING
             const usingOld =
-                oldLen !== undefined
-                    ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
-                    : ""
+                oldLen === undefined
+                    ? ""
+                    : ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
             downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -5398,13 +5398,13 @@ export class PostgresQueryRunner
 
         const tableSql = this.escapePath(table)
         const colName = String(oldColumn.name)
-        const q = (i: string) => `"${i.replace(/"/g, '""')}"`
+        const q = (i: string) => `"${i.replaceAll('"', '""')}"`
 
         // Build TYPE-only fragments (no NULL/DEFAULT/etc.)
         const buildColumnType = (column: TableColumn): string => {
             const t = String(column.type ?? "").toLowerCase()
             const len = column.length
-                ? parseInt(String(column.length), 10)
+                ? Number.parseInt(String(column.length), 10)
                 : undefined
             const prec = column.precision
             const scale = column.scale
@@ -5416,7 +5416,7 @@ export class PostgresQueryRunner
                 return `${base}(${prec},${scale})`
             }
             const withTimePrec = (base: string) =>
-                prec != null ? `${base}(${prec})` : base
+                prec == null ? base : `${base}(${prec})`
 
             // strings
             if (t === "varchar" || t === "character varying")

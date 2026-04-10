@@ -1534,12 +1534,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const oldLen =
                         oldColumn.length !== undefined &&
                         oldColumn.length !== null
-                            ? parseInt(String(oldColumn.length), 10)
+                            ? Number.parseInt(String(oldColumn.length), 10)
                             : undefined
                     const newLen =
                         newColumn.length !== undefined &&
                         newColumn.length !== null
-                            ? parseInt(String(newColumn.length), 10)
+                            ? Number.parseInt(String(newColumn.length), 10)
                             : undefined
 
                     const wouldShrinkOnDown =
@@ -3802,20 +3802,23 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         const escapeColumnName = (name: string) =>
-            `"${String(name).replace(/"/g, '""')}"`
+            `"${String(name).replaceAll('"', '""')}"`
 
         const oldLen = oldColumn.length
-            ? parseInt(String(oldColumn.length), 10)
+            ? Number.parseInt(String(oldColumn.length), 10)
             : undefined
         const newLen = newColumn.length
-            ? parseInt(String(newColumn.length), 10)
+            ? Number.parseInt(String(newColumn.length), 10)
             : undefined
 
         // Validate that lengths are valid numbers and at least one is defined
         if (!oldLen && !newLen) {
             return false
         }
-        if ((oldLen && isNaN(oldLen)) || (newLen && isNaN(newLen))) {
+        if (
+            (oldLen && Number.isNaN(oldLen)) ||
+            (newLen && Number.isNaN(newLen))
+        ) {
             return false
         }
 
@@ -4098,12 +4101,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const tableSql = this.escapePath(table)
         const colName = String(oldColumn.name)
-        const q = (i: string) => `"${i.replace(/"/g, '""')}"`
+        const q = (i: string) => `"${i.replaceAll('"', '""')}"`
 
         const buildColumnType = (column: TableColumn): string => {
             const t = String(column.type ?? "").toLowerCase()
             const len = column.length
-                ? parseInt(String(column.length), 10)
+                ? Number.parseInt(String(column.length), 10)
                 : undefined
             const prec = column.precision
             const scale = column.scale

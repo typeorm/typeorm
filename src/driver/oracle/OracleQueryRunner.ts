@@ -3566,7 +3566,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const tableSql = this.escapePath(table)
         const colName = String(oldColumn.name)
-        const q = (i: string) => `"${i.replace(/"/g, '""')}"`
+        const q = (i: string) => `"${i.replaceAll('"', '""')}"`
 
         // Oracle TIMESTAMP precision must be between 0 and 9. Clamp to avoid ORA-30088.
         const clampTs = (col: TableColumn) => {
