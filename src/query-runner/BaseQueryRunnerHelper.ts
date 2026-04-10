@@ -40,7 +40,10 @@ export function isSafeAlter(
     newColumn: TableColumn,
 ): boolean {
     const norm = (t: unknown): string =>
-        (t ?? "").toString().toLowerCase().replace(/\s+/g, " ").trim()
+        String(t ?? "")
+            .toLowerCase()
+            .replaceAll(/\s+/g, " ")
+            .trim()
 
     // Canonicalize engine-specific synonyms to family-friendly base names
     const alias = (t: string): string => {
@@ -90,14 +93,14 @@ export function isSafeAlter(
         return m
             ? m[1]
                   .split(",")
-                  .map((s) => parseInt(s.trim(), 10))
+                  .map((s) => Number.parseInt(s.trim(), 10))
                   .filter((n) => !Number.isNaN(n))
             : []
     }
 
     // Prefer TableColumn.length when params aren’t inline
     const lengthFromCol = (c: TableColumn) => {
-        const n = parseInt((c.length ?? "").toString(), 10)
+        const n = Number.parseInt(String(c.length ?? ""), 10)
         return Number.isFinite(n) ? n : undefined
     }
 

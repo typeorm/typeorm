@@ -343,7 +343,7 @@ export class CockroachQueryRunner
                 return `${base}(${prec},${scale})`
             }
             const withTimePrec = (base: string) =>
-                prec != null ? `${base}(${prec})` : base
+                prec == null ? base : `${base}(${prec})`
 
             // strings
             if (t === "varchar" || t === "character varying")

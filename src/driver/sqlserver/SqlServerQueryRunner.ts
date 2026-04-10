@@ -4601,11 +4601,11 @@ export class SqlServerQueryRunner
     }): void {
         const oldLen =
             typeof oldColumn.length === "string"
-                ? parseInt(oldColumn.length, 10)
+                ? Number.parseInt(oldColumn.length, 10)
                 : undefined
         const newLen =
             typeof newColumn.length === "string"
-                ? parseInt(newColumn.length, 10)
+                ? Number.parseInt(newColumn.length, 10)
                 : undefined
         const isOldMax =
             typeof oldColumn.length === "string" &&
@@ -4708,11 +4708,11 @@ export class SqlServerQueryRunner
         // We must drop it before altering and re-add it afterwards.
         const hasDefault =
             oldColumn.default !== null && oldColumn.default !== undefined
-        const quoteIdent = (i: string) => `[${i.replace(/]/g, "]]")}]`
+        const quoteIdent = (i: string) => `[${i.replaceAll("]", "]]")}]`
 
         if (hasDefault) {
             const defName =
-                this.connection.namingStrategy.defaultConstraintName(
+                this.dataSource.namingStrategy.defaultConstraintName(
                     table,
                     colName,
                 )
@@ -4754,7 +4754,7 @@ export class SqlServerQueryRunner
         // Re-add the default constraint after the ALTER COLUMN
         if (hasDefault) {
             const defName =
-                this.connection.namingStrategy.defaultConstraintName(
+                this.dataSource.namingStrategy.defaultConstraintName(
                     table,
                     colName,
                 )

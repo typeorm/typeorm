@@ -3847,23 +3847,18 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
             // 2) COPY data into temp, trimming to new length
+            // 3) DROP old column
+            // 4) ADD final column with the new definition (still NULLable for now)
+            // 5) COPY data back from temp → final
             upQueries.push(
                 new Query(
                     `UPDATE ${this.escapePath(
                         table,
                     )} SET ${escapedTmp} = SUBSTRING(${escapedCol}, 1, ${newLen})`,
                 ),
-            )
-
-            // 3) DROP old column
-            upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} DROP (${escapedCol})`,
                 ),
-            )
-
-            // 4) ADD final column with the new definition (still NULLable for now)
-            upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ADD (` +
                         this.buildCreateColumnSql(
@@ -3879,10 +3874,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         ) +
                         `)`,
                 ),
-            )
-
-            // 5) COPY data back from temp → final
-            upQueries.push(
                 new Query(
                     `UPDATE ${this.escapePath(table)} SET ${escapedCol} = ${escapedTmp}`,
                 ),
@@ -3987,23 +3978,18 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
             // 2) COPY data into temp, trimming to old length
+            // 3) DROP widened column
+            // 4) ADD final column with the old definition (NULLable for now)
+            // 5) COPY data back from temp → final
             downQueries.push(
                 new Query(
                     `UPDATE ${this.escapePath(
                         table,
                     )} SET ${escapedTmpDown} = SUBSTRING(${escapedCol}, 1, ${oldLen})`,
                 ),
-            )
-
-            // 3) DROP widened column
-            downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} DROP (${escapedCol})`,
                 ),
-            )
-
-            // 4) ADD final column with the old definition (NULLable for now)
-            downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ADD (` +
                         this.buildCreateColumnSql(
@@ -4019,10 +4005,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         ) +
                         `)`,
                 ),
-            )
-
-            // 5) COPY data back from temp → final
-            downQueries.push(
                 new Query(
                     `UPDATE ${this.escapePath(table)} SET ${escapedCol} = ${escapedTmpDown}`,
                 ),

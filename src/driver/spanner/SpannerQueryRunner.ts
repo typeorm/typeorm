@@ -2491,10 +2491,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         downQueries: Query[]
     }): Promise<boolean> {
         const oldLen = oldColumn.length
-            ? parseInt(String(oldColumn.length), 10)
+            ? Number.parseInt(String(oldColumn.length), 10)
             : undefined
         const newLen = newColumn.length
-            ? parseInt(String(newColumn.length), 10)
+            ? Number.parseInt(String(newColumn.length), 10)
             : undefined
         const col = oldColumn.name
 
@@ -2581,17 +2581,17 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const tableSql = this.escapePath(table)
         const colName = String(oldColumn.name)
-        const q = (i: string) => `\`${i.replace(/`/g, "``")}\``
+        const q = (i: string) => `\`${i.replaceAll("`", "``")}\``
 
         const buildColumnType = (column: TableColumn): string => {
             const t = String(column.type ?? "").toLowerCase()
             const len = column.length
-                ? parseInt(String(column.length), 10)
+                ? Number.parseInt(String(column.length), 10)
                 : undefined
             const prec = column.precision
 
             const withTimePrec = (base: string) =>
-                prec != null ? `${base}(${prec})` : base
+                prec == null ? base : `${base}(${prec})`
 
             // strings
             if (t === "string" || t === "text")
