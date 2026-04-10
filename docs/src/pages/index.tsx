@@ -319,6 +319,10 @@ function SupportedDatabases() {
                         </div>
                     ))}
                 </div>
+                <p className={styles.databasesDisclaimer}>
+                    All logos are trademarks of their respective owners, used
+                    for identification purposes only.
+                </p>
             </div>
         </section>
     )
