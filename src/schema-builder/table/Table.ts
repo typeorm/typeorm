@@ -114,10 +114,10 @@ export class Table {
                         new TableForeignKey({
                             ...foreignKey,
                             referencedDatabase:
-                                foreignKey?.referencedDatabase ||
+                                foreignKey?.referencedDatabase ??
                                 options.database,
                             referencedSchema:
-                                foreignKey?.referencedSchema || options.schema,
+                                foreignKey?.referencedSchema ?? options.schema,
                         }),
                 )
 
@@ -184,6 +184,7 @@ export class Table {
 
     /**
      * Add column and creates its constraints.
+     *
      * @param column
      */
     addColumn(column: TableColumn): void {
@@ -192,6 +193,7 @@ export class Table {
 
     /**
      * Remove column and its constraints.
+     *
      * @param column
      */
     removeColumn(column: TableColumn): void {
@@ -202,6 +204,7 @@ export class Table {
 
     /**
      * Adds unique constraint.
+     *
      * @param uniqueConstraint
      */
     addUniqueConstraint(uniqueConstraint: TableUnique): void {
@@ -216,6 +219,7 @@ export class Table {
 
     /**
      * Removes unique constraint.
+     *
      * @param removedUnique
      */
     removeUniqueConstraint(removedUnique: TableUnique): void {
@@ -235,6 +239,7 @@ export class Table {
 
     /**
      * Adds check constraint.
+     *
      * @param checkConstraint
      */
     addCheckConstraint(checkConstraint: TableCheck): void {
@@ -243,6 +248,7 @@ export class Table {
 
     /**
      * Removes check constraint.
+     *
      * @param removedCheck
      */
     removeCheckConstraint(removedCheck: TableCheck): void {
@@ -256,6 +262,7 @@ export class Table {
 
     /**
      * Adds exclusion constraint.
+     *
      * @param exclusionConstraint
      */
     addExclusionConstraint(exclusionConstraint: TableExclusion): void {
@@ -264,6 +271,7 @@ export class Table {
 
     /**
      * Removes exclusion constraint.
+     *
      * @param removedExclusion
      */
     removeExclusionConstraint(removedExclusion: TableExclusion): void {
@@ -277,6 +285,7 @@ export class Table {
 
     /**
      * Adds foreign keys.
+     *
      * @param foreignKey
      */
     addForeignKey(foreignKey: TableForeignKey): void {
@@ -285,6 +294,7 @@ export class Table {
 
     /**
      * Removes foreign key.
+     *
      * @param removedForeignKey
      */
     removeForeignKey(removedForeignKey: TableForeignKey): void {
@@ -296,6 +306,7 @@ export class Table {
 
     /**
      * Adds index.
+     *
      * @param index
      * @param isMysql
      */
@@ -314,6 +325,7 @@ export class Table {
 
     /**
      * Removes index.
+     *
      * @param tableIndex
      * @param isMysql
      */
@@ -347,6 +359,7 @@ export class Table {
 
     /**
      * Returns all column indices.
+     *
      * @param column
      */
     findColumnIndices(column: TableColumn): TableIndex[] {
@@ -359,6 +372,7 @@ export class Table {
 
     /**
      * Returns all column foreign keys.
+     *
      * @param column
      */
     findColumnForeignKeys(column: TableColumn): TableForeignKey[] {
@@ -371,6 +385,7 @@ export class Table {
 
     /**
      * Returns all column uniques.
+     *
      * @param column
      */
     findColumnUniques(column: TableColumn): TableUnique[] {
@@ -383,6 +398,7 @@ export class Table {
 
     /**
      * Returns all column checks.
+     *
      * @param column
      */
     findColumnChecks(column: TableColumn): TableCheck[] {
@@ -399,6 +415,7 @@ export class Table {
 
     /**
      * Creates table from a given entity metadata.
+     *
      * @param entityMetadata
      * @param driver
      */

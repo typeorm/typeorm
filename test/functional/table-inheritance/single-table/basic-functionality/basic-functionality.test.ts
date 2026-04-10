@@ -142,76 +142,76 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 let loadedStudent = await dataSource.manager
                     .createQueryBuilder(Student, "student")
                     .where("student.name = :name", { name: "Bob" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedStudent!.faculty = "Chemistry"
-                await dataSource.getRepository(Student).save(loadedStudent!)
+                loadedStudent.faculty = "Chemistry"
+                await dataSource.getRepository(Student).save(loadedStudent)
 
                 loadedStudent = await dataSource.manager
                     .createQueryBuilder(Student, "student")
                     .where("student.name = :name", { name: "Bob" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedStudent!.should.have.all.keys("id", "name", "faculty")
-                loadedStudent!.id.should.equal(2)
-                loadedStudent!.name.should.equal("Bob")
-                loadedStudent!.faculty.should.equal("Chemistry")
+                loadedStudent.should.have.all.keys("id", "name", "faculty")
+                loadedStudent.id.should.equal(2)
+                loadedStudent.name.should.equal("Bob")
+                loadedStudent.faculty.should.equal("Chemistry")
 
                 let loadedTeacher = await dataSource.manager
                     .createQueryBuilder(Teacher, "teacher")
                     .where("teacher.name = :name", { name: "Mr. Adler" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedTeacher!.salary = 1000
-                await dataSource.getRepository(Teacher).save(loadedTeacher!)
+                loadedTeacher.salary = 1000
+                await dataSource.getRepository(Teacher).save(loadedTeacher)
 
                 loadedTeacher = await dataSource.manager
                     .createQueryBuilder(Teacher, "teacher")
                     .where("teacher.name = :name", { name: "Mr. Adler" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedTeacher!.should.have.all.keys(
+                loadedTeacher.should.have.all.keys(
                     "id",
                     "name",
                     "specialization",
                     "salary",
                 )
-                loadedTeacher!.id.should.equal(4)
-                loadedTeacher!.name.should.equal("Mr. Adler")
-                loadedTeacher!.specialization.should.equal("Mathematics")
-                loadedTeacher!.salary.should.equal(1000)
+                loadedTeacher.id.should.equal(4)
+                loadedTeacher.name.should.equal("Mr. Adler")
+                loadedTeacher.specialization.should.equal("Mathematics")
+                loadedTeacher.salary.should.equal(1000)
 
                 let loadedAccountant = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountant")
                     .where("accountant.name = :name", { name: "Mr. Trump" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedAccountant!.salary = 1000
+                loadedAccountant.salary = 1000
                 await dataSource
                     .getRepository(Accountant)
-                    .save(loadedAccountant!)
+                    .save(loadedAccountant)
 
                 loadedAccountant = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountant")
                     .where("accountant.name = :name", { name: "Mr. Trump" })
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedAccountant!.should.have.all.keys(
+                loadedAccountant.should.have.all.keys(
                     "id",
                     "name",
                     "department",
                     "salary",
                 )
-                loadedAccountant!.id.should.equal(6)
-                loadedAccountant!.name.should.equal("Mr. Trump")
-                loadedAccountant!.department.should.equal("Director")
-                loadedAccountant!.salary.should.equal(1000)
+                loadedAccountant.id.should.equal(6)
+                loadedAccountant.name.should.equal("Mr. Trump")
+                loadedAccountant.department.should.equal("Director")
+                loadedAccountant.salary.should.equal(1000)
 
                 // -------------------------------------------------------------------------
                 // Delete
                 // -------------------------------------------------------------------------
 
-                await dataSource.getRepository(Student).remove(loadedStudent!)
+                await dataSource.getRepository(Student).remove(loadedStudent)
 
                 loadedStudents = await dataSource.manager
                     .createQueryBuilder(Student, "students")
@@ -224,7 +224,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedStudents[0].name.should.equal("Alice")
                 loadedStudents[0].faculty.should.equal("Economics")
 
-                await dataSource.getRepository(Teacher).remove(loadedTeacher!)
+                await dataSource.getRepository(Teacher).remove(loadedTeacher)
 
                 loadedTeachers = await dataSource.manager
                     .createQueryBuilder(Teacher, "teachers")
@@ -245,7 +245,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
                 await dataSource
                     .getRepository(Accountant)
-                    .remove(loadedAccountant!)
+                    .remove(loadedAccountant)
 
                 loadedAccountants = await dataSource.manager
                     .createQueryBuilder(Accountant, "accountants")
@@ -381,7 +381,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 )
                 expect(loadedEmployee1).to.be.null
 
-                const loadedEmployee2 = await dataSource.manager.findOne(
+                const loadedEmployee2 = await dataSource.manager.findOneOrFail(
                     Employee,
                     {
                         where: {
@@ -389,16 +389,16 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                         },
                     },
                 )
-                loadedEmployee2!.should.be.instanceof(Employee)
+                loadedEmployee2.should.be.instanceof(Employee)
                 expect(loadedEmployee2).not.to.be.null
-                loadedEmployee2!.id.should.be.eql(2)
-                loadedEmployee2!.name.should.be.eql("John")
-                loadedEmployee2!.salary.should.be.eql(1000)
-                loadedEmployee2!.should.not.haveOwnProperty("department")
-                loadedEmployee2!.should.not.haveOwnProperty("specialization")
-                loadedEmployee2!.should.not.haveOwnProperty("faculty")
+                loadedEmployee2.id.should.be.eql(2)
+                loadedEmployee2.name.should.be.eql("John")
+                loadedEmployee2.salary.should.be.eql(1000)
+                loadedEmployee2.should.not.haveOwnProperty("department")
+                loadedEmployee2.should.not.haveOwnProperty("specialization")
+                loadedEmployee2.should.not.haveOwnProperty("faculty")
 
-                const loadedStudent1 = await dataSource.manager.findOne(
+                const loadedStudent1 = await dataSource.manager.findOneOrFail(
                     Student,
                     {
                         where: {
@@ -406,13 +406,13 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                         },
                     },
                 )
-                loadedStudent1!.should.be.instanceof(Student)
-                loadedStudent1!.id.should.be.eql(1)
-                loadedStudent1!.name.should.be.eql("Alice")
-                loadedStudent1!.faculty.should.be.eql("Economics")
-                loadedStudent1!.should.not.haveOwnProperty("department")
-                loadedStudent1!.should.not.haveOwnProperty("specialization")
-                loadedStudent1!.should.not.haveOwnProperty("salary")
+                loadedStudent1.should.be.instanceof(Student)
+                loadedStudent1.id.should.be.eql(1)
+                loadedStudent1.name.should.be.eql("Alice")
+                loadedStudent1.faculty.should.be.eql("Economics")
+                loadedStudent1.should.not.haveOwnProperty("department")
+                loadedStudent1.should.not.haveOwnProperty("specialization")
+                loadedStudent1.should.not.haveOwnProperty("salary")
 
                 const loadedStudent2 = await dataSource.manager.findOne(
                     Student,
@@ -424,31 +424,37 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 )
                 expect(loadedStudent2).to.be.null
 
-                const loadedPerson1 = await dataSource.manager.findOne(Person, {
-                    where: {
-                        id: 1,
+                const loadedPerson1 = await dataSource.manager.findOneOrFail(
+                    Person,
+                    {
+                        where: {
+                            id: 1,
+                        },
                     },
-                })
-                loadedPerson1!.should.be.instanceof(Student)
-                loadedPerson1!.id.should.be.eql(1)
-                loadedPerson1!.name.should.be.eql("Alice")
+                )
+                loadedPerson1.should.be.instanceof(Student)
+                loadedPerson1.id.should.be.eql(1)
+                loadedPerson1.name.should.be.eql("Alice")
                 ;(loadedPerson1! as Student).faculty.should.be.eql("Economics")
-                loadedPerson1!.should.not.haveOwnProperty("department")
-                loadedPerson1!.should.not.haveOwnProperty("specialization")
-                loadedPerson1!.should.not.haveOwnProperty("salary")
+                loadedPerson1.should.not.haveOwnProperty("department")
+                loadedPerson1.should.not.haveOwnProperty("specialization")
+                loadedPerson1.should.not.haveOwnProperty("salary")
 
-                const loadedPerson2 = await dataSource.manager.findOne(Person, {
-                    where: {
-                        id: 2,
+                const loadedPerson2 = await dataSource.manager.findOneOrFail(
+                    Person,
+                    {
+                        where: {
+                            id: 2,
+                        },
                     },
-                })
-                loadedPerson2!.should.be.instanceof(Employee)
-                loadedPerson2!.id.should.be.eql(2)
-                loadedPerson2!.name.should.be.eql("John")
+                )
+                loadedPerson2.should.be.instanceof(Employee)
+                loadedPerson2.id.should.be.eql(2)
+                loadedPerson2.name.should.be.eql("John")
                 ;(loadedPerson2! as Employee).salary.should.be.eql(1000)
-                loadedPerson2!.should.not.haveOwnProperty("department")
-                loadedPerson2!.should.not.haveOwnProperty("specialization")
-                loadedPerson2!.should.not.haveOwnProperty("faculty")
+                loadedPerson2.should.not.haveOwnProperty("department")
+                loadedPerson2.should.not.haveOwnProperty("specialization")
+                loadedPerson2.should.not.haveOwnProperty("faculty")
             }),
         ))
 

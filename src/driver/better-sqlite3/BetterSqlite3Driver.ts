@@ -51,11 +51,11 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new BetterSqlite3QueryRunner(this)
+        this.queryRunner ??= new BetterSqlite3QueryRunner(this)
 
         return this.queryRunner
     }
@@ -82,6 +82,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * For SQLite, the database may be added in the decorator metadata. It will be a filepath to a database file.
+     *
      * @param tableName
      * @param _schema
      * @param database
@@ -176,7 +177,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     protected loadDependencies(): void {
         try {
             const sqlite =
-                this.options.driver || PlatformTools.load("better-sqlite3")
+                this.options.driver ?? PlatformTools.load("better-sqlite3")
             this.sqlite = sqlite
         } catch (e) {
             throw new DriverPackageNotInstalledError("SQLite", "better-sqlite3")
@@ -185,6 +186,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * Auto creates database directory if it does not exist.
+     *
      * @param dbPath
      */
     protected async createDatabaseDirectory(dbPath: string): Promise<void> {

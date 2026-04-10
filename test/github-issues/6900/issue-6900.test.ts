@@ -33,7 +33,7 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
     })
 
     it("should connect to the expected database", async () => {
-        const host = options.host || "localhost"
+        const host = options.host ?? "localhost"
 
         const dataSource = new DataSource({
             ...options,
@@ -54,7 +54,7 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
     })
 
     it("should write data to the correct database", async () => {
-        const host = options.host || "localhost"
+        const host = options.host ?? "localhost"
 
         const dataSource = new DataSource({
             ...options,
