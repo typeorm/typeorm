@@ -2512,18 +2512,23 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
         }
 
+        const spannerType =
+            String(oldColumn.type).toLowerCase() === "bytes"
+                ? "BYTES"
+                : "STRING"
+
         upQueries.push(
             new Query(
                 `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.driver.escape(
                     col,
-                )} STRING(${newLen ?? oldLen})`,
+                )} ${spannerType}(${newLen ?? oldLen ?? "MAX"})`,
             ),
         )
         downQueries.push(
             new Query(
                 `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.driver.escape(
                     col,
-                )} STRING(${oldLen ?? newLen})`,
+                )} ${spannerType}(${oldLen ?? newLen ?? "MAX"})`,
             ),
         )
 
@@ -2585,14 +2590,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : undefined
             const prec = column.precision
 
-            const withLen = (base: string) => (len ? `${base}(${len})` : base)
             const withTimePrec = (base: string) =>
                 prec != null ? `${base}(${prec})` : base
 
             // strings
             if (t === "string" || t === "text")
-                return `STRING(${withLen("VARCHAR")})`
-            if (t === "bytes") return `BYTES(${withLen("VARBINARY")})`
+                return len ? `STRING(${len})` : "STRING(MAX)"
+            if (t === "bytes") return len ? `BYTES(${len})` : "BYTES(MAX)"
 
             // numerics
             if (t === "int64" || t === "int") return "INT64"
