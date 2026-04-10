@@ -1498,7 +1498,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length
             ) {
-                // BEGIN length-only fast path (MySQL family)
                 safeAlterHandled =
                     this.handleMysqlLengthOnlyFastPathChangeColumn({
                         table,
@@ -1508,7 +1507,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         upQueries,
                         downQueries,
                     })
-                // END length-only fast path
             }
 
             // Skip this block if safe alter already handled the change to avoid double ALTER

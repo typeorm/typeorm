@@ -1297,8 +1297,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             newColumn?.comment === oldColumn?.comment &&
             newColumn?.isUnique === oldColumn?.isUnique
         ) {
-            // BEGIN length-only fast path (SAP HANA)
-
             this.handleHanaLengthOnlyFastPath({
                 table,
                 clonedTable,
@@ -1307,7 +1305,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 upQueries,
                 downQueries,
             })
-            // END length-only fast path (SAP HANA)
         }
 
         if (

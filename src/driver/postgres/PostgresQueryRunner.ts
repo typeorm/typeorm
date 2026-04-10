@@ -1642,7 +1642,6 @@ export class PostgresQueryRunner
                     String(oldColumn?.type ?? ""),
                 )
             ) {
-                // BEGIN length-only fast path (Postgres) — FIXED
                 this.handlePostgresLengthOnlyFastPath({
                     table,
                     clonedTable,
@@ -1651,7 +1650,6 @@ export class PostgresQueryRunner
                     upQueries,
                     downQueries,
                 })
-                // END length-only fast path
             }
 
             // Handle scale and precision changes without recreating the column, e.g.:

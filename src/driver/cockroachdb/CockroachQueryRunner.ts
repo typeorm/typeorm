@@ -1923,8 +1923,6 @@ export class CockroachQueryRunner
                 !newColumn?.isArray &&
                 !oldColumn?.isArray
             ) {
-                // BEGIN length-only fast path (Cockroach) — FIXED
-
                 this.handleCockroachLengthOnlyFastPath({
                     table,
                     clonedTable,
@@ -1933,7 +1931,6 @@ export class CockroachQueryRunner
                     upQueries,
                     downQueries,
                 })
-                // END length-only fast path
             }
 
             if (

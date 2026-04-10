@@ -1409,7 +1409,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn?.isPrimary === newColumn?.isPrimary &&
                 oldColumn?.isUnique === newColumn?.isUnique
             ) {
-                // BEGIN length-only fast path (Oracle)
                 this.handleOracleLengthOnlyFastPath({
                     table,
                     clonedTable,
@@ -1418,7 +1417,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     upQueries,
                     downQueries,
                 })
-                // END length-only fast path
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
