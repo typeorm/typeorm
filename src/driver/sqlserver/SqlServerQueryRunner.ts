@@ -233,7 +233,7 @@ export class SqlServerQueryRunner
             const request = new this.driver.mssql.Request(
                 this.isTransactionActive ? this.databaseConnection : pool,
             )
-            if (parameters && parameters.length) {
+            if (parameters?.length) {
                 parameters.forEach((parameter, index) => {
                     const parameterName = index.toString()
                     if (InstanceChecker.isMssqlParameter(parameter)) {
@@ -368,7 +368,7 @@ export class SqlServerQueryRunner
         const request = new this.driver.mssql.Request(
             this.isTransactionActive ? this.databaseConnection : pool,
         )
-        if (parameters && parameters.length) {
+        if (parameters?.length) {
             parameters.forEach((parameter, index) => {
                 const parameterName = index.toString()
                 if (InstanceChecker.isMssqlParameter(parameter)) {
@@ -486,13 +486,9 @@ export class SqlServerQueryRunner
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
 
-        if (!parsedTableName.database) {
-            parsedTableName.database = await this.getCurrentDatabase()
-        }
+        parsedTableName.database ??= await this.getCurrentDatabase()
 
-        if (!parsedTableName.schema) {
-            parsedTableName.schema = await this.getCurrentSchema()
-        }
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
         const sql = `SELECT * FROM ${this.driver.escape(parsedTableName.database)}."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1`
         const result = await this.query(sql, [
@@ -514,13 +510,9 @@ export class SqlServerQueryRunner
     ): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
 
-        if (!parsedTableName.database) {
-            parsedTableName.database = await this.getCurrentDatabase()
-        }
+        parsedTableName.database ??= await this.getCurrentDatabase()
 
-        if (!parsedTableName.schema) {
-            parsedTableName.schema = await this.getCurrentSchema()
-        }
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
         const sql = `SELECT * FROM ${this.driver.escape(parsedTableName.database)}."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = @0 AND "TABLE_SCHEMA" = @1 AND "COLUMN_NAME" = @2`
         const result = await this.query(sql, [
@@ -699,12 +691,11 @@ export class SqlServerQueryRunner
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                if (!index.name)
-                    index.name = this.dataSource.namingStrategy.indexName(
-                        table,
-                        index.columnNames,
-                        index.where,
-                    )
+                index.name ??= this.dataSource.namingStrategy.indexName(
+                    table,
+                    index.columnNames,
+                    index.where,
+                )
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(table, index))
             })
@@ -718,9 +709,7 @@ export class SqlServerQueryRunner
         for (const column of generatedColumns) {
             const parsedTableName = this.driver.parseTableName(table)
 
-            if (!parsedTableName.schema) {
-                parsedTableName.schema = await this.getCurrentSchema()
-            }
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
             const insertQuery = this.insertTypeormMetadataSql({
                 database: parsedTableName.database,
@@ -801,9 +790,7 @@ export class SqlServerQueryRunner
         for (const column of generatedColumns) {
             const parsedTableName = this.driver.parseTableName(table)
 
-            if (!parsedTableName.schema) {
-                parsedTableName.schema = await this.getCurrentSchema()
-            }
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
             const deleteQuery = this.deleteTypeormMetadataSql({
                 database: parsedTableName.database,
@@ -1151,12 +1138,12 @@ export class SqlServerQueryRunner
             const primaryColumns = clonedTable.primaryColumns
             // if table already have primary key, me must drop it and recreate again
             if (primaryColumns.length > 0) {
-                const pkName = primaryColumns[0].primaryKeyConstraintName
-                    ? primaryColumns[0].primaryKeyConstraintName
-                    : this.dataSource.namingStrategy.primaryKeyName(
-                          clonedTable,
-                          primaryColumns.map((column) => column.name),
-                      )
+                const pkName =
+                    primaryColumns[0].primaryKeyConstraintName ??
+                    this.dataSource.namingStrategy.primaryKeyName(
+                        clonedTable,
+                        primaryColumns.map((column) => column.name),
+                    )
 
                 const columnNames = primaryColumns
                     .map((column) => `"${column.name}"`)
@@ -1179,12 +1166,12 @@ export class SqlServerQueryRunner
             }
 
             primaryColumns.push(column)
-            const pkName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
-                : this.dataSource.namingStrategy.primaryKeyName(
-                      clonedTable,
-                      primaryColumns.map((column) => column.name),
-                  )
+            const pkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    primaryColumns.map((column) => column.name),
+                )
 
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
@@ -1261,9 +1248,7 @@ export class SqlServerQueryRunner
         if (column.generatedType && column.asExpression) {
             const parsedTableName = this.driver.parseTableName(table)
 
-            if (!parsedTableName.schema) {
-                parsedTableName.schema = await this.getCurrentSchema()
-            }
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
             const insertQuery = this.insertTypeormMetadataSql({
                 database: parsedTableName.database,
@@ -1894,12 +1879,12 @@ export class SqlServerQueryRunner
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName = primaryColumns[0].primaryKeyConstraintName
-                        ? primaryColumns[0].primaryKeyConstraintName
-                        : this.dataSource.namingStrategy.primaryKeyName(
-                              clonedTable,
-                              primaryColumns.map((column) => column.name),
-                          )
+                    const pkName =
+                        primaryColumns[0].primaryKeyConstraintName ??
+                        this.dataSource.namingStrategy.primaryKeyName(
+                            clonedTable,
+                            primaryColumns.map((column) => column.name),
+                        )
 
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
@@ -1927,12 +1912,12 @@ export class SqlServerQueryRunner
                         (column) => column.name === newColumn.name,
                     )
                     column!.isPrimary = true
-                    const pkName = primaryColumns[0].primaryKeyConstraintName
-                        ? primaryColumns[0].primaryKeyConstraintName
-                        : this.dataSource.namingStrategy.primaryKeyName(
-                              clonedTable,
-                              primaryColumns.map((column) => column.name),
-                          )
+                    const pkName =
+                        primaryColumns[0].primaryKeyConstraintName ??
+                        this.dataSource.namingStrategy.primaryKeyName(
+                            clonedTable,
+                            primaryColumns.map((column) => column.name),
+                        )
 
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
@@ -1968,13 +1953,12 @@ export class SqlServerQueryRunner
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName = primaryColumns[0]
-                            .primaryKeyConstraintName
-                            ? primaryColumns[0].primaryKeyConstraintName
-                            : this.dataSource.namingStrategy.primaryKeyName(
-                                  clonedTable,
-                                  primaryColumns.map((column) => column.name),
-                              )
+                        const pkName =
+                            primaryColumns[0].primaryKeyConstraintName ??
+                            this.dataSource.namingStrategy.primaryKeyName(
+                                clonedTable,
+                                primaryColumns.map((column) => column.name),
+                            )
 
                         const columnNames = primaryColumns
                             .map((column) => `"${column.name}"`)
@@ -2166,12 +2150,12 @@ export class SqlServerQueryRunner
 
         // drop primary key constraint
         if (column.isPrimary) {
-            const pkName = column.primaryKeyConstraintName
-                ? column.primaryKeyConstraintName
-                : this.dataSource.namingStrategy.primaryKeyName(
-                      clonedTable,
-                      clonedTable.primaryColumns.map((column) => column.name),
-                  )
+            const pkName =
+                column.primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    clonedTable.primaryColumns.map((column) => column.name),
+                )
 
             const columnNames = clonedTable.primaryColumns
                 .map((primaryColumn) => `"${primaryColumn.name}"`)
@@ -2198,15 +2182,12 @@ export class SqlServerQueryRunner
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = clonedTable.primaryColumns[0]
-                    .primaryKeyConstraintName
-                    ? clonedTable.primaryColumns[0].primaryKeyConstraintName
-                    : this.dataSource.namingStrategy.primaryKeyName(
-                          clonedTable,
-                          clonedTable.primaryColumns.map(
-                              (column) => column.name,
-                          ),
-                      )
+                const pkName =
+                    clonedTable.primaryColumns[0].primaryKeyConstraintName ??
+                    this.dataSource.namingStrategy.primaryKeyName(
+                        clonedTable,
+                        clonedTable.primaryColumns.map((column) => column.name),
+                    )
 
                 const columnNames = clonedTable.primaryColumns
                     .map((primaryColumn) => `"${primaryColumn.name}"`)
@@ -2304,9 +2285,7 @@ export class SqlServerQueryRunner
         if (column.generatedType && column.asExpression) {
             const parsedTableName = this.driver.parseTableName(table)
 
-            if (!parsedTableName.schema) {
-                parsedTableName.schema = await this.getCurrentSchema()
-            }
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
             const deleteQuery = this.deleteTypeormMetadataSql({
                 database: parsedTableName.database,
@@ -2422,12 +2401,12 @@ export class SqlServerQueryRunner
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
-                : this.dataSource.namingStrategy.primaryKeyName(
-                      clonedTable,
-                      primaryColumns.map((column) => column.name),
-                  )
+            const pkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    primaryColumns.map((column) => column.name),
+                )
 
             const columnNamesString = primaryColumns
                 .map((column) => `"${column.name}"`)
@@ -2456,12 +2435,12 @@ export class SqlServerQueryRunner
                 column.isPrimary = true
             })
 
-        const pkName = primaryColumns[0].primaryKeyConstraintName
-            ? primaryColumns[0].primaryKeyConstraintName
-            : this.dataSource.namingStrategy.primaryKeyName(
-                  clonedTable,
-                  columnNames,
-              )
+        const pkName =
+            primaryColumns[0].primaryKeyConstraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(
+                clonedTable,
+                columnNames,
+            )
 
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
@@ -2530,12 +2509,11 @@ export class SqlServerQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!uniqueConstraint.name)
-            uniqueConstraint.name =
-                this.dataSource.namingStrategy.uniqueConstraintName(
-                    table,
-                    uniqueConstraint.columnNames,
-                )
+        uniqueConstraint.name ??=
+            this.dataSource.namingStrategy.uniqueConstraintName(
+                table,
+                uniqueConstraint.columnNames,
+            )
 
         const up = this.createUniqueConstraintSql(table, uniqueConstraint)
         const down = this.dropUniqueConstraintSql(table, uniqueConstraint)
@@ -2623,12 +2601,11 @@ export class SqlServerQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!checkConstraint.name)
-            checkConstraint.name =
-                this.dataSource.namingStrategy.checkConstraintName(
-                    table,
-                    checkConstraint.expression!,
-                )
+        checkConstraint.name ??=
+            this.dataSource.namingStrategy.checkConstraintName(
+                table,
+                checkConstraint.expression!,
+            )
 
         const up = this.createCheckConstraintSql(table, checkConstraint)
         const down = this.dropCheckConstraintSql(table, checkConstraint)
@@ -2783,8 +2760,7 @@ export class SqlServerQueryRunner
             : undefined
 
         if (
-            metadata &&
-            metadata.treeParentRelation &&
+            metadata?.treeParentRelation &&
             metadata.treeParentRelation!.isTreeParent &&
             metadata.foreignKeys.find(
                 (foreignKey) => foreignKey.onDelete !== "NO ACTION",
@@ -2795,13 +2771,12 @@ export class SqlServerQueryRunner
             )
 
         // new FK may be passed without name. In this case we generate FK name manually.
-        if (!foreignKey.name)
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
@@ -2850,14 +2825,12 @@ export class SqlServerQueryRunner
             )
         }
 
-        if (!foreignKey.name) {
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
-        }
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
@@ -2898,7 +2871,7 @@ export class SqlServerQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -2948,7 +2921,7 @@ export class SqlServerQueryRunner
         }
 
         // old index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -3036,7 +3009,7 @@ export class SqlServerQueryRunner
                     }[]
                 } = allTablesResults.reduce(
                     (c, { TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME }) => {
-                        c[TABLE_CATALOG] = c[TABLE_CATALOG] || []
+                        c[TABLE_CATALOG] = c[TABLE_CATALOG] ?? []
                         c[TABLE_CATALOG].push({ TABLE_SCHEMA, TABLE_NAME })
                         return c
                     },
@@ -3126,9 +3099,7 @@ export class SqlServerQueryRunner
             return []
         }
 
-        if (!viewPaths) {
-            viewPaths = []
-        }
+        viewPaths ??= []
 
         const currentSchema = await this.getCurrentSchema()
         const currentDatabase = await this.getCurrentDatabase()
@@ -3148,9 +3119,7 @@ export class SqlServerQueryRunner
                 let { schema, tableName: name } =
                     this.driver.parseTableName(viewPath)
 
-                if (!schema) {
-                    schema = currentSchema
-                }
+                schema ??= currentSchema
                 return `("T"."SCHEMA" = '${schema}' AND "T"."NAME" = '${name}')`
             })
             .join(" OR ")
@@ -3195,7 +3164,7 @@ export class SqlServerQueryRunner
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -3238,10 +3207,10 @@ export class SqlServerQueryRunner
                 .map((tableName) => this.driver.parseTableName(tableName))
                 .reduce(
                     (c, { database, ...other }) => {
-                        database = database || currentDatabase
+                        database = database ?? currentDatabase
                         c[database] = c[database] || []
                         c[database].push({
-                            schema: other.schema || currentSchema,
+                            schema: other.schema ?? currentSchema,
                             tableName: other.tableName,
                         })
                         return c
@@ -3741,7 +3710,7 @@ export class SqlServerQueryRunner
                                     asExpressionQuery.query,
                                     asExpressionQuery.parameters,
                                 )
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""
@@ -3948,12 +3917,12 @@ export class SqlServerQueryRunner
         if (table.uniques.length > 0) {
             const uniquesSql = table.uniques
                 .map((unique) => {
-                    const uniqueName = unique.name
-                        ? unique.name
-                        : this.dataSource.namingStrategy.uniqueConstraintName(
-                              table,
-                              unique.columnNames,
-                          )
+                    const uniqueName =
+                        unique.name ??
+                        this.dataSource.namingStrategy.uniqueConstraintName(
+                            table,
+                            unique.columnNames,
+                        )
                     const columnNames = unique.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
@@ -3967,12 +3936,12 @@ export class SqlServerQueryRunner
         if (table.checks.length > 0) {
             const checksSql = table.checks
                 .map((check) => {
-                    const checkName = check.name
-                        ? check.name
-                        : this.dataSource.namingStrategy.checkConstraintName(
-                              table,
-                              check.expression!,
-                          )
+                    const checkName =
+                        check.name ??
+                        this.dataSource.namingStrategy.checkConstraintName(
+                            table,
+                            check.expression!,
+                        )
                     return `CONSTRAINT "${checkName}" CHECK (${check.expression})`
                 })
                 .join(", ")
@@ -3986,13 +3955,12 @@ export class SqlServerQueryRunner
                     const columnNames = fk.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
-                            table,
-                            fk.columnNames,
-                            this.getTablePath(fk),
-                            fk.referencedColumnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        table,
+                        fk.columnNames,
+                        this.getTablePath(fk),
+                        fk.referencedColumnNames,
+                    )
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
@@ -4016,12 +3984,12 @@ export class SqlServerQueryRunner
             (column) => column.isPrimary,
         )
         if (primaryColumns.length > 0) {
-            const primaryKeyName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
-                : this.dataSource.namingStrategy.primaryKeyName(
-                      table,
-                      primaryColumns.map((column) => column.name),
-                  )
+            const primaryKeyName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    table,
+                    primaryColumns.map((column) => column.name),
+                )
 
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
@@ -4074,9 +4042,7 @@ export class SqlServerQueryRunner
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
         const parsedTableName = this.driver.parseTableName(view)
 
-        if (!parsedTableName.schema) {
-            parsedTableName.schema = await this.getCurrentSchema()
-        }
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
         const expression =
             typeof view.expression === "string"
@@ -4117,9 +4083,7 @@ export class SqlServerQueryRunner
     ): Promise<Query> {
         const parsedTableName = this.driver.parseTableName(viewOrPath)
 
-        if (!parsedTableName.schema) {
-            parsedTableName.schema = await this.getCurrentSchema()
-        }
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
         return this.deleteTypeormMetadataSql({
             type: MetadataTableType.VIEW,
@@ -4178,9 +4142,9 @@ export class SqlServerQueryRunner
         columnNames: string[],
         constraintName?: string,
     ): Query {
-        const primaryKeyName = constraintName
-            ? constraintName
-            : this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
+        const primaryKeyName =
+            constraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
 
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
@@ -4200,9 +4164,9 @@ export class SqlServerQueryRunner
     protected dropPrimaryKeySql(table: Table): Query {
         const columnNames = table.primaryColumns.map((column) => column.name)
         const constraintName = table.primaryColumns[0].primaryKeyConstraintName
-        const primaryKeyName = constraintName
-            ? constraintName
-            : this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
+        const primaryKeyName =
+            constraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
 
         return new Query(
             `ALTER TABLE ${this.escapePath(

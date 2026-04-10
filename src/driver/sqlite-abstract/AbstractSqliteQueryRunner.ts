@@ -332,12 +332,11 @@ export abstract class AbstractSqliteQueryRunner
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                if (!index.name)
-                    index.name = this.dataSource.namingStrategy.indexName(
-                        table,
-                        index.columnNames,
-                        index.where,
-                    )
+                index.name ??= this.dataSource.namingStrategy.indexName(
+                    table,
+                    index.columnNames,
+                    index.where,
+                )
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(index))
             })
@@ -1261,7 +1260,7 @@ export abstract class AbstractSqliteQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(index)
@@ -1311,7 +1310,7 @@ export abstract class AbstractSqliteQueryRunner
         }
 
         // old index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(index, ifExists)
         const down = this.createIndexSql(table, index)
@@ -1419,9 +1418,7 @@ export abstract class AbstractSqliteQueryRunner
             return []
         }
 
-        if (!viewNames) {
-            viewNames = []
-        }
+        viewNames ??= []
 
         let query = `SELECT "t".* FROM "${this.getTypeormMetadataTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view' WHERE "t"."type" = '${
             MetadataTableType.VIEW
@@ -1479,7 +1476,7 @@ export abstract class AbstractSqliteQueryRunner
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -1612,10 +1609,7 @@ export abstract class AbstractSqliteQueryRunner
                         tableColumn.name = dbColumn["name"]
                         tableColumn.type = dbColumn["type"].toLowerCase()
                         tableColumn.default =
-                            dbColumn["dflt_value"] !== null &&
-                            dbColumn["dflt_value"] !== undefined
-                                ? dbColumn["dflt_value"]
-                                : undefined
+                            dbColumn["dflt_value"] ?? undefined
                         tableColumn.isNullable = dbColumn["notnull"] === 0
                         // primary keys are numbered starting with 1, columns that aren't primary keys are marked with 0
                         tableColumn.isPrimary = dbColumn["pk"] > 0
@@ -1644,7 +1638,7 @@ export abstract class AbstractSqliteQueryRunner
                                 asExpressionQuery.query,
                                 asExpressionQuery.parameters,
                             )
-                            if (results[0] && results[0].value) {
+                            if (results[0]?.value) {
                                 tableColumn.asExpression = results[0].value
                             } else {
                                 tableColumn.asExpression = ""
@@ -1688,7 +1682,7 @@ export abstract class AbstractSqliteQueryRunner
                                     `^${dataType}\\((\\d+),?\\s?(\\d+)?\\)`,
                                 )
                                 const matches = fullType.match(re)
-                                if (matches && matches[1]) {
+                                if (matches?.[1]) {
                                     tableColumn.precision = +matches[1]
                                 }
                                 if (
@@ -1696,7 +1690,7 @@ export abstract class AbstractSqliteQueryRunner
                                         (col) => col === dataType,
                                     )
                                 ) {
-                                    if (matches && matches[2]) {
+                                    if (matches?.[2]) {
                                         tableColumn.scale = +matches[2]
                                     }
                                 }
@@ -1960,12 +1954,12 @@ export abstract class AbstractSqliteQueryRunner
         if (table.uniques.length > 0) {
             const uniquesSql = table.uniques
                 .map((unique) => {
-                    const uniqueName = unique.name
-                        ? unique.name
-                        : this.dataSource.namingStrategy.uniqueConstraintName(
-                              newTableName,
-                              unique.columnNames,
-                          )
+                    const uniqueName =
+                        unique.name ??
+                        this.dataSource.namingStrategy.uniqueConstraintName(
+                            newTableName,
+                            unique.columnNames,
+                        )
                     const columnNames = unique.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
@@ -1979,12 +1973,12 @@ export abstract class AbstractSqliteQueryRunner
         if (table.checks.length > 0) {
             const checksSql = table.checks
                 .map((check) => {
-                    const checkName = check.name
-                        ? check.name
-                        : this.dataSource.namingStrategy.checkConstraintName(
-                              newTableName,
-                              check.expression!,
-                          )
+                    const checkName =
+                        check.name ??
+                        this.dataSource.namingStrategy.checkConstraintName(
+                            newTableName,
+                            check.expression!,
+                        )
                     return `CONSTRAINT "${checkName}" CHECK (${check.expression})`
                 })
                 .join(", ")
@@ -2010,13 +2004,12 @@ export abstract class AbstractSqliteQueryRunner
                     const columnNames = fk.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
-                            newTableName,
-                            fk.columnNames,
-                            this.getTablePath(fk),
-                            fk.referencedColumnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        newTableName,
+                        fk.columnNames,
+                        this.getTablePath(fk),
+                        fk.referencedColumnNames,
+                    )
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
@@ -2205,7 +2198,7 @@ export abstract class AbstractSqliteQueryRunner
 
         if (column.asExpression) {
             c += ` AS (${column.asExpression}) ${
-                column.generatedType ? column.generatedType : "VIRTUAL"
+                column.generatedType ?? "VIRTUAL"
             }`
         } else {
             if (column.default !== undefined && column.default !== null)
@@ -2256,7 +2249,7 @@ export abstract class AbstractSqliteQueryRunner
                         const oldColumn = oldTable.columns.find(
                             (c) => c.name === column.name,
                         )
-                        if (oldColumn && oldColumn.generatedType) return false
+                        if (oldColumn?.generatedType) return false
                         return !column.generatedType && oldColumn
                     })
                     .map((column) => `"${column.name}"`)
@@ -2320,12 +2313,11 @@ export abstract class AbstractSqliteQueryRunner
         // recreate table indices
         newTable.indices.forEach((index) => {
             // new index may be passed without name. In this case we generate index name manually.
-            if (!index.name)
-                index.name = this.dataSource.namingStrategy.indexName(
-                    newTable,
-                    index.columnNames,
-                    index.where,
-                )
+            index.name ??= this.dataSource.namingStrategy.indexName(
+                newTable,
+                index.columnNames,
+                index.where,
+            )
             upQueries.push(this.createIndexSql(newTable, index))
             downQueries.push(this.dropIndexSql(index))
         })

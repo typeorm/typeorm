@@ -1860,13 +1860,13 @@ export class AuroraMysqlQueryRunner
         )
 
         // if we already have generated column or column is changed to generated, and we dropped AUTO_INCREMENT property before, we must bring it back
-        const newOrExistGeneratedColumn = generatedColumn
-            ? generatedColumn
-            : columns.find(
-                  (column) =>
-                      column.isGenerated &&
-                      column.generationStrategy === "increment",
-              )
+        const newOrExistGeneratedColumn =
+            generatedColumn ??
+            columns.find(
+                (column) =>
+                    column.isGenerated &&
+                    column.generationStrategy === "increment",
+            )
         if (newOrExistGeneratedColumn) {
             const nonGeneratedColumn = newOrExistGeneratedColumn.clone()
             nonGeneratedColumn.isGenerated = false
@@ -2123,11 +2123,10 @@ export class AuroraMysqlQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new FK may be passed without name. In this case we generate FK name manually.
-        if (!foreignKey.name)
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-            )
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+        )
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
@@ -2176,12 +2175,10 @@ export class AuroraMysqlQueryRunner
             )
         }
 
-        if (!foreignKey.name) {
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-            )
-        }
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+        )
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
@@ -2222,7 +2219,7 @@ export class AuroraMysqlQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -2272,7 +2269,7 @@ export class AuroraMysqlQueryRunner
         }
 
         // old index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -2325,7 +2322,7 @@ export class AuroraMysqlQueryRunner
      * @param database
      */
     async clearDatabase(database?: string): Promise<void> {
-        const dbName = database ? database : this.driver.database
+        const dbName = database ?? this.driver.database
         if (dbName) {
             const isDatabaseExist = await this.hasDatabase(dbName)
             if (!isDatabaseExist) return Promise.resolve()
@@ -2385,9 +2382,7 @@ export class AuroraMysqlQueryRunner
             return []
         }
 
-        if (!viewNames) {
-            viewNames = []
-        }
+        viewNames ??= []
 
         const currentDatabase = await this.getCurrentDatabase()
         const viewsCondition = viewNames
@@ -2395,9 +2390,7 @@ export class AuroraMysqlQueryRunner
                 let { database, tableName: name } =
                     this.driver.parseTableName(tableName)
 
-                if (!database) {
-                    database = currentDatabase
-                }
+                database ??= currentDatabase
 
                 return `(\`t\`.\`schema\` = '${database}' AND \`t\`.\`name\` = '${name}')`
             })
@@ -2435,7 +2428,7 @@ export class AuroraMysqlQueryRunner
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -2453,7 +2446,7 @@ export class AuroraMysqlQueryRunner
                     let [database, name] = tableName.split(".")
                     if (!name) {
                         name = database
-                        database = this.driver.database || currentDatabase
+                        database = this.driver.database ?? currentDatabase
                     }
                     return `(\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}')`
                 })
@@ -2566,8 +2559,7 @@ export class AuroraMysqlQueryRunner
                     )
                     const hasIgnoredIndex =
                         columnUniqueIndices.length > 0 &&
-                        tableMetadata &&
-                        tableMetadata.indices.some((index) => {
+                        tableMetadata?.indices.some((index) => {
                             return columnUniqueIndices.some((uniqueIndex) => {
                                 return (
                                     index.name === uniqueIndex["INDEX_NAME"] &&
@@ -2896,12 +2888,11 @@ export class AuroraMysqlQueryRunner
                     const columnNames = index.columnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
-                    if (!index.name)
-                        index.name = this.dataSource.namingStrategy.indexName(
-                            table,
-                            index.columnNames,
-                            index.where,
-                        )
+                    index.name ??= this.dataSource.namingStrategy.indexName(
+                        table,
+                        index.columnNames,
+                        index.where,
+                    )
 
                     let indexType = ""
                     if (index.isUnique) indexType += "UNIQUE "
@@ -2920,11 +2911,10 @@ export class AuroraMysqlQueryRunner
                     const columnNames = fk.columnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
-                            table,
-                            fk.columnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        table,
+                        fk.columnNames,
+                    )
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
@@ -2951,7 +2941,7 @@ export class AuroraMysqlQueryRunner
             sql += `, PRIMARY KEY (${columnNames})`
         }
 
-        sql += `) ENGINE=${table.engine || "InnoDB"}`
+        sql += `) ENGINE=${table.engine ?? "InnoDB"}`
 
         return new Query(sql)
     }
@@ -3202,7 +3192,7 @@ export class AuroraMysqlQueryRunner
 
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${
-                column.generatedType ? column.generatedType : "VIRTUAL"
+                column.generatedType ?? "VIRTUAL"
             }`
 
         if (column.unsigned) {
