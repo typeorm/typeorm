@@ -2021,13 +2021,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         // if we already have generated column or column is changed to generated, and we dropped AUTO_INCREMENT property before, we must bring it back
-        const newOrExistGeneratedColumn = generatedColumn
-            ? generatedColumn
-            : columns.find(
-                  (column) =>
-                      column.isGenerated &&
-                      column.generationStrategy === "increment",
-              )
+        const newOrExistGeneratedColumn =
+            generatedColumn ??
+            columns.find(
+                (column) =>
+                    column.isGenerated &&
+                    column.generationStrategy === "increment",
+            )
         if (newOrExistGeneratedColumn) {
             const nonGeneratedColumn = newOrExistGeneratedColumn.clone()
             nonGeneratedColumn.isGenerated = false
@@ -2285,13 +2285,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new FK may be passed without name. In this case we generate FK name manually.
-        if (!foreignKey.name)
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
@@ -2340,14 +2339,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
         }
 
-        if (!foreignKey.name) {
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
-        }
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
@@ -2388,7 +2385,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -2438,7 +2435,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         // old index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -2492,7 +2489,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param database
      */
     async clearDatabase(database?: string): Promise<void> {
-        const dbName = database ? database : this.driver.database
+        const dbName = database ?? this.driver.database
         if (dbName) {
             const isDatabaseExist = await this.hasDatabase(dbName)
             if (!isDatabaseExist) return Promise.resolve()
@@ -2549,9 +2546,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return []
         }
 
-        if (!viewNames) {
-            viewNames = []
-        }
+        viewNames ??= []
 
         const currentDatabase = await this.getCurrentDatabase()
         const viewsCondition = viewNames
@@ -2559,9 +2554,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 let { database, tableName: name } =
                     this.driver.parseTableName(tableName)
 
-                if (!database) {
-                    database = currentDatabase
-                }
+                database ??= currentDatabase
 
                 return `(\`t\`.\`schema\` = '${database}' AND \`t\`.\`name\` = '${name}')`
             })
@@ -2648,9 +2641,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     let { database, tableName: name } =
                         this.driver.parseTableName(tableName)
 
-                    if (!database) {
-                        database = currentDatabase
-                    }
+                    database ??= currentDatabase
 
                     return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
                 })
@@ -3261,12 +3252,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const columnNames = index.columnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
-                    if (!index.name)
-                        index.name = this.dataSource.namingStrategy.indexName(
-                            table,
-                            index.columnNames,
-                            index.where,
-                        )
+                    index.name ??= this.dataSource.namingStrategy.indexName(
+                        table,
+                        index.columnNames,
+                        index.where,
+                    )
 
                     let indexType = ""
                     if (index.isUnique) indexType += "UNIQUE "
@@ -3290,13 +3280,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const columnNames = fk.columnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
-                            table,
-                            fk.columnNames,
-                            this.getTablePath(fk),
-                            fk.referencedColumnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        table,
+                        fk.columnNames,
+                        this.getTablePath(fk),
+                        fk.referencedColumnNames,
+                    )
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
@@ -3323,7 +3312,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             sql += `, PRIMARY KEY (${columnNames})`
         }
 
-        sql += `) ENGINE=${table.engine || "InnoDB"}`
+        sql += `) ENGINE=${table.engine ?? "InnoDB"}`
 
         if (table.comment) {
             sql += ` COMMENT="${table.comment}"`
@@ -3579,7 +3568,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${
-                column.generatedType ? column.generatedType : "VIRTUAL"
+                column.generatedType ?? "VIRTUAL"
             }`
 
         if (column.unsigned) {
@@ -3594,7 +3583,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             isMariaDb &&
             column.asExpression &&
-            ["VIRTUAL", "STORED"].includes(column.generatedType || "VIRTUAL")
+            ["VIRTUAL", "STORED"].includes(column.generatedType ?? "VIRTUAL")
         ) {
             // do nothing - MariaDB does not support NULL/NOT NULL expressions for VIRTUAL columns and STORED columns
         } else {

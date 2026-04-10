@@ -249,9 +249,7 @@ export class Subject {
                 // if entity was just inserted valueSets must contain all values from the entity and values just inserted in the database
                 // so, here we check if we have a value set then we simply use it as value to get our reference column values
                 // otherwise simply use an entity which cannot be just inserted at the moment and have all necessary data
-                value = value.insertedValueSet
-                    ? value.insertedValueSet
-                    : value.entity
+                value = value.insertedValueSet ?? value.entity
             }
             // value = changeMap.valueFactory ? changeMap.valueFactory(value) : changeMap.column.createValueMap(value);
 

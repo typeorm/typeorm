@@ -136,12 +136,11 @@ export function Index(
         !Array.isArray(nameOrFieldsOrOptions)
             ? (nameOrFieldsOrOptions as IndexOptions)
             : maybeOptions
-    if (!options)
-        options =
-            ObjectUtils.isObject(maybeFieldsOrOptions) &&
-            !Array.isArray(maybeFieldsOrOptions)
-                ? (maybeFieldsOrOptions as IndexOptions)
-                : maybeOptions
+    options ??=
+        ObjectUtils.isObject(maybeFieldsOrOptions) &&
+        !Array.isArray(maybeFieldsOrOptions)
+            ? (maybeFieldsOrOptions as IndexOptions)
+            : maybeOptions
 
     return function (
         clsOrObject: Function | Object,

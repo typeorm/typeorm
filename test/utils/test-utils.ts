@@ -168,16 +168,14 @@ export function setupSingleTestingConnection(
     options: TestingOptions,
 ): DataSourceOptions | undefined {
     const testingConnections = setupTestingConnections({
-        entities: options.entities ? options.entities : [],
-        subscribers: options.subscribers ? options.subscribers : [],
-        dropSchema: options.dropSchema ? options.dropSchema : false,
-        schemaCreate: options.schemaCreate ? options.schemaCreate : false,
+        entities: options.entities ?? [],
+        subscribers: options.subscribers ?? [],
+        dropSchema: options.dropSchema ?? false,
+        schemaCreate: options.schemaCreate ?? false,
         enabledDrivers: [driverType],
         cache: options.cache,
-        schema: options.schema ? options.schema : undefined,
-        namingStrategy: options.namingStrategy
-            ? options.namingStrategy
-            : undefined,
+        schema: options.schema ?? undefined,
+        namingStrategy: options.namingStrategy ?? undefined,
     })
     if (!testingConnections.length) return undefined
 

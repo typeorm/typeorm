@@ -133,7 +133,7 @@ export class RedisQueryResultCache implements QueryResultCache {
         options: QueryResultCacheOptions,
         queryRunner?: QueryRunner,
     ): Promise<QueryResultCacheOptions | undefined> {
-        const key = options.identifier || options.query
+        const key = options.identifier ?? options.query
         if (!key) return undefined
 
         const result = await this.client.get(key)
@@ -161,7 +161,7 @@ export class RedisQueryResultCache implements QueryResultCache {
         savedCache: QueryResultCacheOptions,
         queryRunner?: QueryRunner,
     ): Promise<void> {
-        const key = options.identifier || options.query
+        const key = options.identifier ?? options.query
         if (!key) return
 
         const value = JSON.stringify(options)

@@ -632,9 +632,7 @@ export class SubjectExecutor {
                             )
                         }
                     })
-                    if (!subject.generatedMap) {
-                        subject.generatedMap = {}
-                    }
+                    subject.generatedMap ??= {}
                     Object.assign(subject.generatedMap, updateGeneratedMap)
                 }
             }

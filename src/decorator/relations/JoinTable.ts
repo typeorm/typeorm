@@ -38,7 +38,7 @@ export function JoinTable(
 ): PropertyDecorator {
     return function (object: Object, propertyName: string) {
         options =
-            options ||
+            options ??
             ({} as JoinTableOptions | JoinTableMultipleColumnsOptions)
         getMetadataArgsStorage().joinTables.push({
             target: object.constructor,

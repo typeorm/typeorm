@@ -14,7 +14,7 @@ export function TreeParent(options?: {
     onDelete?: OnDeleteType
 }): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        options ??= {} as RelationOptions
 
         // now try to determine it its lazy relation
         const reflectedType =
@@ -24,7 +24,7 @@ export function TreeParent(options?: {
         const isLazy =
             (reflectedType &&
                 typeof reflectedType.name === "string" &&
-                reflectedType.name.toLowerCase() === "promise") ||
+                reflectedType.name.toLowerCase() === "promise") ??
             false
 
         getMetadataArgsStorage().relations.push({

@@ -200,7 +200,7 @@ export class DriverUtils {
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
+            database: afterBase ?? undefined,
         }
     }
 
@@ -275,7 +275,7 @@ export class DriverUtils {
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
+            database: afterBase ?? undefined,
         }
 
         // Loop to set every options in connectionUrl to object

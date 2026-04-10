@@ -213,8 +213,8 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || [],
+                        updatedColumns: updatedColumns ?? [],
+                        updatedRelations: updatedRelations ?? [],
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -714,8 +714,8 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || [],
+                        updatedColumns: updatedColumns ?? [],
+                        updatedRelations: updatedRelations ?? [],
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)

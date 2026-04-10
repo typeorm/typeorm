@@ -538,7 +538,7 @@ export class EntityMetadata {
         args: TableMetadataArgs
     }) {
         this.dataSource = options.dataSource
-        this.inheritanceTree = options.inheritanceTree || []
+        this.inheritanceTree = options.inheritanceTree ?? []
         this.inheritancePattern = options.inheritancePattern
         this.treeType = options.tableTree ? options.tableTree.type : undefined
         this.treeOptions = options.tableTree
@@ -927,7 +927,7 @@ export class EntityMetadata {
                         manuallySetDiscriminatorValue ===
                             meta.discriminatorValue ||
                         value.constructor === meta.target,
-                ) || this
+                ) ?? this
             )
         }
         return this

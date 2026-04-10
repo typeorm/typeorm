@@ -15,7 +15,7 @@ export function TreeChildren(options?: {
         | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
 }): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        options ??= {} as RelationOptions
 
         // now try to determine it its lazy relation
         const reflectedType =
@@ -25,7 +25,7 @@ export function TreeChildren(options?: {
         const isLazy =
             (reflectedType &&
                 typeof reflectedType.name === "string" &&
-                reflectedType.name.toLowerCase() === "promise") ||
+                reflectedType.name.toLowerCase() === "promise") ??
             false
 
         // add one-to-many relation for this

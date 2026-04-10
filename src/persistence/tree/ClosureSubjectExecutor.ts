@@ -56,9 +56,9 @@ export class ClosureSubjectExecutor {
         ) // if entity was attached via parent
         if (!parent && subject.parentSubject && subject.parentSubject.entity)
             // if entity was attached via children
-            parent = subject.parentSubject.insertedValueSet
-                ? subject.parentSubject.insertedValueSet
-                : subject.parentSubject.entity
+            parent =
+                subject.parentSubject.insertedValueSet ??
+                subject.parentSubject.entity
 
         if (parent) {
             const escape = (alias: string) =>
@@ -84,9 +84,7 @@ export class ClosureSubjectExecutor {
                 (column) => {
                     queryParams.push(
                         column.getEntityValue(
-                            subject.insertedValueSet
-                                ? subject.insertedValueSet
-                                : subject.entity!,
+                            subject.insertedValueSet ?? subject.entity!,
                         ),
                     )
                     return this.queryRunner.dataSource.driver.createParameter(

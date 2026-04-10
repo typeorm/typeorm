@@ -52,7 +52,7 @@ export function OneToOne<T>(
     }
 
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        options ??= {} as RelationOptions
 
         // now try to determine it its lazy relation
         let isLazy = options && options.lazy === true ? true : false

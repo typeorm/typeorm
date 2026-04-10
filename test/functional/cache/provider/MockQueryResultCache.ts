@@ -31,7 +31,7 @@ export class MockQueryResultCache implements QueryResultCache {
                 ? this.connection.options.cache
                 : {}
         const cacheTableName =
-            cacheOptions.tableName || "mock-query-result-cache"
+            cacheOptions.tableName ?? "mock-query-result-cache"
 
         this.queryResultCacheTable = this.connection.driver.buildTableName(
             cacheTableName,
