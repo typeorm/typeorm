@@ -1,4 +1,5 @@
 import {
+    Column,
     Entity,
     PrimaryGeneratedColumn,
     ManyToMany,
@@ -10,6 +11,9 @@ import { Tag } from "./Tag"
 export class Post {
     @PrimaryGeneratedColumn()
     id: number
+
+    @Column({ nullable: true })
+    title: string
 
     @ManyToMany(() => Tag)
     @JoinTable({

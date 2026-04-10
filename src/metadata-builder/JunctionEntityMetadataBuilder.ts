@@ -351,34 +351,32 @@ export class JunctionEntityMetadataBuilder {
         relation: RelationMetadata,
         joinTable: JoinTableMetadataArgs,
     ): ColumnMetadata[] {
-        const hasInverseJoinColumns = !!joinTable.inverseJoinColumns
-        const hasAnyInverseReferencedColumnName = hasInverseJoinColumns
-            ? joinTable.inverseJoinColumns!.find(
+        const inverseJoinColumns = joinTable.inverseJoinColumns
+        const hasAnyInverseReferencedColumnName = inverseJoinColumns
+            ? inverseJoinColumns.find(
                   (joinColumn) => !!joinColumn.referencedColumnName,
               )
             : false
         if (
-            !hasInverseJoinColumns ||
-            (hasInverseJoinColumns && !hasAnyInverseReferencedColumnName)
+            !inverseJoinColumns ||
+            (inverseJoinColumns && !hasAnyInverseReferencedColumnName)
         ) {
             return relation.inverseEntityMetadata.primaryColumns
         } else {
-            const referencedColumns = joinTable.inverseJoinColumns!.map(
-                (joinColumn) => {
-                    const referencedColumn =
-                        relation.inverseEntityMetadata.ownColumns.find(
-                            (column) =>
-                                column.propertyName ===
-                                joinColumn.referencedColumnName,
-                        )
-                    if (!referencedColumn)
-                        throw new TypeORMError(
-                            `Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`,
-                        )
+            const referencedColumns = inverseJoinColumns.map((joinColumn) => {
+                const referencedColumn =
+                    relation.inverseEntityMetadata.ownColumns.find(
+                        (column) =>
+                            column.propertyName ===
+                            joinColumn.referencedColumnName,
+                    )
+                if (!referencedColumn)
+                    throw new TypeORMError(
+                        `Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`,
+                    )
 
-                    return referencedColumn
-                },
-            )
+                return referencedColumn
+            })
 
             if (referencedColumns.length > 1) {
                 const pkColumns = relation.inverseEntityMetadata.primaryColumns
