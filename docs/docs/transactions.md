@@ -50,7 +50,7 @@ Isolation level implementations are _not_ agnostic across all databases. Each dr
 | ----------------- | ----------------------------------------------------------------------------------- |
 | Aurora MySQL      | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
 | Aurora PostgreSQL | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
-| CockroachDB       | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| CockroachDB       | `READ UNCOMMITTED`, `READ COMMITTED`\*\*, `REPEATABLE READ`\*\*, `SERIALIZABLE`     |
 | MySQL / MariaDB   | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
 | Oracle            | `READ COMMITTED`, `SERIALIZABLE`                                                    |
 | PostgreSQL        | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
@@ -60,6 +60,8 @@ Isolation level implementations are _not_ agnostic across all databases. Each dr
 | SQLite            | `READ UNCOMMITTED`\*, `SERIALIZABLE`                                                |
 
 \* SQLite's `READ UNCOMMITTED` only takes effect when [shared-cache mode](https://www.sqlite.org/sharedcache.html) is enabled. In the default mode, SQLite always uses `SERIALIZABLE` isolation regardless of the setting.
+
+\*\* CockroachDB defaults to `SERIALIZABLE`. `READ COMMITTED` requires the cluster setting `sql.txn.read_committed_isolation.enabled` (enabled by default in recent versions). `READ UNCOMMITTED` is upgraded to `READ COMMITTED`, and `REPEATABLE READ` is upgraded to `SERIALIZABLE`. See [CockroachDB Read Committed](https://www.cockroachlabs.com/docs/stable/read-committed) for details.
 
 ## Default isolation level
 
