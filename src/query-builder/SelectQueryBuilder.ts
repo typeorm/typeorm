@@ -2308,7 +2308,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let useIndex: string = ""
         if (this.expressionMap.useIndex) {
             if (DriverUtils.isMySQLFamily(this.dataSource.driver)) {
-                useIndex = ` USE INDEX (${this.expressionMap.useIndex})`
+                useIndex = ` USE INDEX (${this.escape(this.expressionMap.useIndex)})`
             }
         }
 
@@ -2804,7 +2804,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (this.expressionMap.lockTables.length < 1) {
                 throw new TypeORMError("lockTables cannot be an empty array")
             }
-            lockTablesClause = " OF " + this.expressionMap.lockTables.join(", ")
+            lockTablesClause =
+                " OF " +
+                this.expressionMap.lockTables
+                    .map((table) => this.escape(table))
+                    .join(", ")
         }
 
         let onLockExpression = ""
