@@ -1621,7 +1621,9 @@ export class PostgresQueryRunner
                 columnRenamed = true
             }
 
+            let typeChangeHandled = false
             if (oldColumn.type !== newColumn.type) {
+                typeChangeHandled = true
                 await this.handleSafeAlterPostgres({
                     table,
                     clonedTable,
@@ -1656,8 +1658,9 @@ export class PostgresQueryRunner
             // varchar(n) -> varchar(m)
             // numeric(x, y) -> numeric(v, w)
             if (
-                newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                !typeChangeHandled &&
+                (newColumn.precision !== oldColumn.precision ||
+                    newColumn.scale !== oldColumn.scale)
             ) {
                 upQueries.push(
                     new Query(
