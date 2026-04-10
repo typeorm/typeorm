@@ -30,6 +30,51 @@ function secureRandomBase36String(length: number): string {
     return result.slice(0, length)
 }
 
+/**
+ * Creates an SQL-recording wrapper around `connection.createQueryRunner`.
+ * Returns `{ recorded, install, remove }`.
+ */
+function createSqlRecorder(connection: DataSource): {
+    recorded: string[]
+    install: () => void
+    remove: () => void
+} {
+    const recorded: string[] = []
+    const origCreateQR = (
+        connection as DataSource & {
+            createQueryRunner: DataSource["createQueryRunner"]
+        }
+    ).createQueryRunner.bind(connection)
+
+    const install = () => {
+        ;(
+            connection as DataSource & {
+                createQueryRunner: DataSource["createQueryRunner"]
+            }
+        ).createQueryRunner = (
+            ...args: Parameters<DataSource["createQueryRunner"]>
+        ) => {
+            const qr = origCreateQR(...args)
+            const origQuery = qr.query.bind(qr)
+            qr.query = async (sql: string, params?: unknown[]) => {
+                if (typeof sql === "string") recorded.push(sql)
+                return origQuery(sql, params)
+            }
+            return qr
+        }
+    }
+
+    const remove = () => {
+        ;(
+            connection as DataSource & {
+                createQueryRunner: DataSource["createQueryRunner"]
+            }
+        ).createQueryRunner = origCreateQR
+    }
+
+    return { recorded, install, remove }
+}
+
 describe("schema builder > change column", () => {
     let dataSources: DataSource[]
     before(async () => {
@@ -72,36 +117,17 @@ describe("schema builder > change column", () => {
                     return
 
                 const metadata = connection.getMetadata(Post)
-                const nameColumn = metadata.findColumnWithPropertyName("name")!
+                const nameColumn = metadata.findColumnWithPropertyName("name")
+                if (!nameColumn) return
                 const originalType = nameColumn.type
                 const originalLength = nameColumn.length || "50"
 
                 // Helper: record SQL emitted by synchronize()
-                const recorded: string[] = []
-                const origCreateQR =
-                    connection.createQueryRunner.bind(connection)
-                const installRecorder = () => {
-                    ;(
-                        connection as DataSource & {
-                            createQueryRunner: DataSource["createQueryRunner"]
-                        }
-                    ).createQueryRunner = (
-                        ...args: Parameters<DataSource["createQueryRunner"]>
-                    ) => {
-                        const qr = origCreateQR(...args)
-                        const origQuery = qr.query.bind(qr)
-
-                        qr.query = async (sql: string, params?: unknown[]) => {
-                            recorded.push(sql)
-                            return origQuery(sql, params)
-                        }
-
-                        return qr
-                    }
-                }
-                const removeRecorder = () => {
-                    ;(connection as any).createQueryRunner = origCreateQR
-                }
+                const {
+                    recorded,
+                    install: installRecorder,
+                    remove: removeRecorder,
+                } = createSqlRecorder(connection)
 
                 try {
                     // Step 1: Ensure column is CHAR(N)
@@ -189,8 +215,8 @@ describe("schema builder > change column", () => {
                     const qr = connection.createQueryRunner()
                     const postTable = await qr.getTable("post")
                     await qr.release()
-                    const col = postTable!.findColumnByName("name")!
-                    if (col.length) expect(col.length).to.equal(originalLength)
+                    const col = postTable?.findColumnByName("name")
+                    if (col?.length) expect(col.length).to.equal(originalLength)
 
                     // Verify data still exists after migration (data survived)
                     const afterChange = await repo.findOne({
@@ -261,31 +287,20 @@ describe("schema builder > change column", () => {
                 }
 
                 // SQL recorder
-                const recorded: string[] = []
-                const origCreateQR = (connection as any).createQueryRunner.bind(
-                    connection,
-                )
-                const installRecorder = () => {
-                    ;(connection as any).createQueryRunner = (
-                        ...args: any[]
-                    ) => {
-                        const qr = origCreateQR(...args)
-                        const origQuery = qr.query.bind(qr)
-                        qr.query = async (sql: any, params?: any[]) => {
-                            if (typeof sql === "string") recorded.push(sql)
-                            return origQuery(sql, params)
-                        }
-                        return qr
-                    }
-                }
-                const removeRecorder = () => {
-                    ;(connection as any).createQueryRunner = origCreateQR
-                }
+                const {
+                    recorded,
+                    install: installRecorder,
+                    remove: removeRecorder,
+                } = createSqlRecorder(connection)
 
                 // Test body (same assertions, just run on the isolated connection)
                 const postMeta = connection.getMetadata(Post)
                 const versionCol =
-                    postMeta.findColumnWithPropertyName("version")!
+                    postMeta.findColumnWithPropertyName("version")
+                if (!versionCol) {
+                    await closeTestingConnections(conns)
+                    return
+                }
                 const originalType = versionCol.type
                 const originalPrecision = versionCol.precision
 
@@ -411,7 +426,8 @@ describe("schema builder > change column", () => {
                     return
 
                 const postMeta = connection.getMetadata(Post)
-                const nameCol = postMeta.findColumnWithPropertyName("name")!
+                const nameCol = postMeta.findColumnWithPropertyName("name")
+                if (!nameCol) return
                 const originalType = nameCol.type
                 const originalLength = nameCol.length
                 const originalDefault = nameCol.default // ← save this
@@ -432,26 +448,11 @@ describe("schema builder > change column", () => {
                 }
                 if (!datetimeBy[driver] || !timestampBy[driver]) return
 
-                const recorded: string[] = []
-                const origCreateQR = (connection as any).createQueryRunner.bind(
-                    connection,
-                )
-                const installRecorder = () => {
-                    ;(connection as any).createQueryRunner = (
-                        ...args: any[]
-                    ) => {
-                        const qr = origCreateQR(...args)
-                        const origQuery = qr.query.bind(qr)
-                        qr.query = async (sql: any, params?: any[]) => {
-                            if (typeof sql === "string") recorded.push(sql)
-                            return origQuery(sql, params)
-                        }
-                        return qr
-                    }
-                }
-                const removeRecorder = () => {
-                    ;(connection as any).createQueryRunner = origCreateQR
-                }
+                const {
+                    recorded,
+                    install: installRecorder,
+                    remove: removeRecorder,
+                } = createSqlRecorder(connection)
 
                 try {
                     // STEP 1: varchar2 -> "datetime-like" (DATE for Oracle)
@@ -582,32 +583,21 @@ describe("schema builder > change column", () => {
 
                 const metadata = connection.getMetadata("post")
                 const nameColumnMetadata =
-                    metadata.findColumnWithPropertyName("name")!
+                    metadata.findColumnWithPropertyName("name")
+                if (!nameColumnMetadata) {
+                    await queryRunner.release()
+                    return
+                }
                 const originalLength = nameColumnMetadata.length ?? ""
 
                 // --- SQL recorder around synchronize() ---
-                const recorded: string[] = []
-                const origCreateQR = (connection as any).createQueryRunner.bind(
-                    connection,
-                )
-                const installRecorder = () => {
-                    ;(connection as any).createQueryRunner = (
-                        ...args: any[]
-                    ) => {
-                        const qr = origCreateQR(...args)
-                        const origQuery = qr.query.bind(qr)
-                        qr.query = async (sql: any, params?: any[]) => {
-                            if (typeof sql === "string") recorded.push(sql)
-                            return origQuery(sql, params)
-                        }
-                        return qr
-                    }
-                }
-                const removeRecorder = () => {
-                    ;(connection as any).createQueryRunner = origCreateQR
-                }
+                const {
+                    recorded,
+                    install: installRecorder,
+                    remove: removeRecorder,
+                } = createSqlRecorder(connection)
 
-                let insertedRowId: any | undefined
+                let insertedRowId: number | undefined
 
                 try {
                     // 1) Ensure start at varchar(50)
@@ -616,8 +606,8 @@ describe("schema builder > change column", () => {
                     await connection.synchronize()
 
                     const preTable = await queryRunner.getTable("post")
-                    const preCol = preTable!.findColumnByName("name")!
-                    if (preCol.length) expect(preCol.length).to.equal("50")
+                    const preCol = preTable?.findColumnByName("name")
+                    if (preCol?.length) expect(preCol.length).to.equal("50")
 
                     // 2) Insert a 45-char value BEFORE schema change (to test data survival)
                     const fortyFive = "x".repeat(45)
@@ -872,10 +862,12 @@ describe("schema builder > change column", () => {
                     try {
                         const nameColumnMetadata = connection
                             .getMetadata("post")
-                            .findColumnWithPropertyName("name")!
-                        nameColumnMetadata.length = originalLength
-                        nameColumnMetadata.build(connection)
-                        await connection.synchronize()
+                            .findColumnWithPropertyName("name")
+                        if (nameColumnMetadata) {
+                            nameColumnMetadata.length = originalLength
+                            nameColumnMetadata.build(connection)
+                            await connection.synchronize()
+                        }
                     } catch {}
                     await queryRunner.release()
                 }
@@ -891,32 +883,21 @@ describe("schema builder > change column", () => {
 
                 const metadata = connection.getMetadata("post")
                 const nameColumnMetadata =
-                    metadata.findColumnWithPropertyName("name")!
+                    metadata.findColumnWithPropertyName("name")
+                if (!nameColumnMetadata) {
+                    await queryRunner.release()
+                    return
+                }
                 const originalLength = nameColumnMetadata.length ?? ""
 
                 // --- SQL recorder around synchronize() ---
-                const recorded: string[] = []
-                const origCreateQR = (connection as any).createQueryRunner.bind(
-                    connection,
-                )
-                const installRecorder = () => {
-                    ;(connection as any).createQueryRunner = (
-                        ...args: any[]
-                    ) => {
-                        const qr = origCreateQR(...args)
-                        const origQuery = qr.query.bind(qr)
-                        qr.query = async (sql: any, params?: any[]) => {
-                            if (typeof sql === "string") recorded.push(sql)
-                            return origQuery(sql, params)
-                        }
-                        return qr
-                    }
-                }
-                const removeRecorder = () => {
-                    ;(connection as any).createQueryRunner = origCreateQR
-                }
+                const {
+                    recorded,
+                    install: installRecorder,
+                    remove: removeRecorder,
+                } = createSqlRecorder(connection)
 
-                let insertedRowId: any | undefined
+                let insertedRowId: number | undefined
 
                 try {
                     // 1) Ensure start at varchar(50)
@@ -925,8 +906,8 @@ describe("schema builder > change column", () => {
                     await connection.synchronize()
 
                     const preTable = await queryRunner.getTable("post")
-                    const preCol = preTable!.findColumnByName("name")!
-                    if (preCol.length) expect(preCol.length).to.equal("50")
+                    const preCol = preTable?.findColumnByName("name")
+                    if (preCol?.length) expect(preCol.length).to.equal("50")
 
                     // 2) Insert a 30-char value BEFORE schema change (will survive reduction to 40)
                     const thirty = "x".repeat(30)
@@ -945,7 +926,7 @@ describe("schema builder > change column", () => {
                                 const isBigInt =
                                     /\bbigint\b|^int8$|^bigserial$/.test(t) ||
                                     (typeof (c as any).width === "number" &&
-                                        (c as any).width! >= 20)
+                                        (c as any).width >= 20)
 
                                 if (isBigInt) {
                                     payload.id ??= Math.min(
@@ -1116,7 +1097,7 @@ describe("schema builder > change column", () => {
                                     // TypeORM sometimes sets type as a function/constructor; stringify may be '[Function:Number]'.
                                     // If metadata has width info suggestive of bigint, treat as bigint (rare in this test schema).
                                     (typeof (c as any).width === "number" &&
-                                        (c as any).width! >= 20)
+                                        (c as any).width >= 20)
 
                                 if (isBigInt) {
                                     // still keep it in JS safe integer range
@@ -1183,10 +1164,12 @@ describe("schema builder > change column", () => {
                     try {
                         const nameColumnMetadata = connection
                             .getMetadata("post")
-                            .findColumnWithPropertyName("name")!
-                        nameColumnMetadata.length = originalLength
-                        nameColumnMetadata.build(connection)
-                        await connection.synchronize()
+                            .findColumnWithPropertyName("name")
+                        if (nameColumnMetadata) {
+                            nameColumnMetadata.length = originalLength
+                            nameColumnMetadata.build(connection)
+                            await connection.synchronize()
+                        }
                     } catch {}
                     await queryRunner.release()
                 }
@@ -1687,7 +1670,8 @@ describe("schema builder > change column", () => {
                 if (driver === "spanner") return
 
                 const metadata = connection.getMetadata(Post)
-                const nameColumn = metadata.findColumnWithPropertyName("name")!
+                const nameColumn = metadata.findColumnWithPropertyName("name")
+                if (!nameColumn) return
 
                 // Step 1: Create table with varchar(50)
                 nameColumn.type = "varchar"
