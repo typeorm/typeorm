@@ -34,7 +34,7 @@ export function Entity(
     const options =
         (ObjectUtils.isObject(nameOrOptions)
             ? (nameOrOptions as EntityOptions)
-            : maybeOptions) || {}
+            : maybeOptions) ?? {}
     const name =
         typeof nameOrOptions === "string" ? nameOrOptions : options.name
 
@@ -43,13 +43,13 @@ export function Entity(
             target: target,
             name: name,
             type: "regular",
-            orderBy: options.orderBy ? options.orderBy : undefined,
-            engine: options.engine ? options.engine : undefined,
-            database: options.database ? options.database : undefined,
-            schema: options.schema ? options.schema : undefined,
+            orderBy: options.orderBy ?? undefined,
+            engine: options.engine ?? undefined,
+            database: options.database ?? undefined,
+            schema: options.schema ?? undefined,
             synchronize: options.synchronize,
             withoutRowid: options.withoutRowid,
-            comment: options.comment ? options.comment : undefined,
+            comment: options.comment ?? undefined,
         } as TableMetadataArgs)
     }
 }

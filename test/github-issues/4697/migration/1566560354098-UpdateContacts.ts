@@ -8,7 +8,7 @@ export class UpdateContacts1566560354098 implements MigrationInterface {
 
         items.forEach((item) => {
             if (!item.contacts) {
-                item.contacts = [item.contact || ""]
+                item.contacts = [item.contact ?? ""]
             }
         })
 

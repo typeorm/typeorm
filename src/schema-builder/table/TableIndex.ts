@@ -85,7 +85,7 @@ export class TableIndex {
         this.isFulltext = !!options.isFulltext
         this.isNullFiltered = !!options.isNullFiltered
         this.parser = options.parser
-        this.where = options.where ? options.where : ""
+        this.where = options.where ?? ""
         this.type = options.type
     }
 

@@ -151,6 +151,19 @@ export class Post {
 }
 ```
 
+:::note Cascade remove
+When using `cascade: ["remove"]` or `cascade: true`, calling `manager.remove(entity)` will also remove related entities that are loaded on the entity instance. TypeORM only traverses relations that are populated on the object — if a relation is not loaded, its children will not be cascade-removed. Make sure to load relations before removing:
+
+```typescript
+const post = await manager.findOne(Post, {
+    where: { id: 1 },
+    relations: { categories: true },
+})
+await manager.remove(post) // categories will also be removed
+```
+
+:::
+
 ## `@JoinColumn` options
 
 `@JoinColumn` not only defines which side of the relation contains the join column with a foreign key,
@@ -198,6 +211,8 @@ You can also join multiple columns. Note that they do not reference the primary 
 ])
 category: Category;
 ```
+
+> **Note:** When using composite `@JoinColumn` or `@JoinTable`, TypeORM automatically sorts the foreign key columns to match the referenced entity's primary key order. This ensures compatibility with databases like MySQL, MSSQL, and SAP HANA that require FK columns to reference PK columns in index order.
 
 ## `@JoinTable` options
 

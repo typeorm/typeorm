@@ -24,7 +24,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         targetName: string,
         userSpecifiedName: string | undefined,
     ): string {
-        return userSpecifiedName ? userSpecifiedName : snakeCase(targetName)
+        return userSpecifiedName ?? snakeCase(targetName)
     }
 
     /**
@@ -186,9 +186,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         propertyName: string,
         columnName?: string,
     ): string {
-        return camelCase(
-            tableName + "_" + (columnName ? columnName : propertyName),
-        )
+        return camelCase(tableName + "_" + (columnName ?? propertyName))
     }
 
     joinTableInverseColumnName(
