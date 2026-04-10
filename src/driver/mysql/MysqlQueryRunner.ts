@@ -173,13 +173,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             name: oldColumn.name,
         } as TableColumn
 
-        // Use CHANGE COLUMN so that emitted SQL matches tests expecting "MODIFY/CHANGE COLUMN"
+        // Use CHANGE COLUMN — syntax requires: CHANGE COLUMN `old` `new` <full definition>
         const up = `ALTER TABLE ${this.escapePath(table)} CHANGE COLUMN \`${
             oldColumn.name
-        }\` ${this.buildCreateColumnSql(newColDef, true, true)}`
+        }\` ${this.buildCreateColumnSql(newColDef, true)}`
         const down = `ALTER TABLE ${this.escapePath(table)} CHANGE COLUMN \`${
             oldColumn.name
-        }\` ${this.buildCreateColumnSql(oldColDef, true, true)}`
+        }\` ${this.buildCreateColumnSql(oldColDef, true)}`
 
         upQueries.push(new Query(up))
         downQueries.push(new Query(down))
