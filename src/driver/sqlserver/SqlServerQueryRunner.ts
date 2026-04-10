@@ -1729,7 +1729,7 @@ export class SqlServerQueryRunner
                     )
                 }
 
-                const handled = await this.handleSafeAlterSqlServer({
+                await this.handleSafeAlterSqlServer({
                     table,
                     clonedTable,
                     oldColumn,

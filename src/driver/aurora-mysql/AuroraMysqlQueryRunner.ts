@@ -143,7 +143,7 @@ export class AuroraMysqlQueryRunner
         }
 
         const isGenerated = Boolean(
-            newColumn.asExpression || oldColumn.asExpression,
+            newColumn.asExpression ?? oldColumn.asExpression,
         )
 
         // Generated/computed columns are handled by the generic change flow.

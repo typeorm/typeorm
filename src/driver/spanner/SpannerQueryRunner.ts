@@ -922,7 +922,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable = table.clone()
         } else {
             if (oldColumn.type !== newColumn.type) {
-                const handled = await this.handleSafeAlterSpanner({
+                await this.handleSafeAlterSpanner({
                     table,
                     clonedTable,
                     oldColumn,
@@ -2584,14 +2584,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 ? parseInt(String(column.length), 10)
                 : undefined
             const prec = column.precision
-            const scale = column.scale
 
             const withLen = (base: string) => (len ? `${base}(${len})` : base)
-            const withPS = (base: string) => {
-                if (prec == null) return base
-                if (scale == null) return `${base}(${prec})`
-                return `${base}(${prec},${scale})`
-            }
             const withTimePrec = (base: string) =>
                 prec != null ? `${base}(${prec})` : base
 

@@ -1622,7 +1622,7 @@ export class PostgresQueryRunner
             }
 
             if (oldColumn.type !== newColumn.type) {
-                const handled = await this.handleSafeAlterPostgres({
+                await this.handleSafeAlterPostgres({
                     table,
                     clonedTable,
                     oldColumn,
