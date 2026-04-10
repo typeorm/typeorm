@@ -50,9 +50,9 @@ export function isSafeAlter(
             character: "char",
             "double precision": "double",
             "timestamp without time zone": "timestamp",
-            "timestamp with time zone": "timestamp",
+            "timestamp with time zone": "timestamptz",
             "time without time zone": "time",
-            "time with time zone": "time",
+            "time with time zone": "timetz",
             bytea: "bytea",
 
             // Oracle
@@ -154,7 +154,9 @@ export function isSafeAlter(
         "datetime2",
         "datetimeoffset",
         "timestamp",
+        "timestamptz",
         "time",
+        "timetz",
     ])
     const ENUM = new Set(["enum", "set"])
     const UUID = new Set(["uuid", "uniqueidentifier"])
