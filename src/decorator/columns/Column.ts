@@ -185,7 +185,7 @@ export function Column(
             options = <ColumnOptions>typeOrOptions
             type = typeOrOptions.type
         }
-        if (!options) options = {} as ColumnOptions
+        options ??= {} as ColumnOptions
 
         // if type is not given explicitly then try to guess it
         const reflectMetadataType =
@@ -215,8 +215,7 @@ export function Column(
                 propertyName: propertyName,
                 isArray:
                     reflectMetadataType === Array || options.array === true,
-                prefix:
-                    options.prefix !== undefined ? options.prefix : undefined,
+                prefix: options.prefix ?? undefined,
                 type: typeOrOptions as (type?: any) => Function,
             } as EmbeddedMetadataArgs)
         } else {

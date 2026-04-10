@@ -538,7 +538,7 @@ export class EntityMetadata {
         args: TableMetadataArgs
     }) {
         this.dataSource = options.dataSource
-        this.inheritanceTree = options.inheritanceTree || []
+        this.inheritanceTree = options.inheritanceTree ?? []
         this.inheritancePattern = options.inheritancePattern
         this.treeType = options.tableTree ? options.tableTree.type : undefined
         this.treeOptions = options.tableTree
@@ -569,7 +569,7 @@ export class EntityMetadata {
         queryRunner?: QueryRunner,
         options?: { fromDeserializer?: boolean; pojo?: boolean },
     ): any {
-        const pojo = options && options.pojo === true ? true : false
+        const pojo = options?.pojo === true ? true : false
         // if target is set to a function (e.g. class) that can be created then create it
         let ret: any
         if (typeof this.target === "function" && !pojo) {
@@ -759,8 +759,7 @@ export class EntityMetadata {
         const relation = this.relations.find(
             (relation) => relation.propertyPath === propertyPath,
         )
-        if (relation && relation.joinColumns.length === 1)
-            return relation.joinColumns[0]
+        if (relation?.joinColumns.length === 1) return relation.joinColumns[0]
 
         return undefined
     }
@@ -794,7 +793,7 @@ export class EntityMetadata {
         // in the case if column with property path was not found, try to find a relation with such property path
         // if we find relation and it has a single join column then its the column user was seeking
         const relation = this.findRelationWithPropertyPath(propertyPath)
-        if (relation && relation.joinColumns) return relation.joinColumns
+        if (relation?.joinColumns) return relation.joinColumns
 
         return []
     }
@@ -927,7 +926,7 @@ export class EntityMetadata {
                         manuallySetDiscriminatorValue ===
                             meta.discriminatorValue ||
                         value.constructor === meta.target,
-                ) || this
+                ) ?? this
             )
         }
         return this

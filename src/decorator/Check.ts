@@ -37,7 +37,7 @@ export function Check(
     maybeExpression?: string,
 ): ClassDecorator & PropertyDecorator {
     const name = maybeExpression ? nameOrExpression : undefined
-    const expression = maybeExpression ? maybeExpression : nameOrExpression
+    const expression = maybeExpression ?? nameOrExpression
 
     if (!expression) throw new TypeORMError(`Check expression is required`)
 

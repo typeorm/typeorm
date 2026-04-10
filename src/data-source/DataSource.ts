@@ -141,8 +141,8 @@ export class DataSource {
         this.driver = new DriverFactory().create(this)
         this.manager = this.createEntityManager()
         this.namingStrategy =
-            options.namingStrategy || new DefaultNamingStrategy()
-        this.metadataTableName = options.metadataTableName || "typeorm_metadata"
+            options.namingStrategy ?? new DefaultNamingStrategy()
+        this.metadataTableName = options.metadataTableName ?? "typeorm_metadata"
         this.queryResultCache = options.cache
             ? new QueryResultCacheFactory(this).create()
             : undefined
@@ -201,8 +201,8 @@ export class DataSource {
 
         if (options.logger || options.logging) {
             this.logger = new LoggerFactory().create(
-                options.logger || this.options.logger,
-                options.logging || this.options.logging,
+                options.logger ?? this.options.logger,
+                options.logging ?? this.options.logging,
             )
         }
 
@@ -361,10 +361,10 @@ export class DataSource {
 
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
-            options?.transaction ||
-            this.options?.migrationsTransactionMode ||
+            options?.transaction ??
+            this.options?.migrationsTransactionMode ??
             "all"
-        migrationExecutor.fake = (options && options.fake) || false
+        migrationExecutor.fake = options?.fake ?? false
 
         const successMigrations =
             await migrationExecutor.executePendingMigrations()
@@ -386,9 +386,8 @@ export class DataSource {
         if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
-        migrationExecutor.transaction =
-            (options && options.transaction) || "all"
-        migrationExecutor.fake = (options && options.fake) || false
+        migrationExecutor.transaction = options?.transaction ?? "all"
+        migrationExecutor.fake = options?.fake ?? false
 
         await migrationExecutor.undoLastMigration()
     }
@@ -506,10 +505,10 @@ export class DataSource {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Queries aren't supported by MongoDB.`)
 
-        if (queryRunner && queryRunner.isReleased)
+        if (queryRunner?.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner()
+        const usedQueryRunner = queryRunner ?? this.createQueryRunner()
 
         try {
             return await usedQueryRunner.query(query, parameters) // await is needed here because we are using finally
@@ -711,7 +710,7 @@ export class DataSource {
 
         // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
         const flattenedSubscribers = ObjectUtils.mixedListToArray(
-            this.options.subscribers || [],
+            this.options.subscribers ?? [],
         )
         const subscribers =
             await connectionMetadataBuilder.buildSubscribers(
@@ -721,7 +720,7 @@ export class DataSource {
 
         // build entity metadatas
         const flattenedEntities = ObjectUtils.mixedListToArray(
-            this.options.entities || [],
+            this.options.entities ?? [],
         )
         const entityMetadatas =
             await connectionMetadataBuilder.buildEntityMetadatas(
@@ -736,7 +735,7 @@ export class DataSource {
 
         // create migration instances
         const flattenedMigrations = ObjectUtils.mixedListToArray(
-            this.options.migrations || [],
+            this.options.migrations ?? [],
         )
         const migrations =
             await connectionMetadataBuilder.buildMigrations(flattenedMigrations)
