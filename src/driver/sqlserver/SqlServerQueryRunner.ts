@@ -1812,7 +1812,6 @@ export class SqlServerQueryRunner
                             true,
                             false,
                             true,
-                            true,
                         )}`,
                     ),
                 )
@@ -1825,7 +1824,6 @@ export class SqlServerQueryRunner
                             oldColumn,
                             true,
                             false,
-                            true,
                             true,
                         )}`,
                     ),
