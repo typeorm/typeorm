@@ -29,6 +29,3 @@ ormlogs.log
 ### Stryker ###
 reports/
 .stryker-tmp
-/reports
-
-.nyc_output/
