@@ -43,7 +43,7 @@ export class JunctionEntityMetadataBuilder {
         )
 
         const joinTableName =
-            joinTable.name ||
+            joinTable.name ??
             this.dataSource.namingStrategy.joinTableName(
                 relation.entityMetadata.tableNameWithoutPrefix,
                 relation.inverseEntityMetadata.tableNameWithoutPrefix,
@@ -60,8 +60,8 @@ export class JunctionEntityMetadataBuilder {
                 name: joinTableName,
                 type: "junction",
                 database:
-                    joinTable.database || relation.entityMetadata.database,
-                schema: joinTable.schema || relation.entityMetadata.schema,
+                    joinTable.database ?? relation.entityMetadata.database,
+                schema: joinTable.schema ?? relation.entityMetadata.schema,
                 synchronize: joinTable.synchronize,
             },
         })
@@ -80,13 +80,12 @@ export class JunctionEntityMetadataBuilder {
                   })
                 : undefined
             const columnName =
-                joinColumn && joinColumn.name
-                    ? joinColumn.name
-                    : this.dataSource.namingStrategy.joinTableColumnName(
-                          relation.entityMetadata.tableNameWithoutPrefix,
-                          referencedColumn.propertyName,
-                          referencedColumn.databaseName,
-                      )
+                joinColumn?.name ??
+                this.dataSource.namingStrategy.joinTableColumnName(
+                    relation.entityMetadata.tableNameWithoutPrefix,
+                    referencedColumn.propertyName,
+                    referencedColumn.databaseName,
+                )
 
             return new ColumnMetadata({
                 entityMetadata: entityMetadata,
@@ -143,14 +142,12 @@ export class JunctionEntityMetadataBuilder {
                       })
                     : undefined
                 const columnName =
-                    joinColumn && joinColumn.name
-                        ? joinColumn.name
-                        : this.dataSource.namingStrategy.joinTableInverseColumnName(
-                              relation.inverseEntityMetadata
-                                  .tableNameWithoutPrefix,
-                              inverseReferencedColumn.propertyName,
-                              inverseReferencedColumn.databaseName,
-                          )
+                    joinColumn?.name ??
+                    this.dataSource.namingStrategy.joinTableInverseColumnName(
+                        relation.inverseEntityMetadata.tableNameWithoutPrefix,
+                        inverseReferencedColumn.propertyName,
+                        inverseReferencedColumn.databaseName,
+                    )
 
                 return new ColumnMetadata({
                     entityMetadata,
@@ -225,12 +222,13 @@ export class JunctionEntityMetadataBuilder {
                       onDelete:
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : relation.onDelete || "CASCADE",
+                              : (relation.onDelete ?? "CASCADE"),
                       onUpdate:
                           this.dataSource.driver.options.type === "oracle" ||
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : relation.onUpdate || "CASCADE",
+                              : (relation.onUpdate ?? "CASCADE"),
+                      deferrable: relation.deferrable,
                   }),
                   new ForeignKeyMetadata({
                       entityMetadata: entityMetadata,
@@ -251,6 +249,9 @@ export class JunctionEntityMetadataBuilder {
                               : relation.inverseRelation
                                 ? relation.inverseRelation.onUpdate
                                 : "CASCADE",
+                      deferrable: relation.inverseRelation
+                          ? relation.inverseRelation.deferrable
+                          : relation.deferrable,
                   }),
               ]
             : []

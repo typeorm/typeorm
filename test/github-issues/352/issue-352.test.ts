@@ -37,10 +37,9 @@ describe("github issues > #352 double precision round to int in mssql", () => {
                     .where("post.id = :id", {
                         id: new MssqlParameter(1.234567789, "float"),
                     })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost).to.exist
-                expect(loadedPost!.id).to.be.equal(1.234567789)
+                expect(loadedPost.id).to.be.equal(1.234567789)
             }),
         ))
 })

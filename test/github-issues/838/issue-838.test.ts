@@ -34,10 +34,13 @@ describe.skip("github issues > #838 Time zones for timestamp columns are incorre
         await postgresConnection.query(
             `INSERT INTO "flight" ("id", "date") VALUES (1, '${testDateString}');`,
         )
-        const flight = await postgresConnection.manager.findOneBy(Flight, {
-            id: 1,
-        })
-        expect(flight!.date.toISOString()).to.equal(
+        const flight = await postgresConnection.manager.findOneByOrFail(
+            Flight,
+            {
+                id: 1,
+            },
+        )
+        expect(flight.date.toISOString()).to.equal(
             new Date(testDateString).toISOString(),
         )
     })

@@ -102,17 +102,40 @@ export const redirects = [
     { from: "/data-source-api", to: "/docs/data-source/data-source-api" },
 
     { from: "/migrations", to: "/docs/migrations/why" },
-    { from: "/transactions", to: "/docs/advanced-topics/transactions" },
-    { from: "/indices", to: "/docs/advanced-topics/indices" },
+    { from: "/transactions", to: "/docs/transactions" },
+    { from: "/indices", to: "/docs/indexes" },
     {
         from: "/listeners-and-subscribers",
-        to: "/docs/advanced-topics/listeners-and-subscribers",
+        to: "/docs/listeners-and-subscribers",
     },
-    { from: "/logging", to: "/docs/advanced-topics/logging" },
-    { from: "/using-cli", to: "/docs/advanced-topics/using-cli" },
+    { from: "/logging", to: "/docs/logging" },
+    { from: "/using-cli", to: "/docs/using-cli" },
     {
         from: "/performance-optimizing",
-        to: "/docs/advanced-topics/performance-optimizing",
+        to: "/docs/performance-optimization/introduction",
+    },
+    {
+        from: "/docs/advanced-topics/transactions",
+        to: "/docs/transactions",
+    },
+    { from: "/docs/indices", to: "/docs/indexes" },
+    { from: "/docs/advanced-topics/indices", to: "/docs/indexes" },
+    {
+        from: "/docs/performance-optimization/using-indices",
+        to: "/docs/performance-optimization/using-indexes",
+    },
+    {
+        from: "/docs/advanced-topics/listeners-and-subscribers",
+        to: "/docs/listeners-and-subscribers",
+    },
+    { from: "/docs/advanced-topics/logging", to: "/docs/logging" },
+    {
+        from: "/docs/advanced-topics/using-cli",
+        to: "/docs/using-cli",
+    },
+    {
+        from: "/docs/advanced-topics/performance-optimizing",
+        to: "/docs/performance-optimization/introduction",
     },
 
     { from: "/faq", to: "/docs/help/faq" },

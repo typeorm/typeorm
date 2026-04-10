@@ -55,10 +55,10 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap("post.categoryId", "post.category")
                     .where("post.id = :id", { id: post.id })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryId).to.not.be.undefined
-                expect(loadedPost!.categoryId).to.be.equal(1)
+                expect(loadedPost.categoryId).to.not.be.undefined
+                expect(loadedPost.categoryId).to.be.equal(1)
             }),
         ))
 
@@ -98,10 +98,10 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
                     .createQueryBuilder(Category, "category")
                     .loadRelationIdAndMap("category.postId", "category.post")
                     .where("category.id = 1")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.postId).to.not.be.undefined
-                expect(loadedCategory!.postId).to.be.equal(1)
+                expect(loadedCategory.postId).to.not.be.undefined
+                expect(loadedCategory.postId).to.be.equal(1)
             }),
         ))
 })
