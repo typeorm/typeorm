@@ -54,7 +54,7 @@ export function Exclusion(
     if (!expression) throw new TypeORMError(`Exclusion expression is required`)
 
     return function (
-        clsOrObject: Function | Object,
+        clsOrObject: Function | object,
         propertyName?: string | symbol,
     ) {
         getMetadataArgsStorage().exclusions.push({

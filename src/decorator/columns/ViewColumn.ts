@@ -8,7 +8,7 @@ import type { ViewColumnOptions } from "../options/ViewColumnOptions"
  * @param options
  */
 export function ViewColumn(options?: ViewColumnOptions): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         getMetadataArgsStorage().columns.push({
             target: object.constructor,
             propertyName: propertyName,

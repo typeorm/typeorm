@@ -104,7 +104,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Array of possible enumerated values.
      */
-    enum?: (string | number)[] | Object
+    enum?: (string | number)[] | object
 
     /**
      * Exact name of enum
