@@ -31,9 +31,9 @@ export class ClosureJunctionEntityMetadataBuilder {
             dataSource: this.dataSource,
             args: {
                 target: "",
-                name: parentClosureEntityMetadata.treeOptions?.closureTableName
-                    ? parentClosureEntityMetadata.treeOptions.closureTableName
-                    : parentClosureEntityMetadata.tableNameWithoutPrefix,
+                name:
+                    parentClosureEntityMetadata.treeOptions?.closureTableName ??
+                    parentClosureEntityMetadata.tableNameWithoutPrefix,
                 type: "closure-junction",
                 schema: parentClosureEntityMetadata.schema,
                 database: parentClosureEntityMetadata.database,

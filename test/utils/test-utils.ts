@@ -242,15 +242,10 @@ export function setupTestingConnections(
                 {},
                 connectionOptions as DataSourceOptions,
                 {
-                    entities: options?.entities ? options.entities : [],
-                    migrations: options?.migrations ? options.migrations : [],
-                    subscribers: options?.subscribers
-                        ? options.subscribers
-                        : [],
-                    dropSchema:
-                        options?.dropSchema !== undefined
-                            ? options.dropSchema
-                            : false,
+                    entities: options?.entities ?? [],
+                    migrations: options?.migrations ?? [],
+                    subscribers: options?.subscribers ?? [],
+                    dropSchema: options?.dropSchema ?? false,
                     cache: options ? options.cache : undefined,
                 },
             )

@@ -135,7 +135,7 @@ export class DriverUtils {
         buildOptions: { shorten?: boolean; joiner?: string } | undefined,
         ...alias: string[]
     ): string {
-        const joiner = buildOptions?.joiner ? buildOptions.joiner : "_"
+        const joiner = buildOptions?.joiner ?? "_"
 
         const newAlias = alias.length === 1 ? alias[0] : alias.join(joiner)
 

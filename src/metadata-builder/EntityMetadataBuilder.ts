@@ -586,9 +586,8 @@ export class EntityMetadataBuilder {
         // for table inheritance we need to add a discriminator column
         //
         if (entityInheritance?.column) {
-            const discriminatorColumnName = entityInheritance.column?.name
-                ? entityInheritance.column.name
-                : "type"
+            const discriminatorColumnName =
+                entityInheritance.column?.name ?? "type"
             let discriminatorColumn = entityMetadata.ownColumns.find(
                 (column) => column.propertyName === discriminatorColumnName,
             )
