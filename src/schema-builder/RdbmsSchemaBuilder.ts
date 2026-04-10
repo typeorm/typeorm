@@ -1037,7 +1037,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     viewExpression === metadataExpression
                 )
             })
-            if (!view || !view.materialized) continue
+            if (!view?.materialized) continue
 
             const newIndices = metadata.indices
                 .filter(

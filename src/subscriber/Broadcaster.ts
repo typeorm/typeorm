@@ -1003,8 +1003,7 @@ export class Broadcaster {
         target: Function | string,
     ): boolean {
         return (
-            !subscriber.listenTo ||
-            !subscriber.listenTo() ||
+            !subscriber.listenTo?.() ||
             subscriber.listenTo() === Object ||
             subscriber.listenTo() === target ||
             subscriber.listenTo().isPrototypeOf(target)

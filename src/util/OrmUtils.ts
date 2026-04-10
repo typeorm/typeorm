@@ -321,7 +321,7 @@ export class OrmUtils {
             ),
         )
 
-        if (enumMatch && enumMatch.index) {
+        if (enumMatch?.index) {
             const afterMatch = sql.substring(
                 enumMatch.index + enumMatch[0].length,
             )

@@ -2196,7 +2196,7 @@ export class AuroraMysqlQueryRunner
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -2327,8 +2327,7 @@ export class AuroraMysqlQueryRunner
                     )
                     const hasIgnoredIndex =
                         columnUniqueIndices.length > 0 &&
-                        tableMetadata &&
-                        tableMetadata.indices.some((index) => {
+                        tableMetadata?.indices.some((index) => {
                             return columnUniqueIndices.some((uniqueIndex) => {
                                 return (
                                     index.name === uniqueIndex["INDEX_NAME"] &&

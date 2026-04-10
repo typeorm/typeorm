@@ -477,10 +477,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         )
 
         // add discriminator column parameter if it exist
-        if (
-            this.expressionMap.mainAlias &&
-            this.expressionMap.mainAlias.hasMetadata
-        ) {
+        if (this.expressionMap.mainAlias?.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const values = metadata.childEntityMetadatas

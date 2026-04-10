@@ -216,7 +216,7 @@ export class MockQueryResultCache implements QueryResultCache {
             }
         }
 
-        if (savedCache && savedCache.identifier) {
+        if (savedCache?.identifier) {
             // if exist then update
             const qb = queryRunner.manager
                 .createQueryBuilder()
@@ -227,7 +227,7 @@ export class MockQueryResultCache implements QueryResultCache {
                 condition: insertedValues.identifier,
             })
             await qb.execute()
-        } else if (savedCache && savedCache.query) {
+        } else if (savedCache?.query) {
             // if exist then update
             const qb = queryRunner.manager
                 .createQueryBuilder()
