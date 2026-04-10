@@ -55,7 +55,7 @@ export function JoinTable(
                       .inverseJoinColumns) as any,
             schema: options?.schema ?? undefined,
             database: options?.database ?? undefined,
-            synchronize: !(options?.synchronize === false),
+            synchronize: options?.synchronize !== false,
         } as JoinTableMetadataArgs)
     }
 }

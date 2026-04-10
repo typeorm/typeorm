@@ -1804,14 +1804,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const dbTables: { TABLE_NAME: string }[] = []
 
-        if (!tableNames?.length) {
-            // Since we don't have any of this data we have to do a scan
-            const tablesSql =
-                `SELECT \`TABLE_NAME\` ` +
-                `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
-                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
-            dbTables.push(...(await this.query(tablesSql)))
-        } else {
+        if (tableNames?.length) {
             const placeholders = tableNames
                 .map((_, i) => `@param${i}`)
                 .join(", ")
@@ -1822,6 +1815,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `AND \`TABLE_NAME\` IN (${placeholders})`
 
             dbTables.push(...(await this.query(tablesSql, tableNames)))
+        } else {
+            // Since we don't have any of this data we have to do a scan
+            const tablesSql =
+                `SELECT \`TABLE_NAME\` ` +
+                `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
+                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
+            dbTables.push(...(await this.query(tablesSql)))
         }
 
         // if tables were not found in the db, no need to proceed

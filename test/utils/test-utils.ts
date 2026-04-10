@@ -246,7 +246,7 @@ export function setupTestingConnections(
                     migrations: options?.migrations ?? [],
                     subscribers: options?.subscribers ?? [],
                     dropSchema: options?.dropSchema ?? false,
-                    cache: options ? options.cache : undefined,
+                    cache: options?.cache,
                 },
             )
             if (options?.driverSpecific)
