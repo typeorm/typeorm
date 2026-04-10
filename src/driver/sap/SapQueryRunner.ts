@@ -3828,6 +3828,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const escapedTmp = escapeColumnName(tmp)
 
             // 1) ADD temp column with the *new* (shorter) length; keep NULLable for the copy
+            // 2) COPY data into temp, trimming to new length
+            // 3) DROP old column
+            // 4) ADD final column with the new definition (still NULLable for now)
+            // 5) COPY data back from temp → final
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ADD (` +
@@ -3844,13 +3848,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         ) +
                         `)`,
                 ),
-            )
-
-            // 2) COPY data into temp, trimming to new length
-            // 3) DROP old column
-            // 4) ADD final column with the new definition (still NULLable for now)
-            // 5) COPY data back from temp → final
-            upQueries.push(
                 new Query(
                     `UPDATE ${this.escapePath(
                         table,
@@ -3959,6 +3956,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const escapedTmpDown = escapeColumnName(tmpDown)
 
             // 1) ADD temp column with the *old* (shorter) length; keep NULLable for the copy
+            // 2) COPY data into temp, trimming to old length
+            // 3) DROP widened column
+            // 4) ADD final column with the old definition (NULLable for now)
+            // 5) COPY data back from temp → final
             downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ADD (` +
@@ -3975,13 +3976,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         ) +
                         `)`,
                 ),
-            )
-
-            // 2) COPY data into temp, trimming to old length
-            // 3) DROP widened column
-            // 4) ADD final column with the old definition (NULLable for now)
-            // 5) COPY data back from temp → final
-            downQueries.push(
                 new Query(
                     `UPDATE ${this.escapePath(
                         table,

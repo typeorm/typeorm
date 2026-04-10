@@ -4614,7 +4614,7 @@ export class SqlServerQueryRunner
             ((typeof oldLen === "number" && newLen < oldLen) || isOldMax)
         ) {
             const col = this.driver.escape(oldColumn.name)
-            const t = (newColumn.type as string).toLowerCase()
+            const t = newColumn.type.toLowerCase()
             const threshold = t.startsWith("n") ? `${newLen}*2` : `${newLen}`
             const isBinary = t === "varbinary" || t === "binary"
             const updateExpr = isBinary
@@ -4630,7 +4630,7 @@ export class SqlServerQueryRunner
             )
         }
 
-        const t = (newColumn.type as string).toLowerCase()
+        const t = newColumn.type.toLowerCase()
         const isCharOrBin =
             t === "varchar" ||
             t === "nvarchar" ||

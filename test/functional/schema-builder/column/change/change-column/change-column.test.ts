@@ -671,7 +671,7 @@ describe("schema builder > change column", () => {
                     let insertErr, row
                     try {
                         row = await repo.save(payload)
-                        insertedRowId = (row as any)?.id
+                        insertedRowId = row?.id
                     } catch (e) {
                         insertErr = e
                     }
@@ -679,7 +679,7 @@ describe("schema builder > change column", () => {
 
                     // Verify data exists before migration
                     const beforeMigration = await repo.findOneByOrFail({
-                        id: (row as any).id,
+                        id: row?.id,
                     })
                     expect(beforeMigration.name.length).to.equal(45)
 
@@ -705,7 +705,7 @@ describe("schema builder > change column", () => {
 
                     // 4) Verify data still exists with original value after ALTER (data survived migration)
                     const afterMigration = await repo.findOneByOrFail({
-                        id: (row as any).id,
+                        id: row?.id,
                     })
                     expect(afterMigration.name.length).to.equal(45)
                     expect(afterMigration.name).to.equal(fortyFive)
@@ -849,7 +849,7 @@ describe("schema builder > change column", () => {
 
                     // 6) Verify new data works with increased length
                     const rt = await repo.findOneByOrFail({
-                        id: (row2 as any)?.id,
+                        id: row2?.id,
                     })
                     expect(rt.name.length).to.equal(51)
                 } finally {
@@ -969,7 +969,7 @@ describe("schema builder > change column", () => {
                     let insertErr, row
                     try {
                         row = await repo.save(payload)
-                        insertedRowId = (row as any)?.id
+                        insertedRowId = row?.id
                     } catch (e) {
                         insertErr = e
                     }
@@ -977,7 +977,7 @@ describe("schema builder > change column", () => {
 
                     // Verify data exists before migration
                     const beforeMigration = await repo.findOneByOrFail({
-                        id: (row as any).id,
+                        id: row?.id,
                     })
                     expect(beforeMigration.name.length).to.equal(30)
 
@@ -1010,7 +1010,7 @@ describe("schema builder > change column", () => {
 
                     // 4) Verify data still exists with original value after ALTER (data survived migration)
                     const afterMigration = await repo.findOneByOrFail({
-                        id: (row as any).id,
+                        id: row?.id,
                     })
                     expect(afterMigration.name.length).to.equal(30)
                     expect(afterMigration.name).to.equal(thirty)
@@ -1151,7 +1151,7 @@ describe("schema builder > change column", () => {
 
                     // 6) Verify new data works with reduced length
                     const rt = await repo.findOneByOrFail({
-                        id: (row2 as any)?.id,
+                        id: row2?.id,
                     })
                     expect(rt.name.length).to.equal(40)
                 } finally {
@@ -1682,9 +1682,12 @@ describe("schema builder > change column", () => {
                 const longTitle = "This is a 45-character title to test data"
                 const repository = connection.getRepository(Post)
                 const post = new Post()
+                post.id = 1
                 post.name = longTitle
                 post.version = "1.0"
                 post.text = "Some content"
+                post.tag = "test"
+                post.likesCount = 1
                 await repository.save(post)
 
                 // Verify data exists before change
