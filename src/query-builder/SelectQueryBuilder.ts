@@ -3854,12 +3854,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 : {}
         let savedQueryResultCacheOptions: QueryResultCacheOptions | undefined =
             undefined
-        const isCachingEnabled =
-            // Caching is enabled globally and isn't disabled locally.
-            (cacheOptions.alwaysEnabled &&
-                this.expressionMap.cache !== false) ??
-            // ...or it's enabled locally explicitly.
-            this.expressionMap.cache === true
+        const isCachingEnabled = cacheOptions.alwaysEnabled
+            ? this.expressionMap.cache !== false
+            : this.expressionMap.cache === true
         let cacheError = false
         if (this.dataSource.queryResultCache && isCachingEnabled) {
             try {

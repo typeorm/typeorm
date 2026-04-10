@@ -179,6 +179,8 @@ export class DriverUtils {
         if (afterBase && afterBase.indexOf("?") !== -1) {
             afterBase = afterBase.substring(0, afterBase.indexOf("?"))
         }
+        // normalize empty string to undefined so downstream ?? works correctly
+        if (afterBase === "") afterBase = undefined
 
         const lastAtSign = base.lastIndexOf("@")
         const usernameAndPassword = base.substring(0, lastAtSign)
@@ -217,6 +219,8 @@ export class DriverUtils {
             secondSlash !== -1 ? preBase.substring(0, secondSlash) : preBase
         let afterBase =
             secondSlash !== -1 ? preBase.substring(secondSlash + 1) : undefined
+        // normalize empty string to undefined so downstream ?? works correctly
+        if (afterBase === "") afterBase = undefined
         let afterQuestionMark: string
         let host = undefined
         let port = undefined
