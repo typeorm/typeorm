@@ -115,8 +115,8 @@ describe("multi-database > basic-functionality", () => {
 
         it("should prefix tableName when custom database used in Entity decorator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
 
                     const tablePathAnswer = `${attachAnswerHandle}.answer`
                     const table = await queryRunner.getTable(tablePathAnswer)
@@ -125,9 +125,9 @@ describe("multi-database > basic-functionality", () => {
                     const answer = new Answer()
                     answer.text = "Answer #1"
 
-                    await connection.getRepository(Answer).save(answer)
+                    await dataSource.getRepository(Answer).save(answer)
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(Answer, "answer")
                         .where("answer.id = :id", { id: 1 })
                         .getSql()
@@ -141,8 +141,8 @@ describe("multi-database > basic-functionality", () => {
 
         it("should not affect tableName when using default main database", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
 
                     const tablePathUser = `user`
                     const table = await queryRunner.getTable(tablePathUser)
@@ -150,9 +150,9 @@ describe("multi-database > basic-functionality", () => {
 
                     const user = new User()
                     user.name = "User #1"
-                    await connection.getRepository(User).save(user)
+                    await dataSource.getRepository(User).save(user)
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(User, "user")
                         .where("user.id = :id", { id: 1 })
                         .getSql()
@@ -167,8 +167,8 @@ describe("multi-database > basic-functionality", () => {
 
         it("should create foreign keys for relations within the same database", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const tablePathCategory = `${attachCategoryHandle}.category`
                     const tablePathPost = `${attachCategoryHandle}.post`
                     const tableCategory =

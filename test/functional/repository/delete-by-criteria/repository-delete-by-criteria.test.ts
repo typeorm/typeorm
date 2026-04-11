@@ -28,8 +28,8 @@ describe("repository > delete methods", function () {
 
     it("remove using delete method should delete successfully", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save some new posts
                 const newPost1 = postRepository.create()
@@ -63,8 +63,8 @@ describe("repository > delete methods", function () {
 
     it("remove multiple rows using delete method should delete successfully", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save some new posts
                 const newPost1 = postRepository.create()
@@ -98,8 +98,8 @@ describe("repository > delete methods", function () {
 
     it("remove row using delete method with partial criteria should delete successfully", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save some new posts
                 const newPost1 = postRepository.create()
@@ -137,8 +137,8 @@ describe("repository > delete methods", function () {
 
     it("removes all rows using deleteAll method", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 // save some new posts
                 const newPost1 = postRepository.create()

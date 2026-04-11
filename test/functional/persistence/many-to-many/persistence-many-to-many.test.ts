@@ -28,10 +28,10 @@ describe("persistence > many-to-many", function () {
 
     it("add exist element to exist object with empty many-to-many relation and save it and it should contain a new category", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
-                const userRepository = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
+                const userRepository = dataSource.getRepository(User)
 
                 // save a new category
                 const newCategory = categoryRepository.create()
@@ -54,31 +54,29 @@ describe("persistence > many-to-many", function () {
                 await userRepository.save(newUser)
 
                 // load a post
-                const loadedUser = await userRepository.findOne({
+                const loadedUser = await userRepository.findOneOrFail({
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
 
-                expect(loadedUser!).not.to.be.null
-                expect(loadedUser!.post).not.to.be.undefined
-                expect(loadedUser!.post.categories).not.to.be.undefined
+                expect(loadedUser).not.to.be.null
+                expect(loadedUser.post).not.to.be.undefined
+                expect(loadedUser.post.categories).not.to.be.undefined
             }),
         ))
 
     it("remove one element from many-to-many relation should remove from the database as well", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
-                const userRepository = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
+                const userRepository = dataSource.getRepository(User)
 
                 // save a new category
                 const category1 = new Category()
@@ -106,23 +104,21 @@ describe("persistence > many-to-many", function () {
                 await userRepository.save(newUser)
 
                 // load a post
-                const loadedUser1 = await userRepository.findOne({
+                const loadedUser1 = await userRepository.findOneOrFail({
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
 
-                expect(loadedUser1!).not.to.be.null
-                expect(loadedUser1!.post).not.to.be.undefined
-                expect(loadedUser1!.post.categories).not.to.be.undefined
-                expect(loadedUser1!.post.categories!.length).to.be.equal(2)
+                expect(loadedUser1).not.to.be.null
+                expect(loadedUser1.post).not.to.be.undefined
+                expect(loadedUser1.post.categories).not.to.be.undefined
+                expect(loadedUser1.post.categories!.length).to.be.equal(2)
 
                 // now remove added categories
                 newPost.categories = [category1]
@@ -130,32 +126,30 @@ describe("persistence > many-to-many", function () {
                 await userRepository.save(newUser)
 
                 // load a post
-                const loadedUser2 = await userRepository.findOne({
+                const loadedUser2 = await userRepository.findOneOrFail({
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
 
-                expect(loadedUser2!).not.to.be.null
-                expect(loadedUser2!.post).not.to.be.undefined
-                expect(loadedUser2!.post.categories).not.to.be.undefined
-                expect(loadedUser2!.post.categories!.length).to.be.equal(1)
+                expect(loadedUser2).not.to.be.null
+                expect(loadedUser2.post).not.to.be.undefined
+                expect(loadedUser2.post.categories).not.to.be.undefined
+                expect(loadedUser2.post.categories!.length).to.be.equal(1)
             }),
         ))
 
     it("remove all elements from many-to-many relation should remove from the database as well", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
-                const userRepository = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
+                const userRepository = dataSource.getRepository(User)
 
                 // save a new category
                 const category1 = new Category()
@@ -183,23 +177,21 @@ describe("persistence > many-to-many", function () {
                 await userRepository.save(newUser)
 
                 // load a post
-                const loadedUser1 = await userRepository.findOne({
+                const loadedUser1 = await userRepository.findOneOrFail({
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
 
-                expect(loadedUser1!).not.to.be.null
-                expect(loadedUser1!.post).not.to.be.undefined
-                expect(loadedUser1!.post.categories).not.to.be.undefined
-                expect(loadedUser1!.post.categories!.length).to.be.equal(2)
+                expect(loadedUser1).not.to.be.null
+                expect(loadedUser1.post).not.to.be.undefined
+                expect(loadedUser1.post.categories).not.to.be.undefined
+                expect(loadedUser1.post.categories!.length).to.be.equal(2)
 
                 // now remove added categories
                 newPost.categories = []
@@ -207,31 +199,29 @@ describe("persistence > many-to-many", function () {
                 await userRepository.save(newUser)
 
                 // load a post
-                const loadedUser2 = await userRepository.findOne({
+                const loadedUser2 = await userRepository.findOneOrFail({
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
 
-                expect(loadedUser2!).not.to.be.null
-                expect(loadedUser2!.post).not.to.be.undefined
-                expect(loadedUser2!.post.categories!.length).to.be.equal(0)
+                expect(loadedUser2).not.to.be.null
+                expect(loadedUser2.post).not.to.be.undefined
+                expect(loadedUser2.post.categories!.length).to.be.equal(0)
             }),
         ))
 
     it("remove all elements (set to null) from many-to-many relation should remove from the database as well", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const categoryRepository = connection.getRepository(Category)
-                const userRepository = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
+                const userRepository = dataSource.getRepository(User)
 
                 // save a new category
                 const category1 = new Category()
@@ -259,23 +249,21 @@ describe("persistence > many-to-many", function () {
                 await userRepository.save(newUser)
 
                 // load a post
-                const loadedUser1 = await userRepository.findOne({
+                const loadedUser1 = await userRepository.findOneOrFail({
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
 
-                expect(loadedUser1!).not.to.be.null
-                expect(loadedUser1!.post).not.to.be.undefined
-                expect(loadedUser1!.post.categories).not.to.be.undefined
-                expect(loadedUser1!.post.categories!.length).to.be.equal(2)
+                expect(loadedUser1).not.to.be.null
+                expect(loadedUser1.post).not.to.be.undefined
+                expect(loadedUser1.post.categories).not.to.be.undefined
+                expect(loadedUser1.post.categories!.length).to.be.equal(2)
 
                 // now remove added categories
                 newPost.categories = null
@@ -283,49 +271,47 @@ describe("persistence > many-to-many", function () {
                 await userRepository.save(newUser)
 
                 // load a post
-                const loadedUser2 = await userRepository.findOne({
+                const loadedUser2 = await userRepository.findOneOrFail({
                     where: {
                         id: newUser.id,
                     },
-                    join: {
-                        alias: "user",
-                        leftJoinAndSelect: {
-                            post: "user.post",
-                            categories: "post.categories",
+                    relations: {
+                        post: {
+                            categories: true,
                         },
                     },
                 })
 
-                expect(loadedUser2!).not.to.be.null
-                expect(loadedUser2!.post).not.to.be.undefined
-                expect(loadedUser2!.post.categories!.length).to.be.equal(0)
+                expect(loadedUser2).not.to.be.null
+                expect(loadedUser2.post).not.to.be.undefined
+                expect(loadedUser2.post.categories!.length).to.be.equal(0)
             }),
         ))
 
     it("remove all elements from many-to-many relation if parent entity is removed", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // save a new category
                 const category1 = new Category()
                 category1.name = "Animals"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 // save a new category
                 const category2 = new Category()
                 category2.name = "Animals"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 // save a new post
                 const newPost = new Post()
                 newPost.title = "All about animals"
-                await connection.manager.save(newPost)
+                await dataSource.manager.save(newPost)
 
                 // now categories to the post inside user and save a user
                 newPost.categories = [category1, category2]
-                await connection.manager.save(newPost)
+                await dataSource.manager.save(newPost)
 
                 // this should not give an error:
-                await connection.manager.remove(newPost)
+                await dataSource.manager.remove(newPost)
             }),
         ))
 })

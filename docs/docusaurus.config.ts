@@ -68,6 +68,24 @@ const config: Config = {
                     editUrl:
                         "https://github.com/typeorm/typeorm/tree/master/docs/",
                 },
+                blog: {
+                    showReadingTime: true,
+                    blogTitle: "TypeORM Blog",
+                    blogDescription:
+                        "News, release updates, and insights from the TypeORM team.",
+                    blogSidebarTitle: "Recent Posts",
+                    blogSidebarCount: 10,
+                    postsPerPage: 10,
+                    feedOptions: {
+                        type: ["rss", "atom"],
+                        title: "TypeORM Blog",
+                        description:
+                            "News, release updates, and insights from the TypeORM team.",
+                        copyright: `Copyright © ${new Date().getFullYear()} TypeORM`,
+                    },
+                    editUrl:
+                        "https://github.com/typeorm/typeorm/tree/master/docs/",
+                },
                 sitemap: {
                     lastmod: "datetime",
                     changefreq: null,
@@ -81,6 +99,14 @@ const config: Config = {
     themeConfig: {
         // Replace with your project's social card
         image: "img/typeorm-social-card.jpg",
+        announcementBar: {
+            id: "v1_release",
+            content:
+                'TypeORM 1.0 is here! Check the <a href="/docs/releases/1.0/release-notes">release notes</a> and <a href="/docs/releases/1.0/upgrading-from-0.3">upgrading guide</a>.',
+            backgroundColor: "#d94400",
+            textColor: "#ffffff",
+            isCloseable: true,
+        },
         colorMode: {
             defaultMode: "light",
             disableSwitch: false,
@@ -105,6 +131,11 @@ const config: Config = {
                 {
                     to: "/maintainers",
                     label: "Maintainers",
+                    position: "left",
+                },
+                {
+                    to: "/blog",
+                    label: "Blog",
                     position: "left",
                 },
                 {
@@ -161,6 +192,10 @@ const config: Config = {
                 {
                     title: "More",
                     items: [
+                        {
+                            label: "Blog",
+                            to: "/blog",
+                        },
                         {
                             label: "GitHub",
                             href: "https://github.com/typeorm/typeorm",

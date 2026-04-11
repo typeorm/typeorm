@@ -20,8 +20,8 @@ describe("entity schemas > target option", () => {
 
     it("should create instance of the target", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const post = postRepository.create({
                     title: "First Post",
                     text: "About first post",
@@ -32,17 +32,17 @@ describe("entity schemas > target option", () => {
 
     it("should find instances of the target", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const post = new Post()
                 post.title = "First Post"
                 post.text = "About first post"
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     title: "First Post",
                 })
-                loadedPost!.should.be.instanceof(Post)
+                loadedPost.should.be.instanceof(Post)
             }),
         ))
 })

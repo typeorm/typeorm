@@ -25,8 +25,8 @@ describe("deferrable foreign key constraint", () => {
 
     it("initially deferred fk should be validated at the end of transaction", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.manager.transaction(async (entityManager) => {
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.transaction(async (entityManager) => {
                     // first save user
                     const user = new User()
                     user.id = 1
@@ -44,7 +44,7 @@ describe("deferrable foreign key constraint", () => {
                 }).should.not.be.rejected
 
                 // now check
-                const user = await connection.manager.findOne(User, {
+                const user = await dataSource.manager.findOne(User, {
                     relations: { company: true },
                     where: { id: 1 },
                 })
@@ -62,11 +62,11 @@ describe("deferrable foreign key constraint", () => {
 
     it("initially immediate fk should be validated at the end at transaction with deferred check time", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // changing the constraint check time is only supported on postgres
-                if (connection.driver.options.type !== "postgres") return
+                if (dataSource.driver.options.type !== "postgres") return
 
-                await connection.manager.transaction(async (entityManager) => {
+                await dataSource.manager.transaction(async (entityManager) => {
                     // first set constraints deferred manually
                     await entityManager.query("SET CONSTRAINTS ALL DEFERRED")
 
@@ -87,7 +87,7 @@ describe("deferrable foreign key constraint", () => {
                 }).should.not.be.rejected
 
                 // now check
-                const office = await connection.manager.findOne(Office, {
+                const office = await dataSource.manager.findOne(Office, {
                     relations: { company: true },
                     where: { id: 2 },
                 })

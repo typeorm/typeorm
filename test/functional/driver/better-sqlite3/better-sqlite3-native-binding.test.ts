@@ -30,10 +30,10 @@ describe("option nativeBinding for better-sqlite3", () => {
 
     it("should use a the path set in nativeBindings to the node file", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 expect(
                     (
-                        connection.driver
+                        dataSource.driver
                             .options as BetterSqlite3DataSourceOptions
                     ).nativeBinding,
                 ).to.be.eql(pathToBetterSqliteNode)

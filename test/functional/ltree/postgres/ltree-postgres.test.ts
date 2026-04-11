@@ -21,8 +21,8 @@ describe("ltree-postgres", () => {
 
     it("should create correct schema with Postgres' ltree type", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
                 expect(schema).not.to.be.undefined
@@ -38,46 +38,46 @@ describe("ltree-postgres", () => {
 
     it("should persist ltree correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const path = "News.Featured.Opinion"
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.path = path
                 const persistedPost = await postRepo.save(post)
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(path)
+                expect(foundPost.path).to.deep.equal(path)
             }),
         ))
 
     it("should update ltree correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const path = "News.Featured.Opinion"
                 const path2 = "News.Featured.Gossip"
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.path = path
                 const persistedPost = await postRepo.save(post)
 
                 await postRepo.update({ id: persistedPost.id }, { path: path2 })
 
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(path2)
+                expect(foundPost.path).to.deep.equal(path2)
             }),
         ))
 
     it("should re-save ltree correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const path = "News.Featured.Opinion"
                 const path2 = "News.Featured.Gossip"
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.path = path
                 const persistedPost = await postRepo.save(post)
@@ -85,43 +85,43 @@ describe("ltree-postgres", () => {
                 persistedPost.path = path2
                 await postRepo.save(persistedPost)
 
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(path2)
+                expect(foundPost.path).to.deep.equal(path2)
             }),
         ))
 
     it("should persist ltree correctly with trailing '.'", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const path = "News.Featured.Opinion."
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.path = path
                 const persistedPost = await postRepo.save(post)
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal("News.Featured.Opinion")
+                expect(foundPost.path).to.deep.equal("News.Featured.Opinion")
             }),
         ))
 
     it("should persist ltree correctly when containing spaces", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const path = "News.Featured Story.Opinion"
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.path = path
                 const persistedPost = await postRepo.save(post)
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(
+                expect(foundPost.path).to.deep.equal(
                     "News.Featured_Story.Opinion",
                 )
             }),
@@ -129,18 +129,17 @@ describe("ltree-postgres", () => {
 
     it("should be able to query ltree correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const path = "News.Featured.Opinion"
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.path = path
                 await postRepo.save(post)
                 const foundPost = await postRepo
                     .createQueryBuilder()
                     .where(`path ~ 'news@.*'`)
-                    .getOne()
-                expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(path)
+                    .getOneOrFail()
+                expect(foundPost.path).to.deep.equal(path)
             }),
         ))
 })

@@ -26,12 +26,12 @@ describe.skip("views dependencies", () => {
 
     it("should generate drop and create queries in correct order", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const expectedDrops: RegExp[] = []
                 const expectedCreates: RegExp[] = []
                 // Views in order in which they should be created
                 for (const view of [ViewA, ViewB, ViewC]) {
-                    const metadata = connection.getMetadata(view)
+                    const metadata = dataSource.getMetadata(view)
                     // Modify ViewA, this should trigger updates on all views that depend on it
                     if (view === ViewA) {
                         metadata.expression = (
@@ -47,7 +47,7 @@ describe.skip("views dependencies", () => {
                 }
                 // Drop order should be reverse of create order
                 expectedDrops.reverse()
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
                 // console.log(sqlInMemory.upQueries.map(q => q.query));

@@ -23,10 +23,10 @@ describe("find options > order", () => {
 
     it("order by id DESC", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts1 = await connection
+                const posts1 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -61,7 +61,7 @@ describe("find options > order", () => {
                     },
                 ])
 
-                const posts2 = await connection
+                const posts2 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -96,7 +96,7 @@ describe("find options > order", () => {
                     },
                 ])
 
-                const posts3 = await connection
+                const posts3 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -131,7 +131,7 @@ describe("find options > order", () => {
                     },
                 ])
 
-                const posts4 = await connection
+                const posts4 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -168,7 +168,7 @@ describe("find options > order", () => {
                     },
                 ])
 
-                const posts5 = await connection
+                const posts5 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -203,7 +203,7 @@ describe("find options > order", () => {
                     },
                 ])
 
-                const posts6 = await connection
+                const posts6 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -238,7 +238,7 @@ describe("find options > order", () => {
                     },
                 ])
 
-                const posts7 = await connection
+                const posts7 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -273,7 +273,7 @@ describe("find options > order", () => {
                     },
                 ])
 
-                const posts8 = await connection
+                const posts8 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -314,10 +314,10 @@ describe("find options > order", () => {
 
     it("order by title", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -356,10 +356,10 @@ describe("find options > order", () => {
 
     it("where two criteria", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -399,10 +399,10 @@ describe("find options > order", () => {
 
     it("order by relation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -447,10 +447,10 @@ describe("find options > order", () => {
 
     it("order by relation with where relation applied", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -491,10 +491,10 @@ describe("find options > order", () => {
 
     it("order by nested relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
@@ -535,10 +535,10 @@ describe("find options > order", () => {
 
     it("order by complex nested relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -589,10 +589,10 @@ describe("find options > order", () => {
 
     it("order by column in embed", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         order: {
@@ -634,10 +634,10 @@ describe("find options > order", () => {
 
     it("order by relation in embed", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {

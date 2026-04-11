@@ -82,7 +82,7 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                         })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))
@@ -185,7 +185,7 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                         })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))

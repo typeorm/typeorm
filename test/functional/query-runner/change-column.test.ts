@@ -23,15 +23,15 @@ describe("query runner > change column", () => {
 
     it("should correctly change column and revert change", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner does not allow changing primary columns and renaming constraints
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 )
                     return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
 
                 const nameColumn = table!.findColumnByName("name")!
@@ -56,7 +56,7 @@ describe("query runner > change column", () => {
                 table!.findColumnByName("name")!.isNullable.should.be.true
 
                 // SQLite does not impose any length restrictions
-                if (!DriverUtils.isSQLiteFamily(connection.driver)) {
+                if (!DriverUtils.isSQLiteFamily(dataSource.driver)) {
                     table!
                         .findColumnByName("name")!
                         .length!.should.be.equal("500")
@@ -106,15 +106,15 @@ describe("query runner > change column", () => {
 
     it("should correctly change column 'isGenerated' property and revert change", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner does not allow changing generated columns in existent tables
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 )
                     return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 let idColumn = table!.findColumnByName("id")!
                 let changedIdColumn = idColumn.clone()
@@ -184,23 +184,23 @@ describe("query runner > change column", () => {
 
     it("should correctly change generated as expression", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const isPostgres = connection.driver.options.type === "postgres"
-                const isSpanner = connection.driver.options.type === "spanner"
+            dataSources.map(async (dataSource) => {
+                const isPostgres = dataSource.driver.options.type === "postgres"
+                const isSpanner = dataSource.driver.options.type === "spanner"
                 const shouldRun =
                     (isPostgres &&
-                        (connection.driver as PostgresDriver)
+                        (dataSource.driver as PostgresDriver)
                             .isGeneratedColumnsSupported) ||
                     isSpanner
                 if (!shouldRun) return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
-                await createTypeormMetadataTable(connection.driver, queryRunner)
+                await createTypeormMetadataTable(dataSource.driver, queryRunner)
 
                 // Database is running < postgres 12
                 if (
-                    !(connection.driver as PostgresDriver)
+                    !(dataSource.driver as PostgresDriver)
                         .isGeneratedColumnsSupported
                 )
                     return

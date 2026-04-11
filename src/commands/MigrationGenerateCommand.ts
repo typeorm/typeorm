@@ -79,7 +79,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             : path.resolve(process.cwd(), args.path)
         const filename = timestamp + "-" + path.basename(fullPath) + extension
 
-        let dataSource: DataSource | undefined = undefined
+        let dataSource: DataSource | undefined
         try {
             dataSource = await CommandUtils.loadDataSource(
                 path.resolve(process.cwd(), args.dataSource as string),
@@ -215,10 +215,11 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     /**
      * Formats query parameters for migration queries if parameters actually exist
+     *
      * @param parameters
      */
     protected static queryParams(parameters: any[] | undefined): string {
-        if (!parameters || !parameters.length) {
+        if (!parameters?.length) {
             return ""
         }
 
@@ -227,6 +228,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the migration file.
+     *
      * @param name
      * @param timestamp
      * @param upSqls
@@ -261,6 +263,7 @@ ${downSqls.join(`
 
     /**
      * Gets contents of the migration file in Javascript.
+     *
      * @param name
      * @param timestamp
      * @param upSqls

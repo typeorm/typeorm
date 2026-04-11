@@ -21,8 +21,8 @@ describe("database schema > column length > sqlite", () => {
 
     it("all types should create with correct size", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -49,8 +49,8 @@ describe("database schema > column length > sqlite", () => {
 
     it("all types should update their size", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const metadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const metadata = dataSource.getMetadata(Post)
                 metadata.findColumnWithPropertyName("character")!.length = "100"
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
                 metadata.findColumnWithPropertyName("nchar")!.length = "100"
@@ -62,9 +62,9 @@ describe("database schema > column length > sqlite", () => {
                     "native_character",
                 )!.length = "100"
 
-                await connection.synchronize(false)
+                await dataSource.synchronize(false)
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -87,7 +87,7 @@ describe("database schema > column length > sqlite", () => {
                     table!.findColumnByName("native_character")!.length,
                 ).to.be.equal("100")
 
-                await connection.synchronize(false)
+                await dataSource.synchronize(false)
             }),
         ))
 })

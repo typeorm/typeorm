@@ -24,8 +24,8 @@ describe("deferrable unique constraint", () => {
 
     it("initially deferred unique should be validated at the end of transaction", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.manager.transaction(async (entityManager) => {
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.transaction(async (entityManager) => {
                     // first save company
                     const company1 = new Company()
                     company1.id = 100
@@ -47,7 +47,7 @@ describe("deferrable unique constraint", () => {
                 })
 
                 // now check
-                const companies = await connection.manager.find(Company, {
+                const companies = await dataSource.manager.find(Company, {
                     order: { id: "ASC" },
                 })
 
@@ -66,8 +66,8 @@ describe("deferrable unique constraint", () => {
 
     it("initially immediate unique should be validated at the end at transaction with deferred check time", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.manager.transaction(async (entityManager) => {
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.transaction(async (entityManager) => {
                     // first set constraints deferred manually
                     await entityManager.query("SET CONSTRAINTS ALL DEFERRED")
 
@@ -92,7 +92,7 @@ describe("deferrable unique constraint", () => {
                 })
 
                 // now check
-                const offices = await connection.manager.find(Office, {
+                const offices = await dataSource.manager.find(Office, {
                     order: { id: "ASC" },
                 })
 

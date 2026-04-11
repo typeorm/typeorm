@@ -23,8 +23,8 @@ describe("query runner > create view", () => {
 
     it("should correctly create VIEW and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const view = new View({
                     name: "new_post_view",
                     expression: `SELECT * from "post"`,
@@ -45,8 +45,8 @@ describe("query runner > create view", () => {
 
     it("should correctly create MATERIALIZED VIEW and revert creation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const view = new View({
                     name: "new_post_materialized_view",
                     expression: `SELECT * from "post"`,

@@ -93,6 +93,7 @@ export class UniqueMetadata {
     /**
      * Builds some depend unique constraint properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     *
      * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
@@ -100,7 +101,7 @@ export class UniqueMetadata {
 
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {
-            let columnPropertyPaths: string[] = []
+            let columnPropertyPaths: string[]
             if (Array.isArray(this.givenColumnNames)) {
                 columnPropertyPaths = this.givenColumnNames.map(
                     (columnName) => {
@@ -180,12 +181,12 @@ export class UniqueMetadata {
             {} as { [key: string]: number },
         )
 
-        this.name = this.givenName
-            ? this.givenName
-            : namingStrategy.uniqueConstraintName(
-                  this.entityMetadata.tableName,
-                  this.columns.map((column) => column.databaseName),
-              )
+        this.name =
+            this.givenName ??
+            namingStrategy.uniqueConstraintName(
+                this.entityMetadata.tableName,
+                this.columns.map((column) => column.databaseName),
+            )
         return this
     }
 }

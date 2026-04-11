@@ -21,8 +21,8 @@ describe("database schema > column length > mysql", () => {
 
     it("all types should be created with correct length", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -37,14 +37,14 @@ describe("database schema > column length > mysql", () => {
 
     it("all types should update their length", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const metadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const metadata = dataSource.getMetadata(Post)
                 metadata.findColumnWithPropertyName("char")!.length = "100"
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
 
-                await connection.synchronize(false)
+                await dataSource.synchronize(false)
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 

@@ -21,8 +21,8 @@ describe("database schema > column length > postgres", () => {
 
     it("all types should create with correct size", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -43,8 +43,8 @@ describe("database schema > column length > postgres", () => {
 
     it("all types should update their size", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const metadata = connection.getMetadata(Post)
+            dataSources.map(async (dataSource) => {
+                const metadata = dataSource.getMetadata(Post)
                 metadata.findColumnWithPropertyName(
                     "characterVarying",
                 )!.length = "100"
@@ -52,9 +52,9 @@ describe("database schema > column length > postgres", () => {
                 metadata.findColumnWithPropertyName("character")!.length = "100"
                 metadata.findColumnWithPropertyName("char")!.length = "100"
 
-                await connection.synchronize(false)
+                await dataSource.synchronize(false)
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 

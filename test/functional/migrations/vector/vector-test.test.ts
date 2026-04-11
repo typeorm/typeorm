@@ -24,10 +24,10 @@ describe("migrations > vector type", () => {
 
     it("should run vector migration and create table with vector columns", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.runMigrations()
+            dataSources.map(async (dataSource) => {
+                await dataSource.runMigrations()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -54,10 +54,10 @@ describe("migrations > vector type", () => {
 
     it("should handle vector data after migration", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.runMigrations()
+            dataSources.map(async (dataSource) => {
+                await dataSource.runMigrations()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.query(
                     'INSERT INTO "post"("embedding", "embedding_three_dimensions", "halfvec_embedding", "halfvec_four_dimensions") VALUES (\'[1,2,3,4]\', \'[4,5,6]\', \'[1.5,2.5]\', \'[1,2,3,4]\')',
                 )

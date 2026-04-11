@@ -51,14 +51,14 @@ describe("create comment", () => {
 
         it("should create table with comment", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const tableMetadata = connection.getMetadata(Company)
+                dataSources.map(async (dataSource) => {
+                    const tableMetadata = dataSource.getMetadata(Company)
                     expect(tableMetadata!.comment).to.be.equal(
                         "This is a company entity",
                     )
 
                     const res = await loadCommentFromDB(
-                        connection,
+                        dataSource,
                         tableMetadata.tableName,
                     )
                     expect(res).to.equal("This is a company entity")
@@ -67,10 +67,10 @@ describe("create comment", () => {
 
         it("should update table and remove comment", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
 
-                    const tableMetadata = connection.getMetadata(Company)
+                    const tableMetadata = dataSource.getMetadata(Company)
                     expect(tableMetadata!.comment).to.be.equal(
                         "This is a company entity",
                     )
@@ -87,7 +87,7 @@ describe("create comment", () => {
                     )
 
                     const res = await loadCommentFromDB(
-                        connection,
+                        dataSource,
                         tableMetadata.tableName,
                     )
                     expect(res).to.equal("Updated company entity comment")
@@ -98,7 +98,7 @@ describe("create comment", () => {
                     expect(table!.comment).to.be.undefined
 
                     const res2 = await loadCommentFromDB(
-                        connection,
+                        dataSource,
                         tableMetadata.tableName,
                     )
 
@@ -108,8 +108,8 @@ describe("create comment", () => {
             ))
         it("should correctly synchronize when table comment changes", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const companyMetadata = connection.getMetadata(Company)
+                dataSources.map(async (dataSource) => {
+                    const companyMetadata = dataSource.getMetadata(Company)
                     expect(companyMetadata!.comment).to.be.equal(
                         "This is a company entity",
                     )
@@ -117,10 +117,10 @@ describe("create comment", () => {
                     companyMetadata.comment =
                         "Synchronized company entity comment"
 
-                    await connection.synchronize()
+                    await dataSource.synchronize()
 
                     const res = await loadCommentFromDB(
-                        connection,
+                        dataSource,
                         companyMetadata.tableName,
                     )
                     expect(res).to.equal("Synchronized company entity comment")

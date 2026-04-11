@@ -22,9 +22,9 @@ describe("table-inheritance > single-table > no-type-column", () => {
 
     it("should return subclass in relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postItRepo = connection.getRepository(PostItNote)
-                const stickyRepo = connection.getRepository(StickyNote)
+            dataSources.map(async (dataSource) => {
+                const postItRepo = dataSource.getRepository(PostItNote)
+                const stickyRepo = dataSource.getRepository(StickyNote)
 
                 // -------------------------------------------------------------------------
                 // Create
@@ -33,12 +33,12 @@ describe("table-inheritance > single-table > no-type-column", () => {
                 const employee = new Employee()
                 employee.name = "alicefoo"
                 employee.employeeName = "Alice Foo"
-                await connection.getRepository(Employee).save(employee)
+                await dataSource.getRepository(Employee).save(employee)
 
                 const author = new Author()
                 author.name = "bobbar"
                 author.authorName = "Bob Bar"
-                await connection.getRepository(Author).save(author)
+                await dataSource.getRepository(Author).save(author)
 
                 await postItRepo.insert({
                     postItNoteLabel: "A post-it note",

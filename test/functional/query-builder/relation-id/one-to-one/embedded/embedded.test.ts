@@ -24,22 +24,22 @@ describe("query builder > relation-id > one-to-one > embedded", () => {
 
     it("should load ids when loadRelationIdAndMap used on embedded and nested embedded tables", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.name = "Alice"
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.name = "Bob"
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const category1 = new Category()
                 category1.name = "cars"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "airplanes"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const post1 = new Post()
                 post1.title = "About BMW"
@@ -52,7 +52,7 @@ describe("query builder > relation-id > one-to-one > embedded", () => {
                 post1.counters.subcounters.version = 1
                 post1.counters.subcounters.watches = 2
                 post1.counters.subcounters.watchedUser = user1
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "About Boeing"
@@ -65,9 +65,9 @@ describe("query builder > relation-id > one-to-one > embedded", () => {
                 post2.counters.subcounters.version = 1
                 post2.counters.subcounters.watches = 1
                 post2.counters.subcounters.watchedUser = user2
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap(
                         "post.counters.categoryId",

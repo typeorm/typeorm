@@ -20,10 +20,10 @@ describe("sqlite driver > throws an error when queried after closing connection"
 
     it("should throw", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection.destroy()
+            dataSources.map(async (dataSource) => {
+                await dataSource.destroy()
                 await expect(
-                    connection.query("select * from sqlite_master;"),
+                    dataSource.query("select * from sqlite_master;"),
                 ).to.rejectedWith("The database connection is not open")
             }),
         ))

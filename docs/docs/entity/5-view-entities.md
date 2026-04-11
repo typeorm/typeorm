@@ -148,7 +148,7 @@ List of available options in `ViewColumnOptions`:
 - `name: string` - Column name in the database view.
 - `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to unmarshal properties of arbitrary type `DatabaseType` supported by the database into a type `EntityType`. Arrays of transformers are also supported and are applied in reverse order when reading. Note that because database views are read-only, `transformer.to(value)` will never be used.
 
-## Materialized View Indices
+## Materialized View Indexes
 
 There's support for creation of indices for materialized views if using `PostgreSQL` or `CockroachDB`.
 
@@ -178,7 +178,7 @@ export class PostCategory {
 }
 ```
 
-However, `unique` is currently the only supported option for indices in materialized views. The rest of the indices options will be ignored.
+However, `unique` is currently the only supported option for indexes in materialized views. The rest of the index options will be ignored.
 
 ```typescript
 @Index("name-idx", { unique: true })

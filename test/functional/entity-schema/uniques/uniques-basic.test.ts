@@ -21,15 +21,15 @@ describe("entity-schema > uniques", () => {
 
     it("should create a unique constraint with 2 columns", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("person")
                 await queryRunner.release()
 
                 if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "spanner"
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
                 ) {
                     expect(table!.indices.length).to.be.equal(1)
                     expect(table!.indices[0].name).to.be.equal("UNIQUE_TEST")
@@ -38,7 +38,7 @@ describe("entity-schema > uniques", () => {
                     expect(
                         table!.indices[0].columnNames,
                     ).to.deep.include.members(["FirstName", "LastName"])
-                } else if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                } else if (DriverUtils.isSQLiteFamily(dataSource.driver)) {
                     expect(table!.uniques.length).to.be.equal(1)
                     expect(table!.uniques[0].columnNames.length).to.be.equal(2)
                     expect(

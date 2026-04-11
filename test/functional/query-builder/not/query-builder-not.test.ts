@@ -22,8 +22,8 @@ describe("query builder > not", () => {
 
     it("should put negation in the SQL with one condition", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const sql = connection
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .andWhere(
@@ -48,8 +48,8 @@ describe("query builder > not", () => {
 
     it("should put negation in the SQL with two condition", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const sql = connection
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .andWhere(
@@ -76,26 +76,26 @@ describe("query builder > not", () => {
 
     it("should put negation correctly into WHERE expression with one condition", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"
                 user1.isAdmin = false
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.firstName = "Alex"
                 user2.lastName = "Messer"
                 user2.isAdmin = false
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.firstName = "Umed"
                 user3.lastName = "Pleerock"
                 user3.isAdmin = true
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
-                const users = await connection
+                const users = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .andWhere(
@@ -113,26 +113,26 @@ describe("query builder > not", () => {
 
     it("should put negation correctly into WHERE expression with two conditions", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"
                 user1.isAdmin = false
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.firstName = "Alex"
                 user2.lastName = "Messer"
                 user2.isAdmin = false
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.firstName = "Umed"
                 user3.lastName = "Pleerock"
                 user3.isAdmin = true
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
-                const users = await connection
+                const users = await dataSource
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .andWhere(

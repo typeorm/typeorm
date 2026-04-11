@@ -450,7 +450,7 @@ describe("query builder > insert from select", () => {
             }),
         ))
 
-    it("should insert from select with onConflict().orUpdate()", () =>
+    it("should insert from select with orUpdate()", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 // Insert initial user
@@ -475,7 +475,7 @@ describe("query builder > insert from select", () => {
                     },
                 ])
 
-                // Insert from select with onConflict update
+                // Insert from select with conflict update
                 await dataSource
                     .createQueryBuilder()
                     .insert()
@@ -504,7 +504,7 @@ describe("query builder > insert from select", () => {
             }),
         ))
 
-    it("should insert from select with onConflict().orIgnore()", () =>
+    it("should insert from select with orIgnore()", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 // Insert initial user
@@ -529,7 +529,7 @@ describe("query builder > insert from select", () => {
                     },
                 ])
 
-                // Insert from select with onConflict ignore
+                // Insert from select with conflict ignore
                 await dataSource
                     .createQueryBuilder()
                     .insert()

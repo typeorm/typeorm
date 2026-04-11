@@ -29,15 +29,6 @@ export interface ColumnOptions extends ColumnCommonOptions {
     nullable?: boolean
 
     /**
-     * Indicates if column value is not updated by "save" operation.
-     * It means you'll be able to write this value only when you first time insert the object.
-     * Default value is "false".
-     * @deprecated Please use the `update` option instead.  Careful, it takes
-     * the opposite value to readonly.
-     */
-    readonly?: boolean
-
-    /**
      * Indicates if column value is updated by "save" operation.
      * If false, you'll be able to write this value only when you first time insert the object.
      * Default value is "true".
@@ -177,6 +168,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     *
      * @see https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
     query?: (alias: string) => string
@@ -185,11 +177,13 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * Indicates if date values should be stored and retrieved in UTC timezone
      * instead of local timezone. Only applies to "date" column type.
      * Default value is "false" (uses local timezone for backward compatibility).
+     *
      * @example
      * ```
      * \@Column({ type: "date", utc: true })
      * birthDate: Date
      * ```
+     *
      */
     utc?: boolean
 }

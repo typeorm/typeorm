@@ -24,6 +24,7 @@ import { Raw } from "../../../../src/find-options/operator/Raw"
 import { PersonAR } from "./entity/PersonAR"
 import { expect } from "chai"
 import { Comment } from "./entity/Comment"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("repository > find options > operators", () => {
     let dataSources: DataSource[]
@@ -37,19 +38,19 @@ describe("repository > find options > operators", () => {
 
     it("not", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Not("About #1"),
@@ -62,19 +63,19 @@ describe("repository > find options > operators", () => {
 
     it("lessThan", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: LessThan(10),
@@ -87,23 +88,23 @@ describe("repository > find options > operators", () => {
 
     it("lessThanOrEqual", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
                 const post3 = new Post()
                 post3.title = "About #3"
                 post3.likes = 13
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: LessThanOrEqual(12),
@@ -117,19 +118,19 @@ describe("repository > find options > operators", () => {
 
     it("not(lessThan)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Not(LessThan(10)),
@@ -142,23 +143,23 @@ describe("repository > find options > operators", () => {
 
     it("not(lessThanOrEqual)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
                 const post3 = new Post()
                 post3.title = "About #3"
                 post3.likes = 13
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Not(LessThanOrEqual(12)),
@@ -171,19 +172,19 @@ describe("repository > find options > operators", () => {
 
     it("moreThan", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: MoreThan(10),
@@ -196,23 +197,23 @@ describe("repository > find options > operators", () => {
 
     it("moreThanOrEqual", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
                 const post3 = new Post()
                 post3.title = "About #3"
                 post3.likes = 13
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: MoreThanOrEqual(12),
@@ -228,19 +229,19 @@ describe("repository > find options > operators", () => {
 
     it("not(moreThan)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Not(MoreThan(10)),
@@ -253,23 +254,23 @@ describe("repository > find options > operators", () => {
 
     it("not(moreThanOrEqual)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
                 const post3 = new Post()
                 post3.title = "About #3"
                 post3.likes = 13
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Not(MoreThanOrEqual(12)),
@@ -282,19 +283,19 @@ describe("repository > find options > operators", () => {
 
     it("equal", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Equal("About #2"),
@@ -307,19 +308,19 @@ describe("repository > find options > operators", () => {
 
     it("not(equal)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Not(Equal("About #2")),
@@ -332,19 +333,19 @@ describe("repository > find options > operators", () => {
 
     it("ilike", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "about #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "ABOUT #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: ILike("%out #%"),
@@ -358,19 +359,19 @@ describe("repository > find options > operators", () => {
 
     it("not(ilike)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "about #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "ABOUT #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Not(ILike("%out #1")),
@@ -383,19 +384,19 @@ describe("repository > find options > operators", () => {
 
     it("like", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Like("%out #%"),
@@ -409,19 +410,19 @@ describe("repository > find options > operators", () => {
 
     it("not(like)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Not(Like("%out #1")),
@@ -434,19 +435,19 @@ describe("repository > find options > operators", () => {
 
     it("between", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts1 = await connection
+                const loadedPosts1 = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Between(1, 10),
@@ -455,7 +456,7 @@ describe("repository > find options > operators", () => {
                     { id: 2, likes: 3, title: "About #2" },
                 ])
 
-                const loadedPosts2 = await connection
+                const loadedPosts2 = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Between(10, 13),
@@ -464,7 +465,7 @@ describe("repository > find options > operators", () => {
                     { id: 1, likes: 12, title: "About #1" },
                 ])
 
-                const loadedPosts3 = await connection
+                const loadedPosts3 = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Between(1, 20),
@@ -478,19 +479,19 @@ describe("repository > find options > operators", () => {
 
     it("not(between)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts1 = await connection
+                const loadedPosts1 = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Not(Between(1, 10)),
@@ -499,7 +500,7 @@ describe("repository > find options > operators", () => {
                     { id: 1, likes: 12, title: "About #1" },
                 ])
 
-                const loadedPosts2 = await connection
+                const loadedPosts2 = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Not(Between(10, 13)),
@@ -508,7 +509,7 @@ describe("repository > find options > operators", () => {
                     { id: 2, likes: 3, title: "About #2" },
                 ])
 
-                const loadedPosts3 = await connection
+                const loadedPosts3 = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Not(Between(1, 20)),
@@ -519,19 +520,19 @@ describe("repository > find options > operators", () => {
 
     it("in", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: In(["About #2", "About #3"]),
@@ -540,7 +541,7 @@ describe("repository > find options > operators", () => {
                     { id: 2, likes: 3, title: "About #2" },
                 ])
 
-                const noPosts = await connection.getRepository(Post).findBy({
+                const noPosts = await dataSource.getRepository(Post).findBy({
                     title: In([]),
                 })
                 noPosts.length.should.be.eql(0)
@@ -549,19 +550,19 @@ describe("repository > find options > operators", () => {
 
     it("not(in)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Not(In(["About #1", "About #3"])),
@@ -570,7 +571,7 @@ describe("repository > find options > operators", () => {
                     { id: 2, likes: 3, title: "About #2" },
                 ])
 
-                const noPosts = await connection.getRepository(Post).findBy({
+                const noPosts = await dataSource.getRepository(Post).findBy({
                     title: Not(In([])),
                 })
                 noPosts.length.should.be.eql(2)
@@ -579,21 +580,21 @@ describe("repository > find options > operators", () => {
 
     it("any", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                if (!(connection.driver.options.type === "postgres")) return
+            dataSources.map(async (dataSource) => {
+                if (!(dataSource.driver.options.type === "postgres")) return
 
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Any(["About #2", "About #3"]),
@@ -606,21 +607,21 @@ describe("repository > find options > operators", () => {
 
     it("not(any)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                if (!(connection.driver.options.type === "postgres")) return
+            dataSources.map(async (dataSource) => {
+                if (!(dataSource.driver.options.type === "postgres")) return
 
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Not(Any(["About #2", "About #3"])),
@@ -633,19 +634,19 @@ describe("repository > find options > operators", () => {
 
     it("isNull", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = null as any
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: IsNull(),
@@ -656,19 +657,19 @@ describe("repository > find options > operators", () => {
 
     it("not(isNull)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = null as any
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         title: Not(IsNull()),
@@ -681,19 +682,19 @@ describe("repository > find options > operators", () => {
 
     it("raw", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Raw("12"),
@@ -706,19 +707,19 @@ describe("repository > find options > operators", () => {
 
     it("raw (function)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy({
                         likes: Raw(
@@ -733,7 +734,7 @@ describe("repository > find options > operators", () => {
 
     it("raw (function with object literal parameters)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const createPost = (index: number): Post => {
                     const post = new Post()
                     post.title = `About #${index}`
@@ -743,7 +744,7 @@ describe("repository > find options > operators", () => {
                 }
 
                 // insert some fake data
-                await connection.manager.save([
+                await dataSource.manager.save([
                     createPost(1),
                     createPost(2),
                     createPost(3),
@@ -753,7 +754,7 @@ describe("repository > find options > operators", () => {
                 ])
 
                 // check operator
-                const result1 = await connection.getRepository(Post).findBy({
+                const result1 = await dataSource.getRepository(Post).findBy({
                     likes: Raw(
                         (columnAlias) => {
                             return `(${columnAlias} = :value1) OR (${columnAlias} = :value2)`
@@ -768,7 +769,7 @@ describe("repository > find options > operators", () => {
                 ])
 
                 // check operator
-                const result2 = await connection.getRepository(Post).findBy({
+                const result2 = await dataSource.getRepository(Post).findBy({
                     likes: Raw(
                         (columnAlias) => {
                             return `(${columnAlias} IN (1, 4, 5, 6)) AND (${columnAlias} < :maxValue)`
@@ -784,7 +785,7 @@ describe("repository > find options > operators", () => {
                 ])
 
                 // check operator
-                const result3 = await connection.getRepository(Post).findBy({
+                const result3 = await dataSource.getRepository(Post).findBy({
                     title: Raw(
                         (columnAlias) => {
                             return `${columnAlias} IN (:a, :b, :c)`
@@ -803,7 +804,7 @@ describe("repository > find options > operators", () => {
                 ])
 
                 // check operator
-                const result4 = await connection.getRepository(Post).findBy({
+                const result4 = await dataSource.getRepository(Post).findBy({
                     likes: Raw((columnAlias) => `${columnAlias} IN (2, 6)`, {}),
                 })
                 result4.sort((a, b) => a.id - b.id)
@@ -813,7 +814,7 @@ describe("repository > find options > operators", () => {
                 ])
 
                 // check operator
-                const result5 = await connection.getRepository(Post).findBy({
+                const result5 = await dataSource.getRepository(Post).findBy({
                     likes: Raw(
                         (columnAlias) => `${columnAlias} IN (2, :value, 6)`,
                         { value: 3 },
@@ -827,7 +828,7 @@ describe("repository > find options > operators", () => {
                 ])
 
                 // check operator
-                const result6 = await connection.getRepository(Post).findBy({
+                const result6 = await dataSource.getRepository(Post).findBy({
                     likes: Raw(
                         (columnAlias) => `${columnAlias} IN (:...values)`,
                         { values: [2, 3, 6] },
@@ -844,12 +845,12 @@ describe("repository > find options > operators", () => {
 
     it("should work with ActiveRecord model", async () => {
         // These must run sequentially as we have the global context of the `PersonAR` ActiveRecord class
-        for (const connection of dataSources) {
-            PersonAR.useDataSource(connection)
+        for (const dataSource of dataSources) {
+            PersonAR.useDataSource(dataSource)
 
             const person = new PersonAR()
             person.name = "Timber"
-            await connection.manager.save(person)
+            await dataSource.manager.save(person)
 
             const loadedPeople = await PersonAR.findBy({
                 name: In(["Timber"]),
@@ -860,23 +861,23 @@ describe("repository > find options > operators", () => {
 
     it("or (array syntax)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
                 post1.likes = 12
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
                 const post2 = new Post()
                 post2.title = "About #2"
                 post2.likes = 3
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
                 const post3 = new Post()
                 post3.title = "About #3"
                 post3.likes = 4
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
                 // check operator
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(Post)
                     .findBy([
                         {
@@ -899,7 +900,12 @@ describe("repository > find options > operators", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Comment],
-                enabledDrivers: ["postgres", "cockroachdb"],
+                enabledDrivers: [
+                    "postgres",
+                    "cockroachdb",
+                    "better-sqlite3",
+                    "sqljs",
+                ],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
@@ -907,22 +913,24 @@ describe("repository > find options > operators", () => {
 
         it("should work with @> (contains) operator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
+                    // SQLite does not support @> operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
                         approved: true,
                         tags: ["news", "tech"],
                     }
-                    await connection.manager.save(comment1)
+                    await dataSource.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
                     comment2.metadata = { approved: false, tags: ["news"] }
-                    await connection.manager.save(comment2)
+                    await dataSource.manager.save(comment2)
 
                     // Test @> operator - does left contain right
-                    const loadedComments = await connection
+                    const loadedComments = await dataSource
                         .getRepository(Comment)
                         .findBy({
                             metadata: Raw((alias) => `${alias} @> :value`, {
@@ -940,7 +948,7 @@ describe("repository > find options > operators", () => {
                         },
                     ])
 
-                    const loadedComments2 = await connection
+                    const loadedComments2 = await dataSource
                         .getRepository(Comment)
                         .find({
                             where: {
@@ -972,22 +980,25 @@ describe("repository > find options > operators", () => {
 
         it("should work with <@ (contained by) operator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
+                    // SQLite does not support <@ operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
                         approved: true,
                         tags: ["news", "tech"],
                     }
-                    await connection.manager.save(comment1)
+                    await dataSource.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
                     comment2.metadata = { approved: false }
-                    await connection.manager.save(comment2)
+                    await dataSource.manager.save(comment2)
 
                     // Test <@ operator - is left contained by right
-                    const loadedComments = await connection
+                    const loadedComments = await dataSource
                         .getRepository(Comment)
                         .findBy({
                             metadata: Raw((alias) => `${alias} <@ :value`, {
@@ -1005,7 +1016,7 @@ describe("repository > find options > operators", () => {
                         },
                     ])
 
-                    const loadedComments2 = await connection
+                    const loadedComments2 = await dataSource
                         .getRepository(Comment)
                         .find({
                             where: {
@@ -1036,22 +1047,25 @@ describe("repository > find options > operators", () => {
 
         it("should work with ?| (any keys exist) operator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
+                    // SQLite does not support ?| operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
                         approved: true,
                         tags: ["news", "tech"],
                     }
-                    await connection.manager.save(comment1)
+                    await dataSource.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
                     comment2.metadata = { rejected: true, tags: ["news"] }
-                    await connection.manager.save(comment2)
+                    await dataSource.manager.save(comment2)
 
                     // Test ?| operator - do any of these keys exist
-                    const loadedComments = await connection
+                    const loadedComments = await dataSource
                         .getRepository(Comment)
                         .findBy({
                             metadata: Raw(
@@ -1068,22 +1082,25 @@ describe("repository > find options > operators", () => {
 
         it("should work with ?& (all keys exist) operator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
+                    // SQLite does not support ?& operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
                         approved: true,
                         tags: ["news", "tech"],
                     }
-                    await connection.manager.save(comment1)
+                    await dataSource.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
                     comment2.metadata = { approved: false }
-                    await connection.manager.save(comment2)
+                    await dataSource.manager.save(comment2)
 
                     // Test ?& operator - do all of these keys exist
-                    const loadedComments = await connection
+                    const loadedComments = await dataSource
                         .getRepository(Comment)
                         .findBy({
                             metadata: Raw(
@@ -1109,19 +1126,19 @@ describe("repository > find options > operators", () => {
 
         it("should work with -> (get object field) operator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = { author: { name: "Alice" } }
-                    await connection.manager.save(comment1)
+                    await dataSource.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
                     comment2.metadata = { author: { name: "Bob" } }
-                    await connection.manager.save(comment2)
+                    await dataSource.manager.save(comment2)
 
                     // Test -> operator - get nested object and compare
-                    const loadedComments = await connection
+                    const loadedComments = await dataSource
                         .getRepository(Comment)
                         .findBy({
                             metadata: Raw(
@@ -1139,7 +1156,7 @@ describe("repository > find options > operators", () => {
                         },
                     ])
 
-                    const loadedComments2 = await connection
+                    const loadedComments2 = await dataSource
                         .getRepository(Comment)
                         .find({
                             where: {
@@ -1162,23 +1179,23 @@ describe("repository > find options > operators", () => {
 
         it("should work with ->> (get object field) operator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
                         author: "Alice",
                     }
-                    await connection.manager.save(comment1)
+                    await dataSource.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
                     comment2.metadata = {
                         author: "Bob",
                     }
-                    await connection.manager.save(comment2)
+                    await dataSource.manager.save(comment2)
 
                     // Test ->> operator - get nested object and compare
-                    const loadedComments = await connection
+                    const loadedComments = await dataSource
                         .getRepository(Comment)
                         .findBy({
                             metadata: Raw(
@@ -1198,7 +1215,7 @@ describe("repository > find options > operators", () => {
                         },
                     ])
 
-                    const loadedComments2 = await connection
+                    const loadedComments2 = await dataSource
                         .getRepository(Comment)
                         .find({
                             where: {
@@ -1219,23 +1236,26 @@ describe("repository > find options > operators", () => {
             ))
         it("should work with #> (get object field as JSON) operator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
+                    // SQLite does not support #> operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
                         details: { stats: { views: 100, likes: 10 } },
                     }
-                    await connection.manager.save(comment1)
+                    await dataSource.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
                     comment2.metadata = {
                         details: { stats: { views: 200, likes: 20 } },
                     }
-                    await connection.manager.save(comment2)
+                    await dataSource.manager.save(comment2)
 
                     // Test #> operator - get nested object as JSON and compare
-                    const loadedComments = await connection
+                    const loadedComments = await dataSource
                         .getRepository(Comment)
                         .findBy({
                             metadata: Raw(
@@ -1263,19 +1283,22 @@ describe("repository > find options > operators", () => {
 
         it("should work with #>> (get object field as text) operator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
+                    // SQLite does not support #>> operator as of now
+                    if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = { likesDislikes: [300, 20] }
-                    await connection.manager.save(comment1)
+                    await dataSource.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
                     comment2.metadata = { likesDislikes: [300, 20] }
-                    await connection.manager.save(comment2)
+                    await dataSource.manager.save(comment2)
 
                     // Test #>> operator - get nested object as text and compare
-                    const loadedComments = await connection
+                    const loadedComments = await dataSource
                         .getRepository(Comment)
                         .findBy({
                             metadata: Raw(

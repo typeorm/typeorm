@@ -20,8 +20,8 @@ describe("embedded > prefix functionality", () => {
 
     it("should insert, load, update and remove entities with embeddeds properly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 const post = new Post()
                 post.id = 1

@@ -60,18 +60,12 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection name.
-     * @deprecated we don't need names anymore since we are going to drop all related methods relying on this property.
-     */
-    readonly name: string
-
-    /**
-     * Connection options.
+     * DataSource options.
      */
     readonly options: DataSourceOptions
 
     /**
-     * Indicates if DataSource is initialized or not.
+     * Indicates if the DataSource is initialized or not.
      */
     readonly isInitialized: boolean
 
@@ -139,7 +133,6 @@ export class DataSource {
 
     constructor(options: DataSourceOptions) {
         registerQueryBuilders()
-        this.name = options.name || "default"
         this.options = options
         this.logger = new LoggerFactory().create(
             this.options.logger,
@@ -148,8 +141,8 @@ export class DataSource {
         this.driver = new DriverFactory().create(this)
         this.manager = this.createEntityManager()
         this.namingStrategy =
-            options.namingStrategy || new DefaultNamingStrategy()
-        this.metadataTableName = options.metadataTableName || "typeorm_metadata"
+            options.namingStrategy ?? new DefaultNamingStrategy()
+        this.metadataTableName = options.metadataTableName ?? "typeorm_metadata"
         this.queryResultCache = options.cache
             ? new QueryResultCacheFactory(this).create()
             : undefined
@@ -167,6 +160,7 @@ export class DataSource {
      * with any entity in this connection.
      *
      * Available only in mongodb connections.
+     *
      * @returns the mongodb entity manager
      */
     get mongoManager(): MongoEntityManager {
@@ -182,6 +176,7 @@ export class DataSource {
      * Gets a sql.js specific Entity Manager that allows to perform special load and save operations
      *
      * Available only in connection with the sqljs driver.
+     *
      * @returns an sqljs specific Entity Manager
      */
     get sqljsManager(): SqljsEntityManager {
@@ -198,6 +193,7 @@ export class DataSource {
     // -------------------------------------------------------------------------
     /**
      * Updates current connection options with provided options.
+     *
      * @param options
      */
     setOptions(options: Partial<DataSourceOptions>): this {
@@ -205,8 +201,8 @@ export class DataSource {
 
         if (options.logger || options.logging) {
             this.logger = new LoggerFactory().create(
-                options.logger || this.options.logger,
-                options.logging || this.options.logging,
+                options.logger ?? this.options.logger,
+                options.logging ?? this.options.logging,
             )
         }
 
@@ -239,8 +235,7 @@ export class DataSource {
      * but it also can setup a connection pool with database to use.
      */
     async initialize(): Promise<this> {
-        if (this.isInitialized)
-            throw new CannotConnectAlreadyConnectedError(this.name)
+        if (this.isInitialized) throw new CannotConnectAlreadyConnectedError()
 
         // connect to the database via its driver
         await this.driver.connect()
@@ -283,8 +278,7 @@ export class DataSource {
      * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
      */
     async destroy(): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         await this.driver.disconnect()
 
@@ -297,11 +291,11 @@ export class DataSource {
     /**
      * Creates database schema for all entities registered in this connection.
      * Can be used only after connection to the database is established.
+     *
      * @param dropBeforeSync If set to true then it drops the database with all its tables and data
      */
     async synchronize(dropBeforeSync: boolean = false): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         if (dropBeforeSync) await this.dropDatabase()
 
@@ -354,6 +348,7 @@ export class DataSource {
     /**
      * Runs all pending migrations.
      * Can be used only after connection to the database is established.
+     *
      * @param options
      * @param options.transaction
      * @param options.fake
@@ -362,15 +357,14 @@ export class DataSource {
         transaction?: "all" | "none" | "each"
         fake?: boolean
     }): Promise<Migration[]> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
-            options?.transaction ||
-            this.options?.migrationsTransactionMode ||
+            options?.transaction ??
+            this.options?.migrationsTransactionMode ??
             "all"
-        migrationExecutor.fake = (options && options.fake) || false
+        migrationExecutor.fake = options?.fake ?? false
 
         const successMigrations =
             await migrationExecutor.executePendingMigrations()
@@ -380,6 +374,7 @@ export class DataSource {
     /**
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
+     *
      * @param options
      * @param options.transaction
      * @param options.fake
@@ -388,13 +383,11 @@ export class DataSource {
         transaction?: "all" | "none" | "each"
         fake?: boolean
     }): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
-        migrationExecutor.transaction =
-            (options && options.transaction) || "all"
-        migrationExecutor.fake = (options && options.fake) || false
+        migrationExecutor.transaction = options?.transaction ?? "all"
+        migrationExecutor.fake = options?.fake ?? false
 
         await migrationExecutor.undoLastMigration()
     }
@@ -405,7 +398,7 @@ export class DataSource {
      */
     async showMigrations(): Promise<boolean> {
         if (!this.isInitialized) {
-            throw new CannotExecuteNotConnectedError(this.name)
+            throw new CannotExecuteNotConnectedError()
         }
         const migrationExecutor = new MigrationExecutor(this)
         return await migrationExecutor.showMigrations()
@@ -413,6 +406,7 @@ export class DataSource {
 
     /**
      * Checks if entity metadata exist for the given entity class, target name or table name.
+     *
      * @param target
      */
     hasMetadata(target: EntityTarget<any>): boolean {
@@ -421,6 +415,7 @@ export class DataSource {
 
     /**
      * Gets entity metadata for the given entity class or schema name.
+     *
      * @param target
      */
     getMetadata(target: EntityTarget<any>): EntityMetadata {
@@ -432,6 +427,7 @@ export class DataSource {
 
     /**
      * Gets repository for the given entity.
+     *
      * @param target
      */
     getRepository<Entity extends ObjectLiteral>(
@@ -443,6 +439,7 @@ export class DataSource {
     /**
      * Gets tree repository for the given entity class or name.
      * Only tree-type entities can have a TreeRepository, like ones decorated with `@Tree` decorator.
+     *
      * @param target
      */
     getTreeRepository<Entity extends ObjectLiteral>(
@@ -454,6 +451,7 @@ export class DataSource {
     /**
      * Gets mongodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
+     *
      * @param target
      */
     getMongoRepository<Entity extends ObjectLiteral>(
@@ -492,6 +490,7 @@ export class DataSource {
 
     /**
      * Executes raw SQL query and returns raw database results.
+     *
      * @param query
      * @param parameters
      * @param queryRunner
@@ -506,10 +505,10 @@ export class DataSource {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Queries aren't supported by MongoDB.`)
 
-        if (queryRunner && queryRunner.isReleased)
+        if (queryRunner?.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner()
+        const usedQueryRunner = queryRunner ?? this.createQueryRunner()
 
         try {
             return await usedQueryRunner.query(query, parameters) // await is needed here because we are using finally
@@ -523,7 +522,10 @@ export class DataSource {
      * Template expressions are automatically transformed into database parameters.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
-     * Example: dataSource.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @example
+     * dataSource.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
      * @param strings
      * @param values
      * @returns a raw response from the database client
@@ -557,6 +559,7 @@ export class DataSource {
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
+     *
      * @param entityOrRunner
      * @param alias
      * @param queryRunner
@@ -594,6 +597,7 @@ export class DataSource {
      * to master database or any of slave databases.
      * If you perform writes you must use master database,
      * if you perform reads you can use slave databases.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode = "master"): QueryRunner {
@@ -605,6 +609,7 @@ export class DataSource {
 
     /**
      * Gets entity metadata of the junction table (many-to-many table).
+     *
      * @param entityTarget
      * @param relationPropertyPath
      */
@@ -631,6 +636,7 @@ export class DataSource {
 
     /**
      * Creates an Entity Manager for the current connection with the help of the EntityManagerFactory.
+     *
      * @param queryRunner
      */
     createEntityManager(queryRunner?: QueryRunner): EntityManager {
@@ -643,6 +649,7 @@ export class DataSource {
 
     /**
      * Finds exist entity metadata by the given entity class, target name or table name.
+     *
      * @param target
      */
     protected findMetadata(
@@ -703,7 +710,7 @@ export class DataSource {
 
         // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
         const flattenedSubscribers = ObjectUtils.mixedListToArray(
-            this.options.subscribers || [],
+            this.options.subscribers ?? [],
         )
         const subscribers =
             await connectionMetadataBuilder.buildSubscribers(
@@ -713,7 +720,7 @@ export class DataSource {
 
         // build entity metadatas
         const flattenedEntities = ObjectUtils.mixedListToArray(
-            this.options.entities || [],
+            this.options.entities ?? [],
         )
         const entityMetadatas =
             await connectionMetadataBuilder.buildEntityMetadatas(
@@ -728,7 +735,7 @@ export class DataSource {
 
         // create migration instances
         const flattenedMigrations = ObjectUtils.mixedListToArray(
-            this.options.migrations || [],
+            this.options.migrations ?? [],
         )
         const migrations =
             await connectionMetadataBuilder.buildMigrations(flattenedMigrations)

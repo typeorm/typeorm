@@ -24,8 +24,8 @@ describe("repository > find methods", () => {
     describe("count", function () {
         it("should return a full count when no criteria given", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     for (let i = 0; i < 100; i++) {
                         const post = new Post()
@@ -45,8 +45,8 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match given criteria", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
                         post.id = i
@@ -66,8 +66,8 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match given multiple criteria", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
                         post.id = i
@@ -88,8 +88,8 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match given find options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
                         post.id = i
@@ -109,8 +109,8 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match both criteria and find options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
                         post.id = i
@@ -137,8 +137,8 @@ describe("repository > find methods", () => {
     describe("exists", function () {
         it("should return a True when no criteria given", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     for (let i = 0; i < 100; i++) {
                         const post = new Post()
@@ -158,8 +158,8 @@ describe("repository > find methods", () => {
 
         it("should return True when matches the given criteria", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
                         post.id = i
@@ -179,8 +179,8 @@ describe("repository > find methods", () => {
 
         it("should return True when matches the given multiple criteria", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
                         post.id = i
@@ -201,8 +201,8 @@ describe("repository > find methods", () => {
 
         it("should return True when matches the given find options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
                         post.id = i
@@ -222,8 +222,8 @@ describe("repository > find methods", () => {
 
         it("should return True when matches both criteria and find options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
                         post.id = i
@@ -250,8 +250,8 @@ describe("repository > find methods", () => {
     describe("find and findAndCount", function () {
         it("should return everything when no criteria given", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     for (let i = 0; i < 100; i++) {
                         const post = new Post()
@@ -289,8 +289,8 @@ describe("repository > find methods", () => {
 
         it("should return posts that match given criteria", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -330,8 +330,8 @@ describe("repository > find methods", () => {
 
         it("should return posts that match given multiple criteria", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -372,8 +372,8 @@ describe("repository > find methods", () => {
 
         it("should return posts that match given find options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -429,8 +429,8 @@ describe("repository > find methods", () => {
 
         it("should return posts that match both criteria and find options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -489,9 +489,9 @@ describe("repository > find methods", () => {
     describe("findOne", function () {
         it("should throw an error when no criteria given", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userRepository =
-                        connection.getRepository<User>("User")
+                        dataSource.getRepository<User>("User")
 
                     for (let i = 0; i < 100; i++) {
                         const user: User = {
@@ -514,9 +514,9 @@ describe("repository > find methods", () => {
 
         it("should return when criteria given", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userRepository =
-                        connection.getRepository<User>("User")
+                        dataSource.getRepository<User>("User")
 
                     for (let i = 0; i < 100; i++) {
                         const user: User = {
@@ -539,9 +539,9 @@ describe("repository > find methods", () => {
 
         it("should return when find options given", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userRepository =
-                        connection.getRepository<User>("User")
+                        dataSource.getRepository<User>("User")
 
                     for (let i = 0; i < 100; i++) {
                         const user: User = {
@@ -571,9 +571,9 @@ describe("repository > find methods", () => {
     describe("findOne", function () {
         it("should return entity by a given id", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userRepository =
-                        connection.getRepository<User>("User")
+                        dataSource.getRepository<User>("User")
 
                     for (let i = 0; i < 100; i++) {
                         const user: User = {
@@ -584,28 +584,22 @@ describe("repository > find methods", () => {
                         await userRepository.save(user)
                     }
 
-                    let loadedUser = (await userRepository.findOne({
-                        where: {
-                            id: 0,
-                        },
+                    let loadedUser = (await userRepository.findOneBy({
+                        id: 0,
                     }))!
                     loadedUser.id.should.be.equal(0)
                     loadedUser.firstName.should.be.equal("name #0")
                     loadedUser.secondName.should.be.equal("Doe")
 
-                    loadedUser = (await userRepository.findOne({
-                        where: {
-                            id: 1,
-                        },
+                    loadedUser = (await userRepository.findOneBy({
+                        id: 1,
                     }))!
                     loadedUser.id.should.be.equal(1)
                     loadedUser.firstName.should.be.equal("name #1")
                     loadedUser.secondName.should.be.equal("Doe")
 
-                    loadedUser = (await userRepository.findOne({
-                        where: {
-                            id: 99,
-                        },
+                    loadedUser = (await userRepository.findOneBy({
+                        id: 99,
                     }))!
                     loadedUser.id.should.be.equal(99)
                     loadedUser.firstName.should.be.equal("name #99")
@@ -615,9 +609,9 @@ describe("repository > find methods", () => {
 
         it("should return entity by a given id and find options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userRepository =
-                        connection.getRepository<User>("User")
+                        dataSource.getRepository<User>("User")
 
                     for (let i = 0; i < 100; i++) {
                         const user: User = {
@@ -628,53 +622,19 @@ describe("repository > find methods", () => {
                         await userRepository.save(user)
                     }
 
-                    let loadedUser = await userRepository.findOne({
-                        where: {
-                            id: 0,
-                            secondName: "Doe",
-                        },
+                    let loadedUser = await userRepository.findOneBy({
+                        id: 0,
+                        secondName: "Doe",
                     })
                     loadedUser!.id.should.be.equal(0)
                     loadedUser!.firstName.should.be.equal("name #0")
                     loadedUser!.secondName.should.be.equal("Doe")
 
-                    loadedUser = await userRepository.findOne({
-                        where: {
-                            id: 1,
-                            secondName: "Dorian",
-                        },
+                    loadedUser = await userRepository.findOneBy({
+                        id: 1,
+                        secondName: "Dorian",
                     })
                     expect(loadedUser).to.be.null
-                }),
-            ))
-    })
-
-    describe("findByIds", function () {
-        it("should return entities by given ids", () =>
-            Promise.all(
-                dataSources.map(async (connection) => {
-                    const userRepository =
-                        connection.getRepository<User>("User")
-
-                    const users = [1, 2, 3, 4, 5].map((id) => {
-                        return {
-                            id,
-                            firstName: `name #${id}`,
-                            secondName: "Doe",
-                        }
-                    })
-
-                    const savedUsers = await userRepository.save(users)
-                    savedUsers.length.should.be.equal(users.length) // check if they all are saved
-
-                    const loadIds = [1, 2, 4]
-                    const loadedUsers =
-                        (await userRepository.findByIds(loadIds))!
-
-                    loadedUsers
-                        .sort((a, b) => a.id - b.id)
-                        .map((user) => user.id)
-                        .should.be.eql(loadIds)
                 }),
             ))
     })
@@ -682,9 +642,9 @@ describe("repository > find methods", () => {
     describe("findOneOrFail", function () {
         it("should return entity by a given id", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userRepository =
-                        connection.getRepository<User>("User")
+                        dataSource.getRepository<User>("User")
 
                     for (let i = 0; i < 100; i++) {
                         const user: User = {
@@ -695,28 +655,22 @@ describe("repository > find methods", () => {
                         await userRepository.save(user)
                     }
 
-                    let loadedUser = (await userRepository.findOneOrFail({
-                        where: {
-                            id: 0,
-                        },
-                    }))!
+                    let loadedUser = await userRepository.findOneByOrFail({
+                        id: 0,
+                    })
                     loadedUser.id.should.be.equal(0)
                     loadedUser.firstName.should.be.equal("name #0")
                     loadedUser.secondName.should.be.equal("Doe")
 
-                    loadedUser = (await userRepository.findOneOrFail({
-                        where: {
-                            id: 1,
-                        },
+                    loadedUser = (await userRepository.findOneByOrFail({
+                        id: 1,
                     }))!
                     loadedUser.id.should.be.equal(1)
                     loadedUser.firstName.should.be.equal("name #1")
                     loadedUser.secondName.should.be.equal("Doe")
 
-                    loadedUser = (await userRepository.findOneOrFail({
-                        where: {
-                            id: 99,
-                        },
+                    loadedUser = (await userRepository.findOneByOrFail({
+                        id: 99,
                     }))!
                     loadedUser.id.should.be.equal(99)
                     loadedUser.firstName.should.be.equal("name #99")
@@ -726,9 +680,9 @@ describe("repository > find methods", () => {
 
         it("should return entity by a given id and find options", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userRepository =
-                        connection.getRepository<User>("User")
+                        dataSource.getRepository<User>("User")
 
                     for (let i = 0; i < 100; i++) {
                         const user: User = {
@@ -739,11 +693,9 @@ describe("repository > find methods", () => {
                         await userRepository.save(user)
                     }
 
-                    const loadedUser = await userRepository.findOneOrFail({
-                        where: {
-                            id: 0,
-                            secondName: "Doe",
-                        },
+                    const loadedUser = await userRepository.findOneByOrFail({
+                        id: 0,
+                        secondName: "Doe",
                     })
                     loadedUser!.id.should.be.equal(0)
                     loadedUser!.firstName.should.be.equal("name #0")
@@ -768,9 +720,9 @@ describe("repository > find methods", () => {
 
         it("should throw an error if nothing was found", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const userRepository =
-                        connection.getRepository<User>("User")
+                        dataSource.getRepository<User>("User")
 
                     for (let i = 0; i < 100; i++) {
                         const user: User = {
@@ -782,10 +734,8 @@ describe("repository > find methods", () => {
                     }
 
                     await userRepository
-                        .findOneOrFail({
-                            where: {
-                                id: 100,
-                            },
+                        .findOneByOrFail({
+                            id: 100,
                         })
                         .should.eventually.be.rejectedWith(EntityNotFoundError)
                 }),

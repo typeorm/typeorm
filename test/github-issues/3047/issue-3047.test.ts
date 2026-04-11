@@ -61,7 +61,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
                         expect(loadedUser[0]).to.includes({ is_updated: "yes" })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))
@@ -96,7 +96,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
                         expect(loadedUser[0]).to.includes({ is_updated: "yes" })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))

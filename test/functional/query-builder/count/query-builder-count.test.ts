@@ -22,8 +22,8 @@ describe("query builder > count", () => {
 
     it("Count query should of empty table should be 0", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Test)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Test)
 
                 const count = await repo.count()
                 expect(count).to.be.equal(0)
@@ -32,8 +32,8 @@ describe("query builder > count", () => {
 
     it("Count query should count database values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Test)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Test)
 
                 await repo.save({
                     varcharField: "ok",
@@ -53,8 +53,8 @@ describe("query builder > count", () => {
 
     it("Count query should handle ambiguous values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(AmbigiousPrimaryKey)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(AmbigiousPrimaryKey)
 
                 await repo.save({ a: "A", b: "AAA" })
                 await repo.save({ a: "AAA", b: "A" })
@@ -64,14 +64,14 @@ describe("query builder > count", () => {
                 await repo.save({ a: "BBB", b: "B" })
 
                 const count = await repo.count()
-                expect(count).to.be.equal(6, connection.name)
+                expect(count).to.be.equal(6, dataSource.options.type)
             }),
         ))
 
     it("counting joined query should count database values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Test)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Test)
 
                 await repo.save({
                     varcharField: "ok",
@@ -96,8 +96,8 @@ describe("query builder > count", () => {
 
     it("counting joined queries should handle ambiguous values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(AmbigiousPrimaryKey)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(AmbigiousPrimaryKey)
 
                 await repo.save({ a: "A", b: "AAA" })
                 await repo.save({ a: "AAA", b: "A" })
@@ -112,7 +112,7 @@ describe("query builder > count", () => {
                     .leftJoin(AmbigiousPrimaryKey, "self", "self.a = main.a")
                     .getCount()
 
-                expect(count).to.be.equal(6, connection.name)
+                expect(count).to.be.equal(6, dataSource.options.type)
             }),
         ))
 })

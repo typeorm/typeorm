@@ -27,7 +27,7 @@ describe("persistence > remove-topological-order", function () {
 
     it("should remove depend properties in a proper order", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // insert some data
                 const category1 = new Category()
                 category1.name = "cat#1"
@@ -40,10 +40,10 @@ describe("persistence > remove-topological-order", function () {
                 post.categories = [category1, category2]
 
                 // check insertion
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
                 // check deletion
-                await connection.manager.remove([category2, post, category1])
+                await dataSource.manager.remove([category2, post, category1])
 
                 // todo: finish test, e.g. check actual queries
             }),

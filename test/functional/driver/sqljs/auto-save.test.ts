@@ -25,7 +25,7 @@ describe("sqljs driver > autosave", () => {
 
     it("should call autoSaveCallback on insert, update and delete", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const posts = [
                     {
                         title: "second post",
@@ -35,25 +35,25 @@ describe("sqljs driver > autosave", () => {
                     },
                 ]
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
                     .values(posts)
                     .execute()
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .update(Post)
                     .set({ title: "Many posts" })
                     .execute()
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .delete()
                     .from(Post)
                     .where("title = ?", { title: "third post" })
                     .execute()
 
-                const repository = connection.getRepository(Post)
+                const repository = dataSource.getRepository(Post)
                 const post = new Post()
                 post.title = "A post"
                 await repository.save(post)
@@ -70,7 +70,7 @@ describe("sqljs driver > autosave", () => {
                     await repository.remove(savedPost)
                 }
 
-                await connection.destroy()
+                await dataSource.destroy()
 
                 expect(saves).to.be.equal(8)
             }),
@@ -98,8 +98,8 @@ describe("sqljs driver > autosave off", () => {
 
     it("should not call autoSaveCallback when autoSave is disabled", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Post)
                 const post = new Post()
                 post.title = "A post"
                 await repository.save(post)
@@ -116,7 +116,7 @@ describe("sqljs driver > autosave off", () => {
                     await repository.remove(savedPost)
                 }
 
-                await connection.destroy()
+                await dataSource.destroy()
 
                 expect(saves).to.be.equal(0)
             }),

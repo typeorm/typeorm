@@ -1,6 +1,5 @@
 import type { RelationMetadataArgs } from "./RelationMetadataArgs"
 import type { ColumnMetadataArgs } from "./ColumnMetadataArgs"
-import type { RelationCountMetadataArgs } from "./RelationCountMetadataArgs"
 import type { IndexMetadataArgs } from "./IndexMetadataArgs"
 import type { EntityListenerMetadataArgs } from "./EntityListenerMetadataArgs"
 import type { TableMetadataArgs } from "./TableMetadataArgs"
@@ -49,7 +48,6 @@ export class MetadataArgsStorage {
     readonly joinColumns: JoinColumnMetadataArgs[] = []
     readonly joinTables: JoinTableMetadataArgs[] = []
     readonly entityListeners: EntityListenerMetadataArgs[] = []
-    readonly relationCounts: RelationCountMetadataArgs[] = []
     readonly relationIds: RelationIdMetadataArgs[] = []
     readonly embeddeds: EmbeddedMetadataArgs[] = []
     readonly inheritances: InheritanceMetadataArgs[] = []
@@ -128,19 +126,6 @@ export class MetadataArgsStorage {
     ): RelationIdMetadataArgs[] {
         return this.filterByTargetAndWithoutDuplicateProperties(
             this.relationIds,
-            target,
-        )
-    }
-
-    filterRelationCounts(target: Function | string): RelationCountMetadataArgs[]
-    filterRelationCounts(
-        target: (Function | string)[],
-    ): RelationCountMetadataArgs[]
-    filterRelationCounts(
-        target: (Function | string) | (Function | string)[],
-    ): RelationCountMetadataArgs[] {
-        return this.filterByTargetAndWithoutDuplicateProperties(
-            this.relationCounts,
             target,
         )
     }
@@ -333,6 +318,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets.
+     *
      * @param array
      * @param target
      */
@@ -349,6 +335,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate property names.
+     *
      * @param array
      * @param target
      */
@@ -374,6 +361,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate relation property names.
+     *
      * @param array
      * @param target
      */
@@ -408,6 +396,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate embedded property names.
+     *
      * @param array
      * @param target
      */
