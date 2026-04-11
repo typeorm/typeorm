@@ -1,46 +1,71 @@
-import { Driver, ReturningType } from "../Driver"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { OracleQueryRunner } from "./OracleQueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { DateUtils } from "../../util/DateUtils"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { OnDeleteType } from "../../metadata/types/OnDeleteType"
+import type { OnUpdateType } from "../../metadata/types/OnUpdateType"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source/DataSource"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { OracleConnectionOptions } from "./OracleConnectionOptions"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
-import { DriverUtils } from "../DriverUtils"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { TypeORMError } from "../../error"
+import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType"
-import { OnDeleteType } from "../../metadata/types/OnDeleteType"
-import { OnUpdateType } from "../../metadata/types/OnUpdateType"
+import { OrmUtils } from "../../util/OrmUtils"
+import type { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import type { UpsertType } from "../types/UpsertType"
+import type { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
+import type { OracleDataSourceOptions } from "./OracleDataSourceOptions"
+import { OracleQueryRunner } from "./OracleQueryRunner"
 
 /**
  * Organizes communication with Oracle RDBMS.
  */
 export class OracleDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://docs.oracle.com/en/database/oracle/oracle-database/23/cncpt/data-concurrency-and-consistency.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ COMMITTED",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Underlying oracle library.
@@ -63,9 +88,9 @@ export class OracleDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
-    options: OracleConnectionOptions
+    options: OracleDataSourceOptions
 
     /**
      * Database name used to perform all write queries.
@@ -240,6 +265,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Max length allowed by Oracle for aliases.
+     *
      * @see https://docs.oracle.com/database/121/SQLRF/sql_elements008.htm#SQLRF51129
      * > The following list of rules applies to both quoted and nonquoted identifiers unless otherwise indicated
      * > Names must be from 1 to 30 bytes long with these exceptions:
@@ -263,8 +289,8 @@ export class OracleDriver implements Driver {
     // -------------------------------------------------------------------------
 
     constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as OracleConnectionOptions
+        this.dataSource = connection
+        this.options = connection.options as OracleDataSourceOptions
 
         if (this.options.useUTC === true) {
             process.env.ORA_SDTZ = "UTC"
@@ -319,13 +345,9 @@ export class OracleDriver implements Driver {
         if (!this.database || !this.schema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.schema) {
-                this.schema = await queryRunner.getCurrentSchema()
-            }
+            this.schema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
@@ -356,7 +378,7 @@ export class OracleDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -377,15 +399,8 @@ export class OracleDriver implements Driver {
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => {
-                if (typeof nativeParameters[key] === "boolean")
-                    return nativeParameters[key] ? 1 : 0
-                return nativeParameters[key]
-            },
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -431,7 +446,7 @@ export class OracleDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return `"${columnName}"`
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
@@ -469,8 +484,8 @@ export class OracleDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -480,11 +495,11 @@ export class OracleDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -493,8 +508,8 @@ export class OracleDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -645,7 +660,10 @@ export class OracleDriver implements Driver {
             return "varchar2"
         } else if (column.type === Date) {
             return "timestamp"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         } else if (column.type === "uuid") {
             return "varchar2"
@@ -1015,7 +1033,7 @@ export class OracleDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const oracle = this.options.driver || PlatformTools.load("oracledb")
+            const oracle = this.options.driver ?? PlatformTools.load("oracledb")
             this.oracle = oracle
         } catch {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
@@ -1036,7 +1054,7 @@ export class OracleDriver implements Driver {
      * @param credentials
      */
     protected async createPool(
-        options: OracleConnectionOptions,
+        options: OracleDataSourceOptions,
         credentials: OracleConnectionCredentialsOptions,
     ): Promise<any> {
         credentials = Object.assign(
@@ -1081,7 +1099,7 @@ export class OracleDriver implements Driver {
             {
                 poolMax: options.poolSize,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         // pooling is enabled either when its set explicitly to true,

@@ -1,5 +1,5 @@
 import { TypeORMError } from "./TypeORMError"
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 
 /**
  * Thrown when specified entity property was not found.

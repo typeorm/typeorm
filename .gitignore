@@ -3,31 +3,29 @@
 ._*
 
 ### Node ###
-.nvmrc
-.node-version
+.pnpm-store/
 build/
 coverage/
 node_modules/
+.nvmrc
+.node-version
 *.lcov
 
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
 !.vscode/extensions.json
-!.vscode/*.code-snippets
 
-### Other IDEs ###
+### JetBrains ###
 .idea/
 *.iml
 
-### Custom ###
-/ormconfig.json
+### TypeORM ###
+ormconfig.json
 ormlogs.log
 
 /test/github-issues/799/tmp/*
 
-# stryker temp files
+### Stryker ###
+reports/
 .stryker-tmp
-/reports

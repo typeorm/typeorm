@@ -3,25 +3,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { EntitySchema } from "../../../src"
 import { Author, AuthorSchema } from "./entity/Author"
 import { Post, PostSchema } from "./entity/Post"
 
 describe("github issues > #1123 load relation eagerly by setting isEager property", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [
-                    new EntitySchema<Author>(AuthorSchema),
-                    new EntitySchema<Post>(PostSchema),
-                ],
-                dropSchema: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [
+                new EntitySchema<Author>(AuthorSchema),
+                new EntitySchema<Post>(PostSchema),
+            ],
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const author = new Author()
@@ -38,13 +37,16 @@ describe("github issues > #1123 load relation eagerly by setting isEager propert
 
     it("should load all eager relations when object is loaded", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
-                const loadedPost = await connection.manager.findOneBy(Post, {
-                    id: 1,
-                })
-                loadedPost!.should.be.eql({
+                const loadedPost = await connection.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "Post 1",
                     author: {
@@ -57,7 +59,7 @@ describe("github issues > #1123 load relation eagerly by setting isEager propert
 
     it("should not load eager relations when query builder is used", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const loadedPost = (await connection.manager
@@ -65,7 +67,7 @@ describe("github issues > #1123 load relation eagerly by setting isEager propert
                     .where("post.id = :id", { id: 1 })
                     .getOne()) as Post
 
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "Post 1",
                 })

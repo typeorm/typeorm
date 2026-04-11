@@ -1,46 +1,75 @@
-import { Driver, ReturningType } from "../Driver"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { DriverUtils } from "../DriverUtils"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { SqlServerQueryRunner } from "./SqlServerQueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { DateUtils } from "../../util/DateUtils"
-import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source/DataSource"
-import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { SqlServerConnectionOptions } from "./SqlServerConnectionOptions"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MssqlParameter } from "./MssqlParameter"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
-import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { TypeORMError } from "../../error"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType"
 import { FindOperator } from "../../find-options/FindOperator"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import { PlatformTools } from "../../platform/PlatformTools"
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import type { Table } from "../../schema-builder/table/Table"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { DateUtils } from "../../util/DateUtils"
+import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import type { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
+import type { UpsertType } from "../types/UpsertType"
+import { MssqlParameter } from "./MssqlParameter"
+import type { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
+import type { SqlServerDataSourceOptions } from "./SqlServerDataSourceOptions"
+import { SqlServerQueryRunner } from "./SqlServerQueryRunner"
 
 /**
  * Organizes communication with SQL Server DBMS.
  */
 export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://learn.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+        "SNAPSHOT",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * SQL Server library.
@@ -63,9 +92,9 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
-    options: SqlServerConnectionOptions
+    options: SqlServerDataSourceOptions
 
     /**
      * Database name used to perform all write queries.
@@ -245,6 +274,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Max length allowed by MSSQL Server for aliases (identifiers).
+     *
      * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
      */
     maxAliasLength = 128
@@ -253,9 +283,9 @@ export class SqlServerDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as SqlServerConnectionOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as SqlServerDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
 
         // load mssql package
@@ -305,20 +335,14 @@ export class SqlServerDriver implements Driver {
         if (!this.database || !this.searchSchema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
+            this.searchSchema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
 
-        if (!this.schema) {
-            this.schema = this.searchSchema
-        }
+        this.schema ??= this.searchSchema
     }
 
     /**
@@ -355,7 +379,7 @@ export class SqlServerDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -376,11 +400,8 @@ export class SqlServerDriver implements Driver {
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -427,7 +448,7 @@ export class SqlServerDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return `"${columnName}"`
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
@@ -473,8 +494,8 @@ export class SqlServerDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -484,11 +505,11 @@ export class SqlServerDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -497,8 +518,8 @@ export class SqlServerDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -654,7 +675,10 @@ export class SqlServerDriver implements Driver {
             return "datetime"
         } else if (column.type === Boolean) {
             return "bit"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "binary"
         } else if (column.type === "uuid") {
             return "uniqueidentifier"
@@ -943,10 +967,7 @@ export class SqlServerDriver implements Driver {
      * @param returningType
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
-        if (
-            this.options.options &&
-            this.options.options.disableOutputReturning
-        ) {
+        if (this.options.options?.disableOutputReturning) {
             return false
         }
         return true
@@ -1064,10 +1085,10 @@ export class SqlServerDriver implements Driver {
      */
     parametrizeMap(tablePath: string, map: ObjectLiteral): ObjectLiteral {
         // find metadata for the given table
-        if (!this.connection.hasMetadata(tablePath))
+        if (!this.dataSource.hasMetadata(tablePath))
             // if no metadata found then we can't proceed because we don't have columns and their types
             return map
-        const metadata = this.connection.getMetadata(tablePath)
+        const metadata = this.dataSource.getMetadata(tablePath)
 
         return Object.keys(map).reduce((newMap, key) => {
             const value = map[key]
@@ -1111,7 +1132,7 @@ export class SqlServerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const mssql = this.options.driver || PlatformTools.load("mssql")
+            const mssql = this.options.driver ?? PlatformTools.load("mssql")
             this.mssql = mssql
         } catch (e) {
             // todo: better error for browser env
@@ -1163,7 +1184,7 @@ export class SqlServerDriver implements Driver {
      * @param credentials
      */
     protected createPool(
-        options: SqlServerConnectionOptions,
+        options: SqlServerDataSourceOptions,
         credentials: SqlServerConnectionCredentialsOptions,
     ): Promise<any> {
         credentials = Object.assign(
@@ -1172,26 +1193,40 @@ export class SqlServerDriver implements Driver {
             DriverUtils.buildDriverOptions(credentials),
         ) // todo: do it better way
 
-        // todo: credentials.domain is deprecation. remove it in future
-        const authentication = !credentials.domain
-            ? credentials.authentication
-            : {
-                  type: "ntlm",
-                  options: {
-                      domain: credentials.domain,
-                      userName: credentials.username,
-                      password: credentials.password,
-                  },
-              }
+        let isolationLevel: number | undefined
+        if (options.options?.isolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.isolationLevel,
+            )
+            isolationLevel = this.convertIsolationLevel(
+                options.options.isolationLevel,
+            )
+        }
+        let connectionIsolationLevel: number | undefined
+        if (options.options?.connectionIsolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.connectionIsolationLevel,
+            )
+            connectionIsolationLevel = this.convertIsolationLevel(
+                options.options.connectionIsolationLevel,
+            )
+        }
+
         // build connection options for the driver
         const connectionOptions = Object.assign(
             {},
             {
-                connectionTimeout: this.options.connectionTimeout,
-                requestTimeout: this.options.requestTimeout,
-                stream: this.options.stream,
-                pool: this.options.pool,
-                options: this.options.options,
+                connectionTimeout: options.connectionTimeout,
+                requestTimeout: options.requestTimeout,
+                stream: options.stream,
+                pool: options.pool,
+                options: {
+                    ...options.options,
+                    isolationLevel,
+                    connectionIsolationLevel,
+                },
             },
             {
                 server: credentials.host,
@@ -1199,9 +1234,9 @@ export class SqlServerDriver implements Driver {
                 port: credentials.port,
                 user: credentials.username,
                 password: credentials.password,
-                authentication: authentication,
+                authentication: credentials.authentication,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         // set default useUTC option if it hasn't been set
@@ -1220,10 +1255,10 @@ export class SqlServerDriver implements Driver {
         return new Promise<void>((ok, fail) => {
             const pool = new this.mssql.ConnectionPool(connectionOptions)
 
-            const { logger } = this.connection
+            const { logger } = this.dataSource
 
             const poolErrorHandler =
-                (options.pool && options.pool.errorHandler) ||
+                options.pool?.errorHandler ??
                 ((error: any) =>
                     logger.log("warn", `MSSQL pool raised an error. ${error}`))
             /**
@@ -1237,5 +1272,30 @@ export class SqlServerDriver implements Driver {
                 ok(connection)
             })
         })
+    }
+
+    /**
+     * Converts string literal of isolation level to enum.
+     * The underlying mssql driver requires an enum for the isolation level.
+     *
+     * @param isolation
+     */
+    convertIsolationLevel(isolation: IsolationLevel): number {
+        const ISOLATION_LEVEL = this.mssql.ISOLATION_LEVEL
+        switch (isolation) {
+            case "READ UNCOMMITTED":
+                return ISOLATION_LEVEL.READ_UNCOMMITTED
+            case "REPEATABLE READ":
+                return ISOLATION_LEVEL.REPEATABLE_READ
+            case "SERIALIZABLE":
+                return ISOLATION_LEVEL.SERIALIZABLE
+            case "SNAPSHOT":
+                return ISOLATION_LEVEL.SNAPSHOT
+
+            case "READ COMMITTED":
+                return ISOLATION_LEVEL.READ_COMMITTED
+            default:
+                throw new TypeORMError(`Unknown isolation level "${isolation}"`)
+        }
     }
 }
