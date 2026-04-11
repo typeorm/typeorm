@@ -400,7 +400,7 @@ describe("schema builder > change column", () => {
                         where: { name: "test" },
                     })
                     expect(afterChange).to.not.be.undefined
-                    expect(afterChange?.version).to.equal(
+                    expect(String(afterChange?.version)).to.equal(
                         testValue.toString(),
                         "Data should survive FLOAT->DOUBLE migration",
                     )
