@@ -34,10 +34,10 @@ describe("github issues > #341 OneToOne relation with referencedColumnName does 
                 const loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.category", "category")
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.category).not.to.be.undefined
+                expect(loadedPost.category).not.to.be.undefined
             }),
         ))
 })

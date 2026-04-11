@@ -25,7 +25,7 @@ export class ExpoDriver extends AbstractSqliteDriver {
     }
 
     createQueryRunner(): QueryRunner {
-        if (!this.queryRunner) this.queryRunner = new ExpoQueryRunner(this)
+        this.queryRunner ??= new ExpoQueryRunner(this)
 
         return this.queryRunner
     }

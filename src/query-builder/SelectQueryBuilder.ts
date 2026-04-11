@@ -162,6 +162,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                this.assertNoSemicolon(s, "select")
+            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
@@ -173,6 +176,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
+            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -215,6 +219,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (!selection) return this
 
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                this.assertNoSemicolon(s, "addSelect")
+            }
             this.expressionMap.selects = this.expressionMap.selects.concat(
                 selection.map((selection) => ({ selection: selection })),
             )
@@ -226,6 +233,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
+            this.assertNoSemicolon(selection, "addSelect")
             this.expressionMap.selects.push({
                 selection: selection,
                 aliasName: selectionAliasName,
@@ -1135,11 +1143,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }): this {
         // todo: add skip relations
         this.expressionMap.mainAlias!.metadata.relations.forEach((relation) => {
-            if (
-                options !== undefined &&
-                options.relations !== undefined &&
-                options.relations.indexOf(relation.propertyPath) === -1
-            )
+            if (options?.relations?.indexOf(relation.propertyPath) === -1)
                 return
 
             this.loadRelationIdAndMap(
@@ -1365,6 +1369,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     groupBy(groupBy?: string): this {
         if (groupBy) {
+            this.assertNoSemicolon(groupBy, "groupBy")
             this.expressionMap.groupBys = [groupBy]
         } else {
             this.expressionMap.groupBys = []
@@ -1378,6 +1383,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param groupBy
      */
     addGroupBy(groupBy: string): this {
+        this.assertNoSemicolon(groupBy, "addGroupBy")
         this.expressionMap.groupBys.push(groupBy)
         return this
     }
@@ -1453,22 +1459,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
             )
 
-        if (sort) {
-            if (typeof sort === "object") {
-                this.validateOrderByCondition(sort)
-                this.expressionMap.orderBys = sort
-            } else {
-                if (nulls) {
-                    this.expressionMap.orderBys = {
-                        [sort as string]: { order, nulls },
-                    }
-                } else {
-                    this.expressionMap.orderBys = { [sort as string]: order }
-                }
-            }
-        } else {
+        if (!sort) {
             this.expressionMap.orderBys = {}
+            return this
         }
+
+        if (typeof sort === "object") {
+            this.validateOrderByCondition(sort)
+            this.expressionMap.orderBys = sort
+            return this
+        }
+
+        this.assertNoSemicolon(sort, "orderBy sort key")
+
+        this.expressionMap.orderBys = nulls
+            ? { [sort]: { order, nulls } }
+            : { [sort]: order }
+
         return this
     }
 
@@ -1496,6 +1503,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             throw new TypeORMError(
                 `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
             )
+
+        this.assertNoSemicolon(sort, "orderBy sort key")
 
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }
@@ -2194,10 +2203,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 metadata: joinAttributeMetadata,
                 subQuery: isSubQuery ? subQuery : undefined,
             })
-            if (
-                joinAttribute.relation &&
-                joinAttribute.relation.junctionEntityMetadata
-            ) {
+            if (joinAttribute.relation?.junctionEntityMetadata) {
                 this.expressionMap.createAlias({
                     type: "join",
                     name: joinAttribute.junctionAlias,
@@ -2304,7 +2310,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .filter(
                 (alias) =>
                     alias.type === "from" &&
-                    (alias.tablePath || alias.subQuery),
+                    (alias.tablePath ?? alias.subQuery),
             )
             .map((alias) => {
                 if (alias.subQuery)
@@ -2392,9 +2398,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // if join was build without relation (e.g. without "post.category") then it means that we have direct
             // table to join, without junction table involved. This means we simply join direct table.
             if (!parentAlias || !relation) {
-                const destinationJoin = joinAttr.alias.subQuery
-                    ? joinAttr.alias.subQuery
-                    : this.getTableName(destinationTableName)
+                const destinationJoin =
+                    joinAttr.alias.subQuery ??
+                    this.getTableName(destinationTableName)
                 return (
                     " " +
                     joinAttr.direction +
@@ -2593,8 +2599,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Creates "GROUP BY" part of SQL query.
      */
     protected createGroupByExpression() {
-        if (!this.expressionMap.groupBys || !this.expressionMap.groupBys.length)
-            return ""
+        if (!this.expressionMap.groupBys?.length) return ""
         return " GROUP BY " + this.expressionMap.groupBys.join(", ")
     }
 
@@ -2878,8 +2883,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Creates "HAVING" part of SQL query.
      */
     protected createHavingExpression() {
-        if (!this.expressionMap.havings || !this.expressionMap.havings.length)
-            return ""
+        if (!this.expressionMap.havings?.length) return ""
         const conditions = this.expressionMap.havings
             .map((having, index) => {
                 switch (having.type) {
@@ -2993,14 +2997,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 selections.forEach((selection) => {
                     finalSelects.push({
                         selection: selectionPath,
-                        aliasName: selection.aliasName
-                            ? selection.aliasName
-                            : DriverUtils.buildAlias(
-                                  this.dataSource.driver,
-                                  undefined,
-                                  aliasName,
-                                  column.databaseName,
-                              ),
+                        aliasName:
+                            selection.aliasName ??
+                            DriverUtils.buildAlias(
+                                this.dataSource.driver,
+                                undefined,
+                                aliasName,
+                                column.databaseName,
+                            ),
                         // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                         virtual: selection.virtual,
                     })
@@ -3101,7 +3105,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )}`,
                 )
-                .join(", '|;|', ")
+                .join(", '|:|', ")
 
             if (primaryColumns.length === 1) {
                 return `COUNT(DISTINCT(${columnsExpression}))`
@@ -3127,7 +3131,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )} AS STRING)`,
                 )
-                .join(", '|;|', ")
+                .join(", '|:|', ")
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
 
@@ -3142,7 +3146,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             `COUNT(DISTINCT(` +
             primaryColumns
                 .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
-                .join(" || '|;|' || ") +
+                .join(" || '|:|' || ") +
             "))"
         )
     }
@@ -3163,7 +3167,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .setOption("disable-global-order")
             .loadRawResults(queryRunner)
 
-        if (!results || !results[0] || !results[0]["cnt"]) return 0
+        if (!results?.[0]?.["cnt"]) return 0
 
         return parseInt(results[0]["cnt"])
     }
@@ -3462,6 +3466,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.dataSource,
             queryRunner,
             this.expressionMap.relationIdAttributes,
+            this.expressionMap.withDeleted,
         )
         const relationIdMetadataTransformer =
             new RelationIdMetadataToAttributeTransformer(this.expressionMap)
@@ -3849,12 +3854,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 : {}
         let savedQueryResultCacheOptions: QueryResultCacheOptions | undefined =
             undefined
-        const isCachingEnabled =
-            // Caching is enabled globally and isn't disabled locally.
-            (cacheOptions.alwaysEnabled &&
-                this.expressionMap.cache !== false) ||
-            // ...or it's enabled locally explicitly.
-            this.expressionMap.cache === true
+        const isCachingEnabled = cacheOptions.alwaysEnabled
+            ? this.expressionMap.cache !== false
+            : this.expressionMap.cache === true
         let cacheError = false
         if (this.dataSource.queryResultCache && isCachingEnabled) {
             try {
@@ -3865,8 +3867,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             query: queryId,
                             duration:
                                 this.expressionMap.cacheDuration ||
-                                cacheOptions.duration ||
-                                1000,
+                                (cacheOptions.duration ?? 1000),
                         },
                         queryRunner,
                     )
@@ -3901,8 +3902,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         time: Date.now(),
                         duration:
                             this.expressionMap.cacheDuration ||
-                            cacheOptions.duration ||
-                            1000,
+                            (cacheOptions.duration ?? 1000),
                         result: JSON.stringify(results.records),
                     },
                     savedQueryResultCacheOptions,
@@ -3947,7 +3947,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     protected obtainQueryRunner() {
         return (
-            this.queryRunner ||
+            this.queryRunner ??
             this.dataSource.createQueryRunner(
                 this.dataSource.defaultReplicationModeForReads(),
             )
@@ -4376,7 +4376,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === undefined) {
                     const undefinedBehavior =
                         this.dataSource.options.invalidWhereValuesBehavior
-                            ?.undefined || "throw"
+                            ?.undefined ?? "throw"
                     if (undefinedBehavior === "throw") {
                         throw new TypeORMError(
                             `Undefined value encountered in property '${alias}.${key}' of a where condition. ` +
@@ -4389,7 +4389,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === null) {
                     const nullBehavior =
                         this.dataSource.options.invalidWhereValuesBehavior
-                            ?.null || "throw"
+                            ?.null ?? "throw"
                     if (nullBehavior === "ignore") {
                         continue
                     } else if (nullBehavior === "throw") {
@@ -4454,7 +4454,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (where[key] === null) {
                         const nullBehavior =
                             this.dataSource.options.invalidWhereValuesBehavior
-                                ?.null || "throw"
+                                ?.null ?? "throw"
                         if (nullBehavior === "sql-null") {
                             andConditions.push(
                                 `${alias}.${propertyPath} IS NULL`,
@@ -4485,7 +4485,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         if (allUndefined) {
                             const undefinedBehavior =
                                 this.dataSource.options
-                                    .invalidWhereValuesBehavior?.undefined ||
+                                    .invalidWhereValuesBehavior?.undefined ??
                                 "throw"
                             if (undefinedBehavior === "throw") {
                                 throw new TypeORMError(

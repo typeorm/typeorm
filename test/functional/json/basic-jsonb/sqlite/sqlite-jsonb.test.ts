@@ -65,11 +65,10 @@ describe("jsonb type > sqlite", () => {
                 record.data = { key: "value", nested: { num: 42 } }
 
                 const persistedRecord = await recordRepo.save(record)
-                const foundRecord = await recordRepo.findOneBy({
+                const foundRecord = await recordRepo.findOneByOrFail({
                     id: persistedRecord.id,
                 })
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!.data).to.deep.equal({
+                expect(foundRecord.data).to.deep.equal({
                     key: "value",
                     nested: { num: 42 },
                 })
@@ -136,15 +135,10 @@ describe("jsonb type > sqlite", () => {
                 record.data = [1, "two", { three: 3 }]
 
                 const persistedRecord = await recordRepo.save(record)
-                const foundRecord = await recordRepo.findOneBy({
+                const foundRecord = await recordRepo.findOneByOrFail({
                     id: persistedRecord.id,
                 })
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!.data).to.deep.equal([
-                    1,
-                    "two",
-                    { three: 3 },
-                ])
+                expect(foundRecord.data).to.deep.equal([1, "two", { three: 3 }])
             }),
         ))
     it("should bulk insert and retrieve JSONB data correctly", () =>
@@ -182,11 +176,10 @@ describe("jsonb type > sqlite", () => {
                 persistedRecord.data = { updated: true, count: 1 }
                 await recordRepo.save(persistedRecord)
 
-                const foundRecord = await recordRepo.findOneBy({
+                const foundRecord = await recordRepo.findOneByOrFail({
                     id: persistedRecord.id,
                 })
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!.data).to.deep.equal({
+                expect(foundRecord.data).to.deep.equal({
                     updated: true,
                     count: 1,
                 })
@@ -249,11 +242,10 @@ describe("jsonb type > sqlite", () => {
                 record.data = { qoute: "He said, O'Brian" }
                 const savedRecord = await recordRepo.save(record)
 
-                const foundRecord = await recordRepo.findOneBy({
+                const foundRecord = await recordRepo.findOneByOrFail({
                     id: savedRecord.id,
                 })
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!).to.deep.include({
+                expect(foundRecord).to.deep.include({
                     data: {
                         qoute: "He said, O'Brian",
                     },

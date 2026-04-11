@@ -76,13 +76,13 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
                 // remove the reference of another and insert a 3rd.
                 expect(bars.length).to.equal(3)
 
-                const bar = await barRepo.findOneBy({ id: 1 })
+                const bar = await barRepo.findOneByOrFail({ id: 1 })
 
                 expect(bar).not.to.be.null
 
                 // Did not observe the same behavior with unwanted inserts. Current behavior is
                 // that the first duplicate goes through and the rest are ignored.
-                expect(bar!.description).to.equal("test2a-1")
+                expect(bar.description).to.equal("test2a-1")
             }),
         ))
 })

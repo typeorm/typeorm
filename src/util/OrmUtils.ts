@@ -321,7 +321,7 @@ export class OrmUtils {
             ),
         )
 
-        if (enumMatch && enumMatch.index) {
+        if (enumMatch?.index != null) {
             const afterMatch = sql.substring(
                 enumMatch.index + enumMatch[0].length,
             )
@@ -589,9 +589,7 @@ export class OrmUtils {
             return
         }
 
-        if (!target[key]) {
-            target[key] = Array.isArray(value) ? [] : {}
-        }
+        target[key] ??= Array.isArray(value) ? [] : {}
 
         memo.set(value, target[key])
         OrmUtils.merge(target[key], value, memo)
@@ -679,7 +677,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined || "throw"
+                const behavior = options?.undefined ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -688,7 +686,7 @@ export class OrmUtils {
                 }
                 // "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null || "throw"
+                const behavior = options?.null ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +

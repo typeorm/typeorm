@@ -1,12 +1,9 @@
-import { Column, OneToMany, Entity } from "../../../../../src/index"
+import { PrimaryColumn, OneToMany, Entity } from "../../../../../src/index"
 import { DataModel } from "./DataModel"
 
 @Entity()
 export class ValidationModel {
-    @Column({
-        type: "integer",
-        primary: true,
-    })
+    @PrimaryColumn()
     validation: number
 
     @OneToMany(() => DataModel, (dataModel) => dataModel.validations)
