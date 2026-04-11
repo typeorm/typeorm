@@ -49,47 +49,56 @@ describe("query builder > relational query builder > load operation > many-to-on
                 post3.category = category1
                 await dataSource.manager.save(post3)
 
-                const loadedPost1 = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost1 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
                 const loadedCategory1 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(loadedPost1)
                     .loadOne()
-                loadedPost1!.category = loadedCategory1!
+                loadedPost1.category = loadedCategory1!
 
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
 
-                const loadedPost2 = await dataSource.manager.findOneBy(Post, {
-                    id: 2,
-                })
+                const loadedPost2 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 2,
+                    },
+                )
                 const loadedCategory2 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(loadedPost2)
                     .loadOne()
-                loadedPost2!.category = loadedCategory2!
+                loadedPost2.category = loadedCategory2!
 
-                expect(loadedPost2!.category).to.be.eql({
+                expect(loadedPost2.category).to.be.eql({
                     id: 2,
                     name: "category #2",
                 })
 
-                const loadedPost3 = await dataSource.manager.findOneBy(Post, {
-                    id: 3,
-                })
+                const loadedPost3 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 3,
+                    },
+                )
                 const loadedCategory3 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(loadedPost3)
                     .loadOne()
-                loadedPost3!.category = loadedCategory3!
+                loadedPost3.category = loadedCategory3!
 
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3.category).to.be.eql({
                     id: 1,
                     name: "category #1",
                 })
@@ -126,47 +135,56 @@ describe("query builder > relational query builder > load operation > many-to-on
                 post3.category = category1
                 await dataSource.manager.save(post3)
 
-                const loadedPost1 = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost1 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
                 const loadedCategory1 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of({ id: 1 })
                     .loadOne()
-                loadedPost1!.category = loadedCategory1!
+                loadedPost1.category = loadedCategory1!
 
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
 
-                const loadedPost2 = await dataSource.manager.findOneBy(Post, {
-                    id: 2,
-                })
+                const loadedPost2 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 2,
+                    },
+                )
                 const loadedCategory2 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of({ id: 2 })
                     .loadOne()
-                loadedPost2!.category = loadedCategory2!
+                loadedPost2.category = loadedCategory2!
 
-                expect(loadedPost2!.category).to.be.eql({
+                expect(loadedPost2.category).to.be.eql({
                     id: 2,
                     name: "category #2",
                 })
 
-                const loadedPost3 = await dataSource.manager.findOneBy(Post, {
-                    id: 3,
-                })
+                const loadedPost3 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 3,
+                    },
+                )
                 const loadedCategory3 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of({ id: 3 })
                     .loadOne()
-                loadedPost3!.category = loadedCategory3!
+                loadedPost3.category = loadedCategory3!
 
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3.category).to.be.eql({
                     id: 1,
                     name: "category #1",
                 })
@@ -203,47 +221,56 @@ describe("query builder > relational query builder > load operation > many-to-on
                 post3.category = category1
                 await dataSource.manager.save(post3)
 
-                const loadedPost1 = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost1 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
                 const loadedCategory1 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(1)
                     .loadOne()
-                loadedPost1!.category = loadedCategory1!
+                loadedPost1.category = loadedCategory1!
 
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
 
-                const loadedPost2 = await dataSource.manager.findOneBy(Post, {
-                    id: 2,
-                })
+                const loadedPost2 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 2,
+                    },
+                )
                 const loadedCategory2 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(2)
                     .loadOne()
-                loadedPost2!.category = loadedCategory2!
+                loadedPost2.category = loadedCategory2!
 
-                expect(loadedPost2!.category).to.be.eql({
+                expect(loadedPost2.category).to.be.eql({
                     id: 2,
                     name: "category #2",
                 })
 
-                const loadedPost3 = await dataSource.manager.findOneBy(Post, {
-                    id: 3,
-                })
+                const loadedPost3 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 3,
+                    },
+                )
                 const loadedCategory3 = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "category")
                     .of(3)
                     .loadOne()
-                loadedPost3!.category = loadedCategory3!
+                loadedPost3.category = loadedCategory3!
 
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3.category).to.be.eql({
                     id: 1,
                     name: "category #1",
                 })

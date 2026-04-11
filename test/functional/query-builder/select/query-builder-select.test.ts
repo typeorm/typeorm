@@ -474,11 +474,11 @@ describe("query builder > select", () => {
                     const entity = await dataSource
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: "1" })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(entity).not.to.be.null
-                    expect(entity!.id).to.equal("1")
-                    expect(entity!.title).to.equal("Hello")
+                    expect(entity.id).to.equal("1")
+                    expect(entity.title).to.equal("Hello")
                 }),
             ))
 

@@ -17,7 +17,6 @@ describe("github issues > #8522 Single table inheritance returns the same discri
     let dataSources: DataSource[]
 
     after(() => closeTestingConnections(dataSources))
-    afterEach(() => closeTestingConnections(dataSources))
 
     describe("Unrelated tables", () => {
         before(async () => {
