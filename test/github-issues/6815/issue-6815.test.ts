@@ -37,10 +37,8 @@ describe("github issues > #6815 RelationId() on nullable relation returns 'null'
                 const parent = em.create(ParentEntity)
                 await em.save(parent)
 
-                const loaded = await em.findOneOrFail(ParentEntity, {
-                    where: {
-                        id: parent.id,
-                    },
+                const loaded = await em.findOneByOrFail(ParentEntity, {
+                    id: parent.id,
                 })
                 expect(loaded.childId).to.be.null
             }),
@@ -57,10 +55,8 @@ describe("github issues > #6815 RelationId() on nullable relation returns 'null'
                 parent.child = child
                 await em.save(parent)
 
-                const loaded = await em.findOneOrFail(ParentEntity, {
-                    where: {
-                        id: parent.id,
-                    },
+                const loaded = await em.findOneByOrFail(ParentEntity, {
+                    id: parent.id,
                 })
 
                 if (connection.driver.options.type === "cockroachdb") {

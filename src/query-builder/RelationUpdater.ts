@@ -25,6 +25,7 @@ export class RelationUpdater {
 
     /**
      * Performs set or add operation on a relation.
+     *
      * @param value
      */
     async update(value: any | any[]): Promise<void> {
@@ -162,8 +163,8 @@ export class RelationUpdater {
             if (!bulkInserted.length) return
 
             if (
-                this.queryBuilder.connection.driver.options.type === "oracle" ||
-                this.queryBuilder.connection.driver.options.type === "sap"
+                this.queryBuilder.dataSource.driver.options.type === "oracle" ||
+                this.queryBuilder.dataSource.driver.options.type === "sap"
             ) {
                 await Promise.all(
                     bulkInserted.map((value) => {

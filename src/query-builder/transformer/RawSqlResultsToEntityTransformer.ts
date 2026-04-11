@@ -56,6 +56,7 @@ export class RawSqlResultsToEntityTransformer {
     /**
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
+     *
      * @param rawResults
      * @param alias
      */
@@ -75,6 +76,7 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Build an alias from a name and column name.
+     *
      * @param aliasName
      * @param columnName
      */
@@ -99,6 +101,7 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Groups given raw results by ids of given alias.
+     *
      * @param rawResults
      * @param alias
      */
@@ -163,6 +166,7 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Transforms set of data results into single entity.
+     *
      * @param rawResults
      * @param alias
      */
@@ -265,6 +269,7 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Transforms joined entities in the given raw results by a given alias and stores to the given (parent) entity
+     *
      * @param rawResults
      * @param entity
      * @param alias
@@ -522,14 +527,6 @@ export class RawSqlResultsToEntityTransformer {
         }, {} as ObjectLiteral)
     }
 
-    /*private removeVirtualColumns(entity: ObjectLiteral, alias: Alias) {
-        const virtualColumns = this.expressionMap.selects
-            .filter(select => select.virtual)
-            .map(select => select.selection.replace(alias.name + ".", ""));
-
-        virtualColumns.forEach(virtualColumn => delete entity[virtualColumn]);
-    }*/
-
     /** Prepare data to run #transformRelationIds, as a lot of result independent data is needed in every call */
     private prepareDataForTransformRelationIds() {
         // Return early if the relationIdMaps were already calculated
@@ -644,6 +641,7 @@ export class RawSqlResultsToEntityTransformer {
      * Use a simple JSON.stringify to create a simple hash of the primary ids of an entity.
      * As this.extractEntityPrimaryIds always creates the primary id object in the same order, if the same relation is
      * given, a simple JSON.stringify should be enough to get a unique hash per entity!
+     *
      * @param relation
      * @param data
      */

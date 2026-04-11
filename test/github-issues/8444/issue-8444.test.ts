@@ -39,7 +39,7 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
 
     describe("with entitySkipConstructor", () => {
         let dataSources: DataSource[] = []
-        afterEach(() => closeTestingConnections(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("createTestingConnections should succeed", async () => {
             dataSources = await createTestingConnections({

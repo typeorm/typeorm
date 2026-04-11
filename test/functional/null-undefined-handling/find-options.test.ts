@@ -446,10 +446,8 @@ describe("find options > null and undefined handling", () => {
                 }
 
                 try {
-                    await dataSource.getRepository(Post).findOne({
-                        where: {
-                            text: undefined,
-                        },
+                    await dataSource.getRepository(Post).findOneBy({
+                        text: undefined,
                     })
                     expect.fail("Expected query to throw an error")
                 } catch (error) {
@@ -498,10 +496,8 @@ describe("find options > null and undefined handling", () => {
                     }
 
                     try {
-                        await dataSource.getRepository(Post).findOne({
-                            where: {
-                                category: undefined,
-                            },
+                        await dataSource.getRepository(Post).findOneBy({
+                            category: undefined,
                         })
                         expect.fail("Expected query to throw an error")
                     } catch (error) {
@@ -553,10 +549,8 @@ describe("find options > null and undefined handling", () => {
                     // Test Repository with findOne
                     const postWithRepo = await dataSource
                         .getRepository(Post)
-                        .findOne({
-                            where: {
-                                title: "Post #1",
-                            },
+                        .findOneBy({
+                            title: "Post #1",
                         })
 
                     expect(postWithRepo?.title).to.equal("Post #1")
@@ -702,10 +696,8 @@ describe("find options > null and undefined handling", () => {
                     // Test Repository with findOne
                     const postWithRepo = await dataSource
                         .getRepository(Post)
-                        .findOne({
-                            where: {
-                                title: "Post #2",
-                            },
+                        .findOneBy({
+                            title: "Post #2",
                         })
 
                     expect(postWithRepo?.title).to.equal("Post #2")

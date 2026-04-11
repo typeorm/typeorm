@@ -70,14 +70,17 @@ describe("relations > lazy relations > persistence and hydration of bidirectiona
                 loadedPosts2![0].id.should.equal(2)
                 loadedPosts2![0].title.should.equal("Hello Post #2")
 
-                const reloadedPost = await dataSource.manager.findOneBy(Post, {
-                    id: post1.id,
-                })
+                const reloadedPost = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: post1.id,
+                    },
+                )
 
-                const promise = reloadedPost!.category
-                reloadedPost!.category = Promise.resolve(category2)
+                const promise = reloadedPost.category
+                reloadedPost.category = Promise.resolve(category2)
                 ;(await promise).id.should.equal(category1.id)
-                ;(await reloadedPost!.category).id.should.equal(category2.id)
+                ;(await reloadedPost.category).id.should.equal(category2.id)
                 // todo: need to test somehow how query is being generated, or how many raw data is returned
             }),
         ))

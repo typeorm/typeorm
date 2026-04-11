@@ -6,6 +6,7 @@ import type { ClosureTreeOptions } from "../../metadata/types/ClosureTreeOptions
 /**
  * Marks entity to work like a tree.
  * Tree pattern that will be used for the tree entity should be specified.
+ *
  * @param type
  * @param options
  * `@TreeParent` decorator must be used in tree entities.
