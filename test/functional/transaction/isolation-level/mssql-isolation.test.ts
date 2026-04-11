@@ -55,113 +55,170 @@ const prepareDataAndTest = async (dataSource: DataSource) => {
 
 describe("transaction > isolation level > mssql", () => {
     describe("defined in data source", () => {
-        describe("connection level", () => {
-            // Skipped: node-mssql does not reset session state when returning connections
-            // to the pool, so connectionIsolationLevel can be overwritten by prior operations.
-            // Upstream: https://github.com/tediousjs/node-mssql/issues/1483
-            // Docs: https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level
-            describe.skip("supported", () => {
-                for (const isolationLevel of supportedLevels) {
-                    // As per SqlServerDataSourceOptions: The default isolation level for new connections. All out-of-transaction queries are executed with this setting.
-                    describe(isolationLevel, () => {
-                        let dataSources: DataSource[]
-                        before(async () => {
-                            dataSources = await createTestingConnections({
-                                entities: [__dirname + "/entity/*{.js,.ts}"],
-                                enabledDrivers: ["mssql"],
-                                driverSpecific: {
-                                    options: {
-                                        connectionIsolationLevel:
-                                            isolationLevel,
-                                    },
-                                },
-                            })
+        describe("isolationLevel", () => {
+            // SNAPSHOT excluded: requires ALTER DATABASE ... SET ALLOW_SNAPSHOT_ISOLATION ON
+            const levelsWithoutSnapshot = supportedLevels.filter(
+                (l) => l !== "SNAPSHOT",
+            )
+
+            for (const isolationLevel of levelsWithoutSnapshot) {
+                describe(isolationLevel, () => {
+                    let dataSources: DataSource[]
+                    before(async () => {
+                        // Create schema without isolation level to avoid
+                        // DDL failures under non-default isolation
+                        const setup = await createTestingConnections({
+                            entities: [__dirname + "/entity/*{.js,.ts}"],
+                            enabledDrivers: ["mssql"],
+                            schemaCreate: true,
+                            dropSchema: true,
                         })
-                        beforeEach(() => reloadTestingDatabases(dataSources))
-                        after(() => closeTestingConnections(dataSources))
+                        await closeTestingConnections(setup)
 
-                        it(`should execute all operations with default ${isolationLevel} level for new connections`, () =>
-                            Promise.all(
-                                dataSources.map(async (dataSource) => {
-                                    await getCurrentTransactionLevelAndAssert(
-                                        dataSource,
-                                        isolationLevel,
-                                    )
-                                    await prepareDataAndTest(dataSource)
-                                }),
-                            ))
-                    })
-                }
-            })
-
-            describe("unsupported", () => {
-                for (const level of unsupportedLevels) {
-                    it(level, async () => {
-                        await createTestingConnections({
+                        dataSources = await createTestingConnections({
                             entities: [__dirname + "/entity/*{.js,.ts}"],
                             enabledDrivers: ["mssql"],
                             driverSpecific: {
-                                options: {
-                                    connectionIsolationLevel: level,
-                                },
+                                isolationLevel,
                             },
-                        }).should.be.rejectedWith("is not supported")
+                        })
                     })
-                }
-            })
+                    after(() => closeTestingConnections(dataSources))
+
+                    it(`should apply ${isolationLevel} as default`, () =>
+                        Promise.all(
+                            dataSources.map(async (dataSource) => {
+                                await dataSource.manager.transaction(
+                                    async (transactionalEntityManager) => {
+                                        await getCurrentTransactionLevelAndAssert(
+                                            transactionalEntityManager,
+                                            isolationLevel,
+                                        )
+                                    },
+                                )
+                            }),
+                        ))
+                })
+            }
         })
 
-        describe("default level", () => {
-            // Skipped: same upstream pool limitation as connectionIsolationLevel above.
-            // Upstream: https://github.com/tediousjs/node-mssql/issues/1483
-            // Docs: https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level
-            describe.skip("supported", () => {
-                for (const isolationLevel of supportedLevels) {
-                    // As per SqlServerDataSourceOptions: The default isolation level that transactions will be run with.
-                    describe(isolationLevel, () => {
-                        let dataSources: DataSource[]
-                        before(async () => {
-                            dataSources = await createTestingConnections({
+        describe("driver options", () => {
+            describe("connectionIsolationLevel", () => {
+                // Skipped: node-mssql does not reset session state when returning connections
+                // to the pool, so connectionIsolationLevel can be overwritten by prior operations.
+                // Upstream: https://github.com/tediousjs/node-mssql/issues/1483
+                // Docs: https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level
+                describe.skip("supported", () => {
+                    for (const isolationLevel of supportedLevels) {
+                        // As per SqlServerDataSourceOptions: The default isolation level for new connections. All out-of-transaction queries are executed with this setting.
+                        describe(isolationLevel, () => {
+                            let dataSources: DataSource[]
+                            before(async () => {
+                                dataSources = await createTestingConnections({
+                                    entities: [
+                                        __dirname + "/entity/*{.js,.ts}",
+                                    ],
+                                    enabledDrivers: ["mssql"],
+                                    driverSpecific: {
+                                        options: {
+                                            connectionIsolationLevel:
+                                                isolationLevel,
+                                        },
+                                    },
+                                })
+                            })
+                            beforeEach(() =>
+                                reloadTestingDatabases(dataSources),
+                            )
+                            after(() => closeTestingConnections(dataSources))
+
+                            it(`should execute all operations with default ${isolationLevel} level for new connections`, () =>
+                                Promise.all(
+                                    dataSources.map(async (dataSource) => {
+                                        await getCurrentTransactionLevelAndAssert(
+                                            dataSource,
+                                            isolationLevel,
+                                        )
+                                        await prepareDataAndTest(dataSource)
+                                    }),
+                                ))
+                        })
+                    }
+                })
+
+                describe("unsupported", () => {
+                    for (const level of unsupportedLevels) {
+                        it(level, async () => {
+                            await createTestingConnections({
                                 entities: [__dirname + "/entity/*{.js,.ts}"],
                                 enabledDrivers: ["mssql"],
                                 driverSpecific: {
                                     options: {
-                                        isolationLevel: isolationLevel,
+                                        connectionIsolationLevel: level,
                                     },
                                 },
-                            })
+                            }).should.be.rejectedWith("is not supported")
                         })
-                        beforeEach(() => reloadTestingDatabases(dataSources))
-                        after(() => closeTestingConnections(dataSources))
-
-                        it(`should execute all operations with default ${isolationLevel} level`, () =>
-                            Promise.all(
-                                dataSources.map(async (dataSource) => {
-                                    await getCurrentTransactionLevelAndAssert(
-                                        dataSource,
-                                        isolationLevel,
-                                    )
-                                    await prepareDataAndTest(dataSource)
-                                }),
-                            ))
-                    })
-                }
+                    }
+                })
             })
 
-            describe("unsupported", () => {
-                for (const level of unsupportedLevels) {
-                    it(level, async () => {
-                        await createTestingConnections({
-                            entities: [__dirname + "/entity/*{.js,.ts}"],
-                            enabledDrivers: ["mssql"],
-                            driverSpecific: {
-                                options: {
-                                    isolationLevel: level,
+            describe("isolationLevel", () => {
+                // Skipped: same upstream pool limitation as connectionIsolationLevel above.
+                // Upstream: https://github.com/tediousjs/node-mssql/issues/1483
+                // Docs: https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level
+                describe.skip("supported", () => {
+                    for (const isolationLevel of supportedLevels) {
+                        // As per SqlServerDataSourceOptions: The default isolation level that transactions will be run with.
+                        describe(isolationLevel, () => {
+                            let dataSources: DataSource[]
+                            before(async () => {
+                                dataSources = await createTestingConnections({
+                                    entities: [
+                                        __dirname + "/entity/*{.js,.ts}",
+                                    ],
+                                    enabledDrivers: ["mssql"],
+                                    driverSpecific: {
+                                        options: {
+                                            isolationLevel: isolationLevel,
+                                        },
+                                    },
+                                })
+                            })
+                            beforeEach(() =>
+                                reloadTestingDatabases(dataSources),
+                            )
+                            after(() => closeTestingConnections(dataSources))
+
+                            it(`should execute all operations with default ${isolationLevel} level`, () =>
+                                Promise.all(
+                                    dataSources.map(async (dataSource) => {
+                                        await getCurrentTransactionLevelAndAssert(
+                                            dataSource,
+                                            isolationLevel,
+                                        )
+                                        await prepareDataAndTest(dataSource)
+                                    }),
+                                ))
+                        })
+                    }
+                })
+
+                describe("unsupported", () => {
+                    for (const level of unsupportedLevels) {
+                        it(level, async () => {
+                            await createTestingConnections({
+                                entities: [__dirname + "/entity/*{.js,.ts}"],
+                                enabledDrivers: ["mssql"],
+                                driverSpecific: {
+                                    options: {
+                                        isolationLevel: level,
+                                    },
                                 },
-                            },
-                        }).should.be.rejectedWith("is not supported")
-                    })
-                }
+                            }).should.be.rejectedWith("is not supported")
+                        })
+                    }
+                })
             })
         })
     })

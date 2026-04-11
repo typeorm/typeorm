@@ -33,7 +33,7 @@ The most important restriction when working in a transaction is to **ALWAYS** us
 `transactionalEntityManager` in this example. DO NOT USE GLOBAL ENTITY MANAGER.
 All operations **MUST** be executed using the provided transactional entity manager.
 
-### Specifying Isolation Levels
+### Specifying isolation level
 
 Specifying the isolation level for the transaction can be done by supplying it as the first parameter:
 
@@ -50,7 +50,7 @@ Isolation level implementations are _not_ agnostic across all databases. Each dr
 | --------------- | ----------------------------------------------------------------------------------- |
 | MySQL / MariaDB | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
 | PostgreSQL      | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
-| CockroachDB     | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
+| CockroachDB     | `READ UNCOMMITTED`, `READ COMMITTED`\*\*, `REPEATABLE READ`\*\*, `SERIALIZABLE`     |
 | SQL Server      | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`, `SNAPSHOT` |
 | Oracle          | `READ COMMITTED`, `SERIALIZABLE`                                                    |
 | SAP HANA        | `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`                                 |
@@ -59,7 +59,23 @@ Isolation level implementations are _not_ agnostic across all databases. Each dr
 
 \* SQLite's `READ UNCOMMITTED` only takes effect when [shared-cache mode](https://www.sqlite.org/sharedcache.html) is enabled. In the default mode, SQLite always uses `SERIALIZABLE` isolation regardless of the setting.
 
-SQL Server also supports setting a default isolation level via data source options (`isolationLevel` and `connectionIsolationLevel`), but these are subject to an [upstream pool limitation](./drivers/microsoft-sqlserver.md#connection-pool-does-not-reset-isolation-level). Per-transaction isolation levels are not affected.
+\*\* CockroachDB defaults to `SERIALIZABLE`. `READ COMMITTED` requires the cluster setting `sql.txn.read_committed_isolation.enabled` (enabled by default in recent versions). `READ UNCOMMITTED` is upgraded to `READ COMMITTED`, and `REPEATABLE READ` is upgraded to `SERIALIZABLE`. See [CockroachDB Read Committed](https://www.cockroachlabs.com/docs/stable/read-committed) for details.
+
+## Default isolation level
+
+You can configure a default isolation level for all transactions by setting `isolationLevel` in the DataSource options:
+
+```typescript
+const dataSource = new DataSource({
+    type: "postgres",
+    isolationLevel: "SERIALIZABLE",
+    // ...
+})
+```
+
+When set, all transactions started without an explicit isolation level will use this default. An explicit isolation level passed to `transaction()` or `startTransaction()` will override the default.
+
+> **Note:** SQL Server also supports driver-specific `options.isolationLevel` and `options.connectionIsolationLevel` settings, but these are subject to an [upstream pool limitation](./drivers/microsoft-sqlserver.md#connection-pool-does-not-reset-isolation-level). The top-level `isolationLevel` option above is not affected by this limitation because it is applied explicitly on each transaction.
 
 ## Using `QueryRunner` to create and control state of single database connection
 
