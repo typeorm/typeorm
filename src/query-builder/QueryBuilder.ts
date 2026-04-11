@@ -196,10 +196,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                this.assertNoSemicolon(s, "select")
+            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
         } else if (selection) {
+            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -225,6 +229,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Creates UPDATE query and applies given update values.
      */
     update(): UpdateQueryBuilder<Entity>
+
+    /**
+     * Creates UPDATE query for the given entity.
+     */
+    update<Entity extends ObjectLiteral>(
+        entity: EntityTarget<Entity>,
+    ): UpdateQueryBuilder<Entity>
 
     /**
      * Creates UPDATE query and applies given update values.
@@ -259,9 +270,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         entityOrTableNameUpdateSet?: EntityTarget<any> | ObjectLiteral,
         maybeUpdateSet?: ObjectLiteral,
     ): UpdateQueryBuilder<any> {
-        const updateSet = maybeUpdateSet
-            ? maybeUpdateSet
-            : (entityOrTableNameUpdateSet as ObjectLiteral | undefined)
+        const updateSet =
+            maybeUpdateSet ??
+            (entityOrTableNameUpdateSet as ObjectLiteral | undefined)
         entityOrTableNameUpdateSet = InstanceChecker.isEntitySchema(
             entityOrTableNameUpdateSet,
         )
@@ -466,10 +477,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         )
 
         // add discriminator column parameter if it exist
-        if (
-            this.expressionMap.mainAlias &&
-            this.expressionMap.mainAlias.hasMetadata
-        ) {
+        if (this.expressionMap.mainAlias?.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const values = metadata.childEntityMetadatas
@@ -620,7 +628,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         this.expressionMap.commonTableExpressions.push({
             queryBuilder,
             alias,
-            options: options || {},
+            options: options ?? {},
         })
         return this
     }
@@ -1682,11 +1690,19 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Creates a query builder used to execute sql queries inside this query builder.
      */
     protected obtainQueryRunner() {
-        return this.queryRunner || this.dataSource.createQueryRunner()
+        return this.queryRunner ?? this.dataSource.createQueryRunner()
     }
 
     protected hasCommonTableExpressions(): boolean {
         return this.expressionMap.commonTableExpressions.length > 0
+    }
+
+    protected assertNoSemicolon(value: string, context: string): void {
+        if (value.includes(";")) {
+            throw new TypeORMError(
+                `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
+            )
+        }
     }
 
     protected validateOrderByCondition(sort: OrderByCondition): void {
@@ -1694,6 +1710,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         const validNulls = ["NULLS FIRST", "NULLS LAST"]
 
         for (const [key, value] of Object.entries(sort)) {
+            this.assertNoSemicolon(key, "orderBy sort key")
             if (typeof value === "string") {
                 if (!validOrders.includes(value))
                     throw new TypeORMError(

@@ -336,20 +336,14 @@ export class SqlServerDriver implements Driver {
         if (!this.database || !this.searchSchema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
+            this.searchSchema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
 
-        if (!this.schema) {
-            this.schema = this.searchSchema
-        }
+        this.schema ??= this.searchSchema
     }
 
     /**
@@ -506,8 +500,8 @@ export class SqlServerDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -517,11 +511,11 @@ export class SqlServerDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -530,8 +524,8 @@ export class SqlServerDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -989,10 +983,7 @@ export class SqlServerDriver implements Driver {
      * @param returningType
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
-        if (
-            this.options.options &&
-            this.options.options.disableOutputReturning
-        ) {
+        if (this.options.options?.disableOutputReturning) {
             return false
         }
         return true
@@ -1161,7 +1152,7 @@ export class SqlServerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const mssql = this.options.driver || PlatformTools.load("mssql")
+            const mssql = this.options.driver ?? PlatformTools.load("mssql")
             this.mssql = mssql
         } catch (e) {
             // todo: better error for browser env
@@ -1266,7 +1257,7 @@ export class SqlServerDriver implements Driver {
                 password: credentials.password,
                 authentication: credentials.authentication,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         // set default useUTC option if it hasn't been set
@@ -1288,7 +1279,7 @@ export class SqlServerDriver implements Driver {
             const { logger } = this.dataSource
 
             const poolErrorHandler =
-                (options.pool && options.pool.errorHandler) ||
+                options.pool?.errorHandler ??
                 ((error: any) =>
                     logger.log("warn", `MSSQL pool raised an error. ${error}`))
             /**

@@ -1,3 +1,4 @@
+import { expect } from "chai"
 import "reflect-metadata"
 import "../../../utils/test-setup"
 import type { DataSource } from "../../../../src/data-source/DataSource"
@@ -10,20 +11,17 @@ import { ValidationModel } from "./entity/ValidationModel"
 import { MainModel } from "./entity/MainModel"
 import { DataModel } from "./entity/DataModel"
 
-// TODO: this test was broken after removing primary: true from relation decorators
-//  due to complexity of cascades, it was skipped fow now
-describe.skip("cascades > save insert vs update", () => {
+describe("cascades > save insert vs update", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should add intial validation data", () =>
+    it("should update rather than insert on second save", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const validation1 = new ValidationModel()
@@ -47,7 +45,16 @@ describe.skip("cascades > save insert vs update", () => {
                 main1.dataModel[0].active = false
                 await connection.manager.save(main1)
 
-                return true
+                const loadedMain = await connection.manager.findOneOrFail(
+                    MainModel,
+                    {
+                        where: { id: main1.id },
+                        relations: { dataModel: true },
+                    },
+                )
+
+                expect(loadedMain.dataModel).to.have.length(1)
+                expect(loadedMain.dataModel[0].active).to.be.false
             }),
         ))
 })

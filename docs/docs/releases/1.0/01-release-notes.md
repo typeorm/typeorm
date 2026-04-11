@@ -81,7 +81,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 - **PostgreSQL: `ADD VALUE` for enum changes** — when adding new enum values, TypeORM now uses the simpler `ALTER TYPE ... ADD VALUE` syntax instead of the 4-step rename-create-migrate-drop approach, when possible ([#10956](https://github.com/typeorm/typeorm/pull/10956) by [@janzipek](https://github.com/janzipek))
 - **PostgreSQL: additional extensions** — new `installExtensions` option to install additional PostgreSQL extensions during connection setup ([#11888](https://github.com/typeorm/typeorm/pull/11888) by [@Cprakhar](https://github.com/Cprakhar))
-- **PostgreSQL: partial index support** — add support for PostgreSQL partial indices ([#11318](https://github.com/typeorm/typeorm/pull/11318) by [@freePixel](https://github.com/freePixel))
+- **PostgreSQL: partial index support** — add support for PostgreSQL partial indexes ([#11318](https://github.com/typeorm/typeorm/pull/11318) by [@freePixel](https://github.com/freePixel))
 - **SAP HANA: locking in SELECT** — `FOR UPDATE` and other lock modes are now supported in SAP HANA queries ([#11996](https://github.com/typeorm/typeorm/pull/11996) by [@alumni](https://github.com/alumni))
 - **SAP HANA: table comments** — `@Entity({ comment: "..." })` now works with SAP HANA ([#11939](https://github.com/typeorm/typeorm/pull/11939) by [@Cprakhar](https://github.com/Cprakhar))
 - **SAP HANA: pool timeout** — new `maxWaitTimeoutIfPoolExhausted` pool option ([#11868](https://github.com/typeorm/typeorm/pull/11868) by [@alumni](https://github.com/alumni))

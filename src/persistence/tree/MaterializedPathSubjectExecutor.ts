@@ -29,11 +29,11 @@ export class MaterializedPathSubjectExecutor {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+        if (!parent && subject.parentSubject?.entity)
             // if entity was attached via children
-            parent = subject.parentSubject.insertedValueSet
-                ? subject.parentSubject.insertedValueSet
-                : subject.parentSubject.entity
+            parent =
+                subject.parentSubject.insertedValueSet ??
+                subject.parentSubject.entity
 
         const parentId = subject.metadata.getEntityIdMap(parent)
 
@@ -70,7 +70,7 @@ export class MaterializedPathSubjectExecutor {
         let newParent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!newParent && subject.parentSubject && subject.parentSubject.entity)
+        if (!newParent && subject.parentSubject?.entity)
             // if entity was attached via children
             newParent = subject.parentSubject.entity
 

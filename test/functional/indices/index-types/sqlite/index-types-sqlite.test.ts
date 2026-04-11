@@ -1,0 +1,31 @@
+import { expect } from "chai"
+import { TypeORMError } from "../../../../../src"
+import {
+    createTestingConnections,
+    closeTestingConnections,
+} from "../../../../utils/test-utils"
+import { User2 } from "../entity/User2"
+import { User3 } from "../entity/User3"
+
+describe("indices > index types > sqlite", () => {
+    it("Should throw an error if index type is set and sqlite does not support index types", async () => {
+        const connections = await createTestingConnections({
+            entities: [User3],
+            enabledDrivers: ["better-sqlite3"],
+            schemaCreate: true,
+        })
+
+        const isSqlite = connections.length > 0
+
+        if (isSqlite) {
+            await closeTestingConnections(connections)
+            await expect(
+                createTestingConnections({
+                    entities: [User2],
+                    enabledDrivers: ["better-sqlite3"],
+                    schemaCreate: true,
+                }),
+            ).to.be.rejectedWith(TypeORMError)
+        }
+    })
+})

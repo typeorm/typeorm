@@ -576,33 +576,6 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         checkComment?: boolean,
         checkEnum = true,
     ): boolean {
-        // this logs need to debug issues in column change detection. Do not delete it!
-
-        // console.log("charset ---------------");
-        // console.log(oldColumn.charset !== newColumn.charset);
-        // console.log(oldColumn.charset, newColumn.charset);
-        // console.log("collation ---------------");
-        // console.log(oldColumn.collation !== newColumn.collation);
-        // console.log(oldColumn.collation, newColumn.collation);
-        // console.log("precision ---------------");
-        // console.log(oldColumn.precision !== newColumn.precision);
-        // console.log(oldColumn.precision, newColumn.precision);
-        // console.log("scale ---------------");
-        // console.log(oldColumn.scale !== newColumn.scale);
-        // console.log(oldColumn.scale, newColumn.scale);
-        // console.log("default ---------------");
-        // console.log((checkDefault && oldColumn.default !== newColumn.default));
-        // console.log(oldColumn.default, newColumn.default);
-        // console.log("isNullable ---------------");
-        // console.log(oldColumn.isNullable !== newColumn.isNullable);
-        // console.log(oldColumn.isNullable, newColumn.isNullable);
-        // console.log("comment ---------------");
-        // console.log((checkComment && oldColumn.comment !== newColumn.comment));
-        // console.log(oldColumn.comment, newColumn.comment);
-        // console.log("enum ---------------");
-        // console.log(!OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []));
-        // console.log(oldColumn.enum, newColumn.enum);
-
         return (
             oldColumn.charset !== newColumn.charset ||
             oldColumn.collation !== newColumn.collation ||
@@ -610,18 +583,18 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             oldColumn.scale !== newColumn.scale ||
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only
             oldColumn.asExpression !== newColumn.asExpression ||
-            (checkDefault && oldColumn.default !== newColumn.default) ||
+            (!!checkDefault && oldColumn.default !== newColumn.default) ||
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
-            (checkComment && oldColumn.comment !== newColumn.comment) ||
+            (!!checkComment && oldColumn.comment !== newColumn.comment) ||
             (checkEnum && this.isEnumChanged(oldColumn, newColumn))
         )
     }
 
     protected isEnumChanged(oldColumn: TableColumn, newColumn: TableColumn) {
         return !OrmUtils.isArraysEqual(
-            oldColumn.enum || [],
-            newColumn.enum || [],
+            oldColumn.enum ?? [],
+            newColumn.enum ?? [],
         )
     }
 
@@ -651,11 +624,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             }
         }
 
-        if (
-            this.dataSource.driver.dataTypeDefaults &&
-            this.dataSource.driver.dataTypeDefaults[column.type] &&
-            this.dataSource.driver.dataTypeDefaults[column.type].length
-        ) {
+        if (this.dataSource.driver.dataTypeDefaults?.[column.type]?.length) {
             return (
                 this.dataSource.driver.dataTypeDefaults[
                     column.type
@@ -685,20 +654,17 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
                 column.name,
             )
             if (
-                columnMetadata &&
-                columnMetadata.precision !== null &&
-                columnMetadata.precision !== undefined
+                columnMetadata?.precision !== null &&
+                columnMetadata?.precision !== undefined
             )
                 return false
         }
 
         if (
-            this.dataSource.driver.dataTypeDefaults &&
-            this.dataSource.driver.dataTypeDefaults[column.type] &&
-            this.dataSource.driver.dataTypeDefaults[column.type].precision !==
-                null &&
-            this.dataSource.driver.dataTypeDefaults[column.type].precision !==
-                undefined
+            this.dataSource.driver.dataTypeDefaults?.[column.type]
+                ?.precision !== null &&
+            this.dataSource.driver.dataTypeDefaults?.[column.type]
+                ?.precision !== undefined
         )
             return (
                 this.dataSource.driver.dataTypeDefaults[column.type]
@@ -727,19 +693,16 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
                 column.name,
             )
             if (
-                columnMetadata &&
-                columnMetadata.scale !== null &&
-                columnMetadata.scale !== undefined
+                columnMetadata?.scale !== null &&
+                columnMetadata?.scale !== undefined
             )
                 return false
         }
 
         if (
-            this.dataSource.driver.dataTypeDefaults &&
-            this.dataSource.driver.dataTypeDefaults[column.type] &&
-            this.dataSource.driver.dataTypeDefaults[column.type].scale !==
+            this.dataSource.driver.dataTypeDefaults?.[column.type]?.scale !==
                 null &&
-            this.dataSource.driver.dataTypeDefaults[column.type].scale !==
+            this.dataSource.driver.dataTypeDefaults?.[column.type]?.scale !==
                 undefined
         )
             return (

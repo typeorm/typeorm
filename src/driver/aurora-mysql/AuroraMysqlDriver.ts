@@ -492,8 +492,8 @@ export class AuroraMysqlDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -503,11 +503,11 @@ export class AuroraMysqlDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -516,8 +516,8 @@ export class AuroraMysqlDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -526,7 +526,7 @@ export class AuroraMysqlDriver implements Driver {
 
         return {
             database:
-                (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
+                (parts.length > 1 ? parts[0] : undefined) ?? driverDatabase,
             schema: driverSchema,
             tableName: parts.length > 1 ? parts[1] : parts[0],
         }
@@ -545,10 +545,7 @@ export class AuroraMysqlDriver implements Driver {
                 value,
             )
 
-        if (
-            !this.options.formatOptions ||
-            this.options.formatOptions.castParameters !== false
-        ) {
+        if (this.options.formatOptions?.castParameters !== false) {
             return this.client.preparePersistentValue(value, columnMetadata)
         }
 
@@ -602,10 +599,7 @@ export class AuroraMysqlDriver implements Driver {
                   )
                 : value
 
-        if (
-            !this.options.formatOptions ||
-            this.options.formatOptions.castParameters !== false
-        ) {
+        if (this.options.formatOptions?.castParameters !== false) {
             return this.client.prepareHydratedValue(value, columnMetadata)
         }
 
@@ -976,12 +970,14 @@ export class AuroraMysqlDriver implements Driver {
                     this.normalizeDefault(columnMetadata),
                     tableColumn.default,
                 ) ||
-                (tableColumn.enum &&
+                !!(
+                    tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
                         tableColumn.enum,
                         columnMetadata.enum.map((val) => val + ""),
-                    )) ||
+                    )
+                ) ||
                 tableColumn.onUpdate !== columnMetadata.onUpdate ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
@@ -1033,13 +1029,13 @@ export class AuroraMysqlDriver implements Driver {
      */
     protected loadDependencies(): void {
         const DataApiDriver =
-            this.options.driver ||
+            this.options.driver ??
             PlatformTools.load("typeorm-aurora-data-api-driver")
         this.DataApiDriver = DataApiDriver
 
         // Driver uses rollup for publishing, which has issues when using typeorm in combination with webpack
         // See https://github.com/webpack/webpack/issues/4742#issuecomment-295556787
-        this.DataApiDriver = this.DataApiDriver.default || this.DataApiDriver
+        this.DataApiDriver = this.DataApiDriver.default ?? this.DataApiDriver
     }
 
     /**
@@ -1077,7 +1073,7 @@ export class AuroraMysqlDriver implements Driver {
                 ssl: options.ssl,
             },
 
-            options.extra || {},
+            options.extra ?? {},
         )
     }
 

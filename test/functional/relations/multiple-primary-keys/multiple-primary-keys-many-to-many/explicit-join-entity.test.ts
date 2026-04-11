@@ -52,10 +52,10 @@ describe("relations > multiple-primary-keys > many-to-many > explicit join entit
                     .innerJoinAndSelect("post.categories", "postCategory")
                     .innerJoinAndSelect("postCategory.category", "category")
                     .addOrderBy("postCategory.categoryId")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!).not.to.be.null
-                loadedPost!.should.be.eql({
+                expect(loadedPost).not.to.be.null
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "Hello Post #1",
                     categories: [

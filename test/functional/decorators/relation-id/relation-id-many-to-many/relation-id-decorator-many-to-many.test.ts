@@ -64,11 +64,11 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.eql([])
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
-                expect(loadedPost!.categoryIds[1]).to.be.equal(2)
+                expect(loadedPost.categoryIds).to.not.be.eql([])
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -118,11 +118,11 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.removedCategoryIds).to.not.be.eql([])
-                expect(loadedPost!.removedCategoryIds.length).to.be.equal(1)
-                expect(loadedPost!.removedCategoryIds[0]).to.be.equal(2)
+                expect(loadedPost.removedCategoryIds).to.not.be.eql([])
+                expect(loadedPost.removedCategoryIds.length).to.be.equal(1)
+                expect(loadedPost.removedCategoryIds[0]).to.be.equal(2)
             }),
         ))
 
@@ -148,11 +148,11 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.subcategoryIds).to.not.be.eql([])
-                expect(loadedPost!.subcategoryIds[0]).to.be.equal(1)
-                expect(loadedPost!.subcategoryIds[1]).to.be.equal(2)
+                expect(loadedPost.subcategoryIds).to.not.be.eql([])
+                expect(loadedPost.subcategoryIds[0]).to.be.equal(1)
+                expect(loadedPost.subcategoryIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -179,11 +179,11 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.removedSubcategoryIds).to.not.be.eql([])
-                expect(loadedPost!.removedSubcategoryIds.length).to.be.equal(1)
-                expect(loadedPost!.removedSubcategoryIds[0]).to.be.equal(2)
+                expect(loadedPost.removedSubcategoryIds).to.not.be.eql([])
+                expect(loadedPost.removedSubcategoryIds.length).to.be.equal(1)
+                expect(loadedPost.removedSubcategoryIds[0]).to.be.equal(2)
             }),
         ))
 
@@ -210,11 +210,11 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 const loadedCategory = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.postIds).to.not.be.eql([])
-                expect(loadedCategory!.postIds[0]).to.be.equal(1)
-                expect(loadedCategory!.postIds[1]).to.be.equal(2)
+                expect(loadedCategory.postIds).to.not.be.eql([])
+                expect(loadedCategory.postIds[0]).to.be.equal(1)
+                expect(loadedCategory.postIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -242,11 +242,11 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 const loadedCategory = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.removedPostIds).to.not.be.eql([])
-                expect(loadedCategory!.removedPostIds.length).to.be.equal(1)
-                expect(loadedCategory!.removedPostIds[0]).to.be.equal(2)
+                expect(loadedCategory.removedPostIds).to.not.be.eql([])
+                expect(loadedCategory.removedPostIds.length).to.be.equal(1)
+                expect(loadedCategory.removedPostIds[0]).to.be.equal(2)
             }),
         ))
 
@@ -329,17 +329,17 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                     .leftJoinAndSelect("post.categories", "categories")
                     .addOrderBy("post.id, categories.id")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categories).to.not.be.eql([])
-                expect(loadedPost!.categoryIds).to.not.be.eql([])
-                expect(loadedPost!.categoryIds.length).to.be.equal(2)
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
-                expect(loadedPost!.categoryIds[1]).to.be.equal(2)
-                expect(loadedPost!.categories[0].imageIds).to.not.be.eql([])
-                expect(loadedPost!.categories[0].imageIds.length).to.be.equal(2)
-                expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1)
-                expect(loadedPost!.categories[0].imageIds[1]).to.be.equal(2)
+                expect(loadedPost.categories).to.not.be.eql([])
+                expect(loadedPost.categoryIds).to.not.be.eql([])
+                expect(loadedPost.categoryIds.length).to.be.equal(2)
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds[1]).to.be.equal(2)
+                expect(loadedPost.categories[0].imageIds).to.not.be.eql([])
+                expect(loadedPost.categories[0].imageIds.length).to.be.equal(2)
+                expect(loadedPost.categories[0].imageIds[0]).to.be.equal(1)
+                expect(loadedPost.categories[0].imageIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -378,9 +378,9 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                     .where("post.id = :id", { id: 1 })
                     .setParameter("categoryCode", 2)
                     .addOrderBy("post.id, categories.id")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categories).to.be.eql([])
+                expect(loadedPost.categories).to.be.eql([])
             }),
         ))
 
@@ -473,21 +473,21 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                     .leftJoinAndSelect("post.categories", "categories")
                     .addOrderBy("post.id, categories.id")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categories).to.not.be.eql([])
-                expect(loadedPost!.categoryIds).to.not.be.eql([])
-                expect(loadedPost!.removedCategoryIds.length).to.be.equal(1)
-                expect(loadedPost!.removedCategoryIds[0]).to.be.equal(2)
-                expect(loadedPost!.categories[0].removedImageIds).to.not.be.eql(
+                expect(loadedPost.categories).to.not.be.eql([])
+                expect(loadedPost.categoryIds).to.not.be.eql([])
+                expect(loadedPost.removedCategoryIds.length).to.be.equal(1)
+                expect(loadedPost.removedCategoryIds[0]).to.be.equal(2)
+                expect(loadedPost.categories[0].removedImageIds).to.not.be.eql(
                     [],
                 )
                 expect(
-                    loadedPost!.categories[0].removedImageIds.length,
+                    loadedPost.categories[0].removedImageIds.length,
                 ).to.be.equal(1)
-                expect(
-                    loadedPost!.categories[0].removedImageIds[0],
-                ).to.be.equal(2)
+                expect(loadedPost.categories[0].removedImageIds[0]).to.be.equal(
+                    2,
+                )
             }),
         ))
 })
