@@ -122,9 +122,8 @@ export class ManyToManySubjectBuilder {
         let relatedEntities: ObjectLiteral[] = relation.getEntityValue(
             subject.entity!,
         )
-        if (relatedEntities === null)
-            // if value set to null its equal if we set it to empty array - all items must be removed from the database
-            relatedEntities = []
+        // if value set to null its equal if we set it to empty array - all items must be removed from the database
+        relatedEntities ??= []
         if (!Array.isArray(relatedEntities)) return
 
         // from all related entities find only those which aren't found in the db - for them we will create operation subjects
@@ -177,9 +176,9 @@ export class ManyToManySubjectBuilder {
 
             const ownerValue = relation.isOwning
                 ? subject
-                : relatedEntitySubject || relatedEntity // by example: ownerEntityMap is post from subject here
+                : (relatedEntitySubject ?? relatedEntity) // by example: ownerEntityMap is post from subject here
             const inverseValue = relation.isOwning
-                ? relatedEntitySubject || relatedEntity
+                ? (relatedEntitySubject ?? relatedEntity)
                 : subject // by example: inverseEntityMap is category from categories array here
 
             // create a new subject for insert operation of junction rows

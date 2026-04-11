@@ -195,7 +195,7 @@ export class ReturningResultsEntityUpdator {
                     result,
                     entityIndex,
                     entities.length,
-                ) || {}
+                ) ?? {}
 
             if (entityIndex in this.expressionMap.locallyGenerated) {
                 this.queryRunner.manager.merge(

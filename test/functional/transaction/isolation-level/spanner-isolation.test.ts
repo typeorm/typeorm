@@ -92,4 +92,45 @@ describe("transaction > isolation level > spanner", () => {
             }
         })
     })
+
+    describe("defined in data source", () => {
+        for (const isolationLevel of supportedLevels) {
+            describe(isolationLevel, () => {
+                let dataSources: DataSource[]
+                before(async () => {
+                    // Create schema without isolation level to avoid
+                    // DDL failures under non-default isolation
+                    const setup = await createTestingConnections({
+                        entities: [__dirname + "/entity/*{.js,.ts}"],
+                        enabledDrivers: ["spanner"],
+                        schemaCreate: true,
+                        dropSchema: true,
+                    })
+                    await closeTestingConnections(setup)
+
+                    dataSources = await createTestingConnections({
+                        entities: [__dirname + "/entity/*{.js,.ts}"],
+                        enabledDrivers: ["spanner"],
+                        driverSpecific: {
+                            isolationLevel,
+                        },
+                    })
+                })
+                after(() => closeTestingConnections(dataSources))
+
+                it(`should apply ${isolationLevel} as default`, () =>
+                    Promise.all(
+                        dataSources.map(async (dataSource) => {
+                            await dataSource.manager.transaction(
+                                async (entityManager) => {
+                                    const post = new Post()
+                                    post.title = "Post #1"
+                                    await entityManager.save(post)
+                                },
+                            )
+                        }),
+                    ))
+            })
+        }
+    })
 })

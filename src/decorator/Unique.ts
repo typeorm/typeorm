@@ -86,12 +86,11 @@ export function Unique(
         !Array.isArray(nameOrFieldsOrOptions)
             ? (nameOrFieldsOrOptions as UniqueOptions)
             : maybeOptions
-    if (!options)
-        options =
-            ObjectUtils.isObject(nameOrFieldsOrOptions) &&
-            !Array.isArray(maybeFieldsOrOptions)
-                ? (maybeFieldsOrOptions as UniqueOptions)
-                : maybeOptions
+    options ??=
+        ObjectUtils.isObject(nameOrFieldsOrOptions) &&
+        !Array.isArray(maybeFieldsOrOptions)
+            ? (maybeFieldsOrOptions as UniqueOptions)
+            : maybeOptions
 
     return function (
         clsOrObject: Function | Object,

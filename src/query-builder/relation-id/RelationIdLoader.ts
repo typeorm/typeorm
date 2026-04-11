@@ -126,7 +126,7 @@ export class RelationIdLoader {
                         : relation.inverseRelation!.joinColumns
                     const table = relation.inverseEntityMetadata.target // category
                     const tableName = relation.inverseEntityMetadata.tableName // category
-                    const tableAlias = relationIdAttr.alias || tableName // if condition (custom query builder factory) is set then relationIdAttr.alias defined
+                    const tableAlias = relationIdAttr.alias ?? tableName // if condition (custom query builder factory) is set then relationIdAttr.alias defined
 
                     const duplicates: { [duplicateKey: string]: boolean } = {}
                     const parameters: ObjectLiteral = {}
@@ -262,7 +262,7 @@ export class RelationIdLoader {
                     const inverseSideTableName =
                         relationIdAttr.joinInverseSideMetadata.tableName
                     const inverseSideTableAlias =
-                        relationIdAttr.alias || inverseSideTableName
+                        relationIdAttr.alias ?? inverseSideTableName
                     const junctionTableName = relation.isOwning
                         ? relation.junctionEntityMetadata!.tableName
                         : relation.inverseRelation!.junctionEntityMetadata!

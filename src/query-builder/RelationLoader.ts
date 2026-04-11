@@ -38,7 +38,7 @@ export class RelationLoader {
         loadEagerRelations?: boolean,
     ): Promise<any[]> {
         // todo: check all places where it uses non array
-        if (queryRunner && queryRunner.isReleased) queryRunner = undefined // get new one if already closed
+        if (queryRunner?.isReleased) queryRunner = undefined // get new one if already closed
         if (relation.isManyToOne || relation.isOneToOneOwner) {
             return this.loadManyToOneOrOneToOneOwner(
                 relation,
@@ -102,12 +102,12 @@ export class RelationLoader {
             ? entityOrEntities
             : [entityOrEntities]
 
-        const qb = queryBuilder
-            ? queryBuilder
-            : this.dataSource
-                  .createQueryBuilder(queryRunner)
-                  .select(relation.propertyName)
-                  .from(relation.type, relation.propertyName)
+        const qb =
+            queryBuilder ??
+            this.dataSource
+                .createQueryBuilder(queryRunner)
+                .select(relation.propertyName)
+                .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
 
@@ -220,15 +220,15 @@ export class RelationLoader {
             ? entityOrEntities
             : [entityOrEntities]
         const columns = relation.inverseRelation!.joinColumns
-        const qb = queryBuilder
-            ? queryBuilder
-            : this.dataSource
-                  .createQueryBuilder(queryRunner)
-                  .select(relation.propertyName)
-                  .from(
-                      relation.inverseRelation!.entityMetadata.target,
-                      relation.propertyName,
-                  )
+        const qb =
+            queryBuilder ??
+            this.dataSource
+                .createQueryBuilder(queryRunner)
+                .select(relation.propertyName)
+                .from(
+                    relation.inverseRelation!.entityMetadata.target,
+                    relation.propertyName,
+                )
 
         const aliasName = qb.expressionMap.mainAlias!.name
 
@@ -317,12 +317,12 @@ export class RelationLoader {
             {} as ObjectLiteral,
         )
 
-        const qb = queryBuilder
-            ? queryBuilder
-            : this.dataSource
-                  .createQueryBuilder(queryRunner)
-                  .select(relation.propertyName)
-                  .from(relation.type, relation.propertyName)
+        const qb =
+            queryBuilder ??
+            this.dataSource
+                .createQueryBuilder(queryRunner)
+                .select(relation.propertyName)
+                .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
         const joinAlias = relation.junctionEntityMetadata!.tableName
@@ -378,12 +378,12 @@ export class RelationLoader {
             ? entityOrEntities
             : [entityOrEntities]
 
-        const qb = queryBuilder
-            ? queryBuilder
-            : this.dataSource
-                  .createQueryBuilder(queryRunner)
-                  .select(relation.propertyName)
-                  .from(relation.type, relation.propertyName)
+        const qb =
+            queryBuilder ??
+            this.dataSource
+                .createQueryBuilder(queryRunner)
+                .select(relation.propertyName)
+                .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
         const joinAlias = relation.junctionEntityMetadata!.tableName
