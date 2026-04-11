@@ -1150,7 +1150,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             (oldColumn.type !== newColumn.type &&
-                !isSafeAlter(oldColumn, newColumn)) ||
+                !this.canAlterColumnTypeInPlace(oldColumn, newColumn)) ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -3517,7 +3517,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             return false
 
         // Only proceed when caller says this change is safely widening
-        if (!isSafeAlter(oldColumn, newColumn)) return false
+        if (!this.canAlterColumnTypeInPlace(oldColumn, newColumn)) return false
 
         const tableSql = this.escapePath(table)
         const colName = String(oldColumn.name)
@@ -3580,6 +3580,42 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         upQueries.push(new Query(upSql))
         downQueries.push(new Query(downSql))
+        return true
+    }
+
+    /**
+     * Oracle rejects populated float-family rewrites such as FLOAT/BINARY_FLOAT
+     * -> BINARY_DOUBLE with ORA-01439, so only a subset of generic "safe alter"
+     * changes can use in-place MODIFY here.
+     */
+    private canAlterColumnTypeInPlace(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): boolean {
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const normalize = (type: TableColumn["type"]) =>
+            String(type ?? "")
+                .toLowerCase()
+                .replaceAll(/\s+/g, " ")
+                .trim()
+
+        const floatFamily = new Set([
+            "float",
+            "real",
+            "double",
+            "double precision",
+            "binary_float",
+            "binary_double",
+        ])
+
+        const oldType = normalize(oldColumn.type)
+        const newType = normalize(newColumn.type)
+
+        if (floatFamily.has(oldType) && floatFamily.has(newType)) {
+            return false
+        }
+
         return true
     }
 
