@@ -27,7 +27,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import { MysqlDriver } from "./MysqlDriver"
+import type { MysqlDriver } from "./MysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -114,8 +114,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
         validateIsolationLevel(
-            MysqlDriver.supportedIsolationLevels,
+            this.driver.supportedIsolationLevels,
             isolationLevel,
         )
 
