@@ -1,10 +1,11 @@
-import { JsonContains, DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
+import { JsonContains } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Address } from "./entities/Address"
+import { Address } from "./entity/Address"
 import { expect } from "chai"
 
 describe("github issues > #9664 add JsonContains operator ", () => {

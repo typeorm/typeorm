@@ -1,8 +1,8 @@
-import { Subject } from "./Subject"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { MongoRepository } from "../repository/MongoRepository"
+import type { Subject } from "./Subject"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { MongoRepository } from "../repository/MongoRepository"
 import { OrmUtils } from "../util/OrmUtils"
 
 /**
@@ -30,6 +30,8 @@ export class SubjectDatabaseEntityLoader {
      *
      * loadAllRelations flag is used to load all relation ids of the object, no matter if they present in subject entity or not.
      * This option is used for deletion.
+     *
+     * @param operationType
      */
     async load(
         operationType: "save" | "remove" | "soft-remove" | "recover",
@@ -100,14 +102,15 @@ export class SubjectDatabaseEntityLoader {
                         relations: loadRelationPropertyPaths,
                         disableMixedMap: true,
                     },
-                    // the soft-deleted entities should be included in the loaded entities for recover operation
+                    // include soft-deleted entities so save, soft-remove, recover,
+                    // and remove can find them by PK and load their relation IDs
                     withDeleted: true,
                 }
 
                 // load database entities for all given ids
-                let entities: any[] = []
+                let entities: any[]
                 if (
-                    this.queryRunner.connection.driver.options.type ===
+                    this.queryRunner.dataSource.driver.options.type ===
                     "mongodb"
                 ) {
                     const mongoRepo =
@@ -159,16 +162,22 @@ export class SubjectDatabaseEntityLoader {
         target: Function | string
         subjects: Subject[]
     }[] {
-        return this.subjects.reduce((groups, operatedEntity) => {
-            let group = groups.find(
-                (group) => group.target === operatedEntity.metadata.target,
-            )
-            if (!group) {
-                group = { target: operatedEntity.metadata.target, subjects: [] }
-                groups.push(group)
-            }
-            group.subjects.push(operatedEntity)
-            return groups
-        }, [] as { target: Function | string; subjects: Subject[] }[])
+        return this.subjects.reduce(
+            (groups, operatedEntity) => {
+                let group = groups.find(
+                    (group) => group.target === operatedEntity.metadata.target,
+                )
+                if (!group) {
+                    group = {
+                        target: operatedEntity.metadata.target,
+                        subjects: [],
+                    }
+                    groups.push(group)
+                }
+                group.subjects.push(operatedEntity)
+                return groups
+            },
+            [] as { target: Function | string; subjects: Subject[] }[],
+        )
     }
 }

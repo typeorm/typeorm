@@ -3,9 +3,9 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { assert, expect } from "chai"
-import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
+import type { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
 import { TableIndex } from "../../../src"
 import { PostCategory } from "./entity/PostCategory"
 import { IndexMetadata } from "../../../src/metadata/IndexMetadata"
@@ -14,18 +14,18 @@ describe("github issues > #8459 Can not create indexes of materialized views", (
     const tableIndex: TableIndex = new TableIndex({
         columnNames: ["name"],
         name: "name-idx",
+        type: "btree",
     })
 
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should create a materialized view index at runtime", () =>

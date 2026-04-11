@@ -1,12 +1,14 @@
 import { getMetadataArgsStorage } from "../globals"
-import { IndexMetadataArgs } from "../metadata-args/IndexMetadataArgs"
-import { IndexOptions } from "./options/IndexOptions"
+import type { IndexMetadataArgs } from "../metadata-args/IndexMetadataArgs"
+import type { IndexOptions } from "./options/IndexOptions"
 import { ObjectUtils } from "../util/ObjectUtils"
 
 /**
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
+ * @param options
  */
 export function Index(
     options?: IndexOptions,
@@ -16,6 +18,9 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
+ * @param name
+ * @param options
  */
 export function Index(
     name: string,
@@ -26,6 +31,10 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
+ * @param name
+ * @param options
+ * @param options.synchronize
  */
 export function Index(
     name: string,
@@ -36,6 +45,10 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
+ * @param name
+ * @param fields
+ * @param options
  */
 export function Index(
     name: string,
@@ -47,6 +60,9 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
+ * @param fields
+ * @param options
  */
 export function Index(
     fields: string[],
@@ -57,6 +73,9 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
+ * @param fields
+ * @param options
  */
 export function Index(
     fields: (object?: any) => any[] | { [key: string]: number },
@@ -67,6 +86,10 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
+ * @param name
+ * @param fields
+ * @param options
  */
 export function Index(
     name: string,
@@ -78,6 +101,10 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
+ *
+ * @param nameOrFieldsOrOptions
+ * @param maybeFieldsOrOptions
+ * @param maybeOptions
  */
 export function Index(
     nameOrFieldsOrOptions?:
@@ -109,12 +136,11 @@ export function Index(
         !Array.isArray(nameOrFieldsOrOptions)
             ? (nameOrFieldsOrOptions as IndexOptions)
             : maybeOptions
-    if (!options)
-        options =
-            ObjectUtils.isObject(maybeFieldsOrOptions) &&
-            !Array.isArray(maybeFieldsOrOptions)
-                ? (maybeFieldsOrOptions as IndexOptions)
-                : maybeOptions
+    options ??=
+        ObjectUtils.isObject(maybeFieldsOrOptions) &&
+        !Array.isArray(maybeFieldsOrOptions)
+            ? (maybeFieldsOrOptions as IndexOptions)
+            : maybeOptions
 
     return function (
         clsOrObject: Function | Object,
@@ -132,14 +158,15 @@ export function Index(
                     ? false
                     : true,
             where: options ? options.where : undefined,
-            unique: options && options.unique ? true : false,
-            spatial: options && options.spatial ? true : false,
-            fulltext: options && options.fulltext ? true : false,
-            nullFiltered: options && options.nullFiltered ? true : false,
+            type: options ? options.type : undefined,
+            unique: options?.unique ? true : false,
+            spatial: options?.spatial ? true : false,
+            fulltext: options?.fulltext ? true : false,
+            nullFiltered: options?.nullFiltered ? true : false,
             parser: options ? options.parser : undefined,
-            sparse: options && options.sparse ? true : false,
-            background: options && options.background ? true : false,
-            concurrent: options && options.concurrent ? true : false,
+            sparse: options?.sparse ? true : false,
+            background: options?.background ? true : false,
+            concurrent: options?.concurrent ? true : false,
             expireAfterSeconds: options
                 ? options.expireAfterSeconds
                 : undefined,

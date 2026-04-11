@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { PostDetails } from "./entity/PostDetails"
 import { Image } from "./entity/Image"
@@ -50,6 +51,6 @@ dataSource
         postRepository
             .save(post)
             .then((result) => console.log(result))
-            .catch((error) => console.log(error.stack ? error.stack : error))
+            .catch((error) => console.log(error.stack ?? error))
     })
-    .catch((error) => console.log(error.stack ? error.stack : error))
+    .catch((error) => console.log(error.stack ?? error))

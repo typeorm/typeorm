@@ -1,19 +1,19 @@
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { Subject } from "./Subject"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { Subject } from "./Subject"
 import { SubjectTopologicalSorter } from "./SubjectTopologicalSorter"
 import { SubjectChangedColumnsComputer } from "./SubjectChangedColumnsComputer"
 import { SubjectWithoutIdentifierError } from "../error/SubjectWithoutIdentifierError"
 import { SubjectRemovedAndUpdatedError } from "../error/SubjectRemovedAndUpdatedError"
-import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { SaveOptions } from "../repository/SaveOptions"
-import { RemoveOptions } from "../repository/RemoveOptions"
+import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { SaveOptions } from "../repository/SaveOptions"
+import type { RemoveOptions } from "../repository/RemoveOptions"
 import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { NestedSetSubjectExecutor } from "./tree/NestedSetSubjectExecutor"
 import { ClosureSubjectExecutor } from "./tree/ClosureSubjectExecutor"
 import { MaterializedPathSubjectExecutor } from "./tree/MaterializedPathSubjectExecutor"
 import { OrmUtils } from "../util/OrmUtils"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 
@@ -364,7 +364,7 @@ export class SubjectExecutor {
             const bulkInsertMaps: ObjectLiteral[] = []
             const bulkInsertSubjects: Subject[] = []
             const singleInsertSubjects: Subject[] = []
-            if (this.queryRunner.connection.driver.options.type === "mongodb") {
+            if (this.queryRunner.dataSource.driver.options.type === "mongodb") {
                 subjects.forEach((subject) => {
                     if (subject.metadata.createDateColumn && subject.entity) {
                         subject.entity[
@@ -384,7 +384,7 @@ export class SubjectExecutor {
                     bulkInsertMaps.push(subject.entity!)
                 })
             } else if (
-                this.queryRunner.connection.driver.options.type === "oracle"
+                this.queryRunner.dataSource.driver.options.type === "oracle"
             ) {
                 subjects.forEach((subject) => {
                     singleInsertSubjects.push(subject)
@@ -398,9 +398,9 @@ export class SubjectExecutor {
                     if (
                         subject.changeMaps.length === 0 ||
                         subject.metadata.treeType ||
-                        this.queryRunner.connection.driver.options.type ===
+                        this.queryRunner.dataSource.driver.options.type ===
                             "oracle" ||
-                        this.queryRunner.connection.driver.options.type ===
+                        this.queryRunner.dataSource.driver.options.type ===
                             "sap"
                     ) {
                         singleInsertSubjects.push(subject)
@@ -506,7 +506,7 @@ export class SubjectExecutor {
                         )
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -534,28 +534,19 @@ export class SubjectExecutor {
                 InstanceChecker.isMongoEntityManager(this.queryRunner.manager)
             ) {
                 const partialEntity = this.cloneMongoSubjectEntity(subject)
-                if (
-                    subject.metadata.objectIdColumn &&
-                    subject.metadata.objectIdColumn.propertyName
-                ) {
+                if (subject.metadata.objectIdColumn?.propertyName) {
                     delete partialEntity[
                         subject.metadata.objectIdColumn.propertyName
                     ]
                 }
 
-                if (
-                    subject.metadata.createDateColumn &&
-                    subject.metadata.createDateColumn.propertyName
-                ) {
+                if (subject.metadata.createDateColumn?.propertyName) {
                     delete partialEntity[
                         subject.metadata.createDateColumn.propertyName
                     ]
                 }
 
-                if (
-                    subject.metadata.updateDateColumn &&
-                    subject.metadata.updateDateColumn.propertyName
-                ) {
+                if (subject.metadata.updateDateColumn?.propertyName) {
                     partialEntity[
                         subject.metadata.updateDateColumn.propertyName
                     ] = new Date()
@@ -622,7 +613,7 @@ export class SubjectExecutor {
                         const value = column.getEntityValue(updateGeneratedMap!)
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -632,9 +623,7 @@ export class SubjectExecutor {
                             )
                         }
                     })
-                    if (!subject.generatedMap) {
-                        subject.generatedMap = {}
-                    }
+                    subject.generatedMap ??= {}
                     Object.assign(subject.generatedMap, updateGeneratedMap)
                 }
             }
@@ -756,37 +745,25 @@ export class SubjectExecutor {
                     )
                 ) {
                     const partialEntity = this.cloneMongoSubjectEntity(subject)
-                    if (
-                        subject.metadata.objectIdColumn &&
-                        subject.metadata.objectIdColumn.propertyName
-                    ) {
+                    if (subject.metadata.objectIdColumn?.propertyName) {
                         delete partialEntity[
                             subject.metadata.objectIdColumn.propertyName
                         ]
                     }
 
-                    if (
-                        subject.metadata.createDateColumn &&
-                        subject.metadata.createDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.createDateColumn?.propertyName) {
                         delete partialEntity[
                             subject.metadata.createDateColumn.propertyName
                         ]
                     }
 
-                    if (
-                        subject.metadata.updateDateColumn &&
-                        subject.metadata.updateDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.updateDateColumn?.propertyName) {
                         partialEntity[
                             subject.metadata.updateDateColumn.propertyName
                         ] = new Date()
                     }
 
-                    if (
-                        subject.metadata.deleteDateColumn &&
-                        subject.metadata.deleteDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.deleteDateColumn?.propertyName) {
                         partialEntity[
                             subject.metadata.deleteDateColumn.propertyName
                         ] = new Date()
@@ -834,7 +811,7 @@ export class SubjectExecutor {
                         )
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -879,37 +856,25 @@ export class SubjectExecutor {
                     )
                 ) {
                     const partialEntity = this.cloneMongoSubjectEntity(subject)
-                    if (
-                        subject.metadata.objectIdColumn &&
-                        subject.metadata.objectIdColumn.propertyName
-                    ) {
+                    if (subject.metadata.objectIdColumn?.propertyName) {
                         delete partialEntity[
                             subject.metadata.objectIdColumn.propertyName
                         ]
                     }
 
-                    if (
-                        subject.metadata.createDateColumn &&
-                        subject.metadata.createDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.createDateColumn?.propertyName) {
                         delete partialEntity[
                             subject.metadata.createDateColumn.propertyName
                         ]
                     }
 
-                    if (
-                        subject.metadata.updateDateColumn &&
-                        subject.metadata.updateDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.updateDateColumn?.propertyName) {
                         partialEntity[
                             subject.metadata.updateDateColumn.propertyName
                         ] = new Date()
                     }
 
-                    if (
-                        subject.metadata.deleteDateColumn &&
-                        subject.metadata.deleteDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.deleteDateColumn?.propertyName) {
                         partialEntity[
                             subject.metadata.deleteDateColumn.propertyName
                         ] = null
@@ -957,7 +922,7 @@ export class SubjectExecutor {
                         )
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -1037,8 +1002,7 @@ export class SubjectExecutor {
                 InstanceChecker.isMongoEntityManager(this.queryRunner.manager)
             ) {
                 if (
-                    subject.metadata.objectIdColumn &&
-                    subject.metadata.objectIdColumn.databaseName &&
+                    subject.metadata.objectIdColumn?.databaseName &&
                     subject.metadata.objectIdColumn.databaseName !==
                         subject.metadata.objectIdColumn.propertyName
                 ) {
@@ -1053,6 +1017,8 @@ export class SubjectExecutor {
     /**
      * Updates all special columns of the saving entities (create date, update date, version, etc.).
      * Also updates nullable columns and columns with default values.
+     *
+     * @param subjects
      */
     protected updateSpecialColumnsInInsertedAndUpdatedEntities(
         subjects: Subject[],
@@ -1082,6 +1048,19 @@ export class SubjectExecutor {
                     const columnValue = column.getEntityValue(subject.entity!)
                     if (columnValue === undefined)
                         column.setEntityValue(subject.entity!, null)
+                }
+
+                if (!column.isSelect) {
+                    const target = column.embeddedMetadata
+                        ? OrmUtils.deepValue(
+                              subject.entity!,
+                              column.embeddedMetadata.propertyPath,
+                          )
+                        : subject.entity
+
+                    if (target) {
+                        delete target[column.propertyName]
+                    }
                 }
 
                 // update relational columns
@@ -1129,6 +1108,9 @@ export class SubjectExecutor {
      *
      * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
      * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
+     *
+     * @param subjects
+     * @param type
      */
     protected groupBulkSubjects(
         subjects: Subject[],
@@ -1141,7 +1123,7 @@ export class SubjectExecutor {
         })
         const groupingAllowed =
             type === "delete" ||
-            this.queryRunner.connection.driver.isReturningSqlSupported(
+            this.queryRunner.dataSource.driver.isReturningSqlSupported(
                 "insert",
             ) ||
             hasReturningDependColumns === false

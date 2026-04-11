@@ -1,5 +1,6 @@
 import { expect } from "chai"
-import { DeepPartial } from "../../../src"
+import { runInNewContext } from "node:vm"
+import type { DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
@@ -200,6 +201,73 @@ describe(`OrmUtils`, () => {
             expect(objCopy).not.to.equal(obj)
             expect(objCopy).to.deep.equal(obj)
             expect(objCopy2).to.equal(undefined)
+        })
+    })
+
+    describe("getArraysDiff", () => {
+        it("should return array difference", () => {
+            const a = [1, 2, 3]
+            const b = [2, 3, 4]
+
+            expect(OrmUtils.getArraysDiff(a, b)).to.deep.equal({
+                extraItems: [1],
+                missingItems: [4],
+            })
+            expect(OrmUtils.getArraysDiff(b, a)).to.deep.equal({
+                extraItems: [4],
+                missingItems: [1],
+            })
+        })
+    })
+
+    describe("compare2Objects", () => {
+        it("should compare two Map.", () => {
+            expect(OrmUtils.deepCompare(new Map(), new Map())).to.equal(true)
+            expect(
+                OrmUtils.deepCompare(
+                    new Map(
+                        Object.entries({ prop1: "value1", prop2: "value2" }),
+                    ),
+                    new Map(
+                        Object.entries({ prop1: "value1", prop2: "value2" }),
+                    ),
+                ),
+            ).to.equal(true)
+            expect(
+                OrmUtils.deepCompare(
+                    new Map(Object.entries({ prop1: "value1" })),
+                    new Map(
+                        Object.entries({ prop1: "value1", prop2: "value2" }),
+                    ),
+                ),
+            ).to.equal(false)
+        })
+
+        it("should compare two Set.", () => {
+            expect(OrmUtils.deepCompare(new Set(), new Set())).to.equal(true)
+            expect(
+                OrmUtils.deepCompare(new Set([1, 2, 3]), new Set([1, 2, 3])),
+            ).to.equal(true)
+            expect(
+                OrmUtils.deepCompare(new Set([1, 2]), new Set([1, 2, 3])),
+            ).to.equal(false)
+        })
+
+        it("should compare cross-realm Uint8Array values by content", () => {
+            const crossRealmArray = runInNewContext("new Uint8Array([1, 2, 3])")
+
+            expect(
+                OrmUtils.deepCompare(
+                    crossRealmArray,
+                    new Uint8Array([1, 2, 3]),
+                ),
+            ).to.equal(true)
+            expect(
+                OrmUtils.deepCompare(
+                    crossRealmArray,
+                    new Uint8Array([1, 2, 4]),
+                ),
+            ).to.equal(false)
         })
     })
 })

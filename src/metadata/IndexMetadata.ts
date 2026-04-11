@@ -1,9 +1,10 @@
-import { EntityMetadata } from "./EntityMetadata"
-import { IndexMetadataArgs } from "../metadata-args/IndexMetadataArgs"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { ColumnMetadata } from "./ColumnMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { IndexMetadataArgs } from "../metadata-args/IndexMetadataArgs"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
 import { TypeORMError } from "../error"
+import type { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
 
 /**
  * Index metadata contains all information about table's index.
@@ -120,6 +121,13 @@ export class IndexMetadata {
     where?: string
 
     /**
+     * The `type` option defines the type of the index being created.
+     * Supported types include B-tree, Hash, GiST, SP-GiST, GIN, and BRIN
+     * This option is only applicable in PostgreSQL.
+     */
+    type?: TableIndexTypes
+
+    /**
      * Map of column names with order set.
      * Used only by MongoDB driver.
      */
@@ -135,6 +143,16 @@ export class IndexMetadata {
         columns?: ColumnMetadata[]
         args?: IndexMetadataArgs
     }) {
+        // check if index type is supported
+        if (
+            options.args?.type &&
+            !options.entityMetadata.dataSource.driver.supportedIndexTypes?.includes(
+                options.args.type,
+            )
+        ) {
+            throw new TypeORMError(`Unsupported index type`)
+        }
+
         this.entityMetadata = options.entityMetadata
         this.embeddedMetadata = options.embeddedMetadata
         if (options.columns) this.columns = options.columns
@@ -147,7 +165,8 @@ export class IndexMetadata {
             )
                 this.synchronize = options.args.synchronize
             this.isUnique = !!options.args.unique
-            this.isSpatial = !!options.args.spatial
+            this.isSpatial =
+                !!options.args.spatial || options.args.type === "gist"
             this.isFulltext = !!options.args.fulltext
             this.isNullFiltered = !!options.args.nullFiltered
             this.parser = options.args.parser
@@ -158,6 +177,7 @@ export class IndexMetadata {
             this.expireAfterSeconds = options.args.expireAfterSeconds
             this.givenName = options.args.name
             this.givenColumnNames = options.args.columns
+            this.type = options.args.type
         }
     }
 
@@ -168,6 +188,8 @@ export class IndexMetadata {
     /**
      * Builds some depend index properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     *
+     * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
         if (this.synchronize === false) {
@@ -179,7 +201,7 @@ export class IndexMetadata {
 
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {
-            let columnPropertyPaths: string[] = []
+            let columnPropertyPaths: string[]
             if (Array.isArray(this.givenColumnNames)) {
                 columnPropertyPaths = this.givenColumnNames.map(
                     (columnName) => {
@@ -193,9 +215,9 @@ export class IndexMetadata {
                         return columnName.trim()
                     },
                 )
-                columnPropertyPaths.forEach(
-                    (propertyPath) => (map[propertyPath] = 1),
-                )
+                columnPropertyPaths.forEach((propertyPath) => {
+                    map[propertyPath] = 1
+                })
             } else {
                 // todo: indices in embeds are not implemented in this syntax. deprecate this syntax?
                 // if columns is a function that returns array of field names then execute it and get columns names from it
@@ -206,15 +228,16 @@ export class IndexMetadata {
                     columnPropertyPaths = columnsFnResult.map((i: any) =>
                         String(i),
                     )
-                    columnPropertyPaths.forEach((name) => (map[name] = 1))
+                    columnPropertyPaths.forEach((name) => {
+                        map[name] = 1
+                    })
                 } else {
                     columnPropertyPaths = Object.keys(columnsFnResult).map(
                         (i: any) => String(i),
                     )
-                    Object.keys(columnsFnResult).forEach(
-                        (columnName) =>
-                            (map[columnName] = columnsFnResult[columnName]),
-                    )
+                    Object.keys(columnsFnResult).forEach((columnName) => {
+                        map[columnName] = columnsFnResult[columnName]
+                    })
                 }
             }
 
@@ -259,13 +282,13 @@ export class IndexMetadata {
             {} as { [key: string]: number },
         )
 
-        this.name = this.givenName
-            ? this.givenName
-            : namingStrategy.indexName(
-                  this.entityMetadata.tableName,
-                  this.columns.map((column) => column.databaseName),
-                  this.where,
-              )
+        this.name =
+            this.givenName ??
+            namingStrategy.indexName(
+                this.entityMetadata.tableName,
+                this.columns.map((column) => column.databaseName),
+                this.where,
+            )
         return this
     }
 }

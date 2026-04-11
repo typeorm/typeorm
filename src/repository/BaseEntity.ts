@@ -1,16 +1,16 @@
-import { Repository } from "./Repository"
-import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { DeepPartial } from "../common/DeepPartial"
-import { SaveOptions } from "./SaveOptions"
-import { FindOneOptions } from "../find-options/FindOneOptions"
-import { RemoveOptions } from "./RemoveOptions"
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { DataSource } from "../data-source"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { InsertResult } from "../query-builder/result/InsertResult"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { ObjectId } from "../driver/mongodb/typings"
+import type { Repository } from "./Repository"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { DeepPartial } from "../common/DeepPartial"
+import type { SaveOptions } from "./SaveOptions"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
+import type { RemoveOptions } from "./RemoveOptions"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { DataSource } from "../data-source"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { InsertResult } from "../query-builder/result/InsertResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type { ObjectId } from "../driver/mongodb/typings"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { UpsertOptions } from "./UpsertOptions"
@@ -47,6 +47,8 @@ export class BaseEntity {
     /**
      * Saves current entity in the database.
      * If entity does not exist in the database then inserts, otherwise updates.
+     *
+     * @param options
      */
     save(options?: SaveOptions): Promise<this> {
         const baseEntity = this.constructor as typeof BaseEntity
@@ -55,6 +57,8 @@ export class BaseEntity {
 
     /**
      * Removes current entity from the database.
+     *
+     * @param options
      */
     remove(options?: RemoveOptions): Promise<this> {
         const baseEntity = this.constructor as typeof BaseEntity
@@ -63,6 +67,8 @@ export class BaseEntity {
 
     /**
      * Records the delete date of current entity.
+     *
+     * @param options
      */
     softRemove(options?: SaveOptions): Promise<this> {
         const baseEntity = this.constructor as typeof BaseEntity
@@ -71,6 +77,8 @@ export class BaseEntity {
 
     /**
      * Recovers a given entity in the database.
+     *
+     * @param options
      */
     recover(options?: SaveOptions): Promise<this> {
         const baseEntity = this.constructor as typeof BaseEntity
@@ -101,6 +109,8 @@ export class BaseEntity {
 
     /**
      * Sets DataSource to be used by entity.
+     *
+     * @param dataSource
      */
     static useDataSource(dataSource: DataSource | null) {
         this.dataSource = dataSource
@@ -130,6 +140,8 @@ export class BaseEntity {
     /**
      * Checks entity has an id.
      * If entity composite compose ids, it will check them all.
+     *
+     * @param entity
      */
     static hasId(entity: BaseEntity): boolean {
         return this.getRepository().hasId(entity)
@@ -137,6 +149,8 @@ export class BaseEntity {
 
     /**
      * Gets entity mixed id.
+     *
+     * @param entity
      */
     static getId<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -147,6 +161,8 @@ export class BaseEntity {
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
+     *
+     * @param alias
      */
     static createQueryBuilder<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -183,6 +199,8 @@ export class BaseEntity {
     /**
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
+     *
+     * @param entityOrEntities
      */
     static create<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -193,6 +211,9 @@ export class BaseEntity {
 
     /**
      * Merges multiple entities (or entity-like objects) into a given entity.
+     *
+     * @param mergeIntoEntity
+     * @param entityLikes
      */
     static merge<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -213,6 +234,8 @@ export class BaseEntity {
      *
      * Note that given entity-like object must have an entity id / primary key to find entity by.
      * Returns undefined if entity with given id was not found.
+     *
+     * @param entityLike
      */
     static preload<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -244,6 +267,9 @@ export class BaseEntity {
 
     /**
      * Saves one or many given entities.
+     *
+     * @param entityOrEntities
+     * @param options
      */
     static save<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -273,6 +299,9 @@ export class BaseEntity {
 
     /**
      * Removes one or many given entities.
+     *
+     * @param entityOrEntities
+     * @param options
      */
     static remove<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -302,6 +331,9 @@ export class BaseEntity {
 
     /**
      * Records the delete date of one or many given entities.
+     *
+     * @param entityOrEntities
+     * @param options
      */
     static softRemove<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -319,6 +351,8 @@ export class BaseEntity {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
+     *
+     * @param entity
      */
     static insert<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -332,6 +366,10 @@ export class BaseEntity {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
+     *
+     * @param criteria
+     * @param partialEntity
+     * @param options
      */
     static update<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -355,6 +393,9 @@ export class BaseEntity {
      * Inserts a given entity into the database, unless a unique constraint conflicts then updates the entity
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT ... ON CONFLICT DO UPDATE/ON DUPLICATE KEY UPDATE query.
+     *
+     * @param entityOrEntities
+     * @param conflictPathsOrOptions
      */
     static upsert<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -374,6 +415,8 @@ export class BaseEntity {
      * Unlike remove method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
+     *
+     * @param criteria
      */
     static delete<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -393,6 +436,8 @@ export class BaseEntity {
 
     /**
      * Checks whether any entity exists that matches the given options.
+     *
+     * @param options
      */
     static exists<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -403,6 +448,8 @@ export class BaseEntity {
 
     /**
      * Checks whether any entity exists that matches the given conditions.
+     *
+     * @param where
      */
     static existsBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -413,6 +460,8 @@ export class BaseEntity {
 
     /**
      * Counts entities that match given options.
+     *
+     * @param options
      */
     static count<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -423,6 +472,8 @@ export class BaseEntity {
 
     /**
      * Counts entities that match given WHERE conditions.
+     *
+     * @param where
      */
     static countBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -433,6 +484,9 @@ export class BaseEntity {
 
     /**
      * Return the SUM of a column
+     *
+     * @param columnName
+     * @param where
      */
     static sum<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -444,6 +498,9 @@ export class BaseEntity {
 
     /**
      * Return the AVG of a column
+     *
+     * @param columnName
+     * @param where
      */
     static average<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -455,6 +512,9 @@ export class BaseEntity {
 
     /**
      * Return the MIN of a column
+     *
+     * @param columnName
+     * @param where
      */
     static minimum<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -466,6 +526,9 @@ export class BaseEntity {
 
     /**
      * Return the MAX of a column
+     *
+     * @param columnName
+     * @param where
      */
     static maximum<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -477,6 +540,8 @@ export class BaseEntity {
 
     /**
      * Finds entities that match given options.
+     *
+     * @param options
      */
     static find<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -487,6 +552,8 @@ export class BaseEntity {
 
     /**
      * Finds entities that match given WHERE conditions.
+     *
+     * @param where
      */
     static findBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -499,6 +566,8 @@ export class BaseEntity {
      * Finds entities that match given find options.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
+     * @param options
      */
     static findAndCount<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -511,6 +580,8 @@ export class BaseEntity {
      * Finds entities that match given WHERE conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
+     * @param where
      */
     static findAndCountBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -520,24 +591,9 @@ export class BaseEntity {
     }
 
     /**
-     * Finds entities by ids.
-     * Optionally find options can be applied.
-     *
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    static findByIds<T extends BaseEntity>(
-        this: { new (): T } & typeof BaseEntity,
-        ids: any[],
-    ): Promise<T[]> {
-        return this.getRepository<T>().findByIds(ids)
-    }
-
-    /**
      * Finds first entity that matches given conditions.
+     *
+     * @param options
      */
     static findOne<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -548,6 +604,8 @@ export class BaseEntity {
 
     /**
      * Finds first entity that matches given conditions.
+     *
+     * @param where
      */
     static findOneBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -557,23 +615,9 @@ export class BaseEntity {
     }
 
     /**
-     * Finds first entity that matches given options.
-     *
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    static findOneById<T extends BaseEntity>(
-        this: { new (): T } & typeof BaseEntity,
-        id: string | number | Date | ObjectId,
-    ): Promise<T | null> {
-        return this.getRepository<T>().findOneById(id)
-    }
-
-    /**
      * Finds first entity that matches given conditions.
+     *
+     * @param options
      */
     static findOneOrFail<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -584,6 +628,8 @@ export class BaseEntity {
 
     /**
      * Finds first entity that matches given conditions.
+     *
+     * @param where
      */
     static findOneByOrFail<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -595,6 +641,9 @@ export class BaseEntity {
     /**
      * Executes a raw SQL query and returns a raw database results.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     *
+     * @param query
+     * @param parameters
      */
     static query<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -606,10 +655,14 @@ export class BaseEntity {
 
     /**
      * Clears all the data from the given table/collection (truncates/drops it).
+     *
+     * @param options
+     * @param options.cascade
      */
     static clear<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
+        options?: { cascade?: boolean },
     ): Promise<void> {
-        return this.getRepository<T>().clear()
+        return this.getRepository<T>().clear(options)
     }
 }

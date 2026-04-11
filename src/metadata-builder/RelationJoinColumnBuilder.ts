@@ -1,9 +1,9 @@
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { UniqueMetadata } from "../metadata/UniqueMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
-import { RelationMetadata } from "../metadata/RelationMetadata"
-import { JoinColumnMetadataArgs } from "../metadata-args/JoinColumnMetadataArgs"
-import { DataSource } from "../data-source/DataSource"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
+import type { JoinColumnMetadataArgs } from "../metadata-args/JoinColumnMetadataArgs"
+import type { DataSource } from "../data-source/DataSource"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
 import { OrmUtils } from "../util/OrmUtils"
@@ -49,7 +49,7 @@ export class RelationJoinColumnBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: DataSource) {}
+    constructor(private dataSource: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -57,6 +57,9 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Builds a foreign key of the many-to-one or one-to-one owner relations.
+     *
+     * @param joinColumns
+     * @param relation
      */
     build(
         joinColumns: JoinColumnMetadataArgs[],
@@ -86,7 +89,7 @@ export class RelationJoinColumnBuilder {
             name: joinColumns[0]?.foreignKeyConstraintName,
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
-            namingStrategy: this.connection.namingStrategy,
+            namingStrategy: this.dataSource.namingStrategy,
             columns,
             referencedColumns,
             onDelete: relation.onDelete,
@@ -108,14 +111,14 @@ export class RelationJoinColumnBuilder {
             entityMetadata: relation.entityMetadata,
             columns: foreignKey.columns,
             args: {
-                name: this.connection.namingStrategy.relationConstraintName(
+                name: this.dataSource.namingStrategy.relationConstraintName(
                     relation.entityMetadata.tableName,
                     foreignKey.columns.map((column) => column.databaseName),
                 ),
                 target: relation.entityMetadata.target,
             },
         })
-        uniqueConstraint.build(this.connection.namingStrategy)
+        uniqueConstraint.build(this.dataSource.namingStrategy)
 
         return { foreignKey, columns, uniqueConstraint }
     }
@@ -126,6 +129,9 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     *
+     * @param joinColumns
+     * @param relation
      */
     protected collectReferencedColumns(
         joinColumns: JoinColumnMetadataArgs[],
@@ -147,7 +153,7 @@ export class RelationJoinColumnBuilder {
             return relation.inverseEntityMetadata.primaryColumns
         } else {
             // cases with referenced columns defined
-            return joinColumns.map((joinColumn) => {
+            const referencedColumns = joinColumns.map((joinColumn) => {
                 const referencedColumn =
                     relation.inverseEntityMetadata.ownColumns.find(
                         (column) =>
@@ -161,11 +167,32 @@ export class RelationJoinColumnBuilder {
 
                 return referencedColumn
             })
+
+            // Sort to match the referenced entity's primary key order.
+            // Databases like MySQL, MSSQL, and SAP HANA require composite FK
+            // columns to reference PK columns in the same index order.
+            if (referencedColumns.length > 1) {
+                const pkColumns = relation.inverseEntityMetadata.primaryColumns
+                const orderMap = new Map(
+                    pkColumns.map((col, idx) => [col, idx]),
+                )
+                return [...referencedColumns].sort((a, b) => {
+                    const aIdx = orderMap.get(a) ?? Infinity
+                    const bIdx = orderMap.get(b) ?? Infinity
+                    return aIdx - bIdx
+                })
+            }
+
+            return referencedColumns
         }
     }
 
     /**
      * Collects columns from the given join column args.
+     *
+     * @param joinColumns
+     * @param relation
+     * @param referencedColumns
      */
     private collectColumns(
         joinColumns: JoinColumnMetadataArgs[],
@@ -184,7 +211,7 @@ export class RelationJoinColumnBuilder {
             })
             const joinColumnName = joinColumnMetadataArg
                 ? joinColumnMetadataArg.name
-                : this.connection.namingStrategy.joinColumnName(
+                : this.dataSource.namingStrategy.joinColumnName(
                       relation.propertyName,
                       referencedColumn.propertyName,
                   )
@@ -198,7 +225,6 @@ export class RelationJoinColumnBuilder {
             )
             if (!relationalColumn) {
                 relationalColumn = new ColumnMetadata({
-                    connection: this.connection,
                     entityMetadata: relation.entityMetadata,
                     embeddedMetadata: relation.embeddedMetadata,
                     args: {
@@ -211,12 +237,12 @@ export class RelationJoinColumnBuilder {
                             length:
                                 !referencedColumn.length &&
                                 (DriverUtils.isMySQLFamily(
-                                    this.connection.driver,
+                                    this.dataSource.driver,
                                 ) ||
-                                    this.connection.driver.options.type ===
+                                    this.dataSource.driver.options.type ===
                                         "aurora-mysql") &&
                                 // some versions of mariadb support the column type and should not try to provide the length property
-                                this.connection.driver.normalizeType(
+                                this.dataSource.driver.normalizeType(
                                     referencedColumn,
                                 ) !== "uuid" &&
                                 (referencedColumn.generationStrategy ===
@@ -224,12 +250,10 @@ export class RelationJoinColumnBuilder {
                                     referencedColumn.type === "uuid")
                                     ? "36"
                                     : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
-                            width: referencedColumn.width,
                             charset: referencedColumn.charset,
                             collation: referencedColumn.collation,
                             precision: referencedColumn.precision,
                             scale: referencedColumn.scale,
-                            zerofill: referencedColumn.zerofill,
                             unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
                             enum: referencedColumn.enum,
@@ -249,7 +273,7 @@ export class RelationJoinColumnBuilder {
             relationalColumn.referencedColumn = referencedColumn // its important to set it here because we need to set referenced column for user defined join column
             relationalColumn.type = referencedColumn.type // also since types of relational column and join column must be equal we override user defined column type
             relationalColumn.relationMetadata = relation
-            relationalColumn.build(this.connection)
+            relationalColumn.build(this.dataSource)
             return relationalColumn
         })
     }

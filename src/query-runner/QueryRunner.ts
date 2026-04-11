@@ -1,29 +1,36 @@
-import { TableColumn } from "../schema-builder/table/TableColumn"
-import { Table } from "../schema-builder/table/Table"
-import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
-import { TableIndex } from "../schema-builder/table/TableIndex"
-import { DataSource } from "../data-source/DataSource"
-import { ReadStream } from "../platform/PlatformTools"
-import { EntityManager } from "../entity-manager/EntityManager"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { SqlInMemory } from "../driver/SqlInMemory"
-import { TableUnique } from "../schema-builder/table/TableUnique"
-import { View } from "../schema-builder/view/View"
-import { Broadcaster } from "../subscriber/Broadcaster"
-import { TableCheck } from "../schema-builder/table/TableCheck"
-import { IsolationLevel } from "../driver/types/IsolationLevel"
-import { TableExclusion } from "../schema-builder/table/TableExclusion"
-import { QueryResult } from "./QueryResult"
-import { ReplicationMode } from "../driver/types/ReplicationMode"
+import type { TableColumn } from "../schema-builder/table/TableColumn"
+import type { Table } from "../schema-builder/table/Table"
+import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
+import type { TableIndex } from "../schema-builder/table/TableIndex"
+import type { DataSource } from "../data-source/DataSource"
+import type { ReadStream } from "../platform/PlatformTools"
+import type { EntityManager } from "../entity-manager/EntityManager"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { SqlInMemory } from "../driver/SqlInMemory"
+import type { TableUnique } from "../schema-builder/table/TableUnique"
+import type { View } from "../schema-builder/view/View"
+import type { Broadcaster } from "../subscriber/Broadcaster"
+import type { TableCheck } from "../schema-builder/table/TableCheck"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { TableExclusion } from "../schema-builder/table/TableExclusion"
+import type { QueryResult } from "./QueryResult"
+import type { ReplicationMode } from "../driver/types/ReplicationMode"
 
 /**
  * Runs queries on a single database connection.
  */
-export interface QueryRunner {
+export interface QueryRunner extends AsyncDisposable {
     /**
-     * Connection used by this query runner.
+     * DataSource used by this query runner.
      */
-    readonly connection: DataSource
+    readonly dataSource: DataSource
+
+    /**
+     * DataSource used by this query runner.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource
 
     /**
      * Broadcaster used on this query runner to broadcast entity events.
@@ -53,20 +60,6 @@ export interface QueryRunner {
     data: ObjectLiteral
 
     /**
-     * All synchronized tables in the database.
-     *
-     * @deprecated Call `getTables()`
-     */
-    loadedTables: Table[]
-
-    /**
-     * All synchronized views in the database.
-     *
-     * @deprecated Call `getViews()`
-     */
-    loadedViews: View[]
-
-    /**
      * Creates/uses database connection from the connection pool to perform further operations.
      * Returns obtained database connection.
      */
@@ -87,6 +80,8 @@ export interface QueryRunner {
      * You cannot use query runner methods after connection is released.
      */
     release(): Promise<void>
+
+    [Symbol.asyncDispose](): Promise<void>
 
     /**
      * Removes all tables from the currently connected database.
@@ -131,7 +126,10 @@ export interface QueryRunner {
      * Template expressions are automatically transformed into database parameters.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
-     * Example: queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @example
+     * queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
      */
     sql<T = any>(
         strings: TemplateStringsArray,
@@ -218,26 +216,26 @@ export interface QueryRunner {
     /**
      * Creates a new database.
      */
-    createDatabase(database: string, ifNotExist?: boolean): Promise<void>
+    createDatabase(database: string, ifNotExists?: boolean): Promise<void>
 
     /**
-     * Drops database.
+     * Drops a database.
      */
-    dropDatabase(database: string, ifExist?: boolean): Promise<void>
+    dropDatabase(database: string, ifExists?: boolean): Promise<void>
 
     /**
      * Creates a new table schema.
      */
-    createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>
+    createSchema(schemaPath: string, ifNotExists?: boolean): Promise<void>
 
     /**
-     * Drops table schema.
+     * Drops a table schema.
      * For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
      * If schema path passed, it will drop schema in specified database.
      */
     dropSchema(
         schemaPath: string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         isCascade?: boolean,
     ): Promise<void>
 
@@ -246,7 +244,7 @@ export interface QueryRunner {
      */
     createTable(
         table: Table,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
         createForeignKeys?: boolean,
         createIndices?: boolean,
     ): Promise<void>
@@ -256,7 +254,7 @@ export interface QueryRunner {
      */
     dropTable(
         table: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys?: boolean,
         dropIndices?: boolean,
     ): Promise<void>
@@ -273,7 +271,7 @@ export interface QueryRunner {
     /**
      * Drops a view.
      */
-    dropView(view: View | string): Promise<void>
+    dropView(view: View | string, ifExists?: boolean): Promise<void>
 
     /**
      * Renames a table.
@@ -333,6 +331,7 @@ export interface QueryRunner {
     dropColumn(
         table: Table | string,
         column: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -341,6 +340,7 @@ export interface QueryRunner {
     dropColumns(
         table: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -366,6 +366,7 @@ export interface QueryRunner {
     dropPrimaryKey(
         table: Table | string,
         constraintName?: string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -390,6 +391,7 @@ export interface QueryRunner {
     dropUniqueConstraint(
         table: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -398,6 +400,7 @@ export interface QueryRunner {
     dropUniqueConstraints(
         table: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -422,6 +425,7 @@ export interface QueryRunner {
     dropCheckConstraint(
         table: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -430,6 +434,7 @@ export interface QueryRunner {
     dropCheckConstraints(
         table: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -449,11 +454,12 @@ export interface QueryRunner {
     ): Promise<void>
 
     /**
-     * Drops a exclusion constraint.
+     * Drops an exclusion constraint.
      */
     dropExclusionConstraint(
         table: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -462,6 +468,7 @@ export interface QueryRunner {
     dropExclusionConstraints(
         table: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -486,6 +493,7 @@ export interface QueryRunner {
     dropForeignKey(
         table: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -494,6 +502,7 @@ export interface QueryRunner {
     dropForeignKeys(
         table: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void>
 
     /**
@@ -509,18 +518,29 @@ export interface QueryRunner {
     /**
      * Drops an index.
      */
-    dropIndex(table: Table | string, index: TableIndex | string): Promise<void>
+    dropIndex(
+        table: Table | string,
+        index: TableIndex | string,
+        ifExists?: boolean,
+    ): Promise<void>
 
     /**
      * Drops indices.
      */
-    dropIndices(table: Table | string, indices: TableIndex[]): Promise<void>
+    dropIndices(
+        table: Table | string,
+        indices: TableIndex[],
+        ifExists?: boolean,
+    ): Promise<void>
 
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    clearTable(tableName: string): Promise<void>
+    clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void>
 
     /**
      * Enables special query runner mode in which sql queries won't be executed,

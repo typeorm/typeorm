@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Repository } from "../../../src"
+import type { Repository } from "../../../src"
+import { DataSource } from "../../../src"
 import { Post } from "./entity/Post"
 import {
     reloadTestingDatabases,
@@ -52,13 +53,11 @@ describe("github issues > #9015 @UpdateDateColumn not updating on upsert", () =>
                 skipUpdateIfNoValuesChanged: true,
             },
         )
-        const postReloaded = await repository.findOne({
-            where: { id: post.id },
-        })
+        const postReloaded = await repository.findOneByOrFail({ id: post.id })
 
         expect(postReloaded).to.exist
-        expect(postReloaded!.description).to.be.equal("Some new description")
-        expect(postReloaded!.updated_at.toString()).to.not.equal(
+        expect(postReloaded.description).to.be.equal("Some new description")
+        expect(postReloaded.updated_at.toString()).to.not.equal(
             oldDate.toString(),
         )
     })

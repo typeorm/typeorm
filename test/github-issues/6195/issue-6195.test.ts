@@ -1,13 +1,14 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource, QueryRunner, Table } from "../../../src"
+import type { DataSource, QueryRunner } from "../../../src"
+import { Table } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { testColumnName, testTableName } from "./migrations/MigrationToFakeRun"
+import { testColumnName, testTableName } from "./migration/MigrationToFakeRun"
 
 const createTestTable = async (queryRunner: QueryRunner) => {
     await queryRunner.createTable(
@@ -36,7 +37,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: false,
             dropSchema: false,
-            migrations: [__dirname + "/migrations/**/*{.ts,.js}"],
+            migrations: [__dirname + "/migration/**/*{.ts,.js}"],
         })
 
         await reloadTestingDatabases(dataSources)

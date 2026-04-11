@@ -1,14 +1,13 @@
 import { importClassesFromDirectories } from "../util/DirectoryExportedClassesLoader"
 import { OrmUtils } from "../util/OrmUtils"
-import { getFromContainer } from "../container"
-import { MigrationInterface } from "../migration/MigrationInterface"
+import type { MigrationInterface } from "../migration/MigrationInterface"
 import { getMetadataArgsStorage } from "../globals"
 import { EntityMetadataBuilder } from "../metadata-builder/EntityMetadataBuilder"
 import { EntitySchemaTransformer } from "../entity-schema/EntitySchemaTransformer"
-import { DataSource } from "../data-source/DataSource"
-import { EntitySchema } from "../entity-schema/EntitySchema"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
+import type { DataSource } from "../data-source/DataSource"
+import type { EntitySchema } from "../entity-schema/EntitySchema"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
 import { InstanceChecker } from "../util/InstanceChecker"
 
 /**
@@ -19,7 +18,7 @@ export class ConnectionMetadataBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {}
+    constructor(protected dataSource: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -27,6 +26,8 @@ export class ConnectionMetadataBuilder {
 
     /**
      * Builds migration instances for the given classes or directories.
+     *
+     * @param migrations
      */
     async buildMigrations(
         migrations: (Function | string)[],
@@ -36,17 +37,20 @@ export class ConnectionMetadataBuilder {
         const allMigrationClasses = [
             ...migrationClasses,
             ...(await importClassesFromDirectories(
-                this.connection.logger,
+                this.dataSource.logger,
                 migrationDirectories,
             )),
         ]
-        return allMigrationClasses.map((migrationClass) =>
-            getFromContainer<MigrationInterface>(migrationClass),
+        return allMigrationClasses.map(
+            (migrationClass) =>
+                new (migrationClass as new () => MigrationInterface)(),
         )
     }
 
     /**
      * Builds subscriber instances for the given classes or directories.
+     *
+     * @param subscribers
      */
     async buildSubscribers(
         subscribers: (Function | string)[],
@@ -56,21 +60,22 @@ export class ConnectionMetadataBuilder {
         const allSubscriberClasses = [
             ...subscriberClasses,
             ...(await importClassesFromDirectories(
-                this.connection.logger,
+                this.dataSource.logger,
                 subscriberDirectories,
             )),
         ]
         return getMetadataArgsStorage()
             .filterSubscribers(allSubscriberClasses)
-            .map((metadata) =>
-                getFromContainer<EntitySubscriberInterface<any>>(
-                    metadata.target,
-                ),
+            .map(
+                (metadata) =>
+                    new (metadata.target as new () => EntitySubscriberInterface<any>)(),
             )
     }
 
     /**
      * Builds entity metadatas for the given classes or directories.
+     *
+     * @param entities
      */
     async buildEntityMetadatas(
         entities: (Function | EntitySchema<any> | string)[],
@@ -90,7 +95,7 @@ export class ConnectionMetadataBuilder {
         const allEntityClasses = [
             ...entityClasses,
             ...(await importClassesFromDirectories(
-                this.connection.logger,
+                this.dataSource.logger,
                 entityDirectories,
             )),
         ]
@@ -101,14 +106,14 @@ export class ConnectionMetadataBuilder {
             }
         })
         const decoratorEntityMetadatas = new EntityMetadataBuilder(
-            this.connection,
+            this.dataSource,
             getMetadataArgsStorage(),
         ).build(allEntityClasses)
 
         const metadataArgsStorageFromSchema =
             new EntitySchemaTransformer().transform(entitySchemas)
         const schemaEntityMetadatas = new EntityMetadataBuilder(
-            this.connection,
+            this.dataSource,
             metadataArgsStorageFromSchema,
         ).build()
 

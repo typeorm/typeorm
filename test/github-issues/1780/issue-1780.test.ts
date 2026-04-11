@@ -4,23 +4,23 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { User } from "./entity/User"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #1780 Support for insertion ignore on duplicate error", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [User],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mysql", "mariadb", "postgres", "cockroachdb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
     const user1 = new User()
     user1.first_name = "John"
     user1.last_name = "Lenon"
@@ -34,7 +34,7 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
     // https://doxygen.postgresql.org/nodeModifyTable_8c_source.html : Line 1356
     it("should save one row without duplicate error in MySQL/MariaDB", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 try {
                     if (DriverUtils.isMySQLFamily(connection.driver)) {
                         const UserRepository =
@@ -82,15 +82,15 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                         })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))
-    it("should save one row without duplicate error in PostgreSQL", () =>
+    it("should save one row without duplicate error in PostgreSQL/CockroachDB", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 try {
-                    if (connection.driver.options.type === "postgres") {
+                    if (DriverUtils.isPostgresFamily(connection.driver)) {
                         const UserRepository =
                             connection.manager.getRepository(User)
                         // ignore while insertion duplicated row
@@ -113,23 +113,16 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                         await UserRepository.remove(loadedUser_1)
                         const loadedUser_2 = await UserRepository.find()
                         expect(loadedUser_2).to.be.eql([])
-                        // update while insertion duplicated row via unique columns
+                        // update while insertion duplicated row via unique column
                         await UserRepository.createQueryBuilder()
                             .insert()
-                            .orUpdate(
-                                ["is_updated"],
-                                ["first_name", "last_name"],
-                            )
                             .into(User)
                             .values(user1)
                             .execute()
                         await UserRepository.createQueryBuilder()
                             .insert()
-                            .orUpdate(
-                                ["is_updated"],
-                                ["first_name", "last_name"],
-                            )
                             .into(User)
+                            .orUpdate(["is_updated"], ["first_name"])
                             .values(user2)
                             .execute()
                         const loadedUser_3 = await UserRepository.find()
@@ -140,23 +133,19 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                             last_name: "Lenon",
                             is_updated: "yes",
                         })
-                        // create unique constraint
-                        await connection.manager.query(
-                            'ALTER TABLE "user" ADD CONSTRAINT constraint_unique_idx UNIQUE USING INDEX unique_idx;',
-                        )
+
                         await UserRepository.remove(loadedUser_3)
                         const loadedUser_4 = await UserRepository.find()
                         expect(loadedUser_4).to.be.eql([])
-                        // update while insertion duplicated row via unique's constraint name
+                        // update while insertion duplicated row via single-column unique constraint name
                         await UserRepository.createQueryBuilder()
                             .insert()
-                            .orUpdate(["is_updated"], "constraint_unique_idx")
                             .into(User)
                             .values(user1)
                             .execute()
                         await UserRepository.createQueryBuilder()
                             .insert()
-                            .orUpdate(["is_updated"], "constraint_unique_idx")
+                            .orUpdate(["is_updated"], "unique_first_name")
                             .setParameter("is_updated", user2.is_updated)
                             .into(User)
                             .values(user2)
@@ -164,14 +153,39 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                         const loadedUser_5 = await UserRepository.find()
                         expect(loadedUser_5).not.to.be.eql([])
                         loadedUser_5.length.should.be.equal(1)
-                        expect(loadedUser_3[0]).to.deep.include({
+                        expect(loadedUser_5[0]).to.deep.include({
+                            first_name: "John",
+                            last_name: "Lenon",
+                            is_updated: "yes",
+                        })
+
+                        await UserRepository.remove(loadedUser_5)
+                        const loadedUser_6 = await UserRepository.find()
+                        expect(loadedUser_6).to.be.eql([])
+                        // update while insertion duplicated row via multi-column unique constraint name (issue #8731)
+                        await UserRepository.createQueryBuilder()
+                            .insert()
+                            .into(User)
+                            .values(user1)
+                            .execute()
+                        await UserRepository.createQueryBuilder()
+                            .insert()
+                            .orUpdate(["is_updated"], "unique_name_pair")
+                            .setParameter("is_updated", user2.is_updated)
+                            .into(User)
+                            .values(user2)
+                            .execute()
+                        const loadedUser = await UserRepository.find()
+                        expect(loadedUser).not.to.be.eql([])
+                        loadedUser.length.should.be.equal(1)
+                        expect(loadedUser[0]).to.deep.include({
                             first_name: "John",
                             last_name: "Lenon",
                             is_updated: "yes",
                         })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))

@@ -1,27 +1,26 @@
 import "reflect-metadata"
 
 import { expect } from "chai"
-import { v4 } from "uuid"
 
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import { RandomGenerator } from "../../../src/util/RandomGenerator"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { CreateUserContract } from "./contract/create-user-contract"
+import type { CreateUserContract } from "./contract/create-user-contract"
 import { User } from "./entity/user"
 
 describe("github issues > #10569 Fix type inferencing of EntityManager#create", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -33,7 +32,7 @@ describe("github issues > #10569 Fix type inferencing of EntityManager#create", 
 
             const user = dataSource.manager.create(User, createUserContract)
 
-            user.id = v4()
+            user.id = RandomGenerator.uuidv4()
 
             expect(user.id).to.exist
         })

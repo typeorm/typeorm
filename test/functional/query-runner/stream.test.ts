@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -9,9 +9,9 @@ import {
 import { Book } from "./entity/Book"
 
 describe("query runner > stream", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Book],
             enabledDrivers: [
                 "cockroachdb",
@@ -24,20 +24,20 @@ describe("query runner > stream", () => {
             ],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should stream data", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.manager.save(Book, { ean: "a" })
-                await connection.manager.save(Book, { ean: "b" })
-                await connection.manager.save(Book, { ean: "c" })
-                await connection.manager.save(Book, { ean: "d" })
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.save(Book, { ean: "a" })
+                await dataSource.manager.save(Book, { ean: "b" })
+                await dataSource.manager.save(Book, { ean: "c" })
+                await dataSource.manager.save(Book, { ean: "d" })
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
-                const query = connection
+                const query = dataSource
                     .createQueryBuilder(Book, "book")
                     .select()
                     .orderBy("book.ean")
@@ -45,14 +45,16 @@ describe("query runner > stream", () => {
 
                 const readStream = await queryRunner.stream(query)
 
-                if (!(connection.driver.options.type === "spanner"))
-                    await new Promise((ok) => readStream.once("readable", ok))
+                if (!(dataSource.driver.options.type === "spanner"))
+                    await new Promise<void>((ok) =>
+                        readStream.once("readable", ok),
+                    )
 
                 const data: any[] = []
 
                 readStream.on("data", (row) => data.push(row))
 
-                await new Promise((ok, fail) => {
+                await new Promise<void>((ok, fail) => {
                     readStream.once("end", ok)
                     readStream.once("error", fail)
                 })

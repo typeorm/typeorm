@@ -1,62 +1,58 @@
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { Table } from "../../schema-builder/table/Table"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { View } from "../../schema-builder/view/View"
-// import {Connection} from "../../connection/Connection";
-import { ReadStream } from "../../platform/PlatformTools"
-import { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
-import { SqlInMemory } from "../SqlInMemory"
-import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { TypeORMError } from "../../error"
-
-import {
-    BulkWriteResult,
-    AggregationCursor,
-    MongoClient,
-    Collection,
-    FindCursor,
-    Document,
+import type { DataSource } from "../../data-source/DataSource"
+import type {
     AggregateOptions,
+    AggregationCursor,
     AnyBulkWriteOperation,
     BulkWriteOptions,
-    Filter,
-    CountOptions,
-    CountDocumentsOptions,
-    IndexSpecification,
-    CreateIndexesOptions,
-    IndexDescription,
-    DeleteResult,
-    DeleteOptions,
+    BulkWriteResult,
+    ChangeStream,
+    ChangeStreamOptions,
+    Collection,
     CommandOperationOptions,
+    CountDocumentsOptions,
+    CountOptions,
+    CreateIndexesOptions,
+    DeleteOptions,
+    DeleteResult,
+    Document,
+    Filter,
+    FindCursor,
     FindOneAndDeleteOptions,
     FindOneAndReplaceOptions,
-    UpdateFilter,
     FindOneAndUpdateOptions,
-    RenameOptions,
-    ReplaceOptions,
-    UpdateResult,
-    CollStats,
-    CollStatsOptions,
-    ChangeStreamOptions,
-    ChangeStream,
-    UpdateOptions,
-    ListIndexesOptions,
-    ListIndexesCursor,
-    OptionalId,
+    IndexDescription,
+    IndexInformationOptions,
+    IndexSpecification,
+    InsertManyResult,
     InsertOneOptions,
     InsertOneResult,
-    InsertManyResult,
-    UnorderedBulkOperation,
+    ListIndexesCursor,
+    ListIndexesOptions,
+    MongoClient,
+    OptionalId,
     OrderedBulkOperation,
-    IndexInformationOptions,
+    RenameOptions,
+    ReplaceOptions,
+    UnorderedBulkOperation,
+    UpdateFilter,
+    UpdateOptions,
+    UpdateResult,
 } from "../../driver/mongodb/typings"
-import { DataSource } from "../../data-source/DataSource"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
+import { TypeORMError } from "../../error"
+import type { ReadStream } from "../../platform/PlatformTools"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableCheck } from "../../schema-builder/table/TableCheck"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { TableIndex } from "../../schema-builder/table/TableIndex"
+import type { TableUnique } from "../../schema-builder/table/TableUnique"
+import type { View } from "../../schema-builder/view/View"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import type { SqlInMemory } from "../SqlInMemory"
+import type { ReplicationMode } from "../types/ReplicationMode"
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -69,7 +65,16 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Connection used by this query runner.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Broadcaster used on this query runner to broadcast entity events.
@@ -101,16 +106,6 @@ export class MongoQueryRunner implements QueryRunner {
     data = {}
 
     /**
-     * All synchronized tables in the database.
-     */
-    loadedTables: Table[]
-
-    /**
-     * All synchronized views in the database.
-     */
-    loadedViews: View[]
-
-    /**
      * Real database connection from a connection pool used to perform queries.
      */
     databaseConnection: MongoClient
@@ -119,8 +114,8 @@ export class MongoQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource, databaseConnection: MongoClient) {
-        this.connection = connection
+    constructor(dataSource: DataSource, databaseConnection: MongoClient) {
+        this.dataSource = dataSource
         this.databaseConnection = databaseConnection
         this.broadcaster = new Broadcaster(this)
     }
@@ -145,6 +140,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
+     *
+     * @param collectionName
+     * @param filter
      */
     cursor(collectionName: string, filter: Filter<Document>): FindCursor<any> {
         return this.getCollection(collectionName).find(filter || {})
@@ -152,6 +150,10 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Execute an aggregation framework pipeline against the collection.
+     *
+     * @param collectionName
+     * @param pipeline
+     * @param options
      */
     aggregate(
         collectionName: string,
@@ -160,12 +162,16 @@ export class MongoQueryRunner implements QueryRunner {
     ): AggregationCursor<any> {
         return this.getCollection(collectionName).aggregate(
             pipeline,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Perform a bulkWrite operation without a fluent API.
+     *
+     * @param collectionName
+     * @param operations
+     * @param options
      */
     async bulkWrite(
         collectionName: string,
@@ -174,12 +180,16 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<BulkWriteResult> {
         return await this.getCollection(collectionName).bulkWrite(
             operations,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Count number of matching documents in the db to a query.
+     *
+     * @param collectionName
+     * @param filter
+     * @param options
      */
     async count(
         collectionName: string,
@@ -188,12 +198,16 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<number> {
         return this.getCollection(collectionName).count(
             filter || {},
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Count number of matching documents in the db to a query.
+     *
+     * @param collectionName
+     * @param filter
+     * @param options
      */
     async countDocuments(
         collectionName: string,
@@ -202,12 +216,16 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<any> {
         return this.getCollection(collectionName).countDocuments(
             filter || {},
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Creates an index on the db and collection.
+     *
+     * @param collectionName
+     * @param indexSpec
+     * @param options
      */
     async createCollectionIndex(
         collectionName: string,
@@ -216,13 +234,16 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<string> {
         return this.getCollection(collectionName).createIndex(
             indexSpec,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
-     * Creates multiple indexes in the collection, this method is only supported for MongoDB 2.6 or higher.
-     * Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+     * Creates multiple indexes in the collection.
+     * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+     *
+     * @param collectionName
+     * @param indexSpecs
      */
     async createCollectionIndexes(
         collectionName: string,
@@ -233,6 +254,10 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Delete multiple documents on MongoDB.
+     *
+     * @param collectionName
+     * @param filter
+     * @param options
      */
     async deleteMany(
         collectionName: string,
@@ -247,6 +272,10 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Delete a document on MongoDB.
+     *
+     * @param collectionName
+     * @param filter
+     * @param options
      */
     async deleteOne(
         collectionName: string,
@@ -255,12 +284,17 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<DeleteResult> {
         return this.getCollection(collectionName).deleteOne(
             filter,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
+     *
+     * @param collectionName
+     * @param key
+     * @param filter
+     * @param options
      */
     async distinct(
         collectionName: string,
@@ -271,12 +305,16 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).distinct(
             key,
             filter,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Drops an index from this collection.
+     *
+     * @param collectionName
+     * @param indexName
+     * @param options
      */
     async dropCollectionIndex(
         collectionName: string,
@@ -285,19 +323,25 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<Document> {
         return this.getCollection(collectionName).dropIndex(
             indexName,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Drops all indexes from the collection.
+     *
+     * @param collectionName
      */
-    async dropCollectionIndexes(collectionName: string): Promise<Document> {
+    async dropCollectionIndexes(collectionName: string): Promise<boolean> {
         return this.getCollection(collectionName).dropIndexes()
     }
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
+     *
+     * @param collectionName
+     * @param filter
+     * @param options
      */
     async findOneAndDelete(
         collectionName: string,
@@ -306,12 +350,17 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<Document | null> {
         return this.getCollection(collectionName).findOneAndDelete(
             filter,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
+     *
+     * @param collectionName
+     * @param filter
+     * @param replacement
+     * @param options
      */
     async findOneAndReplace(
         collectionName: string,
@@ -322,12 +371,17 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).findOneAndReplace(
             filter,
             replacement,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
+     *
+     * @param collectionName
+     * @param filter
+     * @param update
+     * @param options
      */
     async findOneAndUpdate(
         collectionName: string,
@@ -338,12 +392,14 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).findOneAndUpdate(
             filter,
             update,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Retrieve all the indexes on the collection.
+     *
+     * @param collectionName
      */
     async collectionIndexes(collectionName: string): Promise<Document> {
         return this.getCollection(collectionName).indexes()
@@ -351,6 +407,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Retrieve all the indexes on the collection.
+     *
+     * @param collectionName
+     * @param indexes
      */
     async collectionIndexExists(
         collectionName: string,
@@ -361,18 +420,24 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Retrieves this collections index info.
+     *
+     * @param collectionName
+     * @param options
      */
     async collectionIndexInformation(
         collectionName: string,
         options?: IndexInformationOptions,
     ): Promise<any> {
         return this.getCollection(collectionName).indexInformation(
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
+     *
+     * @param collectionName
+     * @param options
      */
     initializeOrderedBulkOp(
         collectionName: string,
@@ -385,6 +450,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
+     *
+     * @param collectionName
+     * @param options
      */
     initializeUnorderedBulkOp(
         collectionName: string,
@@ -397,6 +465,10 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Inserts an array of documents into MongoDB.
+     *
+     * @param collectionName
+     * @param docs
+     * @param options
      */
     async insertMany(
         collectionName: string,
@@ -405,23 +477,29 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<InsertManyResult> {
         return this.getCollection(collectionName).insertMany(
             docs,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Inserts a single document into MongoDB.
+     *
+     * @param collectionName
+     * @param doc
+     * @param options
      */
     async insertOne(
         collectionName: string,
         doc: OptionalId<Document>,
         options?: InsertOneOptions,
     ): Promise<InsertOneResult> {
-        return this.getCollection(collectionName).insertOne(doc, options || {})
+        return this.getCollection(collectionName).insertOne(doc, options ?? {})
     }
 
     /**
      * Returns if the collection is a capped collection.
+     *
+     * @param collectionName
      */
     async isCapped(collectionName: string): Promise<boolean> {
         return this.getCollection(collectionName).isCapped()
@@ -429,6 +507,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Get the list of all indexes information for the collection.
+     *
+     * @param collectionName
+     * @param options
      */
     listCollectionIndexes(
         collectionName: string,
@@ -439,17 +520,26 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
+     *
+     * @param collectionName
+     * @param newName
+     * @param options
      */
     async rename(
         collectionName: string,
         newName: string,
         options?: RenameOptions,
     ): Promise<Collection<Document>> {
-        return this.getCollection(collectionName).rename(newName, options || {})
+        return this.getCollection(collectionName).rename(newName, options ?? {})
     }
 
     /**
      * Replace a document on MongoDB.
+     *
+     * @param collectionName
+     * @param filter
+     * @param replacement
+     * @param options
      */
     async replaceOne(
         collectionName: string,
@@ -460,22 +550,16 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).replaceOne(
             filter,
             replacement,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
-     * Get all the collection statistics.
-     */
-    async stats(
-        collectionName: string,
-        options?: CollStatsOptions,
-    ): Promise<CollStats> {
-        return this.getCollection(collectionName).stats(options || {})
-    }
-
-    /**
      * Watching new changes as stream.
+     *
+     * @param collectionName
+     * @param pipeline
+     * @param options
      */
     watch(
         collectionName: string,
@@ -487,6 +571,11 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Update multiple documents on MongoDB.
+     *
+     * @param collectionName
+     * @param filter
+     * @param update
+     * @param options
      */
     async updateMany(
         collectionName: string,
@@ -497,12 +586,17 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).updateMany(
             filter,
             update,
-            options || {},
+            options ?? {},
         )
     }
 
     /**
      * Update a single document on MongoDB.
+     *
+     * @param collectionName
+     * @param filter
+     * @param update
+     * @param options
      */
     async updateOne(
         collectionName: string,
@@ -513,7 +607,7 @@ export class MongoQueryRunner implements QueryRunner {
         return await this.getCollection(collectionName).updateOne(
             filter,
             update,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -528,7 +622,7 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async clearDatabase(): Promise<void> {
         await this.databaseConnection
-            .db(this.connection.driver.database!)
+            .db(this.dataSource.driver.database!)
             .dropDatabase()
     }
 
@@ -542,6 +636,10 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async release(): Promise<void> {
         // the mongodb driver does not support releasing connection, so simply don't do anything here
+    }
+
+    async [Symbol.asyncDispose](): Promise<void> {
+        // there's no clean-up necessary, so simply don't do anything here
     }
 
     /**
@@ -567,6 +665,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
+     * @param query
+     * @param parameters
      */
     query(query: string, parameters?: any[]): Promise<any> {
         throw new TypeORMError(
@@ -576,6 +677,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Unsupported - Executing SQL query is not supported by MongoDB driver.
+     *
+     * @param strings
+     * @param values
      */
     async sql(
         strings: TemplateStringsArray,
@@ -588,6 +692,11 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Returns raw data stream.
+     *
+     * @param query
+     * @param parameters
+     * @param onEnd
+     * @param onError
      */
     stream(
         query: string,
@@ -601,42 +710,6 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Insert a new row with given values into the given table.
-     * Returns value of inserted object id.
-
-    async insert(collectionName: string, keyValues: ObjectLiteral): Promise<any> { // todo: fix any
-        const results = await this.databaseConnection
-            .collection(collectionName)
-            .insertOne(keyValues);
-        const generatedMap = this.connection.getMetadata(collectionName).objectIdColumn!.createValueMap(results.insertedId);
-        return {
-            result: results,
-            generatedMap: generatedMap
-        };
-    }*/
-
-    /**
-     * Updates rows that match given conditions in the given table.
-
-    async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> { // todo: fix any
-        await this.databaseConnection
-            .collection(collectionName)
-            .updateOne(conditions, valuesMap);
-    }*/
-
-    /**
-     * Deletes from the given table by a given conditions.
-
-    async delete(collectionName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> { // todo: fix any
-        if (typeof conditions === "string")
-            throw new TypeORMError(`String condition is not supported by MongoDB driver.`);
-
-        await this.databaseConnection
-            .collection(collectionName)
-            .deleteOne(conditions);
-    }*/
-
-    /**
      * Returns all available database names including system databases.
      */
     async getDatabases(): Promise<string[]> {
@@ -648,6 +721,8 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     *
+     * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
         throw new TypeORMError(
@@ -657,6 +732,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Loads given table's data from the database.
+     *
+     * @param collectionName
      */
     async getTable(collectionName: string): Promise<Table | undefined> {
         throw new TypeORMError(
@@ -666,6 +743,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     *
+     * @param collectionNames
      */
     async getTables(collectionNames: string[]): Promise<Table[]> {
         throw new TypeORMError(
@@ -675,6 +754,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Loads given views's data from the database.
+     *
+     * @param collectionName
      */
     async getView(collectionName: string): Promise<View | undefined> {
         throw new TypeORMError(
@@ -684,6 +765,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Loads all views (with given names) from the database and creates a Table from them.
+     *
+     * @param collectionNames
      */
     async getViews(collectionNames: string[]): Promise<View[]> {
         throw new TypeORMError(
@@ -697,6 +780,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Checks if database with the given name exist.
+     *
+     * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
         throw new TypeORMError(
@@ -715,6 +800,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Checks if schema with the given name exist.
+     *
+     * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
         throw new TypeORMError(
@@ -733,6 +820,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Checks if table with the given name exist in the database.
+     *
+     * @param collectionName
      */
     async hasTable(collectionName: string): Promise<boolean> {
         throw new TypeORMError(
@@ -742,6 +831,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Checks if column with the given name exist in the given table.
+     *
+     * @param tableOrName
+     * @param columnName
      */
     async hasColumn(
         tableOrName: Table | string,
@@ -754,6 +846,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a database if it's not created.
+     *
+     * @param database
      */
     async createDatabase(database: string): Promise<void> {
         throw new TypeORMError(
@@ -763,8 +857,11 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops database.
+     *
+     * @param database
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
         throw new TypeORMError(
             `Database drop queries are not supported by MongoDB driver.`,
         )
@@ -772,10 +869,13 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new table schema.
+     *
+     * @param schemaPath
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema create queries are not supported by MongoDB driver.`,
@@ -784,8 +884,11 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops table schema.
+     *
+     * @param schemaPath
+     * @param ifExists
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    async dropSchema(schemaPath: string, ifExists?: boolean): Promise<void> {
         throw new TypeORMError(
             `Schema drop queries are not supported by MongoDB driver.`,
         )
@@ -793,6 +896,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new table from the given table and columns inside it.
+     *
+     * @param table
      */
     async createTable(table: Table): Promise<void> {
         throw new TypeORMError(
@@ -802,6 +907,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops the table.
+     *
+     * @param tableName
      */
     async dropTable(tableName: Table | string): Promise<void> {
         throw new TypeORMError(
@@ -811,6 +918,8 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new view.
+     *
+     * @param view
      */
     async createView(view: View): Promise<void> {
         throw new TypeORMError(
@@ -820,8 +929,11 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops the view.
+     *
+     * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
         )
@@ -829,6 +941,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Renames the given table.
+     *
+     * @param oldTableOrName
+     * @param newTableOrName
      */
     async renameTable(
         oldTableOrName: Table | string,
@@ -841,6 +956,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new column from the column in the table.
+     *
+     * @param tableOrName
+     * @param column
      */
     async addColumn(
         tableOrName: Table | string,
@@ -853,6 +971,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new columns from the column in the table.
+     *
+     * @param tableOrName
+     * @param columns
      */
     async addColumns(
         tableOrName: Table | string,
@@ -865,6 +986,10 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Renames column in the given table.
+     *
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newTableColumnOrName
      */
     async renameColumn(
         tableOrName: Table | string,
@@ -878,6 +1003,10 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     *
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newColumn
      */
     async changeColumn(
         tableOrName: Table | string,
@@ -891,6 +1020,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     *
+     * @param tableOrName
+     * @param changedColumns
      */
     async changeColumns(
         tableOrName: Table | string,
@@ -903,10 +1035,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops column in the table.
+     *
+     * @param tableOrName
+     * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -915,10 +1052,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops the columns in the table.
+     *
+     * @param tableOrName
+     * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -927,6 +1069,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new primary key.
+     *
+     * @param tableOrName
+     * @param columnNames
      */
     async createPrimaryKey(
         tableOrName: Table | string,
@@ -939,6 +1084,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Updates composite primary keys.
+     *
+     * @param tableOrName
+     * @param columns
      */
     async updatePrimaryKeys(
         tableOrName: Table | string,
@@ -951,8 +1099,16 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops a primary key.
+     *
+     * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
         )
@@ -960,6 +1116,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new unique constraint.
+     *
+     * @param tableOrName
+     * @param uniqueConstraint
      */
     async createUniqueConstraint(
         tableOrName: Table | string,
@@ -972,6 +1131,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new unique constraints.
+     *
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async createUniqueConstraints(
         tableOrName: Table | string,
@@ -984,10 +1146,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops a unique constraint.
+     *
+     * @param tableOrName
+     * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -996,10 +1163,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops unique constraints.
+     *
+     * @param tableOrName
+     * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1008,6 +1180,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new check constraint.
+     *
+     * @param tableOrName
+     * @param checkConstraint
      */
     async createCheckConstraint(
         tableOrName: Table | string,
@@ -1020,6 +1195,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new check constraints.
+     *
+     * @param tableOrName
+     * @param checkConstraints
      */
     async createCheckConstraints(
         tableOrName: Table | string,
@@ -1032,10 +1210,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraint.
+     *
+     * @param tableOrName
+     * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1044,10 +1227,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraints.
+     *
+     * @param tableOrName
+     * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1056,6 +1244,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new exclusion constraint.
+     *
+     * @param tableOrName
+     * @param exclusionConstraint
      */
     async createExclusionConstraint(
         tableOrName: Table | string,
@@ -1068,6 +1259,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new exclusion constraints.
+     *
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async createExclusionConstraints(
         tableOrName: Table | string,
@@ -1080,10 +1274,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops exclusion constraint.
+     *
+     * @param tableOrName
+     * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1092,10 +1291,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops exclusion constraints.
+     *
+     * @param tableOrName
+     * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1104,6 +1308,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new foreign key.
+     *
+     * @param tableOrName
+     * @param foreignKey
      */
     async createForeignKey(
         tableOrName: Table | string,
@@ -1116,6 +1323,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new foreign keys.
+     *
+     * @param tableOrName
+     * @param foreignKeys
      */
     async createForeignKeys(
         tableOrName: Table | string,
@@ -1128,10 +1338,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign key from the table.
+     *
+     * @param tableOrName
+     * @param foreignKey
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKey: TableForeignKey,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1140,10 +1355,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign keys from the table.
+     *
+     * @param tableOrName
+     * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1152,6 +1372,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new index.
+     *
+     * @param tableOrName
+     * @param index
      */
     async createIndex(
         tableOrName: Table | string,
@@ -1164,6 +1387,9 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Creates a new indices
+     *
+     * @param tableOrName
+     * @param indices
      */
     async createIndices(
         tableOrName: Table | string,
@@ -1176,8 +1402,16 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops an index from the table.
+     *
+     * @param collectionName
+     * @param indexName
+     * @param ifExists
      */
-    async dropIndex(collectionName: string, indexName: string): Promise<void> {
+    async dropIndex(
+        collectionName: string,
+        indexName: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
         )
@@ -1185,10 +1419,15 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops an indices from the table.
+     *
+     * @param tableOrName
+     * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1197,10 +1436,22 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Drops collection.
+     *
+     * @param collectionName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(collectionName: string): Promise<void> {
+    async clearTable(
+        collectionName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        if (options?.cascade) {
+            throw new TypeORMError(
+                `MongoDB driver does not support clearing table with cascade option`,
+            )
+        }
         await this.databaseConnection
-            .db(this.connection.driver.database!)
+            .db(this.dataSource.driver.database!)
             .dropCollection(collectionName)
     }
 
@@ -1269,15 +1520,20 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Gets collection from the database with a given name.
+     *
+     * @param collectionName
      */
     protected getCollection(collectionName: string): Collection<any> {
         return this.databaseConnection
-            .db(this.connection.driver.database!)
+            .db(this.dataSource.driver.database!)
             .collection(collectionName)
     }
 
     /**
      * Change table comment.
+     *
+     * @param tableOrName
+     * @param comment
      */
     changeTableComment(
         tableOrName: Table | string,

@@ -4,30 +4,29 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
-import { Foo } from "./entities/Foo"
-import { FooView } from "./entities/FooView"
+import { Foo } from "./entity/Foo"
+import { FooView } from "./entity/FooView"
 
 const customTypeormMetadataTableName = "custom_typeorm_metadata_table_name"
 
 describe("github issues > #7266 rename table typeorm_metadata name.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Foo, FooView],
-                enabledDrivers: ["postgres", "mysql", "mariadb"],
-                metadataTableName: customTypeormMetadataTableName,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Foo, FooView],
+            enabledDrivers: ["postgres", "mysql", "mariadb"],
+            metadataTableName: customTypeormMetadataTableName,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create the typeorm metadata table with a custom name when provided", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 expect(connection.metadataTableName).to.equal(
@@ -40,9 +39,8 @@ describe("github issues > #7266 rename table typeorm_metadata name.", () => {
 
                 expect(hasCustomMetadataTableName).to.be.true
 
-                const hasDefaultMetadataTableName = await queryRunner.hasTable(
-                    "typeorm_metadata",
-                )
+                const hasDefaultMetadataTableName =
+                    await queryRunner.hasTable("typeorm_metadata")
 
                 expect(hasDefaultMetadataTableName).to.be.false
 
@@ -52,7 +50,7 @@ describe("github issues > #7266 rename table typeorm_metadata name.", () => {
 
     it("should have correct views using the custom named metadata table", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 const fooView = await queryRunner.getView("foo_view")

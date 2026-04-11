@@ -1,16 +1,16 @@
-import { Driver } from "../../driver/Driver"
-import { RelationIdLoadResult } from "../relation-id/RelationIdLoadResult"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { Alias } from "../Alias"
-import { RelationCountLoadResult } from "../relation-count/RelationCountLoadResult"
-import { RelationMetadata } from "../../metadata/RelationMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
-import { QueryExpressionMap } from "../QueryExpressionMap"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { QueryRunner } from "../.."
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { Driver } from "../../driver/Driver"
 import { DriverUtils } from "../../driver/DriverUtils"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { RelationMetadata } from "../../metadata/RelationMetadata"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { ObjectUtils } from "../../util/ObjectUtils"
+import { isUint8Array, uint8ArrayToHex } from "../../util/Uint8ArrayUtils"
+import { OrmUtils } from "../../util/OrmUtils"
+import type { Alias } from "../Alias"
+import type { QueryExpressionMap } from "../QueryExpressionMap"
+import type { RelationIdLoadResult } from "../relation-id/RelationIdLoadResult"
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -39,7 +39,6 @@ export class RawSqlResultsToEntityTransformer {
         protected expressionMap: QueryExpressionMap,
         protected driver: Driver,
         protected rawRelationIdResults: RelationIdLoadResult[],
-        protected rawRelationCountResults: RelationCountLoadResult[],
         protected queryRunner?: QueryRunner,
     ) {
         this.pojo = this.expressionMap.options.includes("create-pojo")
@@ -57,6 +56,9 @@ export class RawSqlResultsToEntityTransformer {
     /**
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
+     *
+     * @param rawResults
+     * @param alias
      */
     transform(rawResults: any[], alias: Alias): any[] {
         const group = this.group(rawResults, alias)
@@ -74,6 +76,9 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Build an alias from a name and column name.
+     *
+     * @param aliasName
+     * @param columnName
      */
     protected buildAlias(aliasName: string, columnName: string) {
         let aliases = this.aliasCache.get(aliasName)
@@ -96,6 +101,9 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Groups given raw results by ids of given alias.
+     *
+     * @param rawResults
+     * @param alias
      */
     protected group(rawResults: any[], alias: Alias): Map<string, any[]> {
         const map = new Map()
@@ -113,22 +121,38 @@ export class RawSqlResultsToEntityTransformer {
                 ),
             )
         }
+
+        // Check if primary key columns are actually selected in the raw results
+        const primaryKeysSelected = keys.some(
+            (key) => key in (rawResults[0] ?? {}),
+        )
+
         for (const rawResult of rawResults) {
-            const id = keys
-                .map((key) => {
-                    const keyValue = rawResult[key]
+            let id: string
 
-                    if (Buffer.isBuffer(keyValue)) {
-                        return keyValue.toString("hex")
-                    }
+            if (primaryKeysSelected) {
+                // Use primary key based grouping when available
+                id = keys
+                    .map((key) => {
+                        const keyValue = rawResult[key]
 
-                    if (ObjectUtils.isObject(keyValue)) {
-                        return JSON.stringify(keyValue)
-                    }
+                        if (isUint8Array(keyValue)) {
+                            return uint8ArrayToHex(keyValue)
+                        }
 
-                    return keyValue
-                })
-                .join("_") // todo: check partial
+                        if (ObjectUtils.isObject(keyValue)) {
+                            return JSON.stringify(keyValue)
+                        }
+
+                        return keyValue
+                    })
+                    .join("_")
+            } else {
+                // Fallback: use row index when primary keys are not available
+                // This ensures each row gets its own group for proper entity mapping
+                const rowIndex = rawResults.indexOf(rawResult)
+                id = `row_${rowIndex}`
+            }
 
             const items = map.get(id)
             if (!items) {
@@ -142,6 +166,9 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Transforms set of data results into single entity.
+     *
+     * @param rawResults
+     * @param alias
      */
     protected transformRawResultsGroup(
         rawResults: any[],
@@ -197,12 +224,6 @@ export class RawSqlResultsToEntityTransformer {
             entity,
             metadata,
         )
-        const hasRelationCounts = this.transformRelationCounts(
-            rawResults,
-            alias,
-            entity,
-        )
-
         // if we have at least one selected column then return this entity
         // since entity must have at least primary columns to be really selected and transformed into entity
         if (hasColumns) return entity
@@ -213,10 +234,7 @@ export class RawSqlResultsToEntityTransformer {
         const hasOnlyVirtualPrimaryColumns = metadata.primaryColumns.every(
             (column) => column.isVirtual === true,
         ) // todo: create metadata.hasOnlyVirtualPrimaryColumns
-        if (
-            hasOnlyVirtualPrimaryColumns &&
-            (hasRelations || hasRelationIds || hasRelationCounts)
-        )
+        if (hasOnlyVirtualPrimaryColumns && (hasRelations || hasRelationIds))
             return entity
 
         return undefined
@@ -251,6 +269,11 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Transforms joined entities in the given raw results by a given alias and stores to the given (parent) entity
+     *
+     * @param rawResults
+     * @param entity
+     * @param alias
+     * @param metadata
      */
     protected transformJoins(
         rawResults: any[],
@@ -365,6 +388,12 @@ export class RawSqlResultsToEntityTransformer {
                     return map
                 }
                 if (property && properties.length > 0) {
+                    if (
+                        typeof map[property] !== "object" ||
+                        map[property] === null
+                    ) {
+                        map[property] = {}
+                    }
                     mapToProperty(properties, map[property], value)
                 } else {
                     return map
@@ -378,57 +407,6 @@ export class RawSqlResultsToEntityTransformer {
             } else {
                 mapToProperty(properties, entity, idMaps)
                 hasData = hasData || idMaps.length > 0
-            }
-        }
-
-        return hasData
-    }
-
-    protected transformRelationCounts(
-        rawSqlResults: any[],
-        alias: Alias,
-        entity: ObjectLiteral,
-    ): boolean {
-        let hasData = false
-        for (const rawRelationCountResult of this.rawRelationCountResults) {
-            if (
-                rawRelationCountResult.relationCountAttribute.parentAlias !==
-                alias.name
-            )
-                continue
-            const relation =
-                rawRelationCountResult.relationCountAttribute.relation
-            let referenceColumnName: string
-
-            if (relation.isOneToMany) {
-                referenceColumnName =
-                    relation.inverseRelation!.joinColumns[0].referencedColumn!
-                        .databaseName // todo: fix joinColumns[0]
-            } else {
-                referenceColumnName = relation.isOwning
-                    ? relation.joinColumns[0].referencedColumn!.databaseName
-                    : relation.inverseRelation!.joinColumns[0].referencedColumn!
-                          .databaseName
-            }
-
-            const referenceColumnValue =
-                rawSqlResults[0][
-                    this.buildAlias(alias.name, referenceColumnName)
-                ] // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
-            if (
-                referenceColumnValue !== undefined &&
-                referenceColumnValue !== null
-            ) {
-                entity[
-                    rawRelationCountResult.relationCountAttribute.mapToPropertyPropertyName
-                ] = 0
-                for (const result of rawRelationCountResult.results) {
-                    if (result["parentId"] !== referenceColumnValue) continue
-                    entity[
-                        rawRelationCountResult.relationCountAttribute.mapToPropertyPropertyName
-                    ] = parseInt(result["cnt"])
-                    hasData = true
-                }
             }
         }
 
@@ -549,14 +527,6 @@ export class RawSqlResultsToEntityTransformer {
         }, {} as ObjectLiteral)
     }
 
-    /*private removeVirtualColumns(entity: ObjectLiteral, alias: Alias) {
-        const virtualColumns = this.expressionMap.selects
-            .filter(select => select.virtual)
-            .map(select => select.selection.replace(alias.name + ".", ""));
-
-        virtualColumns.forEach(virtualColumn => delete entity[virtualColumn]);
-    }*/
-
     /** Prepare data to run #transformRelationIds, as a lot of result independent data is needed in every call */
     private prepareDataForTransformRelationIds() {
         // Return early if the relationIdMaps were already calculated
@@ -671,6 +641,9 @@ export class RawSqlResultsToEntityTransformer {
      * Use a simple JSON.stringify to create a simple hash of the primary ids of an entity.
      * As this.extractEntityPrimaryIds always creates the primary id object in the same order, if the same relation is
      * given, a simple JSON.stringify should be enough to get a unique hash per entity!
+     *
+     * @param relation
+     * @param data
      */
     private hashEntityIds(relation: RelationMetadata, data: ObjectLiteral) {
         const entityPrimaryIds = this.extractEntityPrimaryIds(relation, data)
