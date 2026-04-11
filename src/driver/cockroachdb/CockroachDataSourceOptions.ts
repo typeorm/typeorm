@@ -43,6 +43,7 @@ export interface CockroachDataSourceOptions
     readonly replication?: ReplicationConfig<CockroachConnectionCredentialsOptions> & {
         /**
          * Default connection pool to use for SELECT queries
+         *
          * @default "slave"
          */
         readonly defaultMode?: ReplicationMode

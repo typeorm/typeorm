@@ -1,4 +1,5 @@
 import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReplicationConfig } from "../types/ReplicationConfig"
 import type { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
@@ -216,26 +217,23 @@ export interface SqlServerDataSourceOptions
         }
 
         /**
-         * The default isolation level that transactions will be run with. The isolation levels are available
-         * from require('tedious').ISOLATION_LEVEL. (default: READ_COMMITTED).
+         * The default isolation level that transactions will be run with. (default: `READ COMMITTED`).
+         *
+         * Note: this setting may not be reliably preserved across pooled connection reuse.
+         *
+         * @see {@link https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level | Known Issues}
          */
-        readonly isolation?:
-            | "READ_UNCOMMITTED"
-            | "READ_COMMITTED"
-            | "REPEATABLE_READ"
-            | "SERIALIZABLE"
-            | "SNAPSHOT"
+        readonly isolationLevel?: IsolationLevel
 
         /**
          * The default isolation level for new connections. All out-of-transaction queries are executed with this
-         * setting. The isolation levels are available from require('tedious').ISOLATION_LEVEL .
+         * setting. (default: `READ COMMITTED`).
+         *
+         * Note: this setting may not be reliably preserved across pooled connection reuse.
+         *
+         * @see {@link https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level | Known Issues}
          */
-        readonly connectionIsolationLevel?:
-            | "READ_UNCOMMITTED"
-            | "READ_COMMITTED"
-            | "REPEATABLE_READ"
-            | "SERIALIZABLE"
-            | "SNAPSHOT"
+        readonly connectionIsolationLevel?: IsolationLevel
 
         /**
          * A boolean, determining whether the connection will request read only access from a SQL Server
@@ -305,6 +303,7 @@ export interface SqlServerDataSourceOptions
     readonly replication?: ReplicationConfig<SqlServerConnectionCredentialsOptions> & {
         /**
          * Default connection pool to use for SELECT queries
+         *
          * @default "slave"
          */
         readonly defaultMode?: ReplicationMode

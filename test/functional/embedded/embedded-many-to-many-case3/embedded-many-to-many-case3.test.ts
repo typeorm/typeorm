@@ -135,10 +135,10 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         )
                         .orderBy("likedUser.id")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost.should.be.eql({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -164,10 +164,10 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         }),
                     )
 
-                    loadedPost!.counters.favorites += 1
-                    loadedPost!.counters.subcounters.watches += 1
-                    loadedPost!.counters.likedUsers = [user1]
-                    await dataSource.getRepository(Post).save(loadedPost!)
+                    loadedPost.counters.favorites += 1
+                    loadedPost.counters.subcounters.watches += 1
+                    loadedPost.counters.likedUsers = [user1]
+                    await dataSource.getRepository(Post).save(loadedPost)
 
                     loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
@@ -177,10 +177,10 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         )
                         .orderBy("likedUser.id")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost.should.be.eql({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -202,7 +202,7 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         }),
                     )
 
-                    await dataSource.getRepository(Post).remove(loadedPost!)
+                    await dataSource.getRepository(Post).remove(loadedPost)
 
                     loadedPosts = (await dataSource.getRepository(Post).find())!
                     expect(loadedPosts.length).to.be.equal(1)
@@ -352,10 +352,10 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         .leftJoinAndSelect("user.likedPosts", "likedPost")
                         .orderBy("likedPost.id")
                         .where("user.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser.should.be.eql({
                             id: 1,
                             name: "Alice",
                             likedPosts: [
@@ -391,19 +391,19 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         }),
                     )
 
-                    loadedUser!.name = "Anna"
-                    loadedUser!.likedPosts = [post1]
-                    await dataSource.getRepository(User).save(loadedUser!)
+                    loadedUser.name = "Anna"
+                    loadedUser.likedPosts = [post1]
+                    await dataSource.getRepository(User).save(loadedUser)
 
                     loadedUser = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPosts", "likedPost")
                         .orderBy("likedPost.id")
                         .where("user.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser.should.be.eql({
                             id: 1,
                             name: "Anna",
                             likedPosts: [
@@ -425,7 +425,7 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         }),
                     )
 
-                    await dataSource.getRepository(User).remove(loadedUser!)
+                    await dataSource.getRepository(User).remove(loadedUser)
 
                     loadedUsers = (await dataSource
                         .getRepository(User)

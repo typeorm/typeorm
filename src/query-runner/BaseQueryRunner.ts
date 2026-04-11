@@ -28,9 +28,18 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by this query runner.
+     * DataSource used by this query runner.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by this query runner.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Entity manager working only with current query runner.
@@ -144,7 +153,10 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      * Template expressions are automatically transformed into database parameters.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
-     * Example: queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @example
+     * queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
      * @param strings
      * @param values
      */
@@ -153,7 +165,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         ...values: unknown[]
     ): Promise<T> {
         const { query, parameters } = buildSqlTag({
-            driver: this.connection.driver,
+            driver: this.dataSource.driver,
             strings: strings,
             expressions: values,
         })
@@ -189,6 +201,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Loads given table's data from the database.
+     *
      * @param tablePath
      */
     async getTable(tablePath: string): Promise<Table | undefined> {
@@ -198,6 +211,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Loads all tables (with given names) from the database.
+     *
      * @param tableNames
      */
     async getTables(tableNames?: string[]): Promise<Table[]> {
@@ -213,6 +227,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Loads given view's data from the database.
+     *
      * @param viewPath
      */
     async getView(viewPath: string): Promise<View | undefined> {
@@ -222,6 +237,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Loads given view's data from the database.
+     *
      * @param viewPaths
      */
     async getViews(viewPaths?: string[]): Promise<View[]> {
@@ -295,6 +311,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Gets view from previously loaded views, otherwise loads it from database.
+     *
      * @param viewName
      */
     protected async getCachedView(viewName: string): Promise<View> {
@@ -312,6 +329,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Gets table from previously loaded tables, otherwise loads it from database.
+     *
      * @param tableName
      */
     protected async getCachedTable(tableName: string): Promise<Table> {
@@ -351,6 +369,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Replaces loaded table with given changed table.
+     *
      * @param table
      * @param changedTable
      */
@@ -385,9 +404,9 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     protected getTablePath(
         target: EntityMetadata | Table | View | TableForeignKey | string,
     ): string {
-        const parsed = this.connection.driver.parseTableName(target)
+        const parsed = this.dataSource.driver.parseTableName(target)
 
-        return this.connection.driver.buildTableName(
+        return this.dataSource.driver.buildTableName(
             parsed.tableName,
             parsed.schema,
             parsed.database,
@@ -397,9 +416,9 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     protected getTypeormMetadataTableName(): string {
         const options = <
             SqlServerDataSourceOptions | PostgresDataSourceOptions
-        >this.connection.driver.options
-        return this.connection.driver.buildTableName(
-            this.connection.metadataTableName,
+        >this.dataSource.driver.options
+        return this.dataSource.driver.buildTableName(
+            this.dataSource.metadataTableName,
             options.schema,
             options.database,
         )
@@ -407,6 +426,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Generates SQL query to select record from typeorm metadata table.
+     *
      * @param root0
      * @param root0.database
      * @param root0.schema
@@ -427,7 +447,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         type: MetadataTableType
         name: string
     }): Query {
-        const qb = this.connection.createQueryBuilder()
+        const qb = this.dataSource.createQueryBuilder()
         const selectQb = qb
             .select()
             .from(this.getTypeormMetadataTableName(), "t")
@@ -454,6 +474,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Generates SQL query to insert a record into typeorm metadata table.
+     *
      * @param root0
      * @param root0.database
      * @param root0.schema
@@ -477,7 +498,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         name: string
         value?: string
     }): Query {
-        const [query, parameters] = this.connection
+        const [query, parameters] = this.dataSource
             .createQueryBuilder()
             .insert()
             .into(this.getTypeormMetadataTableName())
@@ -496,6 +517,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Generates SQL query to delete a record from typeorm metadata table.
+     *
      * @param root0
      * @param root0.database
      * @param root0.schema
@@ -516,7 +538,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         type: MetadataTableType
         name: string
     }): Query {
-        const qb = this.connection.createQueryBuilder()
+        const qb = this.dataSource.createQueryBuilder()
         const deleteQb = qb
             .delete()
             .from(this.getTypeormMetadataTableName())
@@ -544,6 +566,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     /**
      * Checks if at least one of column properties was changed.
      * Does not checks column type, length and autoincrement, because these properties changes separately.
+     *
      * @param oldColumn
      * @param newColumn
      * @param checkDefault
@@ -557,33 +580,6 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         checkComment?: boolean,
         checkEnum = true,
     ): boolean {
-        // this logs need to debug issues in column change detection. Do not delete it!
-
-        // console.log("charset ---------------");
-        // console.log(oldColumn.charset !== newColumn.charset);
-        // console.log(oldColumn.charset, newColumn.charset);
-        // console.log("collation ---------------");
-        // console.log(oldColumn.collation !== newColumn.collation);
-        // console.log(oldColumn.collation, newColumn.collation);
-        // console.log("precision ---------------");
-        // console.log(oldColumn.precision !== newColumn.precision);
-        // console.log(oldColumn.precision, newColumn.precision);
-        // console.log("scale ---------------");
-        // console.log(oldColumn.scale !== newColumn.scale);
-        // console.log(oldColumn.scale, newColumn.scale);
-        // console.log("default ---------------");
-        // console.log((checkDefault && oldColumn.default !== newColumn.default));
-        // console.log(oldColumn.default, newColumn.default);
-        // console.log("isNullable ---------------");
-        // console.log(oldColumn.isNullable !== newColumn.isNullable);
-        // console.log(oldColumn.isNullable, newColumn.isNullable);
-        // console.log("comment ---------------");
-        // console.log((checkComment && oldColumn.comment !== newColumn.comment));
-        // console.log(oldColumn.comment, newColumn.comment);
-        // console.log("enum ---------------");
-        // console.log(!OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []));
-        // console.log(oldColumn.enum, newColumn.enum);
-
         return (
             oldColumn.charset !== newColumn.charset ||
             oldColumn.collation !== newColumn.collation ||
@@ -591,23 +587,24 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             oldColumn.scale !== newColumn.scale ||
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only
             oldColumn.asExpression !== newColumn.asExpression ||
-            (checkDefault && oldColumn.default !== newColumn.default) ||
+            (!!checkDefault && oldColumn.default !== newColumn.default) ||
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
-            (checkComment && oldColumn.comment !== newColumn.comment) ||
+            (!!checkComment && oldColumn.comment !== newColumn.comment) ||
             (checkEnum && this.isEnumChanged(oldColumn, newColumn))
         )
     }
 
     protected isEnumChanged(oldColumn: TableColumn, newColumn: TableColumn) {
         return !OrmUtils.isArraysEqual(
-            oldColumn.enum || [],
-            newColumn.enum || [],
+            oldColumn.enum ?? [],
+            newColumn.enum ?? [],
         )
     }
 
     /**
      * Checks if column length is by default.
+     *
      * @param table
      * @param column
      * @param length
@@ -618,26 +615,22 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         length: string,
     ): boolean {
         // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
+        if (this.dataSource.hasMetadata(table.name)) {
+            const metadata = this.dataSource.getMetadata(table.name)
             const columnMetadata = metadata.findColumnWithDatabaseName(
                 column.name,
             )
 
             if (columnMetadata) {
                 const columnMetadataLength =
-                    this.connection.driver.getColumnLength(columnMetadata)
+                    this.dataSource.driver.getColumnLength(columnMetadata)
                 if (columnMetadataLength) return false
             }
         }
 
-        if (
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].length
-        ) {
+        if (this.dataSource.driver.dataTypeDefaults?.[column.type]?.length) {
             return (
-                this.connection.driver.dataTypeDefaults[
+                this.dataSource.driver.dataTypeDefaults[
                     column.type
                 ].length!.toString() === length.toString()
             )
@@ -648,6 +641,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Checks if column precision is by default.
+     *
      * @param table
      * @param column
      * @param precision
@@ -658,29 +652,26 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         precision: number,
     ): boolean {
         // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
+        if (this.dataSource.hasMetadata(table.name)) {
+            const metadata = this.dataSource.getMetadata(table.name)
             const columnMetadata = metadata.findColumnWithDatabaseName(
                 column.name,
             )
             if (
-                columnMetadata &&
-                columnMetadata.precision !== null &&
-                columnMetadata.precision !== undefined
+                columnMetadata?.precision !== null &&
+                columnMetadata?.precision !== undefined
             )
                 return false
         }
 
         if (
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].precision !==
-                null &&
-            this.connection.driver.dataTypeDefaults[column.type].precision !==
-                undefined
+            this.dataSource.driver.dataTypeDefaults?.[column.type]
+                ?.precision !== null &&
+            this.dataSource.driver.dataTypeDefaults?.[column.type]
+                ?.precision !== undefined
         )
             return (
-                this.connection.driver.dataTypeDefaults[column.type]
+                this.dataSource.driver.dataTypeDefaults[column.type]
                     .precision === precision
             )
 
@@ -689,6 +680,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Checks if column scale is by default.
+     *
      * @param table
      * @param column
      * @param scale
@@ -699,29 +691,26 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         scale: number,
     ): boolean {
         // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
+        if (this.dataSource.hasMetadata(table.name)) {
+            const metadata = this.dataSource.getMetadata(table.name)
             const columnMetadata = metadata.findColumnWithDatabaseName(
                 column.name,
             )
             if (
-                columnMetadata &&
-                columnMetadata.scale !== null &&
-                columnMetadata.scale !== undefined
+                columnMetadata?.scale !== null &&
+                columnMetadata?.scale !== undefined
             )
                 return false
         }
 
         if (
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].scale !==
+            this.dataSource.driver.dataTypeDefaults?.[column.type]?.scale !==
                 null &&
-            this.connection.driver.dataTypeDefaults[column.type].scale !==
+            this.dataSource.driver.dataTypeDefaults?.[column.type]?.scale !==
                 undefined
         )
             return (
-                this.connection.driver.dataTypeDefaults[column.type].scale ===
+                this.dataSource.driver.dataTypeDefaults[column.type].scale ===
                 scale
             )
 
@@ -730,6 +719,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Executes sql used special for schema build.
+     *
      * @param upQueries
      * @param downQueries
      */
@@ -754,6 +744,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Generated an index name for a table and index
+     *
      * @param table
      * @param index
      */
@@ -762,7 +753,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         index: TableIndex,
     ): string {
         // new index may be passed without name. In this case we generate index name manually.
-        return this.connection.namingStrategy.indexName(
+        return this.dataSource.namingStrategy.indexName(
             table,
             index.columnNames,
             index.where,

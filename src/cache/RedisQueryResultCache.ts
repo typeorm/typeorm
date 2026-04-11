@@ -67,7 +67,7 @@ export class RedisQueryResultCache implements QueryResultCache {
 
             await this.client.connect()
         } else if (this.clientType === "ioredis") {
-            if (cacheOptions && cacheOptions.port) {
+            if (cacheOptions?.port) {
                 if (cacheOptions.options) {
                     this.client = new this.redis(
                         cacheOptions.port,
@@ -76,23 +76,15 @@ export class RedisQueryResultCache implements QueryResultCache {
                 } else {
                     this.client = new this.redis(cacheOptions.port)
                 }
-            } else if (cacheOptions && cacheOptions.options) {
+            } else if (cacheOptions?.options) {
                 this.client = new this.redis(cacheOptions.options)
             } else {
                 this.client = new this.redis()
             }
         } else if (this.clientType === "ioredis/cluster") {
-            if (
-                cacheOptions &&
-                cacheOptions.options &&
-                Array.isArray(cacheOptions.options)
-            ) {
+            if (cacheOptions?.options && Array.isArray(cacheOptions.options)) {
                 this.client = new this.redis.Cluster(cacheOptions.options)
-            } else if (
-                cacheOptions &&
-                cacheOptions.options &&
-                cacheOptions.options.startupNodes
-            ) {
+            } else if (cacheOptions?.options?.startupNodes) {
                 this.client = new this.redis.Cluster(
                     cacheOptions.options.startupNodes,
                     cacheOptions.options.options,
@@ -116,6 +108,7 @@ export class RedisQueryResultCache implements QueryResultCache {
 
     /**
      * Creates table for storing cache if it does not exist yet.
+     *
      * @param queryRunner
      */
     async synchronize(queryRunner: QueryRunner): Promise<void> {}
@@ -124,6 +117,7 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Get data from cache.
      * Returns cache result if found.
      * Returns undefined if result is not cached.
+     *
      * @param options
      * @param queryRunner
      */
@@ -131,7 +125,9 @@ export class RedisQueryResultCache implements QueryResultCache {
         options: QueryResultCacheOptions,
         queryRunner?: QueryRunner,
     ): Promise<QueryResultCacheOptions | undefined> {
-        const key = options.identifier || options.query
+        const identifier =
+            options.identifier === "" ? undefined : options.identifier
+        const key = identifier ?? options.query
         if (!key) return undefined
 
         const result = await this.client.get(key)
@@ -140,6 +136,7 @@ export class RedisQueryResultCache implements QueryResultCache {
 
     /**
      * Checks if cache is expired or not.
+     *
      * @param savedCache
      */
     isExpired(savedCache: QueryResultCacheOptions): boolean {
@@ -148,6 +145,7 @@ export class RedisQueryResultCache implements QueryResultCache {
 
     /**
      * Stores given query result in the cache.
+     *
      * @param options
      * @param savedCache
      * @param queryRunner
@@ -157,7 +155,9 @@ export class RedisQueryResultCache implements QueryResultCache {
         savedCache: QueryResultCacheOptions,
         queryRunner?: QueryRunner,
     ): Promise<void> {
-        const key = options.identifier || options.query
+        const identifier =
+            options.identifier === "" ? undefined : options.identifier
+        const key = identifier ?? options.query
         if (!key) return
 
         const value = JSON.stringify(options)
@@ -177,6 +177,7 @@ export class RedisQueryResultCache implements QueryResultCache {
 
     /**
      * Clears everything stored in the cache.
+     *
      * @param queryRunner
      */
     async clear(queryRunner?: QueryRunner): Promise<void> {
@@ -189,6 +190,7 @@ export class RedisQueryResultCache implements QueryResultCache {
 
     /**
      * Removes all cached results by given identifiers from cache.
+     *
      * @param identifiers
      * @param queryRunner
      */
@@ -205,6 +207,7 @@ export class RedisQueryResultCache implements QueryResultCache {
 
     /**
      * Removes a single key from redis database.
+     *
      * @param key
      */
     protected async deleteKey(key: string): Promise<void> {

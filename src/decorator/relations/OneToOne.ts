@@ -7,6 +7,7 @@ import { ObjectUtils } from "../../util/ObjectUtils"
 /**
  * One-to-one relation allows the creation of a direct relation between two entities. Entity1 has only one Entity2.
  * Entity1 is the owner of the relationship, and stores Entity2 id on its own side.
+ *
  * @param typeFunctionOrTarget
  * @param options
  */
@@ -18,6 +19,7 @@ export function OneToOne<T>(
 /**
  * One-to-one relation allows the creation of a direct relation between two entities. Entity1 has only one Entity2.
  * Entity1 is the owner of the relationship, and stores Entity2 id on its own side.
+ *
  * @param typeFunctionOrTarget
  * @param inverseSide
  * @param options
@@ -31,6 +33,7 @@ export function OneToOne<T>(
 /**
  * One-to-one relation allows the creation of a direct relation between two entities. Entity1 has only one Entity2.
  * Entity1 is the owner of the relationship, and stores Entity2 id on its own side.
+ *
  * @param typeFunctionOrTarget
  * @param inverseSideOrOptions
  * @param options
@@ -49,10 +52,10 @@ export function OneToOne<T>(
     }
 
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        options ??= {} as RelationOptions
 
         // now try to determine it its lazy relation
-        let isLazy = options && options.lazy === true ? true : false
+        let isLazy = options?.lazy === true ? true : false
         if (!isLazy && Reflect && (Reflect as any).getMetadata) {
             // automatic determination
             const reflectedType = (Reflect as any).getMetadata(

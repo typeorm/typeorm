@@ -160,10 +160,13 @@ describe("relations > lazy relations > named tables and columns", () => {
                 await dataSource.manager.save(category)
                 await dataSource.manager.save(post)
 
-                const loadedPost = await dataSource.manager.findOne(Post, {
-                    where: { title: "post with great category" },
-                })
-                const loadedCategory = await loadedPost!.category
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: { title: "post with great category" },
+                    },
+                )
+                const loadedCategory = await loadedPost.category
 
                 loadedCategory.name.should.be.equal("category of great post")
             }),
@@ -201,10 +204,13 @@ describe("relations > lazy relations > named tables and columns", () => {
                 await dataSource.manager.save(category)
                 await dataSource.manager.save(post)
 
-                const loadedPost = await dataSource.manager.findOne(Post, {
-                    where: { title: "post with great category" },
-                })
-                const loadedCategory = await loadedPost!.twoSideCategory
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: { title: "post with great category" },
+                    },
+                )
+                const loadedCategory = await loadedPost.twoSideCategory
 
                 loadedCategory.name.should.be.equal("category of great post")
             }),
@@ -241,11 +247,11 @@ describe("relations > lazy relations > named tables and columns", () => {
                 post.twoSideCategory = Promise.resolve(category)
                 await dataSource.manager.save(post)
 
-                const loadedCategory = await dataSource.manager.findOne(
+                const loadedCategory = await dataSource.manager.findOneOrFail(
                     Category,
                     { where: { name: "category of great post" } },
                 )
-                const loadedPost = await loadedCategory!.twoSidePosts2
+                const loadedPost = await loadedCategory.twoSidePosts2
 
                 loadedPost[0].title.should.be.equal("post with great category")
             }),
@@ -282,10 +288,13 @@ describe("relations > lazy relations > named tables and columns", () => {
                 post.oneCategory = Promise.resolve(category)
                 await dataSource.manager.save(post)
 
-                const loadedPost = await dataSource.manager.findOne(Post, {
-                    where: { title: "post with great category" },
-                })
-                const loadedCategory = await loadedPost!.oneCategory
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: { title: "post with great category" },
+                    },
+                )
+                const loadedCategory = await loadedPost.oneCategory
 
                 loadedCategory.name.should.be.equal("category of great post")
             }),
@@ -322,11 +331,11 @@ describe("relations > lazy relations > named tables and columns", () => {
                 post.oneCategory = Promise.resolve(category)
                 await dataSource.manager.save(post)
 
-                const loadedCategory = await dataSource.manager.findOne(
+                const loadedCategory = await dataSource.manager.findOneOrFail(
                     Category,
                     { where: { name: "category of great post" } },
                 )
-                const loadedPost = await loadedCategory!.onePost
+                const loadedPost = await loadedCategory.onePost
                 loadedPost.title.should.be.equal("post with great category")
             }),
         ))
