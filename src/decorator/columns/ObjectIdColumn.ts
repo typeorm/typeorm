@@ -1,18 +1,19 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { ColumnOptions } from "../options/ColumnOptions"
+import type { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import type { ColumnOptions } from "../options/ColumnOptions"
 
 /**
  * Special type of column that is available only for MongoDB database.
  * Marks your entity's column to be an object id.
+ *
  * @param options
  */
 export function ObjectIdColumn(options?: ColumnOptions): PropertyDecorator {
     return function (object: Object, propertyName: string) {
         // if column options are not given then create a new empty options
-        if (!options) options = {} as ColumnOptions
+        options ??= {} as ColumnOptions
         options.primary = true
-        if (!options.name) options.name = "_id"
+        options.name ??= "_id"
 
         // create and register a new column metadata
         getMetadataArgsStorage().columns.push({

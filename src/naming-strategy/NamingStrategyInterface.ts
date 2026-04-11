@@ -1,5 +1,5 @@
-import { Table } from "../schema-builder/table/Table"
-import { View } from "../schema-builder/view/View"
+import type { Table } from "../schema-builder/table/Table"
+import type { View } from "../schema-builder/view/View"
 
 /**
  * Naming strategy defines how auto-generated names for such things like table name, or table column gonna be
@@ -13,6 +13,7 @@ export interface NamingStrategyInterface {
 
     /**
      * Normalizes table name.
+     *
      * @param targetName Name of the target entity that can be used to generate a table name.
      * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. `@Entity("name")`
      */
@@ -20,6 +21,7 @@ export interface NamingStrategyInterface {
 
     /**
      * Creates a table name for a junction table of a closure table.
+     *
      * @param originalClosureTableName Name of the closure table which owns this junction table.
      */
     closureJunctionTableName(originalClosureTableName: string): string

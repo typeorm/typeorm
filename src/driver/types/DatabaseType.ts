@@ -19,5 +19,4 @@ export type DatabaseType =
     | "react-native"
     | "sap"
     | "spanner"
-    | "sqlite"
     | "sqljs"
