@@ -7,6 +7,7 @@
     "url": "https://github.com/typeorm/typeorm.git",
     "directory": "packages/codemod"
   },
+  "homepage": "https://typeorm.io",
   "license": "MIT",
   "bin": {
     "typeorm-codemod": "./dist/index.js"

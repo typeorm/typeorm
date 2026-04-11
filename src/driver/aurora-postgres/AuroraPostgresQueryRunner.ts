@@ -90,9 +90,12 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Starts transaction on the current connection.
+     *
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
         if (isolationLevel) {
             throw new TypeORMError(
                 `Setting transaction isolation level is not supported by the Aurora Data API`,
@@ -163,6 +166,7 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -197,6 +201,7 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Change table comment.
+     *
      * @param tableOrName
      * @param comment
      */

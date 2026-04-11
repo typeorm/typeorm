@@ -41,6 +41,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Transaction isolation levels supported by this driver.
+     *
      * @see https://docs.oracle.com/en/database/oracle/oracle-database/23/cncpt/data-concurrency-and-consistency.html
      */
     static readonly supportedIsolationLevels: IsolationLevel[] = [
@@ -58,7 +59,13 @@ export class OracleDriver implements Driver {
     dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = OracleDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -117,6 +124,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://www.techonthenet.com/oracle/datatypes.php
      * @see https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT012
      */
@@ -263,6 +271,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Max length allowed by Oracle for aliases.
+     *
      * @see https://docs.oracle.com/database/121/SQLRF/sql_elements008.htm#SQLRF51129
      * > The following list of rules applies to both quoted and nonquoted identifiers unless otherwise indicated
      * > Names must be from 1 to 30 bytes long with these exceptions:
@@ -342,13 +351,9 @@ export class OracleDriver implements Driver {
         if (!this.database || !this.schema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.schema) {
-                this.schema = await queryRunner.getCurrentSchema()
-            }
+            this.schema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
@@ -384,6 +389,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
@@ -393,6 +399,7 @@ export class OracleDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
      * @param sql
      * @param parameters
      */
@@ -443,6 +450,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
      * @param columnName
      */
     escape(columnName: string): string {
@@ -452,6 +460,7 @@ export class OracleDriver implements Driver {
     /**
      * Build full table name with database name, schema name and table name.
      * Oracle does not support table schemas. One user can have only one schema.
+     *
      * @param tableName
      * @param schema
      * @param database
@@ -472,6 +481,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
      * @param target
      */
     parseTableName(
@@ -484,8 +494,8 @@ export class OracleDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -495,11 +505,11 @@ export class OracleDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -508,8 +518,8 @@ export class OracleDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -539,6 +549,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -579,6 +590,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -626,6 +638,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
      * @param column
      * @param column.type
      * @param column.length
@@ -680,6 +693,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -710,6 +724,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
      * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -720,6 +735,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Calculates column length taking into account the default length values.
+     *
      * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
@@ -821,6 +837,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
      * @param metadata
      * @param insertResult
      */
@@ -844,6 +861,7 @@ export class OracleDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
      * @param tableColumns
      * @param columnMetadatas
      */
@@ -961,6 +979,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
      * @param _returningType
      */
     isReturningSqlSupported(_returningType: ReturningType): boolean {
@@ -983,6 +1002,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
      * @param parameterName
      * @param index
      */
@@ -992,6 +1012,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Converts column type in to native oracle type.
+     *
      * @param type
      */
     columnTypeToNativeParameter(type: ColumnType): any {
@@ -1033,7 +1054,7 @@ export class OracleDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const oracle = this.options.driver || PlatformTools.load("oracledb")
+            const oracle = this.options.driver ?? PlatformTools.load("oracledb")
             this.oracle = oracle
         } catch {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
@@ -1050,6 +1071,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
      * @param options
      * @param credentials
      */
@@ -1099,7 +1121,7 @@ export class OracleDriver implements Driver {
             {
                 poolMax: options.poolSize,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         // pooling is enabled either when its set explicitly to true,
@@ -1114,6 +1136,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Closes connection pool.
+     *
      * @param pool
      */
     protected async closePool(pool: any): Promise<void> {

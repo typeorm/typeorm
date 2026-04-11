@@ -41,21 +41,18 @@ describe("cascades > cascade update", () => {
                         .createQueryBuilder("post")
                         .leftJoinAndSelect("post.photo", "photo")
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost).to.not.be.null
-                    loadedPost!.photo.url = "new-logo.png"
-                    await postRepository.save(loadedPost!)
+                    loadedPost.photo.url = "new-logo.png"
+                    await postRepository.save(loadedPost)
 
                     // reload and verify update was cascaded
                     const reloadedPost = await postRepository
                         .createQueryBuilder("post")
                         .leftJoinAndSelect("post.photo", "photo")
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
-
-                    expect(reloadedPost).to.not.be.null
-                    expect(reloadedPost!.photo.url).to.equal("new-logo.png")
+                        .getOneOrFail()
+                    expect(reloadedPost.photo.url).to.equal("new-logo.png")
                 }),
             ))
     })
@@ -93,10 +90,9 @@ describe("cascades > cascade update", () => {
                         .createQueryBuilder("post")
                         .leftJoinAndSelect("post.photo", "photo")
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(reloadedPost).to.not.be.null
-                    expect(reloadedPost!.photo.url).to.equal("logo.png")
+                    expect(reloadedPost.photo.url).to.equal("logo.png")
                 }),
             ))
     })

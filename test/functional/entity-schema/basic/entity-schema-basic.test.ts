@@ -30,14 +30,14 @@ describe("entity schemas > basic functionality", () => {
                 })
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     title: "First Post",
                 })
-                loadedPost!.id.should.be.equal(post.id)
-                loadedPost!.title.should.be.equal("First Post")
-                loadedPost!.text.should.be.equal("About first post")
+                loadedPost.id.should.be.equal(post.id)
+                loadedPost.title.should.be.equal("First Post")
+                loadedPost.text.should.be.equal("About first post")
 
-                await postRepository.remove(loadedPost!)
+                await postRepository.remove(loadedPost)
 
                 const loadedPostAfterRemove = await postRepository.findOneBy({
                     title: "First Post",
@@ -56,15 +56,15 @@ describe("entity schemas > basic functionality", () => {
                 })
                 await dataSource.manager.save(PostEntity, post)
 
-                const loadedPost = await dataSource.manager.findOneBy(
+                const loadedPost = await dataSource.manager.findOneByOrFail(
                     PostEntity,
                     { title: "First Post" },
                 )
-                loadedPost!.id.should.be.equal(post.id)
-                loadedPost!.title.should.be.equal("First Post")
-                loadedPost!.text.should.be.equal("About first post")
+                loadedPost.id.should.be.equal(post.id)
+                loadedPost.title.should.be.equal("First Post")
+                loadedPost.text.should.be.equal("About first post")
 
-                await dataSource.manager.remove(PostEntity, loadedPost!)
+                await dataSource.manager.remove(PostEntity, loadedPost)
 
                 const loadedPostAfterRemove =
                     await dataSource.manager.findOneBy(PostEntity, {

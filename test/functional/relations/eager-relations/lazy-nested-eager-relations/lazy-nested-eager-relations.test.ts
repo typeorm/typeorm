@@ -67,11 +67,12 @@ describe("relations > eager relations > lazy nested eager relations", () => {
             dataSources.map(async (dataSource) => {
                 await prepareData(dataSource)
 
-                const loadedEditor = await dataSource.manager.findOne(Editor, {
-                    where: {
+                const loadedEditor = await dataSource.manager.findOneBy(
+                    Editor,
+                    {
                         id: 1,
                     },
-                })
+                )
 
                 const loadedPost = await loadedEditor?.post
 

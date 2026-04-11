@@ -30,10 +30,8 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
                 parent.name = "Parent"
                 await manager.save(parent)
 
-                const loadedParent = await manager.findOne(Parent, {
-                    where: {
-                        id: 1,
-                    },
+                const loadedParent = await manager.findOneBy(Parent, {
+                    id: 1,
                 })
                 expect(loadedParent).not.to.be.null
 
@@ -69,10 +67,8 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
                 parent.name = "Parent"
                 await manager.save(parent)
 
-                const loadedParent = await manager.findOne(Parent, {
-                    where: {
-                        id: 1,
-                    },
+                const loadedParent = await manager.findOneBy(Parent, {
+                    id: 1,
                 })
                 expect(loadedParent).not.to.be.null
 

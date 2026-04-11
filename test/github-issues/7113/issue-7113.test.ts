@@ -79,8 +79,8 @@ describe("github issues > #7113 Soft deleted docs still being pulled in Mongodb"
 
                 await repository.softRemove(configuration)
 
-                const withoutDeletedOne = await repository.findOne({
-                    where: { _id: configuration._id },
+                const withoutDeletedOne = await repository.findOneBy({
+                    _id: configuration._id,
                 })
                 expect(withoutDeletedOne).to.be.null
 

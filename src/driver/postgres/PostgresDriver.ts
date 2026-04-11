@@ -44,6 +44,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Transaction isolation levels supported by this driver.
+     *
      * @see https://www.postgresql.org/docs/current/transaction-iso.html
      */
     static readonly supportedIsolationLevels: IsolationLevel[] = [
@@ -63,7 +64,13 @@ export class PostgresDriver implements Driver {
     dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = PostgresDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -143,6 +150,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://www.postgresql.org/docs/current/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
@@ -329,6 +337,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Max length allowed by Postgres for aliases.
+     *
      * @see https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
      */
     maxAliasLength = 63
@@ -405,24 +414,16 @@ export class PostgresDriver implements Driver {
         if (!this.version || !this.database || !this.searchSchema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.version) {
-                this.version = await queryRunner.getVersion()
-            }
+            this.version ??= await queryRunner.getVersion()
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
+            this.searchSchema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
 
-        if (!this.schema) {
-            this.schema = this.searchSchema
-        }
+        this.schema ??= this.searchSchema
     }
 
     /**
@@ -501,14 +502,14 @@ export class PostgresDriver implements Driver {
                 await this.executeQuery(
                     connection,
                     `CREATE EXTENSION IF NOT EXISTS "${
-                        this.options.uuidExtension || "uuid-ossp"
+                        this.options.uuidExtension ?? "uuid-ossp"
                     }"`,
                 )
             } catch (_) {
                 logger.log(
                     "warn",
                     `At least one of the entities has uuid column, but the '${
-                        this.options.uuidExtension || "uuid-ossp"
+                        this.options.uuidExtension ?? "uuid-ossp"
                     }' extension cannot be installed automatically. Please install it manually using superuser rights, or select another uuid extension.`,
                 )
             }
@@ -739,6 +740,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
@@ -747,6 +749,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -862,6 +865,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -1002,6 +1006,7 @@ export class PostgresDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
      * @param sql
      * @param parameters
      */
@@ -1053,6 +1058,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
      * @param columnName
      */
     escape(columnName: string): string {
@@ -1062,6 +1068,7 @@ export class PostgresDriver implements Driver {
     /**
      * Build full table name with schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
      * @param tableName
      * @param schema
      */
@@ -1077,6 +1084,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
      * @param target
      */
     parseTableName(
@@ -1089,8 +1097,8 @@ export class PostgresDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -1100,11 +1108,11 @@ export class PostgresDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -1113,8 +1121,8 @@ export class PostgresDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -1123,13 +1131,14 @@ export class PostgresDriver implements Driver {
 
         return {
             database: driverDatabase,
-            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
+            schema: (parts.length > 1 ? parts[0] : undefined) ?? driverSchema,
             tableName: parts.length > 1 ? parts[1] : parts[0],
         }
     }
 
     /**
      * Creates a database type from a given column metadata.
+     *
      * @param column
      * @param column.type
      * @param column.length
@@ -1189,6 +1198,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -1231,6 +1241,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Compares "default" value of the column.
+     *
      * @param columnMetadata
      * @param tableColumn
      */
@@ -1261,6 +1272,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Compares json/jsonb default values of the column.
+     *
      * @param columnMetadata
      * @param tableColumn
      */
@@ -1298,6 +1310,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
      * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -1308,6 +1321,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     *
      * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
@@ -1316,6 +1330,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     *
      * @param column
      */
     createFullType(column: TableColumn): string {
@@ -1431,6 +1446,7 @@ export class PostgresDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      *
      * todo: slow. optimize Object.keys(), OrmUtils.mergeDeep and column.createValueMap parts
+     *
      * @param metadata
      * @param insertResult
      */
@@ -1453,6 +1469,7 @@ export class PostgresDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
      * @param tableColumns
      * @param columnMetadatas
      */
@@ -1483,19 +1500,21 @@ export class PostgresDriver implements Driver {
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
                 tableColumn.enumName !== columnMetadata.enumName ||
-                (tableColumn.enum &&
+                !!(
+                    tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
                         tableColumn.enum,
                         columnMetadata.enum.map((val) => val + ""),
-                    )) || // enums in postgres are always strings
+                    )
+                ) || // enums in postgres are always strings
                 tableColumn.isGenerated !== columnMetadata.isGenerated ||
-                (tableColumn.spatialFeatureType || "").toLowerCase() !==
-                    (columnMetadata.spatialFeatureType || "").toLowerCase() ||
+                (tableColumn.spatialFeatureType ?? "").toLowerCase() !==
+                    (columnMetadata.spatialFeatureType ?? "").toLowerCase() ||
                 tableColumn.srid !== columnMetadata.srid ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
-                (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim() ||
+                (tableColumn.asExpression ?? "").trim() !==
+                    (columnMetadata.asExpression ?? "").trim() ||
                 tableColumn.collation !== columnMetadata.collation
 
             // DEBUG SECTION
@@ -1616,6 +1635,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
      * @param _returningType
      */
     isReturningSqlSupported(_returningType: ReturningType): boolean {
@@ -1644,6 +1664,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
      * @param parameterName
      * @param index
      */
@@ -1685,11 +1706,11 @@ export class PostgresDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const postgres = this.options.driver || PlatformTools.load("pg")
+            const postgres = this.options.driver ?? PlatformTools.load("pg")
             this.postgres = postgres
             try {
                 const pgNative =
-                    this.options.nativeDriver || PlatformTools.load("pg-native")
+                    this.options.nativeDriver ?? PlatformTools.load("pg-native")
                 if (pgNative && this.postgres.native)
                     this.postgres = this.postgres.native
             } catch (e) {}
@@ -1701,6 +1722,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
      * @param options
      * @param credentials
      */
@@ -1728,7 +1750,7 @@ export class PostgresDriver implements Driver {
                     options.applicationName ?? credentials.applicationName,
                 max: options.poolSize,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         if (options.parseInt8 !== undefined) {
@@ -1752,7 +1774,7 @@ export class PostgresDriver implements Driver {
         const pool = new this.postgres.Pool(connectionOptions)
 
         const poolErrorHandler =
-            options.poolErrorHandler ||
+            options.poolErrorHandler ??
             ((error: any) =>
                 logger.log("warn", `Postgres pool raised an error. ${error}`))
 
@@ -1789,6 +1811,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Closes connection pool.
+     *
      * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
@@ -1803,6 +1826,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Executes given query.
+     *
      * @param connection
      * @param query
      */
@@ -1819,6 +1843,7 @@ export class PostgresDriver implements Driver {
     /**
      * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
      * Otherwise returns original input.
+     *
      * @param value
      */
     protected normalizeDatetimeFunction(value: string) {
@@ -1861,6 +1886,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     *
      * @param comment
      */
     protected escapeComment(comment?: string) {
