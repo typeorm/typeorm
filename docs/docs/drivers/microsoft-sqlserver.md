@@ -227,10 +227,10 @@ const results = await dataSource.query(
 
 ### Connection pool does not reset isolation level
 
-The `options.isolationLevel` and `options.connectionIsolationLevel` data source options are correctly applied when a connection is first created by the underlying [node-mssql](https://github.com/tediousjs/node-mssql) driver. However, `node-mssql` does not call `connection.reset()` when returning connections to the pool. This means that if any operation changes the isolation level on a pooled connection (e.g., an explicit transaction at a different level), the change persists and leaks to the next consumer of that connection.
+The driver-specific `options.isolationLevel` and `options.connectionIsolationLevel` data source options are correctly applied when a connection is first created by the underlying [node-mssql](https://github.com/tediousjs/node-mssql) driver. However, `node-mssql` does not call `connection.reset()` when returning connections to the pool. This means that if any operation changes the isolation level on a pooled connection (e.g., an explicit transaction at a different level), the change persists and leaks to the next consumer of that connection.
 
 In practice, this makes `options.isolationLevel` and `options.connectionIsolationLevel` unreliable for applications that also use per-transaction isolation levels.
 
-**Per-transaction isolation levels are not affected.** Setting the isolation level via `startTransaction()` or the `transaction()` callback always works correctly because it is applied explicitly on the active connection.
+**Recommended alternative:** Use the top-level `isolationLevel` DataSource option (available on all drivers) instead. This applies the isolation level explicitly on each transaction start, bypassing the pool limitation entirely. See [Transactions > Default Isolation Level](../transactions.md#default-isolation-level).
 
 This is an upstream limitation tracked in [tediousjs/node-mssql#1483](https://github.com/tediousjs/node-mssql/issues/1483).
