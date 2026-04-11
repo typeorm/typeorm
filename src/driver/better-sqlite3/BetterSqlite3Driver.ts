@@ -1,14 +1,14 @@
-import fs from "fs/promises"
-import path from "path"
-import { DataSource } from "../../data-source"
+import fs from "node:fs/promises"
+import path from "node:path"
+import type { DataSource } from "../../data-source"
 import { DriverPackageNotInstalledError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { filepathToName, isAbsolute } from "../../util/PathUtils"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ColumnType } from "../types/ColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { BetterSqlite3DataSourceOptions } from "./BetterSqlite3DataSourceOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { BetterSqlite3DataSourceOptions } from "./BetterSqlite3DataSourceOptions"
 import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner"
 
 /**
@@ -20,7 +20,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: BetterSqlite3DataSourceOptions
 
@@ -28,11 +28,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
-        this.connection = connection
-        this.options = connection.options as BetterSqlite3DataSourceOptions
         this.database = this.options.database
 
         // load sqlite package
@@ -53,11 +51,11 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new BetterSqlite3QueryRunner(this)
+        this.queryRunner ??= new BetterSqlite3QueryRunner(this)
 
         return this.queryRunner
     }
@@ -68,7 +66,10 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         precision?: number | null
         scale?: number
     }): string {
-        if ((column.type as any) === Buffer) {
+        if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         }
 
@@ -81,6 +82,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * For SQLite, the database may be added in the decorator metadata. It will be a filepath to a database file.
+     *
      * @param tableName
      * @param _schema
      * @param database
@@ -175,7 +177,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     protected loadDependencies(): void {
         try {
             const sqlite =
-                this.options.driver || PlatformTools.load("better-sqlite3")
+                this.options.driver ?? PlatformTools.load("better-sqlite3")
             this.sqlite = sqlite
         } catch (e) {
             throw new DriverPackageNotInstalledError("SQLite", "better-sqlite3")
@@ -184,6 +186,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * Auto creates database directory if it does not exist.
+     *
      * @param dbPath
      */
     protected async createDatabaseDirectory(dbPath: string): Promise<void> {
@@ -204,7 +207,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             await this.createDatabaseDirectory(
                 path.dirname(attachFilepathAbsolute),
             )
-            await this.connection.query(
+            await this.dataSource.query(
                 `ATTACH "${attachFilepathAbsolute}" AS "${attachHandle}"`,
             )
         }

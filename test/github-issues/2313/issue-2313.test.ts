@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,20 +10,19 @@ import { expect } from "chai"
 import { EntityNotFoundError } from "../../../src/error/EntityNotFoundError"
 
 describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should find the appropriate record when one exists", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             Post.useDataSource(connection) // change connection each time because of AR specifics
 
             const post1 = new Post()
@@ -34,18 +33,14 @@ describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () 
             post2.data = 456
             await post2.save()
 
-            const result1 = await Post.findOneOrFail({
-                where: {
-                    id: 1,
-                },
+            const result1 = await Post.findOneByOrFail({
+                id: 1,
             })
 
             result1.data.should.be.eql(123)
 
-            const result2 = await Post.findOneOrFail({
-                where: {
-                    id: 2,
-                },
+            const result2 = await Post.findOneByOrFail({
+                id: 2,
             })
 
             result2.data.should.be.eql(456)
@@ -54,7 +49,7 @@ describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () 
 
     it("should throw no matching record exists", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             Post.useDataSource(connection) // change connection each time because of AR specifics
 
             try {

@@ -1,12 +1,8 @@
 [github_app]
-pr_commands = [
-    "/describe --pr_description.publish_description_as_comment=true",
-    "/improve",
-    "/agentic_review",
-]
-
+pr_commands = ["/agentic_review"]
+feedback_or_draft_pr = false
 handle_push_trigger = true
-push_commands = ["/improve", "/agentic_review"]
+push_commands = ["/agentic_review"]
 
 [auto_best_practices]
 enable_auto_best_practices = true
@@ -16,10 +12,12 @@ utilize_auto_best_practices = true
 enabled = true
 publish_output = true
 comments_location_policy = "summary"
-persistent_comment = false
-
-[config]
-publish_output_progress = false
+final_update_message = false
+persistent_comment = true
+persistent_comment_notification = false
 
 [checks]
 enable_auto_checks_feedback = false
+
+[config]
+publish_output_progress = false

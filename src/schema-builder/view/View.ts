@@ -1,9 +1,9 @@
-import { DataSource } from "../../data-source"
-import { Driver } from "../../driver/Driver"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { SelectQueryBuilder } from "../../query-builder/SelectQueryBuilder"
-import { ViewOptions } from "../options/ViewOptions"
-import { TableIndex } from "../table/TableIndex"
+import type { DataSource } from "../../data-source"
+import type { Driver } from "../../driver/Driver"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { SelectQueryBuilder } from "../../query-builder/SelectQueryBuilder"
+import type { ViewOptions } from "../options/ViewOptions"
+import type { TableIndex } from "../table/TableIndex"
 
 /**
  * View in the database represented in this class.
@@ -79,6 +79,7 @@ export class View {
 
     /**
      * Add index
+     *
      * @param index
      */
     addIndex(index: TableIndex): void {
@@ -87,6 +88,7 @@ export class View {
 
     /**
      * Remove index
+     *
      * @param viewIndex
      */
     removeIndex(viewIndex: TableIndex): void {
@@ -104,6 +106,7 @@ export class View {
 
     /**
      * Creates view from a given entity metadata.
+     *
      * @param entityMetadata
      * @param driver
      */

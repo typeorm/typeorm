@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,27 +12,26 @@ import { TestEntity } from "./entity/Test"
 
 // TODO: Implement topological sorting for view dependencies https://github.com/typeorm/typeorm/issues/8240
 describe.skip("views dependencies", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-                // entities: [ViewC, ViewB, ViewA, TestEntity],
-                entities: [TestEntity, ViewA, ViewB, ViewC],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+            // entities: [ViewC, ViewB, ViewA, TestEntity],
+            entities: [TestEntity, ViewA, ViewB, ViewC],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should generate drop and create queries in correct order", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const expectedDrops: RegExp[] = []
                 const expectedCreates: RegExp[] = []
                 // Views in order in which they should be created
                 for (const view of [ViewA, ViewB, ViewC]) {
-                    const metadata = connection.getMetadata(view)
+                    const metadata = dataSource.getMetadata(view)
                     // Modify ViewA, this should trigger updates on all views that depend on it
                     if (view === ViewA) {
                         metadata.expression = (
@@ -48,7 +47,7 @@ describe.skip("views dependencies", () => {
                 }
                 // Drop order should be reverse of create order
                 expectedDrops.reverse()
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
                 // console.log(sqlInMemory.upQueries.map(q => q.query));

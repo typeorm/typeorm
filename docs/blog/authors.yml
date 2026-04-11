@@ -1,0 +1,14 @@
+typeorm:
+  name: TypeORM Team
+  url: https://github.com/typeorm
+  image_url: https://github.com/typeorm.png
+
+dlhck:
+  name: David Hoeck
+  url: https://github.com/dlhck
+  image_url: https://github.com/dlhck.png
+
+michaelbromley:
+  name: Michael Bromley
+  url: https://github.com/michaelbromley
+  image_url: https://github.com/michaelbromley.png

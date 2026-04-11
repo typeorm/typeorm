@@ -4,25 +4,24 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { expect } from "chai"
 import { Record } from "./entity/Record"
 
 describe("github issues > #1314 UPDATE on json column stores string type", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"], // because only postgres supports jsonb type
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"], // because only postgres supports jsonb type
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not store json type as string on update", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const recordRepo = connection.getRepository(Record)
 
                 const record = new Record()
@@ -31,26 +30,20 @@ describe("github issues > #1314 UPDATE on json column stores string type", () =>
                 const persistedRecord = await recordRepo.save(record)
                 record.data.should.be.eql({ foo: "bar" })
 
-                let foundRecord = await recordRepo.findOne({
-                    where: {
-                        id: persistedRecord.id,
-                    },
+                let foundRecord = await recordRepo.findOneByOrFail({
+                    id: persistedRecord.id,
                 })
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!.data.foo).to.eq("bar")
+                expect(foundRecord.data.foo).to.eq("bar")
 
                 // Update
-                foundRecord!.data = { answer: 42 }
-                await recordRepo.save(foundRecord!)
-                foundRecord = await recordRepo.findOne({
-                    where: {
-                        id: persistedRecord.id,
-                    },
+                foundRecord.data = { answer: 42 }
+                await recordRepo.save(foundRecord)
+                foundRecord = await recordRepo.findOneByOrFail({
+                    id: persistedRecord.id,
                 })
 
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!.data).to.not.be.equal('{"answer":42}')
-                expect(foundRecord!.data.answer).to.eq(42)
+                expect(foundRecord.data).to.not.be.equal('{"answer":42}')
+                expect(foundRecord.data.answer).to.eq(42)
             }),
         ))
 })

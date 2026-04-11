@@ -1,10 +1,11 @@
 import { getMetadataArgsStorage } from "../globals"
-import { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs"
-import { UniqueOptions } from "./options/UniqueOptions"
+import type { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs"
+import type { UniqueOptions } from "./options/UniqueOptions"
 import { ObjectUtils } from "../util/ObjectUtils"
 
 /**
  * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
+ *
  * @param name
  * @param fields
  * @param options
@@ -17,6 +18,7 @@ export function Unique(
 
 /**
  * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
+ *
  * @param fields
  * @param options
  */
@@ -27,6 +29,7 @@ export function Unique(
 
 /**
  * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
+ *
  * @param fields
  * @param options
  */
@@ -37,6 +40,7 @@ export function Unique(
 
 /**
  * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
+ *
  * @param name
  * @param fields
  * @param options
@@ -49,6 +53,7 @@ export function Unique(
 
 /**
  * Composite unique constraint must be set on entity classes and must specify entity's fields to be unique.
+ *
  * @param nameOrFieldsOrOptions
  * @param maybeFieldsOrOptions
  * @param maybeOptions
@@ -81,12 +86,11 @@ export function Unique(
         !Array.isArray(nameOrFieldsOrOptions)
             ? (nameOrFieldsOrOptions as UniqueOptions)
             : maybeOptions
-    if (!options)
-        options =
-            ObjectUtils.isObject(nameOrFieldsOrOptions) &&
-            !Array.isArray(maybeFieldsOrOptions)
-                ? (maybeFieldsOrOptions as UniqueOptions)
-                : maybeOptions
+    options ??=
+        ObjectUtils.isObject(nameOrFieldsOrOptions) &&
+        !Array.isArray(maybeFieldsOrOptions)
+            ? (maybeFieldsOrOptions as UniqueOptions)
+            : maybeOptions
 
     return function (
         clsOrObject: Function | Object,
