@@ -464,6 +464,24 @@ describe("schema builder > change column", () => {
                 try {
                     // STEP 1: varchar2 -> "datetime-like" (DATE for Oracle)
                     nameCol.type = datetimeBy[driver]
+                    const temporalValue = new Date("2024-01-02T03:04:05.000Z")
+                    const assertTemporalValue = (value: unknown) => {
+                        expect(value).to.not.be.undefined
+                        expect(value).to.not.be.null
+
+                        const actual =
+                            value instanceof Date
+                                ? value
+                                : new Date(String(value))
+
+                        expect(
+                            Number.isNaN(actual.getTime()),
+                            `Expected a valid temporal value, got ${String(value)}`,
+                        ).to.equal(false)
+                        expect(actual.toISOString()).to.equal(
+                            temporalValue.toISOString(),
+                        )
+                    }
 
                     if (driver === "oracle") {
                         // DATE must not have a bogus length or a string default
@@ -489,7 +507,7 @@ describe("schema builder > change column", () => {
                     const repo = connection.getRepository(Post)
                     await repo.save({
                         id: 1,
-                        name: "test",
+                        name: temporalValue as unknown as string,
                         version: "1.0",
                         text: "content",
                         tag: "test",
@@ -498,10 +516,10 @@ describe("schema builder > change column", () => {
 
                     // Verify data exists before migration
                     const beforeChange = await repo.findOne({
-                        where: { name: "test" },
+                        where: { id: 1 },
                     })
                     expect(beforeChange).to.not.be.undefined
-                    expect(beforeChange?.name).to.equal("test")
+                    assertTemporalValue(beforeChange?.name)
 
                     // STEP 2: datetime-like -> timestamp-like, record SQL
                     nameCol.type = timestampBy[driver]
@@ -561,16 +579,18 @@ describe("schema builder > change column", () => {
 
                     // Verify data still exists after migration (data survived)
                     const afterChange = await repo.findOne({
-                        where: { name: "test" },
+                        where: { id: 1 },
                     })
-                    expect(afterChange).to.not.be.undefined
-                    expect(afterChange?.name).to.equal(
-                        "test",
+                    expect(
+                        afterChange,
                         "Data should survive DATETIME->TIMESTAMP migration",
+                    ).to.not.be.undefined
+                    assertTemporalValue(
+                        afterChange?.name,
                     )
 
                     // Cleanup inserted data
-                    await repo.delete({ name: "test" })
+                    await repo.delete({ id: 1 })
                 } finally {
                     // Revert everything
                     nameCol.type = originalType
