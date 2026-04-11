@@ -1,8 +1,0 @@
-[
-  {
-    "skip": false,
-    "type": "better-sqlite3",
-    "database": "./temp/better-sqlite3.db",
-    "logging": false
-  }
-]

@@ -54,31 +54,26 @@ describe("persistence > partial persist", () => {
                 await postRepository.save(newPost)
 
                 // load a post
-                const loadedPost = await postRepository.findOne({
+                const loadedPost = await postRepository.findOneOrFail({
                     where: {
                         id: newPost.id,
                     },
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            categories: "post.categories",
-                        },
+                    relations: {
+                        categories: true,
                     },
                 })
 
-                expect(loadedPost!).not.to.be.null
-                expect(loadedPost!.categories).not.to.be.undefined
-                loadedPost!.title.should.be.equal("All about animals")
-                loadedPost!.description.should.be.equal(
+                expect(loadedPost).not.to.be.null
+                expect(loadedPost.categories).not.to.be.undefined
+                loadedPost.title.should.be.equal("All about animals")
+                loadedPost.description.should.be.equal(
                     "Description of the post about animals",
                 )
-                loadedPost!.categories[0].name.should.be.equal("Animals")
-                loadedPost!.categories[0].position.should.be.equal(999)
-                loadedPost!.counters.metadata.should.be.equal(
-                    "Animals Metadata",
-                )
-                loadedPost!.counters.stars.should.be.equal(5)
-                loadedPost!.counters.commentCount.should.be.equal(2)
+                loadedPost.categories[0].name.should.be.equal("Animals")
+                loadedPost.categories[0].position.should.be.equal(999)
+                loadedPost.counters.metadata.should.be.equal("Animals Metadata")
+                loadedPost.counters.stars.should.be.equal(5)
+                loadedPost.counters.commentCount.should.be.equal(2)
 
                 // now update partially
                 await postRepository.update(
@@ -87,40 +82,36 @@ describe("persistence > partial persist", () => {
                 )
 
                 // now check if update worked as expected, title is updated and all other columns are not touched
-                const loadedPostAfterTitleUpdate = await postRepository.findOne(
-                    {
+                const loadedPostAfterTitleUpdate =
+                    await postRepository.findOneOrFail({
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                categories: "post.categories",
-                            },
+                        relations: {
+                            categories: true,
                         },
-                    },
-                )
+                    })
 
-                expect(loadedPostAfterTitleUpdate!).not.to.be.undefined
-                expect(loadedPostAfterTitleUpdate!.categories).not.to.be
+                expect(loadedPostAfterTitleUpdate).not.to.be.undefined
+                expect(loadedPostAfterTitleUpdate.categories).not.to.be
                     .undefined
-                loadedPostAfterTitleUpdate!.title.should.be.equal(
+                loadedPostAfterTitleUpdate.title.should.be.equal(
                     "All about bears",
                 )
-                loadedPostAfterTitleUpdate!.description.should.be.equal(
+                loadedPostAfterTitleUpdate.description.should.be.equal(
                     "Description of the post about animals",
                 )
-                loadedPostAfterTitleUpdate!.categories[0].name.should.be.equal(
+                loadedPostAfterTitleUpdate.categories[0].name.should.be.equal(
                     "Animals",
                 )
-                loadedPostAfterTitleUpdate!.categories[0].position.should.be.equal(
+                loadedPostAfterTitleUpdate.categories[0].position.should.be.equal(
                     999,
                 )
-                loadedPostAfterTitleUpdate!.counters.metadata.should.be.equal(
+                loadedPostAfterTitleUpdate.counters.metadata.should.be.equal(
                     "Animals Metadata",
                 )
-                loadedPostAfterTitleUpdate!.counters.stars.should.be.equal(5)
-                loadedPostAfterTitleUpdate!.counters.commentCount.should.be.equal(
+                loadedPostAfterTitleUpdate.counters.stars.should.be.equal(5)
+                loadedPostAfterTitleUpdate.counters.commentCount.should.be.equal(
                     2,
                 )
 
@@ -131,40 +122,36 @@ describe("persistence > partial persist", () => {
                 )
 
                 // now check if update worked as expected, stars counter is updated and all other columns are not touched
-                const loadedPostAfterStarsUpdate = await postRepository.findOne(
-                    {
+                const loadedPostAfterStarsUpdate =
+                    await postRepository.findOneOrFail({
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                categories: "post.categories",
-                            },
+                        relations: {
+                            categories: true,
                         },
-                    },
-                )
+                    })
 
-                expect(loadedPostAfterStarsUpdate!).not.to.be.undefined
-                expect(loadedPostAfterStarsUpdate!.categories).not.to.be
+                expect(loadedPostAfterStarsUpdate).not.to.be.undefined
+                expect(loadedPostAfterStarsUpdate.categories).not.to.be
                     .undefined
-                loadedPostAfterStarsUpdate!.title.should.be.equal(
+                loadedPostAfterStarsUpdate.title.should.be.equal(
                     "All about bears",
                 )
-                loadedPostAfterStarsUpdate!.description.should.be.equal(
+                loadedPostAfterStarsUpdate.description.should.be.equal(
                     "Description of the post about animals",
                 )
-                loadedPostAfterStarsUpdate!.categories[0].name.should.be.equal(
+                loadedPostAfterStarsUpdate.categories[0].name.should.be.equal(
                     "Animals",
                 )
-                loadedPostAfterStarsUpdate!.categories[0].position.should.be.equal(
+                loadedPostAfterStarsUpdate.categories[0].position.should.be.equal(
                     999,
                 )
-                loadedPostAfterStarsUpdate!.counters.metadata.should.be.equal(
+                loadedPostAfterStarsUpdate.counters.metadata.should.be.equal(
                     "Animals Metadata",
                 )
-                loadedPostAfterStarsUpdate!.counters.stars.should.be.equal(10)
-                loadedPostAfterStarsUpdate!.counters.commentCount.should.be.equal(
+                loadedPostAfterStarsUpdate.counters.stars.should.be.equal(10)
+                loadedPostAfterStarsUpdate.counters.commentCount.should.be.equal(
                     2,
                 )
 
@@ -176,40 +163,35 @@ describe("persistence > partial persist", () => {
 
                 // now check if update worked as expected, name of category is updated and all other columns are not touched
                 const loadedPostAfterCategoryUpdate =
-                    await postRepository.findOne({
+                    await postRepository.findOneOrFail({
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "post",
-                            leftJoinAndSelect: {
-                                categories: "post.categories",
-                            },
+                        relations: {
+                            categories: true,
                         },
                     })
 
-                expect(loadedPostAfterCategoryUpdate!).not.to.be.undefined
-                expect(loadedPostAfterCategoryUpdate!.categories).not.to.be
+                expect(loadedPostAfterCategoryUpdate).not.to.be.undefined
+                expect(loadedPostAfterCategoryUpdate.categories).not.to.be
                     .undefined
-                loadedPostAfterCategoryUpdate!.title.should.be.equal(
+                loadedPostAfterCategoryUpdate.title.should.be.equal(
                     "All about bears",
                 )
-                loadedPostAfterCategoryUpdate!.description.should.be.equal(
+                loadedPostAfterCategoryUpdate.description.should.be.equal(
                     "Description of the post about animals",
                 )
-                loadedPostAfterCategoryUpdate!.categories[0].name.should.be.equal(
+                loadedPostAfterCategoryUpdate.categories[0].name.should.be.equal(
                     "Bears",
                 )
-                loadedPostAfterCategoryUpdate!.categories[0].position.should.be.equal(
+                loadedPostAfterCategoryUpdate.categories[0].position.should.be.equal(
                     999,
                 )
-                loadedPostAfterCategoryUpdate!.counters.metadata.should.be.equal(
+                loadedPostAfterCategoryUpdate.counters.metadata.should.be.equal(
                     "Animals Metadata",
                 )
-                loadedPostAfterCategoryUpdate!.counters.stars.should.be.equal(
-                    10,
-                )
-                loadedPostAfterCategoryUpdate!.counters.commentCount.should.be.equal(
+                loadedPostAfterCategoryUpdate.counters.stars.should.be.equal(10)
+                loadedPostAfterCategoryUpdate.counters.commentCount.should.be.equal(
                     2,
                 )
             }),

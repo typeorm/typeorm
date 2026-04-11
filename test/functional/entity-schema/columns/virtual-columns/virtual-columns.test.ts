@@ -25,7 +25,7 @@ describe("entity-schema > columns > virtual column", () => {
             dataSources.map(async (dataSource) => {
                 const repo = dataSource.getRepository(Activity)
                 await repo.save({ id: 0, k1: 1 })
-                const result = (await repo.findOne({ where: { id: 0 } }))!
+                const result = (await repo.findOneBy({ id: 0 }))!
                 expect(result.vK1).eq(result.k1)
                 expect(result.vK1).eq(1)
             }),

@@ -1,0 +1,35 @@
+name: Setup Node.js with pnpm
+description: Sets up pnpm, Node.js with caching, and installs dependencies
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: "24"
+  working-directory:
+    description: Working directory
+    required: false
+  download-build:
+    description: Download build artifact
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v5
+
+    - uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - run: pnpm install --frozen-lockfile
+      shell: bash
+      working-directory: ${{ inputs.working-directory || '.' }}
+
+    - uses: actions/download-artifact@v8
+      if: inputs.download-build == 'true'
+      with:
+        name: build
+        path: build/

@@ -16,9 +16,9 @@ export class SqljsEntityManager extends EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource, queryRunner?: QueryRunner) {
-        super(connection, queryRunner)
-        this.driver = connection.driver as SqljsDriver
+    constructor(dataSource: DataSource, queryRunner?: QueryRunner) {
+        super(dataSource, queryRunner)
+        this.driver = dataSource.driver as SqljsDriver
     }
 
     // -------------------------------------------------------------------------
@@ -28,6 +28,7 @@ export class SqljsEntityManager extends EntityManager {
     /**
      * Loads either the definition from a file (Node.js) or localstorage (browser)
      * or uses the given definition to open a new database.
+     *
      * @param fileNameOrLocalStorageOrData
      */
     async loadDatabase(
@@ -39,6 +40,7 @@ export class SqljsEntityManager extends EntityManager {
     /**
      * Saves the current database to a file (Node.js) or localstorage (browser)
      * if fileNameOrLocalStorage is not set options.location is used.
+     *
      * @param fileNameOrLocalStorage
      */
     async saveDatabase(fileNameOrLocalStorage?: string): Promise<void> {

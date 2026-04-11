@@ -11,7 +11,6 @@ import { Alias } from "./Alias"
 import { JoinAttribute } from "./JoinAttribute"
 import type { QueryBuilder } from "./QueryBuilder"
 import type { QueryBuilderCteOptions } from "./QueryBuilderCte"
-import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import type { SelectQuery } from "./SelectQuery"
 import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
@@ -127,11 +126,6 @@ export class QueryExpressionMap {
     relationIdAttributes: RelationIdAttribute[] = []
 
     /**
-     * Relation count queries.
-     */
-    relationCountAttributes: RelationCountAttribute[] = []
-
-    /**
      * WHERE queries.
      */
     wheres: WhereClause[] = []
@@ -174,7 +168,9 @@ export class QueryExpressionMap {
     /**
      * Use certain index for the query.
      *
+     * @example
      * SELECT * FROM table_name USE INDEX (col1_index, col2_index) WHERE col1=1 AND col2=2 AND col3=3;
+     *
      */
     useIndex?: string
 
@@ -366,7 +362,7 @@ export class QueryExpressionMap {
             this.mainAlias!.hasMetadata &&
             this.options.indexOf("disable-global-order") === -1
         ) {
-            const entityOrderBy = this.mainAlias!.metadata.orderBy || {}
+            const entityOrderBy = this.mainAlias!.metadata.orderBy ?? {}
             return Object.keys(entityOrderBy).reduce((orderBy, key) => {
                 orderBy[this.mainAlias!.name + "." + key] = entityOrderBy[key]
                 return orderBy
@@ -382,6 +378,7 @@ export class QueryExpressionMap {
 
     /**
      * Creates a main alias and adds it to the current expression map.
+     *
      * @param alias
      */
     setMainAlias(alias: Alias): Alias {
@@ -397,6 +394,7 @@ export class QueryExpressionMap {
 
     /**
      * Creates a new alias and adds it to the current expression map.
+     *
      * @param options
      * @param options.type
      * @param options.name
@@ -436,6 +434,7 @@ export class QueryExpressionMap {
     /**
      * Finds alias with the given name.
      * If alias was not found it throw an exception.
+     *
      * @param aliasName
      */
     findAliasByName(aliasName: string): Alias {
@@ -500,9 +499,6 @@ export class QueryExpressionMap {
         )
         map.relationIdAttributes = this.relationIdAttributes.map(
             (relationId) => new RelationIdAttribute(this, relationId),
-        )
-        map.relationCountAttributes = this.relationCountAttributes.map(
-            (relationCount) => new RelationCountAttribute(this, relationCount),
         )
         map.wheres = this.wheres.map((where) => ({ ...where }))
         map.havings = this.havings.map((having) => ({ ...having }))

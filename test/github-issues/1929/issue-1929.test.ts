@@ -52,7 +52,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
             }),
         ))
 
-    it("return column on include in select on findByIds", () =>
+    it("return column on include in select on find with where", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const productRepository = connection.getMongoRepository(Product)
@@ -70,7 +70,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
             }),
         ))
 
-    it("return column on include in select on findByIds ", () =>
+    it("return column on include in select on findOne with where", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const productRepository = connection.getMongoRepository(Product)
