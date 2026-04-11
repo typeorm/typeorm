@@ -168,6 +168,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     *
      * @see https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
     query?: (alias: string) => string
@@ -176,11 +177,13 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * Indicates if date values should be stored and retrieved in UTC timezone
      * instead of local timezone. Only applies to "date" column type.
      * Default value is "false" (uses local timezone for backward compatibility).
+     *
      * @example
      * ```
      * \@Column({ type: "date", utc: true })
      * birthDate: Date
      * ```
+     *
      */
     utc?: boolean
 }

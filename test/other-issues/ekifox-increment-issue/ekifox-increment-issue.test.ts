@@ -38,11 +38,11 @@ describe("other issues > ekifox reported issue with increment", () => {
                 const loadedUser = await connection.manager
                     .createQueryBuilder(User, "user")
                     .where("user.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedUser).not.to.be.null
-                loadedUser!.id.should.be.equal(1)
-                loadedUser!.friendsInvitesCount.should.be.equal(1)
+                loadedUser.id.should.be.equal(1)
+                loadedUser.friendsInvitesCount.should.be.equal(1)
             }),
         ))
 })

@@ -43,6 +43,7 @@ export interface SapDataSourceOptions
          * Defines the maximum time, in milliseconds, to wait for a connection
          * to become available once the specified number of `maxConnectedOrPooled`
          * open connections have been reached (default: 0, no wait).
+         *
          * @remarks Requires `@sap/hana-client` version `2.27` or later.
          */
         readonly maxWaitTimeoutIfPoolExhausted?: number

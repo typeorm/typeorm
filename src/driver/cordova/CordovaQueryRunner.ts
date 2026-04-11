@@ -44,6 +44,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -103,7 +104,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
             const result = new QueryResult()
 
-            if (query.substr(0, 11) === "INSERT INTO") {
+            if (query.startsWith("INSERT INTO")) {
                 result.raw = raw.insertId
             } else {
                 const resultSet = []
@@ -205,6 +206,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     *
      * @param objectLiteral
      * @param startIndex
      */

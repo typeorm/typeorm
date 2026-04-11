@@ -534,28 +534,19 @@ export class SubjectExecutor {
                 InstanceChecker.isMongoEntityManager(this.queryRunner.manager)
             ) {
                 const partialEntity = this.cloneMongoSubjectEntity(subject)
-                if (
-                    subject.metadata.objectIdColumn &&
-                    subject.metadata.objectIdColumn.propertyName
-                ) {
+                if (subject.metadata.objectIdColumn?.propertyName) {
                     delete partialEntity[
                         subject.metadata.objectIdColumn.propertyName
                     ]
                 }
 
-                if (
-                    subject.metadata.createDateColumn &&
-                    subject.metadata.createDateColumn.propertyName
-                ) {
+                if (subject.metadata.createDateColumn?.propertyName) {
                     delete partialEntity[
                         subject.metadata.createDateColumn.propertyName
                     ]
                 }
 
-                if (
-                    subject.metadata.updateDateColumn &&
-                    subject.metadata.updateDateColumn.propertyName
-                ) {
+                if (subject.metadata.updateDateColumn?.propertyName) {
                     partialEntity[
                         subject.metadata.updateDateColumn.propertyName
                     ] = new Date()
@@ -632,9 +623,7 @@ export class SubjectExecutor {
                             )
                         }
                     })
-                    if (!subject.generatedMap) {
-                        subject.generatedMap = {}
-                    }
+                    subject.generatedMap ??= {}
                     Object.assign(subject.generatedMap, updateGeneratedMap)
                 }
             }
@@ -756,37 +745,25 @@ export class SubjectExecutor {
                     )
                 ) {
                     const partialEntity = this.cloneMongoSubjectEntity(subject)
-                    if (
-                        subject.metadata.objectIdColumn &&
-                        subject.metadata.objectIdColumn.propertyName
-                    ) {
+                    if (subject.metadata.objectIdColumn?.propertyName) {
                         delete partialEntity[
                             subject.metadata.objectIdColumn.propertyName
                         ]
                     }
 
-                    if (
-                        subject.metadata.createDateColumn &&
-                        subject.metadata.createDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.createDateColumn?.propertyName) {
                         delete partialEntity[
                             subject.metadata.createDateColumn.propertyName
                         ]
                     }
 
-                    if (
-                        subject.metadata.updateDateColumn &&
-                        subject.metadata.updateDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.updateDateColumn?.propertyName) {
                         partialEntity[
                             subject.metadata.updateDateColumn.propertyName
                         ] = new Date()
                     }
 
-                    if (
-                        subject.metadata.deleteDateColumn &&
-                        subject.metadata.deleteDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.deleteDateColumn?.propertyName) {
                         partialEntity[
                             subject.metadata.deleteDateColumn.propertyName
                         ] = new Date()
@@ -879,37 +856,25 @@ export class SubjectExecutor {
                     )
                 ) {
                     const partialEntity = this.cloneMongoSubjectEntity(subject)
-                    if (
-                        subject.metadata.objectIdColumn &&
-                        subject.metadata.objectIdColumn.propertyName
-                    ) {
+                    if (subject.metadata.objectIdColumn?.propertyName) {
                         delete partialEntity[
                             subject.metadata.objectIdColumn.propertyName
                         ]
                     }
 
-                    if (
-                        subject.metadata.createDateColumn &&
-                        subject.metadata.createDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.createDateColumn?.propertyName) {
                         delete partialEntity[
                             subject.metadata.createDateColumn.propertyName
                         ]
                     }
 
-                    if (
-                        subject.metadata.updateDateColumn &&
-                        subject.metadata.updateDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.updateDateColumn?.propertyName) {
                         partialEntity[
                             subject.metadata.updateDateColumn.propertyName
                         ] = new Date()
                     }
 
-                    if (
-                        subject.metadata.deleteDateColumn &&
-                        subject.metadata.deleteDateColumn.propertyName
-                    ) {
+                    if (subject.metadata.deleteDateColumn?.propertyName) {
                         partialEntity[
                             subject.metadata.deleteDateColumn.propertyName
                         ] = null
@@ -1037,8 +1002,7 @@ export class SubjectExecutor {
                 InstanceChecker.isMongoEntityManager(this.queryRunner.manager)
             ) {
                 if (
-                    subject.metadata.objectIdColumn &&
-                    subject.metadata.objectIdColumn.databaseName &&
+                    subject.metadata.objectIdColumn?.databaseName &&
                     subject.metadata.objectIdColumn.databaseName !==
                         subject.metadata.objectIdColumn.propertyName
                 ) {
@@ -1053,6 +1017,7 @@ export class SubjectExecutor {
     /**
      * Updates all special columns of the saving entities (create date, update date, version, etc.).
      * Also updates nullable columns and columns with default values.
+     *
      * @param subjects
      */
     protected updateSpecialColumnsInInsertedAndUpdatedEntities(
@@ -1143,6 +1108,7 @@ export class SubjectExecutor {
      *
      * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
      * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
+     *
      * @param subjects
      * @param type
      */

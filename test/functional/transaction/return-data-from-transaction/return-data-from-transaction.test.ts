@@ -42,20 +42,23 @@ describe("transaction > return data from transaction", () => {
                         }
                     })
 
-                const post = await dataSource.manager.findOne(Post, {
-                    where: { title: "Post #1" },
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
-                post!.should.be.eql({
+                post.should.be.eql({
                     id: postId,
                     title: "Post #1",
                 })
 
-                const category = await dataSource.manager.findOne(Category, {
-                    where: { name: "Category #1" },
-                })
+                const category = await dataSource.manager.findOneOrFail(
+                    Category,
+                    {
+                        where: { name: "Category #1" },
+                    },
+                )
                 expect(category).not.to.be.null
-                category!.should.be.eql({
+                category.should.be.eql({
                     id: categoryId,
                     name: "Category #1",
                 })
@@ -83,20 +86,23 @@ describe("transaction > return data from transaction", () => {
                         },
                     )
 
-                const post = await dataSource.manager.findOne(Post, {
-                    where: { title: "Post #1" },
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
-                post!.should.be.eql({
+                post.should.be.eql({
                     id: postId,
                     title: "Post #1",
                 })
 
-                const category = await dataSource.manager.findOne(Category, {
-                    where: { name: "Category #1" },
-                })
+                const category = await dataSource.manager.findOneOrFail(
+                    Category,
+                    {
+                        where: { name: "Category #1" },
+                    },
+                )
                 expect(category).not.to.be.null
-                category!.should.be.eql({
+                category.should.be.eql({
                     id: categoryId,
                     name: "Category #1",
                 })

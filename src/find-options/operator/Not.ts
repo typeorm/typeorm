@@ -3,7 +3,10 @@ import { FindOperator } from "../FindOperator"
 /**
  * Find Options Operator.
  * Used to negate expression.
- * Example: { title: not("hello") } will return entities where title not equal to "hello".
+ *
+ * @example
+ * { title: Not("hello") }
+ *
  * @param value
  */
 export function Not<T>(value: T | FindOperator<T>) {

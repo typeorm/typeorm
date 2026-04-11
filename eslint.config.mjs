@@ -39,6 +39,9 @@ export default defineConfig([
             // custom rules
             "@typescript-eslint/consistent-type-exports": "error",
             "@typescript-eslint/consistent-type-imports": "error",
+            "@typescript-eslint/prefer-nullish-coalescing": "error",
+            "@typescript-eslint/prefer-optional-chain": "error",
+            "@typescript-eslint/prefer-string-starts-ends-with": "error",
 
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",
@@ -99,6 +102,7 @@ export default defineConfig([
             "unicorn/prefer-string-replace-all": "error",
         },
     },
+
     jsdoc({
         files: ["src/**/*.ts"],
         config: "flat/recommended-typescript", // change to 'flat/recommended-typescript-error' once warnings are fixed
@@ -106,6 +110,14 @@ export default defineConfig([
         // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
         rules: {
             "jsdoc/valid-types": "error",
+            "jsdoc/tag-lines": [
+                "error",
+                "any",
+                {
+                    startLines: 1,
+                    tags: { example: { lines: "always", count: 1 } },
+                },
+            ],
         },
     }),
 

@@ -31,17 +31,19 @@ describe("github issues > #306 embeddeds with custom column name don't work", ()
 
                 await connection.manager.save(race)
 
-                const loadedRace = await connection.manager.findOneBy(Race, {
-                    name: "National Race",
-                })
-                expect(loadedRace).to.be.not.undefined
-                expect(loadedRace!.id).to.be.not.undefined
-                expect(loadedRace!.duration).to.be.not.undefined
-                loadedRace!.name.should.be.equal("National Race")
-                loadedRace!.duration.should.be.instanceOf(Duration)
-                loadedRace!.duration.durationDays.should.be.equal(1)
-                loadedRace!.duration.durationHours.should.be.equal(10)
-                loadedRace!.duration.durationMinutes.should.be.equal(30)
+                const loadedRace = await connection.manager.findOneByOrFail(
+                    Race,
+                    {
+                        name: "National Race",
+                    },
+                )
+                expect(loadedRace.id).to.be.not.undefined
+                expect(loadedRace.duration).to.be.not.undefined
+                loadedRace.name.should.be.equal("National Race")
+                loadedRace.duration.should.be.instanceOf(Duration)
+                loadedRace.duration.durationDays.should.be.equal(1)
+                loadedRace.duration.durationHours.should.be.equal(10)
+                loadedRace.duration.durationMinutes.should.be.equal(30)
             }),
         ))
 })

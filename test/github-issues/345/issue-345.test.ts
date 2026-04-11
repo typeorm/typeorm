@@ -38,10 +38,10 @@ describe("github issues > #345 Join query on ManyToMany relations not working", 
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "category")
                     .where("category.category_id IN (:...ids)", { ids: [21] })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.categories).not.to.be.undefined
+                expect(loadedPost.categories).not.to.be.undefined
             }),
         ))
 })

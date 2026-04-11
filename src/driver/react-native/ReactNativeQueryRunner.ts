@@ -44,6 +44,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -116,7 +117,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                         }
 
                         // return id of inserted row, if query was insert statement.
-                        if (query.substr(0, 11) === "INSERT INTO") {
+                        if (query.startsWith("INSERT INTO")) {
                             result.raw = raw.insertId
                         }
 
@@ -160,6 +161,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     *
      * @param objectLiteral
      * @param startIndex
      */

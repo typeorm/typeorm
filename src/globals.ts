@@ -11,8 +11,7 @@ export function getMetadataArgsStorage(): MetadataArgsStorage {
     // decorators against a locally installed copy, entities remain available in
     // migrations and CLI-related operations.
     const globalScope = PlatformTools.getGlobalVariable()
-    if (!globalScope.typeormMetadataArgsStorage)
-        globalScope.typeormMetadataArgsStorage = new MetadataArgsStorage()
+    globalScope.typeormMetadataArgsStorage ??= new MetadataArgsStorage()
 
     return globalScope.typeormMetadataArgsStorage
 }
