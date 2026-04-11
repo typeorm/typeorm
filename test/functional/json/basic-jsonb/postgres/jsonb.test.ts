@@ -65,13 +65,12 @@ describe("jsonb type", () => {
                 const record = new Record()
                 record.data = { foo: "bar" }
                 const persistedRecord = await recordRepo.save(record)
-                const foundRecord = await recordRepo.findOneBy({
+                const foundRecord = await recordRepo.findOneByOrFail({
                     id: persistedRecord.id,
                 })
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!.data.foo).to.eq("bar")
-                expect(foundRecord!.dataWithDefaultNull).to.be.null
-                expect(foundRecord!.dataWithDefaultObject).to.eql({
+                expect(foundRecord.data.foo).to.eq("bar")
+                expect(foundRecord.dataWithDefaultNull).to.be.null
+                expect(foundRecord.dataWithDefaultObject).to.eql({
                     hello: "world'O",
                     foo: "bar",
                 })
@@ -85,12 +84,11 @@ describe("jsonb type", () => {
                 const record = new Record()
                 record.data = `foo`
                 const persistedRecord = await recordRepo.save(record)
-                const foundRecord = await recordRepo.findOneBy({
+                const foundRecord = await recordRepo.findOneByOrFail({
                     id: persistedRecord.id,
                 })
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!.data).to.be.a("string")
-                expect(foundRecord!.data).to.eq("foo")
+                expect(foundRecord.data).to.be.a("string")
+                expect(foundRecord.data).to.eq("foo")
             }),
         ))
 
@@ -101,11 +99,10 @@ describe("jsonb type", () => {
                 const record = new Record()
                 record.data = [1, `2`, { a: 3 }]
                 const persistedRecord = await recordRepo.save(record)
-                const foundRecord = await recordRepo.findOneBy({
+                const foundRecord = await recordRepo.findOneByOrFail({
                     id: persistedRecord.id,
                 })
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!.data).to.deep.include.members([
+                expect(foundRecord.data).to.deep.include.members([
                     1,
                     "2",
                     { a: 3 },
@@ -145,6 +142,48 @@ describe("jsonb type", () => {
             }),
         ))
 
+    it("should persist json and jsonb arrays of complex objects correctly", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const recordRepo = dataSource.getRepository(Record)
+                const record = new Record()
+                record.data = [
+                    {
+                        data1: "hello1",
+                        data2: "hello2",
+                        isActive: true,
+                        extra: { nested: "value1", count: 42 },
+                    },
+                    {
+                        data1: "hi1",
+                        data2: "hi2",
+                        isActive: false,
+                        extra: { nested: "value2", count: 99 },
+                    },
+                ]
+                record.config = [
+                    {
+                        id: 1,
+                        option1: "1",
+                        isActive: true,
+                        extra: { data1: "one", data2: "two" },
+                    },
+                    {
+                        id: 2,
+                        option1: "2",
+                        isActive: false,
+                        extra: { data1: "one", data2: "two" },
+                    },
+                ]
+                const persistedRecord = await recordRepo.save(record)
+                const foundRecord = await recordRepo.findOneByOrFail({
+                    id: persistedRecord.id,
+                })
+                expect(foundRecord.data).to.eql(record.data)
+                expect(foundRecord.config).to.eql(record.config)
+            }),
+        ))
+
     it("should not create new migrations when everything is equivalent", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
@@ -165,11 +204,10 @@ describe("jsonb type", () => {
                 record.data = { qoute: "He said, O'Brian" }
                 const savedRecord = await recordRepo.save(record)
 
-                const foundRecord = await recordRepo.findOneBy({
+                const foundRecord = await recordRepo.findOneByOrFail({
                     id: savedRecord.id,
                 })
-                expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!).to.deep.include({
+                expect(foundRecord).to.deep.include({
                     data: {
                         qoute: "He said, O'Brian",
                     },

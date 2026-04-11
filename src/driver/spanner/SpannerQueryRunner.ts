@@ -22,6 +22,7 @@ import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { SpannerDriver } from "./SpannerDriver"
@@ -56,7 +57,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     constructor(driver: SpannerDriver, mode: ReplicationMode) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.mode = mode
         this.broadcaster = new Broadcaster(this)
     }
@@ -95,9 +96,17 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Starts transaction.
+     *
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
+        validateIsolationLevel(
+            this.driver.supportedIsolationLevels,
+            isolationLevel,
+        )
+
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
@@ -108,7 +117,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.connect()
         await this.sessionTransaction.begin()
-        this.connection.logger.logQuery("START TRANSACTION")
+        this.dataSource.logger.logQuery("START TRANSACTION")
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -124,7 +133,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         await this.sessionTransaction.commit()
-        this.connection.logger.logQuery("COMMIT")
+        this.dataSource.logger.logQuery("COMMIT")
         this.isTransactionActive = false
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -141,7 +150,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         await this.sessionTransaction.rollback()
-        this.connection.logger.logQuery("ROLLBACK")
+        this.dataSource.logger.logQuery("ROLLBACK")
         this.isTransactionActive = false
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
@@ -149,6 +158,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -162,7 +172,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.connect()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
@@ -234,7 +244,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             )
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
@@ -245,7 +255,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             result.raw = rawResult
             result.records = rawResult ? rawResult[0] : []
-            if (rawResult && rawResult[1] && rawResult[1].rowCountExact) {
+            if (rawResult?.[1]?.rowCountExact) {
                 result.affected = parseInt(rawResult[1].rowCountExact)
             }
 
@@ -255,7 +265,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return result
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -281,13 +291,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Used for creating/altering/dropping tables, columns, indexes, etc.
      *
      * DDL changing queries should be executed by `updateSchema()` method.
+     *
      * @param query
      * @param parameters
      */
     async updateDDL(query: string, parameters?: any[]): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         try {
             const queryStartTime = Date.now()
             const [operation] =
@@ -302,14 +313,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             )
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
                     this,
                 )
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -321,6 +332,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Returns raw data stream.
+     *
      * @param query
      * @param parameters
      * @param onEnd
@@ -335,7 +347,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         try {
-            this.driver.connection.logger.logQuery(query, parameters, this)
+            this.driver.dataSource.logger.logQuery(query, parameters, this)
             const request = {
                 sql: query,
                 params: parameters
@@ -358,7 +370,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return stream
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -378,6 +390,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     *
      * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
@@ -386,6 +399,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if database with the given name exist.
+     *
      * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
@@ -405,6 +419,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if schema with the given name exist.
+     *
      * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
@@ -426,6 +441,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if table with the given name exist in the database.
+     *
      * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
@@ -441,6 +457,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if column with the given name exist in the given table.
+     *
      * @param tableOrName
      * @param columnName
      */
@@ -461,6 +478,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new database.
      * Note: Spanner does not support database creation inside a transaction block.
+     *
      * @param database
      * @param ifNotExists
      */
@@ -474,14 +492,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (databaseAlreadyExists) return Promise.resolve()
         }
 
-        const up = `CREATE DATABASE "${database}"`
-        const down = `DROP DATABASE "${database}"`
+        const escaped = this.driver.escape(database)
+        const up = `CREATE DATABASE ${escaped}`
+        const down = `DROP DATABASE ${escaped}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
     /**
      * Drops database.
      * Note: Spanner does not support database dropping inside a transaction block.
+     *
      * @param database
      * @param ifExists
      */
@@ -491,13 +511,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (!databaseExists) return
         }
 
-        const up = `DROP DATABASE "${database}"`
-        const down = `CREATE DATABASE "${database}"`
+        const escaped = this.driver.escape(database)
+        const up = `DROP DATABASE ${escaped}`
+        const down = `CREATE DATABASE ${escaped}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
     /**
      * Creates a new table schema.
+     *
      * @param schemaPath
      * @param ifNotExists
      */
@@ -510,6 +532,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops table schema.
+     *
      * @param schemaPath
      * @param ifExists
      * @param isCascade
@@ -524,6 +547,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new table.
+     *
      * @param table
      * @param ifNotExists
      * @param createForeignKeys
@@ -555,12 +579,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(
-                        table,
-                        index.columnNames,
-                        index.where,
-                    )
+                index.name ??= this.dataSource.namingStrategy.indexName(
+                    table,
+                    index.columnNames,
+                    index.where,
+                )
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(table, index))
             })
@@ -594,6 +617,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the table.
+     *
      * @param target
      * @param ifExists
      * @param dropForeignKeys
@@ -662,6 +686,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new view.
+     *
      * @param view
      */
     async createView(view: View): Promise<void> {
@@ -676,6 +701,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the view.
+     *
      * @param target
      * @param ifExists
      */
@@ -700,6 +726,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Renames the given table.
+     *
      * @param oldTableOrName
      * @param newTableName
      */
@@ -714,6 +741,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new column from the column in the table.
+     *
      * @param tableOrName
      * @param column
      */
@@ -755,7 +783,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.dropIndexSql(table, columnIndex))
         } else if (column.isUnique) {
             const uniqueIndex = new TableIndex({
-                name: this.connection.namingStrategy.indexName(table, [
+                name: this.dataSource.namingStrategy.indexName(table, [
                     column.name,
                 ]),
                 columnNames: [column.name],
@@ -799,6 +827,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new columns from the column in the table.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -813,6 +842,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Renames column in the given table.
+     *
      * @param tableOrName
      * @param oldTableColumnOrName
      * @param newTableColumnOrName
@@ -848,6 +878,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     *
      * @param tableOrName
      * @param oldTableColumnOrName
      * @param newColumn
@@ -966,7 +997,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueIndex = new TableIndex({
-                        name: this.connection.namingStrategy.indexName(table, [
+                        name: this.dataSource.namingStrategy.indexName(table, [
                             newColumn.name,
                         ]),
                         columnNames: [newColumn.name],
@@ -1017,6 +1048,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     *
      * @param tableOrName
      * @param changedColumns
      */
@@ -1031,6 +1063,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops column in the table.
+     *
      * @param tableOrName
      * @param columnOrName
      * @param ifExists
@@ -1130,6 +1163,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the columns in the table.
+     *
      * @param tableOrName
      * @param columns
      * @param ifExists
@@ -1148,6 +1182,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new primary key.
      *
      * Not supported in Spanner.
+     *
      * @param tableOrName
      * @param columnNames
      * @see https://cloud.google.com/spanner/docs/schema-and-data-model#notes_about_key_columns
@@ -1163,6 +1198,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Updates composite primary keys.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -1179,6 +1215,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops a primary key.
      *
      * Not supported in Spanner.
+     *
      * @param tableOrName
      * @param constraintName
      * @param ifExists
@@ -1196,6 +1233,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates new unique constraint.
+     *
      * @param tableOrName
      * @param uniqueConstraint
      */
@@ -1210,6 +1248,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates new unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      */
@@ -1224,6 +1263,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops unique constraint.
+     *
      * @param tableOrName
      * @param uniqueOrName
      * @param ifExists
@@ -1240,6 +1280,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      * @param ifExists
@@ -1256,6 +1297,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new check constraint.
+     *
      * @param tableOrName
      * @param checkConstraint
      */
@@ -1269,12 +1311,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : await this.getCachedTable(tableOrName)
 
         // new check constraint may be passed without name. In this case we generate unique name manually.
-        if (!checkConstraint.name)
-            checkConstraint.name =
-                this.connection.namingStrategy.checkConstraintName(
-                    table,
-                    checkConstraint.expression!,
-                )
+        checkConstraint.name ??=
+            this.dataSource.namingStrategy.checkConstraintName(
+                table,
+                checkConstraint.expression!,
+            )
 
         const up = this.createCheckConstraintSql(table, checkConstraint)
         const down = this.dropCheckConstraintSql(table, checkConstraint)
@@ -1284,6 +1325,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates new check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      */
@@ -1299,6 +1341,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraint.
+     *
      * @param tableOrName
      * @param checkOrName
      * @param ifExists
@@ -1331,6 +1374,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      * @param ifExists
@@ -1348,6 +1392,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates new exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionConstraint
      */
@@ -1362,6 +1407,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates new exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      */
@@ -1376,6 +1422,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionOrName
      * @param ifExists
@@ -1392,6 +1439,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      * @param ifExists
@@ -1408,6 +1456,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new foreign key.
+     *
      * @param tableOrName
      * @param foreignKey
      */
@@ -1421,13 +1470,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : await this.getCachedTable(tableOrName)
 
         // new FK may be passed without name. In this case we generate FK name manually.
-        if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
@@ -1437,6 +1485,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new foreign keys.
+     *
      * @param tableOrName
      * @param foreignKeys
      */
@@ -1451,6 +1500,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign key from the table.
+     *
      * @param tableOrName
      * @param foreignKeyOrName
      * @param ifExists
@@ -1475,14 +1525,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
         }
 
-        if (!foreignKey.name) {
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
-        }
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
@@ -1492,6 +1540,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign keys from the table.
+     *
      * @param tableOrName
      * @param foreignKeys
      * @param ifExists
@@ -1508,6 +1557,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new index.
+     *
      * @param tableOrName
      * @param index
      */
@@ -1521,7 +1571,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -1531,6 +1581,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new indices
+     *
      * @param tableOrName
      * @param indices
      */
@@ -1545,6 +1596,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops an index from the table.
+     *
      * @param tableOrName
      * @param indexOrName
      * @param ifExists
@@ -1570,7 +1622,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -1580,6 +1632,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops an indices from the table.
+     *
      * @param tableOrName
      * @param indices
      * @param ifExists
@@ -1597,6 +1650,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Clears all table contents.
      * Spanner does not support TRUNCATE TABLE statement, so we use DELETE FROM.
+     *
      * @param tableName
      * @param options
      * @param options.cascade
@@ -1760,23 +1814,17 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     *
      * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
         const dbTables: { TABLE_NAME: string }[] = []
 
-        if (!tableNames || !tableNames.length) {
-            // Since we don't have any of this data we have to do a scan
-            const tablesSql =
-                `SELECT \`TABLE_NAME\` ` +
-                `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
-                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
-            dbTables.push(...(await this.query(tablesSql)))
-        } else {
+        if (tableNames?.length) {
             const placeholders = tableNames
                 .map((_, i) => `@param${i}`)
                 .join(", ")
@@ -1787,6 +1835,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `AND \`TABLE_NAME\` IN (${placeholders})`
 
             dbTables.push(...(await this.query(tablesSql, tableNames)))
+        } else {
+            // Since we don't have any of this data we have to do a scan
+            const tablesSql =
+                `SELECT \`TABLE_NAME\` ` +
+                `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
+                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
+            dbTables.push(...(await this.query(tablesSql)))
         }
 
         // if tables were not found in the db, no need to proceed
@@ -1876,15 +1931,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                             )
 
                             const tableMetadata =
-                                this.connection.entityMetadatas.find(
+                                this.dataSource.entityMetadatas.find(
                                     (metadata) =>
                                         this.getTablePath(table) ===
                                         this.getTablePath(metadata),
                                 )
                             const hasIgnoredIndex =
                                 columnUniqueIndices.length > 0 &&
-                                tableMetadata &&
-                                tableMetadata.indices.some((index) => {
+                                tableMetadata?.indices.some((index) => {
                                     return columnUniqueIndices.some(
                                         (uniqueIndex) => {
                                             return (
@@ -1958,7 +2012,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                     asExpressionQuery.parameters,
                                 )
 
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""
@@ -2072,6 +2126,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create table sql.
+     *
      * @param table
      * @param createForeignKeys
      */
@@ -2102,7 +2157,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (!isUniqueIndexExist && !isUniqueConstraintExist)
                     table.indices.push(
                         new TableIndex({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -2133,12 +2188,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (table.checks.length > 0) {
             const checksSql = table.checks
                 .map((check) => {
-                    const checkName = check.name
-                        ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
-                              table,
-                              check.expression!,
-                          )
+                    const checkName =
+                        check.name ??
+                        this.dataSource.namingStrategy.checkConstraintName(
+                            table,
+                            check.expression!,
+                        )
                     return `CONSTRAINT \`${checkName}\` CHECK (${check.expression})`
                 })
                 .join(", ")
@@ -2152,13 +2207,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const columnNames = fk.columnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
-                            table,
-                            fk.columnNames,
-                            this.getTablePath(fk),
-                            fk.referencedColumnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        table,
+                        fk.columnNames,
+                        this.getTablePath(fk),
+                        fk.referencedColumnNames,
+                    )
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
@@ -2191,6 +2245,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop table sql.
+     *
      * @param tableOrPath
      */
     protected dropTableSql(tableOrPath: Table | string): Query {
@@ -2204,7 +2259,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const expression =
             typeof view.expression === "string"
                 ? view.expression
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return new Query(
             `CREATE ${materializedClause}VIEW ${viewName} SQL SECURITY INVOKER AS ${expression}`,
         )
@@ -2219,7 +2274,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return this.insertTypeormMetadataSql({
             type,
             schema,
@@ -2230,6 +2285,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop view sql.
+     *
      * @param view
      */
     protected dropViewSql(view: View): Query {
@@ -2241,6 +2297,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds remove view sql.
+     *
      * @param view
      */
     protected async deleteViewDefinitionSql(view: View): Promise<Query> {
@@ -2254,6 +2311,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create index sql.
+     *
      * @param table
      * @param index
      */
@@ -2274,6 +2332,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop index sql.
+     *
      * @param table
      * @param indexOrName
      */
@@ -2288,6 +2347,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create check constraint sql.
+     *
      * @param table
      * @param checkConstraint
      */
@@ -2304,6 +2364,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop check constraint sql.
+     *
      * @param table
      * @param checkOrName
      */
@@ -2322,6 +2383,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create foreign key sql.
+     *
      * @param table
      * @param foreignKey
      */
@@ -2348,6 +2410,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop foreign key sql.
+     *
      * @param table
      * @param foreignKeyOrName
      */
@@ -2368,6 +2431,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Escapes given table or view path.
+     *
      * @param target
      */
     protected escapePath(target: Table | View | string): string {
@@ -2377,12 +2441,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds a part of query to create/change a column.
+     *
      * @param column
      */
     protected buildCreateColumnSql(column: TableColumn) {
         let c = `${this.driver.escape(
             column.name,
-        )} ${this.connection.driver.createFullType(column)}`
+        )} ${this.dataSource.driver.createFullType(column)}`
 
         // Spanner supports only STORED generated column type
         if (column.generatedType === "STORED" && column.asExpression) {
@@ -2396,6 +2461,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Executes sql used special for schema build.
+     *
      * @param upQueries
      * @param downQueries
      */
@@ -2432,6 +2498,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Change table comment.
+     *
      * @param tableOrName
      * @param comment
      */
