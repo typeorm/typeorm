@@ -1,13 +1,14 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
-import { ObjectType } from "../../common/ObjectType"
-import { RelationOptions } from "../options/RelationOptions"
+import type { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
+import type { ObjectType } from "../../common/ObjectType"
+import type { RelationOptions } from "../options/RelationOptions"
 import { ObjectUtils } from "../../util/ObjectUtils"
 
 /**
  * A many-to-one relation allows creating the type of relation where Entity1 can have a single instance of Entity2, but
  * Entity2 can have multiple instances of Entity1. Entity1 is the owner of the relationship, and stores the id of
  * Entity2 on its side of the relation.
+ *
  * @param typeFunctionOrTarget
  * @param options
  */
@@ -20,6 +21,7 @@ export function ManyToOne<T>(
  * A many-to-one relation allows creating the type of relation where Entity1 can have a single instance of Entity2, but
  * Entity2 can have multiple instances of Entity1. Entity1 is the owner of the relationship, and stores the id of
  * Entity2 on its side of the relation.
+ *
  * @param typeFunctionOrTarget
  * @param inverseSide
  * @param options
@@ -34,6 +36,7 @@ export function ManyToOne<T>(
  * A many-to-one relation allows creating the type of relation where Entity1 can have a single instance of Entity2, but
  * Entity2 can have multiple instances of Entity1. Entity1 is the owner of the relationship, and stores the id of
  * Entity2 on its side of the relation.
+ *
  * @param typeFunctionOrTarget
  * @param inverseSideOrOptions
  * @param options
@@ -52,10 +55,10 @@ export function ManyToOne<T>(
     }
 
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        options ??= {} as RelationOptions
 
         // Now try to determine if it is a lazy relation.
-        let isLazy = options && options.lazy === true
+        let isLazy = options?.lazy === true
         if (!isLazy && Reflect && (Reflect as any).getMetadata) {
             // automatic determination
             const reflectedType = (Reflect as any).getMetadata(

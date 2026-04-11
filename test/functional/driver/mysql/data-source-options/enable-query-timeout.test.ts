@@ -1,8 +1,8 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
+import type { TestingOptions } from "../../../../utils/test-utils"
 import {
-    TestingOptions,
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,

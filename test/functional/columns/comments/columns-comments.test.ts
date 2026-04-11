@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,22 +9,21 @@ import {
 import { Test } from "./entity/Test"
 
 describe("columns > comments", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Test],
-                // Only supported on cockroachdb, mysql, postgres, and sap
-                enabledDrivers: ["cockroachdb", "mysql", "postgres", "sap"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Test],
+            // Only supported on cockroachdb, mysql, postgres, and sap
+            enabledDrivers: ["cockroachdb", "mysql", "postgres", "sap"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist comments of different types to the database", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const table = (await connection
+            dataSources.map(async (dataSource) => {
+                const table = (await dataSource
                     .createQueryRunner()
                     .getTable("test"))!
 

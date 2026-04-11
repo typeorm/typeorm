@@ -1,4 +1,4 @@
-import { LogLevel } from "./Logger"
+import type { LogLevel } from "./Logger"
 
 /**
  * Logging options.
