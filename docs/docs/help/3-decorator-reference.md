@@ -246,9 +246,9 @@ Learn more about [entity columns](../entity/1-entities.md#entity-columns).
 
 #### `@ObjectIdColumn`
 
-Marks a property in your entity as ObjectId.
+Marks a property in your entity as `ObjectId`.
 This decorator is only used in MongoDB.
-Every entity in MongoDB must have a ObjectId column.
+Every entity in MongoDB must have an `ObjectId` column.
 Example:
 
 ```typescript
@@ -587,7 +587,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeInsert`
 
@@ -605,7 +605,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterInsert`
 
@@ -623,7 +623,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeUpdate`
 
@@ -641,7 +641,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterUpdate`
 
@@ -659,7 +659,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeRemove`
 
@@ -677,7 +677,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterRemove`
 
@@ -695,7 +695,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeSoftRemove`
 
@@ -713,7 +713,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterSoftRemove`
 
@@ -731,7 +731,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeRecover`
 
@@ -749,7 +749,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterRecover`
 
@@ -767,7 +767,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@EventSubscriber`
 
@@ -809,7 +809,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
 }
 ```
 
-Learn more about [subscribers](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [subscribers](../listeners-and-subscribers.md).
 
 ## Other decorators
 
@@ -852,7 +852,7 @@ export class User {
 }
 ```
 
-Learn more about [indices](../advanced-topics/3-indices.md).
+Learn more about [indexes](../indexes.md).
 
 #### `@Unique`
 
@@ -879,7 +879,7 @@ export class User {
 }
 ```
 
-> Note: MySQL stores unique constraints as unique indices
+> Note: MySQL stores unique constraints as unique indexes
 
 #### `@Check`
 
