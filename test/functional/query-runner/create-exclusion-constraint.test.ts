@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, Table } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,22 +9,22 @@ import {
 import { TableExclusion } from "../../../src/schema-builder/table/TableExclusion"
 
 describe("query runner > create exclusion constraint", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"], // Only PostgreSQL supports exclusion constraints.
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create exclusion constraint and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "question",
@@ -53,7 +54,7 @@ describe("query runner > create exclusion constraint", () => {
                 // clear sqls in memory to avoid removing tables when down queries executed.
                 queryRunner.clearSqlMemory()
 
-                const driver = connection.driver
+                const driver = dataSource.driver
                 const exclusion1 = new TableExclusion({
                     expression: `USING gist (${driver.escape("name")} WITH =)`,
                 })

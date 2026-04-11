@@ -4,36 +4,35 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { assert } from "chai"
 
 describe("github issues > #5704 Many-to-many gives error ER_DUP_ENTRY everytime I save. This one also related to inverseJoinColumn.", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
-                enabledDrivers: ["mysql"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+            enabledDrivers: ["mysql"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work as expected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postName = "post for issue #5704"
                 const catName = "cat for issue #5704"
 
-                let post1 = await connection.manager.findOne(Post, {
-                    where: { title: postName },
+                let post1 = await connection.manager.findOneBy(Post, {
+                    title: postName,
                 })
 
-                let category1 = await connection.manager.findOne(Category, {
-                    where: { name: catName },
+                let category1 = await connection.manager.findOneBy(Category, {
+                    name: catName,
                 })
 
                 if (!category1) {

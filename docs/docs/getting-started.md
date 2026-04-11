@@ -32,7 +32,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 - Unidirectional, bidirectional, and self-referenced relations.
 - Supports multiple inheritance patterns.
 - Cascades.
-- Indices.
+- Indexes.
 - Transactions.
 - [Migrations](/docs/migrations/why) with automatic generation.
 - Connection pooling.
@@ -1188,8 +1188,6 @@ There are a few repositories that you can clone and start with:
 
 There are several extensions that simplify working with TypeORM and integrating it with other modules:
 
-- [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
-- [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 - Models generation from the existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
 - Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
 - ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
