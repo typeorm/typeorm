@@ -10,15 +10,13 @@ import { Counters } from "./entity/Counters"
 
 describe("decorators > embedded", () => {
     let dataSources: DataSource[]
-    beforeEach(() =>
-        createTestingConnections({
+    before(async () => {
+        dataSources = await createTestingConnections({
             entities: [Post, Counters],
-        }).then((all) => {
-            dataSources = all
-        }),
-    )
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    afterEach(() => closeTestingConnections(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("basic functionality", function () {
         it("should persist and load entities with embeddeds properly", () =>

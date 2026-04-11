@@ -34,10 +34,3 @@ export type FindOptionsSelect<Entity> = {
         ? unknown
         : FindOptionsSelectProperty<NonNullable<Entity[P]>>
 }
-
-/**
- * Property paths (column names) to be selected by "find" defined as string.
- * Old selection mechanism in TypeORM.
- * @deprecated will be removed in the next version, use FindOptionsSelect type notation instead
- */
-export type FindOptionsSelectByString<Entity> = (keyof Entity)[]

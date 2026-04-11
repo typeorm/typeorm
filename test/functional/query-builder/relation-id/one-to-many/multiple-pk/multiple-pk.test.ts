@@ -95,11 +95,11 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                     .loadRelationIdAndMap("post.categoryIds", "post.categories")
                     .where("post.id = :id", { id: 1 })
                     .andWhere("post.authorId = :authorId", { authorId: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.eql([])
-                expect(loadedPost!.categoryIds[0]).to.be.eql({ id: 1, code: 1 })
-                expect(loadedPost!.categoryIds[1]).to.be.eql({ id: 2, code: 2 })
+                expect(loadedPost.categoryIds).to.not.be.eql([])
+                expect(loadedPost.categoryIds[0]).to.be.eql({ id: 1, code: 1 })
+                expect(loadedPost.categoryIds[1]).to.be.eql({ id: 2, code: 2 })
             }),
         ))
 
@@ -164,11 +164,11 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                     )
                     .where("category.id = :id", { id: 1 })
                     .andWhere("category.code = :code", { code: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.imageIds).to.not.be.eql([])
-                expect(loadedCategory!.imageIds[0]).to.be.equal(1)
-                expect(loadedCategory!.imageIds[1]).to.be.equal(2)
+                expect(loadedCategory.imageIds).to.not.be.eql([])
+                expect(loadedCategory.imageIds[0]).to.be.equal(1)
+                expect(loadedCategory.imageIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -310,10 +310,10 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                     )
                     .where("post.id = :id", { id: 1 })
                     .andWhere("post.authorId = :authorId", { authorId: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.eql([])
-                expect(loadedPost!.categoryIds[0]).to.be.eql({ id: 2, code: 1 })
+                expect(loadedPost.categoryIds).to.not.be.eql([])
+                expect(loadedPost.categoryIds[0]).to.be.eql({ id: 2, code: 1 })
             }),
         ))
 
@@ -434,15 +434,15 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                     .where("post.id = :id", { id: 1 })
                     .andWhere("post.authorId = :authorId", { authorId: 1 })
                     .orderBy("category.id")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.eql([])
-                expect(loadedPost!.categoryIds[0]).to.be.eql({ id: 1, code: 1 })
-                expect(loadedPost!.categories).to.not.be.eql([])
-                expect(loadedPost!.categories[0].imageIds).to.not.be.eql([])
-                expect(loadedPost!.categories[0].imageIds.length).to.be.equal(2)
-                expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1)
-                expect(loadedPost!.categories[0].imageIds[1]).to.be.equal(2)
+                expect(loadedPost.categoryIds).to.not.be.eql([])
+                expect(loadedPost.categoryIds[0]).to.be.eql({ id: 1, code: 1 })
+                expect(loadedPost.categories).to.not.be.eql([])
+                expect(loadedPost.categories[0].imageIds).to.not.be.eql([])
+                expect(loadedPost.categories[0].imageIds.length).to.be.equal(2)
+                expect(loadedPost.categories[0].imageIds[0]).to.be.equal(1)
+                expect(loadedPost.categories[0].imageIds[1]).to.be.equal(2)
             }),
         ))
 })

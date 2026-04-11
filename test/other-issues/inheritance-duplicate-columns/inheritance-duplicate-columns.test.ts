@@ -27,11 +27,14 @@ describe("other issues > double inheritance produces multiple duplicated columns
                 await connection.manager.save(post)
 
                 // check if it was inserted correctly
-                const loadedPost = await connection.manager.findOneBy(Post, {
-                    id: post.id,
-                })
+                const loadedPost = await connection.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: post.id,
+                    },
+                )
                 expect(loadedPost).not.to.be.null
-                loadedPost!.title.should.be.equal("hello")
+                loadedPost.title.should.be.equal("hello")
             }),
         ))
 })

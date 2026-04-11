@@ -69,6 +69,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Builds a complete entity metadatas for the given entity classes.
+     *
      * @param entityClasses
      */
     build(entityClasses?: Function[]): EntityMetadata[] {
@@ -440,6 +441,7 @@ export class EntityMetadataBuilder {
     /**
      * Creates entity metadata from the given table args.
      * Creates column, relation, etc. metadatas for everything this entity metadata owns.
+     *
      * @param tableArgs
      */
     protected createEntityMetadata(
@@ -461,7 +463,7 @@ export class EntityMetadataBuilder {
         // if single table inheritance used, we need to copy all children columns in to parent table
         let singleTableChildrenTargets: any[]
         if (
-            (tableInheritance && tableInheritance.pattern === "STI") ||
+            tableInheritance?.pattern === "STI" ||
             tableArgs.type === "entity-child"
         ) {
             singleTableChildrenTargets = this.metadataArgsStorage
@@ -473,7 +475,7 @@ export class EntityMetadataBuilder {
         }
 
         return new EntityMetadata({
-            connection: this.dataSource,
+            dataSource: this.dataSource,
             args: tableArgs,
             inheritanceTree: inheritanceTree,
             tableTree: tableTree,
@@ -560,13 +562,12 @@ export class EntityMetadataBuilder {
                             c.propertyName === args.propertyName &&
                             c.target === entityMetadata.target,
                     )
-                    if (childArgs && childArgs.options.default) {
+                    if (childArgs?.options.default) {
                         args.options.default = childArgs.options.default
                     }
                 }
 
                 const column = new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata,
                     args,
                 })
@@ -584,18 +585,15 @@ export class EntityMetadataBuilder {
 
         // for table inheritance we need to add a discriminator column
         //
-        if (entityInheritance && entityInheritance.column) {
+        if (entityInheritance?.column) {
             const discriminatorColumnName =
-                entityInheritance.column && entityInheritance.column.name
-                    ? entityInheritance.column.name
-                    : "type"
+                entityInheritance.column?.name ?? "type"
             let discriminatorColumn = entityMetadata.ownColumns.find(
                 (column) => column.propertyName === discriminatorColumnName,
             )
             if (!discriminatorColumn) {
                 discriminatorColumn = new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     args: {
                         target: entityMetadata.target,
                         mode: "virtual",
@@ -655,8 +653,7 @@ export class EntityMetadataBuilder {
         if (entityMetadata.treeType === "materialized-path") {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     materializedPath: true,
                     args: {
                         target: entityMetadata.target,
@@ -675,7 +672,6 @@ export class EntityMetadataBuilder {
             const { left, right } = namingStrategy.nestedSetColumnNames
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     nestedSetLeft: true,
                     args: {
@@ -693,8 +689,7 @@ export class EntityMetadataBuilder {
             )
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     nestedSetRight: true,
                     args: {
                         target: entityMetadata.target,
@@ -836,6 +831,7 @@ export class EntityMetadataBuilder {
     /**
      * Creates from the given embedded metadata args real embedded metadatas with its columns and relations,
      * and does the same for all its sub-embeddeds (goes recursively).
+     *
      * @param entityMetadata
      * @param embeddedArgs
      */
@@ -857,7 +853,6 @@ export class EntityMetadataBuilder {
                 .filterColumns(targets)
                 .map((args) => {
                     return new ColumnMetadata({
-                        connection: this.dataSource,
                         entityMetadata,
                         embeddedMetadata,
                         args,
@@ -918,6 +913,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Computes all entity metadata's computed properties, and all its sub-metadatas (relations, columns, embeds, etc).
+     *
      * @param entityMetadata
      */
     protected computeEntityMetadataStep2(entityMetadata: EntityMetadata) {
@@ -1090,6 +1086,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Computes entity metadata's relations inverse side properties.
+     *
      * @param entityMetadata
      * @param entityMetadatas
      */
@@ -1130,6 +1127,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Creates indices for the table of single table inheritance.
+     *
      * @param entityMetadata
      */
     protected createKeysForTableInheritance(entityMetadata: EntityMetadata) {
@@ -1162,6 +1160,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Creates from the given foreign key metadata args real foreign key metadatas.
+     *
      * @param entityMetadata
      * @param entityMetadatas
      */

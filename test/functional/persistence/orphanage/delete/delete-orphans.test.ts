@@ -66,12 +66,12 @@ describe("persistence > orphanage > delete", () => {
         })
 
         it("should retain a Post on the Category", async () => {
-            const category = await categoryRepository.findOneBy({
+            const category = await categoryRepository.findOneByOrFail({
                 id: categoryId,
             })
             expect(category).not.to.be.undefined
-            expect(category!.posts).to.have.lengthOf(1)
-            expect(category!.posts[0].id).to.equal(1)
+            expect(category.posts).to.have.lengthOf(1)
+            expect(category.posts[0].id).to.equal(1)
         })
 
         it("should delete the orphaned Post from the database", async () => {

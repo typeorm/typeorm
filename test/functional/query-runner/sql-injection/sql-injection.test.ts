@@ -61,35 +61,7 @@ describe("query runner > sql injection", () => {
         }
     }
 
-    // TODO: DDL methods interpolate identifiers directly into SQL using
-    // double-quote wrapping (e.g. CREATE DATABASE "${name}"), which is
-    // vulnerable to injection via inputs containing double quotes.
-    // Additionally, MSSQL's renameTable uses sp_rename with string
-    // interpolation. Skipped until identifier escaping is fixed across
-    // all drivers.
-    describe.skip("DDL methods", () => {
-        describe("clearTable", () => {
-            for (const malicious of maliciousInputs) {
-                it(`should prevent injection with: ${malicious}`, () =>
-                    Promise.all(
-                        dataSources.map(async (dataSource) => {
-                            if (dataSource.driver.options.type === "mongodb")
-                                return
-
-                            const queryRunner = dataSource.createQueryRunner()
-                            try {
-                                await queryRunner.clearTable(malicious)
-                            } catch {
-                                // expected to throw on invalid table name
-                            } finally {
-                                await verifyIntegrity(dataSource)()
-                                await queryRunner.release()
-                            }
-                        }),
-                    ))
-            }
-        })
-
+    describe("DDL methods", () => {
         describe("createDatabase", () => {
             for (const malicious of maliciousInputs) {
                 it(`should prevent injection with: ${malicious}`, () =>
@@ -202,6 +174,33 @@ describe("query runner > sql injection", () => {
                     ))
             }
         })
+    })
+
+    // TODO: clearTable, dropView, and renameTable still interpolate
+    // identifiers directly into SQL. Skipped until identifier escaping
+    // is fixed for these methods across all drivers.
+    describe.skip("DDL methods (not yet fixed)", () => {
+        describe("clearTable", () => {
+            for (const malicious of maliciousInputs) {
+                it(`should prevent injection with: ${malicious}`, () =>
+                    Promise.all(
+                        dataSources.map(async (dataSource) => {
+                            if (dataSource.driver.options.type === "mongodb")
+                                return
+
+                            const queryRunner = dataSource.createQueryRunner()
+                            try {
+                                await queryRunner.clearTable(malicious)
+                            } catch {
+                                // expected to throw on invalid table name
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
+                            }
+                        }),
+                    ))
+            }
+        })
 
         describe("dropView", () => {
             for (const malicious of maliciousInputs) {
@@ -272,11 +271,123 @@ describe("query runner > sql injection", () => {
         })
     })
 
-    // TODO: read methods (hasColumn, hasTable, getTable, etc.) interpolate
-    // identifiers directly into INFORMATION_SCHEMA queries without proper
-    // escaping. Vulnerable on postgres, cockroachdb, and MSSQL. Skipped
-    // until identifier escaping is fixed across all drivers.
-    describe.skip("read methods", () => {
+    describe("read methods", () => {
+        describe("hasColumn", () => {
+            for (const malicious of maliciousInputs) {
+                it(`should prevent injection via column name with: ${malicious}`, () =>
+                    Promise.all(
+                        dataSources.map(async (dataSource) => {
+                            const queryRunner = dataSource.createQueryRunner()
+                            try {
+                                const result = await queryRunner.hasColumn(
+                                    "post",
+                                    malicious,
+                                )
+                                expect(result).to.be.false
+                            } catch {
+                                // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
+                            }
+                        }),
+                    ))
+
+                it(`should prevent injection via table name with: ${malicious}`, () =>
+                    Promise.all(
+                        dataSources.map(async (dataSource) => {
+                            const queryRunner = dataSource.createQueryRunner()
+                            try {
+                                const result = await queryRunner.hasColumn(
+                                    malicious,
+                                    "id",
+                                )
+                                expect(result).to.be.false
+                            } catch {
+                                // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
+                            }
+                        }),
+                    ))
+            }
+        })
+
+        describe("hasDatabase", () => {
+            for (const malicious of maliciousInputs) {
+                it(`should prevent injection with: ${malicious}`, () =>
+                    Promise.all(
+                        dataSources.map(async (dataSource) => {
+                            if (dataSource.driver.options.type === "mongodb")
+                                return
+
+                            const queryRunner = dataSource.createQueryRunner()
+                            try {
+                                const result =
+                                    await queryRunner.hasDatabase(malicious)
+                                expect(result).to.be.false
+                            } catch {
+                                // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
+                            }
+                        }),
+                    ))
+            }
+        })
+
+        describe("hasSchema", () => {
+            for (const malicious of maliciousInputs) {
+                it(`should prevent injection with: ${malicious}`, () =>
+                    Promise.all(
+                        dataSources.map(async (dataSource) => {
+                            if (dataSource.driver.options.type === "mongodb")
+                                return
+
+                            const queryRunner = dataSource.createQueryRunner()
+                            try {
+                                const result =
+                                    await queryRunner.hasSchema(malicious)
+                                expect(result).to.be.false
+                            } catch {
+                                // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
+                            }
+                        }),
+                    ))
+            }
+        })
+
+        describe("hasTable", () => {
+            for (const malicious of maliciousInputs) {
+                it(`should prevent injection with: ${malicious}`, () =>
+                    Promise.all(
+                        dataSources.map(async (dataSource) => {
+                            const queryRunner = dataSource.createQueryRunner()
+                            try {
+                                const result =
+                                    await queryRunner.hasTable(malicious)
+                                expect(result).to.be.false
+                            } catch {
+                                // some drivers may throw on invalid identifiers
+                            } finally {
+                                await verifyIntegrity(dataSource)()
+                                await queryRunner.release()
+                            }
+                        }),
+                    ))
+            }
+        })
+    })
+
+    // TODO: getSchemas, getTable, getTables, getView, getViews use string
+    // interpolation in loadTables/loadViews internal methods. Skipped until
+    // those internal methods are parameterized.
+    describe.skip("read methods (not yet fixed)", () => {
         describe("getSchemas", () => {
             for (const malicious of maliciousInputs) {
                 it(`should prevent injection with: ${malicious}`, () =>
@@ -386,117 +497,6 @@ describe("query runner > sql injection", () => {
                                     malicious,
                                 ])
                                 expect(results).to.have.length(0)
-                            } catch {
-                                // some drivers may throw on invalid identifiers
-                            } finally {
-                                await verifyIntegrity(dataSource)()
-                                await queryRunner.release()
-                            }
-                        }),
-                    ))
-            }
-        })
-
-        describe("hasColumn", () => {
-            for (const malicious of maliciousInputs) {
-                it(`should prevent injection via column name with: ${malicious}`, () =>
-                    Promise.all(
-                        dataSources.map(async (dataSource) => {
-                            const queryRunner = dataSource.createQueryRunner()
-                            try {
-                                const result = await queryRunner.hasColumn(
-                                    "post",
-                                    malicious,
-                                )
-                                expect(result).to.be.false
-                            } catch {
-                                // some drivers may throw on invalid identifiers
-                            } finally {
-                                await verifyIntegrity(dataSource)()
-                                await queryRunner.release()
-                            }
-                        }),
-                    ))
-
-                it(`should prevent injection via table name with: ${malicious}`, () =>
-                    Promise.all(
-                        dataSources.map(async (dataSource) => {
-                            const queryRunner = dataSource.createQueryRunner()
-                            try {
-                                const result = await queryRunner.hasColumn(
-                                    malicious,
-                                    "id",
-                                )
-                                expect(result).to.be.false
-                            } catch {
-                                // some drivers may throw on invalid identifiers
-                            } finally {
-                                await verifyIntegrity(dataSource)()
-                                await queryRunner.release()
-                            }
-                        }),
-                    ))
-            }
-        })
-
-        describe("hasDatabase", () => {
-            for (const malicious of maliciousInputs) {
-                it(`should prevent injection with: ${malicious}`, () =>
-                    Promise.all(
-                        dataSources.map(async (dataSource) => {
-                            if (dataSource.driver.options.type === "mongodb")
-                                return
-
-                            const queryRunner = dataSource.createQueryRunner()
-                            try {
-                                const result =
-                                    await queryRunner.hasDatabase(malicious)
-                                expect(result).to.be.false
-                            } catch {
-                                // some drivers may throw on invalid identifiers
-                            } finally {
-                                await verifyIntegrity(dataSource)()
-                                await queryRunner.release()
-                            }
-                        }),
-                    ))
-            }
-        })
-
-        describe("hasSchema", () => {
-            for (const malicious of maliciousInputs) {
-                it(`should prevent injection with: ${malicious}`, () =>
-                    Promise.all(
-                        dataSources.map(async (dataSource) => {
-                            if (dataSource.driver.options.type === "mongodb")
-                                return
-
-                            const queryRunner = dataSource.createQueryRunner()
-                            try {
-                                const result =
-                                    await queryRunner.hasSchema(malicious)
-                                expect(result).to.be.false
-                            } catch {
-                                // some drivers may throw on invalid identifiers
-                            } finally {
-                                await verifyIntegrity(dataSource)()
-                                await queryRunner.release()
-                            }
-                        }),
-                    ))
-            }
-        })
-
-        describe("hasTable", () => {
-            for (const malicious of maliciousInputs) {
-                it(`should prevent injection with: ${malicious}`, () =>
-                    Promise.all(
-                        dataSources.map(async (dataSource) => {
-                            const queryRunner = dataSource.createQueryRunner()
-                            try {
-                                const result =
-                                    await queryRunner.hasTable(malicious)
-                                expect(result).to.be.false
                             } catch {
                                 // some drivers may throw on invalid identifiers
                             } finally {

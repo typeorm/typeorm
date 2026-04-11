@@ -89,6 +89,7 @@ jobs:
       id-token: write
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
@@ -96,7 +97,7 @@ jobs:
         with:
           ref: ${{ matrix.ref || github.ref }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
 
       - name: Check if there are new commits since last publish (nightly) or if it's a release
         id: publishable
@@ -155,21 +156,6 @@ jobs:
       - run: pnpm run package
         if: steps.publishable.outputs.should_publish == 'true'
 
-      # The gulp package task copies the root package.json into build/package.
-      # Dev-only fields like "prepare" (husky), "scripts", and "devEngines"
-      # cause publish to fail since their dependencies aren't installed there.
-      - name: Clean built package.json
-        if: steps.publishable.outputs.should_publish == 'true'
-        run: |
-          node -e "
-            const pkg = require('./build/package/package.json');
-            delete pkg.scripts;
-            delete pkg.devDependencies;
-            delete pkg.devEngines;
-            delete pkg.private;
-            require('fs').writeFileSync('./build/package/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-
       - name: Set nightly version
         if: steps.publishable.outputs.should_publish == 'true' && matrix.target != 'release'
         run: |
@@ -177,7 +163,29 @@ jobs:
           pnpm version "${BASE}-nightly.$(date -u +%Y%m%d)" --no-git-tag-version --allow-same-version
         working-directory: build/package
 
-      - name: Publish
+      - name: Publish typeorm
         if: steps.publishable.outputs.should_publish == 'true'
         run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
         working-directory: build/package
+
+      - name: Install @typeorm/codemod dependencies
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0.3'
+        run: pnpm install --frozen-lockfile
+        working-directory: packages/codemod
+
+      - name: Build @typeorm/codemod
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0.3'
+        run: pnpm run build
+        working-directory: packages/codemod
+
+      - name: Set codemod nightly version
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.target != 'release' && matrix.ref != 'v0.3'
+        run: |
+          BASE=$(node -p "require('./package.json').version.replace(/-.*/, '')")
+          pnpm version "${BASE}-nightly.$(date -u +%Y%m%d)" --no-git-tag-version --allow-same-version
+        working-directory: packages/codemod
+
+      - name: Publish @typeorm/codemod
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0.3'
+        run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
+        working-directory: packages/codemod
