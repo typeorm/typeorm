@@ -1,10 +1,11 @@
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { CordovaConnectionOptions } from "./CordovaConnectionOptions"
-import { CordovaQueryRunner } from "./CordovaQueryRunner"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataSource } from "../../data-source/DataSource"
+import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { CordovaDataSourceOptions } from "./CordovaDataSourceOptions"
+import { CordovaQueryRunner } from "./CordovaQueryRunner"
 
 // needed for typescript compiler
 interface Window {
@@ -14,7 +15,21 @@ interface Window {
 declare let window: Window
 
 export class CordovaDriver extends AbstractSqliteDriver {
-    declare options: CordovaConnectionOptions
+    declare options: CordovaDataSourceOptions
+
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /** Cordova does not support transactions. */
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /** Isolation levels supported by this driver. */
+    supportedIsolationLevels = CordovaDriver.supportedIsolationLevels
 
     transactionSupport = "none" as const
 
@@ -22,11 +37,9 @@ export class CordovaDriver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
-        // this.connection = connection;
-        // this.options = connection.options as CordovaConnectionOptions;
         this.database = this.options.database
 
         // load sqlite package
@@ -50,9 +63,11 @@ export class CordovaDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner) this.queryRunner = new CordovaQueryRunner(this)
+        this.queryRunner ??= new CordovaQueryRunner(this)
 
         return this.queryRunner
     }
@@ -71,7 +86,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
                 name: this.options.database,
                 location: this.options.location,
             },
-            this.options.extra || {},
+            this.options.extra ?? {},
         )
 
         const connection = await new Promise<any>((resolve, fail) => {
@@ -101,7 +116,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            const sqlite = this.options.driver || window.sqlitePlugin
+            const sqlite = this.options.driver ?? window.sqlitePlugin
             this.sqlite = sqlite
         } catch (e) {
             throw new DriverPackageNotInstalledError(

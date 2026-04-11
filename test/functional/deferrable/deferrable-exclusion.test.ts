@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,22 +12,21 @@ import { Booking } from "./entity/Booking"
 import { Schedule } from "./entity/Schedule"
 
 describe("deferrable exclusion constraints", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("initially deferred exclusion should be validated at the end of transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.manager.transaction(async (manager) => {
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.transaction(async (manager) => {
                     // first save booking
                     const booking1 = new Booking()
                     booking1.id = 1
@@ -51,7 +50,7 @@ describe("deferrable exclusion constraints", () => {
                 })
 
                 // now check
-                const bookings = await connection.manager.find(Booking, {
+                const bookings = await dataSource.manager.find(Booking, {
                     order: { id: "ASC" },
                 })
 
@@ -72,8 +71,8 @@ describe("deferrable exclusion constraints", () => {
 
     it("initially immediate exclusion should be validated at the end at transaction with deferred check time", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.manager.transaction(async (manager) => {
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.transaction(async (manager) => {
                     // first set constraints deferred manually
                     await manager.query("SET CONSTRAINTS ALL DEFERRED")
 
@@ -98,7 +97,7 @@ describe("deferrable exclusion constraints", () => {
                 })
 
                 // now check
-                const schedules = await connection.manager.find(Schedule, {
+                const schedules = await dataSource.manager.find(Schedule, {
                     order: { id: "ASC" },
                 })
 

@@ -1,4 +1,4 @@
-import { QueryResult } from "../../query-runner/QueryResult"
+import type { QueryResult } from "../../query-runner/QueryResult"
 
 /**
  * Result object returned by DeleteQueryBuilder execution.

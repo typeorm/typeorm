@@ -1,11 +1,11 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
 import { Item } from "../entity/item.entity"
 import { Config } from "../entity/config.entity"
 
 export class MergeConfigs1567689639607 implements MigrationInterface {
-    public async up({ connection }: QueryRunner): Promise<any> {
-        const itemRepository = connection.getMongoRepository(Item)
-        const configRepository = connection.getMongoRepository(Config)
+    public async up({ manager }: QueryRunner): Promise<any> {
+        const itemRepository = manager.getMongoRepository(Item)
+        const configRepository = manager.getMongoRepository(Config)
 
         const configs = await configRepository.find()
 
@@ -28,9 +28,9 @@ export class MergeConfigs1567689639607 implements MigrationInterface {
         )
     }
 
-    public async down({ connection }: QueryRunner): Promise<any> {
-        const itemRepository = connection.getRepository(Item)
-        const configRepository = connection.getRepository(Config)
+    public async down({ manager }: QueryRunner): Promise<any> {
+        const itemRepository = manager.getRepository(Item)
+        const configRepository = manager.getRepository(Config)
 
         const items = await itemRepository.find()
 
