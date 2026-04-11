@@ -1,4 +1,4 @@
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Migrations should implement this interface and all its methods.

@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, TableColumn } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
+import { TableColumn } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,7 +13,7 @@ describe("database schema > generated columns > sqlite", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["sqlite"],
+            enabledDrivers: ["better-sqlite3"],
             schemaCreate: true,
             dropSchema: true,
         })

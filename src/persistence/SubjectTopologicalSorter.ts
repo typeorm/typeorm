@@ -1,5 +1,5 @@
-import { Subject } from "./Subject"
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { Subject } from "./Subject"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { TypeORMError } from "../error"
 
 /**
@@ -36,6 +36,8 @@ export class SubjectTopologicalSorter {
 
     /**
      * Sorts (orders) subjects in their topological order.
+     *
+     * @param direction
      */
     sort(direction: "insert" | "delete"): Subject[] {
         // if there are no metadatas it probably mean there is no subjects... we don't have to do anything here
@@ -103,6 +105,8 @@ export class SubjectTopologicalSorter {
 
     /**
      * Removes already sorted subjects from this.subjects list of subjects.
+     *
+     * @param subjects
      */
     protected removeAlreadySorted(subjects: Subject[]) {
         subjects.forEach((subject) => {
@@ -112,6 +116,8 @@ export class SubjectTopologicalSorter {
 
     /**
      * Extracts all unique metadatas from the given subjects.
+     *
+     * @param subjects
      */
     protected getUniqueMetadatas(subjects: Subject[]) {
         const metadatas: EntityMetadata[] = []
@@ -163,8 +169,14 @@ export class SubjectTopologicalSorter {
      * Sorts given graph using topological sorting algorithm.
      *
      * Algorithm is kindly taken from https://github.com/marcelklehr/toposort repository.
+     *
+     * @param edges
      */
     protected toposort(edges: any[][]) {
+        /**
+         *
+         * @param arr
+         */
         function uniqueNodes(arr: any[]) {
             const res = []
             for (let i = 0, len = arr.length; i < len; i++) {
@@ -185,6 +197,12 @@ export class SubjectTopologicalSorter {
             if (!visited.has(i)) visit(nodes[i], i, [])
         }
 
+        /**
+         *
+         * @param node
+         * @param i
+         * @param predecessors
+         */
         function visit(node: any, i: number, predecessors: any[]) {
             if (predecessors.indexOf(node) >= 0) {
                 throw new TypeORMError(

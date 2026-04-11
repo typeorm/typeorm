@@ -1,6 +1,6 @@
 import ansi from "ansis"
 import path from "path"
-import yargs from "yargs"
+import type yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 
@@ -46,6 +46,8 @@ export class EntityCreateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the entity file.
+     *
+     * @param name
      */
     protected static getTemplate(name: string): string {
         return `import { Entity } from "typeorm"
