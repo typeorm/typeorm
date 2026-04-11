@@ -51,10 +51,8 @@ describe("query builder > insert > merge into", () => {
                     .execute()
 
                 await dataSource.manager
-                    .findOne(Post, {
-                        where: {
-                            id: "post#1",
-                        },
+                    .findOneBy(Post, {
+                        id: "post#1",
                     })
                     .should.eventually.be.eql({
                         id: "post#1",
@@ -103,10 +101,8 @@ describe("query builder > insert > merge into", () => {
                     .execute()
 
                 await dataSource.manager
-                    .findOne(Post, {
-                        where: {
-                            id: "post#1",
-                        },
+                    .findOneBy(Post, {
+                        id: "post#1",
                     })
                     .should.eventually.be.eql({
                         id: "post#1",
@@ -125,10 +121,8 @@ describe("query builder > insert > merge into", () => {
                     .execute()
 
                 await dataSource.manager
-                    .findOne(Post, {
-                        where: {
-                            id: "post#1",
-                        },
+                    .findOneBy(Post, {
+                        id: "post#1",
                     })
                     .should.eventually.be.eql({
                         id: "post#1",

@@ -40,16 +40,16 @@ describe(`query builder > find with the global condition of "non-deleted" and ea
                     .from(PostWithRelation, "post")
                     .orderBy("post.id")
                     .getMany()
-                loadedWithPosts!.length.should.be.equal(2)
-                loadedWithPosts![0].title.should.be.equals("title#2")
-                loadedWithPosts![1].title.should.be.equals("title#3")
+                loadedWithPosts.length.should.be.equal(2)
+                loadedWithPosts[0].title.should.be.equals("title#2")
+                loadedWithPosts[1].title.should.be.equals("title#3")
 
                 const loadedWithPost = await dataSource
                     .createQueryBuilder()
                     .select("post")
                     .from(PostWithRelation, "post")
                     .orderBy("post.id")
-                    .getOne()
+                    .getOneOrFail()
                 loadedWithPost!.title.should.be.equals("title#2")
             }),
         ))
@@ -78,10 +78,10 @@ describe(`query builder > find with the global condition of "non-deleted" and ea
                     .orderBy("post.id")
                     .getMany()
 
-                loadedPosts!.length.should.be.equal(3)
-                loadedPosts![0].title.should.be.equals("title#1")
-                loadedPosts![1].title.should.be.equals("title#2")
-                loadedPosts![2].title.should.be.equals("title#3")
+                loadedPosts.length.should.be.equal(3)
+                loadedPosts[0].title.should.be.equals("title#1")
+                loadedPosts[1].title.should.be.equals("title#2")
+                loadedPosts[2].title.should.be.equals("title#3")
 
                 const loadedWithoutScopePost = await dataSource
                     .createQueryBuilder()
@@ -89,7 +89,7 @@ describe(`query builder > find with the global condition of "non-deleted" and ea
                     .from(PostWithRelation, "post")
                     .withDeleted()
                     .orderBy("post.id")
-                    .getOne()
+                    .getOneOrFail()
                 loadedWithoutScopePost!.title.should.be.equals("title#1")
             }),
         ))

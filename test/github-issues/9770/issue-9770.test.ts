@@ -35,10 +35,8 @@ describe("github issues > #9770 check for referencing foreign keys when altering
                 const foo = new Foo()
                 foo.data = "foo"
                 await manager.save(foo)
-                const foundFoo = await manager.findOne(Foo, {
-                    where: {
-                        id: 1,
-                    },
+                const foundFoo = await manager.findOneBy(Foo, {
+                    id: 1,
                 })
                 expect(foundFoo).not.to.be.null
 

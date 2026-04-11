@@ -25,6 +25,7 @@ export class DebugLogger extends AbstractLogger {
 
     /**
      * Check is logging for level or message type is enabled.
+     *
      * @param type
      */
     protected isLogEnabledFor(type?: LogLevel | LogMessageType) {
@@ -61,6 +62,7 @@ export class DebugLogger extends AbstractLogger {
 
     /**
      * Write log to specific output.
+     *
      * @param level
      * @param logMessage
      * @param queryRunner
@@ -87,7 +89,7 @@ export class DebugLogger extends AbstractLogger {
                     this.logger[messageTypeOrLevel](message.message)
                 }
 
-                if (message.parameters && message.parameters.length) {
+                if (message.parameters?.length) {
                     this.logger[messageTypeOrLevel](
                         "parameters:",
                         message.parameters,

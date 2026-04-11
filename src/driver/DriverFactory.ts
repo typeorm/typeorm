@@ -25,6 +25,7 @@ import { SqlServerDriver } from "./sqlserver/SqlServerDriver"
 export class DriverFactory {
     /**
      * Creates a new driver depend on a given connection's driver type.
+     *
      * @param dataSource DataSource instance.
      * @returns Driver
      */

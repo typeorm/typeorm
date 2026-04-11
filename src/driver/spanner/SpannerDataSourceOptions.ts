@@ -140,6 +140,7 @@ export interface SpannerDataSourceOptions
 
         /**
          * Default connection pool to use for SELECT queries
+         *
          * @default "slave"
          */
         readonly defaultMode?: ReplicationMode

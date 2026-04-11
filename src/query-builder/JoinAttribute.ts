@@ -127,7 +127,7 @@ export class JoinAttribute {
         if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
             return undefined
 
-        return this.entityOrProperty.substr(
+        return this.entityOrProperty.substring(
             0,
             this.entityOrProperty.indexOf("."),
         )
@@ -144,7 +144,7 @@ export class JoinAttribute {
         if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
             return undefined
 
-        return this.entityOrProperty.substr(
+        return this.entityOrProperty.substring(
             this.entityOrProperty.indexOf(".") + 1,
         )
     }
@@ -227,7 +227,7 @@ export class JoinAttribute {
             throw new TypeORMError(`Junction property is not defined.`)
         }
 
-        const aliasProperty = this.entityOrProperty.substr(
+        const aliasProperty = this.entityOrProperty.substring(
             0,
             this.entityOrProperty.indexOf("."),
         )

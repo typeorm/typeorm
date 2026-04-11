@@ -182,6 +182,7 @@ export class EmbeddedMetadata {
 
     /**
      * Creates a new embedded object.
+     *
      * @param options
      * @param options.fromDeserializer
      */

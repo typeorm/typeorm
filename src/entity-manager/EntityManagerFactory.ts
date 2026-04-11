@@ -10,6 +10,7 @@ import type { QueryRunner } from "../query-runner/QueryRunner"
 export class EntityManagerFactory {
     /**
      * Creates a new entity manager depend on a given connection's driver.
+     *
      * @param dataSource
      * @param queryRunner
      * @returns an EntityManager specialized for the driver

@@ -15,6 +15,7 @@ import { TypeORMError } from "../error"
  * a set of edges.
  *
  * Detects cycles and throws an Error if one is detected.
+ *
  * @param edges The set of edges to DFS through
  * @param leavesOnly Whether to only return "leaf" nodes (ones who have no edges)
  * @param result An array in which the results will be populated
@@ -52,6 +53,7 @@ export class DepGraph {
 
     /**
      * Add a node to the dependency graph. If a node already exists, this method will do nothing.
+     *
      * @param node
      * @param data
      */
@@ -70,6 +72,7 @@ export class DepGraph {
 
     /**
      * Remove a node from the dependency graph. If a node does not exist, this method will do nothing.
+     *
      * @param node
      */
     removeNode(node: any) {
@@ -92,6 +95,7 @@ export class DepGraph {
 
     /**
      * Check if a node exists in the graph
+     *
      * @param node
      */
     hasNode(node: any) {
@@ -100,6 +104,7 @@ export class DepGraph {
 
     /**
      * Get the data associated with a node name
+     *
      * @param node
      */
     getNodeData(node: any) {
@@ -112,6 +117,7 @@ export class DepGraph {
 
     /**
      * Set the associated data for a given node name. If the node does not exist, this method will throw an error
+     *
      * @param node
      * @param data
      */
@@ -126,6 +132,7 @@ export class DepGraph {
     /**
      * Add a dependency between two nodes. If either of the nodes does not exist,
      * an Error will be thrown.
+     *
      * @param from
      * @param to
      */
@@ -147,6 +154,7 @@ export class DepGraph {
 
     /**
      * Remove a dependency between two nodes.
+     *
      * @param from
      * @param to
      */
@@ -174,6 +182,7 @@ export class DepGraph {
      *
      * If `leavesOnly` is true, only nodes that do not depend on any other nodes will be returned
      * in the array.
+     *
      * @param node
      * @param leavesOnly
      */
@@ -198,6 +207,7 @@ export class DepGraph {
      * Throws an Error if the graph has a cycle, or the specified node does not exist.
      *
      * If `leavesOnly` is true, only nodes that do not have any dependants will be returned in the array.
+     *
      * @param node
      * @param leavesOnly
      */
@@ -222,6 +232,7 @@ export class DepGraph {
      * Throws an Error if the graph has a cycle.
      *
      * If `leavesOnly` is true, only nodes that do not depend on any other nodes will be returned.
+     *
      * @param leavesOnly
      */
     overallOrder(leavesOnly?: any) {

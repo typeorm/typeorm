@@ -50,6 +50,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -87,7 +88,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
             } else if (["INSERT", "UPDATE", "DELETE"].indexOf(command) !== -1) {
                 raw = await databaseConnection.run(query, parameters, false)
             } else {
-                raw = await databaseConnection.query(query, parameters || [])
+                raw = await databaseConnection.query(query, parameters ?? [])
             }
 
             const result = new QueryResult()
@@ -99,7 +100,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
             if (raw?.hasOwnProperty("changes")) {
                 result.affected = raw.changes.changes
-                result.raw = raw.changes.lastId || raw.changes.changes
+                result.raw = raw.changes.lastId ?? raw.changes.changes
             }
 
             if (!useStructuredResult) {
@@ -125,6 +126,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     *
      * @param objectLiteral
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {

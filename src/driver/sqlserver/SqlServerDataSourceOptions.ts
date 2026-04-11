@@ -219,6 +219,7 @@ export interface SqlServerDataSourceOptions
          * The default isolation level that transactions will be run with. (default: `READ COMMITTED`).
          *
          * Note: this setting may not be reliably preserved across pooled connection reuse.
+         *
          * @see {@link https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level | Known Issues}
          */
         readonly isolationLevel?: IsolationLevel
@@ -228,6 +229,7 @@ export interface SqlServerDataSourceOptions
          * setting. (default: `READ COMMITTED`).
          *
          * Note: this setting may not be reliably preserved across pooled connection reuse.
+         *
          * @see {@link https://typeorm.io/microsoft-sqlserver#connection-pool-does-not-reset-isolation-level | Known Issues}
          */
         readonly connectionIsolationLevel?: IsolationLevel
@@ -309,6 +311,7 @@ export interface SqlServerDataSourceOptions
 
         /**
          * Default connection pool to use for SELECT queries
+         *
          * @default "slave"
          */
         readonly defaultMode?: ReplicationMode

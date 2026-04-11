@@ -51,10 +51,8 @@ describe("query builder > insert > on conflict", () => {
                     .execute()
 
                 await dataSource.manager
-                    .findOne(Post, {
-                        where: {
-                            id: "post#1",
-                        },
+                    .findOneBy(Post, {
+                        id: "post#1",
                     })
                     .should.eventually.be.eql({
                         id: "post#1",
@@ -94,10 +92,8 @@ describe("query builder > insert > on conflict", () => {
                     .execute()
 
                 await dataSource.manager
-                    .findOne(Post, {
-                        where: {
-                            id: "post#1",
-                        },
+                    .findOneBy(Post, {
+                        id: "post#1",
                     })
                     .should.eventually.be.eql({
                         id: "post#1",
@@ -196,10 +192,8 @@ describe("query builder > insert > on conflict", () => {
                 await builder.execute()
 
                 await dataSource.manager
-                    .findOne(Post, {
-                        where: {
-                            id: "post#1",
-                        },
+                    .findOneBy(Post, {
+                        id: "post#1",
                     })
                     .should.eventually.be.eql({
                         id: "post#1",

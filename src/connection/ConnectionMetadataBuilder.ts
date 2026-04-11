@@ -26,6 +26,7 @@ export class ConnectionMetadataBuilder {
 
     /**
      * Builds migration instances for the given classes or directories.
+     *
      * @param migrations
      */
     async buildMigrations(
@@ -48,6 +49,7 @@ export class ConnectionMetadataBuilder {
 
     /**
      * Builds subscriber instances for the given classes or directories.
+     *
      * @param subscribers
      */
     async buildSubscribers(
@@ -72,6 +74,7 @@ export class ConnectionMetadataBuilder {
 
     /**
      * Builds entity metadatas for the given classes or directories.
+     *
      * @param entities
      */
     async buildEntityMetadatas(

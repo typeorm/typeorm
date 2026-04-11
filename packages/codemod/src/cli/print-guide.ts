@@ -9,10 +9,10 @@ export const printGuide = (version: string): void => {
         ),
     )
 
-    const guide = versions[version]?.migrationGuide
+    const guide = versions[version]?.upgradingGuide
     if (guide) {
         console.log(
-            `\nSee the full migration guide for details: ${colors.blue(guide)}`,
+            `\nSee the full upgrading guide for details: ${colors.blue(guide)}`,
         )
     }
 }

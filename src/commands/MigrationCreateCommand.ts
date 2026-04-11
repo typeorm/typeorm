@@ -79,6 +79,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the migration file.
+     *
      * @param name
      * @param timestamp
      */
@@ -102,6 +103,7 @@ export class ${camelCase(
 
     /**
      * Gets contents of the migration file in Javascript.
+     *
      * @param name
      * @param timestamp
      * @param esm
