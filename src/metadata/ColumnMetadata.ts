@@ -715,11 +715,25 @@ export class ColumnMetadata {
                     if (Object.keys(map).length > 0)
                         return { [this.propertyName]: map }
                 } else {
-                    const value =
+                    let value =
                         this.relationMetadata.joinColumns[0].referencedColumn!.getEntityValue(
                             entity[this.relationMetadata!.propertyName],
                         )
                     if (value) {
+                        // bigint-to-string safety conversion — prevents silent
+                        // precision loss for values > Number.MAX_SAFE_INTEGER.
+                        // getEntityValueMap() → createValueMap() already has
+                        // this guard; getEntityValue() does not, so we must
+                        // apply it here for the single-JoinColumn path. #12337
+                        const refCol =
+                            this.relationMetadata.joinColumns[0]
+                                .referencedColumn!
+                        if (
+                            refCol.type === "bigint" &&
+                            typeof value === "number"
+                        )
+                            value = String(value)
+
                         return { [this.propertyName]: value }
                     }
                 }
