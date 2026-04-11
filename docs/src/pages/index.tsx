@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { ReactNode, ElementType } from "react"
 import React from "react"
 import clsx from "clsx"
 import Link from "@docusaurus/Link"
@@ -6,6 +6,18 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext"
 import Layout from "@theme/Layout"
 import Heading from "@theme/Heading"
 import CodeBlock from "@theme/CodeBlock"
+import {
+    Settings,
+    FileCode,
+    Database,
+    Search,
+    Rocket,
+    Globe,
+    Monitor,
+    Smartphone,
+    Atom,
+    AppWindow,
+} from "lucide-react"
 
 import styles from "./index.module.css"
 
@@ -15,37 +27,37 @@ const features = [
         title: "Flexible Patterns",
         description:
             "Supports both DataMapper and ActiveRecord patterns, giving you the flexibility to choose what works best for your project.",
-        icon: "⚙️",
+        icon: Settings,
     },
     {
         title: "TypeScript First",
         description:
             "Built from the ground up with TypeScript support, providing complete type safety for your database models.",
-        icon: "📝",
+        icon: FileCode,
     },
     {
         title: "Multi-Database Support",
         description:
             "Works with MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB, and more.",
-        icon: "🗄️",
+        icon: Database,
     },
     {
         title: "Powerful QueryBuilder",
         description:
             "Elegant syntax for building complex queries with joins, pagination, and caching.",
-        icon: "🔍",
+        icon: Search,
     },
     {
         title: "Migrations & Schema",
         description:
             "First-class support for database migrations with automatic generation.",
-        icon: "🚀",
+        icon: Rocket,
     },
     {
         title: "Cross-Platform",
         description:
             "Works in Node.js, browsers, mobile, and desktop applications.",
-        icon: "🌐",
+        icon: Globe,
     },
 ]
 
@@ -150,10 +162,20 @@ function HomepageHeader() {
     )
 }
 
-function Feature({ title, description, icon }) {
+function Feature({
+    title,
+    description,
+    icon: Icon,
+}: {
+    title: string
+    description: string
+    icon: ElementType
+}) {
     return (
         <div className={clsx("col col--4", styles.featureItem)}>
-            <div className={styles.featureIcon}>{icon}</div>
+            <div className={styles.featureIcon}>
+                <Icon size={32} strokeWidth={1.5} />
+            </div>
             <div className={styles.featureContent}>
                 <Heading as="h3">{title}</Heading>
                 <p>{description}</p>
@@ -302,6 +324,14 @@ function SupportedDatabases() {
     )
 }
 
+const platforms = [
+    { name: "NodeJS", icon: Monitor },
+    { name: "Browser", icon: Globe },
+    { name: "Mobile", icon: Smartphone },
+    { name: "React Native", icon: Atom },
+    { name: "Electron", icon: AppWindow },
+]
+
 function PlatformsSection() {
     return (
         <section className={styles.platformsSection}>
@@ -314,12 +344,56 @@ function PlatformsSection() {
                     Native, NativeScript, Expo, and Electron platforms.
                 </p>
                 <div className={styles.platformsIcons}>
-                    <span>🖥️ NodeJS</span>
-                    <span>🌐 Browser</span>
-                    <span>📱 Mobile</span>
-                    <span>⚛️ React Native</span>
-                    <span>🖼️ Electron</span>
+                    {platforms.map((p) => (
+                        <span key={p.name}>
+                            <p.icon size={18} strokeWidth={1.5} /> {p.name}
+                        </span>
+                    ))}
                 </div>
+            </div>
+        </section>
+    )
+}
+
+const teamHighlights = [
+    { name: "Michael Bromley", github: "michaelbromley" },
+    { name: "David Höck", github: "dlhck" },
+    { name: "Lucian Mocanu", github: "alumni" },
+    { name: "Naor Peled", github: "naorpeled" },
+    { name: "Giorgio Boa", github: "gioboa" },
+    { name: "Piotr Kuczynski", github: "pkuczynski" },
+    { name: "Mohammed Gomaa", github: "G0maa" },
+    { name: "Julian Pufler", github: "pujux" },
+    { name: "Simon Garner", github: "sgarner" },
+    { name: "Pieter Wigboldus", github: "w3nl" },
+    { name: "Mike Guida", github: "mguida22" },
+]
+
+function MaintainersSection() {
+    return (
+        <section className={styles.maintainersSection}>
+            <div className="container">
+                <Heading as="h2" className={styles.sectionTitle}>
+                    Maintained By
+                </Heading>
+                <div className={styles.maintainersAvatars}>
+                    {teamHighlights.map((m) => (
+                        <img
+                            key={m.github}
+                            src={`https://avatars.githubusercontent.com/${m.github}?s=100`}
+                            alt={m.name}
+                            title={m.name}
+                            className={styles.maintainerAvatar}
+                            loading="lazy"
+                        />
+                    ))}
+                </div>
+                <Link
+                    className="button button--primary button--md"
+                    to="/maintainers"
+                >
+                    Meet the Team
+                </Link>
             </div>
         </section>
     )
@@ -372,6 +446,7 @@ export default function Home(): ReactNode {
                 <CodeExampleSection />
                 <SupportedDatabases />
                 <PlatformsSection />
+                <MaintainersSection />
                 <CallToAction />
             </main>
         </Layout>

@@ -4,27 +4,26 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { ObjectLiteral } from "../../../src/common/ObjectLiteral"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import type { ObjectLiteral } from "../../../src/common/ObjectLiteral"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
 import { DateUtils } from "../../../src/util/DateUtils"
 
 describe("github issues > #513 Incorrect time/datetime types for SQLite", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create datetime column type for datetime in sqlite", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const dbColumns: ObjectLiteral[] =
                     await connection.manager.query("PRAGMA table_info(Post)")
                 expect(dbColumns).not.to.be.null
@@ -44,7 +43,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
 
     it("should persist correct type in datetime column in sqlite", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const now: Date = new Date()
 
                 const post: Post = new Post()
@@ -53,13 +52,15 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
 
                 await connection.manager.save(post)
 
-                const storedPost = await connection.manager.findOne(Post, {
-                    where: {
-                        id: post.id,
+                const storedPost = await connection.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: post.id,
+                        },
                     },
-                })
-                expect(storedPost).to.not.be.null
-                storedPost!.dateTimeColumn
+                )
+                storedPost.dateTimeColumn
                     .toDateString()
                     .should.equal(now.toDateString())
             }),
@@ -67,7 +68,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
 
     it("should create datetime column type for time in sqlite", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const dbColumns: ObjectLiteral[] =
                     await connection.manager.query("PRAGMA table_info(Post)")
                 expect(dbColumns).not.to.be.null
@@ -87,7 +88,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
 
     it("should persist correct type in datetime column in sqlite", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const now: Date = new Date()
 
                 const post: Post = new Post()
@@ -96,13 +97,14 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
 
                 await connection.manager.save(post)
 
-                const storedPost = await connection.manager.findOne(Post, {
-                    where: {
-                        id: post.id,
+                const storedPost = await connection.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: post.id,
+                        },
                     },
-                })
-                expect(storedPost).to.not.be.null
-
+                )
                 const expectedTimeString = DateUtils.mixedTimeToString(
                     now.getHours() +
                         ":" +
@@ -110,7 +112,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
                         ":" +
                         now.getSeconds(),
                 )
-                storedPost!.timeColumn
+                storedPost.timeColumn
                     .toString()
                     .should.equal(expectedTimeString)
             }),

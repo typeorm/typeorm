@@ -1,5 +1,5 @@
-import { Logger } from "./Logger"
-import { LoggerOptions } from "./LoggerOptions"
+import type { Logger } from "./Logger"
+import type { LoggerOptions } from "./LoggerOptions"
 import { SimpleConsoleLogger } from "./SimpleConsoleLogger"
 import { AdvancedConsoleLogger } from "./AdvancedConsoleLogger"
 import { FileLogger } from "./FileLogger"
@@ -13,6 +13,7 @@ import { FormattedConsoleLogger } from "./FormattedConsoleLogger"
 export class LoggerFactory {
     /**
      * Creates a new logger depend on a given connection's driver.
+     *
      * @param logger
      * @param options
      */

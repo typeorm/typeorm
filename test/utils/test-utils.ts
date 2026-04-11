@@ -1,21 +1,19 @@
-import {
+import type {
     DatabaseType,
-    DataSource,
     DataSourceOptions,
     Driver,
     EntitySchema,
     EntitySubscriberInterface,
-    getMetadataArgsStorage,
     InsertEvent,
     Logger,
     NamingStrategyInterface,
     QueryRunner,
-    Table,
 } from "../../src"
-import { QueryResultCache } from "../../src/cache/QueryResultCache"
+import { DataSource, getMetadataArgsStorage, Table } from "../../src"
+import type { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
-import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
+import type { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -41,12 +39,6 @@ export interface TestingOptions {
      * If specified, entities will be loaded from that directory.
      */
     __dirname?: string
-
-    /**
-     * Connection name to be overridden.
-     * This can be used to create multiple connections with single connection configuration.
-     */
-    name?: string
 
     /**
      * List of enabled drivers for the given test suite.
@@ -176,17 +168,14 @@ export function setupSingleTestingConnection(
     options: TestingOptions,
 ): DataSourceOptions | undefined {
     const testingConnections = setupTestingConnections({
-        name: options.name ? options.name : undefined,
-        entities: options.entities ? options.entities : [],
-        subscribers: options.subscribers ? options.subscribers : [],
-        dropSchema: options.dropSchema ? options.dropSchema : false,
-        schemaCreate: options.schemaCreate ? options.schemaCreate : false,
+        entities: options.entities ?? [],
+        subscribers: options.subscribers ?? [],
+        dropSchema: options.dropSchema ?? false,
+        schemaCreate: options.schemaCreate ?? false,
         enabledDrivers: [driverType],
         cache: options.cache,
-        schema: options.schema ? options.schema : undefined,
-        namingStrategy: options.namingStrategy
-            ? options.namingStrategy
-            : undefined,
+        schema: options.schema ?? undefined,
+        namingStrategy: options.namingStrategy ?? undefined,
     })
     if (!testingConnections.length) return undefined
 
@@ -237,11 +226,7 @@ export function setupTestingConnections(
         .filter((connectionOptions) => {
             if (connectionOptions.skip === true) return false
 
-            if (
-                options &&
-                options.enabledDrivers &&
-                options.enabledDrivers.length
-            )
+            if (options?.enabledDrivers?.length)
                 return (
                     options.enabledDrivers.indexOf(connectionOptions.type!) !==
                     -1
@@ -257,51 +242,39 @@ export function setupTestingConnections(
                 {},
                 connectionOptions as DataSourceOptions,
                 {
-                    name:
-                        options && options.name
-                            ? options.name
-                            : connectionOptions.name,
-                    entities:
-                        options && options.entities ? options.entities : [],
-                    migrations:
-                        options && options.migrations ? options.migrations : [],
-                    subscribers:
-                        options && options.subscribers
-                            ? options.subscribers
-                            : [],
-                    dropSchema:
-                        options && options.dropSchema !== undefined
-                            ? options.dropSchema
-                            : false,
-                    cache: options ? options.cache : undefined,
+                    entities: options?.entities ?? [],
+                    migrations: options?.migrations ?? [],
+                    subscribers: options?.subscribers ?? [],
+                    dropSchema: options?.dropSchema ?? false,
+                    cache: options?.cache,
                 },
             )
-            if (options && options.driverSpecific)
+            if (options?.driverSpecific)
                 newOptions = Object.assign(
                     {},
                     options.driverSpecific,
                     newOptions,
                 )
-            if (options && options.schemaCreate)
+            if (options?.schemaCreate)
                 newOptions.synchronize = options.schemaCreate
-            if (options && options.schema) newOptions.schema = options.schema
-            if (options && options.logging !== undefined)
+            if (options?.schema) newOptions.schema = options.schema
+            if (options?.logging !== undefined)
                 newOptions.logging = options.logging
-            if (options && options.createLogger !== undefined)
+            if (options?.createLogger !== undefined)
                 newOptions.logger = options.createLogger()
-            if (options && options.__dirname)
+            if (options?.__dirname)
                 newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"]
-            if (options && options.__dirname)
+            if (options?.__dirname)
                 newOptions.migrations = [
                     options.__dirname + "/migration/*{.js,.ts}",
                 ]
-            if (options && options.namingStrategy)
+            if (options?.namingStrategy)
                 newOptions.namingStrategy = options.namingStrategy
-            if (options && options.metadataTableName)
+            if (options?.metadataTableName)
                 newOptions.metadataTableName = options.metadataTableName
-            if (options && options.relationLoadStrategy)
+            if (options?.relationLoadStrategy)
                 newOptions.relationLoadStrategy = options.relationLoadStrategy
-            if (options && options.isolateWhereStatements)
+            if (options?.isolateWhereStatements)
                 newOptions.isolateWhereStatements =
                     options.isolateWhereStatements
 
@@ -441,6 +414,22 @@ export async function createTestingConnections(
                 )
                 await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
+                )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING sql.txn.repeatable_read_isolation.enabled = 'true';`,
+                )
+            }
+
+            if (connection.driver.options.type === "mysql") {
+                await queryRunner.query(
+                    `UPDATE performance_schema.setup_instruments
+                        SET ENABLED = 'YES', TIMED = 'YES'
+                        WHERE NAME = 'transaction'`,
+                )
+                await queryRunner.query(
+                    `UPDATE performance_schema.setup_consumers
+                        SET ENABLED = 'YES'
+                        WHERE NAME LIKE 'events_transactions%'`,
                 )
             }
 
