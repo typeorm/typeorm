@@ -4,27 +4,26 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { JSONBKeyTest } from "./entity/test"
 
 describe("github issues > #6833 Entities with JSON key columns are incorrectly grouped", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [JSONBKeyTest],
-                dropSchema: true,
-                schemaCreate: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [JSONBKeyTest],
+            dropSchema: true,
+            schemaCreate: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("jsonB keys are correctly resolved", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.transaction(async (manager) => {
                     await manager.save(
                         manager.create(JSONBKeyTest, {
@@ -48,7 +47,7 @@ describe("github issues > #6833 Entities with JSON key columns are incorrectly g
 
     it("jsonB keys can be found", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.transaction(async (manager) => {
                     await manager.save(
                         manager.create(JSONBKeyTest, {
@@ -75,7 +74,7 @@ describe("github issues > #6833 Entities with JSON key columns are incorrectly g
 
     it("jsonB keys can be found with IN", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.transaction(async (manager) => {
                     await manager.save(
                         manager.create(JSONBKeyTest, {
@@ -123,7 +122,7 @@ describe("github issues > #6833 Entities with JSON key columns are incorrectly g
 
     it("jsonB keys can be found regardless of order", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.transaction(async (manager) => {
                     await manager.save(
                         manager.create(JSONBKeyTest, {

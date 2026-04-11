@@ -1,23 +1,31 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { TableMetadataArgs } from "../../metadata-args/TableMetadataArgs"
-import { EntityOptions } from "../options/EntityOptions"
+import type { TableMetadataArgs } from "../../metadata-args/TableMetadataArgs"
+import type { EntityOptions } from "../options/EntityOptions"
 import { ObjectUtils } from "../../util/ObjectUtils"
 
 /**
  * This decorator is used to mark classes that will be an entity (table or document depend on database type).
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ *
+ * @param options
  */
 export function Entity(options?: EntityOptions): ClassDecorator
 
 /**
  * This decorator is used to mark classes that will be an entity (table or document depend on database type).
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ *
+ * @param name
+ * @param options
  */
 export function Entity(name?: string, options?: EntityOptions): ClassDecorator
 
 /**
  * This decorator is used to mark classes that will be an entity (table or document depend on database type).
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ *
+ * @param nameOrOptions
+ * @param maybeOptions
  */
 export function Entity(
     nameOrOptions?: string | EntityOptions,
@@ -26,7 +34,7 @@ export function Entity(
     const options =
         (ObjectUtils.isObject(nameOrOptions)
             ? (nameOrOptions as EntityOptions)
-            : maybeOptions) || {}
+            : maybeOptions) ?? {}
     const name =
         typeof nameOrOptions === "string" ? nameOrOptions : options.name
 
@@ -35,13 +43,13 @@ export function Entity(
             target: target,
             name: name,
             type: "regular",
-            orderBy: options.orderBy ? options.orderBy : undefined,
-            engine: options.engine ? options.engine : undefined,
-            database: options.database ? options.database : undefined,
-            schema: options.schema ? options.schema : undefined,
+            orderBy: options.orderBy ?? undefined,
+            engine: options.engine ?? undefined,
+            database: options.database ?? undefined,
+            schema: options.schema ?? undefined,
             synchronize: options.synchronize,
             withoutRowid: options.withoutRowid,
-            comment: options.comment ? options.comment : undefined,
+            comment: options.comment ?? undefined,
         } as TableMetadataArgs)
     }
 }

@@ -1,8 +1,8 @@
-import { EventListenerType } from "./types/EventListenerTypes"
-import { EntityListenerMetadataArgs } from "../metadata-args/EntityListenerMetadataArgs"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { EntityMetadata } from "./EntityMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { EventListenerType } from "./types/EventListenerTypes"
+import type { EntityListenerMetadataArgs } from "../metadata-args/EntityListenerMetadataArgs"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
 
 /**
  * This metadata contains all information about entity's listeners.
@@ -60,6 +60,8 @@ export class EntityListenerMetadata {
 
     /**
      * Checks if entity listener is allowed to be executed on the given entity.
+     *
+     * @param entity
      */
     isAllowed(entity: ObjectLiteral) {
         // todo: create in entity metadata method like isInherited?
@@ -73,6 +75,8 @@ export class EntityListenerMetadata {
 
     /**
      * Executes listener method of the given entity.
+     *
+     * @param entity
      */
     execute(entity: ObjectLiteral) {
         // Check if the Embedded Metadata does not exist
@@ -111,6 +115,9 @@ export class EntityListenerMetadata {
 
     /**
      * Calls embedded entity listener method no matter how nested it is.
+     *
+     * @param entity
+     * @param propertyPaths
      */
     protected callEntityEmbeddedMethod(
         entity: ObjectLiteral,

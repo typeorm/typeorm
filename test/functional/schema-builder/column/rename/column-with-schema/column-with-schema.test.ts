@@ -1,0 +1,93 @@
+import "reflect-metadata"
+import type { DataSource } from "../../../../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../../utils/test-utils"
+import { Example } from "./entity/Example"
+import { expect } from "chai"
+
+describe("schema builder > column > rename > column with schema", () => {
+    describe("schema is set", () => {
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Example],
+                schemaCreate: true,
+                dropSchema: true,
+                driverSpecific: {
+                    schema: "public",
+                },
+                enabledDrivers: ["postgres"],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should correctly change column name", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const postMetadata = connection.getMetadata(Example)
+                    const nameColumn =
+                        postMetadata.findColumnWithPropertyName("name")!
+                    nameColumn.propertyName = "title"
+                    nameColumn.build(connection)
+
+                    await connection.synchronize()
+
+                    const queryRunner = connection.createQueryRunner()
+                    const postTable = await queryRunner.getTable("example")
+                    await queryRunner.release()
+
+                    expect(postTable!.findColumnByName("name")).to.be.undefined
+                    postTable!.findColumnByName("title")!.should.be.exist
+
+                    // revert changes
+                    nameColumn.propertyName = "name"
+                    nameColumn.build(connection)
+                }),
+            ))
+    })
+
+    describe("database is set", () => {
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Example],
+                schemaCreate: true,
+                dropSchema: true,
+                driverSpecific: {
+                    database: "test",
+                },
+                enabledDrivers: ["mysql"],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should correctly change column name", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const postMetadata = connection.getMetadata(Example)
+                    const nameColumn =
+                        postMetadata.findColumnWithPropertyName("name")!
+                    nameColumn.propertyName = "title"
+                    nameColumn.build(connection)
+
+                    await connection.synchronize()
+
+                    const queryRunner = connection.createQueryRunner()
+                    const postTable = await queryRunner.getTable("example")
+                    await queryRunner.release()
+
+                    expect(postTable!.findColumnByName("name")).to.be.undefined
+                    postTable!.findColumnByName("title")!.should.be.exist
+
+                    // revert changes
+                    nameColumn.propertyName = "name"
+                    nameColumn.build(connection)
+                }),
+            ))
+    })
+})

@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { ConnectionMetadataBuilder } from "../../../src/connection/ConnectionMetadataBuilder"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { EntityMetadataValidator } from "../../../src/metadata-builder/EntityMetadataValidator"
@@ -15,9 +15,9 @@ import { Address } from "./entity/Address"
 import { User } from "./entity/User"
 
 describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Address, User],
             enabledDrivers: ["mariadb"],
             driverSpecific: {
@@ -29,7 +29,7 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
         // inet4 is available since 10.10
         // inet6 is available since 10.5
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (
                     !DriverUtils.isReleaseVersionOrGreater(
                         connection.driver,
@@ -45,15 +45,15 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
             }),
         )
 
-        connections = connections.filter(
+        dataSources = dataSources.filter(
             (connection) => connection.isInitialized,
         )
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create table with uuid, inet4, and inet6 type set to column for relevant mariadb versions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)
 
                 const newUser = await userRepository.save({
@@ -62,19 +62,18 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
                     inet6: "2001:0db8:0000:0000:0000:ff00:0042:8329",
                 })
 
-                const savedUser = await userRepository.findOneOrFail({
-                    where: { uuid: newUser.uuid },
+                const savedUser = await userRepository.findOneByOrFail({
+                    uuid: newUser.uuid,
                 })
 
-                const foundUser = await userRepository.findOne({
-                    where: { id: savedUser.id },
+                const foundUser = await userRepository.findOneByOrFail({
+                    id: savedUser.id,
                 })
 
-                expect(foundUser).to.not.be.null
-                expect(foundUser!.uuid).to.deep.equal(newUser.uuid)
-                expect(foundUser!.inet4).to.deep.equal(newUser.inet4)
-                expect(foundUser!.inet6).to.deep.equal("2001:db8::ff00:42:8329")
-                expect(foundUser!.another_uuid_field).to.not.be.undefined
+                expect(foundUser.uuid).to.deep.equal(newUser.uuid)
+                expect(foundUser.inet4).to.deep.equal(newUser.inet4)
+                expect(foundUser.inet6).to.deep.equal("2001:db8::ff00:42:8329")
+                expect(foundUser.another_uuid_field).to.not.be.undefined
 
                 const columnTypes: {
                     COLUMN_NAME: string
@@ -113,7 +112,7 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
                 await addressRepository.save(newAddress)
 
                 const foundAddress = await addressRepository.findOne({
-                    where: { user: { id: foundUser!.id } },
+                    where: { user: { id: foundUser.id } },
                 })
 
                 expect(foundAddress).to.not.be.null
@@ -122,7 +121,7 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
 
     it("should throw error if mariadb uuid is supported and length is provided to property", async () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // version supports all the new types
                 connection.driver.version = "10.10.0"
 
