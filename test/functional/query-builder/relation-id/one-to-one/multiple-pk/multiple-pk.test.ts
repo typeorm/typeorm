@@ -76,9 +76,9 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("post.id = :id", { id: 1 })
                         .andWhere("post.authorId = :authorId", { authorId: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 })
+                    expect(loadedPost.categoryId).to.be.eql({ id: 1, code: 1 })
                 }),
             ))
 
@@ -129,9 +129,9 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("category.id = :id", { id: 1 })
                         .andWhere("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.imageId).to.be.equal(1)
+                    expect(loadedCategory.imageId).to.be.equal(1)
                 }),
             ))
 
@@ -190,9 +190,9 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("post.id = :id", { id: 1 })
                         .andWhere("post.authorId = :authorId", { authorId: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 })
+                    expect(loadedPost.categoryId).to.be.eql({ id: 1, code: 1 })
                 }),
             ))
 
@@ -275,10 +275,10 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("post.id = :id", { id: 1 })
                         .andWhere("post.authorId = :authorId", { authorId: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 })
-                    expect(loadedPost!.category.imageId).to.be.equal(1)
+                    expect(loadedPost.categoryId).to.be.eql({ id: 1, code: 1 })
+                    expect(loadedPost.category.imageId).to.be.equal(1)
                 }),
             ))
     })
@@ -339,9 +339,9 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("category.id = :id", { id: 1 })
                         .andWhere("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.postId).to.be.eql({
+                    expect(loadedCategory.postId).to.be.eql({
                         id: 1,
                         authorId: 1,
                     })
@@ -400,9 +400,9 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "image.category",
                         )
                         .where("image.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedImage!.categoryId).to.be.eql({
+                    expect(loadedImage.categoryId).to.be.eql({
                         id: 1,
                         code: 1,
                     })
@@ -492,13 +492,13 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "category.post",
                         )
                         .where("image.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedImage!.categoryId).to.be.eql({
+                    expect(loadedImage.categoryId).to.be.eql({
                         id: 1,
                         code: 1,
                     })
-                    expect(loadedImage!.category.postId).to.be.eql({
+                    expect(loadedImage.category.postId).to.be.eql({
                         id: 1,
                         authorId: 1,
                     })

@@ -61,6 +61,11 @@ export abstract class AbstractSqliteDriver implements Driver {
     dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = AbstractSqliteDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
      *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
@@ -585,8 +590,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             )
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -596,11 +601,11 @@ export abstract class AbstractSqliteDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -609,8 +614,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -952,84 +957,16 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
-                (tableColumn.enum &&
+                !!(
+                    tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
                         tableColumn.enum,
                         columnMetadata.enum.map((val) => val + ""),
-                    )) ||
+                    )
+                ) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
                     tableColumn.isGenerated !== columnMetadata.isGenerated)
-
-            // DEBUG SECTION
-            // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName)
-            //     console.log(
-            //         "name:",
-            //         tableColumn.name,
-            //         columnMetadata.databaseName,
-            //     )
-            //     console.log(
-            //         "type:",
-            //         tableColumn.type,
-            //         this.normalizeType(columnMetadata),
-            //     )
-            //     console.log(
-            //         "length:",
-            //         tableColumn.length,
-            //         columnMetadata.length,
-            //     )
-            //     console.log(
-            //         "precision:",
-            //         tableColumn.precision,
-            //         columnMetadata.precision,
-            //     )
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
-            //     console.log(
-            //         "default:",
-            //         this.normalizeDefault(columnMetadata),
-            //         columnMetadata.default,
-            //     )
-            //     console.log(
-            //         "isPrimary:",
-            //         tableColumn.isPrimary,
-            //         columnMetadata.isPrimary,
-            //     )
-            //     console.log(
-            //         "isNullable:",
-            //         tableColumn.isNullable,
-            //         columnMetadata.isNullable,
-            //     )
-            //     console.log(
-            //         "generatedType:",
-            //         tableColumn.generatedType,
-            //         columnMetadata.generatedType,
-            //     )
-            //     console.log(
-            //         "asExpression:",
-            //         tableColumn.asExpression,
-            //         columnMetadata.asExpression,
-            //     )
-            //     console.log(
-            //         "isUnique:",
-            //         tableColumn.isUnique,
-            //         this.normalizeIsUnique(columnMetadata),
-            //     )
-            //     console.log(
-            //         "enum:",
-            //         tableColumn.enum &&
-            //             columnMetadata.enum &&
-            //             !OrmUtils.isArraysEqual(
-            //                 tableColumn.enum,
-            //                 columnMetadata.enum.map((val) => val + ""),
-            //             ),
-            //     )
-            //     console.log(
-            //         "isGenerated:",
-            //         tableColumn.isGenerated,
-            //         columnMetadata.isGenerated,
-            //     )
-            // }
 
             return isColumnChanged
         })

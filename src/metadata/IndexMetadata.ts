@@ -282,13 +282,13 @@ export class IndexMetadata {
             {} as { [key: string]: number },
         )
 
-        this.name = this.givenName
-            ? this.givenName
-            : namingStrategy.indexName(
-                  this.entityMetadata.tableName,
-                  this.columns.map((column) => column.databaseName),
-                  this.where,
-              )
+        this.name =
+            this.givenName ??
+            namingStrategy.indexName(
+                this.entityMetadata.tableName,
+                this.columns.map((column) => column.databaseName),
+                this.where,
+            )
         return this
     }
 }

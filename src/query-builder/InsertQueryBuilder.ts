@@ -250,7 +250,7 @@ export class InsertQueryBuilder<
             : entityTarget
         const mainAlias = this.createFromAlias(entityTarget)
         this.expressionMap.setMainAlias(mainAlias)
-        this.expressionMap.insertColumns = columns || []
+        this.expressionMap.insertColumns = columns ?? []
         return this as any as InsertQueryBuilder<T>
     }
 
@@ -1531,13 +1531,6 @@ export class InsertQueryBuilder<
         // extract real value from the entity
         let value = column.getEntityValue(valueSet)
 
-        // if column is relational and value is an object then get real referenced column value from this object
-        // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
-        // and we extract "1" from this object
-        /*if (column.referencedColumn && value instanceof Object && !(typeof value === "function")) { // todo: check if we still need it since getEntityValue already has similar code
-            value = column.referencedColumn.getEntityValue(value);
-        }*/
-
         if (!(typeof value === "function")) {
             // make sure our value is normalized by a driver
             value = this.dataSource.driver.preparePersistentValue(value, column)
@@ -1673,7 +1666,7 @@ export class InsertQueryBuilder<
                     "::STGeomFromText(" +
                     paramName +
                     ", " +
-                    (column.srid || "0") +
+                    (column.srid ?? "0") +
                     ")"
             } else if (DriverUtils.isSQLiteFamily(this.dataSource.driver)) {
                 expression = (

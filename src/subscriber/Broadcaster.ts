@@ -213,8 +213,8 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || [],
+                        updatedColumns: updatedColumns ?? [],
+                        updatedRelations: updatedRelations ?? [],
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -714,8 +714,8 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || [],
+                        updatedColumns: updatedColumns ?? [],
+                        updatedRelations: updatedRelations ?? [],
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -1003,8 +1003,7 @@ export class Broadcaster {
         target: Function | string,
     ): boolean {
         return (
-            !subscriber.listenTo ||
-            !subscriber.listenTo() ||
+            !subscriber.listenTo?.() ||
             subscriber.listenTo() === Object ||
             subscriber.listenTo() === target ||
             subscriber.listenTo().isPrototypeOf(target)

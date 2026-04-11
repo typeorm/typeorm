@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Michael Bromley",
+    "github": "michaelbromley",
+    "role": "Steering, Technical Liaison"
+  },
+  {
+    "name": "David Höck",
+    "github": "dlhck",
+    "role": "Steering, External Relations"
+  },
+  {
+    "name": "Lucian Mocanu",
+    "github": "alumni",
+    "role": "Technical Lead"
+  },
+  {
+    "name": "Naor Peled",
+    "github": "naorpeled",
+    "role": "Maintainer"
+  },
+  {
+    "name": "Giorgio Boa",
+    "github": "gioboa",
+    "role": "Maintainer"
+  },
+  {
+    "name": "Piotr Kuczynski",
+    "github": "pkuczynski",
+    "role": "Maintainer",
+    "linkedin": "https://www.linkedin.com/in/piotrkuczynski"
+  },
+  {
+    "name": "Mohammed Gomaa",
+    "github": "G0maa",
+    "role": "Maintainer"
+  },
+  {
+    "name": "Julian Pufler",
+    "github": "pujux",
+    "role": "Maintainer"
+  },
+  {
+    "name": "Simon Garner",
+    "github": "sgarner",
+    "role": "Maintainer"
+  },
+  {
+    "name": "Pieter Wigboldus",
+    "github": "w3nl",
+    "role": "Maintainer"
+  },
+  {
+    "name": "Mike Guida",
+    "github": "mguida22",
+    "role": "Maintainer"
+  }
+]

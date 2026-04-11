@@ -61,6 +61,11 @@ export class CockroachDriver implements Driver {
     readonly dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = CockroachDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
      *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
@@ -334,20 +339,14 @@ export class CockroachDriver implements Driver {
         if (!this.database || !this.searchSchema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
+            this.searchSchema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
 
-        if (!this.schema) {
-            this.schema = this.searchSchema
-        }
+        this.schema ??= this.searchSchema
     }
 
     /**
@@ -632,8 +631,8 @@ export class CockroachDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -644,11 +643,11 @@ export class CockroachDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -657,8 +656,8 @@ export class CockroachDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -667,7 +666,7 @@ export class CockroachDriver implements Driver {
 
         return {
             database: driverDatabase,
-            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
+            schema: (parts.length > 1 ? parts[0] : undefined) ?? driverSchema,
             tableName: parts.length > 1 ? parts[1] : parts[0],
         }
     }
@@ -1053,18 +1052,20 @@ export class CockroachDriver implements Driver {
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
                 tableColumn.enumName !== columnMetadata.enumName ||
-                (tableColumn.enum &&
+                !!(
+                    tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
                         tableColumn.enum,
                         columnMetadata.enum.map((val) => val + ""),
-                    )) || // enums in postgres are always strings
+                    )
+                ) || // enums in postgres are always strings
                 tableColumn.isGenerated !== columnMetadata.isGenerated ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
-                (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim() ||
-                (tableColumn.spatialFeatureType || "").toLowerCase() !==
-                    (columnMetadata.spatialFeatureType || "").toLowerCase() ||
+                (tableColumn.asExpression ?? "").trim() !==
+                    (columnMetadata.asExpression ?? "").trim() ||
+                (tableColumn.spatialFeatureType ?? "").toLowerCase() !==
+                    (columnMetadata.spatialFeatureType ?? "").toLowerCase() ||
                 tableColumn.srid !== columnMetadata.srid
             )
         })
@@ -1141,11 +1142,11 @@ export class CockroachDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const postgres = this.options.driver || PlatformTools.load("pg")
+            const postgres = this.options.driver ?? PlatformTools.load("pg")
             this.postgres = postgres
             try {
                 const pgNative =
-                    this.options.nativeDriver || PlatformTools.load("pg-native")
+                    this.options.nativeDriver ?? PlatformTools.load("pg-native")
                 if (pgNative && this.postgres.native)
                     this.postgres = this.postgres.native
             } catch (e) {}
@@ -1184,7 +1185,7 @@ export class CockroachDriver implements Driver {
                 application_name: options.applicationName,
                 max: options.poolSize,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         // create a connection pool
@@ -1192,7 +1193,7 @@ export class CockroachDriver implements Driver {
         const { logger } = this.dataSource
 
         const poolErrorHandler =
-            options.poolErrorHandler ||
+            options.poolErrorHandler ??
             ((error: any) =>
                 logger.log("warn", `Postgres pool raised an error. ${error}`))
 
@@ -1247,9 +1248,9 @@ export class CockroachDriver implements Driver {
      */
     protected buildEnumName(column: ColumnMetadata): string {
         const { schema, tableName } = this.parseTableName(column.entityMetadata)
-        let enumName = column.enumName
-            ? column.enumName
-            : `${tableName}_${column.databaseName.toLowerCase()}_enum`
+        let enumName =
+            column.enumName ??
+            `${tableName}_${column.databaseName.toLowerCase()}_enum`
         if (schema) enumName = `${schema}.${enumName}`
         return enumName
             .split(".")

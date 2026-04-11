@@ -7,7 +7,6 @@ import {
 import type { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
 
 describe("github issues > #996 already loaded via query builder relations should not be loaded again when they are lazily loaded", () => {
     let dataSources: DataSource[]
@@ -39,10 +38,9 @@ describe("github issues > #996 already loaded via query builder relations should
                 const loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost).to.not.be.undefined
-                const categories = await loadedPost!.categories
+                const categories = await loadedPost.categories
                 categories.should.be.eql([
                     {
                         id: 1,
