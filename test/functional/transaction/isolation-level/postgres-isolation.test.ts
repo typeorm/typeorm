@@ -118,4 +118,46 @@ describe("transaction > isolation level > postgres / cockroachdb", () => {
             }
         })
     })
+
+    describe("defined in data source", () => {
+        for (const isolationLevel of supportedLevels) {
+            describe(isolationLevel, () => {
+                let dataSources: DataSource[]
+                before(async () => {
+                    // Create schema without isolation level to avoid
+                    // DDL failures under weak isolation
+                    const setup = await createTestingConnections({
+                        entities: [__dirname + "/entity/*{.js,.ts}"],
+                        enabledDrivers: ["postgres", "cockroachdb"],
+                        schemaCreate: true,
+                        dropSchema: true,
+                    })
+                    await closeTestingConnections(setup)
+
+                    dataSources = await createTestingConnections({
+                        entities: [__dirname + "/entity/*{.js,.ts}"],
+                        enabledDrivers: ["postgres", "cockroachdb"],
+                        driverSpecific: {
+                            isolationLevel,
+                        },
+                    })
+                })
+                after(() => closeTestingConnections(dataSources))
+
+                it(`should apply ${isolationLevel} as default`, () =>
+                    Promise.all(
+                        dataSources.map(async (dataSource) => {
+                            await dataSource.manager.transaction(
+                                async (entityManager) => {
+                                    await getCurrentTransactionLevelAndAssert(
+                                        entityManager,
+                                        isolationLevel,
+                                    )
+                                },
+                            )
+                        }),
+                    ))
+            })
+        }
+    })
 })
