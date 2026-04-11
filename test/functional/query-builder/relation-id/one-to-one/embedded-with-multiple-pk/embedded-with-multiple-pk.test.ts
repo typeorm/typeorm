@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
-import { DataSource } from "../../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { Counters } from "./entity/Counters"
@@ -13,38 +13,37 @@ import { User } from "./entity/User"
 import { Subcounters } from "./entity/Subcounters"
 
 describe("query builder > relation-id > one-to-one > embedded-with-multiple-pk", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load ids when loadRelationIdAndMap used on embedded table and each table have primary key", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.id = 1
                 user1.name = "Alice"
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.id = 2
                 user2.name = "Bob"
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "cars"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.id = 2
                 category2.name = "airplanes"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const post1 = new Post()
                 post1.id = 1
@@ -59,7 +58,7 @@ describe("query builder > relation-id > one-to-one > embedded-with-multiple-pk",
                 post1.counters.subcounters.version = 1
                 post1.counters.subcounters.watches = 2
                 post1.counters.subcounters.watchedUser = user1
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.id = 2
@@ -74,9 +73,9 @@ describe("query builder > relation-id > one-to-one > embedded-with-multiple-pk",
                 post2.counters.subcounters.version = 1
                 post2.counters.subcounters.watches = 1
                 post2.counters.subcounters.watchedUser = user2
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap(
                         "post.counters.categoryId",
@@ -126,7 +125,7 @@ describe("query builder > relation-id > one-to-one > embedded-with-multiple-pk",
                     }),
                 )
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap(
                         "post.counters.categoryId",
@@ -141,10 +140,10 @@ describe("query builder > relation-id > one-to-one > embedded-with-multiple-pk",
                     .andWhere("post.counters.subcounters.version = :version", {
                         version: 1,
                     })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(
-                    loadedPost!.should.be.eql({
+                    loadedPost.should.be.eql({
                         id: 1,
                         title: "About BMW",
                         counters: {

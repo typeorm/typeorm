@@ -1,14 +1,14 @@
-import { RelationType } from "./types/RelationTypes"
+import type { RelationType } from "./types/RelationTypes"
 import { EntityMetadata } from "./EntityMetadata"
-import { ForeignKeyMetadata } from "./ForeignKeyMetadata"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { ColumnMetadata } from "./ColumnMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
-import { RelationMetadataArgs } from "../metadata-args/RelationMetadataArgs"
-import { DeferrableType } from "./types/DeferrableType"
-import { OnUpdateType } from "./types/OnUpdateType"
-import { OnDeleteType } from "./types/OnDeleteType"
-import { PropertyTypeFactory } from "./types/PropertyTypeInFunction"
+import type { ForeignKeyMetadata } from "./ForeignKeyMetadata"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { RelationMetadataArgs } from "../metadata-args/RelationMetadataArgs"
+import type { DeferrableType } from "./types/DeferrableType"
+import type { OnUpdateType } from "./types/OnUpdateType"
+import type { OnDeleteType } from "./types/OnDeleteType"
+import type { PropertyTypeFactory } from "./types/PropertyTypeInFunction"
 import { TypeORMError } from "../error"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -25,14 +25,14 @@ export class RelationMetadata {
     /**
      * Entity metadata of the entity where this relation is placed.
      *
-     * For example for @ManyToMany(type => Category) in Post, entityMetadata will be metadata of Post entity.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `entityMetadata` will be metadata of `Post` entity.
      */
     entityMetadata: EntityMetadata
 
     /**
      * Entity metadata of the entity that is targeted by this relation.
      *
-     * For example for @ManyToMany(type => Category) in Post, inverseEntityMetadata will be metadata of Category entity.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `inverseEntityMetadata` will be metadata of `Category` entity.
      */
     inverseEntityMetadata: EntityMetadata
 
@@ -58,9 +58,9 @@ export class RelationMetadata {
      * Target entity to which this relation is applied.
      * Target IS NOT equal to entityMetadata.target, because relation
      *
-     * For example for @ManyToMany(type => Category) in Post, target will be Post.
-     * If @ManyToMany(type => Category) is in Counters which is embedded into Post, target will be Counters.
-     * If @ManyToMany(type => Category) is in abstract class BaseUser which Post extends, target will be BaseUser.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `target` will be `Post`.
+     * If `@ManyToMany(type => Category)` is in `Counters` which is embedded into `Post`, `target` will be `Counters`.
+     * If `@ManyToMany(type => Category)` is in abstract class `BaseUser` which `Post` extends, `target` will be `BaseUser`.
      * Target can be string if its defined in entity schema instead of class.
      */
     target: Function | string
@@ -174,7 +174,7 @@ export class RelationMetadata {
     /**
      * Gets the property's type to which this relation is applied.
      *
-     * For example for @ManyToMany(type => Category) in Post, target will be Category.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `type` will be `Category`.
      */
     type: Function | string
 
@@ -298,11 +298,6 @@ export class RelationMetadata {
             this.givenInverseSidePropertyFactory = args.inverseSideProperty
 
         this.isLazy = args.isLazy || false
-        // this.isCascadeInsert = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("insert") !== -1);
-        // this.isCascadeUpdate = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("update") !== -1);
-        // this.isCascadeRemove = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("remove") !== -1);
-        // this.isCascadeSoftRemove = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("soft-remove") !== -1);
-        // this.isCascadeRecover = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("recover") !== -1);
         this.isCascadeInsert =
             args.options.cascade === true ||
             (Array.isArray(args.options.cascade) &&
@@ -323,7 +318,6 @@ export class RelationMetadata {
             args.options.cascade === true ||
             (Array.isArray(args.options.cascade) &&
                 args.options.cascade.indexOf("recover") !== -1)
-        // this.isPrimary = args.options.primary || false;
         this.isNullable =
             args.options.nullable === false || this.isPrimary ? false : true
         this.onDelete = args.options.onDelete
@@ -331,12 +325,12 @@ export class RelationMetadata {
         this.deferrable = args.options.deferrable
         this.createForeignKeyConstraints =
             args.options.createForeignKeyConstraints === false ? false : true
-        this.isEager = args.options.eager || false
+        this.isEager = args.options.eager ?? false
         this.persistenceEnabled =
             args.options.persistence === false ? false : true
-        this.orphanedRowAction = args.options.orphanedRowAction || "nullify"
-        this.isTreeParent = args.isTreeParent || false
-        this.isTreeChildren = args.isTreeChildren || false
+        this.orphanedRowAction = args.options.orphanedRowAction ?? "nullify"
+        this.isTreeParent = args.isTreeParent ?? false
+        this.isTreeChildren = args.isTreeChildren ?? false
 
         if (typeof args.type === "function") {
             this.type =
@@ -368,6 +362,8 @@ export class RelationMetadata {
 
     /**
      * Creates join column ids map from the given related entity ids array.
+     *
+     * @param entity
      */
     getRelationIdMap(entity: ObjectLiteral): ObjectLiteral | undefined {
         const joinColumns = this.isOwning
@@ -386,6 +382,8 @@ export class RelationMetadata {
      * If given id is an object then it means its already id map.
      * If given id isn't an object then it means its a value of the id column
      * and it creates a new id map with this value and name of the primary column.
+     *
+     * @param id
      */
     ensureRelationIdMap(id: any): ObjectLiteral {
         if (ObjectUtils.isObject(id)) return id
@@ -408,6 +406,9 @@ export class RelationMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
+     *
+     * @param entity
+     * @param getLazyRelationsPromiseValue
      */
     getEntityValue(
         entity: ObjectLiteral,
@@ -486,6 +487,9 @@ export class RelationMetadata {
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
      *
      * If merge is set to true, it merges given value into currently
+     *
+     * @param entity
+     * @param value
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         const propertyName = this.isLazy
@@ -503,9 +507,8 @@ export class RelationMetadata {
 
                 const embeddedMetadata = embeddedMetadatas.shift()
                 if (embeddedMetadata) {
-                    if (!map[embeddedMetadata.propertyName])
-                        map[embeddedMetadata.propertyName] =
-                            embeddedMetadata.create()
+                    map[embeddedMetadata.propertyName] ??=
+                        embeddedMetadata.create()
 
                     extractEmbeddedColumnValue(
                         embeddedMetadatas,
@@ -531,6 +534,8 @@ export class RelationMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
+     *
+     * @param value
      */
     createValueMap(value: any) {
         // extract column value from embeds of entity if column is in embedded
@@ -582,6 +587,8 @@ export class RelationMetadata {
     /**
      * Registers given foreign keys in the relation.
      * This builder method should be used to register foreign key in the relation.
+     *
+     * @param foreignKeys
      */
     registerForeignKeys(...foreignKeys: ForeignKeyMetadata[]) {
         this.foreignKeys.push(...foreignKeys)
@@ -590,6 +597,9 @@ export class RelationMetadata {
     /**
      * Registers given join columns in the relation.
      * This builder method should be used to register join column in the relation.
+     *
+     * @param joinColumns
+     * @param inverseJoinColumns
      */
     registerJoinColumns(
         joinColumns: ColumnMetadata[] = [],
@@ -611,6 +621,8 @@ export class RelationMetadata {
     /**
      * Registers a given junction entity metadata.
      * This builder method can be called after junction entity metadata for the many-to-many relation was created.
+     *
+     * @param junctionEntityMetadata
      */
     registerJunctionEntityMetadata(junctionEntityMetadata: EntityMetadata) {
         this.junctionEntityMetadata = junctionEntityMetadata
@@ -655,10 +667,7 @@ export class RelationMetadata {
      * Builds relation's property path based on its embedded tree.
      */
     buildPropertyPath(): string {
-        if (
-            !this.embeddedMetadata ||
-            !this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (!this.embeddedMetadata?.parentPropertyNames.length)
             return this.propertyName
 
         return (

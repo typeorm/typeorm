@@ -1,6 +1,6 @@
-import { DataSource } from "../data-source"
+import type { DataSource } from "../data-source"
 import * as process from "process"
-import * as yargs from "yargs"
+import type * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
 import path from "path"
 import { CommandUtils } from "./CommandUtils"
@@ -42,8 +42,7 @@ export class MigrationShowCommand implements yargs.CommandModule {
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration show:", err)
 
-            if (dataSource && dataSource.isInitialized)
-                await dataSource.destroy()
+            if (dataSource?.isInitialized) await dataSource.destroy()
 
             process.exit(1)
         }

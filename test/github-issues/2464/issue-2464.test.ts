@@ -6,26 +6,25 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Foo } from "./entity/Foo"
 import { QueryFailedError } from "../../../src"
 import { expect } from "chai"
 
 describe("github issues > #2464 - ManyToMany onDelete option not working", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not delete when onDelete is 'NO ACTION'", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Foo)
 
                 await repo.save({ id: 1, bars: [{ description: "test1" }] })
@@ -41,7 +40,7 @@ describe("github issues > #2464 - ManyToMany onDelete option not working", () =>
 
     it("should delete when onDelete is not set", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Spanner support only NO ACTION clause
                 if (connection.driver.options.type === "spanner") return
 

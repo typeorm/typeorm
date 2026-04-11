@@ -4,29 +4,28 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 import { AfterQuerySubscriber } from "./subscribers/AfterQuerySubscriber"
 import { Comment } from "./entity/Comment"
 
 describe("other issues > lazy count", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                subscribers: [AfterQuerySubscriber],
-                dropSchema: true,
-                schemaCreate: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            subscribers: [AfterQuerySubscriber],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("skip count query when fewer entities are returned than the limit", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
@@ -52,7 +51,7 @@ describe("other issues > lazy count", () => {
 
     it("skip count query when fewer entities are returned than the take", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
@@ -78,7 +77,7 @@ describe("other issues > lazy count", () => {
 
     it("skip count query when an offset is defined", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
@@ -105,7 +104,7 @@ describe("other issues > lazy count", () => {
 
     it("skip count query when skip is defined", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
@@ -132,7 +131,7 @@ describe("other issues > lazy count", () => {
 
     it("run count query when returned entities reach the take", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 2)
 
                 const afterQuery = connection
@@ -158,7 +157,7 @@ describe("other issues > lazy count", () => {
 
     it("skip count query when joining a relation with a take", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
@@ -185,7 +184,7 @@ describe("other issues > lazy count", () => {
 
     it("run count query when joining a relation with a limit", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
@@ -212,7 +211,7 @@ describe("other issues > lazy count", () => {
 
     it("skip count query when joining a relation with a take and a skip", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
@@ -240,7 +239,7 @@ describe("other issues > lazy count", () => {
 
     it("run count query when joining a relation with a limit and an offset", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
@@ -268,7 +267,7 @@ describe("other issues > lazy count", () => {
 
     it("run count query when joining a relation with skip is greater than total entities", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
@@ -296,7 +295,7 @@ describe("other issues > lazy count", () => {
 
     it("run count query when offset is greater than total entities", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
 
                 const afterQuery = connection
