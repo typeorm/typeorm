@@ -130,7 +130,7 @@ export class PlainObjectToDatabaseEntityTransformer {
         fillLoadMap(plainObject, metadata)
         // load all entities and store them in the load map
         const isMongoDb =
-            this.manager.connection.driver.options.type === "mongodb"
+            this.manager.dataSource.driver.options.type === "mongodb"
         await Promise.all(
             loadMap.groupByTargetIds().map(async (targetWithIds) => {
                 let entities: ObjectLiteral[]
@@ -159,8 +159,7 @@ export class PlainObjectToDatabaseEntityTransformer {
             if (
                 !loadMapItem.relation ||
                 !loadMapItem.entity ||
-                !loadMapItem.parentLoadMapItem ||
-                !loadMapItem.parentLoadMapItem.entity
+                !loadMapItem.parentLoadMapItem?.entity
             )
                 return
 
@@ -168,14 +167,9 @@ export class PlainObjectToDatabaseEntityTransformer {
                 loadMapItem.relation.isManyToMany ||
                 loadMapItem.relation.isOneToMany
             ) {
-                if (
-                    !loadMapItem.parentLoadMapItem.entity[
-                        loadMapItem.relation.propertyName
-                    ]
-                )
-                    loadMapItem.parentLoadMapItem.entity[
-                        loadMapItem.relation.propertyName
-                    ] = []
+                loadMapItem.parentLoadMapItem.entity[
+                    loadMapItem.relation.propertyName
+                ] ??= []
                 loadMapItem.parentLoadMapItem.entity[
                     loadMapItem.relation.propertyName
                 ].push(loadMapItem.entity)

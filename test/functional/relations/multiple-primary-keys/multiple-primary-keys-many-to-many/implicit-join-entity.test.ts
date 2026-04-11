@@ -85,11 +85,11 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         .leftJoinAndSelect("post.categories", "categories")
                         .orderBy("categories.code")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].name).to.be.equal("cars")
-                    expect(loadedPost!.categories[0].type).to.be.equal(
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories[0].name).to.be.equal("cars")
+                    expect(loadedPost.categories[0].type).to.be.equal(
                         "common-category",
                     )
                 }),
@@ -171,14 +171,14 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         )
                         .orderBy("categories.code")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoriesWithOptions).to.not.be.eql([])
+                    expect(loadedPost.categoriesWithOptions).to.not.be.eql([])
                     expect(
-                        loadedPost!.categoriesWithOptions[0].name,
+                        loadedPost.categoriesWithOptions[0].name,
                     ).to.be.equal("cars")
                     expect(
-                        loadedPost!.categoriesWithOptions[0].type,
+                        loadedPost.categoriesWithOptions[0].type,
                     ).to.be.equal("common-category")
                 }),
             ))
@@ -274,19 +274,19 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         )
                         .orderBy("categories.code")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
+                    expect(loadedPost.categoriesWithNonPKColumns).to.not.be.eql(
+                        [],
+                    )
                     expect(
-                        loadedPost!.categoriesWithNonPKColumns,
-                    ).to.not.be.eql([])
-                    expect(
-                        loadedPost!.categoriesWithNonPKColumns[0].code,
+                        loadedPost.categoriesWithNonPKColumns[0].code,
                     ).to.be.equal(1)
                     expect(
-                        loadedPost!.categoriesWithNonPKColumns[0].version,
+                        loadedPost.categoriesWithNonPKColumns[0].version,
                     ).to.be.equal(1)
                     expect(
-                        loadedPost!.categoriesWithNonPKColumns[0].description,
+                        loadedPost.categoriesWithNonPKColumns[0].description,
                     ).to.be.equal("category of cars")
                 }),
             ))
@@ -357,11 +357,11 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         .leftJoinAndSelect("tag.categories", "categories")
                         .orderBy("categories.code")
                         .where("tag.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedTag!.categories).to.not.be.eql([])
-                    expect(loadedTag!.categories[0].name).to.be.equal("cars")
-                    expect(loadedTag!.categories[0].type).to.be.equal(
+                    expect(loadedTag.categories).to.not.be.eql([])
+                    expect(loadedTag.categories[0].name).to.be.equal("cars")
+                    expect(loadedTag.categories[0].type).to.be.equal(
                         "common-category",
                     )
                 }),
@@ -447,15 +447,15 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         )
                         .orderBy("categories.code")
                         .where("tag.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedTag!.categoriesWithOptions).to.not.be.eql([])
-                    expect(
-                        loadedTag!.categoriesWithOptions[0].name,
-                    ).to.be.equal("cars")
-                    expect(
-                        loadedTag!.categoriesWithOptions[0].type,
-                    ).to.be.equal("common-category")
+                    expect(loadedTag.categoriesWithOptions).to.not.be.eql([])
+                    expect(loadedTag.categoriesWithOptions[0].name).to.be.equal(
+                        "cars",
+                    )
+                    expect(loadedTag.categoriesWithOptions[0].type).to.be.equal(
+                        "common-category",
+                    )
                 }),
             ))
 
@@ -551,19 +551,19 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         )
                         .orderBy("categories.code")
                         .where("tag.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedTag!.categoriesWithNonPKColumns).to.not.be.eql(
+                    expect(loadedTag.categoriesWithNonPKColumns).to.not.be.eql(
                         [],
                     )
                     expect(
-                        loadedTag!.categoriesWithNonPKColumns[0].code,
+                        loadedTag.categoriesWithNonPKColumns[0].code,
                     ).to.be.equal(1)
                     expect(
-                        loadedTag!.categoriesWithNonPKColumns[0].version,
+                        loadedTag.categoriesWithNonPKColumns[0].version,
                     ).to.be.equal(1)
                     expect(
-                        loadedTag!.categoriesWithNonPKColumns[0].description,
+                        loadedTag.categoriesWithNonPKColumns[0].description,
                     ).to.be.equal("category of cars")
                 }),
             ))
@@ -618,11 +618,11 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         .leftJoinAndSelect("category.posts", "posts")
                         .orderBy("posts.id")
                         .where("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.posts).to.not.be.eql([])
-                    expect(loadedCategory!.posts[0].id).to.be.equal(1)
-                    expect(loadedCategory!.posts[1].id).to.be.equal(2)
+                    expect(loadedCategory.posts).to.not.be.eql([])
+                    expect(loadedCategory.posts[0].id).to.be.equal(1)
+                    expect(loadedCategory.posts[1].id).to.be.equal(2)
                 }),
             ))
 
@@ -684,15 +684,11 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         .leftJoinAndSelect("category.postsWithOptions", "posts")
                         .orderBy("posts.id")
                         .where("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.postsWithOptions).to.not.be.eql([])
-                    expect(loadedCategory!.postsWithOptions[0].id).to.be.equal(
-                        1,
-                    )
-                    expect(loadedCategory!.postsWithOptions[1].id).to.be.equal(
-                        2,
-                    )
+                    expect(loadedCategory.postsWithOptions).to.not.be.eql([])
+                    expect(loadedCategory.postsWithOptions[0].id).to.be.equal(1)
+                    expect(loadedCategory.postsWithOptions[1].id).to.be.equal(2)
                 }),
             ))
 
@@ -762,16 +758,16 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         )
                         .orderBy("posts.id")
                         .where("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.postsWithNonPKColumns).to.not.be.eql(
+                    expect(loadedCategory.postsWithNonPKColumns).to.not.be.eql(
                         [],
                     )
                     expect(
-                        loadedCategory!.postsWithNonPKColumns[0].id,
+                        loadedCategory.postsWithNonPKColumns[0].id,
                     ).to.be.equal(1)
                     expect(
-                        loadedCategory!.postsWithNonPKColumns[1].id,
+                        loadedCategory.postsWithNonPKColumns[1].id,
                     ).to.be.equal(2)
                 }),
             ))
@@ -845,13 +841,13 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         .leftJoinAndSelect("category.tags", "tags")
                         .orderBy("tags.code")
                         .where("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.tags).to.not.be.eql([])
-                    expect(loadedCategory!.tags[0].title).to.be.equal(
+                    expect(loadedCategory.tags).to.not.be.eql([])
+                    expect(loadedCategory.tags[0].title).to.be.equal(
                         "About BMW",
                     )
-                    expect(loadedCategory!.tags[0].description).to.be.equal(
+                    expect(loadedCategory.tags[0].description).to.be.equal(
                         "Tag about BMW",
                     )
                 }),
@@ -930,14 +926,14 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         .leftJoinAndSelect("category.tagsWithOptions", "tags")
                         .orderBy("tags.code")
                         .where("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.tagsWithOptions).to.not.be.eql([])
+                    expect(loadedCategory.tagsWithOptions).to.not.be.eql([])
+                    expect(loadedCategory.tagsWithOptions[0].title).to.be.equal(
+                        "About BMW",
+                    )
                     expect(
-                        loadedCategory!.tagsWithOptions[0].title,
-                    ).to.be.equal("About BMW")
-                    expect(
-                        loadedCategory!.tagsWithOptions[0].description,
+                        loadedCategory.tagsWithOptions[0].description,
                     ).to.be.equal("Tag about BMW")
                 }),
             ))
@@ -1023,16 +1019,16 @@ describe("relations > multiple-primary-keys > many-to-many > implicit join entit
                         )
                         .orderBy("tags.code")
                         .where("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.tagsWithNonPKColumns).to.not.be.eql(
+                    expect(loadedCategory.tagsWithNonPKColumns).to.not.be.eql(
                         [],
                     )
                     expect(
-                        loadedCategory!.tagsWithNonPKColumns[0].title,
+                        loadedCategory.tagsWithNonPKColumns[0].title,
                     ).to.be.equal("About BMW")
                     expect(
-                        loadedCategory!.tagsWithNonPKColumns[0].description,
+                        loadedCategory.tagsWithNonPKColumns[0].description,
                     ).to.be.equal("Tag about BMW")
                 }),
             ))

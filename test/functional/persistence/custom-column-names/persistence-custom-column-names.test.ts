@@ -1,303 +1,154 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import type { Repository } from "../../../../src/repository/Repository"
-import { setupSingleTestingConnection } from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { CategoryMetadata } from "./entity/CategoryMetadata"
 import { Post } from "./entity/Post"
 
-describe("persistence > custom-column-names", function () {
-    // -------------------------------------------------------------------------
-    // Configuration
-    // -------------------------------------------------------------------------
-
-    // connect to db
-    let dataSource: DataSource
+describe("persistence > custom-column-names", () => {
+    let dataSources: DataSource[]
     before(async () => {
-        const options = setupSingleTestingConnection("mysql", {
+        dataSources = await createTestingConnections({
             entities: [Post, Category, CategoryMetadata],
         })
-        if (!options) return
-
-        dataSource = new DataSource(options)
     })
-    after(() => dataSource.destroy())
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
-    // clean up database before each test
-    function reloadDatabase() {
-        if (!dataSource) return
-        return dataSource.synchronize(true).catch((e) => {
-            throw e
-        })
-    }
+    it("should attach exist entity to exist entity with many-to-one relation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const newCategory = dataSource.manager.create(Category)
+                newCategory.name = "Animals"
+                await dataSource.manager.save(newCategory)
 
-    let postRepository: Repository<Post>
-    let categoryRepository: Repository<Category>
-    let metadataRepository: Repository<CategoryMetadata>
-    before(function () {
-        if (!dataSource) return
-        postRepository = dataSource.getRepository(Post)
-        categoryRepository = dataSource.getRepository(Category)
-        metadataRepository = dataSource.getRepository(CategoryMetadata)
-    })
+                const newPost = dataSource.manager.create(Post)
+                newPost.title = "All about animals"
+                await dataSource.manager.save(newPost)
 
-    // -------------------------------------------------------------------------
-    // Specifications
-    // -------------------------------------------------------------------------
+                newPost.category = newCategory
+                await dataSource.manager.save(newPost)
 
-    describe("attach exist entity to exist entity with many-to-one relation", function () {
-        if (!dataSource) return
-        let newPost: Post, newCategory: Category, loadedPost: Post
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    { where: { id: 1 }, relations: { category: true } },
+                )
 
-        before(reloadDatabase)
+                expect(loadedPost.category).not.to.be.undefined
+                expect(loadedPost.categoryId).not.to.be.undefined
+            }),
+        ))
 
-        // save a new category
-        before(function () {
-            newCategory = categoryRepository.create()
-            newCategory.name = "Animals"
-            return categoryRepository.save(newCategory)
-        })
+    it("should attach new entity to exist entity with many-to-one relation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const newCategory = dataSource.manager.create(Category)
+                newCategory.name = "Animals"
+                await dataSource.manager.save(newCategory)
 
-        // save a new post
-        before(function () {
-            newPost = postRepository.create()
-            newPost.title = "All about animals"
-            return postRepository.save(newPost)
-        })
+                const newPost = dataSource.manager.create(Post)
+                newPost.title = "All about animals"
+                newPost.category = newCategory
+                await dataSource.manager.save(newPost)
 
-        // attach category to post and save it
-        before(function () {
-            newPost.category = newCategory
-            return postRepository.save(newPost)
-        })
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    { where: { id: 1 }, relations: { category: true } },
+                )
 
-        // load a post
-        before(function () {
-            return postRepository
-                .findOne({
-                    where: {
-                        id: 1,
+                expect(loadedPost.category).not.to.be.undefined
+                expect(loadedPost.categoryId).not.to.be.undefined
+            }),
+        ))
+
+    it("should attach new entity to new entity with many-to-one relation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const newCategory = dataSource.manager.create(Category)
+                newCategory.name = "Animals"
+                const newPost = dataSource.manager.create(Post)
+                newPost.title = "All about animals"
+                newPost.category = newCategory
+                await dataSource.manager.save(newPost)
+
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    { where: { id: 1 }, relations: { category: true } },
+                )
+
+                expect(loadedPost.category).not.to.be.undefined
+                expect(loadedPost.categoryId).not.to.be.undefined
+            }),
+        ))
+
+    it("should attach exist entity to exist entity with one-to-one relation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const newPost = dataSource.manager.create(Post)
+                newPost.title = "All about animals"
+                await dataSource.manager.save(newPost)
+
+                const newCategory = dataSource.manager.create(Category)
+                newCategory.name = "Animals"
+                await dataSource.manager.save(newCategory)
+
+                const newMetadata = dataSource.manager.create(CategoryMetadata)
+                newMetadata.keyword = "animals"
+                await dataSource.manager.save(newMetadata)
+
+                newCategory.metadata = newMetadata
+                newPost.category = newCategory
+                await dataSource.manager.save(newPost)
+
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: { id: 1 },
+                        relations: { category: { metadata: true } },
                     },
-                    relations: {
-                        category: true,
+                )
+
+                expect(loadedPost.category).not.to.be.undefined
+                expect(loadedPost.categoryId).not.to.be.undefined
+                expect(loadedPost.category.metadata).not.to.be.undefined
+                expect(loadedPost.category.metadataId).not.to.be.undefined
+            }),
+        ))
+
+    it("should attach new entity to exist entity with one-to-one relation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const newPost = dataSource.manager.create(Post)
+                newPost.title = "All about animals"
+                await dataSource.manager.save(newPost)
+
+                const newMetadata = dataSource.manager.create(CategoryMetadata)
+                newMetadata.keyword = "animals"
+                const newCategory = dataSource.manager.create(Category)
+                newCategory.name = "Animals"
+                newCategory.metadata = newMetadata
+                await dataSource.manager.save(newCategory)
+
+                newPost.category = newCategory
+                await dataSource.manager.save(newPost)
+
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: { id: 1 },
+                        relations: { category: { metadata: true } },
                     },
-                })
-                .then((post) => {
-                    loadedPost = post!
-                })
-        })
+                )
 
-        it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.undefined
-            expect(loadedPost.category).not.to.be.undefined
-            expect(loadedPost.categoryId).not.to.be.undefined
-        })
-    })
-
-    describe("attach new entity to exist entity with many-to-one relation", function () {
-        if (!dataSource) return
-        let newPost: Post, newCategory: Category, loadedPost: Post
-
-        before(reloadDatabase)
-
-        // save a new category
-        before(function () {
-            newCategory = categoryRepository.create()
-            newCategory.name = "Animals"
-            return categoryRepository.save(newCategory)
-        })
-
-        // save a new post and attach category
-        before(function () {
-            newPost = postRepository.create()
-            newPost.title = "All about animals"
-            newPost.category = newCategory
-            return postRepository.save(newPost)
-        })
-
-        // load a post
-        before(function () {
-            return postRepository
-                .findOne({
-                    where: {
-                        id: 1,
-                    },
-                    relations: {
-                        category: true,
-                    },
-                })
-                .then((post) => {
-                    loadedPost = post!
-                })
-        })
-
-        it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.undefined
-            expect(loadedPost.category).not.to.be.undefined
-            expect(loadedPost.categoryId).not.to.be.undefined
-        })
-    })
-
-    describe("attach new entity to new entity with many-to-one relation", function () {
-        if (!dataSource) return
-        let newPost: Post, newCategory: Category, loadedPost: Post
-
-        before(reloadDatabase)
-
-        // save a new category, post and attach category to post
-        before(function () {
-            newCategory = categoryRepository.create()
-            newCategory.name = "Animals"
-            newPost = postRepository.create()
-            newPost.title = "All about animals"
-            newPost.category = newCategory
-            return postRepository.save(newPost)
-        })
-
-        // load a post
-        before(function () {
-            return postRepository
-                .findOne({
-                    where: {
-                        id: 1,
-                    },
-                    relations: {
-                        category: true,
-                    },
-                })
-                .then((post) => {
-                    loadedPost = post!
-                })
-        })
-
-        it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.undefined
-            expect(loadedPost.category).not.to.be.undefined
-            expect(loadedPost.categoryId).not.to.be.undefined
-        })
-    })
-
-    describe("attach exist entity to exist entity with one-to-one relation", function () {
-        if (!dataSource) return
-        let newPost: Post,
-            newCategory: Category,
-            newMetadata: CategoryMetadata,
-            loadedPost: Post
-
-        before(reloadDatabase)
-
-        // save a new post
-        before(function () {
-            newPost = postRepository.create()
-            newPost.title = "All about animals"
-            return postRepository.save(newPost)
-        })
-
-        // save a new category
-        before(function () {
-            newCategory = categoryRepository.create()
-            newCategory.name = "Animals"
-            return categoryRepository.save(newCategory)
-        })
-
-        // save a new metadata
-        before(function () {
-            newMetadata = metadataRepository.create()
-            newMetadata.keyword = "animals"
-            return metadataRepository.save(newMetadata)
-        })
-
-        // attach metadata to category and category to post and save it
-        before(function () {
-            newCategory.metadata = newMetadata
-            newPost.category = newCategory
-            return postRepository.save(newPost)
-        })
-
-        // load a post
-        before(function () {
-            return postRepository
-                .findOne({
-                    where: {
-                        id: 1,
-                    },
-                    relations: {
-                        category: {
-                            metadata: true,
-                        },
-                    },
-                })
-                .then((post) => {
-                    loadedPost = post!
-                })
-        })
-
-        it("should contain attached category and metadata in the category", function () {
-            expect(loadedPost).not.to.be.undefined
-            expect(loadedPost.category).not.to.be.undefined
-            expect(loadedPost.categoryId).not.to.be.undefined
-            expect(loadedPost.category.metadata).not.to.be.undefined
-            expect(loadedPost.category.metadataId).not.to.be.undefined
-        })
-    })
-
-    describe("attach new entity to exist entity with one-to-one relation", function () {
-        if (!dataSource) return
-        let newPost: Post,
-            newCategory: Category,
-            newMetadata: CategoryMetadata,
-            loadedPost: Post
-
-        before(reloadDatabase)
-
-        // save a new post
-        before(function () {
-            newPost = postRepository.create()
-            newPost.title = "All about animals"
-            return postRepository.save(newPost)
-        })
-
-        // save a new category and new metadata
-        before(function () {
-            newMetadata = metadataRepository.create()
-            newMetadata.keyword = "animals"
-            newCategory = categoryRepository.create()
-            newCategory.name = "Animals"
-            newCategory.metadata = newMetadata
-            return categoryRepository.save(newCategory)
-        })
-
-        // attach metadata to category and category to post and save it
-        before(function () {
-            newPost.category = newCategory
-            return postRepository.save(newPost)
-        })
-
-        // load a post
-        before(function () {
-            return postRepository
-                .findOne({
-                    where: {
-                        id: 1,
-                    },
-                    relations: {
-                        category: {
-                            metadata: true,
-                        },
-                    },
-                })
-                .then((post) => {
-                    loadedPost = post!
-                })
-        })
-
-        it("should contain attached category and metadata in the category", function () {
-            expect(loadedPost).not.to.be.undefined
-            expect(loadedPost.category).not.to.be.undefined
-            expect(loadedPost.categoryId).not.to.be.undefined
-            expect(loadedPost.category.metadata).not.to.be.undefined
-            expect(loadedPost.category.metadataId).not.to.be.undefined
-        })
-    })
+                expect(loadedPost.category).not.to.be.undefined
+                expect(loadedPost.categoryId).not.to.be.undefined
+                expect(loadedPost.category.metadata).not.to.be.undefined
+                expect(loadedPost.category.metadataId).not.to.be.undefined
+            }),
+        ))
 })

@@ -14,8 +14,8 @@ export class CapacitorDriver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
         this.database = this.options.database
         this.driver = this.options.driver
@@ -49,10 +49,11 @@ export class CapacitorDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner) this.queryRunner = new CapacitorQueryRunner(this)
+        this.queryRunner ??= new CapacitorQueryRunner(this)
 
         return this.queryRunner
     }
@@ -65,7 +66,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
      * Creates connection with the database.
      */
     protected async createDatabaseConnection() {
-        const databaseMode = this.options.mode || "no-encryption"
+        const databaseMode = this.options.mode ?? "no-encryption"
         const isDatabaseEncryted = databaseMode !== "no-encryption"
         const databaseVersion =
             typeof this.options.version === "undefined"
