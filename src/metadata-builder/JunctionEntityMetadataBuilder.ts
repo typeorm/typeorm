@@ -308,18 +308,36 @@ export class JunctionEntityMetadataBuilder {
                 (column) => column.isPrimary,
             )
         } else {
-            return joinTable.joinColumns.map((joinColumn) => {
-                const referencedColumn = relation.entityMetadata.columns.find(
-                    (column) =>
-                        column.propertyName === joinColumn.referencedColumnName,
-                )
-                if (!referencedColumn)
-                    throw new TypeORMError(
-                        `Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.entityMetadata.name}`,
-                    )
+            const referencedColumns = joinTable.joinColumns.map(
+                (joinColumn) => {
+                    const referencedColumn =
+                        relation.entityMetadata.columns.find(
+                            (column) =>
+                                column.propertyName ===
+                                joinColumn.referencedColumnName,
+                        )
+                    if (!referencedColumn)
+                        throw new TypeORMError(
+                            `Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.entityMetadata.name}`,
+                        )
 
-                return referencedColumn
-            })
+                    return referencedColumn
+                },
+            )
+
+            if (referencedColumns.length > 1) {
+                const pkColumns = relation.entityMetadata.primaryColumns
+                const orderMap = new Map(
+                    pkColumns.map((col, idx) => [col, idx]),
+                )
+                return [...referencedColumns].sort(
+                    (a, b) =>
+                        (orderMap.get(a) ?? Infinity) -
+                        (orderMap.get(b) ?? Infinity),
+                )
+            }
+
+            return referencedColumns
         }
     }
 
@@ -333,19 +351,19 @@ export class JunctionEntityMetadataBuilder {
         relation: RelationMetadata,
         joinTable: JoinTableMetadataArgs,
     ): ColumnMetadata[] {
-        const hasInverseJoinColumns = !!joinTable.inverseJoinColumns
-        const hasAnyInverseReferencedColumnName = hasInverseJoinColumns
-            ? joinTable.inverseJoinColumns!.find(
+        const inverseJoinColumns = joinTable.inverseJoinColumns
+        const hasAnyInverseReferencedColumnName = inverseJoinColumns
+            ? inverseJoinColumns.find(
                   (joinColumn) => !!joinColumn.referencedColumnName,
               )
             : false
         if (
-            !hasInverseJoinColumns ||
-            (hasInverseJoinColumns && !hasAnyInverseReferencedColumnName)
+            !inverseJoinColumns ||
+            (inverseJoinColumns && !hasAnyInverseReferencedColumnName)
         ) {
             return relation.inverseEntityMetadata.primaryColumns
         } else {
-            return joinTable.inverseJoinColumns!.map((joinColumn) => {
+            const referencedColumns = inverseJoinColumns.map((joinColumn) => {
                 const referencedColumn =
                     relation.inverseEntityMetadata.ownColumns.find(
                         (column) =>
@@ -359,6 +377,20 @@ export class JunctionEntityMetadataBuilder {
 
                 return referencedColumn
             })
+
+            if (referencedColumns.length > 1) {
+                const pkColumns = relation.inverseEntityMetadata.primaryColumns
+                const orderMap = new Map(
+                    pkColumns.map((col, idx) => [col, idx]),
+                )
+                return [...referencedColumns].sort(
+                    (a, b) =>
+                        (orderMap.get(a) ?? Infinity) -
+                        (orderMap.get(b) ?? Infinity),
+                )
+            }
+
+            return referencedColumns
         }
     }
 

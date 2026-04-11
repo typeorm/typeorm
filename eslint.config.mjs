@@ -39,6 +39,7 @@ export default defineConfig([
             "@typescript-eslint/consistent-type-imports": "error",
             "@typescript-eslint/prefer-nullish-coalescing": "error",
             "@typescript-eslint/prefer-optional-chain": "error",
+            "@typescript-eslint/prefer-string-starts-ends-with": "error",
 
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",
