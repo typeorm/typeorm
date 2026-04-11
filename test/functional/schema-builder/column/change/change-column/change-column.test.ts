@@ -150,10 +150,11 @@ describe("schema builder > change column", () => {
 
                     // Verify data exists before migration
                     const beforeChange = await repo.findOne({
-                        where: { name: testData },
+                        where: { id: 1 },
                     })
                     expect(beforeChange).to.not.be.undefined
-                    expect(beforeChange?.name).to.equal(testData)
+                    // CHAR columns pad with spaces; trim for comparison
+                    expect(beforeChange?.name?.trim()).to.equal(testData)
 
                     // Step 2: Switch to VARCHAR(N) and capture SQL
                     nameColumn.type = varcharTypeByDriver[driver]
@@ -223,10 +224,10 @@ describe("schema builder > change column", () => {
 
                     // Verify data still exists after migration (data survived)
                     const afterChange = await repo.findOne({
-                        where: { name: testData },
+                        where: { id: 1 },
                     })
                     expect(afterChange).to.not.be.undefined
-                    expect(afterChange?.name).to.equal(
+                    expect(afterChange?.name?.trim()).to.equal(
                         testData,
                         "Data should survive CHAR->VARCHAR migration",
                     )
@@ -331,7 +332,7 @@ describe("schema builder > change column", () => {
                         where: { name: "test" },
                     })
                     expect(beforeChange).to.not.be.undefined
-                    expect(beforeChange?.version).to.equal(testValue.toString())
+                    expect(String(beforeChange?.version)).to.equal(testValue.toString())
 
                     // Step 2: change to DOUBLE (or higher-precision float)
                     versionCol.type = doubleBy[driver]
