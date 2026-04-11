@@ -286,8 +286,7 @@ export class ReactNativeDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new ReactNativeQueryRunner(this)
+        this.queryRunner ??= new ReactNativeQueryRunner(this)
 
         return this.queryRunner
     }
@@ -582,8 +581,8 @@ export class ReactNativeDriver implements Driver {
             )
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -593,11 +592,11 @@ export class ReactNativeDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -606,8 +605,8 @@ export class ReactNativeDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -844,12 +843,14 @@ export class ReactNativeDriver implements Driver {
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
-                (tableColumn.enum &&
+                !!(
+                    tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
                         tableColumn.enum,
                         columnMetadata.enum.map((val) => val + ""),
-                    )) ||
+                    )
+                ) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
                     tableColumn.isGenerated !== columnMetadata.isGenerated)
 
@@ -994,7 +995,7 @@ export class ReactNativeDriver implements Driver {
                     location: this.options.location,
                     encryptionKey: this.options.encryptionKey,
                 },
-                this.options.extra || {},
+                this.options.extra ?? {},
             )
 
             this.sqlite.openDatabase(
@@ -1028,7 +1029,7 @@ export class ReactNativeDriver implements Driver {
     protected loadDependencies(): void {
         try {
             const sqlite =
-                this.options.driver || require("react-native-sqlite-storage")
+                this.options.driver ?? require("react-native-sqlite-storage")
             this.sqlite = sqlite
         } catch (e) {
             throw new DriverPackageNotInstalledError(

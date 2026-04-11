@@ -72,7 +72,7 @@ export class ConnectionOptionsReader {
 
         // try to find any of following configuration formats
         const foundFileFormat =
-            fileExtension ||
+            fileExtension ??
             fileFormats.find((format) => {
                 return PlatformTools.fileExist(this.baseFilePath + "." + format)
             })

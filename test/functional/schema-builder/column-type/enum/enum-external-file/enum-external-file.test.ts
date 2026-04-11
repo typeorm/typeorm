@@ -4,8 +4,8 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../../../../utils/test-utils"
-import { Order } from "./entity/order.entity.ts"
-import { OrderProduct } from "./entity/order-product.entity.ts"
+import { Order } from "./entity/order.entity"
+import { OrderProduct } from "./entity/order-product.entity"
 
 describe("schema builder > column type > enum > enum external file", () => {
     let dataSources: DataSource[]

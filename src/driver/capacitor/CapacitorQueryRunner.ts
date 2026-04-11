@@ -86,7 +86,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
             } else if (["INSERT", "UPDATE", "DELETE"].indexOf(command) !== -1) {
                 raw = await databaseConnection.run(query, parameters, false)
             } else {
-                raw = await databaseConnection.query(query, parameters || [])
+                raw = await databaseConnection.query(query, parameters ?? [])
             }
 
             const result = new QueryResult()
@@ -98,7 +98,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
             if (raw?.hasOwnProperty("changes")) {
                 result.affected = raw.changes.changes
-                result.raw = raw.changes.lastId || raw.changes.changes
+                result.raw = raw.changes.lastId ?? raw.changes.changes
             }
 
             if (!useStructuredResult) {

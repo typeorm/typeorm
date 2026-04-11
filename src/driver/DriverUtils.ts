@@ -135,8 +135,7 @@ export class DriverUtils {
         buildOptions: { shorten?: boolean; joiner?: string } | undefined,
         ...alias: string[]
     ): string {
-        const joiner =
-            buildOptions && buildOptions.joiner ? buildOptions.joiner : "_"
+        const joiner = buildOptions?.joiner ?? "_"
 
         const newAlias = alias.length === 1 ? alias[0] : alias.join(joiner)
 
@@ -145,7 +144,7 @@ export class DriverUtils {
             maxAliasLength > 0 &&
             newAlias.length > maxAliasLength
         ) {
-            if (buildOptions && buildOptions.shorten === true) {
+            if (buildOptions?.shorten === true) {
                 const shortenedAlias = shorten(newAlias)
                 if (shortenedAlias.length < maxAliasLength) {
                     return shortenedAlias
@@ -180,6 +179,8 @@ export class DriverUtils {
         if (afterBase && afterBase.indexOf("?") !== -1) {
             afterBase = afterBase.slice(0, afterBase.indexOf("?"))
         }
+        // normalize empty string to undefined so downstream ?? works correctly
+        if (afterBase === "") afterBase = undefined
 
         const { username, password, hostAndPort } = this.parseCredentials(base)
         const [host, port] = hostAndPort.split(":")
@@ -190,7 +191,7 @@ export class DriverUtils {
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
+            database: afterBase ?? undefined,
         }
     }
 
@@ -208,6 +209,8 @@ export class DriverUtils {
             secondSlash !== -1 ? preBase.slice(0, secondSlash) : preBase
         let afterBase =
             secondSlash !== -1 ? preBase.slice(secondSlash + 1) : undefined
+        // normalize empty string to undefined so downstream ?? works correctly
+        if (afterBase === "") afterBase = undefined
         let afterQuestionMark: string
         let host = undefined
         let port = undefined
@@ -252,7 +255,7 @@ export class DriverUtils {
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
+            database: afterBase ?? undefined,
         }
 
         // Loop to set every options in connectionUrl to object

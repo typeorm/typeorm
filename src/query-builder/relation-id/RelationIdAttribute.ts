@@ -49,7 +49,7 @@ export class RelationIdAttribute {
         private queryExpressionMap: QueryExpressionMap,
         relationIdAttribute?: Partial<RelationIdAttribute>,
     ) {
-        ObjectUtils.assign(this, relationIdAttribute || {})
+        ObjectUtils.assign(this, relationIdAttribute ?? {})
     }
 
     // -------------------------------------------------------------------------

@@ -55,7 +55,7 @@ export class MigrationExecutor {
         this.migrationsDatabase = database
         this.migrationsSchema = schema
         this.migrationsTableName =
-            dataSource.options.migrationsTableName || "migrations"
+            dataSource.options.migrationsTableName ?? "migrations"
         this.migrationsTable = this.dataSource.driver.buildTableName(
             this.migrationsTableName,
             schema,
@@ -155,7 +155,7 @@ export class MigrationExecutor {
     async showMigrations(): Promise<boolean> {
         let hasUnappliedMigrations = false
         const queryRunner =
-            this.queryRunner || this.dataSource.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner)
 
@@ -196,7 +196,7 @@ export class MigrationExecutor {
      */
     async executePendingMigrations(): Promise<Migration[]> {
         const queryRunner =
-            this.queryRunner || this.dataSource.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
         // create migrations table if it's not created yet
         await this.createMigrationsTableIfNotExist(queryRunner)
 
@@ -397,7 +397,7 @@ export class MigrationExecutor {
      */
     async undoLastMigration(): Promise<void> {
         const queryRunner =
-            this.queryRunner || this.dataSource.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
 
         // create migrations table if it's not created yet
         await this.createMigrationsTableIfNotExist(queryRunner)
@@ -587,7 +587,7 @@ export class MigrationExecutor {
     protected getMigrations(): Migration[] {
         const migrations = this.dataSource.migrations.map((migration) => {
             const migrationClassName =
-                migration.name || (migration.constructor as any).name
+                migration.name ?? (migration.constructor as any).name
             const migrationTimestamp = parseInt(
                 migrationClassName.slice(-13),
                 10,
@@ -750,7 +750,7 @@ export class MigrationExecutor {
         callback: (queryRunner: QueryRunner) => T | Promise<T>,
     ) {
         const queryRunner =
-            this.queryRunner || this.dataSource.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
 
         try {
             return await callback(queryRunner)

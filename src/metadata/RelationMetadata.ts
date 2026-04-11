@@ -325,12 +325,12 @@ export class RelationMetadata {
         this.deferrable = args.options.deferrable
         this.createForeignKeyConstraints =
             args.options.createForeignKeyConstraints === false ? false : true
-        this.isEager = args.options.eager || false
+        this.isEager = args.options.eager ?? false
         this.persistenceEnabled =
             args.options.persistence === false ? false : true
-        this.orphanedRowAction = args.options.orphanedRowAction || "nullify"
-        this.isTreeParent = args.isTreeParent || false
-        this.isTreeChildren = args.isTreeChildren || false
+        this.orphanedRowAction = args.options.orphanedRowAction ?? "nullify"
+        this.isTreeParent = args.isTreeParent ?? false
+        this.isTreeChildren = args.isTreeChildren ?? false
 
         if (typeof args.type === "function") {
             this.type =
@@ -507,9 +507,8 @@ export class RelationMetadata {
 
                 const embeddedMetadata = embeddedMetadatas.shift()
                 if (embeddedMetadata) {
-                    if (!map[embeddedMetadata.propertyName])
-                        map[embeddedMetadata.propertyName] =
-                            embeddedMetadata.create()
+                    map[embeddedMetadata.propertyName] ??=
+                        embeddedMetadata.create()
 
                     extractEmbeddedColumnValue(
                         embeddedMetadatas,
@@ -668,10 +667,7 @@ export class RelationMetadata {
      * Builds relation's property path based on its embedded tree.
      */
     buildPropertyPath(): string {
-        if (
-            !this.embeddedMetadata ||
-            !this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (!this.embeddedMetadata?.parentPropertyNames.length)
             return this.propertyName
 
         return (

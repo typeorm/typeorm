@@ -232,7 +232,7 @@ createTable(table: Table, ifNotExists?: boolean, createForeignKeys?: boolean, cr
 - `table` - Table object.
 - `ifNotExists` - when set to `true`, silently ignores if the table already exists; otherwise throws an error (default)
 - `createForeignKeys` - indicates whether foreign keys will be created on table creation. Default `true`
-- `createIndices` - indicates whether indices will be created on table creation. Default `true`
+- `createIndices` - indicates whether indexes will be created on table creation. Default `true`
 
 Creates a new table.
 
@@ -245,7 +245,7 @@ dropTable(table: Table|string, ifExists?: boolean, dropForeignKeys?: boolean, dr
 - `table` - Table object or table name to be dropped
 - `ifExists` - when set to `true`, silently ignores if the table does not exist; otherwise throws an error (default)
 - `dropForeignKeys` - indicates whether foreign keys will be dropped on table deletion. Default `true`
-- `dropIndices` - indicates whether indices will be dropped on table deletion. Default `true`
+- `dropIndices` - indicates whether indexes will be dropped on table deletion. Default `true`
 
 Drops a table.
 
@@ -411,7 +411,7 @@ createUniqueConstraint(table: Table|string, uniqueConstraint: TableUnique): Prom
 
 Creates new unique constraint.
 
-> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `createIndex()` method instead.
+> Note: does not work for MySQL, because MySQL stores unique constraints as unique indexes. Use `createIndex()` method instead.
 
 ---
 
@@ -424,7 +424,7 @@ createUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): 
 
 Creates new unique constraints.
 
-> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `createIndices()` method instead.
+> Note: does not work for MySQL, because MySQL stores unique constraints as unique indexes. Use `createIndices()` method instead.
 
 ---
 
@@ -438,7 +438,7 @@ dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string, ifEx
 
 Drops a unique constraint.
 
-> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndex()` method instead.
+> Note: does not work for MySQL, because MySQL stores unique constraints as unique indexes. Use `dropIndex()` method instead.
 
 ---
 
@@ -452,7 +452,7 @@ dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[], ifE
 
 Drops unique constraints.
 
-> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndices()` method instead.
+> Note: does not work for MySQL, because MySQL stores unique constraints as unique indexes. Use `dropIndices()` method instead.
 
 ---
 
@@ -628,7 +628,7 @@ createIndices(table: Table|string, indices: TableIndex[]): Promise<void>
 - `table` - Table object or name
 - `indices` - array of TableIndex objects
 
-Creates a new indices.
+Creates new indexes.
 
 ---
 
@@ -650,9 +650,9 @@ dropIndices(table: Table|string, indices: TableIndex[], ifExists?: boolean): Pro
 
 - `table` - Table object or name
 - `indices` - array of TableIndex objects
-- `ifExists` - when set to `true`, silently ignores if the indices do not exist; otherwise throws an error (default)
+- `ifExists` - when set to `true`, silently ignores if the indexes do not exist; otherwise throws an error (default)
 
-Drops indices.
+Drops indexes.
 
 ---
 

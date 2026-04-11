@@ -125,10 +125,9 @@ export class DocumentToEntityTransformer {
                             ]
                         if (value === undefined) return
 
-                        if (!entity[embedded.propertyName])
-                            entity[embedded.propertyName] = embedded.create({
-                                fromDeserializer: true,
-                            })
+                        entity[embedded.propertyName] ??= embedded.create({
+                            fromDeserializer: true,
+                        })
 
                         entity[embedded.propertyName][column.propertyName] =
                             value

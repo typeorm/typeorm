@@ -60,15 +60,11 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
                 )
 
                 // load to check
-                const loadedPost1 = await postRepository.findOne({
-                    where: {
-                        id: 1,
-                    },
+                const loadedPost1 = await postRepository.findOneBy({
+                    id: 1,
                 })
-                const loadedPost2 = await postRepository.findOne({
-                    where: {
-                        id: 2,
-                    },
+                const loadedPost2 = await postRepository.findOneBy({
+                    id: 2,
                 })
 
                 // assert
@@ -117,15 +113,11 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
                 ])
 
                 // load to check
-                const loadedPost1 = await postRepository.findOne({
-                    where: {
-                        id: 1,
-                    },
+                const loadedPost1 = await postRepository.findOneBy({
+                    id: 1,
                 })
-                const loadedPost2 = await postRepository.findOne({
-                    where: {
-                        id: 2,
-                    },
+                const loadedPost2 = await postRepository.findOneBy({
+                    id: 2,
                 })
 
                 // assert
@@ -166,15 +158,11 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
                 ])
 
                 // load to check
-                const loadedPost1 = await postRepository.findOne({
-                    where: {
-                        id: 1,
-                    },
+                const loadedPost1 = await postRepository.findOneBy({
+                    id: 1,
                 })
-                const loadedPost2 = await postRepository.findOne({
-                    where: {
-                        id: 2,
-                    },
+                const loadedPost2 = await postRepository.findOneBy({
+                    id: 2,
                 })
 
                 // assert
@@ -219,15 +207,11 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
                 await postRepository.restore(conditions)
 
                 // load to check
-                const loadedPost1 = await postRepository.findOne({
-                    where: {
-                        id: 1,
-                    },
+                const loadedPost1 = await postRepository.findOneBy({
+                    id: 1,
                 })
-                const loadedPost2 = await postRepository.findOne({
-                    where: {
-                        id: 2,
-                    },
+                const loadedPost2 = await postRepository.findOneBy({
+                    id: 2,
                 })
 
                 // assert
