@@ -1,26 +1,23 @@
-import {
-    DataSource,
-    EntitySchemaEmbeddedColumnOptions,
-    SelectQueryBuilder,
-} from ".."
-import { EntitySchemaIndexOptions } from "./EntitySchemaIndexOptions"
-import { EntitySchemaColumnOptions } from "./EntitySchemaColumnOptions"
-import { EntitySchemaRelationOptions } from "./EntitySchemaRelationOptions"
-import { OrderByCondition } from "../find-options/OrderByCondition"
-import { TableType } from "../metadata/types/TableTypes"
-import { EntitySchemaUniqueOptions } from "./EntitySchemaUniqueOptions"
-import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
-import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
+import type { DataSource } from "../data-source"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
+import type { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
+import type { TableType } from "../metadata/types/TableTypes"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
+import type { EntitySchemaColumnOptions } from "./EntitySchemaColumnOptions"
+import type { EntitySchemaEmbeddedColumnOptions } from "./EntitySchemaEmbeddedColumnOptions"
+import type { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
+import type { EntitySchemaForeignKeyOptions } from "./EntitySchemaForeignKeyOptions"
+import type { EntitySchemaIndexOptions } from "./EntitySchemaIndexOptions"
+import type { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
+import type { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
+import type { EntitySchemaRelationOptions } from "./EntitySchemaRelationOptions"
+import type { EntitySchemaUniqueOptions } from "./EntitySchemaUniqueOptions"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
  */
 export class EntitySchemaOptions<T> {
-    /**
-     * Name of the schema it extends.
-     */
-    extends?: string
-
     /**
      * Target bind to this entity schema. Optional.
      */
@@ -71,9 +68,21 @@ export class EntitySchemaOptions<T> {
     }
 
     /**
+     * Entity relation id options.
+     */
+    relationIds?: {
+        [P in keyof T]?: EntitySchemaRelationIdOptions
+    }
+
+    /**
      * Entity indices options.
      */
     indices?: EntitySchemaIndexOptions[]
+
+    /**
+     * Entity foreign keys options.
+     */
+    foreignKeys?: EntitySchemaForeignKeyOptions[]
 
     /**
      * Entity uniques options.
@@ -107,6 +116,7 @@ export class EntitySchemaOptions<T> {
     /**
      * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
      * an integer primary key column named 'rowid' on table creation.
+     *
      * @see https://www.sqlite.org/withoutrowid.html.
      */
     withoutRowid?: boolean
@@ -114,5 +124,17 @@ export class EntitySchemaOptions<T> {
     /**
      * View expression.
      */
-    expression?: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression?: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
+
+    /**
+     * Inheritance options.
+     */
+    inheritance?: EntitySchemaInheritanceOptions
+
+    /**
+     * Custom discriminator value for Single Table Inheritance.
+     */
+    discriminatorValue?: string
+
+    trees?: Omit<TreeMetadataArgs, "target">[]
 }

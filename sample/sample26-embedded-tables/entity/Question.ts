@@ -9,6 +9,6 @@ export class Question {
     @Column()
     title: string
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters: Counters
 }

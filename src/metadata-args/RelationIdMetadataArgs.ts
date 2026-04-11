@@ -1,4 +1,4 @@
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 
 /**
  * Arguments for RelationIdMetadataArgs class.
@@ -7,7 +7,7 @@ export interface RelationIdMetadataArgs {
     /**
      * Class to which this decorator is applied.
      */
-    readonly target: Function
+    readonly target: Function | string
 
     /**
      * Class's property name to which this decorator is applied.

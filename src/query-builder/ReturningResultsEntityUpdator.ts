@@ -1,9 +1,9 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { QueryExpressionMap } from "./QueryExpressionMap"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { UpdateResult } from "./result/UpdateResult"
-import { InsertResult } from "./result/InsertResult"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryExpressionMap } from "./QueryExpressionMap"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { UpdateResult } from "./result/UpdateResult"
+import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
 
 /**
@@ -25,6 +25,9 @@ export class ReturningResultsEntityUpdator {
 
     /**
      * Updates entities with a special columns after updation query execution.
+     *
+     * @param updateResult
+     * @param entities
      */
     async update(
         updateResult: UpdateResult,
@@ -36,12 +39,12 @@ export class ReturningResultsEntityUpdator {
             entities.map(async (entity, entityIndex) => {
                 // if database supports returning/output statement then we already should have updating values in the raw data returned by insert query
                 if (
-                    this.queryRunner.connection.driver.isReturningSqlSupported(
+                    this.queryRunner.dataSource.driver.isReturningSqlSupported(
                         "update",
                     )
                 ) {
                     if (
-                        this.queryRunner.connection.driver.options.type ===
+                        this.queryRunner.dataSource.driver.options.type ===
                             "oracle" &&
                         Array.isArray(updateResult.raw) &&
                         this.expressionMap.extraReturningColumns.length > 0
@@ -62,7 +65,7 @@ export class ReturningResultsEntityUpdator {
                         ? updateResult.raw[entityIndex]
                         : updateResult.raw
                     const returningColumns =
-                        this.queryRunner.connection.driver.createGeneratedMap(
+                        this.queryRunner.dataSource.driver.createGeneratedMap(
                             metadata,
                             result,
                         )
@@ -112,7 +115,7 @@ export class ReturningResultsEntityUpdator {
                                 .from(metadata.target, metadata.targetName)
                                 .where(entityId)
                                 .withDeleted()
-                                .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties maight be overridden by merge process
+                                .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                                 .getOne()) as any
 
                         if (loadedReturningColumns) {
@@ -133,6 +136,9 @@ export class ReturningResultsEntityUpdator {
 
     /**
      * Updates entities with a special columns after insertion query execution.
+     *
+     * @param insertResult
+     * @param entities
      */
     async insert(
         insertResult: InsertResult,
@@ -145,7 +151,7 @@ export class ReturningResultsEntityUpdator {
         // in the case if we have generated column and it's value returned by underlying driver
         // we remove this column from the insertionColumns list
         const needToCheckGenerated =
-            this.queryRunner.connection.driver.isReturningSqlSupported("insert")
+            this.queryRunner.dataSource.driver.isReturningSqlSupported("insert")
         insertionColumns = insertionColumns.filter((column) => {
             if (!column.isGenerated) return true
             return needToCheckGenerated === true
@@ -153,34 +159,43 @@ export class ReturningResultsEntityUpdator {
 
         const generatedMaps = entities.map((entity, entityIndex) => {
             if (
-                this.queryRunner.connection.driver.options.type === "oracle" &&
                 Array.isArray(insertResult.raw) &&
                 this.expressionMap.extraReturningColumns.length > 0
             ) {
-                insertResult.raw = insertResult.raw.reduce(
-                    (newRaw, rawItem, rawItemIndex) => {
-                        newRaw[
-                            this.expressionMap.extraReturningColumns[
-                                rawItemIndex
-                            ].databaseName
-                        ] = rawItem[0]
-                        return newRaw
-                    },
-                    {} as ObjectLiteral,
-                )
+                if (
+                    this.queryRunner.dataSource.driver.options.type === "oracle"
+                ) {
+                    insertResult.raw = insertResult.raw.reduce(
+                        (newRaw, rawItem, rawItemIndex) => {
+                            newRaw[
+                                this.expressionMap.extraReturningColumns[
+                                    rawItemIndex
+                                ].databaseName
+                            ] = rawItem[0]
+                            return newRaw
+                        },
+                        {} as ObjectLiteral,
+                    )
+                } else if (
+                    this.queryRunner.dataSource.driver.options.type ===
+                    "spanner"
+                ) {
+                    insertResult.raw = insertResult.raw[0]
+                }
             }
+
             // get all values generated by a database for us
             const result = Array.isArray(insertResult.raw)
                 ? insertResult.raw[entityIndex]
                 : insertResult.raw
 
             const generatedMap =
-                this.queryRunner.connection.driver.createGeneratedMap(
+                this.queryRunner.dataSource.driver.createGeneratedMap(
                     metadata,
                     result,
                     entityIndex,
                     entities.length,
-                ) || {}
+                ) ?? {}
 
             if (entityIndex in this.expressionMap.locallyGenerated) {
                 this.queryRunner.manager.merge(
@@ -203,7 +218,7 @@ export class ReturningResultsEntityUpdator {
         // for other drivers we have to re-select this data from the database
         if (
             insertionColumns.length > 0 &&
-            !this.queryRunner.connection.driver.isReturningSqlSupported(
+            !this.queryRunner.dataSource.driver.isReturningSqlSupported(
                 "insert",
             )
         ) {
@@ -243,7 +258,7 @@ export class ReturningResultsEntityUpdator {
                 )
                 .from(metadata.target, metadata.targetName)
                 .where(entityIds)
-                .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties maight be overridden by merge process
+                .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                 .getMany()
 
             entities.forEach((entity, entityIndex) => {
@@ -274,7 +289,11 @@ export class ReturningResultsEntityUpdator {
     getUpdationReturningColumns(): ColumnMetadata[] {
         return this.expressionMap.mainAlias!.metadata.columns.filter(
             (column) => {
-                return column.isUpdateDate || column.isVersion
+                return (
+                    column.asExpression !== undefined ||
+                    column.isUpdateDate ||
+                    column.isVersion
+                )
             },
         )
     }
@@ -286,6 +305,7 @@ export class ReturningResultsEntityUpdator {
         return this.expressionMap.mainAlias!.metadata.columns.filter(
             (column) => {
                 return (
+                    column.asExpression !== undefined ||
                     column.isUpdateDate ||
                     column.isVersion ||
                     column.isDeleteDate

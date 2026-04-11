@@ -6,7 +6,7 @@ export class Counters {
     @Column()
     likes: number
 
-    @Column((type) => Information)
+    @Column(() => Information)
     information?: Information
 
     @BeforeInsert()

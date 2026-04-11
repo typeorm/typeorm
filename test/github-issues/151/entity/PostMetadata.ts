@@ -12,6 +12,6 @@ export class PostMetadata {
     @Column()
     name: string
 
-    @OneToOne((type) => Post, (post) => post.metadata)
+    @OneToOne(() => Post, (post) => post.metadata)
     post: Post | null
 }

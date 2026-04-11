@@ -1,14 +1,13 @@
-import {
-    EntitySubscriberInterface,
-    EventSubscriber,
-    LoadEvent,
-    UpdateEvent,
-} from "../../../../src"
+import { EntitySubscriberInterface, EventSubscriber } from "../../../../src"
 import { Setting } from "./Setting"
 
 @EventSubscriber()
 export class SettingSubscriber implements EntitySubscriberInterface {
-    counter: any
+    counter: {
+        deletes: number
+        inserts: number
+        updates: number
+    }
 
     constructor() {
         this.reset()
@@ -18,20 +17,20 @@ export class SettingSubscriber implements EntitySubscriberInterface {
         return Setting
     }
 
-    afterLoad(item: Setting, event?: LoadEvent<Setting>) {
+    afterLoad(item: Setting) {
         // just an example, any entity modification on after load will lead to this issue
         item.value = "x"
     }
 
-    beforeUpdate(event: UpdateEvent<any>): void {
+    beforeUpdate(): void {
         this.counter.updates++
     }
 
-    beforeInsert(event: UpdateEvent<any>): void {
+    beforeInsert(): void {
         this.counter.inserts++
     }
 
-    beforeRemove(event: UpdateEvent<any>): void {
+    beforeRemove(): void {
         this.counter.deletes++
     }
 

@@ -1,8 +1,8 @@
 import path from "path"
-import * as process from "process"
-import * as yargs from "yargs"
+import process from "process"
+import type * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
-import { DataSource } from "../data-source"
+import type { DataSource } from "../data-source"
 import { CommandUtils } from "./CommandUtils"
 
 /**
@@ -26,6 +26,14 @@ export class MigrationRunCommand implements yargs.CommandModule {
                 describe:
                     "Indicates if transaction should be used or not for migration run. Enabled by default.",
             })
+            .option("fake", {
+                alias: "f",
+                type: "boolean",
+                default: false,
+                describe:
+                    "Fakes running the migrations if table schema has already been changed manually or externally " +
+                    "(e.g. through another project)",
+            })
     }
 
     async handler(args: yargs.Arguments) {
@@ -47,6 +55,7 @@ export class MigrationRunCommand implements yargs.CommandModule {
                 transaction:
                     dataSource.options.migrationsTransactionMode ??
                     ("all" as "all" | "none" | "each"),
+                fake: !!args.f,
             }
 
             switch (args.t) {
@@ -70,9 +79,10 @@ export class MigrationRunCommand implements yargs.CommandModule {
             // exit process if no errors
             process.exit(0)
         } catch (err) {
-            if (dataSource) await dataSource.destroy()
-
             PlatformTools.logCmdErr("Error during migration run:", err)
+
+            if (dataSource?.isInitialized) await dataSource.destroy()
+
             process.exit(1)
         }
     }

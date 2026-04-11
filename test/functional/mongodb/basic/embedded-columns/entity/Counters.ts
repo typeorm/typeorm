@@ -12,9 +12,9 @@ export class Counters {
     @Column()
     favorites: number
 
-    @Column((type) => Information)
+    @Column(() => Information)
     information: Information
 
-    @Column((type) => ExtraInformation)
+    @Column(() => ExtraInformation)
     extraInformation: ExtraInformation
 }

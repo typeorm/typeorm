@@ -1,8 +1,9 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
 import { Column } from "../../../../src/decorator/columns/Column"
-import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
 import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
 import { Unique } from "../../../../src/decorator/Unique"
+
 import { Company } from "./Company"
 
 @Entity()
@@ -14,8 +15,6 @@ export class Office {
     @Column()
     name: string
 
-    @ManyToOne((type) => Company, (company) => company.id, {
-        deferrable: "INITIALLY IMMEDIATE",
-    })
+    @ManyToOne(() => Company, { deferrable: "INITIALLY IMMEDIATE" })
     company: Company
 }

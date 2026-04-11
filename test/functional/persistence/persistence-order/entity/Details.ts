@@ -14,10 +14,10 @@ export class Details {
     @Column()
     title: string
 
-    @OneToOne((type) => Post, (post) => post.details)
+    @OneToOne(() => Post, (post) => post.details)
     post: Post
 
-    @OneToOne((type) => Photo, (photo) => photo.details, {
+    @OneToOne(() => Photo, (photo) => photo.details, {
         nullable: false,
     })
     @JoinColumn()

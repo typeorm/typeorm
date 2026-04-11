@@ -98,10 +98,15 @@ export class Post {
     @Column("nclob")
     nclob: string
 
+    @Column("json")
+    json: any
     // -------------------------------------------------------------------------
     // TypeOrm Specific Type
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
     simpleArray: string[]
+
+    @Column("simple-json")
+    simpleJson: any
 }

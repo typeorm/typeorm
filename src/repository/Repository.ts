@@ -1,20 +1,23 @@
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { FindOneOptions } from "../find-options/FindOneOptions"
-import { DeepPartial } from "../common/DeepPartial"
-import { SaveOptions } from "./SaveOptions"
-import { RemoveOptions } from "./RemoveOptions"
-import { EntityManager } from "../entity-manager/EntityManager"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { InsertResult } from "../query-builder/result/InsertResult"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
-import { ObjectID } from "../driver/mongodb/typings"
-import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { UpsertOptions } from "./UpsertOptions"
-import { EntityTarget } from "../common/EntityTarget"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
+import type { DeepPartial } from "../common/DeepPartial"
+import type { SaveOptions } from "./SaveOptions"
+import type { RemoveOptions } from "./RemoveOptions"
+import type { EntityManager } from "../entity-manager/EntityManager"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { InsertResult } from "../query-builder/result/InsertResult"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import type { ObjectId } from "../driver/mongodb/typings"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { UpsertOptions } from "./UpsertOptions"
+import type { UpdateOptions } from "./UpdateOptions"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { PickKeysByType } from "../common/PickKeysByType"
+import { buildSqlTag } from "../util/SqlTagUtils"
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -49,7 +52,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Entity metadata of the entity current repository manages.
      */
     get metadata() {
-        return this.manager.connection.getMetadata(this.target)
+        return this.manager.dataSource.getMetadata(this.target)
     }
 
     // -------------------------------------------------------------------------
@@ -72,6 +75,9 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
+     *
+     * @param alias
+     * @param queryRunner
      */
     createQueryBuilder(
         alias?: string,
@@ -79,14 +85,16 @@ export class Repository<Entity extends ObjectLiteral> {
     ): SelectQueryBuilder<Entity> {
         return this.manager.createQueryBuilder<Entity>(
             this.metadata.target as any,
-            alias || this.metadata.targetName,
-            queryRunner || this.queryRunner,
+            alias ?? this.metadata.targetName,
+            queryRunner ?? this.queryRunner,
         )
     }
 
     /**
      * Checks if entity has an id.
      * If entity composite compose ids, it will check them all.
+     *
+     * @param entity
      */
     hasId(entity: Entity): boolean {
         return this.manager.hasId(this.metadata.target, entity)
@@ -94,6 +102,8 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Gets entity mixed id.
+     *
+     * @param entity
      */
     getId(entity: Entity): any {
         return this.manager.getId(this.metadata.target, entity)
@@ -119,13 +129,15 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
+     *
+     * @param plainEntityLikeOrPlainEntityLikes
      */
     create(
         plainEntityLikeOrPlainEntityLikes?:
             | DeepPartial<Entity>
             | DeepPartial<Entity>[],
     ): Entity | Entity[] {
-        return this.manager.create<any>(
+        return this.manager.create(
             this.metadata.target as any,
             plainEntityLikeOrPlainEntityLikes as any,
         )
@@ -133,6 +145,9 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Merges multiple entities (or entity-like objects) into a given entity.
+     *
+     * @param mergeIntoEntity
+     * @param entityLikes
      */
     merge(
         mergeIntoEntity: Entity,
@@ -153,6 +168,8 @@ export class Repository<Entity extends ObjectLiteral> {
      *
      * Note that given entity-like object must have an entity id / primary key to find entity by.
      * Returns undefined if entity with given id was not found.
+     *
+     * @param entityLike
      */
     preload(entityLike: DeepPartial<Entity>): Promise<Entity | undefined> {
         return this.manager.preload(this.metadata.target as any, entityLike)
@@ -196,6 +213,9 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Saves one or many given entities.
+     *
+     * @param entityOrEntities
+     * @param options
      */
     save<T extends DeepPartial<Entity>>(
         entityOrEntities: T | T[],
@@ -220,6 +240,9 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Removes one or many given entities.
+     *
+     * @param entityOrEntities
+     * @param options
      */
     remove(
         entityOrEntities: Entity | Entity[],
@@ -266,6 +289,9 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Records the delete date of one or many given entities.
+     *
+     * @param entityOrEntities
+     * @param options
      */
     softRemove<T extends DeepPartial<Entity>>(
         entityOrEntities: T | T[],
@@ -312,6 +338,9 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Recovers one or many given entities.
+     *
+     * @param entityOrEntities
+     * @param options
      */
     recover<T extends DeepPartial<Entity>>(
         entityOrEntities: T | T[],
@@ -329,6 +358,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
+     *
+     * @param entity
      */
     insert(
         entity:
@@ -343,6 +374,10 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
+     *
+     * @param criteria
+     * @param partialEntity
+     * @param options
      */
     update(
         criteria:
@@ -352,15 +387,39 @@ export class Repository<Entity extends ObjectLiteral> {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
-            | FindOptionsWhere<Entity>,
+            | ObjectId
+            | ObjectId[]
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
         partialEntity: QueryDeepPartialEntity<Entity>,
+        options?: UpdateOptions,
     ): Promise<UpdateResult> {
         return this.manager.update(
-            this.metadata.target as any,
-            criteria as any,
+            this.metadata.target,
+            criteria,
             partialEntity,
+            options,
+        )
+    }
+
+    /**
+     * Updates all entities of target type, setting fields from supplied partial entity.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient UPDATE query without WHERE clause.
+     *
+     * WARNING! This method updates ALL rows in the target table.
+     *
+     * @param partialEntity
+     * @param options
+     */
+    updateAll(
+        partialEntity: QueryDeepPartialEntity<Entity>,
+        options?: UpdateOptions,
+    ): Promise<UpdateResult> {
+        return this.manager.updateAll(
+            this.metadata.target,
+            partialEntity,
+            options,
         )
     }
 
@@ -368,6 +427,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Inserts a given entity into the database, unless a unique constraint conflicts then updates the entity
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT ... ON CONFLICT DO UPDATE/ON DUPLICATE KEY UPDATE query.
+     *
+     * @param entityOrEntities
+     * @param conflictPathsOrOptions
      */
     upsert(
         entityOrEntities:
@@ -387,6 +449,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
+     *
+     * @param criteria
      */
     delete(
         criteria:
@@ -396,18 +460,32 @@ export class Repository<Entity extends ObjectLiteral> {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
-            | FindOptionsWhere<Entity>,
+            | ObjectId
+            | ObjectId[]
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
     ): Promise<DeleteResult> {
-        return this.manager.delete(this.metadata.target as any, criteria as any)
+        return this.manager.delete(this.metadata.target, criteria)
+    }
+
+    /**
+     * Deletes all entities of target type.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient DELETE query without WHERE clause.
+     *
+     * WARNING! This method deletes ALL rows in the target table.
+     */
+    deleteAll(): Promise<DeleteResult> {
+        return this.manager.deleteAll(this.metadata.target)
     }
 
     /**
      * Records the delete date of entities by a given criteria.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient SOFT-DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
+     *
+     * @param criteria
      */
     softDelete(
         criteria:
@@ -417,9 +495,10 @@ export class Repository<Entity extends ObjectLiteral> {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
-            | FindOptionsWhere<Entity>,
+            | ObjectId
+            | ObjectId[]
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
     ): Promise<UpdateResult> {
         return this.manager.softDelete(
             this.metadata.target as any,
@@ -430,8 +509,10 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Restores entities by a given criteria.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient SOFT-DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
+     *
+     * @param criteria
      */
     restore(
         criteria:
@@ -441,9 +522,10 @@ export class Repository<Entity extends ObjectLiteral> {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
-            | FindOptionsWhere<Entity>,
+            | ObjectId
+            | ObjectId[]
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
     ): Promise<UpdateResult> {
         return this.manager.restore(
             this.metadata.target as any,
@@ -452,8 +534,30 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Checks whether any entity exists that matches the given options.
+     *
+     * @param options
+     */
+    exists(options?: FindManyOptions<Entity>): Promise<boolean> {
+        return this.manager.exists(this.metadata.target, options)
+    }
+
+    /**
+     * Checks whether any entity exists that matches the given conditions.
+     *
+     * @param where
+     */
+    existsBy(
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<boolean> {
+        return this.manager.existsBy(this.metadata.target, where)
+    }
+
+    /**
      * Counts entities that match given options.
      * Useful for pagination.
+     *
+     * @param options
      */
     count(options?: FindManyOptions<Entity>): Promise<number> {
         return this.manager.count(this.metadata.target, options)
@@ -462,6 +566,8 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Counts entities that match given conditions.
      * Useful for pagination.
+     *
+     * @param where
      */
     countBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -470,7 +576,61 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Return the SUM of a column
+     *
+     * @param columnName
+     * @param where
+     */
+    sum(
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.sum(this.metadata.target, columnName, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     *
+     * @param columnName
+     * @param where
+     */
+    average(
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.average(this.metadata.target, columnName, where)
+    }
+
+    /**
+     * Return the MIN of a column
+     *
+     * @param columnName
+     * @param where
+     */
+    minimum(
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.minimum(this.metadata.target, columnName, where)
+    }
+
+    /**
+     * Return the MAX of a column
+     *
+     * @param columnName
+     * @param where
+     */
+    maximum(
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.maximum(this.metadata.target, columnName, where)
+    }
+
+    /**
      * Finds entities that match given find options.
+     *
+     * @param options
      */
     async find(options?: FindManyOptions<Entity>): Promise<Entity[]> {
         return this.manager.find(this.metadata.target, options)
@@ -478,6 +638,8 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Finds entities that match given find options.
+     *
+     * @param where
      */
     async findBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -489,6 +651,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given find options.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
+     * @param options
      */
     findAndCount(
         options?: FindManyOptions<Entity>,
@@ -500,6 +664,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given WHERE conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
+     * @param where
      */
     findAndCountBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -508,22 +674,10 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Finds entities with ids.
-     * Optionally find options or conditions can be applied.
-     *
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    async findByIds(ids: any[]): Promise<Entity[]> {
-        return this.manager.findByIds(this.metadata.target, ids)
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
+     *
+     * @param options
      */
     async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
         return this.manager.findOne(this.metadata.target, options)
@@ -532,6 +686,8 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - returns null.
+     *
+     * @param where
      */
     async findOneBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -540,24 +696,10 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Finds first entity that matches given id.
-     * If entity was not found in the database - returns null.
-     *
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById(
-        id: number | string | Date | ObjectID,
-    ): Promise<Entity | null> {
-        return this.manager.findOneById(this.metadata.target, id)
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
+     *
+     * @param options
      */
     async findOneOrFail(options: FindOneOptions<Entity>): Promise<Entity> {
         return this.manager.findOneOrFail(this.metadata.target, options)
@@ -566,6 +708,8 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - rejects with error.
+     *
+     * @param where
      */
     async findOneByOrFail(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -576,23 +720,59 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Executes a raw SQL query and returns a raw database results.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     *
+     * @param query
+     * @param parameters
+     * @see [Official docs](https://typeorm.io/repository-api) for examples.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    query<T = any>(query: string, parameters?: any[]): Promise<T> {
         return this.manager.query(query, parameters)
+    }
+
+    /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     *
+     * @example
+     * repository.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @param strings
+     * @param values
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.manager.dataSource.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
     }
 
     /**
      * Clears all the data from the given table/collection (truncates/drops it).
      *
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
+     *
+     * @param options
+     * @param options.cascade
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    clear(): Promise<void> {
-        return this.manager.clear(this.metadata.target)
+    clear(options?: { cascade?: boolean }): Promise<void> {
+        return this.manager.clear(this.metadata.target, options)
     }
 
     /**
      * Increments some column by provided value of the entities matched given conditions.
+     *
+     * @param conditions
+     * @param propertyPath
+     * @param value
      */
     increment(
         conditions: FindOptionsWhere<Entity>,
@@ -609,6 +789,10 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Decrements some column by provided value of the entities matched given conditions.
+     *
+     * @param conditions
+     * @param propertyPath
+     * @param value
      */
     decrement(
         conditions: FindOptionsWhere<Entity>,
@@ -625,23 +809,29 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Extends repository with provided functions.
+     *
+     * @param customs
      */
     extend<CustomRepository>(
-        custom: CustomRepository &
-            ThisType<Repository<Entity> & CustomRepository>,
-    ): Repository<Entity> & CustomRepository {
+        customs: CustomRepository & ThisType<this & CustomRepository>,
+    ): this & CustomRepository {
         // return {
         //     ...this,
         //     ...custom
         // };
-        const thisRepo = this.constructor as new (...args: any[]) => typeof this
+        const thisRepo: any = this.constructor
         const { target, manager, queryRunner } = this
-        const cls = new (class extends thisRepo {})(
-            target,
-            manager,
-            queryRunner,
-        )
-        Object.assign(cls, custom)
-        return cls as any
+        const ChildClass = class extends thisRepo {
+            constructor(
+                target: EntityTarget<Entity>,
+                manager: EntityManager,
+                queryRunner?: QueryRunner,
+            ) {
+                super(target, manager, queryRunner)
+            }
+        }
+        for (const custom in customs)
+            ChildClass.prototype[custom] = customs[custom]
+        return new ChildClass(target, manager, queryRunner) as any
     }
 }

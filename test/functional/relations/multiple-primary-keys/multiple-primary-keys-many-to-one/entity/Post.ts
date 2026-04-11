@@ -13,21 +13,21 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     category: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn()
     categoryWithJoinColumn: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn([
         { name: "category_name", referencedColumnName: "name" },
         { name: "category_type", referencedColumnName: "type" },
     ])
     categoryWithOptions: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn([
         { name: "category_code", referencedColumnName: "code" },
         { name: "category_version", referencedColumnName: "version" },

@@ -11,6 +11,6 @@ export class PlaneEngine extends Engine {
 
 @ChildEntity()
 export class Plane extends Vehicle {
-    @Column((type) => PlaneEngine, { prefix: "planeEngine" })
+    @Column(() => PlaneEngine, { prefix: "planeEngine" })
     public engine: PlaneEngine
 }

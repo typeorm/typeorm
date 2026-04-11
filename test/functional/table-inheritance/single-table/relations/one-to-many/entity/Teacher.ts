@@ -5,9 +5,6 @@ import { Specialization } from "./Specialization"
 
 @ChildEntity()
 export class Teacher extends Employee {
-    @OneToMany(
-        (type) => Specialization,
-        (specialization) => specialization.teacher,
-    )
+    @OneToMany(() => Specialization, (specialization) => specialization.teacher)
     specializations: Specialization[]
 }

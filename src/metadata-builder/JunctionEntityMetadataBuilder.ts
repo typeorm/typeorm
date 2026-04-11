@@ -1,10 +1,10 @@
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source/DataSource"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
 import { IndexMetadata } from "../metadata/IndexMetadata"
-import { JoinTableMetadataArgs } from "../metadata-args/JoinTableMetadataArgs"
-import { RelationMetadata } from "../metadata/RelationMetadata"
+import type { JoinTableMetadataArgs } from "../metadata-args/JoinTableMetadataArgs"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
 
@@ -17,7 +17,7 @@ export class JunctionEntityMetadataBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: DataSource) {}
+    constructor(private dataSource: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -25,6 +25,9 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the junction of the given many-to-many relation.
+     *
+     * @param relation
+     * @param joinTable
      */
     build(
         relation: RelationMetadata,
@@ -40,8 +43,8 @@ export class JunctionEntityMetadataBuilder {
         )
 
         const joinTableName =
-            joinTable.name ||
-            this.connection.namingStrategy.joinTableName(
+            joinTable.name ??
+            this.dataSource.namingStrategy.joinTableName(
                 relation.entityMetadata.tableNameWithoutPrefix,
                 relation.inverseEntityMetadata.tableNameWithoutPrefix,
                 relation.propertyPath,
@@ -51,14 +54,15 @@ export class JunctionEntityMetadataBuilder {
             )
 
         const entityMetadata = new EntityMetadata({
-            connection: this.connection,
+            dataSource: this.dataSource,
             args: {
                 target: "",
                 name: joinTableName,
                 type: "junction",
                 database:
-                    joinTable.database || relation.entityMetadata.database,
-                schema: joinTable.schema || relation.entityMetadata.schema,
+                    joinTable.database ?? relation.entityMetadata.database,
+                schema: joinTable.schema ?? relation.entityMetadata.schema,
+                synchronize: joinTable.synchronize,
             },
         })
         entityMetadata.build()
@@ -76,16 +80,14 @@ export class JunctionEntityMetadataBuilder {
                   })
                 : undefined
             const columnName =
-                joinColumn && joinColumn.name
-                    ? joinColumn.name
-                    : this.connection.namingStrategy.joinTableColumnName(
-                          relation.entityMetadata.tableNameWithoutPrefix,
-                          referencedColumn.propertyName,
-                          referencedColumn.databaseName,
-                      )
+                joinColumn?.name ??
+                this.dataSource.namingStrategy.joinTableColumnName(
+                    relation.entityMetadata.tableNameWithoutPrefix,
+                    referencedColumn.propertyName,
+                    referencedColumn.databaseName,
+                )
 
             return new ColumnMetadata({
-                connection: this.connection,
                 entityMetadata: entityMetadata,
                 referencedColumn: referencedColumn,
                 args: {
@@ -97,26 +99,28 @@ export class JunctionEntityMetadataBuilder {
                         length:
                             !referencedColumn.length &&
                             (DriverUtils.isMySQLFamily(
-                                this.connection.driver,
+                                this.dataSource.driver,
                             ) ||
-                                this.connection.driver.options.type ===
+                                this.dataSource.driver.options.type ===
                                     "aurora-mysql") &&
+                            // some versions of mariadb support the column type and should not try to provide the length property
+                            this.dataSource.driver.normalizeType(
+                                referencedColumn,
+                            ) !== "uuid" &&
                             (referencedColumn.generationStrategy === "uuid" ||
                                 referencedColumn.type === "uuid")
                                 ? "36"
                                 : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
-                        width: referencedColumn.width,
                         type: referencedColumn.type,
                         precision: referencedColumn.precision,
                         scale: referencedColumn.scale,
                         charset: referencedColumn.charset,
                         collation: referencedColumn.collation,
-                        zerofill: referencedColumn.zerofill,
-                        unsigned: referencedColumn.zerofill
-                            ? true
-                            : referencedColumn.unsigned,
+                        unsigned: referencedColumn.unsigned,
                         enum: referencedColumn.enum,
                         enumName: referencedColumn.enumName,
+                        foreignKeyConstraintName:
+                            joinColumn?.foreignKeyConstraintName,
                         nullable: false,
                         primary: true,
                     },
@@ -138,18 +142,15 @@ export class JunctionEntityMetadataBuilder {
                       })
                     : undefined
                 const columnName =
-                    joinColumn && joinColumn.name
-                        ? joinColumn.name
-                        : this.connection.namingStrategy.joinTableInverseColumnName(
-                              relation.inverseEntityMetadata
-                                  .tableNameWithoutPrefix,
-                              inverseReferencedColumn.propertyName,
-                              inverseReferencedColumn.databaseName,
-                          )
+                    joinColumn?.name ??
+                    this.dataSource.namingStrategy.joinTableInverseColumnName(
+                        relation.inverseEntityMetadata.tableNameWithoutPrefix,
+                        inverseReferencedColumn.propertyName,
+                        inverseReferencedColumn.databaseName,
+                    )
 
                 return new ColumnMetadata({
-                    connection: this.connection,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     referencedColumn: inverseReferencedColumn,
                     args: {
                         target: "",
@@ -159,27 +160,29 @@ export class JunctionEntityMetadataBuilder {
                             length:
                                 !inverseReferencedColumn.length &&
                                 (DriverUtils.isMySQLFamily(
-                                    this.connection.driver,
+                                    this.dataSource.driver,
                                 ) ||
-                                    this.connection.driver.options.type ===
+                                    this.dataSource.driver.options.type ===
                                         "aurora-mysql") &&
+                                // some versions of mariadb support the column type and should not try to provide the length property
+                                this.dataSource.driver.normalizeType(
+                                    inverseReferencedColumn,
+                                ) !== "uuid" &&
                                 (inverseReferencedColumn.generationStrategy ===
                                     "uuid" ||
                                     inverseReferencedColumn.type === "uuid")
                                     ? "36"
                                     : inverseReferencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
-                            width: inverseReferencedColumn.width, // fix https://github.com/typeorm/typeorm/issues/6442
                             type: inverseReferencedColumn.type,
                             precision: inverseReferencedColumn.precision,
                             scale: inverseReferencedColumn.scale,
                             charset: inverseReferencedColumn.charset,
                             collation: inverseReferencedColumn.collation,
-                            zerofill: inverseReferencedColumn.zerofill,
-                            unsigned: inverseReferencedColumn.zerofill
-                                ? true
-                                : inverseReferencedColumn.unsigned,
+                            unsigned: inverseReferencedColumn.unsigned,
                             enum: inverseReferencedColumn.enum,
                             enumName: inverseReferencedColumn.enumName,
+                            foreignKeyConstraintName:
+                                joinColumn?.foreignKeyConstraintName,
                             name: columnName,
                             nullable: false,
                             primary: true,
@@ -201,9 +204,9 @@ export class JunctionEntityMetadataBuilder {
             ...junctionColumns,
             ...inverseJunctionColumns,
         ]
-        entityMetadata.ownColumns.forEach(
-            (column) => (column.relationMetadata = relation),
-        )
+        entityMetadata.ownColumns.forEach((column) => {
+            column.relationMetadata = relation
+        })
 
         // create junction table foreign keys
         // Note: UPDATE CASCADE clause is not supported in Oracle.
@@ -215,34 +218,40 @@ export class JunctionEntityMetadataBuilder {
                       referencedEntityMetadata: relation.entityMetadata,
                       columns: junctionColumns,
                       referencedColumns: referencedColumns,
+                      name: junctionColumns[0]?.foreignKeyConstraintName,
                       onDelete:
-                          this.connection.driver.options.type === "spanner"
+                          this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : relation.onDelete || "CASCADE",
+                              : (relation.onDelete ?? "CASCADE"),
                       onUpdate:
-                          this.connection.driver.options.type === "oracle" ||
-                          this.connection.driver.options.type === "spanner"
+                          this.dataSource.driver.options.type === "oracle" ||
+                          this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : relation.onUpdate || "CASCADE",
+                              : (relation.onUpdate ?? "CASCADE"),
+                      deferrable: relation.deferrable,
                   }),
                   new ForeignKeyMetadata({
                       entityMetadata: entityMetadata,
                       referencedEntityMetadata: relation.inverseEntityMetadata,
                       columns: inverseJunctionColumns,
                       referencedColumns: inverseReferencedColumns,
+                      name: inverseJunctionColumns[0]?.foreignKeyConstraintName,
                       onDelete:
-                          this.connection.driver.options.type === "spanner"
+                          this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.inverseRelation
-                              ? relation.inverseRelation.onDelete
-                              : "CASCADE",
+                                ? relation.inverseRelation.onDelete
+                                : "CASCADE",
                       onUpdate:
-                          this.connection.driver.options.type === "oracle" ||
-                          this.connection.driver.options.type === "spanner"
+                          this.dataSource.driver.options.type === "oracle" ||
+                          this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.inverseRelation
-                              ? relation.inverseRelation.onUpdate
-                              : "CASCADE",
+                                ? relation.inverseRelation.onUpdate
+                                : "CASCADE",
+                      deferrable: relation.inverseRelation
+                          ? relation.inverseRelation.deferrable
+                          : relation.deferrable,
                   }),
               ]
             : []
@@ -278,6 +287,9 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     *
+     * @param relation
+     * @param joinTable
      */
     protected collectReferencedColumns(
         relation: RelationMetadata,
@@ -296,41 +308,62 @@ export class JunctionEntityMetadataBuilder {
                 (column) => column.isPrimary,
             )
         } else {
-            return joinTable.joinColumns.map((joinColumn) => {
-                const referencedColumn = relation.entityMetadata.columns.find(
-                    (column) =>
-                        column.propertyName === joinColumn.referencedColumnName,
-                )
-                if (!referencedColumn)
-                    throw new TypeORMError(
-                        `Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.entityMetadata.name}`,
-                    )
+            const referencedColumns = joinTable.joinColumns.map(
+                (joinColumn) => {
+                    const referencedColumn =
+                        relation.entityMetadata.columns.find(
+                            (column) =>
+                                column.propertyName ===
+                                joinColumn.referencedColumnName,
+                        )
+                    if (!referencedColumn)
+                        throw new TypeORMError(
+                            `Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.entityMetadata.name}`,
+                        )
 
-                return referencedColumn
-            })
+                    return referencedColumn
+                },
+            )
+
+            if (referencedColumns.length > 1) {
+                const pkColumns = relation.entityMetadata.primaryColumns
+                const orderMap = new Map(
+                    pkColumns.map((col, idx) => [col, idx]),
+                )
+                return [...referencedColumns].sort(
+                    (a, b) =>
+                        (orderMap.get(a) ?? Infinity) -
+                        (orderMap.get(b) ?? Infinity),
+                )
+            }
+
+            return referencedColumns
         }
     }
 
     /**
      * Collects inverse referenced columns from the given join column args.
+     *
+     * @param relation
+     * @param joinTable
      */
     protected collectInverseReferencedColumns(
         relation: RelationMetadata,
         joinTable: JoinTableMetadataArgs,
     ): ColumnMetadata[] {
-        const hasInverseJoinColumns = !!joinTable.inverseJoinColumns
-        const hasAnyInverseReferencedColumnName = hasInverseJoinColumns
-            ? joinTable.inverseJoinColumns!.find(
+        const inverseJoinColumns = joinTable.inverseJoinColumns
+        const hasAnyInverseReferencedColumnName = inverseJoinColumns
+            ? inverseJoinColumns.find(
                   (joinColumn) => !!joinColumn.referencedColumnName,
               )
             : false
         if (
-            !hasInverseJoinColumns ||
-            (hasInverseJoinColumns && !hasAnyInverseReferencedColumnName)
+            !inverseJoinColumns ||
+            (inverseJoinColumns && !hasAnyInverseReferencedColumnName)
         ) {
             return relation.inverseEntityMetadata.primaryColumns
         } else {
-            return joinTable.inverseJoinColumns!.map((joinColumn) => {
+            const referencedColumns = inverseJoinColumns.map((joinColumn) => {
                 const referencedColumn =
                     relation.inverseEntityMetadata.ownColumns.find(
                         (column) =>
@@ -344,6 +377,20 @@ export class JunctionEntityMetadataBuilder {
 
                 return referencedColumn
             })
+
+            if (referencedColumns.length > 1) {
+                const pkColumns = relation.inverseEntityMetadata.primaryColumns
+                const orderMap = new Map(
+                    pkColumns.map((col, idx) => [col, idx]),
+                )
+                return [...referencedColumns].sort(
+                    (a, b) =>
+                        (orderMap.get(a) ?? Infinity) -
+                        (orderMap.get(b) ?? Infinity),
+                )
+            }
+
+            return referencedColumns
         }
     }
 
@@ -358,7 +405,7 @@ export class JunctionEntityMetadataBuilder {
                     inverseJunctionColumn.givenDatabaseName
                 ) {
                     const junctionColumnName =
-                        this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
+                        this.dataSource.namingStrategy.joinTableColumnDuplicationPrefix(
                             junctionColumn.propertyName,
                             1,
                         )
@@ -366,7 +413,7 @@ export class JunctionEntityMetadataBuilder {
                     junctionColumn.givenDatabaseName = junctionColumnName
 
                     const inverseJunctionColumnName =
-                        this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
+                        this.dataSource.namingStrategy.joinTableColumnDuplicationPrefix(
                             inverseJunctionColumn.propertyName,
                             2,
                         )

@@ -14,10 +14,10 @@ export class Editor {
     @PrimaryColumn()
     postId: number
 
-    @OneToOne((type) => User, { eager: true })
+    @OneToOne(() => User, { eager: true })
     @JoinColumn()
     user: User
 
-    @ManyToOne((type) => Post)
+    @ManyToOne(() => Post)
     post: Post
 }

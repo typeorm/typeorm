@@ -1,30 +1,39 @@
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { ColumnType } from "./types/ColumnTypes"
-import { CteCapabilities } from "./types/CteCapabilities"
-import { MappedColumnTypes } from "./types/MappedColumnTypes"
-import { SchemaBuilder } from "../schema-builder/SchemaBuilder"
-import { DataTypeDefaults } from "./types/DataTypeDefaults"
-import { BaseDataSourceOptions } from "../data-source/BaseDataSourceOptions"
-import { TableColumn } from "../schema-builder/table/TableColumn"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { ReplicationMode } from "./types/ReplicationMode"
-import { Table } from "../schema-builder/table/Table"
-import { View } from "../schema-builder/view/View"
-import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
-import { UpsertType } from "./types/UpsertType"
-
-export type ReturningType = "insert" | "update" | "delete"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { BaseDataSourceOptions } from "../data-source/BaseDataSourceOptions"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { IndexMetadata } from "../metadata/IndexMetadata"
+import type { OnDeleteType } from "../metadata/types/OnDeleteType"
+import type { OnUpdateType } from "../metadata/types/OnUpdateType"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
+import type { SchemaBuilder } from "../schema-builder/SchemaBuilder"
+import type { Table } from "../schema-builder/table/Table"
+import type { TableColumn } from "../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
+import type { TableIndex } from "../schema-builder/table/TableIndex"
+import type { View } from "../schema-builder/view/View"
+import type { ColumnType } from "./types/ColumnTypes"
+import type { CteCapabilities } from "./types/CteCapabilities"
+import type { DataTypeDefaults } from "./types/DataTypeDefaults"
+import type { MappedColumnTypes } from "./types/MappedColumnTypes"
+import type { ReplicationMode } from "./types/ReplicationMode"
+import type { ReturningType } from "./types/ReturningType"
+import type { UpsertType } from "./types/UpsertType"
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
  */
 export interface Driver {
     /**
-     * Connection options.
+     * Data Source options.
      */
     options: BaseDataSourceOptions
+
+    /**
+     * Database version/release. Often requires a SQL query to the DB, so it is not always set
+     */
+    version?: string
 
     /**
      * Database name used to perform all write queries.
@@ -61,7 +70,17 @@ export interface Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertType?: UpsertType
+    supportedUpsertTypes: UpsertType[]
+
+    /**
+     * Returns list of supported onDelete types by driver
+     */
+    supportedOnDeleteTypes?: OnDeleteType[]
+
+    /**
+     * Returns list of supported onUpdate types by driver
+     */
+    supportedOnUpdateTypes?: OnUpdateType[]
 
     /**
      * Default values of length, precision and scale depends on column data type.
@@ -80,6 +99,11 @@ export interface Driver {
     withLengthColumnTypes: ColumnType[]
 
     /**
+     * Supported index types
+     */
+    supportedIndexTypes?: TableIndexTypes[]
+
+    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[]
@@ -96,11 +120,21 @@ export interface Driver {
     mappedDataTypes: MappedColumnTypes
 
     /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix?: string
+
+    /**
      * Max length allowed by the DBMS for aliases (execution of queries).
      */
     maxAliasLength?: number
 
     cteCapabilities: CteCapabilities
+
+    /**
+     * Dummy table name
+     */
+    dummyTableName?: string
 
     /**
      * Performs connection to the database.
@@ -135,7 +169,6 @@ export interface Driver {
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]]
 
     /**
@@ -255,4 +288,12 @@ export interface Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string
+
+    /**
+     * Returns true if both indexes types are equivalent
+     */
+    compareTableIndexTypes?: (
+        indexA: IndexMetadata,
+        indexB: TableIndex,
+    ) => boolean
 }

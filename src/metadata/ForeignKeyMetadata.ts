@@ -1,9 +1,9 @@
-import { ColumnMetadata } from "./ColumnMetadata"
-import { EntityMetadata } from "./EntityMetadata"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { DeferrableType } from "./types/DeferrableType"
-import { OnDeleteType } from "./types/OnDeleteType"
-import { OnUpdateType } from "./types/OnUpdateType"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { DeferrableType } from "./types/DeferrableType"
+import type { OnDeleteType } from "./types/OnDeleteType"
+import type { OnUpdateType } from "./types/OnUpdateType"
 
 /**
  * Contains all information about entity's foreign key.
@@ -55,6 +55,8 @@ export class ForeignKeyMetadata {
 
     /**
      * Gets foreign key name.
+     * If unique constraint name was given by a user then it stores givenName.
+     * If unique constraint name was not given then its generated.
      */
     name: string
 
@@ -67,6 +69,11 @@ export class ForeignKeyMetadata {
      * Gets array of referenced column names.
      */
     referencedColumnNames: string[] = []
+
+    /**
+     * User specified unique constraint name.
+     */
+    givenName?: string
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -81,14 +88,16 @@ export class ForeignKeyMetadata {
         onDelete?: OnDeleteType
         onUpdate?: OnUpdateType
         deferrable?: DeferrableType
+        name?: string
     }) {
         this.entityMetadata = options.entityMetadata
         this.referencedEntityMetadata = options.referencedEntityMetadata
         this.columns = options.columns
         this.referencedColumns = options.referencedColumns
-        this.onDelete = options.onDelete || "NO ACTION"
-        this.onUpdate = options.onUpdate || "NO ACTION"
+        this.onDelete = options.onDelete ?? "NO ACTION"
+        this.onUpdate = options.onUpdate ?? "NO ACTION"
         this.deferrable = options.deferrable
+        this.givenName = options.name
         if (options.namingStrategy) this.build(options.namingStrategy)
     }
 
@@ -99,6 +108,8 @@ export class ForeignKeyMetadata {
     /**
      * Builds some depend foreign key properties.
      * Must be called after all entity metadatas and their columns are built.
+     *
+     * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface) {
         this.columnNames = this.columns.map((column) => column.databaseName)
@@ -106,11 +117,13 @@ export class ForeignKeyMetadata {
             (column) => column.databaseName,
         )
         this.referencedTablePath = this.referencedEntityMetadata.tablePath
-        this.name = namingStrategy.foreignKeyName(
-            this.entityMetadata.tableName,
-            this.columnNames,
-            this.referencedEntityMetadata.tableName,
-            this.referencedColumnNames,
-        )
+        this.name =
+            this.givenName ??
+            namingStrategy.foreignKeyName(
+                this.entityMetadata.tableName,
+                this.columnNames,
+                this.referencedEntityMetadata.tableName,
+                this.referencedColumnNames,
+            )
     }
 }

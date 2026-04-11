@@ -12,13 +12,13 @@ export class Category {
     @PrimaryGeneratedColumn()
     id: number
 
-    @OneToMany((type) => Post, (post) => post.category)
+    @OneToMany(() => Post, (post) => post.category)
     posts: Post[]
 
     @Column({ type: "int", nullable: true })
     metadataId: number
 
-    @OneToOne((type) => CategoryMetadata, (metadata) => metadata.category, {
+    @OneToOne(() => CategoryMetadata, (metadata) => metadata.category, {
         cascade: ["insert"],
     })
     @JoinColumn({ name: "metadataId" })

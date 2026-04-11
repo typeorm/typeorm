@@ -1,10 +1,9 @@
+import type { LogLevel } from "./Logger"
+
 /**
  * Logging options.
  */
-export type LoggerOptions =
-    | boolean
-    | "all"
-    | ("query" | "schema" | "error" | "warn" | "info" | "log" | "migration")[]
+export type LoggerOptions = boolean | "all" | LogLevel[]
 
 /**
  * File logging option.

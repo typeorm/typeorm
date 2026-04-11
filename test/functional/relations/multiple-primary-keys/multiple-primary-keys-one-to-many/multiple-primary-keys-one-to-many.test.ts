@@ -1,0 +1,133 @@
+import { expect } from "chai"
+import "reflect-metadata"
+import type { DataSource } from "../../../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../../../utils/test-utils"
+import { User } from "./entity/User"
+import { Setting } from "./entity/Setting"
+
+/**
+ *  Using OneToMany relation with composed primary key should not error and work correctly
+ */
+describe("relations > multiple-primary-keys > one-to-many", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User, Setting],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+
+    after(() => closeTestingConnections(dataSources))
+
+    function insertSimpleTestData(dataSource: DataSource) {
+        const userRepo = dataSource.getRepository(User)
+        // const settingRepo = dataSource.getRepository(Setting);
+
+        const user = new User(1, "FooGuy")
+        const settingA = new Setting(1, "A", "foo")
+        const settingB = new Setting(1, "B", "bar")
+        user.settings = [settingA, settingB]
+
+        return userRepo.save(user)
+    }
+
+    it("should correctly insert relation items", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userEntity = await insertSimpleTestData(dataSource)
+                const persistedSettings = await dataSource
+                    .getRepository(Setting)
+                    .find()
+
+                expect(persistedSettings!).not.to.be.undefined
+                expect(persistedSettings.length).to.equal(2)
+                expect(persistedSettings[0].assetId).to.equal(userEntity.id)
+                expect(persistedSettings[1].assetId).to.equal(userEntity.id)
+            }),
+        ))
+
+    it("should correctly load relation items", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await insertSimpleTestData(dataSource)
+
+                const [user] = await dataSource.getRepository(User).find({
+                    relations: { settings: true },
+                    // relationLoadStrategy: "join"
+                })
+
+                expect(user!).not.to.be.undefined
+                expect(user!.settings).to.be.an("array")
+                expect(user!.settings!.length).to.equal(2)
+            }),
+        ))
+
+    it("should correctly update relation items", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await insertSimpleTestData(dataSource)
+                const userRepo = dataSource.getRepository(User)
+
+                await userRepo.save([
+                    {
+                        id: 1,
+                        settings: [
+                            { id: 1, name: "A", value: "foobar" },
+                            { id: 1, name: "B", value: "testvalue" },
+                        ],
+                    },
+                ])
+
+                const [user] = await dataSource
+                    .getRepository(User)
+                    .find({ relations: { settings: true } })
+
+                // check the saved items have correctly updated value
+                expect(user!).not.to.be.undefined
+                expect(user!.settings).to.be.an("array")
+                expect(user!.settings!.length).to.equal(2)
+                user!.settings.forEach((setting) => {
+                    if (setting.name === "A")
+                        expect(setting.value).to.equal("foobar")
+                    else expect(setting.value).to.equal("testvalue")
+                })
+
+                // make sure only 2 entries are in db, initial ones should have been updated
+                const settings = await dataSource.getRepository(Setting).find()
+                expect(settings).to.be.an("array")
+                expect(settings!.length).to.equal(2)
+            }),
+        ))
+
+    it("should correctly delete relation items", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await insertSimpleTestData(dataSource)
+                const userRepo = dataSource.getRepository(User)
+
+                await userRepo.save({
+                    id: 1,
+                    settings: [],
+                })
+
+                const [user] = await dataSource.getRepository(User).find({
+                    relations: { settings: true },
+                })
+
+                // check that no relational items are found
+                expect(user!).not.to.be.null
+                expect(user!.settings).to.be.an("array")
+                expect(user!.settings!.length).to.equal(0)
+
+                // check there are no orphane relational items
+                const settings = await dataSource.getRepository(Setting).find()
+                expect(settings).to.be.an("array")
+                expect(settings!.length).to.equal(0)
+            }),
+        ))
+})

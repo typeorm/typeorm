@@ -1,14 +1,16 @@
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { AuroraPostgresDriver } from "./AuroraPostgresDriver"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import type { AuroraPostgresDriver } from "./AuroraPostgresDriver"
 import { PostgresQueryRunner } from "../postgres/PostgresQueryRunner"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { ReplicationMode } from "../types/ReplicationMode"
 import { QueryResult } from "../../query-runner/QueryResult"
+import type { Table } from "../../schema-builder/table/Table"
+import { TypeORMError } from "../../error"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
-    driver: any
+    declare driver: any
 
     constructor(driver: any, mode: ReplicationMode) {
         super(driver, mode)
@@ -29,18 +31,9 @@ export class AuroraPostgresQueryRunner
     /**
      * Database driver used by connection.
      */
-    driver: AuroraPostgresDriver
+    declare driver: AuroraPostgresDriver
 
     protected client: any
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Promise used to obtain a database connection for a first time.
-     */
-    protected databaseConnectionPromise: Promise<any>
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -97,8 +90,16 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Starts transaction on the current connection.
+     *
+     * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        if (isolationLevel) {
+            throw new TypeORMError(
+                `Setting transaction isolation level is not supported by the Aurora Data API`,
+            )
+        }
+
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
@@ -163,6 +164,10 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Executes a given SQL query.
+     *
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -190,5 +195,20 @@ export class AuroraPostgresQueryRunner
         }
 
         return result
+    }
+
+    /**
+     * Change table comment.
+     *
+     * @param tableOrName
+     * @param comment
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `aurora-postgres driver does not support change comment.`,
+        )
     }
 }

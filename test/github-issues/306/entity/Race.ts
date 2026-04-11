@@ -11,6 +11,6 @@ export class Race {
     @Column()
     name: string
 
-    @Column((type) => Duration)
+    @Column(() => Duration)
     duration: Duration
 }

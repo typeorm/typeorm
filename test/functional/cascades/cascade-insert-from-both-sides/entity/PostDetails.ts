@@ -8,7 +8,7 @@ export class PostDetails {
     @PrimaryColumn()
     keyword: string
 
-    @OneToOne((type) => Post, (post) => post.details, {
+    @OneToOne(() => Post, (post) => post.details, {
         cascade: ["insert"],
     })
     post: Post

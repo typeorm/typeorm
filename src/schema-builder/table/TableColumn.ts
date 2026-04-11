@@ -1,4 +1,4 @@
-import { TableColumnOptions } from "../options/TableColumnOptions"
+import type { TableColumnOptions } from "../options/TableColumnOptions"
 
 /**
  * Table's columns in the database represented in this class.
@@ -73,12 +73,6 @@ export class TableColumn {
     length: string = ""
 
     /**
-     * Column type's display width. Used only on some column types in MySQL.
-     * For example, INT(4) specifies an INT with a display width of four digits.
-     */
-    width?: number
-
-    /**
      * Defines column character set.
      */
     charset?: string
@@ -101,12 +95,6 @@ export class TableColumn {
     scale?: number
 
     /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-     */
-    zerofill: boolean = false
-
-    /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
      */
     unsigned: boolean = false
@@ -122,12 +110,17 @@ export class TableColumn {
     enumName?: string
 
     /**
-     * Generated column expression. Supports only in MySQL.
+     * Name of the primary key constraint for primary column.
+     */
+    primaryKeyConstraintName?: string
+
+    /**
+     * Generated column expression.
      */
     asExpression?: string
 
     /**
-     * Generated column type. Supports only in MySQL.
+     * Generated column type.
      */
     generatedType?: "VIRTUAL" | "STORED"
 
@@ -154,26 +147,25 @@ export class TableColumn {
         if (options) {
             this.name = options.name
             this.type = options.type || ""
-            this.length = options.length || ""
-            this.width = options.width
+            this.length = options.length ?? ""
             this.charset = options.charset
             this.collation = options.collation
             this.precision = options.precision
             this.scale = options.scale
-            this.zerofill = options.zerofill || false
-            this.unsigned = this.zerofill ? true : options.unsigned || false
+            this.unsigned = options.unsigned ?? false
             this.default = options.default
             this.onUpdate = options.onUpdate
-            this.isNullable = options.isNullable || false
-            this.isGenerated = options.isGenerated || false
+            this.isNullable = options.isNullable ?? false
+            this.isGenerated = options.isGenerated ?? false
             this.generationStrategy = options.generationStrategy
             this.generatedIdentity = options.generatedIdentity
-            this.isPrimary = options.isPrimary || false
-            this.isUnique = options.isUnique || false
-            this.isArray = options.isArray || false
+            this.isPrimary = options.isPrimary ?? false
+            this.isUnique = options.isUnique ?? false
+            this.isArray = options.isArray ?? false
             this.comment = options.comment
             this.enum = options.enum
             this.enumName = options.enumName
+            this.primaryKeyConstraintName = options.primaryKeyConstraintName
             this.asExpression = options.asExpression
             this.generatedType = options.generatedType
             this.spatialFeatureType = options.spatialFeatureType
@@ -193,15 +185,14 @@ export class TableColumn {
             name: this.name,
             type: this.type,
             length: this.length,
-            width: this.width,
             charset: this.charset,
             collation: this.collation,
             precision: this.precision,
             scale: this.scale,
-            zerofill: this.zerofill,
             unsigned: this.unsigned,
             enum: this.enum,
             enumName: this.enumName,
+            primaryKeyConstraintName: this.primaryKeyConstraintName,
             asExpression: this.asExpression,
             generatedType: this.generatedType,
             default: this.default,

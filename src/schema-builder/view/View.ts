@@ -1,5 +1,9 @@
-import { DataSource, Driver, EntityMetadata, SelectQueryBuilder } from "../.."
-import { ViewOptions } from "../options/ViewOptions"
+import type { DataSource } from "../../data-source"
+import type { Driver } from "../../driver/Driver"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { SelectQueryBuilder } from "../../query-builder/SelectQueryBuilder"
+import type { ViewOptions } from "../options/ViewOptions"
+import type { TableIndex } from "../table/TableIndex"
 
 /**
  * View in the database represented in this class.
@@ -32,15 +36,21 @@ export class View {
     materialized: boolean
 
     /**
+     * View Indices
+     */
+    indices: TableIndex[]
+
+    /**
      * View definition.
      */
-    expression: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(options?: ViewOptions) {
+        this.indices = []
         if (options) {
             this.database = options.database
             this.schema = options.schema
@@ -67,12 +77,38 @@ export class View {
         })
     }
 
+    /**
+     * Add index
+     *
+     * @param index
+     */
+    addIndex(index: TableIndex): void {
+        this.indices.push(index)
+    }
+
+    /**
+     * Remove index
+     *
+     * @param viewIndex
+     */
+    removeIndex(viewIndex: TableIndex): void {
+        const index = this.indices.find(
+            (index) => index.name === viewIndex.name,
+        )
+        if (index) {
+            this.indices.splice(this.indices.indexOf(index), 1)
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Static Methods
     // -------------------------------------------------------------------------
 
     /**
      * Creates view from a given entity metadata.
+     *
+     * @param entityMetadata
+     * @param driver
      */
     static create(entityMetadata: EntityMetadata, driver: Driver): View {
         const options: ViewOptions = {

@@ -16,12 +16,12 @@ export class EventRole {
     @Column()
     compensation: string
 
-    @ManyToOne((type) => Role, (role) => role.roles, {
+    @ManyToOne(() => Role, (role) => role.roles, {
         onDelete: "CASCADE",
     })
     role: Role
 
-    @ManyToOne((type) => Event, (event) => event.roles, {
+    @ManyToOne(() => Event, (event) => event.roles, {
         onDelete: "CASCADE",
     })
     event: Event

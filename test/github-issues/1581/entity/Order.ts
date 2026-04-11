@@ -17,15 +17,15 @@ export class Order {
     @PrimaryColumn()
     userId: number
 
-    @ManyToOne((type) => DeliverySlot)
+    @ManyToOne(() => DeliverySlot)
     deliverySlot: DeliverySlot
 
-    @ManyToOne((type) => User, (user) => user.recurringOrders)
+    @ManyToOne(() => User, (user) => user.recurringOrders)
     user: User
 
     @Column()
     enabled: boolean
 
-    @OneToMany((type) => OrderItem, (item) => item.order)
+    @OneToMany(() => OrderItem, (item) => item.order)
     items: OrderItem[]
 }

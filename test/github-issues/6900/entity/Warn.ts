@@ -1,9 +1,10 @@
-import { Entity, ObjectID, ObjectIdColumn, Column } from "../../../../src"
+import { ObjectId } from "mongodb"
+import { Column, Entity, ObjectIdColumn } from "../../../../src"
 
 @Entity("warnings")
 export class Warn {
     @ObjectIdColumn()
-    id!: ObjectID
+    id!: ObjectId
 
     @Column()
     guild!: string

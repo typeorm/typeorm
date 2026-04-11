@@ -5,6 +5,7 @@
  * For node.js environment this class is not getting packaged.
  * Don't use methods of this class in the code, use PlatformTools methods instead.
  */
+
 export class PlatformTools {
 
     /**
@@ -18,10 +19,12 @@ export class PlatformTools {
     static getGlobalVariable(): any {
         if (typeof window !== "undefined") {
             return window
-        } else {
-            // NativeScript uses global, not window
-            return global
         }
+        if (typeof globalThis !== "undefined") {
+            return globalThis
+        }
+        // NativeScript uses global, not window
+        return global
     }
 
     /**
@@ -75,20 +78,6 @@ export class PlatformTools {
         return false;
     }
 
-    static dotenv(pathStr: string): void {
-        if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: dotenv.config({ path: "${pathStr}" }).`);
-    }
-
-    /**
-     * Gets environment variable.
-     */
-    static getEnvVariable(name: string): any {
-        // if (this.type === "browser")
-        //     throw new Error(`This option/function is not supported in the browser environment. Failed operation: process.env["${name}"].`);
-        return undefined;
-    }
-
     static readFileSync(filename: string): any {
         if (this.type === "browser")
             throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.readFileSync("${filename}").`);
@@ -107,21 +96,14 @@ export class PlatformTools {
     }
 
     /**
-     * Highlights sql string to be print in the console.
+     * Highlights sql string to be printed in the console.
      */
     static highlightSql(sql: string) {
         return sql;
     }
 
     /**
-     * Highlights json string to be print in the console.
-     */
-    static highlightJson(json: string) {
-        return json;
-    }
-
-    /**
-     * Logging functions needed by AdvancedConsoleLogger (but here without chalk)
+     * Logging functions needed by AdvancedConsoleLogger (but here without ANSI colors)
      */
     static logInfo(prefix: string, info: any) {
         console.info(prefix + " ", info);
@@ -155,19 +137,3 @@ export class Readable {}
 export class Writable {}
 
 export interface ReadStream {}
-
-/**
- * This loads a polyfill to enable Buffers in the browser.
- */
-interface Window {
-    Buffer: any;
-}
-
-declare var window: Window;
-if (typeof window !== "undefined") {
-    window.Buffer = require("buffer/").Buffer;
-}
-// NativeScript uses global, not window
-if (typeof global !== "undefined") {
-    global.Buffer = require("buffer/").Buffer;
-}

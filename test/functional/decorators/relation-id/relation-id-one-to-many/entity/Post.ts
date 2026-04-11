@@ -15,7 +15,7 @@ export class Post {
     @Column()
     isRemoved: boolean = false
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     category: Category
 
     categoryId: number

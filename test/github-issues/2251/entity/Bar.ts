@@ -8,6 +8,6 @@ export class Bar {
 
     @Column() description: string
 
-    @ManyToOne((type) => Foo, (foo) => foo.bars)
+    @ManyToOne(() => Foo, (foo) => foo.bars)
     foo?: Foo
 }

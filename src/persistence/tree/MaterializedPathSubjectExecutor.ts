@@ -1,7 +1,10 @@
-import { Subject } from "../Subject"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { Subject } from "../Subject"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { Brackets } from "../../query-builder/Brackets"
 
 /**
  * Executes subject operations for materialized-path tree entities.
@@ -19,16 +22,18 @@ export class MaterializedPathSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     *
+     * @param subject
      */
     async insert(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+        if (!parent && subject.parentSubject?.entity)
             // if entity was attached via children
-            parent = subject.parentSubject.insertedValueSet
-                ? subject.parentSubject.insertedValueSet
-                : subject.parentSubject.entity
+            parent =
+                subject.parentSubject.insertedValueSet ??
+                subject.parentSubject.entity
 
         const parentId = subject.metadata.getEntityIdMap(parent)
 
@@ -58,12 +63,14 @@ export class MaterializedPathSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     *
+     * @param subject
      */
     async update(subject: Subject): Promise<void> {
         let newParent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!newParent && subject.parentSubject && subject.parentSubject.entity)
+        if (!newParent && subject.parentSubject?.entity)
             // if entity was attached via children
             newParent = subject.parentSubject.entity
 
@@ -81,8 +88,14 @@ export class MaterializedPathSubjectExecutor {
         const oldParent = subject.metadata.treeParentRelation!.getEntityValue(
             entity!,
         )
-        const oldParentId = subject.metadata.getEntityIdMap(oldParent)
-        const newParentId = subject.metadata.getEntityIdMap(newParent)
+        const oldParentId = this.getEntityParentReferencedColumnMap(
+            subject,
+            oldParent,
+        )
+        const newParentId = this.getEntityParentReferencedColumnMap(
+            subject,
+            newParent,
+        )
 
         // Exit if the new and old parents are the same
         if (OrmUtils.compareIds(oldParentId, newParentId)) {
@@ -113,7 +126,9 @@ export class MaterializedPathSubjectExecutor {
             .update(subject.metadata.target)
             .set({
                 [propertyPath]: () =>
-                    `REPLACE(${propertyPath}, '${oldParentPath}${entityPath}.', '${newParentPath}${entityPath}.')`,
+                    `REPLACE(${this.queryRunner.dataSource.driver.escape(
+                        propertyPath,
+                    )}, '${oldParentPath}${entityPath}.', '${newParentPath}${entityPath}.')`,
             } as any)
             .where(`${propertyPath} LIKE :path`, {
                 path: `${oldParentPath}${entityPath}.%`,
@@ -121,10 +136,30 @@ export class MaterializedPathSubjectExecutor {
             .execute()
     }
 
+    private getEntityParentReferencedColumnMap(
+        subject: Subject,
+        entity: ObjectLiteral | undefined,
+    ): ObjectLiteral | undefined {
+        if (!entity) return undefined
+        return EntityMetadata.getValueMap(
+            entity,
+            subject.metadata
+                .treeParentRelation!.joinColumns.map(
+                    (column) => column.referencedColumn,
+                )
+                .filter((v) => v != null) as ColumnMetadata[],
+            { skipNulls: true },
+        )
+    }
+
     private getEntityPath(
         subject: Subject,
         id: ObjectLiteral,
     ): Promise<string> {
+        const metadata = subject.metadata
+        const normalized = (Array.isArray(id) ? id : [id]).map((id) =>
+            metadata.ensureEntityIdMap(id),
+        )
         return this.queryRunner.manager
             .createQueryBuilder()
             .select(
@@ -134,7 +169,14 @@ export class MaterializedPathSubjectExecutor {
                 "path",
             )
             .from(subject.metadata.target, subject.metadata.targetName)
-            .whereInIds(id)
+            .where(
+                new Brackets((qb) => {
+                    for (const data of normalized) {
+                        qb.orWhere(new Brackets((qb) => qb.where(data)))
+                    }
+                }),
+            )
+            .withDeleted()
             .getRawOne()
             .then((result) => (result ? result["path"] : ""))
     }

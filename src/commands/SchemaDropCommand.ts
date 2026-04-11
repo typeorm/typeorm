@@ -1,9 +1,9 @@
-import { DataSource } from "../data-source/DataSource"
-import * as yargs from "yargs"
-import chalk from "chalk"
-import { PlatformTools } from "../platform/PlatformTools"
+import ansi from "ansis"
 import path from "path"
 import process from "process"
+import type yargs from "yargs"
+import type { DataSource } from "../data-source/DataSource"
+import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 
 /**
@@ -41,11 +41,13 @@ export class SchemaDropCommand implements yargs.CommandModule {
             await dataSource.destroy()
 
             console.log(
-                chalk.green("Database schema has been successfully dropped."),
+                ansi.green`Database schema has been successfully dropped.`,
             )
         } catch (err) {
-            if (dataSource) await dataSource.destroy()
             PlatformTools.logCmdErr("Error during schema drop:", err)
+
+            if (dataSource?.isInitialized) await dataSource.destroy()
+
             process.exit(1)
         }
     }

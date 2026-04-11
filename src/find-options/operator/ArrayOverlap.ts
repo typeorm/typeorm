@@ -2,10 +2,14 @@ import { FindOperator } from "../FindOperator"
 
 /**
  * FindOptions Operator.
- * Example: { someField: ArrayOverlap([...]) }
+ *
+ * @example
+ * { someField: ArrayOverlap([...]) }
+ *
+ * @param value
  */
 export function ArrayOverlap<T>(
-    value: T[] | FindOperator<T>,
+    value: readonly T[] | FindOperator<T>,
 ): FindOperator<any> {
     return new FindOperator("arrayOverlap", value as any)
 }

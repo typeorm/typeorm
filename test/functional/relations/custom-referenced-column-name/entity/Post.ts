@@ -27,43 +27,43 @@ export class Post {
     @Column({ type: "int", nullable: true })
     tagId: number
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn()
     categoryWithEmptyJoinCol: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn({ name: "categoryId" })
     categoryWithoutRefColName: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn({ referencedColumnName: "name" })
     categoryWithoutColName: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn({ name: "categoryIdentifier" })
     categoryWithoutRefColName2: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn({ name: "categoryName", referencedColumnName: "name" })
     category: Category
 
-    @OneToOne((type) => Tag)
+    @OneToOne(() => Tag)
     @JoinColumn()
     tagWithEmptyJoinCol: Tag
 
-    @OneToOne((type) => Tag)
+    @OneToOne(() => Tag)
     @JoinColumn({ name: "tagId" })
     tagWithoutRefColName: Tag
 
-    @OneToOne((type) => Tag)
+    @OneToOne(() => Tag)
     @JoinColumn({ referencedColumnName: "name" })
     tagWithoutColName: Tag
 
-    @OneToOne((type) => Tag)
+    @OneToOne(() => Tag)
     @JoinColumn({ name: "tagIdentifier" })
     tagWithoutRefColName2: Tag
 
-    @OneToOne((type) => Tag)
+    @OneToOne(() => Tag)
     @JoinColumn({ name: "tagName", referencedColumnName: "name" })
     tag: Tag
 }

@@ -11,12 +11,12 @@ export class Counters {
     @Column()
     favorites: number
 
-    @Column((type) => Information, { prefix: "info" })
+    @Column(() => Information, { prefix: "info" })
     information: Information
 
-    @Column((type) => Information, { prefix: "testData" })
+    @Column(() => Information, { prefix: "testData" })
     data: Information
 
-    @Column((type) => Information, { prefix: "" })
+    @Column(() => Information, { prefix: "" })
     dataWithoutPrefix: Information
 }

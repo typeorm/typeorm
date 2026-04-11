@@ -1,11 +1,12 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
 const options: DataSourceOptions = {
-    type: "sqlite",
-    database: "temp/sqlitedb.db",
+    type: "better-sqlite3",
+    database: "temp/better-sqlite3.db",
     logging: ["query", "error"],
     synchronize: true,
     entities: [Post, Category],
@@ -15,24 +16,24 @@ const dataSource = new DataSource(options)
 dataSource
     .initialize()
     .then(async (dataSource) => {
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
-        let post1 = new Post("Me", "hello me", [
+        const post1 = new Post("Me", "hello me", [
             new Category("programming"),
             new Category("family"),
             new Category("chocolate"),
         ])
-        let post2 = new Post("Zorro", "hello zorro", [
+        const post2 = new Post("Zorro", "hello zorro", [
             new Category("woman"),
             new Category("money"),
             new Category("weapon"),
         ])
-        let post3 = new Post("About earth", "hello earth", [
+        const post3 = new Post("About earth", "hello earth", [
             new Category("kids"),
             new Category("people"),
             new Category("animals"),
         ])
-        let post4 = new Post("Zorro", "hello zorro", [
+        const post4 = new Post("Zorro", "hello zorro", [
             new Category("woman"),
             new Category("money"),
             new Category("weapon"),

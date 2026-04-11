@@ -21,6 +21,6 @@ export class Photo {
     @Column()
     description: string
 
-    @ManyToOne((type) => User, (user) => user.photos)
+    @ManyToOne(() => User, (user) => user.photos)
     user: User
 }

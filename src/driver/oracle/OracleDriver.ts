@@ -1,43 +1,71 @@
-import { Driver } from "../Driver"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { OracleQueryRunner } from "./OracleQueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { DateUtils } from "../../util/DateUtils"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { OnDeleteType } from "../../metadata/types/OnDeleteType"
+import type { OnUpdateType } from "../../metadata/types/OnUpdateType"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source/DataSource"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { OracleConnectionOptions } from "./OracleConnectionOptions"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
-import { DriverUtils } from "../DriverUtils"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { TypeORMError } from "../../error"
+import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import type { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import type { UpsertType } from "../types/UpsertType"
+import type { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
+import type { OracleDataSourceOptions } from "./OracleDataSourceOptions"
+import { OracleQueryRunner } from "./OracleQueryRunner"
 
 /**
  * Organizes communication with Oracle RDBMS.
  */
 export class OracleDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://docs.oracle.com/en/database/oracle/oracle-database/23/cncpt/data-concurrency-and-consistency.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ COMMITTED",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Underlying oracle library.
@@ -60,9 +88,9 @@ export class OracleDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
-    options: OracleConnectionOptions
+    options: OracleDataSourceOptions
 
     /**
      * Database name used to perform all write queries.
@@ -125,7 +153,31 @@ export class OracleDriver implements Driver {
         "nclob",
         "rowid",
         "urowid",
+        "simple-json",
+        "json",
     ]
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
+
+    /**
+     * Returns list of supported onDelete types by driver.
+     * https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/sql-language-reference.pdf
+     * Oracle does not support NO ACTION, but NO ACTION is set by default in EntityMetadata
+     */
+    supportedOnDeleteTypes: OnDeleteType[] = [
+        "CASCADE",
+        "SET NULL",
+        "NO ACTION",
+    ]
+
+    /**
+     * Returns list of supported onUpdate types by driver.
+     * Oracle does not have onUpdate option, but we allow NO ACTION since it is set by default in EntityMetadata
+     */
+    supportedOnUpdateTypes: OnUpdateType[] = ["NO ACTION"]
 
     /**
      * Gets list of spatial column data types.
@@ -191,6 +243,11 @@ export class OracleDriver implements Driver {
     }
 
     /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = ":"
+
+    /**
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
@@ -209,6 +266,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Max length allowed by Oracle for aliases.
+     *
      * @see https://docs.oracle.com/database/121/SQLRF/sql_elements008.htm#SQLRF51129
      * > The following list of rules applies to both quoted and nonquoted identifiers unless otherwise indicated
      * > Names must be from 1 to 30 bytes long with these exceptions:
@@ -222,16 +280,18 @@ export class OracleDriver implements Driver {
     maxAliasLength = 29
 
     cteCapabilities: CteCapabilities = {
-        enabled: false, // TODO: enable
+        enabled: true,
     }
+
+    dummyTableName = "DUAL"
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as OracleConnectionOptions
+        this.dataSource = connection
+        this.options = connection.options as OracleDataSourceOptions
 
         if (this.options.useUTC === true) {
             process.env.ORA_SDTZ = "UTC"
@@ -267,8 +327,8 @@ export class OracleDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        this.oracle.fetchAsString = [this.oracle.CLOB]
-        this.oracle.fetchAsBuffer = [this.oracle.BLOB]
+        this.oracle.fetchAsString = [this.oracle.DB_TYPE_CLOB]
+        this.oracle.fetchAsBuffer = [this.oracle.DB_TYPE_BLOB]
         if (this.options.replication) {
             this.slaves = await Promise.all(
                 this.options.replication.slaves.map((slave) => {
@@ -284,15 +344,11 @@ export class OracleDriver implements Driver {
         }
 
         if (!this.database || !this.schema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.schema) {
-                this.schema = await queryRunner.getCurrentSchema()
-            }
+            this.schema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
@@ -309,8 +365,9 @@ export class OracleDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("oracle"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("oracle")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -322,11 +379,13 @@ export class OracleDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
      * Creates a query runner used to execute database queries.
+     *
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new OracleQueryRunner(this, mode)
@@ -335,19 +394,15 @@ export class OracleDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
+     * @param sql
+     * @param parameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => {
-                if (typeof nativeParameters[key] === "boolean")
-                    return nativeParameters[key] ? 1 : 0
-                return nativeParameters[key]
-            },
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -358,7 +413,7 @@ export class OracleDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -381,6 +436,7 @@ export class OracleDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
+
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -389,21 +445,27 @@ export class OracleDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
+     * @param columnName
      */
     escape(columnName: string): string {
-        return `"${columnName}"`
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
      * Build full table name with database name, schema name and table name.
      * Oracle does not support table schemas. One user can have only one schema.
+     *
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -414,6 +476,8 @@ export class OracleDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -425,8 +489,8 @@ export class OracleDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -436,11 +500,11 @@ export class OracleDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -449,8 +513,8 @@ export class OracleDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -480,6 +544,9 @@ export class OracleDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -495,9 +562,9 @@ export class OracleDriver implements Driver {
         } else if (columnMetadata.type === "date") {
             if (typeof value === "string") value = value.replace(/[^0-9-]/g, "")
             return () =>
-                `TO_DATE('${DateUtils.mixedDateToDateString(
-                    value,
-                )}', 'YYYY-MM-DD')`
+                `TO_DATE('${DateUtils.mixedDateToDateString(value, {
+                    utc: columnMetadata.utc,
+                })}', 'YYYY-MM-DD')`
         } else if (
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
@@ -509,6 +576,8 @@ export class OracleDriver implements Driver {
             return DateUtils.simpleArrayToString(value)
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value)
+        } else if (columnMetadata.type === "json") {
+            return DateUtils.simpleJsonToString(value)
         }
 
         return value
@@ -516,6 +585,9 @@ export class OracleDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -529,7 +601,9 @@ export class OracleDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             value = !!value
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (
@@ -539,12 +613,13 @@ export class OracleDriver implements Driver {
             columnMetadata.type === "timestamp with local time zone"
         ) {
             value = DateUtils.normalizeHydratedDate(value)
-        } else if (columnMetadata.type === "json") {
-            value = JSON.parse(value)
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -558,6 +633,13 @@ export class OracleDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
+     * @param column.isArray
      */
     normalizeType(column: {
         type?: ColumnType
@@ -586,7 +668,10 @@ export class OracleDriver implements Driver {
             return "varchar2"
         } else if (column.type === Date) {
             return "timestamp"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         } else if (column.type === "uuid") {
             return "varchar2"
@@ -594,6 +679,8 @@ export class OracleDriver implements Driver {
             return "clob"
         } else if (column.type === "simple-json") {
             return "clob"
+        } else if (column.type === "json") {
+            return "json"
         } else {
             return (column.type as string) || ""
         }
@@ -601,6 +688,8 @@ export class OracleDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -630,6 +719,8 @@ export class OracleDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.uniques.some(
@@ -639,6 +730,8 @@ export class OracleDriver implements Driver {
 
     /**
      * Calculates column length taking into account the default length values.
+     *
+     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -739,6 +832,9 @@ export class OracleDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
         if (!insertResult) return undefined
@@ -760,6 +856,9 @@ export class OracleDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -781,6 +880,8 @@ export class OracleDriver implements Driver {
                 tableColumn.default !== this.normalizeDefault(columnMetadata) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
+                tableColumn.asExpression !== columnMetadata.asExpression ||
+                tableColumn.generatedType !== columnMetadata.generatedType ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
@@ -788,21 +889,83 @@ export class OracleDriver implements Driver {
 
             // DEBUG SECTION
             // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName);
-            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            //     console.log("length:", tableColumn.length, columnMetadata.length);
-            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
-            //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
-            //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
-            //     console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
-            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            //     console.log("==========================================");
+            //     console.log("table:", columnMetadata.entityMetadata.tableName)
+            //     console.log(
+            //         "name:",
+            //         tableColumn.name,
+            //         columnMetadata.databaseName,
+            //     )
+            //     console.log(
+            //         "type:",
+            //         tableColumn.type,
+            //         this.normalizeType(columnMetadata),
+            //     )
+            //     console.log(
+            //         "length:",
+            //         tableColumn.length,
+            //         columnMetadata.length,
+            //     )
+            //     console.log(
+            //         "precision:",
+            //         tableColumn.precision,
+            //         columnMetadata.precision,
+            //     )
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
+            //     console.log(
+            //         "comment:",
+            //         tableColumn.comment,
+            //         columnMetadata.comment,
+            //     )
+            //     console.log(
+            //         "default:",
+            //         tableColumn.default,
+            //         this.normalizeDefault(columnMetadata),
+            //     )
+            //     console.log(
+            //         "enum:",
+            //         tableColumn.enum &&
+            //             columnMetadata.enum &&
+            //             !OrmUtils.isArraysEqual(
+            //                 tableColumn.enum,
+            //                 columnMetadata.enum.map((val) => val + ""),
+            //             ),
+            //     )
+            //     console.log(
+            //         "onUpdate:",
+            //         tableColumn.onUpdate,
+            //         columnMetadata.onUpdate,
+            //     )
+            //     console.log(
+            //         "isPrimary:",
+            //         tableColumn.isPrimary,
+            //         columnMetadata.isPrimary,
+            //     )
+            //     console.log(
+            //         "isNullable:",
+            //         tableColumn.isNullable,
+            //         columnMetadata.isNullable,
+            //     )
+            //     console.log(
+            //         "asExpression:",
+            //         tableColumn.asExpression,
+            //         columnMetadata.asExpression,
+            //     )
+            //     console.log(
+            //         "generatedType:",
+            //         tableColumn.generatedType,
+            //         columnMetadata.generatedType,
+            //     )
+            //     console.log(
+            //         "isUnique:",
+            //         tableColumn.isUnique,
+            //         this.normalizeIsUnique(columnMetadata),
+            //     )
+            //     console.log(
+            //         "isGenerated:",
+            //         tableColumn.isGenerated,
+            //         columnMetadata.isGenerated,
+            //     )
+            //     console.log("==========================================")
             // }
 
             return isColumnChanged
@@ -811,8 +974,10 @@ export class OracleDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
+     * @param _returningType
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
     }
 
@@ -832,13 +997,18 @@ export class OracleDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
-        return ":" + (index + 1)
+        return this.parametersPrefix + (index + 1)
     }
 
     /**
      * Converts column type in to native oracle type.
+     *
+     * @param type
      */
     columnTypeToNativeParameter(type: ColumnType): any {
         switch (this.normalizeType({ type: type as any })) {
@@ -849,21 +1019,24 @@ export class OracleDriver implements Driver {
             case "smallint":
             case "dec":
             case "decimal":
-                return this.oracle.NUMBER
+                return this.oracle.DB_TYPE_NUMBER
             case "char":
             case "nchar":
             case "nvarchar2":
             case "varchar2":
-                return this.oracle.STRING
+                return this.oracle.DB_TYPE_VARCHAR
             case "blob":
-                return this.oracle.BLOB
+                return this.oracle.DB_TYPE_BLOB
+            case "simple-json":
             case "clob":
-                return this.oracle.CLOB
+                return this.oracle.DB_TYPE_CLOB
             case "date":
             case "timestamp":
             case "timestamp with time zone":
             case "timestamp with local time zone":
-                return this.oracle.DATE
+                return this.oracle.DB_TYPE_TIMESTAMP
+            case "json":
+                return this.oracle.DB_TYPE_JSON
         }
     }
 
@@ -876,18 +1049,29 @@ export class OracleDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const oracle = this.options.driver || PlatformTools.load("oracledb")
+            const oracle = this.options.driver ?? PlatformTools.load("oracledb")
             this.oracle = oracle
-        } catch (e) {
+        } catch {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
+        }
+        const thickMode = this.options.thickMode
+        if (thickMode) {
+            if (typeof thickMode === "object") {
+                this.oracle.initOracleClient(thickMode)
+            } else {
+                this.oracle.initOracleClient()
+            }
         }
     }
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
+     * @param options
+     * @param credentials
      */
     protected async createPool(
-        options: OracleConnectionOptions,
+        options: OracleDataSourceOptions,
         credentials: OracleConnectionCredentialsOptions,
     ): Promise<any> {
         credentials = Object.assign(
@@ -929,7 +1113,10 @@ export class OracleDriver implements Driver {
                 password: credentials.password,
                 connectString: credentials.connectString,
             },
-            options.extra || {},
+            {
+                poolMax: options.poolSize,
+            },
+            options.extra ?? {},
         )
 
         // pooling is enabled either when its set explicitly to true,
@@ -944,6 +1131,8 @@ export class OracleDriver implements Driver {
 
     /**
      * Closes connection pool.
+     *
+     * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
         return new Promise<void>((ok, fail) => {

@@ -1,3 +1,5 @@
+import type { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
+
 /**
  * Arguments for IndexMetadata class.
  */
@@ -73,8 +75,21 @@ export interface IndexMetadataArgs {
     background?: boolean
 
     /**
+     * Builds the index using the concurrently option.
+     * This option is only supported for postgres database.
+     */
+    concurrent?: boolean
+
+    /**
      * Specifies a time to live, in seconds.
      * This option is only supported for mongodb database.
      */
     expireAfterSeconds?: number
+
+    /**
+     * The `type` option defines the type of the index being created.
+     * Supported types include B-tree, Hash, GiST, SP-GiST, GIN, and BRIN
+     * This option is only applicable in PostgreSQL.
+     */
+    type?: TableIndexTypes
 }

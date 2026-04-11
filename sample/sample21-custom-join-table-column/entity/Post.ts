@@ -17,7 +17,7 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToOne((type) => Author, (author) => author.posts, {
+    @ManyToOne(() => Author, (author) => author.posts, {
         cascade: true,
     })
     @JoinColumn({
@@ -26,7 +26,7 @@ export class Post {
     })
     author: Author
 
-    @ManyToMany((type) => Category, (category) => category.posts, {
+    @ManyToMany(() => Category, (category) => category.posts, {
         cascade: true,
     })
     @JoinTable({

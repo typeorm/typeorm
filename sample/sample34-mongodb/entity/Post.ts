@@ -1,11 +1,10 @@
-import { Column, Entity } from "../../../src/index"
-import { ObjectIdColumn } from "../../../src/decorator/columns/ObjectIdColumn"
-import { ObjectID } from "../../../src/driver/mongodb/typings"
+import { ObjectId } from "mongodb"
+import { Column, Entity, ObjectIdColumn } from "../../../src/"
 
 @Entity("sample34_post")
 export class Post {
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 
     @Column()
     title: string

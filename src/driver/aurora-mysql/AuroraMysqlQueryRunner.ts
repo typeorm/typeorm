@@ -1,28 +1,28 @@
-import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryResult } from "../../query-runner/QueryResult"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
+import type { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { OrmUtils } from "../../util/OrmUtils"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { ColumnType } from "../types/ColumnTypes"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { TypeORMError } from "../../error"
-import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { Query } from "../Query"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -59,7 +59,7 @@ export class AuroraMysqlQueryRunner
     constructor(driver: AuroraMysqlDriver, client: any) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.client = client
         this.broadcaster = new Broadcaster(this)
     }
@@ -88,8 +88,16 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Starts transaction on the current connection.
+     *
+     * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        if (isolationLevel) {
+            throw new TypeORMError(
+                `Setting transaction isolation level is not supported by the Aurora Data API`,
+            )
+        }
+
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
@@ -154,6 +162,10 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Executes a raw SQL query.
+     *
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -185,6 +197,11 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Returns raw data stream.
+     *
+     * @param query
+     * @param parameters
+     * @param onEnd
+     * @param onError
      */
     stream(
         query: string,
@@ -217,6 +234,8 @@ export class AuroraMysqlQueryRunner
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     *
+     * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
         throw new TypeORMError(`MySql driver does not support table schemas`)
@@ -224,10 +243,13 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Checks if database with the given name exist.
+     *
+     * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\` WHERE \`SCHEMA_NAME\` = '${database}'`,
+            `SELECT * FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\` WHERE \`SCHEMA_NAME\` = ?`,
+            [database],
         )
         return result.length ? true : false
     }
@@ -242,6 +264,8 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Checks if schema with the given name exist.
+     *
+     * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
         throw new TypeORMError(`MySql driver does not support table schemas`)
@@ -257,16 +281,24 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Checks if table with the given name exist in the database.
+     *
+     * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = ? AND \`TABLE_NAME\` = ?`
+        const result = await this.query(sql, [
+            parsedTableName.database,
+            parsedTableName.tableName,
+        ])
         return result.length ? true : false
     }
 
     /**
      * Checks if column with the given name exist in the given table.
+     *
+     * @param tableOrName
+     * @param column
      */
     async hasColumn(
         tableOrName: Table | string,
@@ -276,42 +308,55 @@ export class AuroraMysqlQueryRunner
         const columnName = InstanceChecker.isTableColumn(column)
             ? column.name
             : column
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}' AND \`COLUMN_NAME\` = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = ? AND \`TABLE_NAME\` = ? AND \`COLUMN_NAME\` = ?`
+        const result = await this.query(sql, [
+            parsedTableName.database,
+            parsedTableName.tableName,
+            columnName,
+        ])
         return result.length ? true : false
     }
 
     /**
      * Creates a new database.
+     *
+     * @param database
+     * @param ifNotExists
      */
     async createDatabase(
         database: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
-        const up = ifNotExist
-            ? `CREATE DATABASE IF NOT EXISTS \`${database}\``
-            : `CREATE DATABASE \`${database}\``
-        const down = `DROP DATABASE \`${database}\``
+        const up = ifNotExists
+            ? `CREATE DATABASE IF NOT EXISTS ${this.driver.escape(database)}`
+            : `CREATE DATABASE ${this.driver.escape(database)}`
+        const down = `DROP DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
     /**
      * Drops database.
+     *
+     * @param database
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        const up = ifExist
-            ? `DROP DATABASE IF EXISTS \`${database}\``
-            : `DROP DATABASE \`${database}\``
-        const down = `CREATE DATABASE \`${database}\``
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
+        const up = ifExists
+            ? `DROP DATABASE IF EXISTS ${this.driver.escape(database)}`
+            : `DROP DATABASE ${this.driver.escape(database)}`
+        const down = `CREATE DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
     /**
      * Creates a new table schema.
+     *
+     * @param schemaPath
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema create queries are not supported by MySql driver.`,
@@ -320,8 +365,11 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops table schema.
+     *
+     * @param schemaPath
+     * @param ifExists
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    async dropSchema(schemaPath: string, ifExists?: boolean): Promise<void> {
         throw new TypeORMError(
             `Schema drop queries are not supported by MySql driver.`,
         )
@@ -329,13 +377,17 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new table.
+     *
+     * @param table
+     * @param ifNotExists
+     * @param createForeignKeys
      */
     async createTable(
         table: Table,
-        ifNotExist: boolean = false,
+        ifNotExists: boolean = false,
         createForeignKeys: boolean = true,
     ): Promise<void> {
-        if (ifNotExist) {
+        if (ifNotExists) {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
@@ -366,15 +418,19 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drop the table.
+     *
+     * @param target
+     * @param ifExists
+     * @param dropForeignKeys
      */
     async dropTable(
         target: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys: boolean = true,
     ): Promise<void> {
         // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
         // to perform drop queries for foreign keys and indices.
-        if (ifExist) {
+        if (ifExists) {
             const isTableExist = await this.hasTable(target)
             if (!isTableExist) return Promise.resolve()
         }
@@ -403,35 +459,52 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new view.
+     *
+     * @param view
+     * @param syncWithMetadata
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(await this.insertViewDefinitionSql(view))
+        if (syncWithMetadata)
+            upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(await this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
     /**
      * Drops the view.
+     *
+     * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
         const view = await this.getCachedView(viewName)
 
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        upQueries.push(await this.deleteViewDefinitionSql(view))
-        upQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.insertViewDefinitionSql(view))
-        downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeQueries(
+            [
+                await this.deleteViewDefinitionSql(view),
+                this.dropViewSql(view, ifExists),
+            ],
+            [
+                await this.insertViewDefinitionSql(view),
+                this.createViewSql(view),
+            ],
+        )
     }
 
     /**
      * Renames a table.
+     *
+     * @param oldTableOrName
+     * @param newTableName
      */
     async renameTable(
         oldTableOrName: Table | string,
@@ -469,7 +542,7 @@ export class AuroraMysqlQueryRunner
             const columnNames = index.columnNames
                 .map((column) => `\`${column}\``)
                 .join(", ")
-            const newIndexName = this.connection.namingStrategy.indexName(
+            const newIndexName = this.dataSource.namingStrategy.indexName(
                 newTable,
                 index.columnNames,
                 index.where,
@@ -511,7 +584,7 @@ export class AuroraMysqlQueryRunner
                 .map((column) => `\`${column}\``)
                 .join(",")
             const newForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     newTable,
                     foreignKey.columnNames,
                 )
@@ -555,6 +628,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new column from the column in the table.
+     *
+     * @param tableOrName
+     * @param column
      */
     async addColumn(
         tableOrName: Table | string,
@@ -688,7 +764,7 @@ export class AuroraMysqlQueryRunner
             downQueries.push(this.dropIndexSql(table, columnIndex))
         } else if (column.isUnique) {
             const uniqueIndex = new TableIndex({
-                name: this.connection.namingStrategy.indexName(table, [
+                name: this.dataSource.namingStrategy.indexName(table, [
                     column.name,
                 ]),
                 columnNames: [column.name],
@@ -725,6 +801,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new columns from the column in the table.
+     *
+     * @param tableOrName
+     * @param columns
      */
     async addColumns(
         tableOrName: Table | string,
@@ -737,6 +816,10 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Renames column in the given table.
+     *
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newTableColumnOrName
      */
     async renameColumn(
         tableOrName: Table | string,
@@ -754,7 +837,7 @@ export class AuroraMysqlQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        let newColumn: TableColumn | undefined = undefined
+        let newColumn: TableColumn
         if (InstanceChecker.isTableColumn(newTableColumnOrName)) {
             newColumn = newTableColumnOrName
         } else {
@@ -767,6 +850,10 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Changes a column in the table.
+     *
+     * @param tableOrName
+     * @param oldColumnOrName
+     * @param newColumn
      */
     async changeColumn(
         tableOrName: Table | string,
@@ -838,7 +925,7 @@ export class AuroraMysqlQueryRunner
                         .map((column) => `\`${column}\``)
                         .join(", ")
                     const newIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -890,7 +977,7 @@ export class AuroraMysqlQueryRunner
                                 .map((column) => `\`${column}\``)
                                 .join(",")
                         const newForeignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                             )
@@ -1107,7 +1194,7 @@ export class AuroraMysqlQueryRunner
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueIndex = new TableIndex({
-                        name: this.connection.namingStrategy.indexName(table, [
+                        name: this.dataSource.namingStrategy.indexName(table, [
                             newColumn.name,
                         ]),
                         columnNames: [newColumn.name],
@@ -1185,6 +1272,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Changes a column in the table.
+     *
+     * @param tableOrName
+     * @param changedColumns
      */
     async changeColumns(
         tableOrName: Table | string,
@@ -1197,10 +1287,15 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops column in the table.
+     *
+     * @param tableOrName
+     * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1208,10 +1303,12 @@ export class AuroraMysqlQueryRunner
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
@@ -1341,7 +1438,7 @@ export class AuroraMysqlQueryRunner
         } else if (column.isUnique) {
             // we splice constraints both from table uniques and indices.
             const uniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(table, [
+                this.dataSource.namingStrategy.uniqueConstraintName(table, [
                     column.name,
                 ])
             const foundUnique = clonedTable.uniques.find(
@@ -1353,7 +1450,7 @@ export class AuroraMysqlQueryRunner
                     1,
                 )
 
-            const indexName = this.connection.namingStrategy.indexName(table, [
+            const indexName = this.dataSource.namingStrategy.indexName(table, [
                 column.name,
             ])
             const foundIndex = clonedTable.indices.find(
@@ -1404,18 +1501,26 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops the columns in the table.
+     *
+     * @param tableOrName
+     * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
-        for (const column of columns) {
-            await this.dropColumn(tableOrName, column)
+        for (const column of [...columns]) {
+            await this.dropColumn(tableOrName, column, ifExists)
         }
     }
 
     /**
      * Creates a new primary key.
+     *
+     * @param tableOrName
+     * @param columnNames
      */
     async createPrimaryKey(
         tableOrName: Table | string,
@@ -1439,6 +1544,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Updates composite primary keys.
+     *
+     * @param tableOrName
+     * @param columns
      */
     async updatePrimaryKeys(
         tableOrName: Table | string,
@@ -1501,7 +1609,9 @@ export class AuroraMysqlQueryRunner
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
         const columnNamesString = columnNames
             .map((columnName) => `\`${columnName}\``)
@@ -1518,13 +1628,13 @@ export class AuroraMysqlQueryRunner
         )
 
         // if we already have generated column or column is changed to generated, and we dropped AUTO_INCREMENT property before, we must bring it back
-        const newOrExistGeneratedColumn = generatedColumn
-            ? generatedColumn
-            : columns.find(
-                  (column) =>
-                      column.isGenerated &&
-                      column.generationStrategy === "increment",
-              )
+        const newOrExistGeneratedColumn =
+            generatedColumn ??
+            columns.find(
+                (column) =>
+                    column.isGenerated &&
+                    column.generationStrategy === "increment",
+            )
         if (newOrExistGeneratedColumn) {
             const nonGeneratedColumn = newOrExistGeneratedColumn.clone()
             nonGeneratedColumn.isGenerated = false
@@ -1562,11 +1672,23 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops a primary key.
+     *
+     * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
+
+        if (ifExists && table.primaryColumns.length === 0)
+            return Promise.resolve()
+
         const up = this.dropPrimaryKeySql(table)
         const down = this.createPrimaryKeySql(
             table,
@@ -1580,6 +1702,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new unique constraint.
+     *
+     * @param tableOrName
+     * @param uniqueConstraint
      */
     async createUniqueConstraint(
         tableOrName: Table | string,
@@ -1592,6 +1717,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new unique constraints.
+     *
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async createUniqueConstraints(
         tableOrName: Table | string,
@@ -1603,11 +1731,16 @@ export class AuroraMysqlQueryRunner
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
+     *
+     * @param tableOrName
+     * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `MySql does not support unique constraints. Use unique index instead.`,
@@ -1615,11 +1748,16 @@ export class AuroraMysqlQueryRunner
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops a unique constraints.
+     *
+     * @param tableOrName
+     * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `MySql does not support unique constraints. Use unique index instead.`,
@@ -1628,6 +1766,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new check constraint.
+     *
+     * @param tableOrName
+     * @param checkConstraint
      */
     async createCheckConstraint(
         tableOrName: Table | string,
@@ -1638,6 +1779,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new check constraints.
+     *
+     * @param tableOrName
+     * @param checkConstraints
      */
     async createCheckConstraints(
         tableOrName: Table | string,
@@ -1648,26 +1792,39 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops check constraint.
+     *
+     * @param tableOrName
+     * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`MySql does not support check constraints.`)
     }
 
     /**
      * Drops check constraints.
+     *
+     * @param tableOrName
+     * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`MySql does not support check constraints.`)
     }
 
     /**
      * Creates a new exclusion constraint.
+     *
+     * @param tableOrName
+     * @param exclusionConstraint
      */
     async createExclusionConstraint(
         tableOrName: Table | string,
@@ -1678,6 +1835,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new exclusion constraints.
+     *
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async createExclusionConstraints(
         tableOrName: Table | string,
@@ -1688,26 +1848,39 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops exclusion constraint.
+     *
+     * @param tableOrName
+     * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`MySql does not support exclusion constraints.`)
     }
 
     /**
      * Drops exclusion constraints.
+     *
+     * @param tableOrName
+     * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`MySql does not support exclusion constraints.`)
     }
 
     /**
      * Creates a new foreign key.
+     *
+     * @param tableOrName
+     * @param foreignKey
      */
     async createForeignKey(
         tableOrName: Table | string,
@@ -1718,11 +1891,10 @@ export class AuroraMysqlQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new FK may be passed without name. In this case we generate FK name manually.
-        if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-            )
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+        )
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
@@ -1732,6 +1904,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new foreign keys.
+     *
+     * @param tableOrName
+     * @param foreignKeys
      */
     async createForeignKeys(
         tableOrName: Table | string,
@@ -1745,10 +1920,15 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops a foreign key.
+     *
+     * @param tableOrName
+     * @param foreignKeyOrName
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1756,10 +1936,17 @@ export class AuroraMysqlQueryRunner
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
+
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+        )
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
@@ -1769,19 +1956,27 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops a foreign keys from the table.
+     *
+     * @param tableOrName
+     * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = foreignKeys.map((foreignKey) =>
-            this.dropForeignKey(tableOrName, foreignKey),
+            this.dropForeignKey(tableOrName, foreignKey, ifExists),
         )
         await Promise.all(promises)
     }
 
     /**
      * Creates a new index.
+     *
+     * @param tableOrName
+     * @param index
      */
     async createIndex(
         tableOrName: Table | string,
@@ -1792,12 +1987,7 @@ export class AuroraMysqlQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -1807,6 +1997,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Creates a new indices
+     *
+     * @param tableOrName
+     * @param indices
      */
     async createIndices(
         tableOrName: Table | string,
@@ -1820,10 +2013,15 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops an index.
+     *
+     * @param tableOrName
+     * @param indexOrName
+     * @param ifExists
      */
     async dropIndex(
         tableOrName: Table | string,
         indexOrName: TableIndex | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1831,10 +2029,15 @@ export class AuroraMysqlQueryRunner
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
+
+        // old index may be passed without name. In this case we generate index name manually.
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -1844,13 +2047,18 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Drops an indices from the table.
+     *
+     * @param tableOrName
+     * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = indices.map((index) =>
-            this.dropIndex(tableOrName, index),
+            this.dropIndex(tableOrName, index, ifExists),
         )
         await Promise.all(promises)
     }
@@ -1858,8 +2066,19 @@ export class AuroraMysqlQueryRunner
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     *
+     * @param tableOrName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tableOrName: Table | string): Promise<void> {
+    async clearTable(
+        tableOrName: Table | string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        if (options?.cascade)
+            throw new TypeORMError(
+                `MySql does not support clearing table with cascade option`,
+            )
         await this.query(`TRUNCATE TABLE ${this.escapePath(tableOrName)}`)
     }
 
@@ -1867,9 +2086,11 @@ export class AuroraMysqlQueryRunner
      * Removes all tables from the currently connected database.
      * Be careful using this method and avoid using it in production or migrations
      * (because it can clear all your database).
+     *
+     * @param database
      */
     async clearDatabase(database?: string): Promise<void> {
-        const dbName = database ? database : this.driver.database
+        const dbName = database ?? this.driver.database
         if (dbName) {
             const isDatabaseExist = await this.hasDatabase(dbName)
             if (!isDatabaseExist) return Promise.resolve()
@@ -1882,21 +2103,23 @@ export class AuroraMysqlQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
+            const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = ?`
             const dropViewQueries: ObjectLiteral[] = await this.query(
                 selectViewDropsQuery,
+                [dbName],
             )
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
 
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = ?`
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
 
             await this.query(disableForeignKeysCheckQuery)
             const dropQueries: ObjectLiteral[] = await this.query(
                 dropTablesQuery,
+                [dbName],
             )
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
@@ -1927,9 +2150,7 @@ export class AuroraMysqlQueryRunner
             return []
         }
 
-        if (!viewNames) {
-            viewNames = []
-        }
+        viewNames ??= []
 
         const currentDatabase = await this.getCurrentDatabase()
         const viewsCondition = viewNames
@@ -1937,9 +2158,7 @@ export class AuroraMysqlQueryRunner
                 let { database, tableName: name } =
                     this.driver.parseTableName(tableName)
 
-                if (!database) {
-                    database = currentDatabase
-                }
+                database ??= currentDatabase
 
                 return `(\`t\`.\`schema\` = '${database}' AND \`t\`.\`name\` = '${name}')`
             })
@@ -1972,10 +2191,12 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     *
+     * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -1993,7 +2214,7 @@ export class AuroraMysqlQueryRunner
                     let [database, name] = tableName.split(".")
                     if (!name) {
                         name = database
-                        database = this.driver.database || currentDatabase
+                        database = this.driver.database ?? currentDatabase
                     }
                     return `(\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}')`
                 })
@@ -2059,358 +2280,320 @@ export class AuroraMysqlQueryRunner
         ])
 
         // create tables for loaded tables
-        return Promise.all(
-            dbTables.map(async (dbTable) => {
-                const table = new Table()
+        return dbTables.map((dbTable) => {
+            const table = new Table()
 
-                const dbCollation = dbCollations.find(
-                    (coll) => coll["SCHEMA_NAME"] === dbTable["TABLE_SCHEMA"],
-                )!
-                const defaultCollation = dbCollation["COLLATION"]
-                const defaultCharset = dbCollation["CHARSET"]
+            const dbCollation = dbCollations.find(
+                (coll) => coll["SCHEMA_NAME"] === dbTable["TABLE_SCHEMA"],
+            )!
+            const defaultCollation = dbCollation["COLLATION"]
+            const defaultCharset = dbCollation["CHARSET"]
 
-                // We do not need to join database name, when database is by default.
-                const db =
-                    dbTable["TABLE_SCHEMA"] === currentDatabase
-                        ? undefined
-                        : dbTable["TABLE_SCHEMA"]
-                table.database = dbTable["TABLE_SCHEMA"]
-                table.name = this.driver.buildTableName(
-                    dbTable["TABLE_NAME"],
-                    undefined,
-                    db,
+            // We do not need to join database name, when database is by default.
+            const db =
+                dbTable["TABLE_SCHEMA"] === currentDatabase
+                    ? undefined
+                    : dbTable["TABLE_SCHEMA"]
+            table.database = dbTable["TABLE_SCHEMA"]
+            table.name = this.driver.buildTableName(
+                dbTable["TABLE_NAME"],
+                undefined,
+                db,
+            )
+
+            // create columns from the loaded columns
+            table.columns = dbColumns
+                .filter(
+                    (dbColumn) =>
+                        dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbColumn["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"],
                 )
-
-                // create columns from the loaded columns
-                table.columns = dbColumns
-                    .filter(
-                        (dbColumn) =>
-                            dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                            dbColumn["TABLE_SCHEMA"] ===
-                                dbTable["TABLE_SCHEMA"],
-                    )
-                    .map((dbColumn) => {
-                        const columnUniqueIndices = dbIndices.filter(
-                            (dbIndex) => {
-                                return (
-                                    dbIndex["TABLE_NAME"] ===
-                                        dbTable["TABLE_NAME"] &&
-                                    dbIndex["TABLE_SCHEMA"] ===
-                                        dbTable["TABLE_SCHEMA"] &&
-                                    dbIndex["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"] &&
-                                    parseInt(dbIndex["NON_UNIQUE"], 10) === 0
-                                )
-                            },
+                .map((dbColumn) => {
+                    const columnUniqueIndices = dbIndices.filter((dbIndex) => {
+                        return (
+                            dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            dbIndex["TABLE_SCHEMA"] ===
+                                dbTable["TABLE_SCHEMA"] &&
+                            dbIndex["COLUMN_NAME"] ===
+                                dbColumn["COLUMN_NAME"] &&
+                            parseInt(dbIndex["NON_UNIQUE"], 10) === 0
                         )
+                    })
 
-                        const tableMetadata =
-                            this.connection.entityMetadatas.find(
-                                (metadata) =>
-                                    this.getTablePath(table) ===
-                                    this.getTablePath(metadata),
-                            )
-                        const hasIgnoredIndex =
-                            columnUniqueIndices.length > 0 &&
-                            tableMetadata &&
-                            tableMetadata.indices.some((index) => {
-                                return columnUniqueIndices.some(
-                                    (uniqueIndex) => {
-                                        return (
-                                            index.name ===
-                                                uniqueIndex["INDEX_NAME"] &&
-                                            index.synchronize === false
-                                        )
-                                    },
+                    const tableMetadata = this.dataSource.entityMetadatas.find(
+                        (metadata) =>
+                            this.getTablePath(table) ===
+                            this.getTablePath(metadata),
+                    )
+                    const hasIgnoredIndex =
+                        columnUniqueIndices.length > 0 &&
+                        tableMetadata?.indices.some((index) => {
+                            return columnUniqueIndices.some((uniqueIndex) => {
+                                return (
+                                    index.name === uniqueIndex["INDEX_NAME"] &&
+                                    index.synchronize === false
                                 )
                             })
+                        })
 
-                        const isConstraintComposite = columnUniqueIndices.every(
-                            (uniqueIndex) => {
-                                return dbIndices.some(
-                                    (dbIndex) =>
-                                        dbIndex["INDEX_NAME"] ===
-                                            uniqueIndex["INDEX_NAME"] &&
-                                        dbIndex["COLUMN_NAME"] !==
-                                            dbColumn["COLUMN_NAME"],
-                                )
-                            },
-                        )
-
-                        const tableColumn = new TableColumn()
-                        tableColumn.name = dbColumn["COLUMN_NAME"]
-                        tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
-
-                        if (
-                            this.driver.withWidthColumnTypes.indexOf(
-                                tableColumn.type as ColumnType,
-                            ) !== -1
-                        ) {
-                            const width = dbColumn["COLUMN_TYPE"].substring(
-                                dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
-                                dbColumn["COLUMN_TYPE"].indexOf(")"),
+                    const isConstraintComposite = columnUniqueIndices.every(
+                        (uniqueIndex) => {
+                            return dbIndices.some(
+                                (dbIndex) =>
+                                    dbIndex["INDEX_NAME"] ===
+                                        uniqueIndex["INDEX_NAME"] &&
+                                    dbIndex["COLUMN_NAME"] !==
+                                        dbColumn["COLUMN_NAME"],
                             )
-                            tableColumn.width =
-                                width &&
-                                !this.isDefaultColumnWidth(
-                                    table,
-                                    tableColumn,
-                                    parseInt(width),
-                                )
-                                    ? parseInt(width)
-                                    : undefined
-                        }
+                        },
+                    )
 
-                        if (
-                            dbColumn["COLUMN_DEFAULT"] === null ||
-                            dbColumn["COLUMN_DEFAULT"] === undefined
-                        ) {
-                            tableColumn.default = undefined
-                        } else {
-                            tableColumn.default =
-                                dbColumn["COLUMN_DEFAULT"] ===
-                                "CURRENT_TIMESTAMP"
-                                    ? dbColumn["COLUMN_DEFAULT"]
-                                    : `'${dbColumn["COLUMN_DEFAULT"]}'`
-                        }
+                    const tableColumn = new TableColumn()
+                    tableColumn.name = dbColumn["COLUMN_NAME"]
+                    tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
 
-                        if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
-                            tableColumn.onUpdate = dbColumn["EXTRA"].substring(
-                                dbColumn["EXTRA"].indexOf("on update") + 10,
-                            )
-                        }
+                    tableColumn.unsigned =
+                        dbColumn["COLUMN_TYPE"].includes("unsigned")
 
-                        if (dbColumn["GENERATION_EXPRESSION"]) {
-                            tableColumn.asExpression =
-                                dbColumn["GENERATION_EXPRESSION"]
-                            tableColumn.generatedType =
-                                dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1
-                                    ? "VIRTUAL"
-                                    : "STORED"
-                        }
+                    if (
+                        dbColumn["COLUMN_DEFAULT"] === null ||
+                        dbColumn["COLUMN_DEFAULT"] === undefined
+                    ) {
+                        tableColumn.default = undefined
+                    } else {
+                        tableColumn.default =
+                            dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP"
+                                ? dbColumn["COLUMN_DEFAULT"]
+                                : `'${dbColumn["COLUMN_DEFAULT"]}'`
+                    }
 
-                        tableColumn.isUnique =
-                            columnUniqueIndices.length > 0 &&
-                            !hasIgnoredIndex &&
-                            !isConstraintComposite
-                        tableColumn.isNullable =
-                            dbColumn["IS_NULLABLE"] === "YES"
-                        tableColumn.isPrimary = dbPrimaryKeys.some(
-                            (dbPrimaryKey) => {
-                                return (
-                                    dbPrimaryKey["TABLE_NAME"] ===
-                                        dbColumn["TABLE_NAME"] &&
-                                    dbPrimaryKey["TABLE_SCHEMA"] ===
-                                        dbColumn["TABLE_SCHEMA"] &&
-                                    dbPrimaryKey["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"]
-                                )
-                            },
+                    if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
+                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(
+                            dbColumn["EXTRA"].indexOf("on update") + 10,
                         )
-                        tableColumn.zerofill =
-                            dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1
-                        tableColumn.unsigned = tableColumn.zerofill
-                            ? true
-                            : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1
-                        tableColumn.isGenerated =
-                            dbColumn["EXTRA"].indexOf("auto_increment") !== -1
-                        if (tableColumn.isGenerated)
-                            tableColumn.generationStrategy = "increment"
+                    }
 
-                        tableColumn.comment =
-                            typeof dbColumn["COLUMN_COMMENT"] === "string" &&
-                            dbColumn["COLUMN_COMMENT"].length === 0
+                    if (dbColumn["GENERATION_EXPRESSION"]) {
+                        tableColumn.asExpression =
+                            dbColumn["GENERATION_EXPRESSION"]
+                        tableColumn.generatedType =
+                            dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1
+                                ? "VIRTUAL"
+                                : "STORED"
+                    }
+
+                    tableColumn.isUnique =
+                        columnUniqueIndices.length > 0 &&
+                        !hasIgnoredIndex &&
+                        !isConstraintComposite
+                    tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES"
+                    tableColumn.isPrimary = dbPrimaryKeys.some(
+                        (dbPrimaryKey) => {
+                            return (
+                                dbPrimaryKey["TABLE_NAME"] ===
+                                    dbColumn["TABLE_NAME"] &&
+                                dbPrimaryKey["TABLE_SCHEMA"] ===
+                                    dbColumn["TABLE_SCHEMA"] &&
+                                dbPrimaryKey["COLUMN_NAME"] ===
+                                    dbColumn["COLUMN_NAME"]
+                            )
+                        },
+                    )
+                    tableColumn.isGenerated =
+                        dbColumn["EXTRA"].indexOf("auto_increment") !== -1
+                    if (tableColumn.isGenerated)
+                        tableColumn.generationStrategy = "increment"
+
+                    tableColumn.comment =
+                        typeof dbColumn["COLUMN_COMMENT"] === "string" &&
+                        dbColumn["COLUMN_COMMENT"].length === 0
+                            ? undefined
+                            : dbColumn["COLUMN_COMMENT"]
+                    if (dbColumn["CHARACTER_SET_NAME"])
+                        tableColumn.charset =
+                            dbColumn["CHARACTER_SET_NAME"] === defaultCharset
                                 ? undefined
-                                : dbColumn["COLUMN_COMMENT"]
-                        if (dbColumn["CHARACTER_SET_NAME"])
-                            tableColumn.charset =
-                                dbColumn["CHARACTER_SET_NAME"] ===
-                                defaultCharset
-                                    ? undefined
-                                    : dbColumn["CHARACTER_SET_NAME"]
-                        if (dbColumn["COLLATION_NAME"])
-                            tableColumn.collation =
-                                dbColumn["COLLATION_NAME"] === defaultCollation
-                                    ? undefined
-                                    : dbColumn["COLLATION_NAME"]
+                                : dbColumn["CHARACTER_SET_NAME"]
+                    if (dbColumn["COLLATION_NAME"])
+                        tableColumn.collation =
+                            dbColumn["COLLATION_NAME"] === defaultCollation
+                                ? undefined
+                                : dbColumn["COLLATION_NAME"]
 
-                        // check only columns that have length property
-                        if (
-                            this.driver.withLengthColumnTypes.indexOf(
-                                tableColumn.type as ColumnType,
-                            ) !== -1 &&
-                            dbColumn["CHARACTER_MAXIMUM_LENGTH"]
-                        ) {
-                            const length =
-                                dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString()
-                            tableColumn.length = !this.isDefaultColumnLength(
-                                table,
-                                tableColumn,
-                                length,
-                            )
-                                ? length
-                                : ""
-                        }
+                    // check only columns that have length property
+                    if (
+                        this.driver.withLengthColumnTypes.indexOf(
+                            tableColumn.type as ColumnType,
+                        ) !== -1 &&
+                        dbColumn["CHARACTER_MAXIMUM_LENGTH"]
+                    ) {
+                        const length =
+                            dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString()
+                        tableColumn.length = !this.isDefaultColumnLength(
+                            table,
+                            tableColumn,
+                            length,
+                        )
+                            ? length
+                            : ""
+                    }
 
+                    if (
+                        tableColumn.type === "decimal" ||
+                        tableColumn.type === "double" ||
+                        tableColumn.type === "float"
+                    ) {
                         if (
-                            tableColumn.type === "decimal" ||
-                            tableColumn.type === "double" ||
-                            tableColumn.type === "float"
-                        ) {
-                            if (
-                                dbColumn["NUMERIC_PRECISION"] !== null &&
-                                !this.isDefaultColumnPrecision(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_PRECISION"],
-                                )
-                            )
-                                tableColumn.precision = parseInt(
-                                    dbColumn["NUMERIC_PRECISION"],
-                                )
-                            if (
-                                dbColumn["NUMERIC_SCALE"] !== null &&
-                                !this.isDefaultColumnScale(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                            )
-                                tableColumn.scale = parseInt(
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                        }
-
-                        if (
-                            tableColumn.type === "enum" ||
-                            tableColumn.type === "simple-enum" ||
-                            tableColumn.type === "set"
-                        ) {
-                            const colType = dbColumn["COLUMN_TYPE"]
-                            const items = colType
-                                .substring(
-                                    colType.indexOf("(") + 1,
-                                    colType.lastIndexOf(")"),
-                                )
-                                .split(",")
-                            tableColumn.enum = (items as string[]).map(
-                                (item) => {
-                                    return item.substring(1, item.length - 1)
-                                },
-                            )
-                            tableColumn.length = ""
-                        }
-
-                        if (
-                            (tableColumn.type === "datetime" ||
-                                tableColumn.type === "time" ||
-                                tableColumn.type === "timestamp") &&
-                            dbColumn["DATETIME_PRECISION"] !== null &&
-                            dbColumn["DATETIME_PRECISION"] !== undefined &&
+                            dbColumn["NUMERIC_PRECISION"] !== null &&
                             !this.isDefaultColumnPrecision(
                                 table,
                                 tableColumn,
-                                parseInt(dbColumn["DATETIME_PRECISION"]),
+                                dbColumn["NUMERIC_PRECISION"],
                             )
-                        ) {
+                        )
                             tableColumn.precision = parseInt(
-                                dbColumn["DATETIME_PRECISION"],
+                                dbColumn["NUMERIC_PRECISION"],
                             )
-                        }
-
-                        return tableColumn
-                    })
-
-                // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
-                const tableForeignKeyConstraints = OrmUtils.uniq(
-                    dbForeignKeys.filter((dbForeignKey) => {
-                        return (
-                            dbForeignKey["TABLE_NAME"] ===
-                                dbTable["TABLE_NAME"] &&
-                            dbForeignKey["TABLE_SCHEMA"] ===
-                                dbTable["TABLE_SCHEMA"]
+                        if (
+                            dbColumn["NUMERIC_SCALE"] !== null &&
+                            !this.isDefaultColumnScale(
+                                table,
+                                tableColumn,
+                                dbColumn["NUMERIC_SCALE"],
+                            )
                         )
-                    }),
-                    (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
-                )
+                            tableColumn.scale = parseInt(
+                                dbColumn["NUMERIC_SCALE"],
+                            )
+                    }
 
-                table.foreignKeys = tableForeignKeyConstraints.map(
-                    (dbForeignKey) => {
-                        const foreignKeys = dbForeignKeys.filter(
-                            (dbFk) =>
-                                dbFk["CONSTRAINT_NAME"] ===
-                                dbForeignKey["CONSTRAINT_NAME"],
-                        )
-
-                        // if referenced table located in currently used db, we don't need to concat db name to table name.
-                        const database =
-                            dbForeignKey["REFERENCED_TABLE_SCHEMA"] ===
-                            currentDatabase
-                                ? undefined
-                                : dbForeignKey["REFERENCED_TABLE_SCHEMA"]
-                        const referencedTableName = this.driver.buildTableName(
-                            dbForeignKey["REFERENCED_TABLE_NAME"],
-                            undefined,
-                            database,
-                        )
-
-                        return new TableForeignKey({
-                            name: dbForeignKey["CONSTRAINT_NAME"],
-                            columnNames: foreignKeys.map(
-                                (dbFk) => dbFk["COLUMN_NAME"],
-                            ),
-                            referencedDatabase:
-                                dbForeignKey["REFERENCED_TABLE_SCHEMA"],
-                            referencedTableName: referencedTableName,
-                            referencedColumnNames: foreignKeys.map(
-                                (dbFk) => dbFk["REFERENCED_COLUMN_NAME"],
-                            ),
-                            onDelete: dbForeignKey["ON_DELETE"],
-                            onUpdate: dbForeignKey["ON_UPDATE"],
+                    if (
+                        tableColumn.type === "enum" ||
+                        tableColumn.type === "simple-enum" ||
+                        tableColumn.type === "set"
+                    ) {
+                        const colType = dbColumn["COLUMN_TYPE"]
+                        const items = colType
+                            .substring(
+                                colType.indexOf("(") + 1,
+                                colType.lastIndexOf(")"),
+                            )
+                            .split(",")
+                        tableColumn.enum = (items as string[]).map((item) => {
+                            return item.substring(1, item.length - 1)
                         })
-                    },
-                )
+                        tableColumn.length = ""
+                    }
 
-                // find index constraints of table, group them by constraint name and build TableIndex.
-                const tableIndexConstraints = OrmUtils.uniq(
-                    dbIndices.filter((dbIndex) => {
-                        return (
-                            dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                            dbIndex["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"]
+                    if (
+                        (tableColumn.type === "datetime" ||
+                            tableColumn.type === "time" ||
+                            tableColumn.type === "timestamp") &&
+                        dbColumn["DATETIME_PRECISION"] !== null &&
+                        dbColumn["DATETIME_PRECISION"] !== undefined &&
+                        !this.isDefaultColumnPrecision(
+                            table,
+                            tableColumn,
+                            parseInt(dbColumn["DATETIME_PRECISION"]),
                         )
-                    }),
-                    (dbIndex) => dbIndex["INDEX_NAME"],
-                )
-
-                table.indices = tableIndexConstraints.map((constraint) => {
-                    const indices = dbIndices.filter((index) => {
-                        return (
-                            index["TABLE_SCHEMA"] ===
-                                constraint["TABLE_SCHEMA"] &&
-                            index["TABLE_NAME"] === constraint["TABLE_NAME"] &&
-                            index["INDEX_NAME"] === constraint["INDEX_NAME"]
+                    ) {
+                        tableColumn.precision = parseInt(
+                            dbColumn["DATETIME_PRECISION"],
                         )
-                    })
+                    }
 
-                    const nonUnique = parseInt(constraint["NON_UNIQUE"], 10)
-
-                    return new TableIndex(<TableIndexOptions>{
-                        table: table,
-                        name: constraint["INDEX_NAME"],
-                        columnNames: indices.map((i) => i["COLUMN_NAME"]),
-                        isUnique: nonUnique === 0,
-                        isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
-                        isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",
-                    })
+                    return tableColumn
                 })
 
-                return table
-            }),
-        )
+            // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
+            const tableForeignKeyConstraints = OrmUtils.uniq(
+                dbForeignKeys.filter((dbForeignKey) => {
+                    return (
+                        dbForeignKey["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbForeignKey["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"]
+                    )
+                }),
+                (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
+            )
+
+            table.foreignKeys = tableForeignKeyConstraints.map(
+                (dbForeignKey) => {
+                    const foreignKeys = dbForeignKeys.filter(
+                        (dbFk) =>
+                            dbFk["CONSTRAINT_NAME"] ===
+                            dbForeignKey["CONSTRAINT_NAME"],
+                    )
+
+                    // if referenced table located in currently used db, we don't need to concat db name to table name.
+                    const database =
+                        dbForeignKey["REFERENCED_TABLE_SCHEMA"] ===
+                        currentDatabase
+                            ? undefined
+                            : dbForeignKey["REFERENCED_TABLE_SCHEMA"]
+                    const referencedTableName = this.driver.buildTableName(
+                        dbForeignKey["REFERENCED_TABLE_NAME"],
+                        undefined,
+                        database,
+                    )
+
+                    return new TableForeignKey({
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: foreignKeys.map(
+                            (dbFk) => dbFk["COLUMN_NAME"],
+                        ),
+                        referencedDatabase:
+                            dbForeignKey["REFERENCED_TABLE_SCHEMA"],
+                        referencedTableName: referencedTableName,
+                        referencedColumnNames: foreignKeys.map(
+                            (dbFk) => dbFk["REFERENCED_COLUMN_NAME"],
+                        ),
+                        onDelete: dbForeignKey["ON_DELETE"],
+                        onUpdate: dbForeignKey["ON_UPDATE"],
+                    })
+                },
+            )
+
+            // find index constraints of table, group them by constraint name and build TableIndex.
+            const tableIndexConstraints = OrmUtils.uniq(
+                dbIndices.filter((dbIndex) => {
+                    return (
+                        dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbIndex["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"]
+                    )
+                }),
+                (dbIndex) => dbIndex["INDEX_NAME"],
+            )
+
+            table.indices = tableIndexConstraints.map((constraint) => {
+                const indices = dbIndices.filter((index) => {
+                    return (
+                        index["TABLE_SCHEMA"] === constraint["TABLE_SCHEMA"] &&
+                        index["TABLE_NAME"] === constraint["TABLE_NAME"] &&
+                        index["INDEX_NAME"] === constraint["INDEX_NAME"]
+                    )
+                })
+
+                const nonUnique = parseInt(constraint["NON_UNIQUE"], 10)
+
+                return new TableIndex({
+                    table: table,
+                    name: constraint["INDEX_NAME"],
+                    columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                    isUnique: nonUnique === 0,
+                    isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
+                    isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",
+                } as TableIndexOptions)
+            })
+
+            return table
+        })
     }
 
     /**
      * Builds create table sql
+     *
+     * @param table
+     * @param createForeignKeys
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns
@@ -2439,7 +2622,7 @@ export class AuroraMysqlQueryRunner
                 if (!isUniqueIndexExist && !isUniqueConstraintExist)
                     table.indices.push(
                         new TableIndex({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -2473,12 +2656,11 @@ export class AuroraMysqlQueryRunner
                     const columnNames = index.columnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
-                    if (!index.name)
-                        index.name = this.connection.namingStrategy.indexName(
-                            table,
-                            index.columnNames,
-                            index.where,
-                        )
+                    index.name ??= this.dataSource.namingStrategy.indexName(
+                        table,
+                        index.columnNames,
+                        index.where,
+                    )
 
                     let indexType = ""
                     if (index.isUnique) indexType += "UNIQUE "
@@ -2497,11 +2679,10 @@ export class AuroraMysqlQueryRunner
                     const columnNames = fk.columnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
-                            table,
-                            fk.columnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        table,
+                        fk.columnNames,
+                    )
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
@@ -2528,13 +2709,15 @@ export class AuroraMysqlQueryRunner
             sql += `, PRIMARY KEY (${columnNames})`
         }
 
-        sql += `) ENGINE=${table.engine || "InnoDB"}`
+        sql += `) ENGINE=${table.engine ?? "InnoDB"}`
 
         return new Query(sql)
     }
 
     /**
      * Builds drop table sql
+     *
+     * @param tableOrName
      */
     protected dropTableSql(tableOrName: Table | string): Query {
         return new Query(`DROP TABLE ${this.escapePath(tableOrName)}`)
@@ -2548,7 +2731,7 @@ export class AuroraMysqlQueryRunner
         } else {
             return new Query(
                 `CREATE VIEW ${this.escapePath(view)} AS ${view
-                    .expression(this.connection)
+                    .expression(this.dataSource)
                     .getQuery()}`,
             )
         }
@@ -2559,7 +2742,7 @@ export class AuroraMysqlQueryRunner
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return this.insertTypeormMetadataSql({
             type: MetadataTableType.VIEW,
             schema: currentDatabase,
@@ -2570,13 +2753,24 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds drop view sql.
+     *
+     * @param viewOrPath
+     * @param ifExists
      */
-    protected dropViewSql(viewOrPath: View | string): Query {
-        return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
+    protected dropViewSql(
+        viewOrPath: View | string,
+        ifExists?: boolean,
+    ): Query {
+        const ifExistsClause = ifExists ? "IF EXISTS " : ""
+        return new Query(
+            `DROP VIEW ${ifExistsClause}${this.escapePath(viewOrPath)}`,
+        )
     }
 
     /**
      * Builds remove view sql.
+     *
+     * @param viewOrPath
      */
     protected async deleteViewDefinitionSql(
         viewOrPath: View | string,
@@ -2594,6 +2788,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds create index sql.
+     *
+     * @param table
+     * @param index
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
@@ -2612,12 +2809,15 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds drop index sql.
+     *
+     * @param table
+     * @param indexOrName
      */
     protected dropIndexSql(
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(
@@ -2627,6 +2827,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds create primary key sql.
+     *
+     * @param table
+     * @param columnNames
      */
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
         const columnNamesString = columnNames
@@ -2641,6 +2844,8 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds drop primary key sql.
+     *
+     * @param table
      */
     protected dropPrimaryKeySql(table: Table): Query {
         return new Query(
@@ -2650,6 +2855,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds create foreign key sql.
+     *
+     * @param table
+     * @param foreignKey
      */
     protected createForeignKeySql(
         table: Table,
@@ -2676,6 +2884,9 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds drop foreign key sql.
+     *
+     * @param table
+     * @param foreignKeyOrName
      */
     protected dropForeignKeySql(
         table: Table,
@@ -2695,6 +2906,8 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Escapes a given comment so it's safe to include in a query.
+     *
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment || comment.length === 0) {
@@ -2711,6 +2924,8 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Escapes given table or view path.
+     *
+     * @param target
      */
     protected escapePath(target: Table | View | string): string {
         const { database, tableName } = this.driver.parseTableName(target)
@@ -2724,31 +2939,34 @@ export class AuroraMysqlQueryRunner
 
     /**
      * Builds a part of query to create/change a column.
+     *
+     * @param column
+     * @param skipPrimary
+     * @param skipName
      */
     protected buildCreateColumnSql(
         column: TableColumn,
         skipPrimary: boolean,
         skipName: boolean = false,
     ) {
-        let c = ""
+        let c: string
         if (skipName) {
-            c = this.connection.driver.createFullType(column)
+            c = this.dataSource.driver.createFullType(column)
         } else {
-            c = `\`${column.name}\` ${this.connection.driver.createFullType(
+            c = `\`${column.name}\` ${this.dataSource.driver.createFullType(
                 column,
             )}`
         }
+
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${
-                column.generatedType ? column.generatedType : "VIRTUAL"
+                column.generatedType ?? "VIRTUAL"
             }`
 
-        // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to that column.
-        if (column.zerofill) {
-            c += " ZEROFILL"
-        } else if (column.unsigned) {
+        if (column.unsigned) {
             c += " UNSIGNED"
         }
+
         if (column.enum)
             c += ` (${column.enum
                 .map((value) => "'" + value + "'")
@@ -2771,30 +2989,17 @@ export class AuroraMysqlQueryRunner
     }
 
     /**
-     * Checks if column display width is by default.
+     * Change table comment.
+     *
+     * @param tableOrName
+     * @param comment
      */
-    protected isDefaultColumnWidth(
-        table: Table,
-        column: TableColumn,
-        width: number,
-    ): boolean {
-        // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name)
-            const columnMetadata = metadata.findColumnWithDatabaseName(
-                column.name,
-            )
-            if (columnMetadata && columnMetadata.width) return false
-        }
-
-        const defaultWidthForType =
-            this.connection.driver.dataTypeDefaults &&
-            this.connection.driver.dataTypeDefaults[column.type] &&
-            this.connection.driver.dataTypeDefaults[column.type].width
-
-        if (defaultWidthForType) {
-            return defaultWidthForType === width
-        }
-        return false
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `aurora-mysql driver does not support change table comment.`,
+        )
     }
 }

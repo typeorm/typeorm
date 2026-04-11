@@ -13,7 +13,7 @@ export class Staff {
     @PrimaryGeneratedColumn()
     id: number
 
-    @ManyToOne((type) => Faculty, (faculty) => faculty.staff)
+    @ManyToOne(() => Faculty, (faculty) => faculty.staff)
     faculty: Faculty
 
     @Column()

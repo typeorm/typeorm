@@ -13,10 +13,3 @@ import {Logger} from "../logger/Logger";
 export function importClassesFromDirectories(logger: Logger, directories: string[], formats = [".js", ".cjs", ".ts"]): Function[] {
     return [];
 }
-
-/**
- * Loads all json files from the given directory.
- */
-export function importJsonsFromDirectories(directories: string[], format = ".json"): any[] {
-    return [];
-}

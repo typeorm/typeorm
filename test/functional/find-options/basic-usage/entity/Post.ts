@@ -30,4 +30,12 @@ export class Post {
 
     @Column(() => Counters)
     counters: Counters
+
+    toString() {
+        return this.title
+    }
+
+    doSomething() {
+        return 123
+    }
 }

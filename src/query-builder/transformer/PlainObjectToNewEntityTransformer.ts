@@ -1,5 +1,5 @@
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ObjectUtils } from "../../util/ObjectUtils"
 
 /**
@@ -11,7 +11,7 @@ export class PlainObjectToNewEntityTransformer {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    transform<T>(
+    transform<T extends ObjectLiteral>(
         newEntity: T,
         object: ObjectLiteral,
         metadata: EntityMetadata,
@@ -36,6 +36,11 @@ export class PlainObjectToNewEntityTransformer {
     /**
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
+     *
+     * @param entity
+     * @param object
+     * @param metadata
+     * @param getLazyRelationsPromiseValue
      */
     private groupAndTransform(
         entity: ObjectLiteral,
@@ -82,20 +87,24 @@ export class PlainObjectToNewEntityTransformer {
                             )
                         })
 
+                        const inverseEntityMetadata =
+                            relation.inverseEntityMetadata.findInheritanceMetadata(
+                                objectRelatedValueItem,
+                            )
+
                         // if such item already exist then merge new data into it, if its not we create a new entity and merge it into the array
                         if (!objectRelatedValueEntity) {
                             objectRelatedValueEntity =
-                                relation.inverseEntityMetadata.create(
-                                    undefined,
-                                    { fromDeserializer: true },
-                                )
+                                inverseEntityMetadata.create(undefined, {
+                                    fromDeserializer: true,
+                                })
                             entityRelatedValue.push(objectRelatedValueEntity)
                         }
 
                         this.groupAndTransform(
                             objectRelatedValueEntity,
                             objectRelatedValueItem,
-                            relation.inverseEntityMetadata,
+                            inverseEntityMetadata,
                             getLazyRelationsPromiseValue,
                         )
                     })
@@ -110,18 +119,25 @@ export class PlainObjectToNewEntityTransformer {
                         return
                     }
 
+                    const inverseEntityMetadata =
+                        relation.inverseEntityMetadata.findInheritanceMetadata(
+                            objectRelatedValue,
+                        )
+
                     if (!entityRelatedValue) {
-                        entityRelatedValue =
-                            relation.inverseEntityMetadata.create(undefined, {
+                        entityRelatedValue = inverseEntityMetadata.create(
+                            undefined,
+                            {
                                 fromDeserializer: true,
-                            })
+                            },
+                        )
                         relation.setEntityValue(entity, entityRelatedValue)
                     }
 
                     this.groupAndTransform(
                         entityRelatedValue,
                         objectRelatedValue,
-                        relation.inverseEntityMetadata,
+                        inverseEntityMetadata,
                         getLazyRelationsPromiseValue,
                     )
                 }

@@ -1,0 +1,53 @@
+import { expect } from "chai"
+import type { DataSource } from "../../../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
+import { UuidEntity } from "./entity/UuidEntity"
+import { DriverUtils } from "../../../../../src/driver/DriverUtils"
+
+describe("database schema > column types > mysql > uuid", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [UuidEntity],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mysql", "mariadb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should create table with appropriate UUID column type based on database version", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const uuidRepository = dataSource.getRepository(UuidEntity)
+
+                // seems there is an issue with the persisting id that crosses over from mysql to mariadb
+                const uuidEntity: UuidEntity = {
+                    id: "ceb2897c-a1cf-11ed-8dbd-040300000000",
+                }
+                await uuidRepository.save(uuidEntity)
+
+                const queryRunner = dataSource.createQueryRunner()
+                const uuidTable = await queryRunner.getTable("uuid_entity")
+                await queryRunner.release()
+
+                const hasNativeUuidSupport =
+                    dataSource.driver.options.type === "mariadb" &&
+                    DriverUtils.isReleaseVersionOrGreater(
+                        dataSource.driver,
+                        "10.7",
+                    )
+                const expectedType = hasNativeUuidSupport ? "uuid" : "varchar"
+                const expectedLength = hasNativeUuidSupport ? "" : "36"
+
+                const idColumn = uuidTable!.findColumnByName("id")
+                expect(idColumn?.type).to.equal(expectedType)
+                expect(idColumn?.length).to.equal(expectedLength)
+            }),
+        ))
+})

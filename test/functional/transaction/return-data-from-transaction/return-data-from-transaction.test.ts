@@ -1,0 +1,111 @@
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import { Post } from "./entity/Post"
+import { Category } from "./entity/Category"
+import { expect } from "chai"
+
+describe("transaction > return data from transaction", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "better-sqlite3", "postgres"], // todo: for some reasons mariadb tests are not passing here
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should allow to return typed data from transaction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const { postId, categoryId } =
+                    await dataSource.manager.transaction<{
+                        postId: number
+                        categoryId: number
+                    }>(async (entityManager) => {
+                        const post = new Post()
+                        post.title = "Post #1"
+                        await entityManager.save(post)
+
+                        const category = new Category()
+                        category.name = "Category #1"
+                        await entityManager.save(category)
+
+                        return {
+                            postId: post.id,
+                            categoryId: category.id,
+                        }
+                    })
+
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
+                })
+                expect(post).not.to.be.null
+                post.should.be.eql({
+                    id: postId,
+                    title: "Post #1",
+                })
+
+                const category = await dataSource.manager.findOneOrFail(
+                    Category,
+                    {
+                        where: { name: "Category #1" },
+                    },
+                )
+                expect(category).not.to.be.null
+                category.should.be.eql({
+                    id: categoryId,
+                    name: "Category #1",
+                })
+            }),
+        ))
+
+    it("should allow to return typed data from transaction using type inference", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const { postId, categoryId } =
+                    await dataSource.manager.transaction(
+                        async (entityManager) => {
+                            const post = new Post()
+                            post.title = "Post #1"
+                            await entityManager.save(post)
+
+                            const category = new Category()
+                            category.name = "Category #1"
+                            await entityManager.save(category)
+
+                            return {
+                                postId: post.id,
+                                categoryId: category.id,
+                            }
+                        },
+                    )
+
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
+                })
+                expect(post).not.to.be.null
+                post.should.be.eql({
+                    id: postId,
+                    title: "Post #1",
+                })
+
+                const category = await dataSource.manager.findOneOrFail(
+                    Category,
+                    {
+                        where: { name: "Category #1" },
+                    },
+                )
+                expect(category).not.to.be.null
+                category.should.be.eql({
+                    id: categoryId,
+                    name: "Category #1",
+                })
+            }),
+        ))
+})

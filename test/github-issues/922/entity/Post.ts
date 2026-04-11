@@ -6,7 +6,7 @@ export class Post {
     id: number
 
     @Column("hstore", { hstoreType: "object" })
-    hstoreObj: Object
+    hstoreObj: object
 
     @Column("hstore", { hstoreType: "string" })
     hstoreStr: string

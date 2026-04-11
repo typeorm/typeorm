@@ -1,4 +1,5 @@
-import { Entity, ObjectIdColumn, Column, ObjectID } from "../../../../src"
+import { ObjectId } from "mongodb"
+import { Column, Entity, ObjectIdColumn } from "../../../../src"
 
 export class Page {
     @Column()
@@ -9,18 +10,18 @@ export class Chapter {
     @Column()
     title: string
 
-    @Column((type) => Page)
+    @Column(() => Page)
     pages: Page[]
 }
 
 @Entity()
 export class Book {
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 
     @Column()
     title: string
 
-    @Column((type) => Chapter)
+    @Column(() => Chapter)
     chapters: Chapter[]
 }

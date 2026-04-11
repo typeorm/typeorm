@@ -1,6 +1,6 @@
-import { TableColumnOptions } from "../options/TableColumnOptions"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { Driver } from "../../driver/Driver"
+import type { TableColumnOptions } from "../options/TableColumnOptions"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { Driver } from "../../driver/Driver"
 
 export class TableUtils {
     static createTableColumnOptions(
@@ -10,12 +10,10 @@ export class TableUtils {
         return {
             name: columnMetadata.databaseName,
             length: driver.getColumnLength(columnMetadata),
-            width: columnMetadata.width,
             charset: columnMetadata.charset,
             collation: columnMetadata.collation,
             precision: columnMetadata.precision,
             scale: columnMetadata.scale,
-            zerofill: columnMetadata.zerofill,
             unsigned: columnMetadata.unsigned,
             asExpression: columnMetadata.asExpression,
             generatedType: columnMetadata.generatedType,
@@ -34,6 +32,7 @@ export class TableUtils {
                 ? columnMetadata.enum.map((val) => val + "")
                 : columnMetadata.enum,
             enumName: columnMetadata.enumName,
+            primaryKeyConstraintName: columnMetadata.primaryKeyConstraintName,
             spatialFeatureType: columnMetadata.spatialFeatureType,
             srid: columnMetadata.srid,
         }

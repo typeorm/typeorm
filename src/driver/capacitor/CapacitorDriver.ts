@@ -1,33 +1,24 @@
+import type { DataSource } from "../../data-source/DataSource"
+import { DriverPackageNotInstalledError } from "../../error"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { CapacitorConnectionOptions } from "./CapacitorConnectionOptions"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { CapacitorDataSourceOptions } from "./CapacitorDataSourceOptions"
 import { CapacitorQueryRunner } from "./CapacitorQueryRunner"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataSource } from "../../data-source/DataSource"
-import {
-    DriverOptionNotSetError,
-    DriverPackageNotInstalledError,
-} from "../../error"
-import { ReplicationMode } from "../types/ReplicationMode"
 
 export class CapacitorDriver extends AbstractSqliteDriver {
     driver: any
-    options: CapacitorConnectionOptions
+    declare options: CapacitorDataSourceOptions
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
         this.database = this.options.database
         this.driver = this.options.driver
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
-
-        if (!this.options.driver) throw new DriverOptionNotSetError("driver")
 
         // load sqlite package
         this.sqlite = this.options.driver
@@ -58,9 +49,11 @@ export class CapacitorDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner) this.queryRunner = new CapacitorQueryRunner(this)
+        this.queryRunner ??= new CapacitorQueryRunner(this)
 
         return this.queryRunner
     }
@@ -73,7 +66,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
      * Creates connection with the database.
      */
     protected async createDatabaseConnection() {
-        const databaseMode = this.options.mode || "no-encryption"
+        const databaseMode = this.options.mode ?? "no-encryption"
         const isDatabaseEncryted = databaseMode !== "no-encryption"
         const databaseVersion =
             typeof this.options.version === "undefined"
@@ -89,7 +82,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
 
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
-        await connection.query(`PRAGMA foreign_keys = ON`)
+        await connection.execute(`PRAGMA foreign_keys = ON`)
 
         if (
             this.options.journalMode &&
@@ -97,7 +90,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
                 this.options.journalMode,
             ) !== -1
         ) {
-            await connection.query(
+            await connection.execute(
                 `PRAGMA journal_mode = ${this.options.journalMode}`,
             )
         }

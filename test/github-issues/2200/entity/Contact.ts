@@ -10,6 +10,6 @@ export class Contact {
     @PrimaryGeneratedColumn()
     id: number
 
-    @OneToMany((type) => Booking, (booking) => booking.contact)
+    @OneToMany(() => Booking, (booking) => booking.contact)
     bookings: Booking[]
 }

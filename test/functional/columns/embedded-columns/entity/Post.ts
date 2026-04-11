@@ -14,12 +14,12 @@ export class Post {
     @Column()
     text: string
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters: Counters
 
-    @Column((type) => Counters, { prefix: "testCounters" })
+    @Column(() => Counters, { prefix: "testCounters" })
     otherCounters: Counters
 
-    @Column((type) => Counters, { prefix: "" })
+    @Column(() => Counters, { prefix: "" })
     countersWithoutPrefix: Counters
 }

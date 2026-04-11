@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 import { PostAuthor } from "./entity/PostAuthor"
@@ -19,16 +20,16 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let category1 = new PostCategory()
+        const category1 = new PostCategory()
         category1.name = "post category #1"
 
-        let category2 = new PostCategory()
+        const category2 = new PostCategory()
         category2.name = "post category #2"
 
-        let author = new PostAuthor()
+        const author = new PostAuthor()
         author.name = "Umed"
 
-        let post = new Post()
+        const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.author = author
@@ -43,14 +44,14 @@ dataSource.initialize().then(
     author = new PostAuthor();
     author.name = "Umed";*/
 
-        let blog = new Blog()
+        const blog = new Blog()
         blog.text = "Hello how are you?"
         blog.title = "hello"
         blog.author = author
         blog.categories.push(category1, category2)
 
-        let postRepository = dataSource.getRepository(Post)
-        let blogRepository = dataSource.getRepository(Blog)
+        const postRepository = dataSource.getRepository(Post)
+        const blogRepository = dataSource.getRepository(Blog)
 
         postRepository
             .save(post)
@@ -71,12 +72,8 @@ dataSource.initialize().then(
                 return blogRepository.save(blog)
             })
             .catch((error) =>
-                console.log(
-                    "Cannot save. Error: ",
-                    error.stack ? error.stack : error,
-                ),
+                console.log("Cannot save. Error: ", error.stack ?? error),
             )
     },
-    (error) =>
-        console.log("Cannot connect: ", error.stack ? error.stack : error),
+    (error) => console.log("Cannot connect: ", error.stack ?? error),
 )

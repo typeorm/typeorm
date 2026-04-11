@@ -1,44 +1,75 @@
-import { Driver } from "../Driver"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { DriverUtils } from "../DriverUtils"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { SqlServerQueryRunner } from "./SqlServerQueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { DateUtils } from "../../util/DateUtils"
+import { FindOperator } from "../../find-options/FindOperator"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source/DataSource"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { SqlServerConnectionOptions } from "./SqlServerConnectionOptions"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MssqlParameter } from "./MssqlParameter"
+import type { Table } from "../../schema-builder/table/Table"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { TypeORMError } from "../../error"
+import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import type { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
+import type { UpsertType } from "../types/UpsertType"
+import { MssqlParameter } from "./MssqlParameter"
+import type { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
+import type { SqlServerDataSourceOptions } from "./SqlServerDataSourceOptions"
+import { SqlServerQueryRunner } from "./SqlServerQueryRunner"
 
 /**
  * Organizes communication with SQL Server DBMS.
  */
 export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://learn.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+        "SNAPSHOT",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * SQL Server library.
@@ -61,9 +92,9 @@ export class SqlServerDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
-    options: SqlServerConnectionOptions
+    options: SqlServerDataSourceOptions
 
     /**
      * Database name used to perform all write queries.
@@ -140,7 +171,13 @@ export class SqlServerDriver implements Driver {
         "geometry",
         "geography",
         "rowversion",
+        "vector",
     ]
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
 
     /**
      * Gets list of spatial column data types.
@@ -157,6 +194,7 @@ export class SqlServerDriver implements Driver {
         "nvarchar",
         "binary",
         "varbinary",
+        "vector",
     ]
 
     /**
@@ -206,6 +244,11 @@ export class SqlServerDriver implements Driver {
     }
 
     /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = "@"
+
+    /**
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
@@ -221,6 +264,7 @@ export class SqlServerDriver implements Driver {
         time: { precision: 7 },
         datetime2: { precision: 7 },
         datetimeoffset: { precision: 7 },
+        vector: { length: 255 }, // default length if not provided a value
     }
 
     cteCapabilities: CteCapabilities = {
@@ -231,6 +275,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Max length allowed by MSSQL Server for aliases (identifiers).
+     *
      * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
      */
     maxAliasLength = 128
@@ -239,9 +284,9 @@ export class SqlServerDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as SqlServerConnectionOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as SqlServerDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
 
         // load mssql package
@@ -289,22 +334,16 @@ export class SqlServerDriver implements Driver {
         }
 
         if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
+            this.searchSchema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
 
-        if (!this.schema) {
-            this.schema = this.searchSchema
-        }
+        this.schema ??= this.searchSchema
     }
 
     /**
@@ -318,9 +357,9 @@ export class SqlServerDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("mssql"))
-
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("mssql")
+        }
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
@@ -329,6 +368,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Closes connection pool.
+     *
+     * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
         return new Promise<void>((ok, fail) => {
@@ -340,11 +381,13 @@ export class SqlServerDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
      * Creates a query runner used to execute database queries.
+     *
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new SqlServerQueryRunner(this, mode)
@@ -353,18 +396,19 @@ export class SqlServerDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
+     * @param sql
+     * @param parameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
+        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
@@ -372,7 +416,11 @@ export class SqlServerDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                if (parameterIndexMap.has(key)) {
+                    return this.parametersPrefix + parameterIndexMap.get(key)
+                }
+
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -391,6 +439,7 @@ export class SqlServerDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
+                parameterIndexMap.set(key, escapedParameters.length - 1)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -399,21 +448,27 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
+     * @param columnName
      */
     escape(columnName: string): string {
-        return `"${columnName}"`
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -432,6 +487,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -443,8 +500,8 @@ export class SqlServerDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -454,11 +511,11 @@ export class SqlServerDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -467,8 +524,8 @@ export class SqlServerDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -498,6 +555,9 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -511,7 +571,7 @@ export class SqlServerDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDate(value)
+            return DateUtils.mixedDateToDate(value, columnMetadata.utc)
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToDate(value)
         } else if (
@@ -531,6 +591,12 @@ export class SqlServerDriver implements Driver {
             return DateUtils.simpleJsonToString(value)
         } else if (columnMetadata.type === "simple-enum") {
             return DateUtils.simpleEnumToString(value)
+        } else if (columnMetadata.type === "vector") {
+            if (Array.isArray(value)) {
+                return JSON.stringify(value)
+            } else {
+                return value
+            }
         }
 
         return value
@@ -538,6 +604,9 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -559,7 +628,9 @@ export class SqlServerDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (columnMetadata.type === "simple-array") {
@@ -568,6 +639,17 @@ export class SqlServerDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
+        } else if (columnMetadata.type === "vector") {
+            if (typeof value === "string") {
+                try {
+                    value = JSON.parse(value)
+                } catch (e) {
+                    // If parsing fails, return the value as-is
+                }
+            }
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -581,6 +663,12 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type?: ColumnType
@@ -596,7 +684,10 @@ export class SqlServerDriver implements Driver {
             return "datetime"
         } else if (column.type === Boolean) {
             return "bit"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "binary"
         } else if (column.type === "uuid") {
             return "uniqueidentifier"
@@ -620,6 +711,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -653,6 +746,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.uniques.some(
@@ -662,6 +757,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     *
+     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -678,12 +775,22 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     *
+     * @param column
      */
     createFullType(column: TableColumn): string {
+        // The Database Engine determines the data type of the computed column by applying the rules
+        // of data type precedence to the expressions specified in the formula.
+        if (column.asExpression) return ""
+
         let type = column.type
 
+        // Handle vector type with length (dimensions)
+        if (column.type === "vector") {
+            type = `vector(${column.length})`
+        }
         // used 'getColumnLength()' method, because SqlServer sets `varchar` and `nvarchar` length to 1 by default.
-        if (this.getColumnLength(column)) {
+        else if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`
         } else if (
             column.precision !== null &&
@@ -731,6 +838,9 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
         if (!insertResult) return undefined
@@ -752,6 +862,9 @@ export class SqlServerDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -765,8 +878,8 @@ export class SqlServerDriver implements Driver {
 
             const isColumnChanged =
                 tableColumn.name !== columnMetadata.databaseName ||
-                tableColumn.type !== this.normalizeType(columnMetadata) ||
-                tableColumn.length !== this.getColumnLength(columnMetadata) ||
+                this.compareColumnType(tableColumn, columnMetadata) ||
+                this.compareColumnLength(tableColumn, columnMetadata) ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
                 // || tableColumn.comment !== columnMetadata.comment || // todo
@@ -780,47 +893,97 @@ export class SqlServerDriver implements Driver {
                         )) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
-                tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                tableColumn.asExpression !== columnMetadata.asExpression ||
+                tableColumn.generatedType !== columnMetadata.generatedType ||
+                tableColumn.isUnique !==
+                    this.normalizeIsUnique(columnMetadata) ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    ))
 
             // DEBUG SECTION
             // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName);
-            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            //     console.log("length:", tableColumn.length, columnMetadata.length);
-            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            //     console.log("isGenerated 2:", !tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== this.lowerDefaultValueIfNecessary(tableColumn.default));
-            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            //     console.log("==========================================");
+            //     console.log("table:", columnMetadata.entityMetadata.tableName)
+            //     console.log(
+            //         "name:",
+            //         tableColumn.name,
+            //         columnMetadata.databaseName,
+            //     )
+            //     console.log(
+            //         "type:",
+            //         tableColumn.type,
+            //         this.normalizeType(columnMetadata),
+            //         this.compareColumnType(tableColumn, columnMetadata),
+            //     )
+            //     console.log(
+            //         "length:",
+            //         tableColumn.length,
+            //         columnMetadata.length,
+            //         this.compareColumnLength(tableColumn, columnMetadata),
+            //     )
+            //     console.log(
+            //         "precision:",
+            //         tableColumn.precision,
+            //         columnMetadata.precision,
+            //     )
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
+            //     console.log(
+            //         "isGenerated:",
+            //         tableColumn.isGenerated,
+            //         columnMetadata.isGenerated,
+            //     )
+            //     console.log(
+            //         "isGenerated 2:",
+            //         !tableColumn.isGenerated &&
+            //             this.lowerDefaultValueIfNecessary(
+            //                 this.normalizeDefault(columnMetadata),
+            //             ) !==
+            //                 this.lowerDefaultValueIfNecessary(
+            //                     tableColumn.default,
+            //                 ),
+            //     )
+            //     console.log(
+            //         "isPrimary:",
+            //         tableColumn.isPrimary,
+            //         columnMetadata.isPrimary,
+            //     )
+            //     console.log(
+            //         "isNullable:",
+            //         tableColumn.isNullable,
+            //         columnMetadata.isNullable,
+            //     )
+            //     console.log(
+            //         "asExpression:",
+            //         tableColumn.asExpression,
+            //         columnMetadata.asExpression,
+            //     )
+            //     console.log(
+            //         "generatedType:",
+            //         tableColumn.generatedType,
+            //         columnMetadata.generatedType,
+            //     )
+            //     console.log(
+            //         "isUnique:",
+            //         tableColumn.isUnique,
+            //         this.normalizeIsUnique(columnMetadata),
+            //     )
+            //     console.log("==========================================")
             // }
 
             return isColumnChanged
         })
     }
-    private lowerDefaultValueIfNecessary(value: string | undefined) {
-        // SqlServer saves function calls in default value as lowercase https://github.com/typeorm/typeorm/issues/2733
-        if (!value) {
-            return value
-        }
-        return value
-            .split(`'`)
-            .map((v, i) => {
-                return i % 2 === 1 ? v : v.toLowerCase()
-            })
-            .join(`'`)
-    }
+
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
+     * @param returningType
      */
-    isReturningSqlSupported(): boolean {
-        if (
-            this.options.options &&
-            this.options.options.disableOutputReturning
-        ) {
+    isReturningSqlSupported(returningType: ReturningType): boolean {
+        if (this.options.options?.disableOutputReturning) {
             return false
         }
         return true
@@ -842,9 +1005,12 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
-        return "@" + index
+        return this.parametersPrefix + index
     }
 
     // -------------------------------------------------------------------------
@@ -854,6 +1020,9 @@ export class SqlServerDriver implements Driver {
     /**
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps given value into MssqlParameter based on its column definition.
+     *
+     * @param column
+     * @param value
      */
     parametrizeValue(column: ColumnMetadata, value: any) {
         // if its already MssqlParameter then simply return it
@@ -899,15 +1068,47 @@ export class SqlServerDriver implements Driver {
     }
 
     /**
+     * Recursively wraps values (including those inside FindOperators) into MssqlParameter instances,
+     * ensuring correct type metadata is passed to the SQL Server driver.
+     *
+     * - If the value is a FindOperator containing an array, all elements are individually parametrized.
+     * - If the value is a non-raw FindOperator, a transformation is applied to its internal value.
+     * - Otherwise, the value is passed directly to parametrizeValue for wrapping.
+     *
+     * This ensures SQL Server receives properly typed parameters for queries involving operators like
+     * In, MoreThan, Between, etc.
+     *
+     * @param column
+     * @param value
+     */
+    parametrizeValues(column: ColumnMetadata, value: any) {
+        if (value instanceof FindOperator) {
+            if (value.type !== "raw") {
+                value.transformValue({
+                    to: (v) => this.parametrizeValues(column, v),
+                    from: (v) => v,
+                })
+            }
+
+            return value
+        }
+
+        return this.parametrizeValue(column, value)
+    }
+
+    /**
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps all values of the given object into MssqlParameter based on their column definitions in the given table.
+     *
+     * @param tablePath
+     * @param map
      */
     parametrizeMap(tablePath: string, map: ObjectLiteral): ObjectLiteral {
         // find metadata for the given table
-        if (!this.connection.hasMetadata(tablePath))
+        if (!this.dataSource.hasMetadata(tablePath))
             // if no metadata found then we can't proceed because we don't have columns and their types
             return map
-        const metadata = this.connection.getMetadata(tablePath)
+        const metadata = this.dataSource.getMetadata(tablePath)
 
         return Object.keys(map).reduce((newMap, key) => {
             const value = map[key]
@@ -951,7 +1152,7 @@ export class SqlServerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const mssql = this.options.driver || PlatformTools.load("mssql")
+            const mssql = this.options.driver ?? PlatformTools.load("mssql")
             this.mssql = mssql
         } catch (e) {
             // todo: better error for browser env
@@ -959,11 +1160,52 @@ export class SqlServerDriver implements Driver {
         }
     }
 
+    protected compareColumnType(
+        tableColumn: TableColumn,
+        columnMetadata: ColumnMetadata,
+    ): boolean {
+        // The Database Engine determines the data type of the computed column by applying the rules
+        // of data type precedence to the expressions specified in the formula.
+        if (columnMetadata.asExpression) return false
+
+        return tableColumn.type !== this.normalizeType(columnMetadata)
+    }
+
+    protected compareColumnLength(
+        tableColumn: TableColumn,
+        columnMetadata: ColumnMetadata,
+    ): boolean {
+        // The Database Engine determines the data type of the computed column by applying the rules
+        // of data type precedence to the expressions specified in the formula.
+        if (columnMetadata.asExpression) return false
+
+        return (
+            tableColumn.length.toUpperCase() !==
+            this.getColumnLength(columnMetadata).toUpperCase()
+        )
+    }
+
+    protected lowerDefaultValueIfNecessary(value: string | undefined) {
+        // SqlServer saves function calls in default value as lowercase https://github.com/typeorm/typeorm/issues/2733
+        if (!value) {
+            return value
+        }
+        return value
+            .split(`'`)
+            .map((v, i) => {
+                return i % 2 === 1 ? v : v.toLowerCase()
+            })
+            .join(`'`)
+    }
+
     /**
      * Creates a new connection pool for a given database credentials.
+     *
+     * @param options
+     * @param credentials
      */
     protected createPool(
-        options: SqlServerConnectionOptions,
+        options: SqlServerDataSourceOptions,
         credentials: SqlServerConnectionCredentialsOptions,
     ): Promise<any> {
         credentials = Object.assign(
@@ -972,26 +1214,40 @@ export class SqlServerDriver implements Driver {
             DriverUtils.buildDriverOptions(credentials),
         ) // todo: do it better way
 
-        // todo: credentials.domain is deprecation. remove it in future
-        const authentication = !credentials.domain
-            ? credentials.authentication
-            : {
-                  type: "ntlm",
-                  options: {
-                      domain: credentials.domain,
-                      userName: credentials.username,
-                      password: credentials.password,
-                  },
-              }
+        let isolationLevel: number | undefined
+        if (options.options?.isolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.isolationLevel,
+            )
+            isolationLevel = this.convertIsolationLevel(
+                options.options.isolationLevel,
+            )
+        }
+        let connectionIsolationLevel: number | undefined
+        if (options.options?.connectionIsolationLevel) {
+            validateIsolationLevel(
+                SqlServerDriver.supportedIsolationLevels,
+                options.options.connectionIsolationLevel,
+            )
+            connectionIsolationLevel = this.convertIsolationLevel(
+                options.options.connectionIsolationLevel,
+            )
+        }
+
         // build connection options for the driver
         const connectionOptions = Object.assign(
             {},
             {
-                connectionTimeout: this.options.connectionTimeout,
-                requestTimeout: this.options.requestTimeout,
-                stream: this.options.stream,
-                pool: this.options.pool,
-                options: this.options.options,
+                connectionTimeout: options.connectionTimeout,
+                requestTimeout: options.requestTimeout,
+                stream: options.stream,
+                pool: options.pool,
+                options: {
+                    ...options.options,
+                    isolationLevel,
+                    connectionIsolationLevel,
+                },
             },
             {
                 server: credentials.host,
@@ -999,9 +1255,9 @@ export class SqlServerDriver implements Driver {
                 port: credentials.port,
                 user: credentials.username,
                 password: credentials.password,
-                authentication: authentication,
+                authentication: credentials.authentication,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         // set default useUTC option if it hasn't been set
@@ -1020,10 +1276,10 @@ export class SqlServerDriver implements Driver {
         return new Promise<void>((ok, fail) => {
             const pool = new this.mssql.ConnectionPool(connectionOptions)
 
-            const { logger } = this.connection
+            const { logger } = this.dataSource
 
             const poolErrorHandler =
-                (options.pool && options.pool.errorHandler) ||
+                options.pool?.errorHandler ??
                 ((error: any) =>
                     logger.log("warn", `MSSQL pool raised an error. ${error}`))
             /**
@@ -1037,5 +1293,30 @@ export class SqlServerDriver implements Driver {
                 ok(connection)
             })
         })
+    }
+
+    /**
+     * Converts string literal of isolation level to enum.
+     * The underlying mssql driver requires an enum for the isolation level.
+     *
+     * @param isolation
+     */
+    convertIsolationLevel(isolation: IsolationLevel): number {
+        const ISOLATION_LEVEL = this.mssql.ISOLATION_LEVEL
+        switch (isolation) {
+            case "READ UNCOMMITTED":
+                return ISOLATION_LEVEL.READ_UNCOMMITTED
+            case "REPEATABLE READ":
+                return ISOLATION_LEVEL.REPEATABLE_READ
+            case "SERIALIZABLE":
+                return ISOLATION_LEVEL.SERIALIZABLE
+            case "SNAPSHOT":
+                return ISOLATION_LEVEL.SNAPSHOT
+
+            case "READ COMMITTED":
+                return ISOLATION_LEVEL.READ_COMMITTED
+            default:
+                throw new TypeORMError(`Unknown isolation level "${isolation}"`)
+        }
     }
 }

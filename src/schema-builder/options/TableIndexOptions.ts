@@ -1,3 +1,5 @@
+import type { TableIndexTypes } from "./TableIndexTypes"
+
 /**
  * Database's table index options.
  */
@@ -28,6 +30,12 @@ export interface TableIndexOptions {
     isSpatial?: boolean
 
     /**
+     * Builds the index using the concurrently option.
+     * This options is only supported for postgres database.
+     */
+    isConcurrent?: boolean
+
+    /**
      * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
      * Supported only in MySQL & SAP HANA.
      */
@@ -52,4 +60,11 @@ export interface TableIndexOptions {
      * Index filter condition.
      */
     where?: string
+
+    /**
+     * The `type` option defines the type of the index being created.
+     * Supported types include B-tree, Hash, GiST, SP-GiST, GIN, and BRIN
+     * This option is only applicable in PostgreSQL.
+     */
+    type?: TableIndexTypes
 }

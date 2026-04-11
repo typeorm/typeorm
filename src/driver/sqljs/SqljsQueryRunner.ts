@@ -1,9 +1,10 @@
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { SqljsDriver } from "./SqljsDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
 import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
+import type { SqljsDriver } from "./SqljsDriver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -26,7 +27,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     constructor(driver: SqljsDriver) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
     }
 
@@ -66,11 +67,17 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
      */
     async commitTransaction(): Promise<void> {
         await super.commitTransaction()
-        await this.flush()
+        if (!this.isTransactionActive) {
+            await this.flush()
+        }
     }
 
     /**
      * Executes a given SQL query.
+     *
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -82,9 +89,14 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         const command = query.trim().split(" ", 1)[0]
 
         const databaseConnection = this.driver.databaseConnection
-        this.driver.connection.logger.logQuery(query, parameters, this)
-        const queryStartTime = +new Date()
+
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
         let statement: any
+
         try {
             statement = databaseConnection.prepare(query)
             if (parameters) {
@@ -98,13 +110,14 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             )
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
@@ -116,6 +129,16 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             while (statement.step()) {
                 records.push(statement.getAsObject())
             }
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                records,
+                undefined,
+            )
 
             const result = new QueryResult()
 
@@ -134,18 +157,30 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             } else {
                 return result.raw
             }
-        } catch (e) {
+        } catch (err) {
             if (statement) {
                 statement.free()
             }
 
-            this.driver.connection.logger.logQueryError(
-                e,
+            this.driver.dataSource.logger.logQueryError(
+                err,
                 query,
                 parameters,
                 this,
             )
-            throw new QueryFailedError(query, parameters, e)
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
+            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 }

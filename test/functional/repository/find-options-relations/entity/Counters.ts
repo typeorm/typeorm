@@ -9,6 +9,6 @@ export class Counters {
     @Column()
     commentCount: number
 
-    @ManyToOne((type) => User)
+    @ManyToOne(() => User)
     author: User
 }

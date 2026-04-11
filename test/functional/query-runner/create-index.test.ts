@@ -1,0 +1,95 @@
+import "reflect-metadata"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
+import { Table } from "../../../src/schema-builder/table/Table"
+import { TableIndex } from "../../../src/schema-builder/table/TableIndex"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
+
+describe("query runner > create index", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should correctly create index and revert creation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                let numericType = "int"
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) {
+                    numericType = "integer"
+                } else if (dataSource.driver.options.type === "spanner") {
+                    numericType = "int64"
+                }
+
+                let stringType = "varchar"
+                if (dataSource.driver.options.type === "spanner") {
+                    stringType = "string"
+                }
+
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.createTable(
+                    new Table({
+                        name: "question",
+                        columns: [
+                            {
+                                name: "id",
+                                type: numericType,
+                                isPrimary: true,
+                            },
+                            {
+                                name: "name",
+                                type: stringType,
+                            },
+                            {
+                                name: "description",
+                                type: stringType,
+                            },
+                        ],
+                    }),
+                    true,
+                )
+
+                // clear sqls in memory to avoid removing tables when down queries executed.
+                queryRunner.clearSqlMemory()
+
+                const index = new TableIndex({
+                    columnNames: ["name", "description"],
+                })
+                await queryRunner.createIndex("question", index)
+
+                const uniqueIndex = new TableIndex({
+                    columnNames: ["description"],
+                    isUnique: true,
+                })
+                await queryRunner.createIndex("question", uniqueIndex)
+
+                let table = await queryRunner.getTable("question")
+
+                // CockroachDB stores unique indices as UNIQUE constraints
+                if (dataSource.driver.options.type === "cockroachdb") {
+                    table!.indices.length.should.be.equal(1)
+                    table!.uniques.length.should.be.equal(1)
+                } else {
+                    table!.indices.length.should.be.equal(2)
+                }
+
+                await queryRunner.executeMemoryDownSql()
+
+                table = await queryRunner.getTable("question")
+                table!.indices.length.should.be.equal(0)
+                table!.uniques.length.should.be.equal(0)
+
+                await queryRunner.release()
+            }),
+        ))
+})

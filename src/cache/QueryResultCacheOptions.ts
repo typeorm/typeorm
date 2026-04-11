@@ -6,7 +6,7 @@ export interface QueryResultCacheOptions {
      * Cache identifier set by user.
      * Can be empty.
      */
-    identifier: string
+    identifier?: string
 
     /**
      * Time, when cache was created.
@@ -21,7 +21,7 @@ export interface QueryResultCacheOptions {
     /**
      * Cached query.
      */
-    query: string
+    query?: string
 
     /**
      * Query result that will be cached.

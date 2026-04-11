@@ -15,16 +15,16 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn({ referencedColumnName: "name" })
     categoryByName: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn()
     category: Category
 
     @OneToMany(
-        (type) => PostCategory,
+        () => PostCategory,
         (postCategoryRelation) => postCategoryRelation.post,
     )
     categories: PostCategory[]

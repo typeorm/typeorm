@@ -1,10 +1,10 @@
 import { Post } from "../entity/Post"
-import { Sample33CustomRepositoryConnection } from "../connection"
+import { Sample33CustomRepositoryDataSource } from "../data-source"
 
-export const PostRepository = Sample33CustomRepositoryConnection.getRepository(
+export const PostRepository = Sample33CustomRepositoryDataSource.getRepository(
     Post,
 ).extend({
     findMyPost() {
-        return this.findOne()
+        return this.findOne({})
     },
 })

@@ -1,5 +1,5 @@
 import { EntitySchema } from "../../../../../src"
-import { Post } from "../model/Post"
+import type { Post } from "../model/Post"
 
 export const PostEntity = new EntitySchema<Post>({
     name: "post",
@@ -19,6 +19,7 @@ export const PostEntity = new EntitySchema<Post>({
         categories: {
             type: "many-to-many",
             target: "category", // CategoryEntity
+            joinTable: true,
         },
     },
 })

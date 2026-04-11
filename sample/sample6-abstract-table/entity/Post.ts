@@ -11,12 +11,12 @@ export class Post extends BasePost {
     @Column()
     text: string
 
-    @ManyToOne((type) => PostAuthor, (post) => post.posts, {
+    @ManyToOne(() => PostAuthor, (post) => post.posts, {
         cascade: true,
     })
     author: PostAuthor
 
-    @ManyToMany((type) => PostCategory, (category) => category.posts, {
+    @ManyToMany(() => PostCategory, (category) => category.posts, {
         cascade: true,
     })
     @JoinTable()

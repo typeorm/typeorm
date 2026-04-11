@@ -1,6 +1,7 @@
-import { DataSource, SelectQueryBuilder } from ".."
-import { OrderByCondition } from "../find-options/OrderByCondition"
-import { TableType } from "../metadata/types/TableTypes"
+import type { DataSource } from "../data-source"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
+import type { TableType } from "../metadata/types/TableTypes"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.
@@ -53,7 +54,7 @@ export interface TableMetadataArgs {
     /**
      * View expression.
      */
-    expression?: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression?: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     /**
      * View dependencies.
@@ -70,4 +71,9 @@ export interface TableMetadataArgs {
      * an integer primary key column named 'rowid' on table creation.
      */
     withoutRowid?: boolean
+
+    /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
 }

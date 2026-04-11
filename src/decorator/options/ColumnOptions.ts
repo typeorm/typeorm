@@ -1,6 +1,6 @@
-import { ColumnType } from "../../driver/types/ColumnTypes"
-import { ValueTransformer } from "./ValueTransformer"
-import { ColumnCommonOptions } from "./ColumnCommonOptions"
+import type { ColumnType } from "../../driver/types/ColumnTypes"
+import type { ValueTransformer } from "./ValueTransformer"
+import type { ColumnCommonOptions } from "./ColumnCommonOptions"
 
 /**
  * Describes all column's options.
@@ -23,27 +23,10 @@ export interface ColumnOptions extends ColumnCommonOptions {
     length?: string | number
 
     /**
-     * Column type's display width. Used only on some column types in MySQL.
-     * For example, INT(4) specifies an INT with a display width of four digits.
-     */
-    width?: number
-
-    /**
      * Indicates if column's value can be set to NULL.
      * Default value is "false".
      */
     nullable?: boolean
-
-    /**
-     * Indicates if column value is not updated by "save" operation.
-     * It means you'll be able to write this value only when you first time insert the object.
-     * Default value is "false".
-     *
-     * @deprecated Please use the `update` option instead.  Careful, it takes
-     * the opposite value to readonly.
-     *
-     */
-    readonly?: boolean
 
     /**
      * Indicates if column value is updated by "save" operation.
@@ -76,7 +59,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
 
     /**
      * Indicates if this column is a primary key.
-     * Same can be achieved when @PrimaryColumn decorator is used.
+     * Same can be achieved when `@PrimaryColumn` decorator is used.
      */
     primary?: boolean
 
@@ -103,12 +86,6 @@ export interface ColumnOptions extends ColumnCommonOptions {
     scale?: number
 
     /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to this column
-     */
-    zerofill?: boolean
-
-    /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
      */
     unsigned?: boolean
@@ -128,18 +105,29 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * Array of possible enumerated values.
      */
     enum?: (string | number)[] | Object
+
     /**
      * Exact name of enum
      */
     enumName?: string
 
     /**
-     * Generated column expression. Supports only in MySQL.
+     * If this column is primary key then this specifies the name for it.
+     */
+    primaryKeyConstraintName?: string
+
+    /**
+     * If this column is foreign key then this specifies the name for it.
+     */
+    foreignKeyConstraintName?: string
+
+    /**
+     * Generated column expression.
      */
     asExpression?: string
 
     /**
-     * Generated column type. Supports only in MySQL.
+     * Generated column type.
      */
     generatedType?: "VIRTUAL" | "STORED"
 
@@ -176,4 +164,26 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * SRID (Spatial Reference ID (EPSG code))
      */
     srid?: number
+
+    /**
+     * Query to be used to populate the column data. This query is used when generating the relational db script.
+     * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     *
+     * @see https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     */
+    query?: (alias: string) => string
+
+    /**
+     * Indicates if date values should be stored and retrieved in UTC timezone
+     * instead of local timezone. Only applies to "date" column type.
+     * Default value is "false" (uses local timezone for backward compatibility).
+     *
+     * @example
+     * ```
+     * \@Column({ type: "date", utc: true })
+     * birthDate: Date
+     * ```
+     *
+     */
+    utc?: boolean
 }

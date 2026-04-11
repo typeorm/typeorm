@@ -19,6 +19,6 @@ export class Counters {
     @Column(() => Subcounters, { prefix: "subcnt" })
     subcounters: Subcounters
 
-    @OneToMany((type) => User, (user) => user.likedPost)
+    @OneToMany(() => User, (user) => user.likedPost)
     likedUsers: User[]
 }

@@ -20,10 +20,10 @@ export class Category {
     @Column()
     isRemoved: boolean = false
 
-    @OneToOne((type) => Post, (post) => post.category)
+    @OneToOne(() => Post, (post) => post.category)
     post: Post
 
-    @OneToOne((type) => Image, (image) => image.category)
+    @OneToOne(() => Image, (image) => image.category)
     @JoinColumn()
     image: Image
 

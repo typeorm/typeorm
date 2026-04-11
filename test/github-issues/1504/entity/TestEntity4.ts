@@ -14,6 +14,6 @@ export class TestEntity4 {
     @Column()
     name: string
 
-    @ManyToOne((t) => TestEntity3, (entity3) => entity3.Entity4)
+    @ManyToOne(() => TestEntity3, (entity3) => entity3.Entity4)
     Entity3: TestEntity3
 }

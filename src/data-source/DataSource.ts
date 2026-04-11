@@ -1,44 +1,48 @@
-import { Driver } from "../driver/Driver"
-import { Repository } from "../repository/Repository"
-import { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
-import { EntityTarget } from "../common/EntityTarget"
-import { ObjectType } from "../common/ObjectType"
-import { EntityManager } from "../entity-manager/EntityManager"
+import type { Driver } from "../driver/Driver"
+import { registerQueryBuilders } from "../query-builder"
+import type { Repository } from "../repository/Repository"
+import type { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { EntityManager } from "../entity-manager/EntityManager"
 import { DefaultNamingStrategy } from "../naming-strategy/DefaultNamingStrategy"
 import {
     CannotConnectAlreadyConnectedError,
     CannotExecuteNotConnectedError,
     EntityMetadataNotFoundError,
     QueryRunnerProviderAlreadyReleasedError,
+    TypeORMError,
 } from "../error"
-import { TreeRepository } from "../repository/TreeRepository"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { Logger } from "../logger/Logger"
-import { MigrationInterface } from "../migration/MigrationInterface"
+import type { TreeRepository } from "../repository/TreeRepository"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { Logger } from "../logger/Logger"
+import type { MigrationInterface } from "../migration/MigrationInterface"
 import { MigrationExecutor } from "../migration/MigrationExecutor"
-import { Migration } from "../migration/Migration"
-import { MongoRepository } from "../repository/MongoRepository"
-import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
+import type { Migration } from "../migration/Migration"
+import type { MongoRepository } from "../repository/MongoRepository"
+import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
 import { EntityMetadataValidator } from "../metadata-builder/EntityMetadataValidator"
-import { DataSourceOptions } from "./DataSourceOptions"
+import type { DataSourceOptions } from "./DataSourceOptions"
 import { EntityManagerFactory } from "../entity-manager/EntityManagerFactory"
 import { DriverFactory } from "../driver/DriverFactory"
 import { ConnectionMetadataBuilder } from "../connection/ConnectionMetadataBuilder"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { LoggerFactory } from "../logger/LoggerFactory"
 import { QueryResultCacheFactory } from "../cache/QueryResultCacheFactory"
-import { QueryResultCache } from "../cache/QueryResultCache"
-import { SqljsEntityManager } from "../entity-manager/SqljsEntityManager"
+import type { QueryResultCache } from "../cache/QueryResultCache"
+import type { SqljsEntityManager } from "../entity-manager/SqljsEntityManager"
 import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { IsolationLevel } from "../driver/types/IsolationLevel"
-import { ReplicationMode } from "../driver/types/ReplicationMode"
-import { TypeORMError } from "../error"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { ReplicationMode } from "../driver/types/ReplicationMode"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import { buildSqlTag } from "../util/SqlTagUtils"
+
+registerQueryBuilders()
 
 /**
  * DataSource is a pre-defined connection configuration to a specific database.
@@ -56,19 +60,12 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection name.
-     *
-     * @deprecated we don't need names anymore since we are going to drop all related methods relying on this property.
-     */
-    readonly name: string
-
-    /**
-     * Connection options.
+     * DataSource options.
      */
     readonly options: DataSourceOptions
 
     /**
-     * Indicates if DataSource is initialized or not.
+     * Indicates if the DataSource is initialized or not.
      */
     readonly isInitialized: boolean
 
@@ -113,6 +110,12 @@ export class DataSource {
     readonly entityMetadatas: EntityMetadata[] = []
 
     /**
+     * All entity metadatas that are registered for this connection.
+     * This is a copy of #.entityMetadatas property -> used for more performant searches.
+     */
+    readonly entityMetadatasMap = new Map<EntityTarget<any>, EntityMetadata>()
+
+    /**
      * Used to work with query result cache.
      */
     queryResultCache?: QueryResultCache
@@ -129,7 +132,7 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     constructor(options: DataSourceOptions) {
-        this.name = options.name || "default"
+        registerQueryBuilders()
         this.options = options
         this.logger = new LoggerFactory().create(
             this.options.logger,
@@ -138,8 +141,8 @@ export class DataSource {
         this.driver = new DriverFactory().create(this)
         this.manager = this.createEntityManager()
         this.namingStrategy =
-            options.namingStrategy || new DefaultNamingStrategy()
-        this.metadataTableName = options.metadataTableName || "typeorm_metadata"
+            options.namingStrategy ?? new DefaultNamingStrategy()
+        this.metadataTableName = options.metadataTableName ?? "typeorm_metadata"
         this.queryResultCache = options.cache
             ? new QueryResultCacheFactory(this).create()
             : undefined
@@ -153,19 +156,12 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     /**
-     Indicates if DataSource is initialized or not.
-     *
-     * @deprecated use .isInitialized instead
-     */
-    get isConnected() {
-        return this.isInitialized
-    }
-
-    /**
      * Gets the mongodb entity manager that allows to perform mongodb-specific repository operations
      * with any entity in this connection.
      *
      * Available only in mongodb connections.
+     *
+     * @returns the mongodb entity manager
      */
     get mongoManager(): MongoEntityManager {
         if (!InstanceChecker.isMongoEntityManager(this.manager))
@@ -180,6 +176,8 @@ export class DataSource {
      * Gets a sql.js specific Entity Manager that allows to perform special load and save operations
      *
      * Available only in connection with the sqljs driver.
+     *
+     * @returns an sqljs specific Entity Manager
      */
     get sqljsManager(): SqljsEntityManager {
         if (!InstanceChecker.isSqljsEntityManager(this.manager))
@@ -195,14 +193,16 @@ export class DataSource {
     // -------------------------------------------------------------------------
     /**
      * Updates current connection options with provided options.
+     *
+     * @param options
      */
     setOptions(options: Partial<DataSourceOptions>): this {
         Object.assign(this.options, options)
 
         if (options.logger || options.logging) {
             this.logger = new LoggerFactory().create(
-                options.logger || this.options.logger,
-                options.logging || this.options.logging,
+                options.logger ?? this.options.logger,
+                options.logging ?? this.options.logging,
             )
         }
 
@@ -214,6 +214,17 @@ export class DataSource {
             this.queryResultCache = new QueryResultCacheFactory(this).create()
         }
 
+        // todo: we must update the database in the driver as well, if it was set by setOptions method
+        //  in the future we need to refactor the code and remove "database" from the driver, and instead
+        //  use database (and options) from a single place - data source.
+        if (options.database) {
+            this.driver.database = DriverUtils.buildDriverOptions(
+                this.options,
+            ).database
+        }
+
+        // todo: need to take a look if we need to update schema and other "poor" properties
+
         return this
     }
 
@@ -224,8 +235,7 @@ export class DataSource {
      * but it also can setup a connection pool with database to use.
      */
     async initialize(): Promise<this> {
-        if (this.isInitialized)
-            throw new CannotConnectAlreadyConnectedError(this.name)
+        if (this.isInitialized) throw new CannotConnectAlreadyConnectedError()
 
         // connect to the database via its driver
         await this.driver.connect()
@@ -256,7 +266,7 @@ export class DataSource {
         } catch (error) {
             // if for some reason build metadata fail (for example validation error during entity metadata check)
             // connection needs to be closed
-            await this.close()
+            await this.destroy()
             throw error
         }
 
@@ -264,24 +274,11 @@ export class DataSource {
     }
 
     /**
-     * Performs connection to the database.
-     * This method should be called once on application bootstrap.
-     * This method not necessarily creates database connection (depend on database type),
-     * but it also can setup a connection pool with database to use.
-     *
-     * @deprecated use .initialize method instead
-     */
-    async connect(): Promise<this> {
-        return this.initialize()
-    }
-
-    /**
      * Closes connection with the database.
      * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
      */
     async destroy(): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         await this.driver.disconnect()
 
@@ -292,24 +289,13 @@ export class DataSource {
     }
 
     /**
-     * Closes connection with the database.
-     * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
-     *
-     * @deprecated use .destroy method instead
-     */
-    async close(): Promise<void> {
-        return this.destroy()
-    }
-
-    /**
      * Creates database schema for all entities registered in this connection.
      * Can be used only after connection to the database is established.
      *
      * @param dropBeforeSync If set to true then it drops the database with all its tables and data
      */
     async synchronize(dropBeforeSync: boolean = false): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         if (dropBeforeSync) await this.dropDatabase()
 
@@ -362,16 +348,23 @@ export class DataSource {
     /**
      * Runs all pending migrations.
      * Can be used only after connection to the database is established.
+     *
+     * @param options
+     * @param options.transaction
+     * @param options.fake
      */
     async runMigrations(options?: {
         transaction?: "all" | "none" | "each"
+        fake?: boolean
     }): Promise<Migration[]> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
-            (options && options.transaction) || "all"
+            options?.transaction ??
+            this.options?.migrationsTransactionMode ??
+            "all"
+        migrationExecutor.fake = options?.fake ?? false
 
         const successMigrations =
             await migrationExecutor.executePendingMigrations()
@@ -381,16 +374,20 @@ export class DataSource {
     /**
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
+     *
+     * @param options
+     * @param options.transaction
+     * @param options.fake
      */
     async undoLastMigration(options?: {
         transaction?: "all" | "none" | "each"
+        fake?: boolean
     }): Promise<void> {
-        if (!this.isInitialized)
-            throw new CannotExecuteNotConnectedError(this.name)
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
-        migrationExecutor.transaction =
-            (options && options.transaction) || "all"
+        migrationExecutor.transaction = options?.transaction ?? "all"
+        migrationExecutor.fake = options?.fake ?? false
 
         await migrationExecutor.undoLastMigration()
     }
@@ -401,7 +398,7 @@ export class DataSource {
      */
     async showMigrations(): Promise<boolean> {
         if (!this.isInitialized) {
-            throw new CannotExecuteNotConnectedError(this.name)
+            throw new CannotExecuteNotConnectedError()
         }
         const migrationExecutor = new MigrationExecutor(this)
         return await migrationExecutor.showMigrations()
@@ -409,6 +406,8 @@ export class DataSource {
 
     /**
      * Checks if entity metadata exist for the given entity class, target name or table name.
+     *
+     * @param target
      */
     hasMetadata(target: EntityTarget<any>): boolean {
         return !!this.findMetadata(target)
@@ -416,6 +415,8 @@ export class DataSource {
 
     /**
      * Gets entity metadata for the given entity class or schema name.
+     *
+     * @param target
      */
     getMetadata(target: EntityTarget<any>): EntityMetadata {
         const metadata = this.findMetadata(target)
@@ -426,16 +427,22 @@ export class DataSource {
 
     /**
      * Gets repository for the given entity.
+     *
+     * @param target
      */
-    getRepository<Entity>(target: EntityTarget<Entity>): Repository<Entity> {
+    getRepository<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+    ): Repository<Entity> {
         return this.manager.getRepository(target)
     }
 
     /**
      * Gets tree repository for the given entity class or name.
-     * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
+     * Only tree-type entities can have a TreeRepository, like ones decorated with `@Tree` decorator.
+     *
+     * @param target
      */
-    getTreeRepository<Entity>(
+    getTreeRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): TreeRepository<Entity> {
         return this.manager.getTreeRepository(target)
@@ -444,8 +451,10 @@ export class DataSource {
     /**
      * Gets mongodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
+     *
+     * @param target
      */
-    getMongoRepository<Entity>(
+    getMongoRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): MongoRepository<Entity> {
         if (!(this.driver.options.type === "mongodb"))
@@ -454,15 +463,6 @@ export class DataSource {
             )
 
         return this.manager.getRepository(target) as any
-    }
-
-    /**
-     * Gets custom entity repository marked with @EntityRepository decorator.
-     *
-     * @deprecated use Repository.extend function to create a custom repository
-     */
-    getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        return this.manager.getCustomRepository(customRepository)
     }
 
     /**
@@ -490,19 +490,25 @@ export class DataSource {
 
     /**
      * Executes raw SQL query and returns raw database results.
+     *
+     * @param query
+     * @param parameters
+     * @param queryRunner
+     * @returns a raw response from the database client
+     * @see {@link https://typeorm.io/data-source-api | Official docs} for examples.
      */
-    async query(
+    async query<T = any>(
         query: string,
         parameters?: any[],
         queryRunner?: QueryRunner,
-    ): Promise<any> {
+    ): Promise<T> {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Queries aren't supported by MongoDB.`)
 
-        if (queryRunner && queryRunner.isReleased)
+        if (queryRunner?.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner()
+        const usedQueryRunner = queryRunner ?? this.createQueryRunner()
 
         try {
             return await usedQueryRunner.query(query, parameters) // await is needed here because we are using finally
@@ -512,9 +518,35 @@ export class DataSource {
     }
 
     /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     *
+     * @example
+     * dataSource.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @param strings
+     * @param values
+     * @returns a raw response from the database client
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
+    }
+
+    /**
      * Creates a new query builder that can be used to build a SQL query.
      */
-    createQueryBuilder<Entity>(
+    createQueryBuilder<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         alias: string,
         queryRunner?: QueryRunner,
@@ -527,8 +559,12 @@ export class DataSource {
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
+     *
+     * @param entityOrRunner
+     * @param alias
+     * @param queryRunner
      */
-    createQueryBuilder<Entity>(
+    createQueryBuilder<Entity extends ObjectLiteral>(
         entityOrRunner?: EntityTarget<Entity> | QueryRunner,
         alias?: string,
         queryRunner?: QueryRunner,
@@ -537,7 +573,7 @@ export class DataSource {
             throw new TypeORMError(`Query Builder is not supported by MongoDB.`)
 
         if (alias) {
-            alias = DriverUtils.buildAlias(this.driver, alias)
+            alias = DriverUtils.buildAlias(this.driver, undefined, alias)
             const metadata = this.getMetadata(
                 entityOrRunner as EntityTarget<Entity>,
             )
@@ -561,6 +597,8 @@ export class DataSource {
      * to master database or any of slave databases.
      * If you perform writes you must use master database,
      * if you perform reads you can use slave databases.
+     *
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode = "master"): QueryRunner {
         const queryRunner = this.driver.createQueryRunner(mode)
@@ -571,6 +609,9 @@ export class DataSource {
 
     /**
      * Gets entity metadata of the junction table (many-to-many table).
+     *
+     * @param entityTarget
+     * @param relationPropertyPath
      */
     getManyToManyMetadata(
         entityTarget: EntityTarget<any>,
@@ -595,6 +636,8 @@ export class DataSource {
 
     /**
      * Creates an Entity Manager for the current connection with the help of the EntityManagerFactory.
+     *
+     * @param queryRunner
      */
     createEntityManager(queryRunner?: QueryRunner): EntityManager {
         return new EntityManagerFactory().create(this, queryRunner)
@@ -606,41 +649,56 @@ export class DataSource {
 
     /**
      * Finds exist entity metadata by the given entity class, target name or table name.
+     *
+     * @param target
      */
     protected findMetadata(
         target: EntityTarget<any>,
     ): EntityMetadata | undefined {
-        return this.entityMetadatas.find((metadata) => {
-            if (metadata.target === target) return true
-            if (InstanceChecker.isEntitySchema(target)) {
-                return metadata.name === target.options.name
+        const metadataFromMap = this.entityMetadatasMap.get(target)
+        if (metadataFromMap) return metadataFromMap
+
+        for (const [_, metadata] of this.entityMetadatasMap) {
+            if (
+                InstanceChecker.isEntitySchema(target) &&
+                metadata.name === target.options.name
+            ) {
+                return metadata
             }
             if (typeof target === "string") {
                 if (target.indexOf(".") !== -1) {
-                    return metadata.tablePath === target
+                    if (metadata.tablePath === target) {
+                        return metadata
+                    }
                 } else {
-                    return (
+                    if (
                         metadata.name === target ||
                         metadata.tableName === target
-                    )
+                    ) {
+                        return metadata
+                    }
                 }
             }
             if (
-                ObjectUtils.isObject(target) &&
+                ObjectUtils.isObjectWithName(target) &&
                 typeof target.name === "string"
             ) {
                 if (target.name.indexOf(".") !== -1) {
-                    return metadata.tablePath === target.name
+                    if (metadata.tablePath === target.name) {
+                        return metadata
+                    }
                 } else {
-                    return (
+                    if (
                         metadata.name === target.name ||
                         metadata.tableName === target.name
-                    )
+                    ) {
+                        return metadata
+                    }
                 }
             }
+        }
 
-            return false
-        })
+        return undefined
     }
 
     /**
@@ -652,30 +710,35 @@ export class DataSource {
 
         // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
         const flattenedSubscribers = ObjectUtils.mixedListToArray(
-            this.options.subscribers || [],
+            this.options.subscribers ?? [],
         )
-        const subscribers = await connectionMetadataBuilder.buildSubscribers(
-            flattenedSubscribers,
-        )
+        const subscribers =
+            await connectionMetadataBuilder.buildSubscribers(
+                flattenedSubscribers,
+            )
         ObjectUtils.assign(this, { subscribers: subscribers })
 
         // build entity metadatas
         const flattenedEntities = ObjectUtils.mixedListToArray(
-            this.options.entities || [],
+            this.options.entities ?? [],
         )
         const entityMetadatas =
             await connectionMetadataBuilder.buildEntityMetadatas(
                 flattenedEntities,
             )
-        ObjectUtils.assign(this, { entityMetadatas: entityMetadatas })
+        ObjectUtils.assign(this, {
+            entityMetadatas: entityMetadatas,
+            entityMetadatasMap: new Map(
+                entityMetadatas.map((metadata) => [metadata.target, metadata]),
+            ),
+        })
 
         // create migration instances
         const flattenedMigrations = ObjectUtils.mixedListToArray(
-            this.options.migrations || [],
+            this.options.migrations ?? [],
         )
-        const migrations = await connectionMetadataBuilder.buildMigrations(
-            flattenedMigrations,
-        )
+        const migrations =
+            await connectionMetadataBuilder.buildMigrations(flattenedMigrations)
         ObjectUtils.assign(this, { migrations: migrations })
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
@@ -687,12 +750,32 @@ export class DataSource {
         )
 
         // set current data source to the entities
-        for (let entityMetadata of entityMetadatas) {
+        for (const entityMetadata of entityMetadatas) {
             if (
                 InstanceChecker.isBaseEntityConstructor(entityMetadata.target)
             ) {
                 entityMetadata.target.useDataSource(this)
             }
         }
+    }
+
+    /**
+     * Get the replication mode SELECT queries should use for this datasource by default
+     */
+    defaultReplicationModeForReads(): ReplicationMode {
+        if (
+            "replication" in this.driver.options &&
+            this.driver.options.replication
+        ) {
+            const value = (
+                this.driver.options.replication as {
+                    defaultMode?: ReplicationMode
+                }
+            ).defaultMode
+            if (value) {
+                return value
+            }
+        }
+        return "slave"
     }
 }

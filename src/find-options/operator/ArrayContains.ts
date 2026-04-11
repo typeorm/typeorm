@@ -2,10 +2,14 @@ import { FindOperator } from "../FindOperator"
 
 /**
  * FindOptions Operator.
- * Example: { someField: ArrayContains([...]) }
+ *
+ * @example
+ * { someField: ArrayContains([...]) }
+ *
+ * @param value
  */
 export function ArrayContains<T>(
-    value: T[] | FindOperator<T>,
+    value: readonly T[] | FindOperator<T>,
 ): FindOperator<any> {
     return new FindOperator("arrayContains", value as any)
 }

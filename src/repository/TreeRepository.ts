@@ -1,9 +1,9 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { DriverUtils } from "../driver/DriverUtils"
 import { TypeORMError } from "../error/TypeORMError"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import { FindTreeOptions } from "../find-options/FindTreeOptions"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { FindTreeOptions } from "../find-options/FindTreeOptions"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { TreeRepositoryUtils } from "../util/TreeRepositoryUtils"
 import { Repository } from "./Repository"
 
@@ -12,13 +12,17 @@ import { Repository } from "./Repository"
  *
  * @see Repository
  */
-export class TreeRepository<Entity> extends Repository<Entity> {
+export class TreeRepository<
+    Entity extends ObjectLiteral,
+> extends Repository<Entity> {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
     /**
      * Gets complete trees for all roots in the table.
+     *
+     * @param options
      */
     async findTrees(options?: FindTreeOptions): Promise<Entity[]> {
         const roots = await this.findRoots(options)
@@ -30,16 +34,18 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     /**
      * Roots are entities that have no ancestors. Finds them all.
+     *
+     * @param options
      */
     findRoots(options?: FindTreeOptions): Promise<Entity[]> {
         const escapeAlias = (alias: string) =>
-            this.manager.connection.driver.escape(alias)
+            this.manager.dataSource.driver.escape(alias)
         const escapeColumn = (column: string) =>
-            this.manager.connection.driver.escape(column)
+            this.manager.dataSource.driver.escape(column)
 
         const joinColumn = this.metadata.treeParentRelation!.joinColumns[0]
         const parentPropertyName =
-            joinColumn.givenDatabaseName || joinColumn.databaseName
+            joinColumn.givenDatabaseName ?? joinColumn.databaseName
 
         const qb = this.createQueryBuilder("treeEntity")
         FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options)
@@ -55,6 +61,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     /**
      * Gets all children (descendants) of the given entity. Returns them all in a flat array.
+     *
+     * @param entity
+     * @param options
      */
     findDescendants(
         entity: Entity,
@@ -71,6 +80,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     /**
      * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
+     *
+     * @param entity
+     * @param options
      */
     async findDescendantsTree(
         entity: Entity,
@@ -109,6 +121,8 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     /**
      * Gets number of descendants of the entity.
+     *
+     * @param entity
      */
     countDescendants(entity: Entity): Promise<number> {
         return this.createDescendantsQueryBuilder(
@@ -120,6 +134,10 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     /**
      * Creates a query builder used to get descendants of the entities in a tree.
+     *
+     * @param alias
+     * @param closureTableAlias
+     * @param entity
      */
     createDescendantsQueryBuilder(
         alias: string,
@@ -128,7 +146,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     ): SelectQueryBuilder<Entity> {
         // create shortcuts for better readability
         const escape = (alias: string) =>
-            this.manager.connection.driver.escape(alias)
+            this.manager.dataSource.driver.escape(alias)
 
         if (this.metadata.treeType === "closure-table") {
             const joinCondition =
@@ -164,7 +182,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
             return this.createQueryBuilder(alias)
                 .innerJoin(
-                    this.metadata.closureJunctionTable.tableName,
+                    this.metadata.closureJunctionTable.tablePath,
                     closureTableAlias,
                     joinCondition,
                 )
@@ -216,7 +234,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                     .whereInIds(this.metadata.getEntityIdMap(entity))
 
                 if (
-                    DriverUtils.isSQLiteFamily(this.manager.connection.driver)
+                    DriverUtils.isSQLiteFamily(this.manager.dataSource.driver)
                 ) {
                     return `${alias}.${
                         this.metadata.materializedPathColumn!.propertyPath
@@ -234,6 +252,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     /**
      * Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
+     *
+     * @param entity
+     * @param options
      */
     findAncestors(
         entity: Entity,
@@ -250,6 +271,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     /**
      * Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
+     *
+     * @param entity
+     * @param options
      */
     async findAncestorsTree(
         entity: Entity,
@@ -281,6 +305,8 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     /**
      * Gets number of ancestors of the entity.
+     *
+     * @param entity
      */
     countAncestors(entity: Entity): Promise<number> {
         return this.createAncestorsQueryBuilder(
@@ -292,6 +318,10 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
     /**
      * Creates a query builder used to get ancestors of the entities in the tree.
+     *
+     * @param alias
+     * @param closureTableAlias
+     * @param entity
      */
     createAncestorsQueryBuilder(
         alias: string,
@@ -299,7 +329,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         entity: Entity,
     ): SelectQueryBuilder<Entity> {
         // create shortcuts for better readability
-        // const escape = (alias: string) => this.manager.connection.driver.escape(alias);
+        // const escape = (alias: string) => this.manager.dataSource.driver.escape(alias);
 
         if (this.metadata.treeType === "closure-table") {
             const joinCondition =
@@ -335,7 +365,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
             return this.createQueryBuilder(alias)
                 .innerJoin(
-                    this.metadata.closureJunctionTable.tableName,
+                    this.metadata.closureJunctionTable.tablePath,
                     closureTableAlias,
                     joinCondition,
                 )
@@ -390,7 +420,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                     .whereInIds(this.metadata.getEntityIdMap(entity))
 
                 if (
-                    DriverUtils.isSQLiteFamily(this.manager.connection.driver)
+                    DriverUtils.isSQLiteFamily(this.manager.dataSource.driver)
                 ) {
                     return `${subQuery.getQuery()} LIKE ${alias}.${
                         this.metadata.materializedPathColumn!.propertyPath
@@ -407,27 +437,10 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     }
 
     /**
-     * Extends tree repository with provided functions.
-     */
-    extend<CustomRepository>(
-        custom: CustomRepository &
-            ThisType<TreeRepository<Entity> & CustomRepository>,
-    ): TreeRepository<Entity> & CustomRepository {
-        const thisRepo = this.constructor as new (...args: any[]) => typeof this
-        const { target, manager, queryRunner } = this
-        const cls = new (class extends thisRepo {})(
-            target,
-            manager,
-            queryRunner,
-        )
-        Object.assign(cls, custom)
-        return cls as any
-    }
-
-    /**
      * Moves entity to the children of then given entity.
      *
     move(entity: Entity, to: Entity): Promise<void> {
         return Promise.resolve();
-    } */
+    }
+     */
 }

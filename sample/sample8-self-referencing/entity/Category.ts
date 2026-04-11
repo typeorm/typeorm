@@ -18,38 +18,34 @@ export class Category {
     @Column()
     name: string
 
-    @OneToOne((type) => Category, (category) => category.oneInverseCategory, {
+    @OneToOne(() => Category, (category) => category.oneInverseCategory, {
         cascade: true,
     })
     @JoinColumn()
     oneCategory: Category
 
-    @OneToOne((type) => Category, (category) => category.oneCategory, {
+    @OneToOne(() => Category, (category) => category.oneCategory, {
         cascade: true,
     })
     oneInverseCategory: Category
 
-    @ManyToOne((type) => Category, (category) => category.oneManyCategories, {
+    @ManyToOne(() => Category, (category) => category.oneManyCategories, {
         cascade: true,
     })
     oneManyCategory: Category
 
-    @OneToMany((type) => Category, (category) => category.oneManyCategory, {
+    @OneToMany(() => Category, (category) => category.oneManyCategory, {
         cascade: true,
     })
     oneManyCategories: Category[]
 
-    @ManyToMany(
-        (type) => Category,
-        (category) => category.manyInverseCategories,
-        {
-            cascade: true,
-        },
-    )
+    @ManyToMany(() => Category, (category) => category.manyInverseCategories, {
+        cascade: true,
+    })
     @JoinTable()
     manyCategories: Category[]
 
-    @ManyToMany((type) => Category, (category) => category.manyCategories, {
+    @ManyToMany(() => Category, (category) => category.manyCategories, {
         cascade: true,
     })
     manyInverseCategories: Category[]

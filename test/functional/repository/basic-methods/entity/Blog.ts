@@ -16,7 +16,7 @@ export class Blog {
     @Column()
     text: string
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 

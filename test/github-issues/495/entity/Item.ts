@@ -12,7 +12,7 @@ export class Item {
     @PrimaryGeneratedColumn()
     postId: number
 
-    @OneToOne((type) => User, (users) => users.userId)
+    @OneToOne(() => User, (users) => users.userId)
     @JoinColumn({ name: "userId" })
     userData: User
 

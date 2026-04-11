@@ -18,16 +18,16 @@ export class Post {
     @Column()
     title: string
 
-    @OneToMany((type) => Photo, (photo) => photo.post)
+    @OneToMany(() => Photo, (photo) => photo.post)
     photos: Photo[]
 
-    @ManyToOne((type) => User)
+    @ManyToOne(() => User)
     user: User
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters: Counters
 }

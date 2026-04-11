@@ -1,8 +1,8 @@
-import { EventListenerType } from "./types/EventListenerTypes"
-import { EntityListenerMetadataArgs } from "../metadata-args/EntityListenerMetadataArgs"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { EntityMetadata } from "./EntityMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { EventListenerType } from "./types/EventListenerTypes"
+import type { EntityListenerMetadataArgs } from "../metadata-args/EntityListenerMetadataArgs"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
 
 /**
  * This metadata contains all information about entity's listeners.
@@ -60,6 +60,8 @@ export class EntityListenerMetadata {
 
     /**
      * Checks if entity listener is allowed to be executed on the given entity.
+     *
+     * @param entity
      */
     isAllowed(entity: ObjectLiteral) {
         // todo: create in entity metadata method like isInherited?
@@ -73,10 +75,34 @@ export class EntityListenerMetadata {
 
     /**
      * Executes listener method of the given entity.
+     *
+     * @param entity
      */
     execute(entity: ObjectLiteral) {
-        if (!this.embeddedMetadata) return entity[this.propertyName]()
+        // Check if the Embedded Metadata does not exist
+        if (!this.embeddedMetadata) {
+            // Get the Entity's Method
+            const entityMethod = entity[this.propertyName]
 
+            // Check if the Entity Method does not exist
+            if (!entityMethod)
+                throw new Error(
+                    `Entity listener method "${this.propertyName}" does not exist in entity "${entity.constructor.name}".`,
+                )
+
+            // Check if the Entity Method is not a function
+            if (typeof entityMethod !== "function")
+                throw new Error(
+                    `Entity listener method "${this.propertyName}" in entity "${
+                        entity.constructor.name
+                    }" must be a function but got "${typeof entityMethod}".`,
+                )
+
+            // Call and return the Entity Method
+            return entityMethod.call(entity)
+        }
+
+        // Call the Embedded Method
         this.callEntityEmbeddedMethod(
             entity,
             this.embeddedMetadata.propertyPath.split("."),
@@ -89,6 +115,9 @@ export class EntityListenerMetadata {
 
     /**
      * Calls embedded entity listener method no matter how nested it is.
+     *
+     * @param entity
+     * @param propertyPaths
      */
     protected callEntityEmbeddedMethod(
         entity: ObjectLiteral,

@@ -1,11 +1,11 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { SaveOptions } from "../repository/SaveOptions"
-import { RemoveOptions } from "../repository/RemoveOptions"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { SaveOptions } from "../repository/SaveOptions"
+import type { RemoveOptions } from "../repository/RemoveOptions"
 import { MustBeEntityError } from "../error/MustBeEntityError"
 import { SubjectExecutor } from "./SubjectExecutor"
 import { CannotDetermineEntityError } from "../error/CannotDetermineEntityError"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { DataSource } from "../data-source/DataSource"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { DataSource } from "../data-source/DataSource"
 import { Subject } from "./Subject"
 import { OneToManySubjectBuilder } from "./subject-builder/OneToManySubjectBuilder"
 import { OneToOneInverseSideSubjectBuilder } from "./subject-builder/OneToOneInverseSideSubjectBuilder"
@@ -23,7 +23,7 @@ export class EntityPersistExecutor {
     // -------------------------------------------------------------------------
 
     constructor(
-        protected connection: DataSource,
+        protected dataSource: DataSource,
         protected queryRunner: QueryRunner | undefined,
         protected mode: "save" | "remove" | "soft-remove" | "recover",
         protected target: Function | string | undefined,
@@ -49,11 +49,11 @@ export class EntityPersistExecutor {
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
         const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
 
         // save data in the query runner - this is useful functionality to share data from outside of the world
         // with third classes - like subscribers and listener methods
-        let oldQueryRunnerData = queryRunner.data
+        const oldQueryRunnerData = queryRunner.data
         if (this.options && this.options.data) {
             queryRunner.data = this.options.data
         }
@@ -75,30 +75,13 @@ export class EntityPersistExecutor {
 
                     // create subjects for all entities we received for the persistence
                     entities.forEach((entity) => {
-                        const entityTarget = this.target
-                            ? this.target
-                            : entity.constructor
+                        const entityTarget = this.target ?? entity.constructor
                         if (entityTarget === Object)
                             throw new CannotDetermineEntityError(this.mode)
 
-                        let metadata = this.connection.getMetadata(entityTarget)
-
-                        // Check for single table inheritance and find the correct metadata in that case.
-                        // Goal is to use the correct discriminator as we could have a repository
-                        // for an (abstract) base class and thus the target would not match.
-                        if (
-                            metadata.inheritancePattern === "STI" &&
-                            metadata.childEntityMetadatas.length > 0
-                        ) {
-                            const matchingChildMetadata =
-                                metadata.childEntityMetadatas.find(
-                                    (meta) =>
-                                        entity.constructor === meta.target,
-                                )
-                            if (matchingChildMetadata) {
-                                metadata = matchingChildMetadata
-                            }
-                        }
+                        const metadata = this.dataSource
+                            .getMetadata(entityTarget)
+                            .findInheritanceMetadata(entity)
 
                         subjects.push(
                             new Subject({
@@ -181,7 +164,10 @@ export class EntityPersistExecutor {
             try {
                 // open transaction if its not opened yet
                 if (!queryRunner.isTransactionActive) {
-                    if (!this.options || this.options.transaction !== false) {
+                    if (
+                        this.dataSource.driver.transactionSupport !== "none" &&
+                        (!this.options || this.options.transaction !== false)
+                    ) {
                         // start transaction until it was not explicitly disabled
                         isTransactionStartedByUs = true
                         await queryRunner.startTransaction()

@@ -1,15 +1,17 @@
-import { ColumnType } from "../driver/types/ColumnTypes"
-import { EntityMetadata } from "./EntityMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
-import { RelationMetadata } from "./RelationMetadata"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { ColumnMetadataArgs } from "../metadata-args/ColumnMetadataArgs"
-import { DataSource } from "../data-source/DataSource"
+import type { ColumnType } from "../driver/types/ColumnTypes"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { RelationMetadata } from "./RelationMetadata"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ColumnMetadataArgs } from "../metadata-args/ColumnMetadataArgs"
+import type { DataSource } from "../data-source/DataSource"
 import { OrmUtils } from "../util/OrmUtils"
-import { ValueTransformer } from "../decorator/options/ValueTransformer"
+import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
+import type { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
 
 /**
  * This metadata contains all information about entity's column.
@@ -30,7 +32,7 @@ export class ColumnMetadata {
     /**
      * Entity metadata where this column metadata is.
      *
-     * For example for @Column() name: string in Post, entityMetadata will be metadata of Post entity.
+     * For example for `@Column() name: string` in `Post`, `entityMetadata` will be metadata of `Post` entity.
      */
     entityMetadata: EntityMetadata
 
@@ -60,11 +62,6 @@ export class ColumnMetadata {
      * Type's length in the database.
      */
     length: string = ""
-
-    /**
-     * Type's display width in the database.
-     */
-    width?: number
 
     /**
      * Defines column character set.
@@ -123,6 +120,12 @@ export class ColumnMetadata {
     comment?: string
 
     /**
+     * Indicates if date values use UTC timezone.
+     * Only applies to "date" column type.
+     */
+    utc: boolean = false
+
+    /**
      * Default database value.
      */
     default?:
@@ -152,12 +155,6 @@ export class ColumnMetadata {
     scale?: number
 
     /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-     */
-    zerofill: boolean = false
-
-    /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
      */
     unsigned: boolean = false
@@ -176,12 +173,12 @@ export class ColumnMetadata {
     enumName?: string
 
     /**
-     * Generated column expression. Supports only in MySQL.
+     * Generated column expression.
      */
     asExpression?: string
 
     /**
-     * Generated column type. Supports only in MySQL.
+     * Generated column type.
      */
     generatedType?: "VIRTUAL" | "STORED"
 
@@ -239,6 +236,22 @@ export class ColumnMetadata {
     isVirtual: boolean = false
 
     /**
+     * Indicates if column is a virtual property. Virtual properties are not mapped to the entity.
+     * This property is used in tandem the virtual column decorator.
+     *
+     * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
+     */
+    isVirtualProperty: boolean = false
+
+    /**
+     * Query to be used to populate the column data. This query is used when generating the relational db script.
+     * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     *
+     * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
+     */
+    query?: (alias: string) => string
+
+    /**
      * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
      */
     isDiscriminator: boolean = false
@@ -278,6 +291,16 @@ export class ColumnMetadata {
      * and this property will contain reference to this column.
      */
     referencedColumn: ColumnMetadata | undefined
+
+    /**
+     * If this column is primary key then this specifies the name for it.
+     */
+    primaryKeyConstraintName?: string
+
+    /**
+     * If this column is foreign key then this specifies the name for it.
+     */
+    foreignKeyConstraintName?: string
 
     /**
      * Specifies a value transformer that is to be used to (un)marshal
@@ -324,7 +347,6 @@ export class ColumnMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
-        connection: DataSource
         entityMetadata: EntityMetadata
         embeddedMetadata?: EmbeddedMetadata
         referencedColumn?: ColumnMetadata
@@ -335,7 +357,9 @@ export class ColumnMetadata {
         materializedPath?: boolean
     }) {
         this.entityMetadata = options.entityMetadata
-        this.embeddedMetadata = options.embeddedMetadata!
+        const driver = this.entityMetadata.dataSource.driver
+
+        this.embeddedMetadata = options.embeddedMetadata
         this.referencedColumn = options.referencedColumn
         if (options.args.target) this.target = options.args.target
         if (options.args.propertyName)
@@ -347,7 +371,6 @@ export class ColumnMetadata {
             this.length = options.args.options.length
                 ? options.args.options.length.toString()
                 : ""
-        if (options.args.options.width) this.width = options.args.options.width
         if (options.args.options.charset)
             this.charset = options.args.options.charset
         if (options.args.options.collation)
@@ -363,10 +386,10 @@ export class ColumnMetadata {
             this.isSelect = options.args.options.select
         if (options.args.options.insert !== undefined)
             this.isInsert = options.args.options.insert
+        if (options.args.options.utc !== undefined)
+            this.utc = options.args.options.utc
         if (options.args.options.update !== undefined)
             this.isUpdate = options.args.options.update
-        if (options.args.options.readonly !== undefined)
-            this.isUpdate = !options.args.options.readonly
         if (options.args.options.comment)
             this.comment = options.args.options.comment
         if (options.args.options.default !== undefined)
@@ -380,10 +403,6 @@ export class ColumnMetadata {
             options.args.options.scale !== undefined
         )
             this.scale = options.args.options.scale
-        if (options.args.options.zerofill) {
-            this.zerofill = options.args.options.zerofill
-            this.unsigned = true // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-        }
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned
         if (options.args.options.precision !== null)
@@ -419,17 +438,24 @@ export class ColumnMetadata {
         if (options.args.options.enumName) {
             this.enumName = options.args.options.enumName
         }
+        if (options.args.options.primaryKeyConstraintName) {
+            this.primaryKeyConstraintName =
+                options.args.options.primaryKeyConstraintName
+        }
+        if (options.args.options.foreignKeyConstraintName) {
+            this.foreignKeyConstraintName =
+                options.args.options.foreignKeyConstraintName
+        }
         if (options.args.options.asExpression) {
             this.asExpression = options.args.options.asExpression
-            this.generatedType = options.args.options.generatedType
-                ? options.args.options.generatedType
-                : "VIRTUAL"
+            this.generatedType = options.args.options.generatedType ?? "VIRTUAL"
         }
         if (options.args.options.hstoreType)
             this.hstoreType = options.args.options.hstoreType
         if (options.args.options.array)
             this.isArray = options.args.options.array
         if (options.args.mode) {
+            this.isVirtualProperty = options.args.mode === "virtual-property"
             this.isVirtual = options.args.mode === "virtual"
             this.isTreeLevel = options.args.mode === "treeLevel"
             this.isCreateDate = options.args.mode === "createDate"
@@ -438,64 +464,55 @@ export class ColumnMetadata {
             this.isVersion = options.args.mode === "version"
             this.isObjectId = options.args.mode === "objectId"
         }
+        if (this.isVirtualProperty) {
+            this.isInsert = false
+            this.isUpdate = false
+        }
         if (options.args.options.transformer)
             this.transformer = options.args.options.transformer
         if (options.args.options.spatialFeatureType)
             this.spatialFeatureType = options.args.options.spatialFeatureType
         if (options.args.options.srid !== undefined)
             this.srid = options.args.options.srid
-        if (this.isTreeLevel)
-            this.type = options.connection.driver.mappedDataTypes.treeLevel
+        if ((options.args.options as VirtualColumnOptions).query)
+            this.query = (options.args.options as VirtualColumnOptions).query
+        if (this.isTreeLevel) this.type = driver.mappedDataTypes.treeLevel
         if (this.isCreateDate) {
-            if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.createDate
-            if (!this.default)
-                this.default = () =>
-                    options.connection.driver.mappedDataTypes.createDateDefault
+            if (!this.type) this.type = driver.mappedDataTypes.createDate
+            this.default ??= () => driver.mappedDataTypes.createDateDefault
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
                 options.args.options.precision === undefined &&
-                options.connection.driver.mappedDataTypes.createDatePrecision
+                driver.mappedDataTypes.createDatePrecision
             )
-                this.precision =
-                    options.connection.driver.mappedDataTypes.createDatePrecision
+                this.precision = driver.mappedDataTypes.createDatePrecision
         }
         if (this.isUpdateDate) {
-            if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.updateDate
-            if (!this.default)
-                this.default = () =>
-                    options.connection.driver.mappedDataTypes.updateDateDefault
-            if (!this.onUpdate)
-                this.onUpdate =
-                    options.connection.driver.mappedDataTypes.updateDateDefault
+            if (!this.type) this.type = driver.mappedDataTypes.updateDate
+            this.default ??= () => driver.mappedDataTypes.updateDateDefault
+            this.onUpdate ??= driver.mappedDataTypes.updateDateDefault
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
                 options.args.options.precision === undefined &&
-                options.connection.driver.mappedDataTypes.updateDatePrecision
+                driver.mappedDataTypes.updateDatePrecision
             )
-                this.precision =
-                    options.connection.driver.mappedDataTypes.updateDatePrecision
+                this.precision = driver.mappedDataTypes.updateDatePrecision
         }
         if (this.isDeleteDate) {
-            if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.deleteDate
+            if (!this.type) this.type = driver.mappedDataTypes.deleteDate
             if (!this.isNullable)
-                this.isNullable =
-                    options.connection.driver.mappedDataTypes.deleteDateNullable
+                this.isNullable = driver.mappedDataTypes.deleteDateNullable
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
                 options.args.options.precision === undefined &&
-                options.connection.driver.mappedDataTypes.deleteDatePrecision
+                driver.mappedDataTypes.deleteDatePrecision
             )
-                this.precision =
-                    options.connection.driver.mappedDataTypes.deleteDatePrecision
+                this.precision = driver.mappedDataTypes.deleteDatePrecision
         }
-        if (this.isVersion)
-            this.type = options.connection.driver.mappedDataTypes.version
+        if (this.isVersion) this.type = driver.mappedDataTypes.version
         if (options.closureType) this.closureType = options.closureType
         if (options.nestedSetLeft) this.isNestedSetLeft = options.nestedSetLeft
         if (options.nestedSetRight)
@@ -510,6 +527,9 @@ export class ColumnMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
+     *
+     * @param value
+     * @param useDatabaseName
      */
     createValueMap(value: any, useDatabaseName = false) {
         // extract column value from embeds of entity if column is in embedded
@@ -529,7 +549,7 @@ export class ColumnMetadata {
             const extractEmbeddedColumnValue = (
                 propertyNames: string[],
                 map: ObjectLiteral,
-            ): any => {
+            ) => {
                 const propertyName = propertyNames.shift()
                 if (propertyName) {
                     map[propertyName] = {}
@@ -576,12 +596,16 @@ export class ColumnMetadata {
      *
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
+     *
+     * @param entity
+     * @param options
+     * @param options.skipNulls
      */
     getEntityValueMap(
         entity: ObjectLiteral,
         options?: { skipNulls?: boolean },
     ): ObjectLiteral | undefined {
-        const returnNulls = false // options && options.skipNulls === false ? false : true; // todo: remove if current will not bring problems, uncomment if it will.
+        const returnNulls = false
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -590,7 +614,9 @@ export class ColumnMetadata {
             // { data: { information: { counters: { id: ... } } } } format
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = [...this.embeddedMetadata.parentPropertyNames]
+            const embeddedMetadataTree = [
+                ...this.embeddedMetadata.embeddedMetadataTree,
+            ]
             const isEmbeddedArray = this.embeddedMetadata.isArray
 
             // now need to access post[data][information][counters] to get column value from the counters
@@ -599,14 +625,14 @@ export class ColumnMetadata {
             // then { data: { information: { counters: [this.propertyName]: entity[data][information][counters][this.propertyName] } } }
             // this recursive function helps doing that
             const extractEmbeddedColumnValue = (
-                propertyNames: string[],
+                embeddedMetadataTree: EmbeddedMetadata[],
                 value: ObjectLiteral,
             ): ObjectLiteral => {
                 if (value === undefined) {
                     return {}
                 }
 
-                const propertyName = propertyNames.shift()
+                const embeddedMetadata = embeddedMetadataTree.at(0)
 
                 if (propertyName) {
                     //MongoDb embedded arrays need to be extracted with additional recursive calls. Otherwise, the arrays are not persisted
@@ -641,12 +667,22 @@ export class ColumnMetadata {
                             return { [propertyName]: submap };
                         }
                     }
+
+                    const submap = extractEmbeddedColumnValue(
+                        embeddedMetadataTree.slice(1),
+                        embeddedPropertyValue,
+                    )
+
+                    if (Object.keys(submap).length > 0) {
+                        return { [embeddedPropertyName]: submap }
+                    }
+
                     return {}
                 }
 
                 if (isEmbeddedArray && Array.isArray(value)) {
-                    return value.map((v) => ({
-                        [this.propertyName]: v[this.propertyName],
+                    return value.map((element) => ({
+                        [this.propertyName]: element[this.propertyName],
                     }))
                 }
 
@@ -659,7 +695,7 @@ export class ColumnMetadata {
 
                 return {}
             }
-            const map = extractEmbeddedColumnValue(propertyNames, entity)
+            const map = extractEmbeddedColumnValue(embeddedMetadataTree, entity)
 
             return Object.keys(map).length > 0 ? map : undefined
         } else {
@@ -667,7 +703,7 @@ export class ColumnMetadata {
             /**
              * Object.getOwnPropertyDescriptor checks if the relation is lazy, in which case value is a Promise
              * DO NOT use `entity[
-                this.relationMetadata.propertyName] instanceof Promise`, which will invoke property getter and make unwanted DB request
+             this.relationMetadata.propertyName] instanceof Promise`, which will invoke property getter and make unwanted DB request
              * refer: https://github.com/typeorm/typeorm/pull/8676#issuecomment-1049906331
              */
             if (
@@ -679,19 +715,29 @@ export class ColumnMetadata {
                 entity[this.relationMetadata.propertyName] &&
                 ObjectUtils.isObject(entity[this.relationMetadata.propertyName])
             ) {
-                const map = this.relationMetadata.joinColumns.reduce(
-                    (map, joinColumn) => {
-                        const value =
-                            joinColumn.referencedColumn!.getEntityValueMap(
-                                entity[this.relationMetadata!.propertyName],
-                            )
-                        if (value === undefined) return map
-                        return OrmUtils.mergeDeep(map, value)
-                    },
-                    {},
-                )
-                if (Object.keys(map).length > 0)
-                    return { [this.propertyName]: map }
+                if (this.relationMetadata.joinColumns.length > 1) {
+                    const map = this.relationMetadata.joinColumns.reduce(
+                        (map, joinColumn) => {
+                            const value =
+                                joinColumn.referencedColumn!.getEntityValueMap(
+                                    entity[this.relationMetadata!.propertyName],
+                                )
+                            if (value === undefined) return map
+                            return OrmUtils.mergeDeep(map, value)
+                        },
+                        {},
+                    )
+                    if (Object.keys(map).length > 0)
+                        return { [this.propertyName]: map }
+                } else {
+                    const value =
+                        this.relationMetadata.joinColumns[0].referencedColumn!.getEntityValue(
+                            entity[this.relationMetadata!.propertyName],
+                        )
+                    if (value) {
+                        return { [this.propertyName]: value }
+                    }
+                }
 
                 return undefined
             } else {
@@ -699,8 +745,9 @@ export class ColumnMetadata {
                     entity[this.propertyName] !== undefined &&
                     (returnNulls === false ||
                         entity[this.propertyName] !== null)
-                )
+                ) {
                     return { [this.propertyName]: entity[this.propertyName] }
+                }
 
                 return undefined
             }
@@ -710,12 +757,15 @@ export class ColumnMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
+     *
+     * @param entity
+     * @param transform
      */
     getEntityValue(
         entity: ObjectLiteral,
         transform: boolean = false,
     ): any | undefined {
-        if (entity === undefined || entity === null) return undefined
+        if (entity === undefined || entity === null) return entity
 
         // extract column value from embeddeds of entity if column is in embedded
         let value: any = undefined
@@ -755,7 +805,7 @@ export class ColumnMetadata {
                         relatedEntity &&
                         ObjectUtils.isObject(relatedEntity) &&
                         !InstanceChecker.isFindOperator(relatedEntity) &&
-                        !Buffer.isBuffer(relatedEntity)
+                        !isUint8Array(relatedEntity)
                     ) {
                         value =
                             this.referencedColumn.getEntityValue(relatedEntity)
@@ -767,7 +817,7 @@ export class ColumnMetadata {
                         !InstanceChecker.isFindOperator(
                             embeddedObject[this.propertyName],
                         ) &&
-                        !Buffer.isBuffer(embeddedObject[this.propertyName]) &&
+                        !isUint8Array(embeddedObject[this.propertyName]) &&
                         !(embeddedObject[this.propertyName] instanceof Date)
                     ) {
                         value = this.referencedColumn.getEntityValue(
@@ -796,7 +846,7 @@ export class ColumnMetadata {
                     ObjectUtils.isObject(relatedEntity) &&
                     !InstanceChecker.isFindOperator(relatedEntity) &&
                     !(typeof relatedEntity === "function") &&
-                    !Buffer.isBuffer(relatedEntity)
+                    !isUint8Array(relatedEntity)
                 ) {
                     value = this.referencedColumn.getEntityValue(relatedEntity)
                 } else if (
@@ -806,7 +856,7 @@ export class ColumnMetadata {
                         entity[this.propertyName],
                     ) &&
                     !(typeof entity[this.propertyName] === "function") &&
-                    !Buffer.isBuffer(entity[this.propertyName]) &&
+                    !isUint8Array(entity[this.propertyName]) &&
                     !(entity[this.propertyName] instanceof Date)
                 ) {
                     value = this.referencedColumn.getEntityValue(
@@ -833,6 +883,9 @@ export class ColumnMetadata {
     /**
      * Sets given entity's column value.
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
+     *
+     * @param entity
+     * @param value
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         if (this.embeddedMetadata) {
@@ -846,9 +899,8 @@ export class ColumnMetadata {
 
                 const embeddedMetadata = embeddedMetadatas.shift()
                 if (embeddedMetadata) {
-                    if (!map[embeddedMetadata.propertyName])
-                        map[embeddedMetadata.propertyName] =
-                            embeddedMetadata.create()
+                    map[embeddedMetadata.propertyName] ??=
+                        embeddedMetadata.create()
 
                     extractEmbeddedColumnValue(
                         embeddedMetadatas,
@@ -887,10 +939,16 @@ export class ColumnMetadata {
 
     /**
      * Compares given entity's column value with a given value.
+     *
+     * @param entity
+     * @param valueToCompareWith
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)
-        if (ObjectUtils.isObject(columnValue)) {
+        if (isUint8Array(columnValue) && isUint8Array(valueToCompareWith)) {
+            return areUint8ArraysEqual(columnValue, valueToCompareWith)
+        }
+        if (typeof columnValue?.equals === "function") {
             return columnValue.equals(valueToCompareWith)
         }
         return columnValue === valueToCompareWith
@@ -900,12 +958,12 @@ export class ColumnMetadata {
     // Builder Methods
     // ---------------------------------------------------------------------
 
-    build(connection: DataSource): this {
+    build(dataSource: DataSource): this {
         this.propertyPath = this.buildPropertyPath()
         this.propertyAliasName = this.propertyPath.replace(".", "_")
-        this.databaseName = this.buildDatabaseName(connection)
+        this.databaseName = this.buildDatabaseName(dataSource)
         this.databasePath = this.buildDatabasePath()
-        this.databaseNameWithoutPrefixes = connection.namingStrategy.columnName(
+        this.databaseNameWithoutPrefixes = dataSource.namingStrategy.columnName(
             this.propertyName,
             this.givenDatabaseName,
             [],
@@ -915,10 +973,7 @@ export class ColumnMetadata {
 
     protected buildPropertyPath(): string {
         let path = ""
-        if (
-            this.embeddedMetadata &&
-            this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (this.embeddedMetadata?.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + "."
 
         path += this.propertyName
@@ -939,10 +994,7 @@ export class ColumnMetadata {
 
     protected buildDatabasePath(): string {
         let path = ""
-        if (
-            this.embeddedMetadata &&
-            this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (this.embeddedMetadata?.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + "."
 
         path += this.databaseName
@@ -961,14 +1013,14 @@ export class ColumnMetadata {
         return path
     }
 
-    protected buildDatabaseName(connection: DataSource): string {
+    protected buildDatabaseName(dataSource: DataSource): string {
         let propertyNames = this.embeddedMetadata
             ? this.embeddedMetadata.parentPrefixes
             : []
-        if (connection.driver.options.type === "mongodb")
+        if (dataSource.driver.options.type === "mongodb")
             // we don't need to include embedded name for the mongodb column names
             propertyNames = []
-        return connection.namingStrategy.columnName(
+        return dataSource.namingStrategy.columnName(
             this.propertyName,
             this.givenDatabaseName,
             propertyNames,

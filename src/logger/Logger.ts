@@ -1,4 +1,4 @@
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Performs logging of the events in TypeORM.
@@ -48,4 +48,57 @@ export interface Logger {
         message: any,
         queryRunner?: QueryRunner,
     ): any
+}
+
+/**
+ * Log level.
+ */
+export type LogLevel =
+    | "query"
+    | "schema"
+    | "error"
+    | "warn"
+    | "info"
+    | "log"
+    | "migration"
+
+/**
+ * Log message.
+ */
+export type LogMessage = {
+    type?: LogMessageType
+    prefix?: string
+    message: string | number
+    format?: LogMessageFormat
+    parameters?: any[]
+    additionalInfo?: Record<string, any>
+}
+
+/**
+ * Log message format.
+ */
+export type LogMessageFormat = "sql"
+
+/**
+ * Log message type.
+ */
+export type LogMessageType =
+    | "log"
+    | "info"
+    | "warn"
+    | "error"
+    | "query"
+    | "query-error"
+    | "query-slow"
+    | "schema-build"
+    | "migration"
+
+/**
+ * Options for prepare log messages
+ */
+export type PrepareLogMessagesOptions = {
+    highlightSql: boolean
+    formatSql: boolean
+    appendParameterAsComment: boolean
+    addColonToPrefix: boolean
 }

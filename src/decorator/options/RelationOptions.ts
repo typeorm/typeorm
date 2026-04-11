@@ -1,6 +1,6 @@
-import { DeferrableType } from "../../metadata/types/DeferrableType"
-import { OnDeleteType } from "../../metadata/types/OnDeleteType"
-import { OnUpdateType } from "../../metadata/types/OnUpdateType"
+import type { DeferrableType } from "../../metadata/types/DeferrableType"
+import type { OnDeleteType } from "../../metadata/types/OnDeleteType"
+import type { OnUpdateType } from "../../metadata/types/OnUpdateType"
 
 /**
  * Describes all relation's options.
@@ -11,7 +11,9 @@ export interface RelationOptions {
      * If set to true then it means that related object can be allowed to be inserted or updated in the database.
      * You can separately restrict cascades to insertion or updation using following syntax:
      *
+     * @example
      * cascade: ["insert", "update", "remove", "soft-remove", "recover"] // include or exclude one of them
+     *
      */
     cascade?:
         | boolean
@@ -67,7 +69,10 @@ export interface RelationOptions {
     persistence?: boolean
 
     /**
-     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     * When a parent is saved (with cascading but) without a child row that still exists in database, this will control what shall happen to them.
+     * delete will remove these rows from database.
+     * nullify will remove the relation key.
+     * disable will keep the relation intact. Removal of related item is only possible through its own repo.
      */
-    orphanedRowAction?: "nullify" | "delete" | "soft-delete"
+    orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
 }

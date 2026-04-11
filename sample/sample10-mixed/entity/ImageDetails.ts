@@ -17,6 +17,6 @@ export class ImageDetails {
     @Column()
     comment: string
 
-    @OneToOne((type) => Image, (image) => image.details)
+    @OneToOne(() => Image, (image) => image.details)
     image: Image
 }

@@ -14,7 +14,7 @@ export class Counters {
     @Column()
     favorites: number
 
-    @OneToOne((type) => Category, (category) => category.post)
+    @OneToOne(() => Category, (category) => category.post)
     @JoinColumn()
     category: Category
 

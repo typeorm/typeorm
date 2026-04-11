@@ -1,0 +1,920 @@
+import "../../../utils/test-setup"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { expect } from "chai"
+import type { DataSource } from "../../../../src"
+import { In, IsNull, Raw } from "../../../../src"
+import { Category } from "./entity/Category"
+import { Post } from "./entity/Post"
+import { Tag } from "./entity/Tag"
+import { HeroImage } from "./entity/HeroImage"
+import { ExternalPost } from "./entity/ExternalPost"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
+
+describe("query builder > select", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category, Post, Tag, HeroImage, ExternalPost],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should append all entity mapped columns from main selection to select statement", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    "SELECT post.id AS post_id, " +
+                        "post.title AS post_title, " +
+                        "post.description AS post_description, " +
+                        "post.rating AS post_rating, " +
+                        "post.version AS post_version, " +
+                        "post.heroImageId AS post_heroImageId, " +
+                        "post.categoryId AS post_categoryId " +
+                        "FROM post post",
+                )
+            }),
+        ))
+
+    it("should append all entity mapped columns from main selection to SELECT DISTINCT statement", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .distinct()
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    "SELECT DISTINCT post.id AS post_id, " +
+                        "post.title AS post_title, " +
+                        "post.description AS post_description, " +
+                        "post.rating AS post_rating, " +
+                        "post.version AS post_version, " +
+                        "post.heroImageId AS post_heroImageId, " +
+                        "post.categoryId AS post_categoryId " +
+                        "FROM post post",
+                )
+            }),
+        ))
+
+    it("should append all entity mapped columns from both main selection and join selections to select statement", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .leftJoinAndSelect("category", "category")
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    "SELECT post.id AS post_id, " +
+                        "post.title AS post_title, " +
+                        "post.description AS post_description, " +
+                        "post.rating AS post_rating, " +
+                        "post.version AS post_version, " +
+                        "post.heroImageId AS post_heroImageId, " +
+                        "post.categoryId AS post_categoryId, " +
+                        "category.id AS category_id, " +
+                        "category.name AS category_name, " +
+                        "category.description AS category_description, " +
+                        "category.version AS category_version " +
+                        "FROM post post LEFT JOIN category category",
+                )
+            }),
+        ))
+
+    it("should append entity mapped columns from both main alias and join aliases to select statement", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .select("post.id")
+                    .addSelect("category.name")
+                    .leftJoin("category", "category")
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    "SELECT post.id AS post_id, " +
+                        "category.name AS category_name " +
+                        "FROM post post LEFT JOIN category category",
+                )
+            }),
+        ))
+
+    it("should append entity mapped columns to select statement, if they passed as array", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .select(["post.id", "post.title"])
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    "SELECT post.id AS post_id, post.title AS post_title FROM post post",
+                )
+            }),
+        ))
+
+    it("should append raw sql to select statement", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .select("COUNT(*) as cnt")
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal("SELECT COUNT(*) as cnt FROM post post")
+            }),
+        ))
+
+    it("should append raw sql and entity mapped column to select statement", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .select(["COUNT(*) as cnt", "post.title"])
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    "SELECT post.title AS post_title, COUNT(*) as cnt FROM post post",
+                )
+            }),
+        ))
+
+    it("should not create alias for selection, which is not entity mapped column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .select("post.name")
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal("SELECT post.name FROM post post")
+            }),
+        ))
+
+    describe("with relations and where clause", () => {
+        describe("many-to-one", () => {
+            it("should craft query with exact value", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        // For github issues #2707
+
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(Post, "post")
+                            .select("post.id")
+                            .leftJoin("post.category", "category_join")
+                            .where({
+                                category: {
+                                    name: "Foo",
+                                },
+                            })
+                            .getQueryAndParameters()
+
+                        expect(sql).to.equal(
+                            'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                                'LEFT JOIN "category" "category_join" ON "category_join"."id"="post"."categoryId" ' +
+                                'WHERE "category_join"."name" = ?',
+                        )
+
+                        expect(params).to.eql(["Foo"])
+                    }),
+                ))
+
+            it("should craft query with FindOperator", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(Post, "post")
+                            .select("post.id")
+                            .leftJoin("post.category", "category_join")
+                            .where({
+                                category: {
+                                    name: IsNull(),
+                                },
+                            })
+                            .getQueryAndParameters()
+
+                        expect(sql).to.equal(
+                            'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                                'LEFT JOIN "category" "category_join" ON "category_join"."id"="post"."categoryId" ' +
+                                'WHERE "category_join"."name" IS NULL',
+                        )
+
+                        expect(params).to.eql([])
+                    }),
+                ))
+
+            it("should craft query with Raw", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        // For github issue #6264
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(Post, "post")
+                            .select("post.id")
+                            .leftJoin("post.category", "category_join")
+                            .where({
+                                category: {
+                                    name: Raw(
+                                        (path) => `SOME_FUNCTION(${path})`,
+                                    ),
+                                },
+                            })
+                            .getQueryAndParameters()
+
+                        expect(sql).to.equal(
+                            'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                                'LEFT JOIN "category" "category_join" ON "category_join"."id"="post"."categoryId" ' +
+                                'WHERE SOME_FUNCTION("category_join"."name")',
+                        )
+
+                        expect(params).to.eql([])
+                    }),
+                ))
+        })
+
+        describe("one-to-many", () => {
+            it("should craft query with exact value", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(Category, "category")
+                            .select("category.id")
+                            .leftJoin("category.posts", "posts")
+                            .where({
+                                posts: {
+                                    id: 10,
+                                },
+                            })
+                            .getQueryAndParameters()
+                        expect(sql).to.equal(
+                            'SELECT "category"."id" AS "category_id" FROM "category" "category" ' +
+                                'LEFT JOIN "post" "posts" ON "posts"."categoryId"="category"."id" ' +
+                                'WHERE "posts"."id" = 10',
+                        )
+
+                        expect(params).to.eql([])
+                    }),
+                ))
+
+            it("should craft query with FindOperator", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(Category, "category")
+                            .select("category.id")
+                            .leftJoin("category.posts", "posts")
+                            .where({
+                                posts: {
+                                    id: IsNull(),
+                                },
+                            })
+                            .getQueryAndParameters()
+                        expect(sql).to.equal(
+                            'SELECT "category"."id" AS "category_id" FROM "category" "category" ' +
+                                'LEFT JOIN "post" "posts" ON "posts"."categoryId"="category"."id" ' +
+                                'WHERE "posts"."id" IS NULL',
+                        )
+
+                        expect(params).to.eql([])
+                    }),
+                ))
+        })
+
+        describe("many-to-many", () => {
+            it("should craft query with exact value", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(Post, "post")
+                            .select("post.id")
+                            .leftJoin("post.tags", "tags_join")
+                            .where({
+                                tags: {
+                                    name: "Foo",
+                                },
+                            })
+                            .getQueryAndParameters()
+                        expect(sql).to.equal(
+                            'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                                'LEFT JOIN "post_tags_tag" "post_tags_join" ON "post_tags_join"."postId"="post"."id" ' +
+                                'LEFT JOIN "tag" "tags_join" ON "tags_join"."id"="post_tags_join"."tagId" ' +
+                                'WHERE "tags_join"."name" = ?',
+                        )
+
+                        expect(params).to.eql(["Foo"])
+                    }),
+                ))
+
+            it("should craft query with FindOperator", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(Post, "post")
+                            .select("post.id")
+                            .leftJoin("post.tags", "tags_join")
+                            .where({
+                                tags: {
+                                    name: IsNull(),
+                                },
+                            })
+                            .getQueryAndParameters()
+                        expect(sql).to.equal(
+                            'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                                'LEFT JOIN "post_tags_tag" "post_tags_join" ON "post_tags_join"."postId"="post"."id" ' +
+                                'LEFT JOIN "tag" "tags_join" ON "tags_join"."id"="post_tags_join"."tagId" ' +
+                                'WHERE "tags_join"."name" IS NULL',
+                        )
+
+                        expect(params).to.eql([])
+                    }),
+                ))
+        })
+
+        describe("one-to-one", () => {
+            it("should craft query with exact value", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(Post, "post")
+                            .select("post.id")
+                            .leftJoin("post.heroImage", "hero_join")
+                            .where({
+                                heroImage: {
+                                    url: "Foo",
+                                },
+                            })
+                            .getQueryAndParameters()
+
+                        expect(sql).to.equal(
+                            'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                                'LEFT JOIN "hero_image" "hero_join" ON "hero_join"."id"="post"."heroImageId" ' +
+                                'WHERE "hero_join"."url" = ?',
+                        )
+
+                        expect(params).to.eql(["Foo"])
+                    }),
+                ))
+
+            it("should craft query with FindOperator", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(Post, "post")
+                            .select("post.id")
+                            .leftJoin("post.heroImage", "hero_join")
+                            .where({
+                                heroImage: {
+                                    url: IsNull(),
+                                },
+                            })
+                            .getQueryAndParameters()
+
+                        expect(sql).to.equal(
+                            'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                                'LEFT JOIN "hero_image" "hero_join" ON "hero_join"."id"="post"."heroImageId" ' +
+                                'WHERE "hero_join"."url" IS NULL',
+                        )
+
+                        expect(params).to.eql([])
+                    }),
+                ))
+        })
+
+        describe("deeply nested relations", () => {
+            it("should craft query with exact value", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        // For github issue #7251
+
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(HeroImage, "hero")
+                            .leftJoin("hero.post", "posts")
+                            .leftJoin("posts.category", "category")
+                            .where({
+                                post: {
+                                    category: {
+                                        name: "Foo",
+                                    },
+                                },
+                            })
+                            .getQueryAndParameters()
+
+                        expect(sql).to.equal(
+                            'SELECT "hero"."id" AS "hero_id", "hero"."url" AS "hero_url" ' +
+                                'FROM "hero_image" "hero" ' +
+                                'LEFT JOIN "post" "posts" ON "posts"."heroImageId"="hero"."id"  ' +
+                                'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ' +
+                                'WHERE "category"."name" = ?',
+                        )
+
+                        expect(params).to.eql(["Foo"])
+                    }),
+                ))
+
+            it("should craft query with FindOperator", () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        // For github issue #4906
+
+                        const [sql, params] = dataSource
+                            .createQueryBuilder(HeroImage, "hero")
+                            .leftJoin("hero.post", "posts")
+                            .leftJoin("posts.category", "category")
+                            .where({
+                                post: {
+                                    category: {
+                                        name: In(["Foo", "Bar", "Baz"]),
+                                    },
+                                },
+                            })
+                            .getQueryAndParameters()
+
+                        expect(sql).to.equal(
+                            'SELECT "hero"."id" AS "hero_id", "hero"."url" AS "hero_url" ' +
+                                'FROM "hero_image" "hero" ' +
+                                'LEFT JOIN "post" "posts" ON "posts"."heroImageId"="hero"."id"  ' +
+                                'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ' +
+                                'WHERE "category"."name" IN (?, ?, ?)',
+                        )
+
+                        expect(params).to.eql(["Foo", "Bar", "Baz"])
+                    }),
+                ))
+        })
+    })
+
+    describe("query execution and retrieval", () => {
+        it("should return a single entity for getOne when found", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save({
+                        id: "1",
+                        title: "Hello",
+                        description: "World",
+                        rating: 0,
+                    })
+
+                    const entity = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .where("post.id = :id", { id: "1" })
+                        .getOneOrFail()
+
+                    expect(entity).not.to.be.null
+                    expect(entity.id).to.equal("1")
+                    expect(entity.title).to.equal("Hello")
+                }),
+            ))
+
+        it("should return undefined for getOne when not found", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save({
+                        id: "1",
+                        title: "Hello",
+                        description: "World",
+                        rating: 0,
+                    })
+
+                    const entity = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .where("post.id = :id", { id: "2" })
+                        .getOne()
+
+                    expect(entity).to.be.null
+                }),
+            ))
+
+        it("should return a single entity for getOneOrFail when found", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save({
+                        id: "1",
+                        title: "Hello",
+                        description: "World",
+                        rating: 0,
+                    })
+
+                    const entity = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .where("post.id = :id", { id: "1" })
+                        .getOneOrFail()
+
+                    expect(entity.id).to.equal("1")
+                    expect(entity.title).to.equal("Hello")
+                }),
+            ))
+
+        it("should throw an Error for getOneOrFail when not found", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save({
+                        id: "1",
+                        title: "Hello",
+                        description: "World",
+                        rating: 0,
+                    })
+
+                    await expect(
+                        dataSource
+                            .createQueryBuilder(Post, "post")
+                            .where("post.id = :id", { id: "2" })
+                            .getOneOrFail(),
+                    ).to.be.rejectedWith("")
+                }),
+            ))
+    })
+
+    describe("where-in-ids", () => {
+        it("should create expected query with simple primary keys", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const [sql, params] = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select("post.id")
+                        .whereInIds(["1", "2", "5", "9"])
+                        .disableEscaping()
+                        .getQueryAndParameters()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id FROM post post WHERE post.id IN (?, ?, ?, ?)",
+                    )
+                    expect(params).to.eql(["1", "2", "5", "9"])
+                }),
+            ))
+
+        it("should create expected query with composite primary keys", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const [sql, params] = dataSource
+                        .createQueryBuilder(ExternalPost, "post")
+                        .select("post.id")
+                        .whereInIds([
+                            { outlet: "foo", id: "1" },
+                            { outlet: "bar", id: "2" },
+                            { outlet: "baz", id: "5" },
+                        ])
+                        .disableEscaping()
+                        .getQueryAndParameters()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id FROM external_post post WHERE " +
+                            "(((post.outlet = ? AND post.id = ?)) OR " +
+                            "((post.outlet = ? AND post.id = ?)) OR " +
+                            "((post.outlet = ? AND post.id = ?)))",
+                    )
+                    expect(params).to.eql(["foo", "1", "bar", "2", "baz", "5"])
+                }),
+            ))
+
+        it("should create expected query with composite primary keys with missing value", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const [sql, params] = dataSource
+                        .createQueryBuilder(ExternalPost, "post")
+                        .select("post.id")
+                        .whereInIds([
+                            { outlet: "foo", id: "1" },
+                            { outlet: "bar", id: "2" },
+                            { id: "5" },
+                        ])
+                        .disableEscaping()
+                        .getQueryAndParameters()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id FROM external_post post WHERE " +
+                            "(((post.outlet = ? AND post.id = ?)) OR " +
+                            "((post.outlet = ? AND post.id = ?)) OR " +
+                            "(post.id = ?))",
+                    )
+                    expect(params).to.eql(["foo", "1", "bar", "2", "5"])
+                }),
+            ))
+    })
+
+    it("Support max execution time", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // MAX_EXECUTION_TIME supports only in MySQL
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .maxExecutionTime(1000)
+                    .getSql()
+
+                expect(sql).contains("SELECT /*+ MAX_EXECUTION_TIME(1000) */")
+            }),
+        ))
+
+    it("Support using certain index", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // `USE INDEX` is only supported in MySQL
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    return
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex("my_index")
+                    .getSql()
+
+                expect(sql).contains("FROM post USE INDEX (my_index)")
+            }),
+        ))
+
+    describe("limit and offset handling", () => {
+        it("should generate LIMIT 0 when limit is set to 0", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .limit(0)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id, " +
+                            "post.title AS post_title, " +
+                            "post.description AS post_description, " +
+                            "post.rating AS post_rating, " +
+                            "post.version AS post_version, " +
+                            "post.heroImageId AS post_heroImageId, " +
+                            "post.categoryId AS post_categoryId " +
+                            "FROM post post LIMIT 0",
+                    )
+                }),
+            ))
+
+        it("should generate LIMIT 0 OFFSET 5 when limit is 0 and offset is 5", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .limit(0)
+                        .offset(5)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id, " +
+                            "post.title AS post_title, " +
+                            "post.description AS post_description, " +
+                            "post.rating AS post_rating, " +
+                            "post.version AS post_version, " +
+                            "post.heroImageId AS post_heroImageId, " +
+                            "post.categoryId AS post_categoryId " +
+                            "FROM post post LIMIT 0 OFFSET 5",
+                    )
+                }),
+            ))
+
+        it("should generate OFFSET 0 when offset is set to 0", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .limit(10)
+                        .offset(0)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id, " +
+                            "post.title AS post_title, " +
+                            "post.description AS post_description, " +
+                            "post.rating AS post_rating, " +
+                            "post.version AS post_version, " +
+                            "post.heroImageId AS post_heroImageId, " +
+                            "post.categoryId AS post_categoryId " +
+                            "FROM post post LIMIT 10 OFFSET 0",
+                    )
+                }),
+            ))
+
+        it("should work correctly with non-zero limits and offsets", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .limit(5)
+                        .offset(10)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.contain("LIMIT 5 OFFSET 10")
+                }),
+            ))
+
+        it("should handle limit(0) with offset(0)", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .limit(0)
+                        .offset(0)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.contain("LIMIT 0 OFFSET 0")
+                }),
+            ))
+
+        it("should generate LIMIT 0 when take is set to 0 without joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .take(0)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id, " +
+                            "post.title AS post_title, " +
+                            "post.description AS post_description, " +
+                            "post.rating AS post_rating, " +
+                            "post.version AS post_version, " +
+                            "post.heroImageId AS post_heroImageId, " +
+                            "post.categoryId AS post_categoryId " +
+                            "FROM post post LIMIT 0",
+                    )
+                }),
+            ))
+
+        it("should generate OFFSET 0 when skip is set to 0 without joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .take(10)
+                        .skip(0)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id, " +
+                            "post.title AS post_title, " +
+                            "post.description AS post_description, " +
+                            "post.rating AS post_rating, " +
+                            "post.version AS post_version, " +
+                            "post.heroImageId AS post_heroImageId, " +
+                            "post.categoryId AS post_categoryId " +
+                            "FROM post post LIMIT 10 OFFSET 0",
+                    )
+                }),
+            ))
+
+        it("should return empty array when limit(0) is used in actual query execution", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    // Insert some test data
+                    await dataSource.getRepository(Post).save([
+                        {
+                            id: "1",
+                            title: "Post 1",
+                            description: "Description 1",
+                            rating: 1,
+                        },
+                        {
+                            id: "2",
+                            title: "Post 2",
+                            description: "Description 2",
+                            rating: 2,
+                        },
+                    ])
+
+                    const posts = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .limit(0)
+                        .getMany()
+
+                    expect(posts).to.be.an("array")
+                    expect(posts.length).to.equal(0)
+                }),
+            ))
+
+        it("should return empty array when take(0) is used in actual query execution without joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    // Insert some test data
+                    await dataSource.getRepository(Post).save([
+                        {
+                            id: "1",
+                            title: "Post 1",
+                            description: "Description 1",
+                            rating: 1,
+                        },
+                        {
+                            id: "2",
+                            title: "Post 2",
+                            description: "Description 2",
+                            rating: 2,
+                        },
+                    ])
+
+                    const posts = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .take(0)
+                        .getMany()
+
+                    expect(posts).to.be.an("array")
+                    expect(posts.length).to.equal(0)
+                }),
+            ))
+    })
+
+    describe("column order in select statement", () => {
+        it("should return columns in the order they were specified in select statement", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const query1 = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select("post.description", "post_description")
+                        .addSelect("post.title", "post_title")
+                        .addSelect("post.id", "post_id")
+                        .disableEscaping()
+                        .getQuery()
+
+                    expect(query1).to.equal(
+                        "SELECT post.description AS post_description, " +
+                            "post.title AS post_title, " +
+                            "post.id AS post_id " +
+                            "FROM post post",
+                    )
+
+                    const query2 = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select(["post.description", "post.title", "post.id"])
+                        .disableEscaping()
+                        .getQuery()
+
+                    expect(query2).to.equal(
+                        "SELECT post.description AS post_description, " +
+                            "post.title AS post_title, " +
+                            "post.id AS post_id " +
+                            "FROM post post",
+                    )
+                }),
+            ))
+
+        it("works with joins and subqueries", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sub = dataSource
+                        .createQueryBuilder(Category, "c")
+                        .select("c.id")
+                        .where("c.name = :name", { name: "Cat" })
+                        .disableEscaping()
+                        .getSql()
+                    expect(sub).to.equal(
+                        "SELECT c.id AS c_id FROM category c WHERE c.name = ?",
+                    )
+
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select("post")
+                        .addSelect("category.description")
+                        .addSelect("category.name")
+                        .leftJoin("post.category", "category")
+                        .where(`post.categoryId IN (${sub})`)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id, " +
+                            "post.title AS post_title, " +
+                            "post.description AS post_description, " +
+                            "post.rating AS post_rating, " +
+                            "post.version AS post_version, " +
+                            "post.heroImageId AS post_heroImageId, " +
+                            "post.categoryId AS post_categoryId, " +
+                            "category.description AS category_description, " +
+                            "category.name AS category_name " +
+                            "FROM post post " +
+                            "LEFT JOIN category category ON category.id=post.categoryId " +
+                            "WHERE post.categoryId IN (" +
+                            "SELECT c.id AS c_id FROM category c WHERE c.name = ?" +
+                            ")",
+                    )
+                }),
+            ))
+    })
+})

@@ -1,15 +1,17 @@
-import { DefaultAuthentication } from "./authentication/DefaultAuthentication"
-import { AzureActiveDirectoryAccessTokenAuthentication } from "./authentication/AzureActiveDirectoryAccessTokenAuthentication"
-import { AzureActiveDirectoryMsiAppServiceAuthentication } from "./authentication/AzureActiveDirectoryMsiAppServiceAuthentication"
-import { AzureActiveDirectoryMsiVmAuthentication } from "./authentication/AzureActiveDirectoryMsiVmAuthentication"
-import { AzureActiveDirectoryPasswordAuthentication } from "./authentication/AzureActiveDirectoryPasswordAuthentication"
-import { AzureActiveDirectoryServicePrincipalSecret } from "./authentication/AzureActiveDirectoryServicePrincipalSecret"
-import { NtlmAuthentication } from "./authentication/NtlmAuthentication"
+import type { DefaultAuthentication } from "./authentication/DefaultAuthentication"
+import type { AzureActiveDirectoryAccessTokenAuthentication } from "./authentication/AzureActiveDirectoryAccessTokenAuthentication"
+import type { AzureActiveDirectoryDefaultAuthentication } from "./authentication/AzureActiveDirectoryDefaultAuthentication"
+import type { AzureActiveDirectoryMsiAppServiceAuthentication } from "./authentication/AzureActiveDirectoryMsiAppServiceAuthentication"
+import type { AzureActiveDirectoryMsiVmAuthentication } from "./authentication/AzureActiveDirectoryMsiVmAuthentication"
+import type { AzureActiveDirectoryPasswordAuthentication } from "./authentication/AzureActiveDirectoryPasswordAuthentication"
+import type { AzureActiveDirectoryServicePrincipalSecret } from "./authentication/AzureActiveDirectoryServicePrincipalSecret"
+import type { NtlmAuthentication } from "./authentication/NtlmAuthentication"
 
 export type SqlServerConnectionCredentialsAuthenticationOptions =
     | DefaultAuthentication
     | NtlmAuthentication
     | AzureActiveDirectoryAccessTokenAuthentication
+    | AzureActiveDirectoryDefaultAuthentication
     | AzureActiveDirectoryMsiAppServiceAuthentication
     | AzureActiveDirectoryMsiVmAuthentication
     | AzureActiveDirectoryPasswordAuthentication
@@ -20,7 +22,7 @@ export type SqlServerConnectionCredentialsAuthenticationOptions =
  */
 export interface SqlServerConnectionCredentialsOptions {
     /**
-     * Connection url where perform connection to.
+     * Connection url where the connection is performed.
      */
     readonly url?: string
 
@@ -54,12 +56,4 @@ export interface SqlServerConnectionCredentialsOptions {
      * It overrides username and password, when passed.
      */
     readonly authentication?: SqlServerConnectionCredentialsAuthenticationOptions
-
-    /**
-     * Once you set domain, driver will connect to SQL Server using domain login.
-     * @see SqlServerConnectionCredentialsOptions.authentication
-     * @see NtlmAuthentication
-     * @deprecated
-     */
-    readonly domain?: string
 }

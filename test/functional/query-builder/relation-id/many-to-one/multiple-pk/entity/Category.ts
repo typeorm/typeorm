@@ -21,10 +21,10 @@ export class Category {
     @Column()
     isRemoved: boolean = false
 
-    @OneToMany((type) => Post, (post) => post.category)
+    @OneToMany(() => Post, (post) => post.category)
     posts: Post[]
 
-    @ManyToOne((type) => Image, (image) => image.categories)
+    @ManyToOne(() => Image, (image) => image.categories)
     @JoinTable()
     image: Image
 

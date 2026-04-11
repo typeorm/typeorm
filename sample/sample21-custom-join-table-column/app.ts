@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { Category } from "./entity/Category"
@@ -19,18 +20,18 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
-        let author = new Author()
+        const author = new Author()
         author.name = "Umed"
 
-        let category1 = new Category()
+        const category1 = new Category()
         category1.name = "Category #1"
 
-        let category2 = new Category()
+        const category2 = new Category()
         category2.name = "Category #2"
 
-        let post = new Post()
+        const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.author = author
@@ -38,15 +39,12 @@ dataSource.initialize().then(
 
         postRepository
             .save(post)
-            .then((post) => {
+            .then(() => {
                 console.log("Post has been saved. Lets load it now.")
                 return postRepository.find({
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            categories: "post.categories",
-                            author: "post.user", // note that table column is used, not object property
-                        },
+                    relations: {
+                        categories: true,
+                        author: true,
                     },
                 })
             })

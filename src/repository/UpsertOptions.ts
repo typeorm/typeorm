@@ -1,11 +1,28 @@
+import type { InsertOrUpdateOptions } from "../query-builder/InsertOrUpdateOptions"
+import type { UpsertType } from "../driver/types/UpsertType"
+import type { ReturningOption } from "../query-builder/ReturningOption"
+
 /**
  * Special options passed to Repository#upsert
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface UpsertOptions<Entity> {
-    conflictPaths: string[]
+export interface UpsertOptions<Entity> extends InsertOrUpdateOptions {
+    conflictPaths: string[] | { [P in keyof Entity]?: true }
+
     /**
      * If true, postgres will skip the update if no values would be changed (reduces writes)
      */
     skipUpdateIfNoValuesChanged?: boolean
+
+    /**
+     * Define the type of upsert to use (currently, CockroachDB only).
+     *
+     * If none provided, it will use the default for the database (first one in the list)
+     */
+    upsertType?: UpsertType
+
+    /**
+     * Allows selecting custom RETURNING / OUTPUT clause.
+     * Works only on drivers with returning support.
+     */
+    returning?: ReturningOption
 }

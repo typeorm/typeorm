@@ -1,6 +1,0 @@
-coverage:
-  precision: 2
-  round: down
-  range: "40...80"
-
-comment: off

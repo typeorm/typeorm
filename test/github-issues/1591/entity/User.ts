@@ -15,7 +15,7 @@ export class User {
     @Column()
     name: string
 
-    @ManyToMany((type) => Photo)
+    @ManyToMany(() => Photo)
     @JoinTable()
     photos: Photo[]
 }

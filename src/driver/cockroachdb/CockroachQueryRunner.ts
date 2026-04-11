@@ -1,30 +1,33 @@
-import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { Table } from "../../schema-builder/table/Table"
-import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { CockroachDriver } from "./CockroachDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { QueryFailedError } from "../../error/QueryFailedError"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
-import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
-import { OrmUtils } from "../../util/OrmUtils"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
-import { ColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
-import { MetadataTableType } from "../types/MetadataTableType"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import type { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryResult } from "../../query-runner/QueryResult"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import { Table } from "../../schema-builder/table/Table"
+import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import { TableIndex } from "../../schema-builder/table/TableIndex"
+import { TableUnique } from "../../schema-builder/table/TableUnique"
+import { View } from "../../schema-builder/view/View"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import { Query } from "../Query"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
+import { MetadataTableType } from "../types/MetadataTableType"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import { CockroachDriver } from "./CockroachDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -54,17 +57,26 @@ export class CockroachQueryRunner
     /**
      * Special callback provided by a driver used to release a created connection.
      */
-    protected releaseCallback: Function
+    protected releaseCallback?: (err: any) => void
 
     /**
      * Stores all executed queries to be able to run them again if transaction fails.
      */
-    protected queries: { query: string; parameters?: any[] }[] = []
+    protected queries: {
+        query: string
+        parameters?: any[]
+        useStructuredResult: boolean
+    }[] = []
 
     /**
      * Indicates if running queries must be stored
      */
     protected storeQueries: boolean = false
+
+    /**
+     * Current number of transaction retries in case of 40001 error.
+     */
+    protected transactionRetries: number = 0
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -73,7 +85,7 @@ export class CockroachQueryRunner
     constructor(driver: CockroachDriver, mode: ReplicationMode) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.mode = mode
         this.broadcaster = new Broadcaster(this)
     }
@@ -99,7 +111,18 @@ export class CockroachQueryRunner
                 .then(([connection, release]: any[]) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
-                    this.releaseCallback = release
+
+                    const onErrorCallback = (err: Error) =>
+                        this.releaseConnection(err)
+                    this.releaseCallback = (err?: Error) => {
+                        this.databaseConnection.removeListener(
+                            "error",
+                            onErrorCallback,
+                        )
+                        release(err)
+                    }
+                    this.databaseConnection.on("error", onErrorCallback)
+
                     return this.databaseConnection
                 })
         } else {
@@ -109,7 +132,18 @@ export class CockroachQueryRunner
                 .then(([connection, release]: any[]) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
-                    this.releaseCallback = release
+
+                    const onErrorCallback = (err: Error) =>
+                        this.releaseConnection(err)
+                    this.releaseCallback = (err?: Error) => {
+                        this.databaseConnection.removeListener(
+                            "error",
+                            onErrorCallback,
+                        )
+                        release(err)
+                    }
+                    this.databaseConnection.on("error", onErrorCallback)
+
                     return this.databaseConnection
                 })
         }
@@ -118,24 +152,50 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Release a connection back to the pool, optionally specifying an Error to release with.
+     * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
+     *
+     * @param err
+     */
+    private async releaseConnection(err?: Error) {
+        if (this.isReleased) {
+            return
+        }
+
+        this.isReleased = true
+        if (this.releaseCallback) {
+            this.releaseCallback(err)
+            this.releaseCallback = undefined
+        }
+
+        const index = this.driver.connectedQueryRunners.indexOf(this)
+
+        if (index !== -1) {
+            this.driver.connectedQueryRunners.splice(index, 1)
+        }
+    }
+
+    /**
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
-        this.isReleased = true
-        if (this.releaseCallback) this.releaseCallback()
-
-        const index = this.driver.connectedQueryRunners.indexOf(this)
-        if (index !== -1) this.driver.connectedQueryRunners.splice(index)
-
-        return Promise.resolve()
+        return this.releaseConnection()
     }
 
     /**
      * Starts transaction.
+     *
+     * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        validateIsolationLevel(
+            CockroachDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
+
         this.isTransactionActive = true
+        this.transactionRetries = 0
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
@@ -177,21 +237,12 @@ export class CockroachQueryRunner
             this.transactionDepth -= 1
         } else {
             this.storeQueries = false
-            try {
-                await this.query("RELEASE SAVEPOINT cockroach_restart")
-                await this.query("COMMIT")
-                this.queries = []
-                this.isTransactionActive = false
-                this.transactionDepth -= 1
-            } catch (e) {
-                if (e.code === "40001") {
-                    await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
-                    for (const q of this.queries) {
-                        await this.query(q.query, q.parameters)
-                    }
-                    await this.commitTransaction()
-                }
-            }
+            await this.query("RELEASE SAVEPOINT cockroach_restart")
+            await this.query("COMMIT")
+            this.queries = []
+            this.isTransactionActive = false
+            this.transactionRetries = 0
+            this.transactionDepth -= 1
         }
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -215,6 +266,7 @@ export class CockroachQueryRunner
             await this.query("ROLLBACK")
             this.queries = []
             this.isTransactionActive = false
+            this.transactionRetries = 0
         }
         this.transactionDepth -= 1
 
@@ -223,6 +275,10 @@ export class CockroachQueryRunner
 
     /**
      * Executes a given SQL query.
+     *
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -232,11 +288,15 @@ export class CockroachQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
-        this.driver.connection.logger.logQuery(query, parameters, this)
-        const queryStartTime = +new Date()
+
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
-            this.queries.push({ query, parameters })
+            this.queries.push({ query, parameters, useStructuredResult })
         }
 
         try {
@@ -251,13 +311,13 @@ export class CockroachQueryRunner
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             ) {
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
@@ -284,27 +344,85 @@ export class CockroachQueryRunner
                     result.raw = raw.rows
             }
 
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
             if (useStructuredResult) {
                 return result
             } else {
                 return result.raw
             }
         } catch (err) {
-            if (err.code !== "40001") {
-                this.driver.connection.logger.logQueryError(
+            if (
+                err.code === "40001" &&
+                this.isTransactionActive &&
+                this.transactionRetries <
+                    (this.driver.options.maxTransactionRetries ?? 5)
+            ) {
+                this.transactionRetries += 1
+                this.storeQueries = false
+                await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
+                const sleepTime =
+                    2 ** this.transactionRetries *
+                    0.1 *
+                    (Math.random() + 0.5) *
+                    1000
+                await new Promise((resolve) => setTimeout(resolve, sleepTime))
+
+                let result = undefined
+                for (const q of this.queries) {
+                    this.driver.dataSource.logger.logQuery(
+                        `Retrying transaction for query "${q.query}"`,
+                        q.parameters,
+                        this,
+                    )
+                    result = await this.query(
+                        q.query,
+                        q.parameters,
+                        q.useStructuredResult,
+                    )
+                }
+                this.transactionRetries = 0
+                this.storeQueries = true
+
+                return result
+            } else {
+                this.driver.dataSource.logger.logQueryError(
                     err,
                     query,
                     parameters,
                     this,
                 )
+                this.broadcaster.broadcastAfterQueryEvent(
+                    broadcasterResult,
+                    query,
+                    parameters,
+                    false,
+                    undefined,
+                    undefined,
+                    err,
+                )
+                throw new QueryFailedError(query, parameters, err)
             }
-
-            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 
     /**
      * Returns raw data stream.
+     *
+     * @param query
+     * @param parameters
+     * @param onEnd
+     * @param onError
      */
     async stream(
         query: string,
@@ -318,7 +436,7 @@ export class CockroachQueryRunner
         }
 
         const databaseConnection = await this.connect()
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         const stream = databaseConnection.query(
             new QueryStream(query, parameters),
         )
@@ -344,6 +462,8 @@ export class CockroachQueryRunner
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     *
+     * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
         return Promise.resolve([])
@@ -351,10 +471,13 @@ export class CockroachQueryRunner
 
     /**
      * Checks if database with the given name exist.
+     *
+     * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM "pg_database" WHERE "datname" = '${database}'`,
+            `SELECT * FROM "pg_database" WHERE "datname" = $1`,
+            [database],
         )
         return result.length ? true : false
     }
@@ -369,10 +492,13 @@ export class CockroachQueryRunner
 
     /**
      * Checks if schema with the given name exist.
+     *
+     * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM "information_schema"."schemata" WHERE "schema_name" = '${schema}'`,
+            `SELECT * FROM "information_schema"."schemata" WHERE "schema_name" = $1`,
+            [schema],
         )
         return result.length ? true : false
     }
@@ -387,21 +513,27 @@ export class CockroachQueryRunner
 
     /**
      * Checks if table with the given name exist in the database.
+     *
+     * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
 
-        if (!parsedTableName.schema) {
-            parsedTableName.schema = await this.getCurrentSchema()
-        }
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
-        const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = '${parsedTableName.schema}' AND "table_name" = '${parsedTableName.tableName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = $1 AND "table_name" = $2`
+        const result = await this.query(sql, [
+            parsedTableName.schema,
+            parsedTableName.tableName,
+        ])
         return result.length ? true : false
     }
 
     /**
      * Checks if column with the given name exist in the given table.
+     *
+     * @param tableOrName
+     * @param columnName
      */
     async hasColumn(
         tableOrName: Table | string,
@@ -409,92 +541,132 @@ export class CockroachQueryRunner
     ): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
 
-        if (!parsedTableName.schema) {
-            parsedTableName.schema = await this.getCurrentSchema()
-        }
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
-        const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = '${parsedTableName.schema}' AND "table_name" = '${parsedTableName.tableName}' AND "column_name" = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = $1 AND "table_name" = $2 AND "column_name" = $3`
+        const result = await this.query(sql, [
+            parsedTableName.schema,
+            parsedTableName.tableName,
+            columnName,
+        ])
         return result.length ? true : false
     }
 
     /**
      * Creates a new database.
+     *
+     * @param database
+     * @param ifNotExists
      */
     async createDatabase(
         database: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         const up = `CREATE DATABASE ${
-            ifNotExist ? "IF NOT EXISTS " : ""
-        } "${database}"`
-        const down = `DROP DATABASE "${database}"`
+            ifNotExists ? "IF NOT EXISTS " : ""
+        } ${this.driver.escape(database)}`
+        const down = `DROP DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
     /**
      * Drops database.
+     *
+     * @param database
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        const up = `DROP DATABASE ${ifExist ? "IF EXISTS " : ""} "${database}"`
-        const down = `CREATE DATABASE "${database}"`
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
+        const up = `DROP DATABASE ${ifExists ? "IF EXISTS " : ""} ${this.driver.escape(database)}`
+        const down = `CREATE DATABASE ${this.driver.escape(database)}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
     /**
      * Creates a new table schema.
+     *
+     * @param schemaPath
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         const schema =
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
+        const escapedSchema = this.driver.escape(schema)
 
-        const up = ifNotExist
-            ? `CREATE SCHEMA IF NOT EXISTS "${schema}"`
-            : `CREATE SCHEMA "${schema}"`
-        const down = `DROP SCHEMA "${schema}" CASCADE`
+        const up = ifNotExists
+            ? `CREATE SCHEMA IF NOT EXISTS ${escapedSchema}`
+            : `CREATE SCHEMA ${escapedSchema}`
+        const down = `DROP SCHEMA ${escapedSchema} CASCADE`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
     /**
      * Drops table schema.
+     *
+     * @param schemaPath
+     * @param ifExists
+     * @param isCascade
      */
     async dropSchema(
         schemaPath: string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         isCascade?: boolean,
     ): Promise<void> {
         const schema =
             schemaPath.indexOf(".") === -1
                 ? schemaPath
                 : schemaPath.split(".")[1]
+        const escapedSchema = this.driver.escape(schema)
 
-        const up = ifExist
-            ? `DROP SCHEMA IF EXISTS "${schema}" ${isCascade ? "CASCADE" : ""}`
-            : `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`
-        const down = `CREATE SCHEMA "${schema}"`
+        const up = ifExists
+            ? `DROP SCHEMA IF EXISTS ${escapedSchema} ${isCascade ? "CASCADE" : ""}`
+            : `DROP SCHEMA ${escapedSchema} ${isCascade ? "CASCADE" : ""}`
+        const down = `CREATE SCHEMA ${escapedSchema}`
         await this.executeQueries(new Query(up), new Query(down))
     }
 
     /**
      * Creates a new table.
+     *
+     * @param table
+     * @param ifNotExists
+     * @param createForeignKeys
+     * @param createIndices
      */
     async createTable(
         table: Table,
-        ifNotExist: boolean = false,
+        ifNotExists: boolean = false,
         createForeignKeys: boolean = true,
         createIndices: boolean = true,
     ): Promise<void> {
-        if (ifNotExist) {
+        if (ifNotExists) {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
         const upQueries: Query[] = []
         const downQueries: Query[] = []
+
+        // if table have column with ENUM type, we must create this type in postgres.
+        const enumColumns = table.columns.filter(
+            (column) => column.type === "enum" || column.type === "simple-enum",
+        )
+        const createdEnumTypes: string[] = []
+        for (const column of enumColumns) {
+            // TODO: Should also check if values of existing type matches expected ones
+            const hasEnum = await this.hasEnumType(table, column)
+            const enumName = this.buildEnumName(table, column)
+
+            // if enum with the same "enumName" is defined more then once, me must prevent double creation
+            if (!hasEnum && createdEnumTypes.indexOf(enumName) === -1) {
+                createdEnumTypes.push(enumName)
+                upQueries.push(this.createEnumTypeSql(table, column, enumName))
+                downQueries.push(this.dropEnumTypeSql(table, column, enumName))
+            }
+        }
 
         table.columns
             .filter(
@@ -534,15 +706,43 @@ export class CockroachQueryRunner
                 .filter((index) => !index.isUnique)
                 .forEach((index) => {
                     // new index may be passed without name. In this case we generate index name manually.
-                    if (!index.name)
-                        index.name = this.connection.namingStrategy.indexName(
-                            table,
-                            index.columnNames,
-                            index.where,
-                        )
+                    index.name ??= this.dataSource.namingStrategy.indexName(
+                        table,
+                        index.columnNames,
+                        index.where,
+                    )
                     upQueries.push(this.createIndexSql(table, index))
                     downQueries.push(this.dropIndexSql(table, index))
                 })
+        }
+
+        // if table have column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            schema ??= currentSchema
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -550,16 +750,21 @@ export class CockroachQueryRunner
 
     /**
      * Drops the table.
+     *
+     * @param target
+     * @param ifExists
+     * @param dropForeignKeys
+     * @param dropIndices
      */
     async dropTable(
         target: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys: boolean = true,
         dropIndices: boolean = true,
     ): Promise<void> {
         // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
         // to perform drop queries for foreign keys and indices.
-        if (ifExist) {
+        if (ifExists) {
             const isTableExist = await this.hasTable(target)
             if (!isTableExist) return Promise.resolve()
         }
@@ -610,40 +815,88 @@ export class CockroachQueryRunner
                 )
             })
 
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            schema ??= currentSchema
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
     /**
      * Creates a new view.
+     *
+     * @param view
+     * @param syncWithMetadata
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(await this.insertViewDefinitionSql(view))
+        if (syncWithMetadata)
+            upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(await this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
     /**
      * Drops the view.
+     *
+     * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
         const view = await this.getCachedView(viewName)
 
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        upQueries.push(await this.deleteViewDefinitionSql(view))
-        upQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.insertViewDefinitionSql(view))
-        downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeQueries(
+            [
+                await this.deleteViewDefinitionSql(view),
+                ifExists
+                    ? new Query(`DROP VIEW IF EXISTS ${this.escapePath(view)}`)
+                    : this.dropViewSql(view),
+            ],
+            [
+                await this.insertViewDefinitionSql(view),
+                this.createViewSql(view),
+            ],
+        )
     }
 
     /**
      * Renames the given table.
+     *
+     * @param oldTableOrName
+     * @param newTableName
      */
     async renameTable(
         oldTableOrName: Table | string,
@@ -679,16 +932,19 @@ export class CockroachQueryRunner
         )
 
         // rename column primary key constraint
-        if (newTable.primaryColumns.length > 0) {
+        if (
+            newTable.primaryColumns.length > 0 &&
+            !newTable.primaryColumns[0].primaryKeyConstraintName
+        ) {
             const columnNames = newTable.primaryColumns.map(
                 (column) => column.name,
             )
 
-            const oldPkName = this.connection.namingStrategy.primaryKeyName(
+            const oldPkName = this.dataSource.namingStrategy.primaryKeyName(
                 oldTable,
                 columnNames,
             )
-            const newPkName = this.connection.namingStrategy.primaryKeyName(
+            const newPkName = this.dataSource.namingStrategy.primaryKeyName(
                 newTable,
                 columnNames,
             )
@@ -711,9 +967,18 @@ export class CockroachQueryRunner
 
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
+            const oldUniqueName =
+                this.dataSource.namingStrategy.uniqueConstraintName(
+                    oldTable,
+                    unique.columnNames,
+                )
+
+            // Skip renaming if Unique has user defined constraint name
+            if (unique.name !== oldUniqueName) return
+
             // build new constraint name
             const newUniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     newTable,
                     unique.columnNames,
                 )
@@ -744,9 +1009,18 @@ export class CockroachQueryRunner
 
         // rename index constraints
         newTable.indices.forEach((index) => {
+            const oldIndexName = this.dataSource.namingStrategy.indexName(
+                oldTable,
+                index.columnNames,
+                index.where,
+            )
+
+            // Skip renaming if Index has user defined constraint name
+            if (index.name !== oldIndexName) return
+
             // build new constraint name
             const { schema } = this.driver.parseTableName(newTable)
-            const newIndexName = this.connection.namingStrategy.indexName(
+            const newIndexName = this.dataSource.namingStrategy.indexName(
                 newTable,
                 index.columnNames,
                 index.where,
@@ -768,9 +1042,20 @@ export class CockroachQueryRunner
 
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
+            const oldForeignKeyName =
+                this.dataSource.namingStrategy.foreignKeyName(
+                    oldTable,
+                    foreignKey.columnNames,
+                    this.getTablePath(foreignKey),
+                    foreignKey.referencedColumnNames,
+                )
+
+            // Skip renaming if foreign key has user defined constraint name
+            if (foreignKey.name !== oldForeignKeyName) return
+
             // build new constraint name
             const newForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     newTable,
                     foreignKey.columnNames,
                     this.getTablePath(foreignKey),
@@ -801,11 +1086,47 @@ export class CockroachQueryRunner
             foreignKey.name = newForeignKeyName
         })
 
+        // rename ENUM types
+        const enumColumns = newTable.columns.filter(
+            (column) => column.type === "enum" || column.type === "simple-enum",
+        )
+        for (const column of enumColumns) {
+            // skip renaming for user-defined enum name
+            if (column.enumName) continue
+
+            const oldEnumType = await this.getUserDefinedTypeName(
+                oldTable,
+                column,
+            )
+            upQueries.push(
+                new Query(
+                    `ALTER TYPE "${oldEnumType.schema}"."${
+                        oldEnumType.name
+                    }" RENAME TO ${this.buildEnumName(
+                        newTable,
+                        column,
+                        false,
+                    )}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TYPE ${this.buildEnumName(
+                        newTable,
+                        column,
+                    )} RENAME TO "${oldEnumType.name}"`,
+                ),
+            )
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
     /**
      * Creates a new column from the column in the table.
+     *
+     * @param tableOrName
+     * @param column
      */
     async addColumn(
         tableOrName: Table | string,
@@ -822,6 +1143,14 @@ export class CockroachQueryRunner
             throw new TypeORMError(
                 `Adding sequential generated columns into existing table is not supported`,
             )
+        }
+
+        if (column.type === "enum" || column.type === "simple-enum") {
+            const hasEnum = await this.hasEnumType(table, column)
+            if (!hasEnum) {
+                upQueries.push(this.createEnumTypeSql(table, column))
+                downQueries.push(this.dropEnumTypeSql(table, column))
+            }
         }
 
         upQueries.push(
@@ -843,12 +1172,15 @@ export class CockroachQueryRunner
         if (column.isPrimary) {
             const primaryColumns = clonedTable.primaryColumns
             // if table already have primary key, me must drop it and recreate again
-            // todo: altering pk is not supported yet https://github.com/cockroachdb/cockroach/issues/19141
+            // todo: https://go.crdb.dev/issue-v/48026/v21.1
             if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    primaryColumns.map((column) => column.name),
-                )
+                const pkName =
+                    primaryColumns[0].primaryKeyConstraintName ??
+                    this.dataSource.namingStrategy.primaryKeyName(
+                        clonedTable,
+                        primaryColumns.map((column) => column.name),
+                    )
+
                 const columnNames = primaryColumns
                     .map((column) => `"${column.name}"`)
                     .join(", ")
@@ -869,10 +1201,13 @@ export class CockroachQueryRunner
             }
 
             primaryColumns.push(column)
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    primaryColumns.map((column) => column.name),
+                )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
@@ -892,6 +1227,29 @@ export class CockroachQueryRunner
             )
         }
 
+        if (column.generatedType && column.asExpression) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            schema ??= currentSchema
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         // create column index
         const columnIndex = clonedTable.indices.find(
             (index) =>
@@ -902,7 +1260,7 @@ export class CockroachQueryRunner
             // CockroachDB stores unique indices as UNIQUE constraints
             if (columnIndex.isUnique) {
                 const unique = new TableUnique({
-                    name: this.connection.namingStrategy.uniqueConstraintName(
+                    name: this.dataSource.namingStrategy.uniqueConstraintName(
                         table,
                         columnIndex.columnNames,
                     ),
@@ -920,7 +1278,7 @@ export class CockroachQueryRunner
         // create unique constraint
         if (column.isUnique) {
             const uniqueConstraint = new TableUnique({
-                name: this.connection.namingStrategy.uniqueConstraintName(
+                name: this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     [column.name],
                 ),
@@ -959,6 +1317,9 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new columns from the column in the table.
+     *
+     * @param tableOrName
+     * @param columns
      */
     async addColumns(
         tableOrName: Table | string,
@@ -971,6 +1332,10 @@ export class CockroachQueryRunner
 
     /**
      * Renames column in the given table.
+     *
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newTableColumnOrName
      */
     async renameColumn(
         tableOrName: Table | string,
@@ -1001,6 +1366,10 @@ export class CockroachQueryRunner
 
     /**
      * Changes a column in the table.
+     *
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newColumn
      */
     async changeColumn(
         tableOrName: Table | string,
@@ -1013,6 +1382,7 @@ export class CockroachQueryRunner
         let clonedTable = table.clone()
         const upQueries: Query[] = []
         const downQueries: Query[] = []
+        let defaultValueChanged = false
 
         const oldColumn = InstanceChecker.isTableColumn(oldTableColumnOrName)
             ? oldTableColumnOrName
@@ -1026,7 +1396,10 @@ export class CockroachQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
+            oldColumn.length !== newColumn.length ||
+            newColumn.isArray !== oldColumn.isArray ||
+            oldColumn.generatedType !== newColumn.generatedType ||
+            oldColumn.asExpression !== newColumn.asExpression
         ) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
@@ -1052,8 +1425,41 @@ export class CockroachQueryRunner
                     ),
                 )
 
+                // rename ENUM type
+                if (
+                    oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum"
+                ) {
+                    const oldEnumType = await this.getUserDefinedTypeName(
+                        table,
+                        oldColumn,
+                    )
+                    upQueries.push(
+                        new Query(
+                            `ALTER TYPE "${oldEnumType.schema}"."${
+                                oldEnumType.name
+                            }" RENAME TO ${this.buildEnumName(
+                                table,
+                                newColumn,
+                                false,
+                            )}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TYPE ${this.buildEnumName(
+                                table,
+                                newColumn,
+                            )} RENAME TO "${oldEnumType.name}"`,
+                        ),
+                    )
+                }
+
                 // rename column primary key constraint
-                if (oldColumn.isPrimary === true) {
+                if (
+                    oldColumn.isPrimary === true &&
+                    !oldColumn.primaryKeyConstraintName
+                ) {
                     const primaryColumns = clonedTable.primaryColumns
 
                     // build old primary constraint name
@@ -1061,7 +1467,7 @@ export class CockroachQueryRunner
                         (column) => column.name,
                     )
                     const oldPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1072,7 +1478,7 @@ export class CockroachQueryRunner
 
                     // build new primary constraint name
                     const newPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1095,6 +1501,15 @@ export class CockroachQueryRunner
 
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach((unique) => {
+                    const oldUniqueName =
+                        this.dataSource.namingStrategy.uniqueConstraintName(
+                            clonedTable,
+                            unique.columnNames,
+                        )
+
+                    // Skip renaming if Unique has user defined constraint name
+                    if (unique.name !== oldUniqueName) return
+
                     // build new constraint name
                     unique.columnNames.splice(
                         unique.columnNames.indexOf(oldColumn.name),
@@ -1102,7 +1517,7 @@ export class CockroachQueryRunner
                     )
                     unique.columnNames.push(newColumn.name)
                     const newUniqueName =
-                        this.connection.namingStrategy.uniqueConstraintName(
+                        this.dataSource.namingStrategy.uniqueConstraintName(
                             clonedTable,
                             unique.columnNames,
                         )
@@ -1133,6 +1548,16 @@ export class CockroachQueryRunner
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
+                    const oldIndexName =
+                        this.dataSource.namingStrategy.indexName(
+                            clonedTable,
+                            index.columnNames,
+                            index.where,
+                        )
+
+                    // Skip renaming if Index has user defined constraint name
+                    if (index.name !== oldIndexName) return
+
                     // build new constraint name
                     index.columnNames.splice(
                         index.columnNames.indexOf(oldColumn.name),
@@ -1141,7 +1566,7 @@ export class CockroachQueryRunner
                     index.columnNames.push(newColumn.name)
                     const { schema } = this.driver.parseTableName(table)
                     const newIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -1165,6 +1590,17 @@ export class CockroachQueryRunner
                 clonedTable
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
+                        const foreignKeyName =
+                            this.dataSource.namingStrategy.foreignKeyName(
+                                clonedTable,
+                                foreignKey.columnNames,
+                                this.getTablePath(foreignKey),
+                                foreignKey.referencedColumnNames,
+                            )
+
+                        // Skip renaming if foreign key has user defined constraint name
+                        if (foreignKey.name !== foreignKeyName) return
+
                         // build new constraint name
                         foreignKey.columnNames.splice(
                             foreignKey.columnNames.indexOf(oldColumn.name),
@@ -1172,7 +1608,7 @@ export class CockroachQueryRunner
                         )
                         foreignKey.columnNames.push(newColumn.name)
                         const newForeignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                                 this.getTablePath(foreignKey),
@@ -1290,13 +1726,16 @@ export class CockroachQueryRunner
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
                     const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        primaryColumns[0].primaryKeyConstraintName ??
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             primaryColumns.map((column) => column.name),
                         )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
+
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1321,13 +1760,16 @@ export class CockroachQueryRunner
                     )
                     column!.isPrimary = true
                     const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        primaryColumns[0].primaryKeyConstraintName ??
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             primaryColumns.map((column) => column.name),
                         )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
+
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1360,10 +1802,12 @@ export class CockroachQueryRunner
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
                         const pkName =
-                            this.connection.namingStrategy.primaryKeyName(
+                            primaryColumns[0].primaryKeyConstraintName ??
+                            this.dataSource.namingStrategy.primaryKeyName(
                                 clonedTable,
                                 primaryColumns.map((column) => column.name),
                             )
+
                         const columnNames = primaryColumns
                             .map((column) => `"${column.name}"`)
                             .join(", ")
@@ -1388,7 +1832,7 @@ export class CockroachQueryRunner
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique) {
                     const uniqueConstraint = new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(
+                        name: this.dataSource.namingStrategy.uniqueConstraintName(
                             table,
                             [newColumn.name],
                         ),
@@ -1427,6 +1871,158 @@ export class CockroachQueryRunner
                         ),
                     )
                 }
+            }
+
+            if (
+                (newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum") &&
+                (oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum") &&
+                (!OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!) ||
+                    newColumn.enumName !== oldColumn.enumName)
+            ) {
+                const arraySuffix = newColumn.isArray ? "[]" : ""
+
+                // "public"."new_enum"
+                const newEnumName = this.buildEnumName(table, newColumn)
+
+                // "public"."old_enum"
+                const oldEnumName = this.buildEnumName(table, oldColumn)
+
+                // "old_enum"
+                const oldEnumNameWithoutSchema = this.buildEnumName(
+                    table,
+                    oldColumn,
+                    false,
+                )
+
+                //"public"."old_enum_old"
+                const oldEnumNameWithSchema_old = this.buildEnumName(
+                    table,
+                    oldColumn,
+                    true,
+                    false,
+                    true,
+                )
+
+                //"old_enum_old"
+                const oldEnumNameWithoutSchema_old = this.buildEnumName(
+                    table,
+                    oldColumn,
+                    false,
+                    false,
+                    true,
+                )
+
+                // rename old ENUM
+                upQueries.push(
+                    new Query(
+                        `ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
+                    ),
+                )
+
+                // create new ENUM
+                upQueries.push(
+                    this.createEnumTypeSql(table, newColumn, newEnumName),
+                )
+                downQueries.push(
+                    this.dropEnumTypeSql(table, newColumn, newEnumName),
+                )
+
+                // if column have default value, we must drop it to avoid issues with type casting
+                if (
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    // mark default as changed to prevent double update
+                    defaultValueChanged = true
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${
+                                oldColumn.default
+                            }`,
+                        ),
+                    )
+                }
+
+                // build column types
+                const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
+                const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${upType}`,
+                    ),
+                )
+
+                // we add a delay here since for some reason cockroachdb fails with
+                // "cannot drop type because other objects still depend on it" error
+                // if we are trying to drop type right after we altered it.
+                upQueries.push(new Query(`SELECT pg_sleep(0.1)`))
+                downQueries.push(new Query(`SELECT pg_sleep(0.1)`))
+
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${downType}`,
+                    ),
+                )
+
+                // restore column default or create new one
+                if (
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${
+                                newColumn.default
+                            }`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                }
+
+                // remove old ENUM
+                upQueries.push(
+                    this.dropEnumTypeSql(
+                        table,
+                        oldColumn,
+                        oldEnumNameWithSchema_old,
+                    ),
+                )
+                downQueries.push(
+                    this.createEnumTypeSql(
+                        table,
+                        oldColumn,
+                        oldEnumNameWithSchema_old,
+                    ),
+                )
             }
 
             if (
@@ -1478,7 +2074,10 @@ export class CockroachQueryRunner
                 }
             }
 
-            if (newColumn.default !== oldColumn.default) {
+            if (
+                newColumn.default !== oldColumn.default &&
+                !defaultValueChanged
+            ) {
                 if (
                     newColumn.default !== null &&
                     newColumn.default !== undefined
@@ -1541,12 +2140,36 @@ export class CockroachQueryRunner
             }
         }
 
+        if (
+            (newColumn.spatialFeatureType ?? "").toLowerCase() !==
+                (oldColumn.spatialFeatureType ?? "").toLowerCase() ||
+            newColumn.srid !== oldColumn.srid
+        ) {
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(newColumn)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                ),
+            )
+        }
+
         await this.executeQueries(upQueries, downQueries)
         this.replaceCachedTable(table, clonedTable)
     }
 
     /**
      * Changes a column in the table.
+     *
+     * @param tableOrName
+     * @param changedColumns
      */
     async changeColumns(
         tableOrName: Table | string,
@@ -1559,10 +2182,15 @@ export class CockroachQueryRunner
 
     /**
      * Drops column in the table.
+     *
+     * @param tableOrName
+     * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1570,22 +2198,27 @@ export class CockroachQueryRunner
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table "${table.name}"`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
         // drop primary key constraint
-        // todo: altering pk is not supported yet https://github.com/cockroachdb/cockroach/issues/19141
+        // todo: https://go.crdb.dev/issue-v/48026/v21.1
         if (column.isPrimary) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                clonedTable.primaryColumns.map((column) => column.name),
-            )
+            const pkName =
+                column.primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    clonedTable.primaryColumns.map((column) => column.name),
+                )
+
             const columnNames = clonedTable.primaryColumns
                 .map((primaryColumn) => `"${primaryColumn.name}"`)
                 .join(", ")
@@ -1610,13 +2243,17 @@ export class CockroachQueryRunner
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    clonedTable.primaryColumns.map((column) => column.name),
-                )
+                const pkName =
+                    clonedTable.primaryColumns[0].primaryKeyConstraintName ??
+                    this.dataSource.namingStrategy.primaryKeyName(
+                        clonedTable,
+                        clonedTable.primaryColumns.map((column) => column.name),
+                    )
+
                 const columnNames = clonedTable.primaryColumns
                     .map((primaryColumn) => `"${primaryColumn.name}"`)
                     .join(", ")
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1684,9 +2321,9 @@ export class CockroachQueryRunner
 
         upQueries.push(
             new Query(
-                `ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${
-                    column.name
-                }"`,
+                `ALTER TABLE ${this.escapePath(table)} DROP COLUMN ${
+                    ifExists ? "IF EXISTS " : ""
+                }"${column.name}"`,
             ),
         )
         downQueries.push(
@@ -1714,6 +2351,46 @@ export class CockroachQueryRunner
             )
         }
 
+        if (column.generatedType && column.asExpression) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            schema ??= currentSchema
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
+        // drop enum type
+        if (column.type === "enum" || column.type === "simple-enum") {
+            const hasEnum = await this.hasEnumType(table, column)
+            if (hasEnum) {
+                const enumType = await this.getUserDefinedTypeName(
+                    table,
+                    column,
+                )
+                const escapedEnumName = `"${enumType.schema}"."${enumType.name}"`
+                upQueries.push(
+                    this.dropEnumTypeSql(table, column, escapedEnumName),
+                )
+                downQueries.push(
+                    this.createEnumTypeSql(table, column, escapedEnumName),
+                )
+            }
+        }
+
         await this.executeQueries(upQueries, downQueries)
 
         clonedTable.removeColumn(column)
@@ -1722,29 +2399,39 @@ export class CockroachQueryRunner
 
     /**
      * Drops the columns in the table.
+     *
+     * @param tableOrName
+     * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
-        for (const column of columns) {
-            await this.dropColumn(tableOrName, column)
+        for (const column of [...columns]) {
+            await this.dropColumn(tableOrName, column, ifExists)
         }
     }
 
     /**
      * Creates a new primary key.
+     *
+     * @param tableOrName
+     * @param columnNames
+     * @param constraintName
      */
     async createPrimaryKey(
         tableOrName: Table | string,
         columnNames: string[],
+        constraintName?: string,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
         const clonedTable = table.clone()
 
-        const up = this.createPrimaryKeySql(table, columnNames)
+        const up = this.createPrimaryKeySql(table, columnNames, constraintName)
 
         // mark columns as primary, because dropPrimaryKeySql build constraint name from table primary column names.
         clonedTable.columns.forEach((column) => {
@@ -1759,6 +2446,9 @@ export class CockroachQueryRunner
 
     /**
      * Updates composite primary keys.
+     *
+     * @param tableOrName
+     * @param columns
      */
     async updatePrimaryKeys(
         tableOrName: Table | string,
@@ -1775,13 +2465,17 @@ export class CockroachQueryRunner
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    primaryColumns.map((column) => column.name),
+                )
+
             const columnNamesString = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -1801,12 +2495,17 @@ export class CockroachQueryRunner
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
-        const pkName = this.connection.namingStrategy.primaryKeyName(
-            clonedTable,
-            columnNames,
-        )
+        const pkName =
+            primaryColumns[0].primaryKeyConstraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(
+                clonedTable,
+                columnNames,
+            )
+
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -1831,15 +2530,24 @@ export class CockroachQueryRunner
 
     /**
      * Drops a primary key.
+     *
+     * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+        ifExists?: boolean,
+    ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
-        const up = this.dropPrimaryKeySql(table)
+        const up = this.dropPrimaryKeySql(table, ifExists)
         const down = this.createPrimaryKeySql(
             table,
             table.primaryColumns.map((column) => column.name),
+            constraintName,
         )
         await this.executeQueries(up, down)
         table.primaryColumns.forEach((column) => {
@@ -1849,6 +2557,9 @@ export class CockroachQueryRunner
 
     /**
      * Creates new unique constraint.
+     *
+     * @param tableOrName
+     * @param uniqueConstraint
      */
     async createUniqueConstraint(
         tableOrName: Table | string,
@@ -1859,12 +2570,11 @@ export class CockroachQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!uniqueConstraint.name)
-            uniqueConstraint.name =
-                this.connection.namingStrategy.uniqueConstraintName(
-                    table,
-                    uniqueConstraint.columnNames,
-                )
+        uniqueConstraint.name ??=
+            this.dataSource.namingStrategy.uniqueConstraintName(
+                table,
+                uniqueConstraint.columnNames,
+            )
 
         const up = this.createUniqueConstraintSql(table, uniqueConstraint)
         // CockroachDB creates index for UNIQUE constraint.
@@ -1876,6 +2586,9 @@ export class CockroachQueryRunner
 
     /**
      * Creates new unique constraints.
+     *
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async createUniqueConstraints(
         tableOrName: Table | string,
@@ -1888,10 +2601,15 @@ export class CockroachQueryRunner
 
     /**
      * Drops unique constraint.
+     *
+     * @param tableOrName
+     * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1899,14 +2617,16 @@ export class CockroachQueryRunner
         const uniqueConstraint = InstanceChecker.isTableUnique(uniqueOrName)
             ? uniqueOrName
             : table.uniques.find((u) => u.name === uniqueOrName)
-        if (!uniqueConstraint)
+        if (!uniqueConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        }
 
         // CockroachDB creates index for UNIQUE constraint.
         // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
-        const up = this.dropIndexSql(table, uniqueConstraint)
+        const up = this.dropIndexSql(table, uniqueConstraint, ifExists)
         const down = this.createUniqueConstraintSql(table, uniqueConstraint)
         await this.executeQueries(up, down)
         table.removeUniqueConstraint(uniqueConstraint)
@@ -1914,18 +2634,30 @@ export class CockroachQueryRunner
 
     /**
      * Drops unique constraints.
+     *
+     * @param tableOrName
+     * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
-            await this.dropUniqueConstraint(tableOrName, uniqueConstraint)
+        for (const uniqueConstraint of [...uniqueConstraints]) {
+            await this.dropUniqueConstraint(
+                tableOrName,
+                uniqueConstraint,
+                ifExists,
+            )
         }
     }
 
     /**
      * Creates new check constraint.
+     *
+     * @param tableOrName
+     * @param checkConstraint
      */
     async createCheckConstraint(
         tableOrName: Table | string,
@@ -1936,12 +2668,11 @@ export class CockroachQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!checkConstraint.name)
-            checkConstraint.name =
-                this.connection.namingStrategy.checkConstraintName(
-                    table,
-                    checkConstraint.expression!,
-                )
+        checkConstraint.name ??=
+            this.dataSource.namingStrategy.checkConstraintName(
+                table,
+                checkConstraint.expression!,
+            )
 
         const up = this.createCheckConstraintSql(table, checkConstraint)
         const down = this.dropCheckConstraintSql(table, checkConstraint)
@@ -1951,6 +2682,9 @@ export class CockroachQueryRunner
 
     /**
      * Creates new check constraints.
+     *
+     * @param tableOrName
+     * @param checkConstraints
      */
     async createCheckConstraints(
         tableOrName: Table | string,
@@ -1964,10 +2698,15 @@ export class CockroachQueryRunner
 
     /**
      * Drops check constraint.
+     *
+     * @param tableOrName
+     * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1975,12 +2714,14 @@ export class CockroachQueryRunner
         const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName
             : table.checks.find((c) => c.name === checkOrName)
-        if (!checkConstraint)
+        if (!checkConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied check constraint was not found in table ${table.name}`,
             )
+        }
 
-        const up = this.dropCheckConstraintSql(table, checkConstraint)
+        const up = this.dropCheckConstraintSql(table, checkConstraint, ifExists)
         const down = this.createCheckConstraintSql(table, checkConstraint)
         await this.executeQueries(up, down)
         table.removeCheckConstraint(checkConstraint)
@@ -1988,19 +2729,27 @@ export class CockroachQueryRunner
 
     /**
      * Drops check constraints.
+     *
+     * @param tableOrName
+     * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = checkConstraints.map((checkConstraint) =>
-            this.dropCheckConstraint(tableOrName, checkConstraint),
+            this.dropCheckConstraint(tableOrName, checkConstraint, ifExists),
         )
         await Promise.all(promises)
     }
 
     /**
      * Creates new exclusion constraint.
+     *
+     * @param tableOrName
+     * @param exclusionConstraint
      */
     async createExclusionConstraint(
         tableOrName: Table | string,
@@ -2013,6 +2762,9 @@ export class CockroachQueryRunner
 
     /**
      * Creates new exclusion constraints.
+     *
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async createExclusionConstraints(
         tableOrName: Table | string,
@@ -2025,10 +2777,15 @@ export class CockroachQueryRunner
 
     /**
      * Drops exclusion constraint.
+     *
+     * @param tableOrName
+     * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `CockroachDB does not support exclusion constraints.`,
@@ -2037,10 +2794,15 @@ export class CockroachQueryRunner
 
     /**
      * Drops exclusion constraints.
+     *
+     * @param tableOrName
+     * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `CockroachDB does not support exclusion constraints.`,
@@ -2049,6 +2811,9 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new foreign key.
+     *
+     * @param tableOrName
+     * @param foreignKey
      */
     async createForeignKey(
         tableOrName: Table | string,
@@ -2059,13 +2824,12 @@ export class CockroachQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new FK may be passed without name. In this case we generate FK name manually.
-        if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
@@ -2075,6 +2839,9 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new foreign keys.
+     *
+     * @param tableOrName
+     * @param foreignKeys
      */
     async createForeignKeys(
         tableOrName: Table | string,
@@ -2087,10 +2854,15 @@ export class CockroachQueryRunner
 
     /**
      * Drops a foreign key from the table.
+     *
+     * @param tableOrName
+     * @param foreignKeyOrName
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2098,12 +2870,21 @@ export class CockroachQueryRunner
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+        }
 
-        const up = this.dropForeignKeySql(table, foreignKey)
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
+
+        const up = this.dropForeignKeySql(table, foreignKey, ifExists)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
         table.removeForeignKey(foreignKey)
@@ -2111,18 +2892,26 @@ export class CockroachQueryRunner
 
     /**
      * Drops a foreign keys from the table.
+     *
+     * @param tableOrName
+     * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
-            await this.dropForeignKey(tableOrName, foreignKey)
+        for (const foreignKey of [...foreignKeys]) {
+            await this.dropForeignKey(tableOrName, foreignKey, ifExists)
         }
     }
 
     /**
      * Creates a new index.
+     *
+     * @param tableOrName
+     * @param index
      */
     async createIndex(
         tableOrName: Table | string,
@@ -2133,12 +2922,7 @@ export class CockroachQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        index.name ??= this.generateIndexName(table, index)
 
         // CockroachDB stores unique indices and UNIQUE constraints
         if (index.isUnique) {
@@ -2162,6 +2946,9 @@ export class CockroachQueryRunner
 
     /**
      * Creates a new indices
+     *
+     * @param tableOrName
+     * @param indices
      */
     async createIndices(
         tableOrName: Table | string,
@@ -2174,10 +2961,15 @@ export class CockroachQueryRunner
 
     /**
      * Drops an index from the table.
+     *
+     * @param tableOrName
+     * @param indexOrName
+     * @param ifExists
      */
     async dropIndex(
         tableOrName: Table | string,
         indexOrName: TableIndex | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2185,12 +2977,17 @@ export class CockroachQueryRunner
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
 
-        const up = this.dropIndexSql(table, index)
+        // old index may be passed without name. In this case we generate index name manually.
+        index.name ??= this.generateIndexName(table, index)
+
+        const up = this.dropIndexSql(table, index, ifExists)
         const down = this.createIndexSql(table, index)
         await this.executeQueries(up, down)
         table.removeIndex(index)
@@ -2198,22 +2995,37 @@ export class CockroachQueryRunner
 
     /**
      * Drops an indices from the table.
+     *
+     * @param tableOrName
+     * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
-        for (const index of indices) {
-            await this.dropIndex(tableOrName, index)
+        for (const index of [...indices]) {
+            await this.dropIndex(tableOrName, index, ifExists)
         }
     }
 
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     *
+     * @param tableName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`)
+    async clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        const cascade = options?.cascade ? " CASCADE" : ""
+        await this.query(
+            `TRUNCATE TABLE ${this.escapePath(tableName)}${cascade}`,
+        )
     }
 
     /**
@@ -2221,7 +3033,7 @@ export class CockroachQueryRunner
      */
     async clearDatabase(): Promise<void> {
         const schemas: string[] = []
-        this.connection.entityMetadatas
+        this.dataSource.entityMetadatas
             .filter((metadata) => metadata.schema)
             .forEach((metadata) => {
                 const isSchemaExist = !!schemas.find(
@@ -2229,39 +3041,64 @@ export class CockroachQueryRunner
                 )
                 if (!isSchemaExist) schemas.push(metadata.schema!)
             })
-        schemas.push(this.driver.options.schema || "current_schema()")
-        const schemaNamesString = schemas
-            .map((name) => {
-                return name === "current_schema()" ? name : "'" + name + "'"
-            })
-            .join(", ")
+        if (this.driver.options.schema) {
+            schemas.push(this.driver.options.schema)
+        } else {
+            const [{ currentSchema }] = await this.query(
+                `SELECT current_schema() AS "currentSchema"`,
+            )
+            schemas.push(currentSchema)
+        }
 
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
+
         try {
-            const selectViewDropsQuery =
-                `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
-                `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
-            await Promise.all(
-                dropViewQueries.map((q) => this.query(q["query"])),
+            const version = await this.getVersion()
+
+            // drop views
+            const views: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(schemaname) || '.' || quote_ident(viewname) as "name" ` +
+                    `FROM "pg_views" WHERE "schemaname"::STRING = ANY($1::STRING[])`,
+                [schemas],
             )
 
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || table_schema || '"."' || table_name || '" CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
-            const dropQueries: ObjectLiteral[] = await this.query(
-                selectDropsQuery,
-            )
-            await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+            if (views.length > 0) {
+                await this.query(
+                    `DROP VIEW IF EXISTS ${views.map(({ name }) => name).join(", ")} CASCADE`,
+                )
+            }
 
-            const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE "' || sequence_schema || '"."' || sequence_name || '";' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`
-            const sequenceDropQueries: ObjectLiteral[] = await this.query(
-                selectSequenceDropsQuery,
+            // drop tables
+            const tables: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(table_schema) || '.' || quote_ident(table_name) as "name" ` +
+                    `FROM "information_schema"."tables" WHERE "table_schema"::STRING = ANY($1::STRING[]) AND "table_type" = 'BASE TABLE'`,
+                [schemas],
             )
-            await Promise.all(
-                sequenceDropQueries.map((q) => this.query(q["query"])),
+
+            if (tables.length > 0) {
+                await this.query(
+                    `DROP TABLE IF EXISTS ${tables.map(({ name }) => name).join(", ")} CASCADE`,
+                )
+            }
+
+            // drop sequences
+            const sequences: ObjectLiteral[] = await this.query(
+                `SELECT quote_ident(sequence_schema) || '.' || quote_ident(sequence_name) as "name" ` +
+                    `FROM "information_schema"."sequences" WHERE "sequence_schema"::STRING = ANY($1::STRING[])`,
+                [schemas],
             )
+
+            if (sequences.length > 0) {
+                await this.query(
+                    `DROP SEQUENCE IF EXISTS ${sequences.map(({ name }) => name).join(", ")}`,
+                )
+            }
+
+            // drop enum types. Supported starting from v20.2.19.
+            if (VersionUtils.isGreaterOrEqual(version, "20.2.19")) {
+                await this.dropEnumTypes(schemas)
+            }
 
             if (!isAnotherTransactionActive) await this.commitTransaction()
         } catch (error) {
@@ -2269,7 +3106,9 @@ export class CockroachQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch {
+                // no-op
+            }
             throw error
         }
     }
@@ -2284,9 +3123,7 @@ export class CockroachQueryRunner
             return []
         }
 
-        if (!viewNames) {
-            viewNames = []
-        }
+        viewNames ??= []
 
         const currentDatabase = await this.getCurrentDatabase()
         const currentSchema = await this.getCurrentSchema()
@@ -2297,7 +3134,7 @@ export class CockroachQueryRunner
                     this.driver.parseTableName(viewName)
 
                 return `("t"."schema" = '${
-                    schema || currentSchema
+                    schema ?? currentSchema
                 }' AND "t"."name" = '${tableName}')`
             })
             .join(" OR ")
@@ -2327,10 +3164,12 @@ export class CockroachQueryRunner
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     *
+     * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -2341,14 +3180,13 @@ export class CockroachQueryRunner
 
         if (!tableNames) {
             const tablesSql = `SELECT "table_schema", "table_name" FROM "information_schema"."tables"`
-
             dbTables.push(...(await this.query(tablesSql)))
         } else {
             const tablesCondition = tableNames
                 .map((tableName) => this.driver.parseTableName(tableName))
                 .map(({ schema, tableName }) => {
                     return `("table_schema" = '${
-                        schema || currentSchema
+                        schema ?? currentSchema
                     }' AND "table_name" = '${tableName}')`
                 })
                 .join(" OR ")
@@ -2369,12 +3207,14 @@ export class CockroachQueryRunner
             })
             .join(" OR ")
         const columnsSql =
-            `
-            SELECT
-                *,
-                pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description
-            FROM "information_schema"."columns"
-            WHERE "is_hidden" = 'NO' AND ` + columnsCondiiton
+            `SELECT "columns".*, "attr"."attgenerated" as "generated_type", ` +
+            `pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) as description ` +
+            `FROM "information_schema"."columns" ` +
+            `LEFT JOIN "pg_class" AS "cls" ON "cls"."relname" = "table_name" ` +
+            `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."oid" = "cls"."relnamespace" AND "ns"."nspname" = "table_schema" ` +
+            `LEFT JOIN "pg_attribute" AS "attr" ON "attr"."attrelid" = "cls"."oid" AND "attr"."attname" = "column_name" AND "attr"."attnum" = "ordinal_position" ` +
+            `WHERE "is_hidden" = 'NO' AND ` +
+            columnsCondiiton
 
         const constraintsCondition = dbTables
             .map(({ table_name, table_schema }) => {
@@ -2426,17 +3266,23 @@ export class CockroachQueryRunner
             `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ` +
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`
-        const [
-            dbColumns,
-            dbConstraints,
-            dbIndices,
-            dbForeignKeys,
-        ]: ObjectLiteral[][] = await Promise.all([
-            this.query(columnsSql),
-            this.query(constraintsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql),
-        ])
+
+        const tableSchemas = dbTables
+            .map((dbTable) => `'${dbTable.table_schema}'`)
+            .join(", ")
+        const enumsSql =
+            `SELECT "t"."typname" AS "name", string_agg("e"."enumlabel", '|') AS "value" ` +
+            `FROM "pg_enum" "e" ` +
+            `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+            `WHERE "n"."nspname" IN (${tableSchemas}) ` +
+            `GROUP BY "t"."typname"`
+
+        const dbColumns: ObjectLiteral[] = await this.query(columnsSql)
+        const dbConstraints: ObjectLiteral[] = await this.query(constraintsSql)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
+        const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
+        const dbEnums: ObjectLiteral[] = await this.query(enumsSql)
 
         // create tables for loaded tables
         return Promise.all(
@@ -2495,7 +3341,7 @@ export class CockroachQueryRunner
                             ) {
                                 tableColumn.collation = dbColumn[
                                     "crdb_sql_type"
-                                ].substr(
+                                ].substring(
                                     dbColumn["crdb_sql_type"].indexOf(
                                         "COLLATE",
                                     ) +
@@ -2503,7 +3349,7 @@ export class CockroachQueryRunner
                                         1,
                                     dbColumn["crdb_sql_type"].length,
                                 )
-                                tableColumn.type = tableColumn.type.substr(
+                                tableColumn.type = tableColumn.type.substring(
                                     0,
                                     dbColumn["crdb_sql_type"].indexOf(
                                         "COLLATE",
@@ -2512,7 +3358,7 @@ export class CockroachQueryRunner
                             }
 
                             if (tableColumn.type.indexOf("(") !== -1)
-                                tableColumn.type = tableColumn.type.substr(
+                                tableColumn.type = tableColumn.type.substring(
                                     0,
                                     tableColumn.type.indexOf("("),
                                 )
@@ -2565,17 +3411,50 @@ export class CockroachQueryRunner
                                 }
                             }
 
+                            // docs: https://www.postgresql.org/docs/current/xtypes.html
+                            // When you define a new base type, PostgreSQL automatically provides support for arrays of that type.
+                            // The array type typically has the same name as the base type with the underscore character (_) prepended.
+                            // ----
+                            // so, we must remove this underscore character from enum type name
+                            let udtName = dbColumn["udt_name"]
+                            if (udtName.indexOf("_") === 0) {
+                                udtName = udtName.substring(1, udtName.length)
+                            }
+
+                            const enumType = dbEnums.find((dbEnum) => {
+                                return dbEnum["name"] === udtName
+                            })
+                            if (enumType) {
+                                // check if `enumName` is specified by user
+                                const builtEnumName = this.buildEnumName(
+                                    table,
+                                    tableColumn,
+                                    false,
+                                    true,
+                                )
+                                const enumName =
+                                    builtEnumName !== enumType["name"]
+                                        ? enumType["name"]
+                                        : undefined
+
+                                tableColumn.type = "enum"
+                                tableColumn.enum = enumType["value"].split("|")
+                                tableColumn.enumName = enumName
+                            }
+
                             if (
                                 dbColumn["data_type"].toLowerCase() === "array"
                             ) {
                                 tableColumn.isArray = true
-                                const type = dbColumn["crdb_sql_type"]
-                                    .replace("[]", "")
-                                    .toLowerCase()
-                                tableColumn.type =
-                                    this.connection.driver.normalizeType({
-                                        type: type,
-                                    })
+                                if (!enumType) {
+                                    const type = dbColumn["crdb_sql_type"]
+                                        .replace("[]", "")
+                                        .toLowerCase()
+                                    tableColumn.type =
+                                        this.dataSource.driver.normalizeType({
+                                            type: type,
+                                        })
+                                }
                             }
 
                             // check only columns that have length property
@@ -2600,10 +3479,51 @@ export class CockroachQueryRunner
                             }
                             tableColumn.isNullable =
                                 dbColumn["is_nullable"] === "YES"
-                            tableColumn.isPrimary = !!columnConstraints.find(
+
+                            const primaryConstraint = columnConstraints.find(
                                 (constraint) =>
                                     constraint["constraint_type"] === "PRIMARY",
                             )
+                            if (primaryConstraint) {
+                                tableColumn.isPrimary = true
+                                // find another columns involved in primary key constraint
+                                const anotherPrimaryConstraints =
+                                    dbConstraints.filter(
+                                        (constraint) =>
+                                            constraint["table_name"] ===
+                                                dbColumn["table_name"] &&
+                                            constraint["table_schema"] ===
+                                                dbColumn["table_schema"] &&
+                                            constraint["column_name"] !==
+                                                dbColumn["column_name"] &&
+                                            constraint["constraint_type"] ===
+                                                "PRIMARY",
+                                    )
+
+                                // collect all column names
+                                const columnNames =
+                                    anotherPrimaryConstraints.map(
+                                        (constraint) =>
+                                            constraint["column_name"],
+                                    )
+                                columnNames.push(dbColumn["column_name"])
+
+                                // build default primary key constraint name
+                                const pkName =
+                                    this.dataSource.namingStrategy.primaryKeyName(
+                                        table,
+                                        columnNames,
+                                    )
+
+                                // if primary key has user-defined constraint name, write it in table column
+                                if (
+                                    primaryConstraint["constraint_name"] !==
+                                    pkName
+                                ) {
+                                    tableColumn.primaryKeyConstraintName =
+                                        primaryConstraint["constraint_name"]
+                                }
+                            }
 
                             const uniqueConstraints = columnConstraints.filter(
                                 (constraint) =>
@@ -2653,22 +3573,83 @@ export class CockroachQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/:::[\w\s\[\]\"]+/g, "")
+                                    ].replace(/:::[\w\s[\]"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
-                                            /^(-?[\d\.]+)$/,
+                                            /^(-?[\d.]+)$/,
                                             "($1)",
                                         )
+
+                                    if (enumType) {
+                                        tableColumn.default =
+                                            tableColumn.default.replace(
+                                                `.${enumType["name"]}`,
+                                                "",
+                                            )
+                                    }
+                                }
+                            }
+
+                            if (
+                                (dbColumn["is_generated"] === "YES" ||
+                                    dbColumn["is_generated"] === "ALWAYS") &&
+                                dbColumn["generation_expression"]
+                            ) {
+                                tableColumn.generatedType =
+                                    dbColumn["generated_type"] === "s"
+                                        ? "STORED"
+                                        : "VIRTUAL"
+                                // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                                const asExpressionQuery =
+                                    this.selectTypeormMetadataSql({
+                                        schema: dbTable["table_schema"],
+                                        table: dbTable["table_name"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
+
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
+                                if (results[0]?.value) {
+                                    tableColumn.asExpression = results[0].value
+                                } else {
+                                    tableColumn.asExpression = ""
                                 }
                             }
 
                             tableColumn.comment =
-                                dbColumn["description"] == null
-                                    ? undefined
-                                    : dbColumn["description"]
+                                dbColumn["description"] ?? undefined
                             if (dbColumn["character_set_name"])
                                 tableColumn.charset =
                                     dbColumn["character_set_name"]
+
+                            if (
+                                tableColumn.type === "geometry" ||
+                                tableColumn.type === "geography"
+                            ) {
+                                const sql =
+                                    `SELECT * FROM (` +
+                                    `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
+                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type" ` +
+                                    `FROM "${tableColumn.type}_columns"` +
+                                    `) AS _ ` +
+                                    `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
+                                    `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
+                                    `"table_name" = '${dbColumn["table_name"]}'`
+
+                                const results: ObjectLiteral[] =
+                                    await this.query(sql)
+
+                                if (results.length > 0) {
+                                    tableColumn.spatialFeatureType =
+                                        results[0].type
+                                    tableColumn.srid = results[0].srid
+                                        ? parseInt(results[0].srid)
+                                        : undefined
+                                }
+                            }
 
                             return tableColumn
                         }),
@@ -2841,6 +3822,9 @@ export class CockroachQueryRunner
 
     /**
      * Builds create table sql.
+     *
+     * @param table
+     * @param createForeignKeys
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns
@@ -2859,7 +3843,7 @@ export class CockroachQueryRunner
                 if (!isUniqueExist)
                     table.uniques.push(
                         new TableUnique({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -2873,7 +3857,7 @@ export class CockroachQueryRunner
             .forEach((index) => {
                 table.uniques.push(
                     new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(
+                        name: this.dataSource.namingStrategy.uniqueConstraintName(
                             table,
                             index.columnNames,
                         ),
@@ -2885,12 +3869,12 @@ export class CockroachQueryRunner
         if (table.uniques.length > 0) {
             const uniquesSql = table.uniques
                 .map((unique) => {
-                    const uniqueName = unique.name
-                        ? unique.name
-                        : this.connection.namingStrategy.uniqueConstraintName(
-                              table,
-                              unique.columnNames,
-                          )
+                    const uniqueName =
+                        unique.name ??
+                        this.dataSource.namingStrategy.uniqueConstraintName(
+                            table,
+                            unique.columnNames,
+                        )
                     const columnNames = unique.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
@@ -2904,12 +3888,12 @@ export class CockroachQueryRunner
         if (table.checks.length > 0) {
             const checksSql = table.checks
                 .map((check) => {
-                    const checkName = check.name
-                        ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
-                              table,
-                              check.expression!,
-                          )
+                    const checkName =
+                        check.name ??
+                        this.dataSource.namingStrategy.checkConstraintName(
+                            table,
+                            check.expression!,
+                        )
                     return `CONSTRAINT "${checkName}" CHECK (${check.expression})`
                 })
                 .join(", ")
@@ -2923,13 +3907,12 @@ export class CockroachQueryRunner
                     const columnNames = fk.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
-                            table,
-                            fk.columnNames,
-                            this.getTablePath(fk),
-                            fk.referencedColumnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        table,
+                        fk.columnNames,
+                        this.getTablePath(fk),
+                        fk.referencedColumnNames,
+                    )
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
@@ -2954,10 +3937,12 @@ export class CockroachQueryRunner
         )
         if (primaryColumns.length > 0) {
             const primaryKeyName =
-                this.connection.namingStrategy.primaryKeyName(
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
                     table,
                     primaryColumns.map((column) => column.name),
                 )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
@@ -2968,18 +3953,31 @@ export class CockroachQueryRunner
 
         table.columns
             .filter((it) => it.comment)
-            .forEach(
-                (it) =>
-                    (sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${
-                        it.name
-                    }" IS ${this.escapeComment(it.comment)}`),
-            )
+            .forEach((it) => {
+                sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${
+                    it.name
+                }" IS ${this.escapeComment(it.comment)}`
+            })
 
         return new Query(sql)
     }
 
     /**
+     * Loads Cockroachdb version.
+     */
+    async getVersion(): Promise<string> {
+        const result: [{ version: string }] = await this.query(
+            `SELECT version() AS "version"`,
+        )
+        const versionString = result[0].version
+
+        return versionString.replace(/^CockroachDB CCL v([\d.]+) .*$/, "$1")
+    }
+
+    /**
      * Builds drop table sql.
+     *
+     * @param tableOrPath
      */
     protected dropTableSql(tableOrPath: Table | string): Query {
         return new Query(`DROP TABLE ${this.escapePath(tableOrPath)}`)
@@ -2993,7 +3991,7 @@ export class CockroachQueryRunner
         } else {
             return new Query(
                 `CREATE VIEW ${this.escapePath(view)} AS ${view
-                    .expression(this.connection)
+                    .expression(this.dataSource)
                     .getQuery()}`,
             )
         }
@@ -3001,17 +3999,13 @@ export class CockroachQueryRunner
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
-
         let { schema, tableName: name } = this.driver.parseTableName(view)
-
-        if (!schema) {
-            schema = currentSchema
-        }
+        schema ??= currentSchema
 
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return this.insertTypeormMetadataSql({
             type: MetadataTableType.VIEW,
             schema: schema,
@@ -3022,6 +4016,8 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop view sql.
+     *
+     * @param viewOrPath
      */
     protected dropViewSql(viewOrPath: View | string): Query {
         return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
@@ -3029,6 +4025,8 @@ export class CockroachQueryRunner
 
     /**
      * Builds remove view sql.
+     *
+     * @param viewOrPath
      */
     protected async deleteViewDefinitionSql(
         viewOrPath: View | string,
@@ -3036,10 +4034,7 @@ export class CockroachQueryRunner
         const currentSchema = await this.getCurrentSchema()
 
         let { schema, tableName: name } = this.driver.parseTableName(viewOrPath)
-
-        if (!schema) {
-            schema = currentSchema
-        }
+        schema ??= currentSchema
 
         return this.deleteTypeormMetadataSql({
             type: MetadataTableType.VIEW,
@@ -3049,45 +4044,140 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Drops ENUM type from given schemas.
+     *
+     * @param schemaNames
+     */
+    protected async dropEnumTypes(schemaNames: string[]): Promise<void> {
+        const enums: ObjectLiteral[] = await this.query(
+            `SELECT quote_ident(n.nspname) || '.' || quote_ident(t.typname) as "name" FROM "pg_type" "t" ` +
+                `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
+                `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+                `WHERE "n"."nspname"::STRING = ANY($1::STRING[]) GROUP BY "n"."nspname", "t"."typname"`,
+            [schemaNames],
+        )
+
+        if (enums.length > 0) {
+            await this.query(
+                `DROP TYPE IF EXISTS ${enums.map(({ name }) => name).join(", ")}`,
+            )
+        }
+    }
+
+    /**
+     * Checks if enum with the given name exist in the database.
+     *
+     * @param table
+     * @param column
+     */
+    protected async hasEnumType(
+        table: Table,
+        column: TableColumn,
+    ): Promise<boolean> {
+        let { schema } = this.driver.parseTableName(table)
+        schema ??= await this.getCurrentSchema()
+
+        const enumName = this.buildEnumName(table, column, false, true)
+        const sql =
+            `SELECT "n"."nspname", "t"."typname" FROM "pg_type" "t" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+            `WHERE "n"."nspname" = '${schema}' AND "t"."typname" = '${enumName}'`
+        const result = await this.query(sql)
+        return result.length ? true : false
+    }
+
+    /**
+     * Builds create ENUM type sql.
+     *
+     * @param table
+     * @param column
+     * @param enumName
+     */
+    protected createEnumTypeSql(
+        table: Table,
+        column: TableColumn,
+        enumName?: string,
+    ): Query {
+        enumName ??= this.buildEnumName(table, column)
+        const enumValues = column
+            .enum!.map((value) => `'${value.replaceAll("'", "''")}'`)
+            .join(", ")
+        return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`)
+    }
+
+    /**
+     * Builds create ENUM type sql.
+     *
+     * @param table
+     * @param column
+     * @param enumName
+     */
+    protected dropEnumTypeSql(
+        table: Table,
+        column: TableColumn,
+        enumName?: string,
+    ): Query {
+        enumName ??= this.buildEnumName(table, column)
+        return new Query(`DROP TYPE ${enumName}`)
+    }
+
+    /**
      * Builds create index sql.
      * UNIQUE indices creates as UNIQUE constraints.
+     *
+     * @param table
+     * @param index
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
-            `CREATE INDEX "${index.name}" ON ${this.escapePath(
-                table,
-            )} (${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
+                index.name
+            }" ON ${this.escapePath(table)} ${
+                index.isSpatial ? "USING GiST " : ""
+            }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
     /**
      * Builds drop index sql.
+     *
+     * @param table
+     * @param indexOrName
+     * @param ifExists
      */
     protected dropIndexSql(
         table: Table,
         indexOrName: TableIndex | TableUnique | string,
+        ifExists?: boolean,
     ): Query {
-        let indexName =
+        const indexName =
             InstanceChecker.isTableIndex(indexOrName) ||
             InstanceChecker.isTableUnique(indexOrName)
                 ? indexOrName.name
                 : indexOrName
         return new Query(
-            `DROP INDEX ${this.escapePath(table)}@"${indexName}" CASCADE`,
+            `DROP INDEX ${ifExists ? "IF EXISTS " : ""}${this.escapePath(table)}@"${indexName}" CASCADE`,
         )
     }
 
     /**
      * Builds create primary key sql.
+     *
+     * @param table
+     * @param columnNames
+     * @param constraintName
      */
-    protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+    protected createPrimaryKeySql(
+        table: Table,
+        columnNames: string[],
+        constraintName?: string,
+    ): Query {
+        const primaryKeyName =
+            constraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -3100,22 +4190,31 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop primary key sql.
+     *
+     * @param table
+     * @param ifExists
      */
-    protected dropPrimaryKeySql(table: Table): Query {
+    protected dropPrimaryKeySql(table: Table, ifExists?: boolean): Query {
+        if (!table.primaryColumns.length)
+            throw new TypeORMError(`Table ${table} has no primary keys.`)
+
         const columnNames = table.primaryColumns.map((column) => column.name)
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+        const constraintName = table.primaryColumns[0].primaryKeyConstraintName
+        const primaryKeyName =
+            constraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${primaryKeyName}"`,
+            )} DROP CONSTRAINT ${ifExists ? "IF EXISTS " : ""}"${primaryKeyName}"`,
         )
     }
 
     /**
      * Builds create unique constraint sql.
+     *
+     * @param table
+     * @param uniqueConstraint
      */
     protected createUniqueConstraintSql(
         table: Table,
@@ -3133,6 +4232,9 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop unique constraint sql.
+     *
+     * @param table
+     * @param uniqueOrName
      */
     protected dropUniqueConstraintSql(
         table: Table,
@@ -3150,6 +4252,9 @@ export class CockroachQueryRunner
 
     /**
      * Builds create check constraint sql.
+     *
+     * @param table
+     * @param checkConstraint
      */
     protected createCheckConstraintSql(
         table: Table,
@@ -3164,10 +4269,15 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop check constraint sql.
+     *
+     * @param table
+     * @param checkOrName
+     * @param ifExists
      */
     protected dropCheckConstraintSql(
         table: Table,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Query {
         const checkName = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName.name
@@ -3175,12 +4285,15 @@ export class CockroachQueryRunner
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${checkName}"`,
+            )} DROP CONSTRAINT ${ifExists ? "IF EXISTS " : ""}"${checkName}"`,
         )
     }
 
     /**
      * Builds create foreign key sql.
+     *
+     * @param table
+     * @param foreignKey
      */
     protected createForeignKeySql(
         table: Table,
@@ -3207,10 +4320,15 @@ export class CockroachQueryRunner
 
     /**
      * Builds drop foreign key sql.
+     *
+     * @param table
+     * @param foreignKeyOrName
+     * @param ifExists
      */
     protected dropForeignKeySql(
         table: Table,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Query {
         const foreignKeyName = InstanceChecker.isTableForeignKey(
             foreignKeyOrName,
@@ -3220,12 +4338,15 @@ export class CockroachQueryRunner
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${foreignKeyName}"`,
+            )} DROP CONSTRAINT ${ifExists ? "IF EXISTS " : ""}"${foreignKeyName}"`,
         )
     }
 
     /**
      * Builds sequence name from given table and column.
+     *
+     * @param table
+     * @param columnOrName
      */
     protected buildSequenceName(
         table: Table,
@@ -3252,7 +4373,62 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Builds ENUM type name from given table and column.
+     *
+     * @param table
+     * @param column
+     * @param withSchema
+     * @param disableEscape
+     * @param toOld
+     */
+    protected buildEnumName(
+        table: Table,
+        column: TableColumn,
+        withSchema: boolean = true,
+        disableEscape?: boolean,
+        toOld?: boolean,
+    ): string {
+        const { schema, tableName } = this.driver.parseTableName(table)
+        let enumName =
+            column.enumName ?? `${tableName}_${column.name.toLowerCase()}_enum`
+        if (schema && withSchema) enumName = `${schema}.${enumName}`
+        if (toOld) enumName = enumName + "_old"
+        return enumName
+            .split(".")
+            .map((i) => {
+                return disableEscape ? i : `"${i}"`
+            })
+            .join(".")
+    }
+
+    protected async getUserDefinedTypeName(table: Table, column: TableColumn) {
+        let { schema, tableName: name } = this.driver.parseTableName(table)
+        schema ??= await this.getCurrentSchema()
+
+        const result = await this.query(
+            `SELECT "udt_schema", "udt_name" ` +
+                `FROM "information_schema"."columns" WHERE "table_schema" = '${schema}' AND "table_name" = '${name}' AND "column_name"='${column.name}'`,
+        )
+
+        // docs: https://www.postgresql.org/docs/current/xtypes.html
+        // When you define a new base type, PostgreSQL automatically provides support for arrays of that type.
+        // The array type typically has the same name as the base type with the underscore character (_) prepended.
+        // ----
+        // so, we must remove this underscore character from enum type name
+        let udtName = result[0]["udt_name"]
+        if (udtName.indexOf("_") === 0) {
+            udtName = udtName.substring(1, udtName.length)
+        }
+        return {
+            schema: result[0]["udt_schema"],
+            name: udtName,
+        }
+    }
+
+    /**
      * Escapes a given comment so it's safe to include in a query.
+     *
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (comment === undefined || comment.length === 0) {
@@ -3266,6 +4442,8 @@ export class CockroachQueryRunner
 
     /**
      * Escapes given table or view path.
+     *
+     * @param target
      */
     protected escapePath(target: Table | View | string): string {
         const { schema, tableName } = this.driver.parseTableName(target)
@@ -3279,6 +4457,9 @@ export class CockroachQueryRunner
 
     /**
      * Builds a query for create column.
+     *
+     * @param table
+     * @param column
      */
     protected buildCreateColumnSql(table: Table, column: TableColumn) {
         let c = '"' + column.name + '"'
@@ -3294,10 +4475,23 @@ export class CockroachQueryRunner
                 c += " UUID DEFAULT gen_random_uuid()"
             }
         }
-        if (!column.isGenerated)
-            c += " " + this.connection.driver.createFullType(column)
-        if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
-        if (column.collation) c += ' COLLATE "' + column.collation + '"'
+
+        if (column.type === "enum" || column.type === "simple-enum") {
+            c += " " + this.buildEnumName(table, column)
+            if (column.isArray) c += " array"
+        } else if (!column.isGenerated) {
+            c += " " + this.dataSource.driver.createFullType(column)
+        }
+
+        if (column.asExpression) {
+            c += ` AS (${column.asExpression}) ${
+                column.generatedType ?? "VIRTUAL"
+            }`
+        } else {
+            if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
+            if (column.collation) c += ' COLLATE "' + column.collation + '"'
+        }
+
         if (!column.isNullable) c += " NOT NULL"
         if (
             !column.isGenerated &&
@@ -3307,5 +4501,19 @@ export class CockroachQueryRunner
             c += " DEFAULT " + column.default
 
         return c
+    }
+    /**
+     * Change table comment.
+     *
+     * @param tableOrName
+     * @param comment
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `cockroachdb driver does not support change table comment.`,
+        )
     }
 }

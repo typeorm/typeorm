@@ -17,6 +17,6 @@ export class PostReview {
     @Column()
     comment: string
 
-    @ManyToOne((type) => Post)
+    @ManyToOne(() => Post)
     post: Post
 }

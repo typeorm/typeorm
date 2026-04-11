@@ -20,7 +20,7 @@ export class Complex {
         complex: Complex
     }
 
-    constructor(from: String) {
+    constructor(from: string) {
         this.circularReferenceToMySelf = { complex: this }
         const [x, y] = from.split(" ")
         this.x = +x

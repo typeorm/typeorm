@@ -1,19 +1,22 @@
 import { Subject } from "../Subject"
 import { OrmUtils } from "../../util/OrmUtils"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { RelationMetadata } from "../../metadata/RelationMetadata"
+import type { RelationMetadata } from "../../metadata/RelationMetadata"
 
 /**
  * Builds operations needs to be executed for one-to-many relations of the given subjects.
  *
- * by example: post contains one-to-many relation with category in the property called "categories", e.g.
- *             @OneToMany(type => Category, category => category.post) categories: Category[]
- *             If user adds categories into the post and saves post we need to bind them.
- *             This operation requires updation of category table since its owner of the relation and contains a join column.
+ * Note: this class shares lot of things with OneToOneInverseSideOperationBuilder,
+ * so when you change this class make sure to reflect changes there as well.
  *
- * note: this class shares lot of things with OneToOneInverseSideOperationBuilder, so when you change this class
- *       make sure to reflect changes there as well.
+ * @example
+ * // Post contains one-to-many relation with Category in the property called "categories".
+ * // If user adds categories into the post and saves post we need to bind them.
+ * // This operation requires updating the category table since it's the owner of
+ * // the relation and contains a join column.
+ * \@OneToMany(type => Category, category => category.post) categories: Category[]
+ *
  */
 export class OneToManySubjectBuilder {
     // ---------------------------------------------------------------------
@@ -48,6 +51,9 @@ export class OneToManySubjectBuilder {
      * Builds operations for a given subject and relation.
      *
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
+     *
+     * @param subject
+     * @param relation
      */
     protected buildForSubjectRelation(
         subject: Subject,
@@ -83,12 +89,11 @@ export class OneToManySubjectBuilder {
         let relatedEntities: ObjectLiteral[] = relation.getEntityValue(
             subject.entity!,
         )
-        if (relatedEntities === null)
-            // we treat relations set to null as removed, so we don't skip it
-            relatedEntities = [] as ObjectLiteral[]
         if (relatedEntities === undefined)
             // if relation is undefined then nothing to update
             return
+        // we treat relations set to null as removed, so we don't skip it
+        relatedEntities ??= [] as ObjectLiteral[]
 
         // extract only relation ids from the related entities, since we only need them for comparison
         // by example: extract from categories only relation ids (category id, or let's say category title, depend on join column options)
@@ -178,43 +183,52 @@ export class OneToManySubjectBuilder {
         })
 
         // find what related entities were added and what were removed based on difference between what we save and what database has
-        EntityMetadata.difference(
-            relatedEntityDatabaseRelationIds,
-            relatedPersistedEntityRelationIds,
-        ).forEach((removedRelatedEntityRelationId) => {
-            // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
+        if (relation.inverseRelation?.orphanedRowAction !== "disable") {
+            EntityMetadata.difference(
+                relatedEntityDatabaseRelationIds,
+                relatedPersistedEntityRelationIds,
+            ).forEach((removedRelatedEntityRelationId) => {
+                // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
 
-            // todo: probably we can improve this in the future by finding entity with column those values,
-            // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
-            // we create a new subject which operations will be executed in subject operation executor
-            const removedRelatedEntitySubject = new Subject({
-                metadata: relation.inverseEntityMetadata,
-                parentSubject: subject,
-                identifier: removedRelatedEntityRelationId,
+                // todo: probably we can improve this in the future by finding entity with column those values,
+                // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
+                // we create a new subject which operations will be executed in subject operation executor
+                const removedRelatedEntitySubject = new Subject({
+                    metadata: relation.inverseEntityMetadata,
+                    parentSubject: subject,
+                    identifier: removedRelatedEntityRelationId,
+                })
+
+                const orphanedRowAction =
+                    relation.inverseRelation?.orphanedRowAction ?? "nullify"
+
+                if (orphanedRowAction === "nullify") {
+                    const allColumnsNullable =
+                        relation.inverseRelation?.joinColumns.every(
+                            (column) => column.isNullable,
+                        ) ?? true
+
+                    if (allColumnsNullable) {
+                        removedRelatedEntitySubject.canBeUpdated = true
+                        removedRelatedEntitySubject.changeMaps = [
+                            {
+                                relation: relation.inverseRelation!,
+                                value: null,
+                            },
+                        ]
+                    } else {
+                        // FK is not nullable — cannot set to null, so delete
+                        // the orphaned entity to keep DB consistent
+                        removedRelatedEntitySubject.mustBeRemoved = true
+                    }
+                } else if (orphanedRowAction === "delete") {
+                    removedRelatedEntitySubject.mustBeRemoved = true
+                } else if (orphanedRowAction === "soft-delete") {
+                    removedRelatedEntitySubject.canBeSoftRemoved = true
+                }
+
+                this.subjects.push(removedRelatedEntitySubject)
             })
-
-            if (
-                !relation.inverseRelation ||
-                relation.inverseRelation.orphanedRowAction === "nullify"
-            ) {
-                removedRelatedEntitySubject.canBeUpdated = true
-                removedRelatedEntitySubject.changeMaps = [
-                    {
-                        relation: relation.inverseRelation!,
-                        value: null,
-                    },
-                ]
-            } else if (
-                relation.inverseRelation.orphanedRowAction === "delete"
-            ) {
-                removedRelatedEntitySubject.mustBeRemoved = true
-            } else if (
-                relation.inverseRelation.orphanedRowAction === "soft-delete"
-            ) {
-                removedRelatedEntitySubject.canBeSoftRemoved = true
-            }
-
-            this.subjects.push(removedRelatedEntitySubject)
-        })
+        }
     }
 }

@@ -14,7 +14,7 @@ export class TestEntity1 {
 
     @Column() name: string
 
-    @OneToOne((t) => TestEntity2, (a) => a.Entity1)
+    @OneToOne(() => TestEntity2, (a) => a.Entity1)
     @JoinColumn()
     Entity2: TestEntity2
 }

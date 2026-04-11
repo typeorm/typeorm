@@ -12,6 +12,6 @@ export class Faculty {
     @Column()
     name: string
 
-    @ManyToMany((type) => Student, (student) => student.faculties)
+    @ManyToMany(() => Student, (student) => student.faculties)
     students: Student[]
 }

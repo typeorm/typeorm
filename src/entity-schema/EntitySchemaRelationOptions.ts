@@ -1,11 +1,11 @@
-import { JoinColumnOptions } from "../decorator/options/JoinColumnOptions"
-import { RelationType } from "../metadata/types/RelationTypes"
-import { JoinTableMultipleColumnsOptions } from "../decorator/options/JoinTableMultipleColumnsOptions"
-import { DeferrableType } from "../metadata/types/DeferrableType"
-import { OnDeleteType } from "../metadata/types/OnDeleteType"
-import { OnUpdateType } from "../metadata/types/OnUpdateType"
-import { JoinTableOptions } from "../decorator/options/JoinTableOptions"
-import { EntityTarget } from "../common/EntityTarget"
+import type { JoinColumnOptions } from "../decorator/options/JoinColumnOptions"
+import type { RelationType } from "../metadata/types/RelationTypes"
+import type { JoinTableMultipleColumnsOptions } from "../decorator/options/JoinTableMultipleColumnsOptions"
+import type { DeferrableType } from "../metadata/types/DeferrableType"
+import type { OnDeleteType } from "../metadata/types/OnDeleteType"
+import type { OnUpdateType } from "../metadata/types/OnUpdateType"
+import type { JoinTableOptions } from "../decorator/options/JoinTableOptions"
+import type { EntityTarget } from "../common/EntityTarget"
 
 export interface EntitySchemaRelationOptions {
     /**
@@ -108,7 +108,9 @@ export interface EntitySchemaRelationOptions {
     deferrable?: DeferrableType
 
     /**
-     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     * When a parent is saved (with cascading but) without a child row that still exists in database, this will control what shall happen to them.
+     * delete will remove these rows from database. nullify will remove the relation key.
+     * skip will keep the relation intact. Removal of related item is only possible through its own repo.
      */
-    orphanedRowAction?: "nullify" | "delete" | "soft-delete"
+    orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
 }

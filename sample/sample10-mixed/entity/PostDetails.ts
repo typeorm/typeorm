@@ -21,15 +21,15 @@ export class PostDetails {
     @Column()
     comment: string
 
-    @OneToOne((type) => Post, (post) => post.details)
+    @OneToOne(() => Post, (post) => post.details)
     post: Post
 
-    @OneToMany((type) => Category, (category) => category.details, {
+    @OneToMany(() => Category, (category) => category.details, {
         cascade: ["insert"],
     })
     categories: Category[]
 
-    @ManyToOne((type) => Chapter, (chapter) => chapter.postDetails, {
+    @ManyToOne(() => Chapter, (chapter) => chapter.postDetails, {
         cascade: ["insert"],
     })
     chapter: Chapter

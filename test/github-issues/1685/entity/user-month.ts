@@ -19,14 +19,14 @@ export class UserMonth {
     @PrimaryColumn()
     public username: string
 
-    @ManyToOne((type) => Month, (month) => month.userMonth)
+    @ManyToOne(() => Month, (month) => month.userMonth)
     @JoinColumn([
         { name: "yearNo", referencedColumnName: "yearNo" },
         { name: "monthNo", referencedColumnName: "monthNo" },
     ])
     public month: Month
 
-    @ManyToOne((type) => User, (user) => user.username)
+    @ManyToOne(() => User, (user) => user.username)
     @JoinColumn({ name: "username", referencedColumnName: "username" })
     public user: User
 

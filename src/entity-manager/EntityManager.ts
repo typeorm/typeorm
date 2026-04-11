@@ -1,41 +1,37 @@
-import { DataSource } from "../data-source/DataSource"
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { EntityTarget } from "../common/EntityTarget"
-import { ObjectType } from "../common/ObjectType"
+import type { DataSource } from "../data-source/DataSource"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { EntityTarget } from "../common/EntityTarget"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
 import { QueryRunnerProviderAlreadyReleasedError } from "../error/QueryRunnerProviderAlreadyReleasedError"
-import { FindOneOptions } from "../find-options/FindOneOptions"
-import { DeepPartial } from "../common/DeepPartial"
-import { RemoveOptions } from "../repository/RemoveOptions"
-import { SaveOptions } from "../repository/SaveOptions"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
+import type { DeepPartial } from "../common/DeepPartial"
+import type { RemoveOptions } from "../repository/RemoveOptions"
+import type { SaveOptions } from "../repository/SaveOptions"
 import { NoNeedToReleaseEntityManagerError } from "../error/NoNeedToReleaseEntityManagerError"
 import { MongoRepository } from "../repository/MongoRepository"
 import { TreeRepository } from "../repository/TreeRepository"
 import { Repository } from "../repository/Repository"
-import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import { PlainObjectToNewEntityTransformer } from "../query-builder/transformer/PlainObjectToNewEntityTransformer"
 import { PlainObjectToDatabaseEntityTransformer } from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer"
-import {
-    CustomRepositoryCannotInheritRepositoryError,
-    CustomRepositoryNotFoundError,
-    TreeRepositoryNotSupportedError,
-    TypeORMError,
-} from "../error"
-import { AbstractRepository } from "../repository/AbstractRepository"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import { TreeRepositoryNotSupportedError, TypeORMError } from "../error"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { EntityPersistExecutor } from "../persistence/EntityPersistExecutor"
-import { ObjectID } from "../driver/mongodb/typings"
-import { InsertResult } from "../query-builder/result/InsertResult"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { ObjectId } from "../driver/mongodb/typings"
+import type { InsertResult } from "../query-builder/result/InsertResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { getMetadataArgsStorage } from "../globals"
-import { UpsertOptions } from "../repository/UpsertOptions"
+import type { UpsertOptions } from "../repository/UpsertOptions"
+import type { UpdateOptions } from "../repository/UpdateOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { PickKeysByType } from "../common/PickKeysByType"
+import { buildSqlTag } from "../util/SqlTagUtils"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -49,9 +45,18 @@ export class EntityManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by this entity manager.
+     * DataSource used by this entity manager.
      */
-    readonly connection: DataSource
+    readonly dataSource: DataSource
+
+    /**
+     * DataSource used by this entity manager.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Custom query runner to be used for operations in this entity manager.
@@ -65,8 +70,9 @@ export class EntityManager {
 
     /**
      * Once created and then reused by repositories.
+     * Created as a future replacement for the #repositories to provide a bit more perf optimization.
      */
-    protected repositories: Repository<any>[] = []
+    protected repositories = new Map<EntityTarget<any>, Repository<any>>()
 
     /**
      * Once created and then reused by repositories.
@@ -83,8 +89,8 @@ export class EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource, queryRunner?: QueryRunner) {
-        this.connection = connection
+    constructor(dataSource: DataSource, queryRunner?: QueryRunner) {
+        this.dataSource = dataSource
         if (queryRunner) {
             this.queryRunner = queryRunner
             // dynamic: this.queryRunner = manager;
@@ -116,6 +122,9 @@ export class EntityManager {
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
      * All database operations must be executed using provided entity manager.
+     *
+     * @param isolationOrRunInTransaction
+     * @param runInTransactionParam
      */
     async transaction<T>(
         isolationOrRunInTransaction:
@@ -134,17 +143,17 @@ export class EntityManager {
 
         if (!runInTransaction) {
             throw new TypeORMError(
-                `Transaction method requires callback in second paramter if isolation level is supplied.`,
+                `Transaction method requires callback in second parameter if isolation level is supplied.`,
             )
         }
 
-        if (this.queryRunner && this.queryRunner.isReleased)
+        if (this.queryRunner?.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
         const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
 
         try {
             await queryRunner.startTransaction(isolation)
@@ -166,15 +175,44 @@ export class EntityManager {
 
     /**
      * Executes raw SQL query and returns raw database results.
+     *
+     * @param query
+     * @param parameters
+     * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
-        return this.connection.query(query, parameters, this.queryRunner)
+    async query<T = any>(query: string, parameters?: any[]): Promise<T> {
+        return this.dataSource.query(query, parameters, this.queryRunner)
+    }
+
+    /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     *
+     * @example
+     * entityManager.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @param strings
+     * @param values
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.dataSource.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
     }
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
      */
-    createQueryBuilder<Entity>(
+    createQueryBuilder<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         alias: string,
         queryRunner?: QueryRunner,
@@ -187,22 +225,26 @@ export class EntityManager {
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
+     *
+     * @param entityClass
+     * @param alias
+     * @param queryRunner
      */
-    createQueryBuilder<Entity>(
+    createQueryBuilder<Entity extends ObjectLiteral>(
         entityClass?: EntityTarget<Entity> | QueryRunner,
         alias?: string,
         queryRunner?: QueryRunner,
     ): SelectQueryBuilder<Entity> {
         if (alias) {
-            return this.connection.createQueryBuilder(
+            return this.dataSource.createQueryBuilder(
                 entityClass as EntityTarget<Entity>,
                 alias,
-                queryRunner || this.queryRunner,
+                queryRunner ?? this.queryRunner,
             )
         } else {
-            return this.connection.createQueryBuilder(
-                (entityClass as QueryRunner | undefined) ||
-                    queryRunner ||
+            return this.dataSource.createQueryBuilder(
+                (entityClass as QueryRunner | undefined) ??
+                    queryRunner ??
                     this.queryRunner,
             )
         }
@@ -220,12 +262,15 @@ export class EntityManager {
 
     /**
      * Checks if entity has an id by its Function type or schema name.
+     *
+     * @param targetOrEntity
+     * @param maybeEntity
      */
     hasId(targetOrEntity: any | Function | string, maybeEntity?: any): boolean {
         const target =
             arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor
         const entity = arguments.length === 2 ? maybeEntity : targetOrEntity
-        const metadata = this.connection.getMetadata(target)
+        const metadata = this.dataSource.getMetadata(target)
         return metadata.hasId(entity)
     }
 
@@ -241,12 +286,15 @@ export class EntityManager {
 
     /**
      * Gets entity mixed id.
+     *
+     * @param targetOrEntity
+     * @param maybeEntity
      */
     getId(targetOrEntity: any | EntityTarget<any>, maybeEntity?: any): any {
         const target =
             arguments.length === 2 ? targetOrEntity : targetOrEntity.constructor
         const entity = arguments.length === 2 ? maybeEntity : targetOrEntity
-        const metadata = this.connection.getMetadata(target)
+        const metadata = this.dataSource.getMetadata(target)
         return metadata.getEntityIdMixedMap(entity)
     }
 
@@ -254,34 +302,37 @@ export class EntityManager {
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObject?: DeepPartial<Entity>,
+        plainObject?: EntityLike,
     ): Entity
 
     /**
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObjects?: DeepPartial<Entity>[],
+        plainObjects?: EntityLike[],
     ): Entity[]
 
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
+     *
+     * @param entityClass
+     * @param plainObjectOrObjects
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObjectOrObjects?: DeepPartial<Entity> | DeepPartial<Entity>[],
+        plainObjectOrObjects?: EntityLike | EntityLike[],
     ): Entity | Entity[] {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
 
         if (!plainObjectOrObjects) return metadata.create(this.queryRunner)
 
         if (Array.isArray(plainObjectOrObjects))
-            return (plainObjectOrObjects as DeepPartial<Entity>[]).map(
+            return (plainObjectOrObjects as EntityLike[]).map(
                 (plainEntityLike) => this.create(entityClass, plainEntityLike),
             )
 
@@ -297,14 +348,18 @@ export class EntityManager {
 
     /**
      * Merges two entities into one new entity.
+     *
+     * @param entityClass
+     * @param mergeIntoEntity
+     * @param entityLikes
      */
-    merge<Entity>(
+    merge<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         mergeIntoEntity: Entity,
         ...entityLikes: DeepPartial<Entity>[]
     ): Entity {
         // todo: throw exception if entity manager is released
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         entityLikes.forEach((object) =>
             this.plainObjectToEntityTransformer.transform(
                 mergeIntoEntity,
@@ -320,14 +375,17 @@ export class EntityManager {
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
+     *
+     * @param entityClass
+     * @param entityLike
      */
-    async preload<Entity>(
+    async preload<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         entityLike: DeepPartial<Entity>,
     ): Promise<Entity | undefined> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         const plainObjectToDatabaseEntityTransformer =
-            new PlainObjectToDatabaseEntityTransformer(this.connection.manager)
+            new PlainObjectToDatabaseEntityTransformer(this.dataSource.manager)
         const transformedEntity =
             await plainObjectToDatabaseEntityTransformer.transform(
                 entityLike,
@@ -397,8 +455,12 @@ export class EntityManager {
 
     /**
      * Saves a given entity in the database.
+     *
+     * @param targetOrEntity
+     * @param maybeEntityOrOptions
+     * @param maybeOptions
      */
-    save<Entity, T extends DeepPartial<Entity>>(
+    save<Entity extends ObjectLiteral, T extends DeepPartial<Entity>>(
         targetOrEntity: (T | T[]) | EntityTarget<Entity>,
         maybeEntityOrOptions?: T | T[],
         maybeOptions?: SaveOptions,
@@ -426,7 +488,7 @@ export class EntityManager {
 
         // execute save operation
         return new EntityPersistExecutor(
-            this.connection,
+            this.dataSource,
             this.queryRunner,
             "save",
             target,
@@ -467,8 +529,12 @@ export class EntityManager {
 
     /**
      * Removes a given entity from the database.
+     *
+     * @param targetOrEntity
+     * @param maybeEntityOrOptions
+     * @param maybeOptions
      */
-    remove<Entity>(
+    remove<Entity extends ObjectLiteral>(
         targetOrEntity: (Entity | Entity[]) | EntityTarget<Entity>,
         maybeEntityOrOptions?: Entity | Entity[],
         maybeOptions?: RemoveOptions,
@@ -477,6 +543,7 @@ export class EntityManager {
         const target =
             arguments.length > 1 &&
             (typeof targetOrEntity === "function" ||
+                InstanceChecker.isEntitySchema(targetOrEntity) ||
                 typeof targetOrEntity === "string")
                 ? (targetOrEntity as Function | string)
                 : undefined
@@ -493,7 +560,7 @@ export class EntityManager {
 
         // execute save operation
         return new EntityPersistExecutor(
-            this.connection,
+            this.dataSource,
             this.queryRunner,
             "remove",
             target,
@@ -537,8 +604,12 @@ export class EntityManager {
 
     /**
      * Records the delete date of one or many given entities.
+     *
+     * @param targetOrEntity
+     * @param maybeEntityOrOptions
+     * @param maybeOptions
      */
-    softRemove<Entity, T extends DeepPartial<Entity>>(
+    softRemove<Entity extends ObjectLiteral, T extends DeepPartial<Entity>>(
         targetOrEntity: (T | T[]) | EntityTarget<Entity>,
         maybeEntityOrOptions?: T | T[],
         maybeOptions?: SaveOptions,
@@ -566,7 +637,7 @@ export class EntityManager {
 
         // execute soft-remove operation
         return new EntityPersistExecutor(
-            this.connection,
+            this.dataSource,
             this.queryRunner,
             "soft-remove",
             target,
@@ -610,8 +681,12 @@ export class EntityManager {
 
     /**
      * Recovers one or many given entities.
+     *
+     * @param targetOrEntity
+     * @param maybeEntityOrOptions
+     * @param maybeOptions
      */
-    recover<Entity, T extends DeepPartial<Entity>>(
+    recover<Entity extends ObjectLiteral, T extends DeepPartial<Entity>>(
         targetOrEntity: (T | T[]) | EntityTarget<Entity>,
         maybeEntityOrOptions?: T | T[],
         maybeOptions?: SaveOptions,
@@ -639,7 +714,7 @@ export class EntityManager {
 
         // execute recover operation
         return new EntityPersistExecutor(
-            this.connection,
+            this.dataSource,
             this.queryRunner,
             "recover",
             target,
@@ -656,8 +731,11 @@ export class EntityManager {
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      * You can execute bulk inserts using this method.
+     *
+     * @param target
+     * @param entity
      */
-    async insert<Entity>(
+    async insert<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         entity:
             | QueryDeepPartialEntity<Entity>
@@ -670,14 +748,14 @@ export class EntityManager {
             .execute()
     }
 
-    async upsert<Entity>(
+    async upsert<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         entityOrEntities:
             | QueryDeepPartialEntity<Entity>
             | QueryDeepPartialEntity<Entity>[],
         conflictPathsOrOptions: string[] | UpsertOptions<Entity>,
     ): Promise<InsertResult> {
-        const metadata = this.connection.getMetadata(target)
+        const metadata = this.dataSource.getMetadata(target)
 
         let options: UpsertOptions<Entity>
 
@@ -698,19 +776,26 @@ export class EntityManager {
         }
 
         const conflictColumns = metadata.mapPropertyPathsToColumns(
-            options.conflictPaths,
+            Array.isArray(options.conflictPaths)
+                ? options.conflictPaths
+                : Object.keys(options.conflictPaths),
         )
 
         const overwriteColumns = metadata.columns.filter(
             (col) =>
                 !conflictColumns.includes(col) &&
+                col.isUpdate !== false &&
+                !col.generatedType &&
                 entities.some(
                     (entity) =>
                         typeof col.getEntityValue(entity) !== "undefined",
                 ),
         )
 
-        return this.createQueryBuilder()
+        const upsertType =
+            options.upsertType ?? this.dataSource.driver.supportedUpsertTypes[0]
+
+        const qb = this.createQueryBuilder()
             .insert()
             .into(target)
             .values(entities)
@@ -722,9 +807,16 @@ export class EntityManager {
                 {
                     skipUpdateIfNoValuesChanged:
                         options.skipUpdateIfNoValuesChanged,
+                    indexPredicate: options.indexPredicate,
+                    upsertType,
                 },
             )
-            .execute()
+
+        if (options.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -733,8 +825,13 @@ export class EntityManager {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
+     *
+     * @param target
+     * @param criteria
+     * @param partialEntity
+     * @param options
      */
-    update<Entity>(
+    update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         criteria:
             | string
@@ -743,18 +840,14 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
         partialEntity: QueryDeepPartialEntity<Entity>,
+        options?: UpdateOptions,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
                     `Empty criteria(s) are not allowed for the update method.`,
@@ -762,24 +855,58 @@ export class EntityManager {
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
-            return this.createQueryBuilder()
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
+            const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
                 .whereInIds(criteria)
-                .execute()
+
+            if (options?.returning !== undefined) {
+                qb.returning(options.returning)
+            }
+
+            return qb.execute()
         } else {
-            return this.createQueryBuilder()
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.dataSource.options.invalidWhereValuesBehavior,
+            )
+            const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
-                .where(criteria)
-                .execute()
+                .where(normalizedCriteria)
+
+            if (options?.returning !== undefined) {
+                qb.returning(options.returning)
+            }
+
+            return qb.execute()
         }
+    }
+
+    /**
+     * Updates all entities of target type, setting fields from supplied partial entity.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient UPDATE query without WHERE clause.
+     *
+     * WARNING! This method updates ALL rows in the target table.
+     *
+     * @param target
+     * @param partialEntity
+     * @param options
+     */
+    updateAll<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+        partialEntity: QueryDeepPartialEntity<Entity>,
+        options?: UpdateOptions,
+    ): Promise<UpdateResult> {
+        const qb = this.createQueryBuilder().update(target).set(partialEntity)
+
+        if (options?.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -788,8 +915,11 @@ export class EntityManager {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
+     *
+     * @param targetOrEntity
+     * @param criteria
      */
-    delete<Entity>(
+    delete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -798,17 +928,12 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
     ): Promise<DeleteResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
                     `Empty criteria(s) are not allowed for the delete method.`,
@@ -816,34 +941,51 @@ export class EntityManager {
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.dataSource.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
 
     /**
+     * Deletes all entities of target type.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient DELETE query without WHERE clause.
+     *
+     * WARNING! This method deletes ALL rows in the target table.
+     *
+     * @param targetOrEntity
+     */
+    deleteAll<Entity extends ObjectLiteral>(
+        targetOrEntity: EntityTarget<Entity>,
+    ): Promise<DeleteResult> {
+        return this.createQueryBuilder().delete().from(targetOrEntity).execute()
+    }
+
+    /**
      * Records the delete date of entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
+     *
+     * @param targetOrEntity
+     * @param criteria
      */
-    softDelete<Entity>(
+    softDelete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -852,40 +994,34 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
+                    `Empty criteria(s) are not allowed for the softDelete method.`,
                 ),
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.dataSource.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
@@ -893,11 +1029,14 @@ export class EntityManager {
     /**
      * Restores entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
+     *
+     * @param targetOrEntity
+     * @param criteria
      */
-    restore<Entity>(
+    restore<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -906,101 +1045,227 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
+                    `Empty criteria(s) are not allowed for the restore method.`,
                 ),
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
                 .whereInIds(criteria)
                 .execute()
         } else {
+            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                criteria as ObjectLiteral,
+                this.dataSource.options.invalidWhereValuesBehavior,
+            )
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(normalizedCriteria)
                 .execute()
         }
     }
 
     /**
+     * Checks whether any entity exists with the given options.
+     *
+     * @param entityClass
+     * @param options
+     */
+    async exists<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        options?: FindManyOptions<Entity>,
+    ): Promise<boolean> {
+        const metadata = this.dataSource.getMetadata(entityClass)
+        return this.createQueryBuilder(entityClass, metadata.name)
+            .setFindOptions(options ?? {})
+            .getExists()
+    }
+
+    /**
+     * Checks whether any entity exists with the given conditions.
+     *
+     * @param entityClass
+     * @param where
+     */
+    async existsBy<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<boolean> {
+        const metadata = this.dataSource.getMetadata(entityClass)
+        return this.createQueryBuilder(entityClass, metadata.name)
+            .setFindOptions({ where })
+            .getExists()
+    }
+
+    /**
      * Counts entities that match given options.
      * Useful for pagination.
+     *
+     * @param entityClass
+     * @param options
      */
-    count<Entity>(
+    async count<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<number> {
-        const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder(
-            entityClass,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
-        )
-            .setFindOptions(options || {})
+        const metadata = this.dataSource.getMetadata(entityClass)
+        return this.createQueryBuilder(entityClass, metadata.name)
+            .setFindOptions(options ?? {})
             .getCount()
     }
 
     /**
      * Counts entities that match given conditions.
      * Useful for pagination.
+     *
+     * @param entityClass
+     * @param where
      */
-    countBy<Entity>(
+    async countBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions({ where })
             .getCount()
     }
 
     /**
-     * Finds entities that match given find options.
+     * Return the SUM of a column
+     *
+     * @param entityClass
+     * @param columnName
+     * @param where
      */
-    async find<Entity>(
+    sum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "SUM", columnName, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     *
+     * @param entityClass
+     * @param columnName
+     * @param where
+     */
+    average<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "AVG", columnName, where)
+    }
+
+    /**
+     * Return the MIN of a column
+     *
+     * @param entityClass
+     * @param columnName
+     * @param where
+     */
+    minimum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "MIN", columnName, where)
+    }
+
+    /**
+     * Return the MAX of a column
+     *
+     * @param entityClass
+     * @param columnName
+     * @param where
+     */
+    maximum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "MAX", columnName, where)
+    }
+
+    private async callAggregateFun<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        fnName: "SUM" | "AVG" | "MIN" | "MAX",
+        columnName: PickKeysByType<Entity, number>,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
+    ): Promise<number | null> {
+        const metadata = this.dataSource.getMetadata(entityClass)
+        const column = metadata.columns.find(
+            (item) => item.propertyPath === columnName,
+        )
+        if (!column) {
+            throw new TypeORMError(
+                `Column "${columnName}" was not found in table "${metadata.name}"`,
+            )
+        }
+
+        const qb = this.createQueryBuilder(entityClass, metadata.name)
+        qb.setFindOptions({ where })
+
+        const alias = qb.alias
+
+        const result = await qb
+            .select(
+                `${fnName}(${this.dataSource.driver.escape(
+                    alias,
+                )}.${this.dataSource.driver.escape(column.databaseName)})`,
+                fnName,
+            )
+            .setOption("disable-global-order")
+            .getRawOne()
+        return result[fnName] === null ? null : parseFloat(result[fnName])
+    }
+
+    /**
+     * Finds entities that match given find options.
+     *
+     * @param entityClass
+     * @param options
+     */
+    async find<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<Entity[]> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
+            metadata.name,
         )
-            .setFindOptions(options || {})
+            .setFindOptions(options ?? {})
             .getMany()
     }
 
     /**
      * Finds entities that match given find options.
+     *
+     * @param entityClass
+     * @param where
      */
-    async findBy<Entity>(
+    async findBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity[]> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             metadata.name,
@@ -1013,18 +1278,20 @@ export class EntityManager {
      * Finds entities that match given find options.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
+     * @param entityClass
+     * @param options
      */
-    findAndCount<Entity>(
+    async findAndCount<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<[Entity[], number]> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
+            metadata.name,
         )
-            .setFindOptions(options || {})
+            .setFindOptions(options ?? {})
             .getManyAndCount()
     }
 
@@ -1032,12 +1299,15 @@ export class EntityManager {
      * Finds entities that match given WHERE conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
+     * @param entityClass
+     * @param where
      */
-    findAndCountBy<Entity>(
+    async findAndCountBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<[Entity[], number]> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             metadata.name,
@@ -1047,46 +1317,17 @@ export class EntityManager {
     }
 
     /**
-     * Finds entities with ids.
-     * Optionally find options or conditions can be applied.
-     *
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    async findByIds<Entity>(
-        entityClass: EntityTarget<Entity>,
-        ids: any[],
-    ): Promise<Entity[]> {
-        // if no ids passed, no need to execute a query - just return an empty array of values
-        if (!ids.length) return Promise.resolve([])
-
-        const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder<Entity>(
-            entityClass as any,
-            metadata.name,
-        )
-            .andWhereInIds(ids)
-            .getMany()
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
+     *
+     * @param entityClass
+     * @param options
      */
-    async findOne<Entity>(
+    async findOne<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
     ): Promise<Entity | null> {
-        const metadata = this.connection.getMetadata(entityClass)
-
-        // prepare alias for built query
-        let alias: string = metadata.name
-        if (options && options.join) {
-            alias = options.join.alias
-        }
+        const metadata = this.dataSource.getMetadata(entityClass)
 
         if (!options.where) {
             throw new Error(
@@ -1095,7 +1336,7 @@ export class EntityManager {
         }
 
         // create query builder and apply find options
-        return this.createQueryBuilder<Entity>(entityClass, alias)
+        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({
                 ...options,
                 take: 1,
@@ -1106,12 +1347,15 @@ export class EntityManager {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - returns null.
+     *
+     * @param entityClass
+     * @param where
      */
-    async findOneBy<Entity>(
+    async findOneBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity | null> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
 
         // create query builder and apply find options
         return this.createQueryBuilder<Entity>(entityClass, metadata.name)
@@ -1123,35 +1367,13 @@ export class EntityManager {
     }
 
     /**
-     * Finds first entity that matches given id.
-     * If entity was not found in the database - returns null.
-     *
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById<Entity>(
-        entityClass: EntityTarget<Entity>,
-        id: number | string | Date | ObjectID,
-    ): Promise<Entity | null> {
-        const metadata = this.connection.getMetadata(entityClass)
-
-        // create query builder and apply find options
-        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
-            .setFindOptions({
-                take: 1,
-            })
-            .whereInIds(metadata.ensureEntityIdMap(id))
-            .getOne()
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
+     *
+     * @param entityClass
+     * @param options
      */
-    async findOneOrFail<Entity>(
+    async findOneOrFail<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
     ): Promise<Entity> {
@@ -1170,8 +1392,11 @@ export class EntityManager {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - rejects with error.
+     *
+     * @param entityClass
+     * @param where
      */
-    async findOneByOrFail<Entity>(
+    async findOneByOrFail<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity> {
@@ -1191,14 +1416,22 @@ export class EntityManager {
      * Clears all the data from the given table (truncates/drops it).
      *
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
+     *
+     * @param entityClass
+     * @param options
+     * @param options.cascade
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    async clear<Entity>(entityClass: EntityTarget<Entity>): Promise<void> {
-        const metadata = this.connection.getMetadata(entityClass)
+    async clear<Entity>(
+        entityClass: EntityTarget<Entity>,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        const metadata = this.dataSource.getMetadata(entityClass)
+
         const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
         try {
-            return await queryRunner.clearTable(metadata.tablePath) // await is needed here because we are using finally
+            return await queryRunner.clearTable(metadata.tablePath, options)
         } finally {
             if (!this.queryRunner) await queryRunner.release()
         }
@@ -1206,14 +1439,19 @@ export class EntityManager {
 
     /**
      * Increments some column by provided value of the entities matched given conditions.
+     *
+     * @param entityClass
+     * @param conditions
+     * @param propertyPath
+     * @param value
      */
-    async increment<Entity>(
+    async increment<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         const column = metadata.findColumnWithPropertyPath(propertyPath)
         if (!column)
             throw new TypeORMError(
@@ -1223,13 +1461,13 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new TypeORMError(`Value "${value}" is not a number.`)
 
-        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        // convert possible embedded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
-                    this.connection.driver.escape(column.databaseName) +
+                    this.dataSource.driver.escape(column.databaseName) +
                     " + " +
                     value,
             )
@@ -1243,14 +1481,19 @@ export class EntityManager {
 
     /**
      * Decrements some column by provided value of the entities matched given conditions.
+     *
+     * @param entityClass
+     * @param conditions
+     * @param propertyPath
+     * @param value
      */
-    async decrement<Entity>(
+    async decrement<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
-        const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.dataSource.getMetadata(entityClass)
         const column = metadata.findColumnWithPropertyPath(propertyPath)
         if (!column)
             throw new TypeORMError(
@@ -1260,13 +1503,13 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new TypeORMError(`Value "${value}" is not a number.`)
 
-        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        // convert possible embedded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
-                    this.connection.driver.escape(column.databaseName) +
+                    this.dataSource.driver.escape(column.databaseName) +
                     " - " +
                     value,
             )
@@ -1283,22 +1526,24 @@ export class EntityManager {
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
+     *
+     * @param target
      */
-    getRepository<Entity>(target: EntityTarget<Entity>): Repository<Entity> {
+    getRepository<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+    ): Repository<Entity> {
         // find already created repository instance and return it if found
-        const repository = this.repositories.find(
-            (repository) => repository.target === target,
-        )
-        if (repository) return repository
+        const repoFromMap = this.repositories.get(target)
+        if (repoFromMap) return repoFromMap
 
         // if repository was not found then create it, store its instance and return it
-        if (this.connection.driver.options.type === "mongodb") {
+        if (this.dataSource.driver.options.type === "mongodb") {
             const newRepository = new MongoRepository(
                 target,
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository as any)
+            this.repositories.set(target, newRepository)
             return newRepository
         } else {
             const newRepository = new Repository<any>(
@@ -1306,7 +1551,7 @@ export class EntityManager {
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository)
+            this.repositories.set(target, newRepository)
             return newRepository
         }
     }
@@ -1316,13 +1561,15 @@ export class EntityManager {
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
+     *
+     * @param target
      */
-    getTreeRepository<Entity>(
+    getTreeRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): TreeRepository<Entity> {
         // tree tables aren't supported by some drivers (mongodb)
-        if (this.connection.driver.treeSupport === false)
-            throw new TreeRepositoryNotSupportedError(this.connection.driver)
+        if (this.dataSource.driver.treeSupport === false)
+            throw new TreeRepositoryNotSupportedError(this.dataSource.driver)
 
         // find already created repository instance and return it if found
         const repository = this.treeRepositories.find(
@@ -1338,19 +1585,25 @@ export class EntityManager {
 
     /**
      * Gets mongodb repository for the given entity class.
+     *
+     * @param target
      */
-    getMongoRepository<Entity>(
+    getMongoRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): MongoRepository<Entity> {
-        return this.connection.getMongoRepository<Entity>(target)
+        return this.dataSource.getMongoRepository<Entity>(target)
     }
 
     /**
      * Creates a new repository instance out of a given Repository and
      * sets current EntityManager instance to it. Used to work with custom repositories
      * in transactions.
+     *
+     * @param repository
      */
-    withRepository<Entity, R extends Repository<Entity>>(repository: R): R {
+    withRepository<Entity extends ObjectLiteral, R extends Repository<any>>(
+        repository: R & Repository<Entity>,
+    ): R {
         const repositoryConstructor =
             repository.constructor as typeof Repository
         const { target, manager, queryRunner, ...otherRepositoryProperties } =
@@ -1361,50 +1614,6 @@ export class EntityManager {
                 ...otherRepositoryProperties,
             },
         )
-    }
-
-    /**
-     * Gets custom entity repository marked with @EntityRepository decorator.
-     *
-     * @deprecated use Repository.extend to create custom repositories
-     */
-    getCustomRepository<T>(customRepository: ObjectType<T>): T {
-        const entityRepositoryMetadataArgs =
-            getMetadataArgsStorage().entityRepositories.find((repository) => {
-                return (
-                    repository.target ===
-                    (typeof customRepository === "function"
-                        ? customRepository
-                        : (customRepository as any).constructor)
-                )
-            })
-        if (!entityRepositoryMetadataArgs)
-            throw new CustomRepositoryNotFoundError(customRepository)
-
-        const entityMetadata = entityRepositoryMetadataArgs.entity
-            ? this.connection.getMetadata(entityRepositoryMetadataArgs.entity)
-            : undefined
-        const entityRepositoryInstance =
-            new (entityRepositoryMetadataArgs.target as any)(
-                this,
-                entityMetadata,
-            )
-
-        // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
-        // however we need these properties for internal work of the class
-        if (entityRepositoryInstance instanceof AbstractRepository) {
-            if (!(entityRepositoryInstance as any)["manager"])
-                (entityRepositoryInstance as any)["manager"] = this
-        } else {
-            if (!entityMetadata)
-                throw new CustomRepositoryCannotInheritRepositoryError(
-                    customRepository,
-                )
-            ;(entityRepositoryInstance as any)["manager"] = this
-            ;(entityRepositoryInstance as any)["metadata"] = entityMetadata
-        }
-
-        return entityRepositoryInstance
     }
 
     /**

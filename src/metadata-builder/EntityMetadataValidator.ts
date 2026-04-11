@@ -1,10 +1,10 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { MissingPrimaryColumnError } from "../error/MissingPrimaryColumnError"
 import { CircularRelationsError } from "../error/CircularRelationsError"
 import { DepGraph } from "../util/DepGraph"
-import { Driver } from "../driver/Driver"
+import type { Driver } from "../driver/Driver"
 import { DataTypeNotSupportedError } from "../error/DataTypeNotSupportedError"
-import { ColumnType } from "../driver/types/ColumnTypes"
+import type { ColumnType } from "../driver/types/ColumnTypes"
 import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
@@ -37,6 +37,9 @@ export class EntityMetadataValidator {
 
     /**
      * Validates all given entity metadatas.
+     *
+     * @param entityMetadatas
+     * @param driver
      */
     validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
         entityMetadatas.forEach((entityMetadata) =>
@@ -48,6 +51,10 @@ export class EntityMetadataValidator {
 
     /**
      * Validates given entity metadata.
+     *
+     * @param entityMetadata
+     * @param allEntityMetadatas
+     * @param driver
      */
     validate(
         entityMetadata: EntityMetadata,
@@ -57,6 +64,21 @@ export class EntityMetadataValidator {
         // check if table metadata has an id
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata)
+
+        // if entity has multiple primary keys and uses custom constraint name,
+        // then all primary keys should have the same constraint name
+        if (entityMetadata.primaryColumns.length > 1) {
+            const areConstraintNamesEqual = entityMetadata.primaryColumns.every(
+                (columnMetadata, i, columnMetadatas) =>
+                    columnMetadata.primaryKeyConstraintName ===
+                    columnMetadatas[0].primaryKeyConstraintName,
+            )
+            if (!areConstraintNamesEqual) {
+                throw new TypeORMError(
+                    `Entity ${entityMetadata.name} has multiple primary columns with different constraint names. Constraint names should be the equal.`,
+                )
+            }
+        }
 
         // validate if table is using inheritance it has a discriminator
         // also validate if discriminator values are not empty and not repeated
@@ -97,40 +119,35 @@ export class EntityMetadataValidator {
                 )
         }
 
-        entityMetadata.relationCounts.forEach((relationCount) => {
-            if (
-                relationCount.relation.isManyToOne ||
-                relationCount.relation.isOneToOne
-            )
-                throw new TypeORMError(
-                    `Relation count can not be implemented on ManyToOne or OneToOne relations.`,
-                )
-        })
-
         if (!(driver.options.type === "mongodb")) {
-            entityMetadata.columns.forEach((column) => {
-                const normalizedColumn = driver.normalizeType(
-                    column,
-                ) as ColumnType
-                if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
-                    throw new DataTypeNotSupportedError(
+            entityMetadata.columns
+                .filter((column) => !column.isVirtualProperty)
+                .forEach((column) => {
+                    const normalizedColumn = driver.normalizeType(
                         column,
-                        normalizedColumn,
-                        driver.options.type,
+                    ) as ColumnType
+                    if (!driver.supportedDataTypes.includes(normalizedColumn))
+                        throw new DataTypeNotSupportedError(
+                            column,
+                            normalizedColumn,
+                            driver.options.type,
+                        )
+                    if (
+                        column.length &&
+                        !driver.withLengthColumnTypes.includes(normalizedColumn)
                     )
-                if (
-                    column.length &&
-                    driver.withLengthColumnTypes.indexOf(normalizedColumn) ===
-                        -1
-                )
-                    throw new TypeORMError(
-                        `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
+                        throw new TypeORMError(
+                            `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
+                        )
+                    if (
+                        column.type === "enum" &&
+                        !column.enum &&
+                        !column.enumName
                     )
-                if (column.type === "enum" && !column.enum && !column.enumName)
-                    throw new TypeORMError(
-                        `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
-                    )
-            })
+                        throw new TypeORMError(
+                            `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
+                        )
+                })
         }
 
         if (
@@ -168,6 +185,20 @@ export class EntityMetadataValidator {
                 )
         }
 
+        // Postgres supports only STORED generated columns.
+        if (driver.options.type === "postgres") {
+            const virtualColumn = entityMetadata.columns.find(
+                (column) =>
+                    column.asExpression &&
+                    (!column.generatedType ||
+                        column.generatedType === "VIRTUAL"),
+            )
+            if (virtualColumn)
+                throw new TypeORMError(
+                    `Column "${virtualColumn.propertyName}" of Entity "${entityMetadata.name}" is defined as VIRTUAL, but Postgres supports only STORED generated columns.`,
+                )
+        }
+
         // check if relations are all without initialized properties
         const entityInstance = entityMetadata.create(undefined, {
             fromDeserializer: true,
@@ -187,45 +218,27 @@ export class EntityMetadataValidator {
 
         // validate relations
         entityMetadata.relations.forEach((relation) => {
-            // check join tables:
-            // using JoinTable is possible only on one side of the many-to-many relation
-            // todo(dima): fix
-            // if (relation.joinTable) {
-            //     if (!relation.isManyToMany)
-            //         throw new UsingJoinTableIsNotAllowedError(entityMetadata, relation);
-            //     // if there is inverse side of the relation, then check if it does not have join table too
-            //     if (relation.hasInverseSide && relation.inverseRelation.joinTable)
-            //         throw new UsingJoinTableOnlyOnOneSideAllowedError(entityMetadata, relation);
-            // }
-            // check join columns:
-            // using JoinColumn is possible only on one side of the relation and on one-to-one, many-to-one relation types
-            // first check if relation is one-to-one or many-to-one
-            // todo(dima): fix
-            /*if (relation.joinColumn) {
-
-                // join column can be applied only on one-to-one and many-to-one relations
-                if (!relation.isOneToOne && !relation.isManyToOne)
-                    throw new UsingJoinColumnIsNotAllowedError(entityMetadata, relation);
-
-                // if there is inverse side of the relation, then check if it does not have join table too
-                if (relation.hasInverseSide && relation.inverseRelation.joinColumn && relation.isOneToOne)
-                    throw new UsingJoinColumnOnlyOnOneSideAllowedError(entityMetadata, relation);
-
-                // check if join column really has referenced column
-                if (relation.joinColumn && !relation.joinColumn.referencedColumn)
-                    throw new TypeORMError(`Join column does not have referenced column set`);
-
+            // check OnDeleteTypes
+            if (
+                driver.supportedOnDeleteTypes &&
+                relation.onDelete &&
+                !driver.supportedOnDeleteTypes.includes(relation.onDelete)
+            ) {
+                throw new TypeORMError(
+                    `OnDeleteType "${relation.onDelete}" is not supported for ${driver.options.type}!`,
+                )
             }
 
-            // if its a one-to-one relation and JoinColumn is missing on both sides of the relation
-            // or its one-side relation without JoinColumn we should give an error
-            if (!relation.joinColumn && relation.isOneToOne && (!relation.hasInverseSide || !relation.inverseRelation.joinColumn))
-                throw new MissingJoinColumnError(entityMetadata, relation);*/
-            // if its a many-to-many relation and JoinTable is missing on both sides of the relation
-            // or its one-side relation without JoinTable we should give an error
-            // todo(dima): fix it
-            // if (!relation.joinTable && relation.isManyToMany && (!relation.hasInverseSide || !relation.inverseRelation.joinTable))
-            //     throw new MissingJoinTableError(entityMetadata, relation);
+            // check OnUpdateTypes
+            if (
+                driver.supportedOnUpdateTypes &&
+                relation.onUpdate &&
+                !driver.supportedOnUpdateTypes.includes(relation.onUpdate)
+            ) {
+                throw new TypeORMError(
+                    `OnUpdateType "${relation.onUpdate}" is not valid for ${driver.options.type}!`,
+                )
+            }
             // todo: validate if its one-to-one and side which does not have join column MUST have inverse side
             // todo: validate if its many-to-many and side which does not have join table MUST have inverse side
             // todo: if there is a relation, and inverse side is specified only on one side, shall we give error
@@ -243,8 +256,7 @@ export class EntityMetadataValidator {
         entityMetadata.relations.forEach((relation) => {
             const isCircularCascadeRemove =
                 relation.isCascadeRemove &&
-                relation.inverseRelation &&
-                relation.inverseRelation!.isCascadeRemove
+                relation.inverseRelation?.isCascadeRemove
             if (isCircularCascadeRemove)
                 throw new TypeORMError(
                     `Relation ${entityMetadata.name}#${
@@ -255,12 +267,12 @@ export class EntityMetadataValidator {
                         `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`,
                 )
         }) // todo: maybe better just deny removal from one to one relation without join column?
-
-        entityMetadata.eagerRelations.forEach((relation) => {})
     }
 
     /**
      * Validates dependencies of the entity metadatas.
+     *
+     * @param entityMetadatas
      */
     protected validateDependencies(entityMetadatas: EntityMetadata[]) {
         const graph = new DepGraph()
@@ -288,14 +300,13 @@ export class EntityMetadataValidator {
 
     /**
      * Validates eager relations to prevent circular dependency in them.
+     *
+     * @param entityMetadatas
      */
     protected validateEagerRelations(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach((entityMetadata) => {
             entityMetadata.eagerRelations.forEach((relation) => {
-                if (
-                    relation.inverseRelation &&
-                    relation.inverseRelation.isEager
-                )
+                if (relation.inverseRelation?.isEager)
                     throw new TypeORMError(
                         `Circular eager relations are disallowed. ` +
                             `${entityMetadata.targetName}#${relation.propertyPath} contains "eager: true", and its inverse side ` +

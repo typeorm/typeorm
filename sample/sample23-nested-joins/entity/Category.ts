@@ -11,7 +11,7 @@ export class Category {
     @Column()
     name: string
 
-    @ManyToMany((type) => Author)
+    @ManyToMany(() => Author)
     @JoinTable()
     author: Author
 }

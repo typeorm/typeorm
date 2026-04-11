@@ -12,6 +12,6 @@ export class User {
     @Column()
     name: string
 
-    @ManyToOne((type) => Post, { cascade: ["update"] })
+    @ManyToOne(() => Post, { cascade: ["update"] })
     post: Post
 }

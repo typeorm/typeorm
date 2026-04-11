@@ -1,12 +1,10 @@
-import { Entity, ObjectIdColumn, ObjectID, Column } from "../../../../src"
+import { ObjectId } from "mongodb"
+import { Column, Entity, ObjectIdColumn } from "../../../../src"
 
-/**
- * @deprecated use item config instead
- */
 @Entity()
 export class Config {
     @ObjectIdColumn()
-    _id: ObjectID
+    _id: ObjectId
 
     @Column()
     itemId: string

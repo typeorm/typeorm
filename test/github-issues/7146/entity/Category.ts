@@ -11,14 +11,14 @@ export class Category {
     @PrimaryGeneratedColumn()
     id: number
 
-    @OneToOne((type) => Post, (post) => post.lazyOneToOne, {
+    @OneToOne(() => Post, (post) => post.lazyOneToOne, {
         nullable: true,
         eager: false,
     })
     @JoinColumn()
     backRef1: Post
 
-    @OneToOne((type) => Post, (post) => post.eagerOneToOne, {
+    @OneToOne(() => Post, (post) => post.eagerOneToOne, {
         nullable: true,
         eager: false,
     })

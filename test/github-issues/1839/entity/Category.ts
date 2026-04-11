@@ -4,9 +4,9 @@ import { Post } from "./Post"
 
 @Entity()
 export class Category {
-    @PrimaryColumn({ collation: "ascii_general_ci", charset: "ascii" })
+    @PrimaryColumn({ charset: "ascii", collation: "ascii_general_ci" })
     id: string
 
-    @ManyToMany((type) => Post, (post) => post.categories)
+    @ManyToMany(() => Post, (post) => post.categories)
     posts: Post[]
 }

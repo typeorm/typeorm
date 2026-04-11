@@ -81,7 +81,7 @@ export class EnumEntity {
         type: "enum",
         enum: StringEnum,
     })
-    enumWithoutdefault: StringEnum
+    enumWithoutDefault: StringEnum
 
     @Column({
         type: "enum",

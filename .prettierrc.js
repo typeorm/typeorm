@@ -1,5 +1,11 @@
-module.exports = {
-  semi: false,
-  trailingComma: "all",
-  arrowParens: "always",
+/**
+ * @see https://prettier.io/docs/configuration
+ * @type {import("prettier").Config}
+ */
+const config = {
+    semi: false,
+
+    plugins: ["prettier-plugin-packagejson", "prettier-plugin-toml"],
 }
+
+module.exports = config

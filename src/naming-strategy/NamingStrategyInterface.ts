@@ -1,4 +1,5 @@
-import { Table } from "../schema-builder/table/Table"
+import type { Table } from "../schema-builder/table/Table"
+import type { View } from "../schema-builder/view/View"
 
 /**
  * Naming strategy defines how auto-generated names for such things like table name, or table column gonna be
@@ -14,7 +15,7 @@ export interface NamingStrategyInterface {
      * Normalizes table name.
      *
      * @param targetName Name of the target entity that can be used to generate a table name.
-     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. @Entity("name")
+     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. `@Entity("name")`
      */
     tableName(targetName: string, userSpecifiedName: string | undefined): string
 
@@ -84,7 +85,7 @@ export interface NamingStrategyInterface {
      * Gets the name of the index - simple and compose index.
      */
     indexName(
-        tableOrName: Table | string,
+        tableOrName: Table | View | string,
         columns: string[],
         where?: string,
     ): string
@@ -160,11 +161,6 @@ export interface NamingStrategyInterface {
      * Note that table name comes here already normalized by #tableName method.
      */
     prefixTableName(prefix: string, tableName: string): string
-
-    /**
-     * Gets the name of the alias used for relation joins.
-     */
-    eagerJoinRelationAlias(alias: string, propertyPath: string): string
 
     /**
      * Column names for nested sets.
