@@ -79,6 +79,7 @@ export class View {
 
     /**
      * Add index
+     *
      * @param index
      */
     addIndex(index: TableIndex): void {
@@ -87,6 +88,7 @@ export class View {
 
     /**
      * Remove index
+     *
      * @param viewIndex
      */
     removeIndex(viewIndex: TableIndex): void {
@@ -104,6 +106,7 @@ export class View {
 
     /**
      * Creates view from a given entity metadata.
+     *
      * @param entityMetadata
      * @param driver
      */

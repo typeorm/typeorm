@@ -11,6 +11,7 @@ export class DateUtils {
 
     /**
      * Normalizes date object hydrated from the database.
+     *
      * @param mixedDate
      */
     static normalizeHydratedDate(
@@ -25,6 +26,7 @@ export class DateUtils {
 
     /**
      * Converts given value into date string in a "YYYY-MM-DD" format.
+     *
      * @param value
      * @param options
      * @param options.utc
@@ -58,6 +60,7 @@ export class DateUtils {
 
     /**
      * Converts given value into date object.
+     *
      * @param mixedDate
      * @param toUtc
      * @param useMilliseconds
@@ -104,6 +107,7 @@ export class DateUtils {
 
     /**
      * Converts given value into time string in a "HH:mm:ss" format.
+     *
      * @param value
      * @param skipSeconds
      */
@@ -126,6 +130,7 @@ export class DateUtils {
 
     /**
      * Converts given value into time string in a "HH:mm:ss" format.
+     *
      * @param value
      */
     static mixedTimeToDate(value: Date | any): string | any {
@@ -143,6 +148,7 @@ export class DateUtils {
 
     /**
      * Converts given string value with "-" separator into a "HH:mm:ss" format.
+     *
      * @param value
      * @param skipSeconds
      */
@@ -169,6 +175,7 @@ export class DateUtils {
 
     /**
      * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     *
      * @param value
      * @param useMilliseconds
      */
@@ -206,6 +213,7 @@ export class DateUtils {
 
     /**
      * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss.sss" format.
+     *
      * @param value
      */
     static mixedDateToUtcDatetimeString(value: Date | any): string | any {
@@ -235,6 +243,7 @@ export class DateUtils {
 
     /**
      * Converts each item in the given array to string joined by "," separator.
+     *
      * @param value
      */
     static simpleArrayToString(value: any[] | any): string[] | any {
@@ -247,6 +256,7 @@ export class DateUtils {
 
     /**
      * Converts given string to simple array split by "," separator.
+     *
      * @param value
      */
     static stringToSimpleArray(value: string | any): string | any {
@@ -271,6 +281,7 @@ export class DateUtils {
 
     /**
      * Converts given simple enum or array of enums to string.
+     *
      * @param value
      */
     static simpleEnumToString(value: any): string {
@@ -282,6 +293,7 @@ export class DateUtils {
 
     /**
      *  Converts given string to simple enum or array of enums based on the column metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -309,6 +321,7 @@ export class DateUtils {
 
     /**
      * Parses and converts a value to its numeric form if it exists in the provided enum values.
+     *
      * @param value
      * @param enumValues
      */
@@ -321,6 +334,7 @@ export class DateUtils {
 
     /**
      * Formats given number to "0x" format, e.g. if the totalLength = 2 and the value is 1 then it will return "01".
+     *
      * @param value
      * @param totalLength
      */
@@ -332,6 +346,7 @@ export class DateUtils {
 
     /**
      * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
+     *
      * @param value
      */
     private static formatMilliseconds(value: number): string {

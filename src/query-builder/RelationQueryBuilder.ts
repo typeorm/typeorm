@@ -32,6 +32,7 @@ export class RelationQueryBuilder<
 
     /**
      * Sets entity (target) which relations will be updated.
+     *
      * @param entity
      */
     of(entity: any | any[]): this {
@@ -44,6 +45,7 @@ export class RelationQueryBuilder<
      * Value can be entity, entity id or entity id map (if entity has composite ids).
      * Works only for many-to-one and one-to-one relations.
      * For many-to-many and one-to-many relations use #add and #remove methods instead.
+     *
      * @param value
      */
     async set(value: any): Promise<void> {
@@ -83,6 +85,7 @@ export class RelationQueryBuilder<
      * Value also can be array of entities, array of entity ids or array of entity id maps (if entity has composite ids).
      * Works only for many-to-many and one-to-many relations.
      * For many-to-one and one-to-one use #set method instead.
+     *
      * @param value
      */
     async add(value: any | any[]): Promise<void> {
@@ -124,6 +127,7 @@ export class RelationQueryBuilder<
      * Value also can be array of entities, array of entity ids or array of entity id maps (if entity has composite ids).
      * Works only for many-to-many and one-to-many relations.
      * For many-to-one and one-to-one use #set method instead.
+     *
      * @param value
      */
     async remove(value: any | any[]): Promise<void> {
@@ -154,6 +158,7 @@ export class RelationQueryBuilder<
      * Value also can be array of entities, array of entity ids or array of entity id maps (if entity has composite ids).
      * Works only for many-to-many and one-to-many relations.
      * For many-to-one and one-to-one use #set method instead.
+     *
      * @param added
      * @param removed
      */
@@ -189,7 +194,7 @@ export class RelationQueryBuilder<
             of = metadata.primaryColumns[0].createValueMap(of)
         }
 
-        return this.connection.relationLoader.load(
+        return this.dataSource.relationLoader.load(
             this.expressionMap.relationMetadata,
             of,
             this.queryRunner,

@@ -1,5 +1,5 @@
 import appRootPath from "app-root-path"
-import path from "path"
+import path from "node:path"
 
 import type { DataSourceOptions } from "../data-source/DataSourceOptions"
 import { TypeORMError } from "../error"
@@ -65,16 +65,14 @@ export class ConnectionOptionsReader {
         const fileFormats = ["js", "mjs", "cjs", "ts", "mts", "cts", "json"]
 
         // Detect if baseFilePath contains file extension
-        const possibleExtension = this.baseFilePath.substr(
-            this.baseFilePath.lastIndexOf("."),
-        )
+        const possibleExtension = path.extname(this.baseFilePath)
         const fileExtension = fileFormats.find(
             (extension) => `.${extension}` === possibleExtension,
         )
 
         // try to find any of following configuration formats
         const foundFileFormat =
-            fileExtension ||
+            fileExtension ??
             fileFormats.find((format) => {
                 return PlatformTools.fileExist(this.baseFilePath + "." + format)
             })
@@ -135,6 +133,7 @@ export class ConnectionOptionsReader {
 
     /**
      * Normalize connection options.
+     *
      * @param connectionOptions
      */
     protected normalizeConnectionOptions(
@@ -147,10 +146,7 @@ export class ConnectionOptionsReader {
             options.baseDirectory = this.baseDirectory
             if (options.entities) {
                 const entities = (options.entities as any[]).map((entity) => {
-                    if (
-                        typeof entity === "string" &&
-                        entity.substr(0, 1) !== "/"
-                    )
+                    if (typeof entity === "string" && !entity.startsWith("/"))
                         return this.baseDirectory + "/" + entity
 
                     return entity
@@ -162,7 +158,7 @@ export class ConnectionOptionsReader {
                     (subscriber) => {
                         if (
                             typeof subscriber === "string" &&
-                            subscriber.substr(0, 1) !== "/"
+                            !subscriber.startsWith("/")
                         )
                             return this.baseDirectory + "/" + subscriber
 
@@ -176,7 +172,7 @@ export class ConnectionOptionsReader {
                     (migration) => {
                         if (
                             typeof migration === "string" &&
-                            migration.substr(0, 1) !== "/"
+                            !migration.startsWith("/")
                         )
                             return this.baseDirectory + "/" + migration
 
@@ -191,8 +187,8 @@ export class ConnectionOptionsReader {
                 if (
                     typeof options.database === "string" &&
                     !isAbsolute(options.database) &&
-                    options.database.substr(0, 1) !== "/" && // unix absolute
-                    options.database.substr(1, 2) !== ":\\" && // windows absolute
+                    !options.database.startsWith("/") && // unix absolute
+                    options.database.substring(1, 3) !== ":\\" && // windows absolute
                     options.database !== ":memory:"
                 ) {
                     Object.assign(options, {

@@ -68,19 +68,6 @@ export class DocumentToEntityTransformer {
                 })
         }
 
-        /*this.joinMappings
-            .filter(joinMapping => joinMapping.parentName === alias.name && !joinMapping.alias.relationOwnerSelection && joinMapping.alias.target)
-            .map(joinMapping => {
-                const relatedEntities = this.transformRawResultsGroup(rawSqlResults, joinMapping.alias);
-                const isResultArray = joinMapping.isMany;
-                const result = !isResultArray ? relatedEntities[0] : relatedEntities;
-
-                if (result && (!isResultArray || result.length > 0)) {
-                    entity[joinMapping.propertyName] = result;
-                    hasData = true;
-                }
-            });*/
-
         // get value from columns selections and put them into object
         metadata.ownColumns.forEach((column) => {
             const valueInObject = document[column.databaseNameWithoutPrefixes]
@@ -138,10 +125,9 @@ export class DocumentToEntityTransformer {
                             ]
                         if (value === undefined) return
 
-                        if (!entity[embedded.propertyName])
-                            entity[embedded.propertyName] = embedded.create({
-                                fromDeserializer: true,
-                            })
+                        entity[embedded.propertyName] ??= embedded.create({
+                            fromDeserializer: true,
+                        })
 
                         entity[embedded.propertyName][column.propertyName] =
                             value

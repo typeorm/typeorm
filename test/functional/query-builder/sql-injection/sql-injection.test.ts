@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -54,6 +55,10 @@ describe("query builder > sql injection", () => {
         "1 OR 1=1",
     ]
 
+    const inputsWithSemicolons = maliciousInputs.filter((input) =>
+        input.includes(";"),
+    )
+
     function verifyIntegrity(dataSource: DataSource) {
         return async () => {
             const count = await dataSource.getRepository(Post).count()
@@ -61,23 +66,17 @@ describe("query builder > sql injection", () => {
         }
     }
 
-    // TODO: addSelect accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("addSelect", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
+    describe("addSelect", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
+                        expect(() =>
+                            dataSource
                                 .getRepository(Post)
                                 .createQueryBuilder("post")
-                                .addSelect(malicious)
-                                .getRawMany()
-                        } catch {
-                            // expected to throw on invalid column expression
-                        }
+                                .addSelect(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
                         await verifyIntegrity(dataSource)()
                     }),
                 ))
@@ -130,23 +129,17 @@ describe("query builder > sql injection", () => {
         }
     })
 
-    // TODO: groupBy accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("groupBy", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
+    describe("groupBy", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
+                        expect(() =>
+                            dataSource
                                 .getRepository(Post)
                                 .createQueryBuilder("post")
-                                .groupBy(malicious)
-                                .getRawMany()
-                        } catch {
-                            // expected to throw on invalid column name
-                        }
+                                .groupBy(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
                         await verifyIntegrity(dataSource)()
                     }),
                 ))
@@ -176,27 +169,253 @@ describe("query builder > sql injection", () => {
         }
     })
 
-    // TODO: orderBy accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("orderBy", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
+    describe("orderBy", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
+                        expect(() =>
+                            dataSource
                                 .getRepository(Post)
                                 .createQueryBuilder("post")
-                                .orderBy(malicious)
-                                .getMany()
-                        } catch {
-                            // expected to throw on invalid column name
-                        }
+                                .orderBy(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
                         await verifyIntegrity(dataSource)()
                     }),
                 ))
         }
+    })
+
+    describe("orderBy value injection", () => {
+        it("should reject invalid order direction in OrderByCondition", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    expect(() =>
+                        dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy({ "post.id": "ASC; DELETE FROM post;" }),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid order direction in nested OrderByCondition", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    expect(() =>
+                        dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy({
+                                "post.id": { order: "ASC; DELETE FROM post;" },
+                            }),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid nulls option in OrderByCondition", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    expect(() =>
+                        dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            // @ts-expect-error intentionally invalid nulls option
+                            .orderBy({
+                                "post.id": {
+                                    order: "ASC",
+                                    nulls: "NULLS FIRST; DROP TABLE post;",
+                                },
+                            }),
+                    ).to.throw(/Invalid nulls option/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should accept valid OrderByCondition values", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .orderBy({
+                            "post.id": "DESC",
+                            "post.name": "ASC",
+                        })
+                        .getMany()
+                }),
+            ))
+
+        it("should accept valid OrderByCondition with nulls option", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (
+                        DriverUtils.isMySQLFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "mssql"
+                    )
+                        return
+
+                    await dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .orderBy({
+                            "post.id": "DESC",
+                            "post.name": {
+                                order: "ASC",
+                                nulls: "NULLS LAST",
+                            },
+                        })
+                        .getMany()
+                }),
+            ))
+        it("should reject invalid order direction in UpdateQueryBuilder", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy({ id: "ASC; DROP TABLE post;" }),
+                    ).to.throw(/Invalid order direction/)
+                }),
+            ))
+
+        it("should reject invalid order direction in SoftDeleteQueryBuilder", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy({ id: "ASC; DROP TABLE post;" }),
+                    ).to.throw(/Invalid order direction/)
+                }),
+            ))
+    })
+
+    describe("base QueryBuilder.select() bypass prevention", () => {
+        it("should reject semicolons in update().select()", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .select("1; DELETE FROM post;"),
+                    ).to.throw(/Semicolons are not allowed/)
+                }),
+            ))
+
+        it("should reject semicolons in delete().select()", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .delete()
+                            .from(Post)
+                            .select("1; DELETE FROM post;"),
+                    ).to.throw(/Semicolons are not allowed/)
+                }),
+            ))
+
+        it("should reject semicolons in select() array via base QueryBuilder", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .select(["id", "1; DELETE FROM post;"]),
+                    ).to.throw(/Semicolons are not allowed/)
+                }),
+            ))
+    })
+
+    describe("UpdateQueryBuilder orderBy semicolons", () => {
+        it("should reject semicolons in orderBy sort key", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id; DELETE FROM post;"),
+                    ).to.throw(/Semicolons are not allowed/)
+                }),
+            ))
+
+        it("should reject semicolons in addOrderBy sort key", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id")
+                            .addOrderBy("name; DELETE FROM post;"),
+                    ).to.throw(/Semicolons are not allowed/)
+                }),
+            ))
+    })
+
+    describe("SoftDeleteQueryBuilder orderBy semicolons", () => {
+        it("should reject semicolons in orderBy sort key", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy("id; DELETE FROM post;"),
+                    ).to.throw(/Semicolons are not allowed/)
+                }),
+            ))
+
+        it("should reject semicolons in addOrderBy sort key", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy("id")
+                            .addOrderBy("name; DELETE FROM post;"),
+                    ).to.throw(/Semicolons are not allowed/)
+                }),
+            ))
     })
 
     describe("orWhere", () => {
@@ -225,23 +444,17 @@ describe("query builder > sql injection", () => {
         }
     })
 
-    // TODO: select accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("select", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
+    describe("select", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
+                        expect(() =>
+                            dataSource
                                 .getRepository(Post)
                                 .createQueryBuilder("post")
-                                .select(malicious)
-                                .getRawMany()
-                        } catch {
-                            // expected to throw on invalid column expression
-                        }
+                                .select(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
                         await verifyIntegrity(dataSource)()
                     }),
                 ))
@@ -293,6 +506,25 @@ describe("query builder > sql injection", () => {
                             expect(results).to.have.length(0)
                         } catch {
                             // some drivers reject certain byte sequences
+                        }
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
+    describe("findOne", () => {
+        for (const malicious of maliciousInputs) {
+            it(`should prevent injection with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        try {
+                            const result = await dataSource
+                                .getRepository(Post)
+                                .findOneBy({ name: malicious })
+                            expect(result).to.be.null
+                        } catch {
+                            // some drivers reject invalid byte sequences
                         }
                         await verifyIntegrity(dataSource)()
                     }),

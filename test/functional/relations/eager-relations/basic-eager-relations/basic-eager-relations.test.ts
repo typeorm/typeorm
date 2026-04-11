@@ -67,15 +67,18 @@ describe("relations > eager relations > basic", () => {
             dataSources.map(async (dataSource) => {
                 await prepareData(dataSource)
 
-                const loadedPost = await dataSource.manager.findOne(Post, {
-                    where: {
-                        id: 1,
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 1,
+                        },
                     },
-                })
+                )
 
                 // sort arrays because some drivers returns arrays in wrong order, e.g. categoryIds: [2, 1]
-                loadedPost!.categories1.sort((a, b) => a.id - b.id)
-                loadedPost!.categories2.sort((a, b) => a.id - b.id)
+                loadedPost.categories1.sort((a, b) => a.id - b.id)
+                loadedPost.categories2.sort((a, b) => a.id - b.id)
 
                 expect(loadedPost).to.deep.equal({
                     id: 1,
@@ -157,9 +160,9 @@ describe("relations > eager relations > basic", () => {
                 nestedProfile.about = "I am nested!"
                 await dataSource.manager.save(nestedProfile)
 
-                const user = (await dataSource.manager.findOne(User, {
-                    where: { id: 1 },
-                }))!
+                const user = await dataSource.manager.findOneByOrFail(User, {
+                    id: 1,
+                })
                 user.nestedProfile = nestedProfile
                 await dataSource.manager.save(user)
 
@@ -207,16 +210,16 @@ describe("relations > eager relations > basic", () => {
                 nestedProfile.about = "I am nested!"
                 await dataSource.manager.save(nestedProfile)
 
-                const user = (await dataSource.manager.findOne(User, {
-                    where: { id: 1 },
-                }))!
+                const user = await dataSource.manager.findOneByOrFail(User, {
+                    id: 1,
+                })
                 user.nestedProfile = nestedProfile
                 await dataSource.manager.save(user)
 
                 // Build the query to inspect the generated SQL
                 const sql = dataSource.manager
                     .getRepository(Editor)
-                    .metadata.connection.createQueryBuilder(Editor, "Editor")
+                    .metadata.dataSource.createQueryBuilder(Editor, "Editor")
                     .setFindOptions({
                         where: { userId: 1 },
                         relations: {
@@ -230,7 +233,7 @@ describe("relations > eager relations > basic", () => {
                 // The user table should only be joined once, not twice
                 // Previously, eager relations with DeleteDateColumn would
                 // cause the user table to be joined twice with different aliases
-                const userJoinCount = (sql.match(/LEFT JOIN .user./gi) || [])
+                const userJoinCount = (sql.match(/LEFT JOIN .user./gi) ?? [])
                     .length
                 expect(userJoinCount).to.equal(1)
             }),

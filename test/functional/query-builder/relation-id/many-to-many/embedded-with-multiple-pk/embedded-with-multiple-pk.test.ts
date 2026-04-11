@@ -165,10 +165,10 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         .andWhere("post.counters.subcntrs.version = :version", {
                             version: 1,
                         })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost.should.be.eql({
                             id: 1,
                             title: "About BMW",
                             counters: {
@@ -313,15 +313,15 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         )
                         .where("category.id = :id", { id: 1 })
                         .andWhere("category.name = :name", { name: "cars" })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.postIds).to.not.be.eql([])
-                    expect(loadedCategory!.postIds.length).to.be.equal(2)
-                    expect(loadedCategory!.postIds[0]).to.be.eql({
+                    expect(loadedCategory.postIds).to.not.be.eql([])
+                    expect(loadedCategory.postIds.length).to.be.equal(2)
+                    expect(loadedCategory.postIds[0]).to.be.eql({
                         id: 1,
                         counters: { code: 111, subcntrs: { version: 1 } },
                     })
-                    expect(loadedCategory!.postIds[1]).to.be.eql({
+                    expect(loadedCategory.postIds[1]).to.be.eql({
                         id: 2,
                         counters: { code: 222, subcntrs: { version: 1 } },
                     })
@@ -358,15 +358,15 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         .loadRelationIdAndMap("user.postIds", "user.posts")
                         .where("user.id = :id", { id: 1 })
                         .andWhere("user.name = :name", { name: "Alice" })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedUser!.postIds).to.not.be.eql([])
-                    expect(loadedUser!.postIds.length).to.be.equal(2)
-                    expect(loadedUser!.postIds[0]).to.be.eql({
+                    expect(loadedUser.postIds).to.not.be.eql([])
+                    expect(loadedUser.postIds.length).to.be.equal(2)
+                    expect(loadedUser.postIds[0]).to.be.eql({
                         id: 1,
                         counters: { code: 111, subcntrs: { version: 1 } },
                     })
-                    expect(loadedUser!.postIds[1]).to.be.eql({
+                    expect(loadedUser.postIds[1]).to.be.eql({
                         id: 2,
                         counters: { code: 222, subcntrs: { version: 1 } },
                     })

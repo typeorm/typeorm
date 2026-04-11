@@ -7,6 +7,7 @@ import { ObjectUtils } from "./ObjectUtils"
 
 /**
  * Loads all exported classes from the given directory.
+ *
  * @param logger
  * @param directories
  * @param formats
