@@ -1,5 +1,5 @@
-import { DataSource } from "../data-source/DataSource"
-import * as yargs from "yargs"
+import type { DataSource } from "../data-source/DataSource"
+import type * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
 import path from "path"
 import process from "process"
@@ -76,8 +76,7 @@ export class MigrationRevertCommand implements yargs.CommandModule {
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration revert:", err)
 
-            if (dataSource && dataSource.isInitialized)
-                await dataSource.destroy()
+            if (dataSource?.isInitialized) await dataSource.destroy()
 
             process.exit(1)
         }

@@ -1,4 +1,4 @@
-import { TlsOptions } from "tls"
+import type { TlsOptions } from "tls"
 
 /**
  * Postgres specific connection credential options.

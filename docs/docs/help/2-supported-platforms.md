@@ -2,7 +2,7 @@
 
 ## NodeJS
 
-TypeORM is compatible with Node.js 16+ and currently each commit is tested on Node.js 18 and 20.
+TypeORM is compatible with Node.js 20+ and currently each commit is tested on Node.js 20 and 24.
 
 ## Browser
 

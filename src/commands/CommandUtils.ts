@@ -1,7 +1,7 @@
 import fs from "fs/promises"
 import path from "path"
 import { TypeORMError } from "../error"
-import { DataSource } from "../data-source"
+import type { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { importOrRequireFile } from "../util/ImportUtils"
 
@@ -19,6 +19,7 @@ export class CommandUtils {
         } catch (err) {
             throw new Error(
                 `Unable to open file: "${dataSourceFilePath}". ${err.message}`,
+                { cause: err },
             )
         }
 
@@ -63,6 +64,7 @@ export class CommandUtils {
 
     /**
      * Creates directories recursively.
+     *
      * @param directory
      */
     static async createDirectories(directory: string): Promise<void> {
@@ -71,6 +73,7 @@ export class CommandUtils {
 
     /**
      * Creates a file with the given content in the given path.
+     *
      * @param filePath
      * @param content
      * @param override
@@ -89,6 +92,7 @@ export class CommandUtils {
 
     /**
      * Reads everything from a given file and returns its content as a string.
+     *
      * @param filePath
      */
     static async readFile(filePath: string): Promise<string> {
@@ -108,6 +112,7 @@ export class CommandUtils {
 
     /**
      * Gets migration timestamp and validates argument (if sent)
+     *
      * @param timestampOptionArgument
      */
     static getTimestamp(timestampOptionArgument: any): number {

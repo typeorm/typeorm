@@ -1,8 +1,8 @@
 import ansi from "ansis"
 import path from "path"
 import process from "process"
-import yargs from "yargs"
-import { DataSource } from "../data-source/DataSource"
+import type yargs from "yargs"
+import type { DataSource } from "../data-source/DataSource"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 
@@ -51,7 +51,7 @@ export class CacheClearCommand implements yargs.CommandModule {
         } catch (err) {
             PlatformTools.logCmdErr("Error during cache clear.", err)
 
-            if (dataSource && dataSource.isInitialized)
+            if (dataSource?.isInitialized)
                 await (dataSource as DataSource).destroy()
 
             process.exit(1)

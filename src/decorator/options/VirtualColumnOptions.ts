@@ -1,5 +1,5 @@
-import { ColumnType } from "../../driver/types/ColumnTypes"
-import { ValueTransformer } from "./ValueTransformer"
+import type { ColumnType } from "../../driver/types/ColumnTypes"
+import type { ValueTransformer } from "./ValueTransformer"
 
 /**
  * Describes all calculated column's options.
@@ -25,7 +25,8 @@ export interface VirtualColumnOptions {
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
-     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     *
+     * @see https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
     query: (alias: string) => string
 

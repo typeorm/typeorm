@@ -4,25 +4,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
-import { ObjectLiteral } from "../../../src"
+import type { ObjectLiteral } from "../../../src"
 
 describe("github issues > #922 Support HSTORE column type", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly implement HSTORE type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const postRepository = connection.getRepository(Post)
                 const table = await queryRunner.getTable("post")
@@ -32,19 +31,19 @@ describe("github issues > #922 Support HSTORE column type", () => {
                 post.hstoreStr = "name => Bob, surname => B, age => 30"
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     id: 1,
                 })
-                ;(loadedPost!.hstoreObj as ObjectLiteral).name.should.be.equal(
+                ;(loadedPost.hstoreObj as ObjectLiteral).name.should.be.equal(
                     "Alice",
                 )
                 ;(
-                    loadedPost!.hstoreObj as ObjectLiteral
+                    loadedPost.hstoreObj as ObjectLiteral
                 ).surname.should.be.equal("A")
-                ;(loadedPost!.hstoreObj as ObjectLiteral).age.should.be.equal(
+                ;(loadedPost.hstoreObj as ObjectLiteral).age.should.be.equal(
                     "25",
                 )
-                loadedPost!.hstoreStr.should.be.equal(
+                loadedPost.hstoreStr.should.be.equal(
                     `"age"=>"30", "name"=>"Bob", "surname"=>"B"`,
                 )
                 table!

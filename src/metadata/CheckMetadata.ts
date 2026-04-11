@@ -1,6 +1,6 @@
-import { EntityMetadata } from "./EntityMetadata"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { CheckMetadataArgs } from "../metadata-args/CheckMetadataArgs"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { CheckMetadataArgs } from "../metadata-args/CheckMetadataArgs"
 
 /**
  * Check metadata contains all information about table's check constraints.
@@ -61,14 +61,16 @@ export class CheckMetadata {
     /**
      * Builds some depend check constraint properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     *
+     * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
-        this.name = this.givenName
-            ? this.givenName
-            : namingStrategy.checkConstraintName(
-                  this.entityMetadata.tableName,
-                  this.expression,
-              )
+        this.name =
+            this.givenName ??
+            namingStrategy.checkConstraintName(
+                this.entityMetadata.tableName,
+                this.expression,
+            )
         return this
     }
 }
