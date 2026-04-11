@@ -7,7 +7,7 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { View } from "../../schema-builder/view/View"
 import { Query } from "../Query"
-import { AbstractSqliteDriver } from "./AbstractSqliteDriver"
+import type { AbstractSqliteDriver } from "./AbstractSqliteDriver"
 import type { ReadStream } from "../../platform/PlatformTools"
 import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -75,8 +75,10 @@ export abstract class AbstractSqliteQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
         validateIsolationLevel(
-            AbstractSqliteDriver.supportedIsolationLevels,
+            this.driver.supportedIsolationLevels,
             isolationLevel,
         )
 

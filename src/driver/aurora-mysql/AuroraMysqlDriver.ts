@@ -37,16 +37,9 @@ export class AuroraMysqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Transaction isolation levels supported by this driver.
-     *
-     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
+     * Aurora Data API does not support setting transaction isolation levels.
      */
-    static readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
-        "REPEATABLE READ",
-        "SERIALIZABLE",
-    ]
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -56,6 +49,11 @@ export class AuroraMysqlDriver implements Driver {
      * DataSource used by the driver.
      */
     dataSource: DataSource
+
+    /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = AuroraMysqlDriver.supportedIsolationLevels
 
     /**
      * DataSource used by the driver.

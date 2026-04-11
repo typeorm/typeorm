@@ -66,6 +66,11 @@ export class CockroachDriver implements Driver {
     readonly dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = CockroachDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
      *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.

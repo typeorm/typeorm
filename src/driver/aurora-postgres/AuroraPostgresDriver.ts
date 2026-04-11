@@ -19,8 +19,20 @@ abstract class PostgresWrapper extends PostgresDriver {
 
 export class AuroraPostgresDriver extends PostgresWrapper {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Aurora Data API does not support setting transaction isolation levels.
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    /** Isolation levels supported by this driver. */
+    supportedIsolationLevels = AuroraPostgresDriver.supportedIsolationLevels
 
     /**
      * Aurora Data API underlying library.

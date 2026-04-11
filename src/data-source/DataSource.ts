@@ -385,6 +385,12 @@ export class DataSource {
     async initialize(): Promise<this> {
         if (this.isInitialized) throw new CannotConnectAlreadyConnectedError()
 
+        // validate isolationLevel before connecting
+        validateIsolationLevel(
+            this.driver.supportedIsolationLevels,
+            this.options.isolationLevel,
+        )
+
         // connect to the database via its driver
         await this.driver.connect()
 
