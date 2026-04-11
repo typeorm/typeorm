@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,10 +8,10 @@ import {
 import { CreatePost0000000000001 } from "./0000000000001-CreatePost"
 
 describe("migrations > vector type", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             schemaCreate: false,
             dropSchema: true,
@@ -19,15 +19,15 @@ describe("migrations > vector type", () => {
         })
     })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should run vector migration and create table with vector columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.runMigrations()
+            dataSources.map(async (dataSource) => {
+                await dataSource.runMigrations()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -54,10 +54,10 @@ describe("migrations > vector type", () => {
 
     it("should handle vector data after migration", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.runMigrations()
+            dataSources.map(async (dataSource) => {
+                await dataSource.runMigrations()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.query(
                     'INSERT INTO "post"("embedding", "embedding_three_dimensions", "halfvec_embedding", "halfvec_four_dimensions") VALUES (\'[1,2,3,4]\', \'[4,5,6]\', \'[1.5,2.5]\', \'[1,2,3,4]\')',
                 )

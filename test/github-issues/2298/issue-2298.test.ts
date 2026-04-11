@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, In } from "../../../src"
+import type { DataSource } from "../../../src"
+import { In } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,20 +11,19 @@ import { Ticket } from "./entity/Ticket"
 import { TicketProduct } from "./entity/TicketProduct"
 
 describe("github issues > #2298 - Repository filtering not considering related columns as filter", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work perfectly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const product1 = new Product("product1")
                 await connection.manager.save(product1)
                 const product2 = new Product("product2")

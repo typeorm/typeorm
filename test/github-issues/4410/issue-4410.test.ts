@@ -1,17 +1,18 @@
 import appRootPath from "app-root-path"
 import sinon from "sinon"
-import { DataSource, FileLogger } from "../../../src"
+import type { DataSource } from "../../../src"
+import { FileLogger } from "../../../src"
+import type { TestingOptions } from "../../utils/test-utils"
 import {
     createTestingConnections,
     reloadTestingDatabases,
     closeTestingConnections,
-    TestingOptions,
 } from "../../utils/test-utils"
 import { Username } from "./entity/Username"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 
 describe("github issues > #4410 allow custom filepath for FileLogger", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     let stub: sinon.SinonStub
     let sandbox: sinon.SinonSandbox
 
@@ -25,23 +26,23 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         sandbox = sinon.createSandbox()
         stub = sandbox.stub(PlatformTools, "appendFileSync")
     })
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
     afterEach(async () => {
         stub.resetHistory()
 
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
     })
 
     describe("when no option is passed", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 ...testingOptions,
                 createLogger: () => new FileLogger("all"),
             })
         })
         it("writes to the base path", async () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape(
                         "username",
                     )}`
@@ -58,7 +59,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
 
     describe("when logPath option is passed as a file", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 ...testingOptions,
                 createLogger: () =>
                     new FileLogger("all", {
@@ -68,7 +69,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         })
         it("writes to the given filename", async () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape(
                         "username",
                     )}`
@@ -85,7 +86,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
 
     describe("when logPath option is passed as a nested path", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 ...testingOptions,
                 createLogger: () =>
                     new FileLogger("all", {
@@ -95,7 +96,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         })
         it("writes to the given path", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape(
                         "username",
                     )}`

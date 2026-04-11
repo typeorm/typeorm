@@ -1,28 +1,9 @@
-import { EntityManager } from "../../entity-manager/EntityManager"
-import { DataSource } from "../../data-source/DataSource"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { BaseEvent } from "./BaseEvent"
 
 /**
  * BeforeQueryEvent is an object that broadcaster sends to the entity subscriber before query is ran against the database.
  */
-export interface QueryEvent<Entity> {
-    /**
-     * Connection used in the event.
-     */
-    connection: DataSource
-
-    /**
-     * QueryRunner used in the event transaction.
-     * All database operations in the subscribed event listener should be performed using this query runner instance.
-     */
-    queryRunner: QueryRunner
-
-    /**
-     * EntityManager used in the event transaction.
-     * All database operations in the subscribed event listener should be performed using this entity manager instance.
-     */
-    manager: EntityManager
-
+export interface QueryEvent extends BaseEvent {
     /**
      * Query that is being executed.
      */
@@ -34,9 +15,9 @@ export interface QueryEvent<Entity> {
     parameters?: any[]
 }
 
-export interface BeforeQueryEvent<Entity> extends QueryEvent<Entity> {}
+export interface BeforeQueryEvent extends QueryEvent {}
 
-export interface AfterQueryEvent<Entity> extends QueryEvent<Entity> {
+export interface AfterQueryEvent extends QueryEvent {
     /**
      * Whether the query was successful.
      */

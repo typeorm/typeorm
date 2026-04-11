@@ -1,8 +1,8 @@
 import path from "path"
 import process from "process"
-import * as yargs from "yargs"
+import type * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
-import { DataSource } from "../data-source"
+import type { DataSource } from "../data-source"
 import { CommandUtils } from "./CommandUtils"
 import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 
@@ -66,8 +66,7 @@ export class MigrationRunCommand implements yargs.CommandModule {
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration run:", err)
 
-            if (dataSource && dataSource.isInitialized)
-                await dataSource.destroy()
+            if (dataSource?.isInitialized) await dataSource.destroy()
 
             process.exit(1)
         }

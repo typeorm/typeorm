@@ -1,8 +1,8 @@
 import ansi from "ansis"
 import path from "path"
 import process from "process"
-import yargs from "yargs"
-import { DataSource } from "../data-source/DataSource"
+import type yargs from "yargs"
+import type { DataSource } from "../data-source/DataSource"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
@@ -44,8 +44,7 @@ export class SchemaDropCommand implements yargs.CommandModule {
         } catch (err) {
             PlatformTools.logCmdErr("Error during schema drop:", err)
 
-            if (dataSource && dataSource.isInitialized)
-                await dataSource.destroy()
+            if (dataSource?.isInitialized) await dataSource.destroy()
 
             process.exit(1)
         }
