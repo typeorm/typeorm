@@ -1,6 +1,6 @@
 import "../../../../utils/test-setup"
 import { Post } from "./entity/Post"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,21 +10,21 @@ import { PostWithoutTypes } from "./entity/PostWithoutTypes"
 import { FruitEnum } from "./enum/FruitEnum"
 
 describe("database schema > column types > sqlite", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["better-sqlite3"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -60,6 +60,7 @@ describe("database schema > column types > sqlite", () => {
                 post.datetime = new Date()
                 post.datetime.setMilliseconds(0)
                 post.json = { id: 1, name: "Post" }
+                post.jsonb = { id: 1, name: "Post" }
                 post.simpleArray = ["A", "B", "C"]
                 post.simpleJson = { param: "VALUE" }
                 post.simpleEnum = "A"
@@ -101,6 +102,7 @@ describe("database schema > column types > sqlite", () => {
                     .valueOf()
                     .should.be.equal(post.datetime.valueOf())
                 loadedPost.json.should.be.deep.equal(post.json)
+                loadedPost.jsonb.should.be.deep.equal(post.jsonb)
                 loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0])
                 loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1])
                 loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2])
@@ -173,6 +175,7 @@ describe("database schema > column types > sqlite", () => {
                     .findColumnByName("datetime")!
                     .type.should.be.equal("datetime")
                 table!.findColumnByName("json")!.type.should.be.equal("json")
+                table!.findColumnByName("jsonb")!.type.should.be.equal("jsonb")
                 table!
                     .findColumnByName("simpleArray")!
                     .type.should.be.equal("text")
@@ -208,10 +211,10 @@ describe("database schema > column types > sqlite", () => {
 
     it("all types should work correctly - persist and hydrate when types are not specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const postRepository =
-                    connection.getRepository(PostWithoutTypes)
-                const queryRunner = connection.createQueryRunner()
+                    dataSource.getRepository(PostWithoutTypes)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post_without_types")
                 await queryRunner.release()
 

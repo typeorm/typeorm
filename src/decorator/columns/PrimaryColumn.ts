@@ -1,10 +1,10 @@
 import { getMetadataArgsStorage } from "../../globals"
 import { ColumnTypeUndefinedError } from "../../error/ColumnTypeUndefinedError"
 import { PrimaryColumnCannotBeNullableError } from "../../error/PrimaryColumnCannotBeNullableError"
-import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
-import { ColumnOptions } from "../options/ColumnOptions"
-import { ColumnType } from "../../driver/types/ColumnTypes"
+import type { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import type { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
+import type { ColumnOptions } from "../options/ColumnOptions"
+import type { ColumnType } from "../../driver/types/ColumnTypes"
 
 /**
  * Describes all primary key column's options.
@@ -16,6 +16,7 @@ export type PrimaryColumnOptions = ColumnOptions & { nullable?: false }
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * Primary columns also creates a PRIMARY KEY for this column in a db.
+ *
  * @param options
  */
 export function PrimaryColumn(options?: PrimaryColumnOptions): PropertyDecorator
@@ -24,6 +25,7 @@ export function PrimaryColumn(options?: PrimaryColumnOptions): PropertyDecorator
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * Primary columns also creates a PRIMARY KEY for this column in a db.
+ *
  * @param type
  * @param options
  */
@@ -36,6 +38,7 @@ export function PrimaryColumn(
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * Primary columns also creates a PRIMARY KEY for this column in a db.
+ *
  * @param typeOrOptions
  * @param options
  */
@@ -56,7 +59,7 @@ export function PrimaryColumn(
         } else {
             options = Object.assign({}, <PrimaryColumnOptions>typeOrOptions)
         }
-        if (!options) options = {} as PrimaryColumnOptions
+        options ??= {} as PrimaryColumnOptions
 
         // if type is not given explicitly then try to guess it
         const reflectMetadataType =

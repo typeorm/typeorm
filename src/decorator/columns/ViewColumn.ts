@@ -1,9 +1,10 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { ViewColumnOptions } from "../options/ViewColumnOptions"
+import type { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import type { ViewColumnOptions } from "../options/ViewColumnOptions"
 
 /**
  * ViewColumn decorator is used to mark a specific class property as a view column.
+ *
  * @param options
  */
 export function ViewColumn(options?: ViewColumnOptions): PropertyDecorator {
@@ -12,7 +13,7 @@ export function ViewColumn(options?: ViewColumnOptions): PropertyDecorator {
             target: object.constructor,
             propertyName: propertyName,
             mode: "regular",
-            options: options || {},
+            options: options ?? {},
         } as ColumnMetadataArgs)
     }
 }

@@ -1,0 +1,40 @@
+import "reflect-metadata"
+import {
+    createTestingConnections,
+    closeTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
+import { expect } from "chai"
+
+describe("schema builder > idempotency > sync twice", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: [
+                "mysql",
+                "mariadb",
+                "oracle",
+                "mssql",
+                "sqljs",
+                "better-sqlite3",
+            ],
+            // todo(AlexMesser): check why tests are failing under postgres driver
+        })
+    })
+    beforeEach(async () => await reloadTestingDatabases(dataSources))
+    after(async () => await closeTestingConnections(dataSources))
+
+    it("can recognize model changes", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const schemaBuilder = connection.driver.createSchemaBuilder()
+                const syncQueries = await schemaBuilder.log()
+                expect(syncQueries.downQueries).to.be.eql([])
+                expect(syncQueries.upQueries).to.be.eql([])
+            }),
+        ))
+})

@@ -3,17 +3,16 @@ import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { IndexMetadata } from "../metadata/IndexMetadata"
 import { RelationMetadata } from "../metadata/RelationMetadata"
 import { EmbeddedMetadata } from "../metadata/EmbeddedMetadata"
-import { MetadataArgsStorage } from "../metadata-args/MetadataArgsStorage"
-import { EmbeddedMetadataArgs } from "../metadata-args/EmbeddedMetadataArgs"
+import type { MetadataArgsStorage } from "../metadata-args/MetadataArgsStorage"
+import type { EmbeddedMetadataArgs } from "../metadata-args/EmbeddedMetadataArgs"
 import { RelationIdMetadata } from "../metadata/RelationIdMetadata"
-import { RelationCountMetadata } from "../metadata/RelationCountMetadata"
 import { EventListenerTypes } from "../metadata/types/EventListenerTypes"
 import { MetadataUtils } from "./MetadataUtils"
-import { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
+import type { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
 import { JunctionEntityMetadataBuilder } from "./JunctionEntityMetadataBuilder"
 import { ClosureJunctionEntityMetadataBuilder } from "./ClosureJunctionEntityMetadataBuilder"
 import { RelationJoinColumnBuilder } from "./RelationJoinColumnBuilder"
-import { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source/DataSource"
 import { EntityListenerMetadata } from "../metadata/EntityListenerMetadata"
 import { UniqueMetadata } from "../metadata/UniqueMetadata"
 import { CheckMetadata } from "../metadata/CheckMetadata"
@@ -70,6 +69,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Builds a complete entity metadatas for the given entity classes.
+     *
      * @param entityClasses
      */
     build(entityClasses?: Function[]): EntityMetadata[] {
@@ -472,6 +472,7 @@ export class EntityMetadataBuilder {
     /**
      * Creates entity metadata from the given table args.
      * Creates column, relation, etc. metadatas for everything this entity metadata owns.
+     *
      * @param tableArgs
      */
     protected createEntityMetadata(
@@ -525,7 +526,7 @@ export class EntityMetadataBuilder {
         }
 
         return new EntityMetadata({
-            connection: this.dataSource,
+            dataSource: this.dataSource,
             args: tableArgs,
             inheritanceTree: inheritanceTree,
             tableTree: tableTree,
@@ -679,13 +680,12 @@ export class EntityMetadataBuilder {
                             c.propertyName === args.propertyName &&
                             c.target === entityMetadata.target,
                     )
-                    if (childArgs && childArgs.options.default) {
+                    if (childArgs?.options.default) {
                         args.options.default = childArgs.options.default
                     }
                 }
 
                 const column = new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata,
                     args,
                 })
@@ -706,18 +706,15 @@ export class EntityMetadataBuilder {
 
         // for table inheritance we need to add a discriminator column
         //
-        if (entityInheritance && entityInheritance.column) {
+        if (entityInheritance?.column) {
             const discriminatorColumnName =
-                entityInheritance.column && entityInheritance.column.name
-                    ? entityInheritance.column.name
-                    : "type"
+                entityInheritance.column?.name ?? "type"
             let discriminatorColumn = entityMetadata.ownColumns.find(
                 (column) => column.propertyName === discriminatorColumnName,
             )
             if (!discriminatorColumn) {
                 discriminatorColumn = new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     args: {
                         target: entityMetadata.target,
                         mode: "virtual",
@@ -799,8 +796,7 @@ export class EntityMetadataBuilder {
         if (entityMetadata.treeType === "materialized-path") {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     materializedPath: true,
                     args: {
                         target: entityMetadata.target,
@@ -819,7 +815,6 @@ export class EntityMetadataBuilder {
             const { left, right } = namingStrategy.nestedSetColumnNames
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     nestedSetLeft: true,
                     args: {
@@ -837,8 +832,7 @@ export class EntityMetadataBuilder {
             )
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     nestedSetRight: true,
                     args: {
                         target: entityMetadata.target,
@@ -1018,6 +1012,7 @@ export class EntityMetadataBuilder {
     /**
      * Creates from the given embedded metadata args real embedded metadatas with its columns and relations,
      * and does the same for all its sub-embeddeds (goes recursively).
+     *
      * @param entityMetadata
      * @param embeddedArgs
      */
@@ -1039,7 +1034,6 @@ export class EntityMetadataBuilder {
                 .filterColumns(targets)
                 .map((args) => {
                     return new ColumnMetadata({
-                        connection: this.dataSource,
                         entityMetadata,
                         embeddedMetadata,
                         args,
@@ -1116,11 +1110,6 @@ export class EntityMetadataBuilder {
                 .map((args) => {
                     return new RelationIdMetadata({ entityMetadata, args })
                 })
-            embeddedMetadata.relationCounts = this.metadataArgsStorage
-                .filterRelationCounts(targets)
-                .map((args) => {
-                    return new RelationCountMetadata({ entityMetadata, args })
-                })
             embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(
                 entityMetadata,
                 this.metadataArgsStorage.filterEmbeddeds(targets),
@@ -1140,6 +1129,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Computes all entity metadata's computed properties, and all its sub-metadatas (relations, columns, embeds, etc).
+     *
      * @param entityMetadata
      */
     protected computeEntityMetadataStep2(entityMetadata: EntityMetadata) {
@@ -1419,21 +1409,16 @@ export class EntityMetadataBuilder {
         )
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap()
         entityMetadata.relationIds.forEach((relationId) => relationId.build())
-        entityMetadata.relationCounts.forEach((relationCount) =>
-            relationCount.build(),
-        )
         entityMetadata.embeddeds.forEach((embedded) => {
             embedded.relationIdsFromTree.forEach((relationId) =>
                 relationId.build(),
-            )
-            embedded.relationCountsFromTree.forEach((relationCount) =>
-                relationCount.build(),
             )
         })
     }
 
     /**
      * Computes entity metadata's relations inverse side properties.
+     *
      * @param entityMetadata
      * @param entityMetadatas
      */
@@ -1474,6 +1459,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Creates indices for the table of single table inheritance.
+     *
      * @param entityMetadata
      */
     protected createKeysForTableInheritance(entityMetadata: EntityMetadata) {
@@ -1506,6 +1492,7 @@ export class EntityMetadataBuilder {
 
     /**
      * Creates from the given foreign key metadata args real foreign key metadatas.
+     *
      * @param entityMetadata
      * @param entityMetadatas
      */

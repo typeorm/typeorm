@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { TableMetadataArgs } from "../../metadata-args/TableMetadataArgs"
-import { DiscriminatorValueMetadataArgs } from "../../metadata-args/DiscriminatorValueMetadataArgs"
+import type { TableMetadataArgs } from "../../metadata-args/TableMetadataArgs"
+import type { DiscriminatorValueMetadataArgs } from "../../metadata-args/DiscriminatorValueMetadataArgs"
 
 /**
  * Options for the @ChildEntity decorator.
