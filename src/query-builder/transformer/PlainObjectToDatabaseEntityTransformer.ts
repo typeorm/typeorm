@@ -159,8 +159,7 @@ export class PlainObjectToDatabaseEntityTransformer {
             if (
                 !loadMapItem.relation ||
                 !loadMapItem.entity ||
-                !loadMapItem.parentLoadMapItem ||
-                !loadMapItem.parentLoadMapItem.entity
+                !loadMapItem.parentLoadMapItem?.entity
             )
                 return
 
@@ -168,14 +167,9 @@ export class PlainObjectToDatabaseEntityTransformer {
                 loadMapItem.relation.isManyToMany ||
                 loadMapItem.relation.isOneToMany
             ) {
-                if (
-                    !loadMapItem.parentLoadMapItem.entity[
-                        loadMapItem.relation.propertyName
-                    ]
-                )
-                    loadMapItem.parentLoadMapItem.entity[
-                        loadMapItem.relation.propertyName
-                    ] = []
+                loadMapItem.parentLoadMapItem.entity[
+                    loadMapItem.relation.propertyName
+                ] ??= []
                 loadMapItem.parentLoadMapItem.entity[
                     loadMapItem.relation.propertyName
                 ].push(loadMapItem.entity)

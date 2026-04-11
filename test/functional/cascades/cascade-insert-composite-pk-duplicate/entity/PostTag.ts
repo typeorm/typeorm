@@ -43,8 +43,8 @@ export const PostTagSchema = new EntitySchema<PostTag>({
             target: () => Post,
             type: "many-to-one",
             joinColumn: [
-                { name: "tagPostId", referencedColumnName: "postId" },
                 { name: "tagOtherId", referencedColumnName: "otherId" },
+                { name: "tagPostId", referencedColumnName: "postId" },
             ],
         },
     },

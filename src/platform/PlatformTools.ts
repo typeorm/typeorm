@@ -238,7 +238,7 @@ export class PlatformTools {
         }
 
         const databaseLanguage = dataSourceType
-            ? databaseLanguageMap[dataSourceType] || "sql"
+            ? (databaseLanguageMap[dataSourceType] ?? "sql")
             : "sql"
 
         return sqlFormat(sql, {
