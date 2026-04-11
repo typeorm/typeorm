@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
@@ -66,27 +66,25 @@ describe("github issues > #12333 SQL injection in QueryBuilder useIndex and setL
                     return
                 }
 
-                const sql = dataSource.manager.transaction(
-                    async (entityManager) => {
-                        const qb = entityManager
-                            .createQueryBuilder(Post, "post")
-                            .setLock("pessimistic_write", undefined, [
-                                'post"; DROP TABLE post; --',
-                            ])
+                await dataSource.manager.transaction(async (entityManager) => {
+                    const qb = entityManager
+                        .createQueryBuilder(Post, "post")
+                        .setLock("pessimistic_write", undefined, [
+                            'post"; DROP TABLE post; --',
+                        ])
 
-                        const generatedSql = qb.getSql()
+                    const generatedSql = qb.getSql()
 
-                        // The table name should be escaped/quoted, preventing SQL injection
-                        expect(generatedSql).to.not.contain("DROP TABLE")
-                        expect(generatedSql).to.contain("OF ")
-                        // The double-quote in the malicious input should be escaped
-                        expect(generatedSql).to.not.contain(
-                            'OF post"; DROP TABLE post; --',
-                        )
+                    // The table name should be escaped/quoted, preventing SQL injection
+                    expect(generatedSql).to.not.contain("DROP TABLE")
+                    expect(generatedSql).to.contain("OF ")
+                    // The double-quote in the malicious input should be escaped
+                    expect(generatedSql).to.not.contain(
+                        'OF post"; DROP TABLE post; --',
+                    )
 
-                        return generatedSql
-                    },
-                )
+                    return generatedSql
+                })
             }),
         ))
 
@@ -97,18 +95,14 @@ describe("github issues > #12333 SQL injection in QueryBuilder useIndex and setL
                     return
                 }
 
-                await dataSource.manager.transaction(
-                    async (entityManager) => {
-                        const sql = entityManager
-                            .createQueryBuilder(Post, "post")
-                            .setLock("pessimistic_write", undefined, [
-                                "post",
-                            ])
-                            .getSql()
+                await dataSource.manager.transaction(async (entityManager) => {
+                    const sql = entityManager
+                        .createQueryBuilder(Post, "post")
+                        .setLock("pessimistic_write", undefined, ["post"])
+                        .getSql()
 
-                        expect(sql).to.contain('OF "post"')
-                    },
-                )
+                    expect(sql).to.contain('OF "post"')
+                })
             }),
         ))
 })
