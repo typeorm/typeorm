@@ -45,7 +45,7 @@ export class TreeRepository<
 
         const joinColumn = this.metadata.treeParentRelation!.joinColumns[0]
         const parentPropertyName =
-            joinColumn.givenDatabaseName || joinColumn.databaseName
+            joinColumn.givenDatabaseName ?? joinColumn.databaseName
 
         const qb = this.createQueryBuilder("treeEntity")
         FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options)

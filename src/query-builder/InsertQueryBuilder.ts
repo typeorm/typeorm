@@ -250,7 +250,7 @@ export class InsertQueryBuilder<
             : entityTarget
         const mainAlias = this.createFromAlias(entityTarget)
         this.expressionMap.setMainAlias(mainAlias)
-        this.expressionMap.insertColumns = columns || []
+        this.expressionMap.insertColumns = columns ?? []
         return this as any as InsertQueryBuilder<T>
     }
 
@@ -1666,7 +1666,7 @@ export class InsertQueryBuilder<
                     "::STGeomFromText(" +
                     paramName +
                     ", " +
-                    (column.srid || "0") +
+                    (column.srid ?? "0") +
                     ")"
             } else if (DriverUtils.isSQLiteFamily(this.dataSource.driver)) {
                 expression = (

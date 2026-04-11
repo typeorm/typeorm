@@ -37,14 +37,14 @@ describe("columns > date utc flag", () => {
                 event.utcDate = testDate
 
                 const savedEvent = await dataSource.manager.save(event)
-                const result = await dataSource.manager.findOneBy(Event, {
+                const result = await dataSource.manager.findOneByOrFail(Event, {
                     id: savedEvent.id,
                 })
 
                 // UTC flag true: should save as 2025-06-01 (UTC date)
-                expect(result!.utcDate).to.equal("2025-06-01")
+                expect(result.utcDate).to.equal("2025-06-01")
                 // UTC flag false (default): should save as 2025-05-31 (local timezone)
-                expect(result!.localDate).to.equal("2025-05-31")
+                expect(result.localDate).to.equal("2025-05-31")
             }),
         ))
 })

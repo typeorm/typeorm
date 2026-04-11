@@ -25,7 +25,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import { SpannerDriver } from "./SpannerDriver"
+import type { SpannerDriver } from "./SpannerDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -100,8 +100,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
         validateIsolationLevel(
-            SpannerDriver.supportedIsolationLevels,
+            this.driver.supportedIsolationLevels,
             isolationLevel,
         )
 
@@ -253,7 +255,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             result.raw = rawResult
             result.records = rawResult ? rawResult[0] : []
-            if (rawResult && rawResult[1] && rawResult[1].rowCountExact) {
+            if (rawResult?.[1]?.rowCountExact) {
                 result.affected = parseInt(rawResult[1].rowCountExact)
             }
 
@@ -577,12 +579,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                if (!index.name)
-                    index.name = this.dataSource.namingStrategy.indexName(
-                        table,
-                        index.columnNames,
-                        index.where,
-                    )
+                index.name ??= this.dataSource.namingStrategy.indexName(
+                    table,
+                    index.columnNames,
+                    index.where,
+                )
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(table, index))
             })
@@ -1292,12 +1293,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : await this.getCachedTable(tableOrName)
 
         // new check constraint may be passed without name. In this case we generate unique name manually.
-        if (!checkConstraint.name)
-            checkConstraint.name =
-                this.dataSource.namingStrategy.checkConstraintName(
-                    table,
-                    checkConstraint.expression!,
-                )
+        checkConstraint.name ??=
+            this.dataSource.namingStrategy.checkConstraintName(
+                table,
+                checkConstraint.expression!,
+            )
 
         const up = this.createCheckConstraintSql(table, checkConstraint)
         const down = this.dropCheckConstraintSql(table, checkConstraint)
@@ -1452,13 +1452,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : await this.getCachedTable(tableOrName)
 
         // new FK may be passed without name. In this case we generate FK name manually.
-        if (!foreignKey.name)
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
@@ -1508,14 +1507,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
         }
 
-        if (!foreignKey.name) {
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
-        }
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
@@ -1556,7 +1553,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -1607,7 +1604,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -1803,20 +1800,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
         const dbTables: { TABLE_NAME: string }[] = []
 
-        if (!tableNames || !tableNames.length) {
-            // Since we don't have any of this data we have to do a scan
-            const tablesSql =
-                `SELECT \`TABLE_NAME\` ` +
-                `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
-                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
-            dbTables.push(...(await this.query(tablesSql)))
-        } else {
+        if (tableNames?.length) {
             const placeholders = tableNames
                 .map((_, i) => `@param${i}`)
                 .join(", ")
@@ -1827,6 +1817,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `AND \`TABLE_NAME\` IN (${placeholders})`
 
             dbTables.push(...(await this.query(tablesSql, tableNames)))
+        } else {
+            // Since we don't have any of this data we have to do a scan
+            const tablesSql =
+                `SELECT \`TABLE_NAME\` ` +
+                `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
+                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
+            dbTables.push(...(await this.query(tablesSql)))
         }
 
         // if tables were not found in the db, no need to proceed
@@ -1923,8 +1920,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 )
                             const hasIgnoredIndex =
                                 columnUniqueIndices.length > 0 &&
-                                tableMetadata &&
-                                tableMetadata.indices.some((index) => {
+                                tableMetadata?.indices.some((index) => {
                                     return columnUniqueIndices.some(
                                         (uniqueIndex) => {
                                             return (
@@ -1998,7 +1994,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                     asExpressionQuery.parameters,
                                 )
 
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""
@@ -2174,12 +2170,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (table.checks.length > 0) {
             const checksSql = table.checks
                 .map((check) => {
-                    const checkName = check.name
-                        ? check.name
-                        : this.dataSource.namingStrategy.checkConstraintName(
-                              table,
-                              check.expression!,
-                          )
+                    const checkName =
+                        check.name ??
+                        this.dataSource.namingStrategy.checkConstraintName(
+                            table,
+                            check.expression!,
+                        )
                     return `CONSTRAINT \`${checkName}\` CHECK (${check.expression})`
                 })
                 .join(", ")
@@ -2193,13 +2189,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const columnNames = fk.columnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
-                            table,
-                            fk.columnNames,
-                            this.getTablePath(fk),
-                            fk.referencedColumnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        table,
+                        fk.columnNames,
+                        this.getTablePath(fk),
+                        fk.referencedColumnNames,
+                    )
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")

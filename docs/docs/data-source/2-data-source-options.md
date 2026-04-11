@@ -26,16 +26,16 @@ Different RDBMS-es have their own specific options.
   It accepts both entity classes and directories from which to load.
   Directories support glob patterns.
   Example: `subscribers: [PostSubscriber, AppSubscriber, "subscribers/*.js", "modules/**/subscribers/*.js"]`.
-  Learn more about [Subscribers](../advanced-topics/4-listeners-and-subscribers.md).
+  Learn more about [Subscribers](../listeners-and-subscribers.md).
 
 - `logging` - Indicates if logging is enabled or not.
   If set to `true` then query and error logging will be enabled.
   You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
-  Learn more about [Logging](../advanced-topics/5-logging.md).
+  Learn more about [Logging](../logging.md).
 
 - `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "formatted-console", "simple-console" and "file".
   Default is "advanced-console". You can also specify a logger class that implements `Logger` interface.
-  Learn more about [Logging](../advanced-topics/5-logging.md).
+  Learn more about [Logging](../logging.md).
 
 - `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
   then logger will log this query.
@@ -59,7 +59,7 @@ Different RDBMS-es have their own specific options.
   This option is useful during debug and development.
   As an alternative to it, you can use CLI and run schema:sync command.
   Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
-  Instead, it syncs just by creating indices.
+  Instead, it syncs just by creating indexes.
 
 - `migrations` - [Migrations](../migrations/01-why.md) to be loaded and used for this data source
 

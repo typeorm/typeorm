@@ -27,31 +27,32 @@ describe("other issues > entity change in listeners should affect persistence", 
                 await connection.manager.save(post)
 
                 // check if it was inserted correctly
-                const loadedPost = await connection.manager.findOneBy(Post, {
-                    id: 1,
-                })
-                expect(loadedPost).not.to.be.null
-                loadedPost!.title.should.be.equal("hello")
-
-                // now update some property and let update listener trigger
-                loadedPost!.active = true
-                await connection.manager.save(loadedPost!)
-
-                // check if update listener was triggered and entity was really updated by the changes in the listener
-                const loadedUpdatedPost = await connection.manager.findOneBy(
+                const loadedPost = await connection.manager.findOneByOrFail(
                     Post,
                     {
                         id: 1,
                     },
                 )
+                expect(loadedPost).not.to.be.null
+                loadedPost.title.should.be.equal("hello")
+
+                // now update some property and let update listener trigger
+                loadedPost.active = true
+                await connection.manager.save(loadedPost)
+
+                // check if update listener was triggered and entity was really updated by the changes in the listener
+                const loadedUpdatedPost =
+                    await connection.manager.findOneByOrFail(Post, {
+                        id: 1,
+                    })
 
                 expect(loadedUpdatedPost).not.to.be.null
-                loadedUpdatedPost!.title.should.be.equal("hello!")
+                loadedUpdatedPost.title.should.be.equal("hello!")
 
-                await connection.manager.save(loadedPost!)
-                await connection.manager.save(loadedPost!)
-                await connection.manager.save(loadedPost!)
-                await connection.manager.save(loadedPost!)
+                await connection.manager.save(loadedPost)
+                await connection.manager.save(loadedPost)
+                await connection.manager.save(loadedPost)
+                await connection.manager.save(loadedPost)
             }),
         ))
 })

@@ -15,7 +15,7 @@ export function VersionColumn(options?: ColumnOptions): PropertyDecorator {
             target: object.constructor,
             propertyName: propertyName,
             mode: "version",
-            options: options || {},
+            options: options ?? {},
         } as ColumnMetadataArgs)
     }
 }

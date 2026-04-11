@@ -33,13 +33,13 @@ describe("columns > insert-control", () => {
                 post.authorLastName = "Good"
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     id: post.id,
                 })
-                expect(loadedPost!.title).to.be.equal("About columns")
-                expect(loadedPost!.text).to.be.equal("Some text about columns")
-                expect(loadedPost!.authorFirstName).to.be.equal("Default")
-                expect(loadedPost!.authorLastName).to.be.equal("Default")
+                expect(loadedPost.title).to.be.equal("About columns")
+                expect(loadedPost.text).to.be.equal("Some text about columns")
+                expect(loadedPost.authorFirstName).to.be.equal("Default")
+                expect(loadedPost.authorLastName).to.be.equal("Default")
             }),
         ))
 

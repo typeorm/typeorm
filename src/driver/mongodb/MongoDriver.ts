@@ -45,6 +45,11 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = MongoDriver.supportedIsolationLevels
+
+    /**
      * Underlying mongodb library.
      */
     mongodb: any
@@ -544,7 +549,7 @@ export class MongoDriver implements Driver {
      */
     protected loadDependencies(): any {
         try {
-            const mongodb = this.options.driver || PlatformTools.load("mongodb")
+            const mongodb = this.options.driver ?? PlatformTools.load("mongodb")
             this.mongodb = mongodb
         } catch (e) {
             throw new DriverPackageNotInstalledError("MongoDB", "mongodb")
@@ -564,19 +569,18 @@ export class MongoDriver implements Driver {
                 : ""
 
         const portUrlPart =
-            schemaUrlPart === "mongodb+srv" ? "" : `:${options.port || "27017"}`
+            schemaUrlPart === "mongodb+srv" ? "" : `:${options.port ?? "27017"}`
 
         let connectionString: string
         if (options.replicaSet) {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${
-                options.hostReplicaSet ||
-                options.host + portUrlPart ||
-                "127.0.0.1" + portUrlPart
-            }/${options.database || ""}`
+                options.hostReplicaSet ??
+                `${options.host ?? "127.0.0.1"}${portUrlPart}`
+            }/${options.database ?? ""}`
         } else {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${
-                options.host || "127.0.0.1"
-            }${portUrlPart}/${options.database || ""}`
+                options.host ?? "127.0.0.1"
+            }${portUrlPart}/${options.database ?? ""}`
         }
 
         return connectionString

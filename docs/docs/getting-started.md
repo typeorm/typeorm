@@ -32,7 +32,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 - Unidirectional, bidirectional, and self-referenced relations.
 - Supports multiple inheritance patterns.
 - Cascades.
-- Indices.
+- Indexes.
 - Transactions.
 - [Migrations](/docs/migrations/why) with automatic generation.
 - Connection pooling.
