@@ -22,6 +22,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     *
      * @param subject
      */
     async insert(subject: Subject): Promise<void> {
@@ -53,11 +54,11 @@ export class ClosureSubjectExecutor {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+        if (!parent && subject.parentSubject?.entity)
             // if entity was attached via children
-            parent = subject.parentSubject.insertedValueSet
-                ? subject.parentSubject.insertedValueSet
-                : subject.parentSubject.entity
+            parent =
+                subject.parentSubject.insertedValueSet ??
+                subject.parentSubject.entity
 
         if (parent) {
             const escape = (alias: string) =>
@@ -83,9 +84,7 @@ export class ClosureSubjectExecutor {
                 (column) => {
                     queryParams.push(
                         column.getEntityValue(
-                            subject.insertedValueSet
-                                ? subject.insertedValueSet
-                                : subject.entity!,
+                            subject.insertedValueSet ?? subject.entity!,
                         ),
                     )
                     return this.queryRunner.dataSource.driver.createParameter(
@@ -135,13 +134,14 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     *
      * @param subject
      */
     async update(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+        if (!parent && subject.parentSubject?.entity)
             // if entity was attached via children
             parent = subject.parentSubject.entity
 
@@ -321,6 +321,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being removed.
+     *
      * @param subjects
      */
     async remove(subjects: Subject | Subject[]): Promise<void> {
@@ -365,6 +366,7 @@ export class ClosureSubjectExecutor {
     /**
      * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
      * schema name, otherwise returns escaped table name.
+     *
      * @param tablePath
      */
     protected getTableName(tablePath: string): string {

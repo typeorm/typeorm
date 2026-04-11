@@ -6,6 +6,7 @@ import { ObjectUtils } from "../../util/ObjectUtils"
 /**
  * This decorator is used to mark classes that will be an entity view.
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ *
  * @param options
  */
 export function ViewEntity(options?: ViewEntityOptions): ClassDecorator
@@ -13,6 +14,7 @@ export function ViewEntity(options?: ViewEntityOptions): ClassDecorator
 /**
  * This decorator is used to mark classes that will be an entity view.
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ *
  * @param name
  * @param options
  */
@@ -24,6 +26,7 @@ export function ViewEntity(
 /**
  * This decorator is used to mark classes that will be an entity view.
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ *
  * @param nameOrOptions
  * @param maybeOptions
  */
@@ -34,7 +37,7 @@ export function ViewEntity(
     const options =
         (ObjectUtils.isObject(nameOrOptions)
             ? (nameOrOptions as ViewEntityOptions)
-            : maybeOptions) || {}
+            : maybeOptions) ?? {}
     const name =
         typeof nameOrOptions === "string" ? nameOrOptions : options.name
 
@@ -47,8 +50,8 @@ export function ViewEntity(
                 ? new Set(options.dependsOn)
                 : undefined,
             type: "view",
-            database: options.database ? options.database : undefined,
-            schema: options.schema ? options.schema : undefined,
+            database: options.database ?? undefined,
+            schema: options.schema ?? undefined,
             synchronize: options.synchronize === false ? false : true,
             materialized: !!options.materialized,
         } as TableMetadataArgs)

@@ -44,11 +44,11 @@ describe("ltree-postgres", () => {
                 const post = new Post()
                 post.path = path
                 const persistedPost = await postRepo.save(post)
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(path)
+                expect(foundPost.path).to.deep.equal(path)
             }),
         ))
 
@@ -64,11 +64,11 @@ describe("ltree-postgres", () => {
 
                 await postRepo.update({ id: persistedPost.id }, { path: path2 })
 
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(path2)
+                expect(foundPost.path).to.deep.equal(path2)
             }),
         ))
 
@@ -85,11 +85,11 @@ describe("ltree-postgres", () => {
                 persistedPost.path = path2
                 await postRepo.save(persistedPost)
 
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(path2)
+                expect(foundPost.path).to.deep.equal(path2)
             }),
         ))
 
@@ -101,11 +101,11 @@ describe("ltree-postgres", () => {
                 const post = new Post()
                 post.path = path
                 const persistedPost = await postRepo.save(post)
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal("News.Featured.Opinion")
+                expect(foundPost.path).to.deep.equal("News.Featured.Opinion")
             }),
         ))
 
@@ -117,11 +117,11 @@ describe("ltree-postgres", () => {
                 const post = new Post()
                 post.path = path
                 const persistedPost = await postRepo.save(post)
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(
+                expect(foundPost.path).to.deep.equal(
                     "News.Featured_Story.Opinion",
                 )
             }),
@@ -138,9 +138,8 @@ describe("ltree-postgres", () => {
                 const foundPost = await postRepo
                     .createQueryBuilder()
                     .where(`path ~ 'news@.*'`)
-                    .getOne()
-                expect(foundPost).to.exist
-                expect(foundPost!.path).to.deep.equal(path)
+                    .getOneOrFail()
+                expect(foundPost.path).to.deep.equal(path)
             }),
         ))
 })
