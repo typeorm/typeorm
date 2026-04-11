@@ -30,7 +30,6 @@ import type { ReplicationMode } from "../types/ReplicationMode"
 import type { CockroachDriver } from "./CockroachDriver"
 import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
-
 /**
  * Runs queries on a single postgres database connection.
  */
