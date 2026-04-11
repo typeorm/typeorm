@@ -31,6 +31,7 @@ export class EntitySchemaTransformer {
 
     /**
      * Transforms entity schema into new metadata args storage object.
+     *
      * @param schemas
      */
     transform(schemas: EntitySchema<any>[]): MetadataArgsStorage {
@@ -41,11 +42,11 @@ export class EntitySchemaTransformer {
 
             // add table metadata args from the schema
             const tableMetadata: TableMetadataArgs = {
-                target: options.target || options.name,
+                target: options.target ?? options.name,
                 name: options.tableName,
                 database: options.database,
                 schema: options.schema,
-                type: options.type || "regular",
+                type: options.type ?? "regular",
                 orderBy: options.orderBy,
                 synchronize: options.synchronize,
                 withoutRowid: !!options.withoutRowid,
@@ -71,7 +72,7 @@ export class EntitySchemaTransformer {
 
             if (discriminatorValue) {
                 metadataArgsStorage.discriminatorValues.push({
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     value: discriminatorValue,
                 })
             }
@@ -102,7 +103,7 @@ export class EntitySchemaTransformer {
             if (regularColumn.virtualProperty) mode = "virtual-property"
 
             const columnArgs: ColumnMetadataArgs = {
-                target: options.target || options.name,
+                target: options.target ?? options.name,
                 mode: mode,
                 propertyName: columnName,
                 options: {
@@ -111,9 +112,7 @@ export class EntitySchemaTransformer {
                     primaryKeyConstraintName:
                         regularColumn.primaryKeyConstraintName,
                     length: regularColumn.length,
-                    width: regularColumn.width,
                     nullable: regularColumn.nullable,
-                    readonly: regularColumn.readonly,
                     update: regularColumn.update,
                     select: regularColumn.select,
                     insert: regularColumn.insert,
@@ -124,7 +123,6 @@ export class EntitySchemaTransformer {
                     onUpdate: regularColumn.onUpdate,
                     precision: regularColumn.precision,
                     scale: regularColumn.scale,
-                    zerofill: regularColumn.zerofill,
                     unsigned: regularColumn.unsigned,
                     charset: regularColumn.charset,
                     collation: regularColumn.collation,
@@ -144,7 +142,7 @@ export class EntitySchemaTransformer {
 
             if (regularColumn.generated) {
                 const generationArgs: GeneratedMetadataArgs = {
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     propertyName: columnName,
                     strategy:
                         typeof regularColumn.generated === "string"
@@ -156,7 +154,7 @@ export class EntitySchemaTransformer {
 
             if (regularColumn.unique)
                 metadataArgsStorage.uniques.push({
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     columns: [columnName],
                 })
 
@@ -164,7 +162,7 @@ export class EntitySchemaTransformer {
                 const foreignKey = regularColumn.foreignKey
 
                 const foreignKeyArgs: ForeignKeyMetadataArgs = {
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     type: foreignKey.target,
                     propertyName: columnName,
                     inverseSide: foreignKey.inverseSide,
@@ -182,16 +180,16 @@ export class EntitySchemaTransformer {
             Object.keys(options.relations).forEach((relationName) => {
                 const relationSchema = options.relations![relationName]!
                 const relation: RelationMetadataArgs = {
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     propertyName: relationName,
                     relationType: relationSchema.type,
-                    isLazy: relationSchema.lazy || false,
+                    isLazy: relationSchema.lazy ?? false,
                     type: relationSchema.target,
                     inverseSideProperty: relationSchema.inverseSide,
                     isTreeParent: relationSchema.treeParent,
                     isTreeChildren: relationSchema.treeChildren,
                     options: {
-                        eager: relationSchema.eager || false,
+                        eager: relationSchema.eager ?? false,
                         cascade: relationSchema.cascade,
                         nullable: relationSchema.nullable,
                         onDelete: relationSchema.onDelete,
@@ -211,7 +209,7 @@ export class EntitySchemaTransformer {
                 if (relationSchema.joinColumn) {
                     if (typeof relationSchema.joinColumn === "boolean") {
                         const joinColumn: JoinColumnMetadataArgs = {
-                            target: options.target || options.name,
+                            target: options.target ?? options.name,
                             propertyName: relationName,
                         }
                         metadataArgsStorage.joinColumns.push(joinColumn)
@@ -224,7 +222,7 @@ export class EntitySchemaTransformer {
 
                         for (const joinColumnOption of joinColumnsOptions) {
                             const joinColumn: JoinColumnMetadataArgs = {
-                                target: options.target || options.name,
+                                target: options.target ?? options.name,
                                 propertyName: relationName,
                                 name: joinColumnOption.name,
                                 referencedColumnName:
@@ -241,13 +239,13 @@ export class EntitySchemaTransformer {
                 if (relationSchema.joinTable) {
                     if (typeof relationSchema.joinTable === "boolean") {
                         const joinTable: JoinTableMetadataArgs = {
-                            target: options.target || options.name,
+                            target: options.target ?? options.name,
                             propertyName: relationName,
                         }
                         metadataArgsStorage.joinTables.push(joinTable)
                     } else {
                         const joinTable: JoinTableMetadataArgs = {
-                            target: options.target || options.name,
+                            target: options.target ?? options.name,
                             propertyName: relationName,
                             name: relationSchema.joinTable.name,
                             database: relationSchema.joinTable.database,
@@ -288,7 +286,7 @@ export class EntitySchemaTransformer {
                 const relationId: RelationIdMetadataArgs = {
                     propertyName: relationIdName,
                     relation: relationIdOptions.relationName,
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     alias: relationIdOptions.alias,
                     queryBuilderFactory: relationIdOptions.queryBuilderFactory,
                 }
@@ -300,7 +298,7 @@ export class EntitySchemaTransformer {
         if (options.indices) {
             options.indices.forEach((index) => {
                 const indexArgs: IndexMetadataArgs = {
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     name: index.name,
                     unique: index.unique === true ? true : false,
                     spatial: index.spatial === true ? true : false,
@@ -319,7 +317,7 @@ export class EntitySchemaTransformer {
         if (options.foreignKeys) {
             options.foreignKeys.forEach((foreignKey) => {
                 const foreignKeyArgs: ForeignKeyMetadataArgs = {
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     type: foreignKey.target,
                     columnNames: foreignKey.columnNames,
                     referencedColumnNames: foreignKey.referencedColumnNames,
@@ -336,7 +334,7 @@ export class EntitySchemaTransformer {
         if (options.uniques) {
             options.uniques.forEach((unique) => {
                 const uniqueArgs: UniqueMetadataArgs = {
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     name: unique.name,
                     columns: unique.columns,
                     deferrable: unique.deferrable,
@@ -349,7 +347,7 @@ export class EntitySchemaTransformer {
         if (options.checks) {
             options.checks.forEach((check) => {
                 const checkArgs: CheckMetadataArgs = {
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     name: check.name,
                     expression: check.expression,
                 }
@@ -361,7 +359,7 @@ export class EntitySchemaTransformer {
         if (options.exclusions) {
             options.exclusions.forEach((exclusion) => {
                 const exclusionArgs: ExclusionMetadataArgs = {
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     name: exclusion.name,
                     expression: exclusion.expression,
                     deferrable: exclusion.deferrable,
@@ -382,14 +380,11 @@ export class EntitySchemaTransformer {
                 const embeddedSchema = embeddedOptions.schema.options
 
                 metadataArgsStorage.embeddeds.push({
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     propertyName: columnName,
                     isArray: embeddedOptions.array === true,
-                    prefix:
-                        embeddedOptions.prefix !== undefined
-                            ? embeddedOptions.prefix
-                            : undefined,
-                    type: () => embeddedSchema?.target || embeddedSchema.name,
+                    prefix: embeddedOptions.prefix ?? undefined,
+                    type: () => embeddedSchema?.target ?? embeddedSchema.name,
                 })
 
                 this.transformColumnsRecursive(
@@ -402,7 +397,7 @@ export class EntitySchemaTransformer {
         if (options.trees) {
             options.trees.forEach((tree) => {
                 metadataArgsStorage.trees.push({
-                    target: options.target || options.name,
+                    target: options.target ?? options.name,
                     type: tree.type,
                     options: tree.options,
                 })

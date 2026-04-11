@@ -20,15 +20,14 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
         const res = await queryRunner.query(query)
         return res.length ? res[0]["column_default"] : null
     }
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-                entities: [User],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [User],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should add DEFAULT value when @Generated('increment') is added", () =>

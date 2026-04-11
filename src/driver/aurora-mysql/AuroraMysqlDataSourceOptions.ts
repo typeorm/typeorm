@@ -3,6 +3,7 @@ import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOpti
 
 /**
  * MySQL specific connection options.
+ *
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface AuroraMysqlDataSourceOptions
@@ -32,7 +33,7 @@ export interface AuroraMysqlDataSourceOptions
 
     /**
      * Use spatial functions like GeomFromText and AsText which are removed in MySQL 8.
-     * (Default: true)
+     * (Default: false)
      */
     readonly legacySpatialSupport?: boolean
 

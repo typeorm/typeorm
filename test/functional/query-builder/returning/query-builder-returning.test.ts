@@ -12,43 +12,42 @@ import { User } from "./entity/User"
 
 describe("query builder > insert/update/delete returning", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mssql", "postgres", "spanner"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mssql", "postgres", "spanner"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should create and perform an INSERT statement, including RETURNING or OUTPUT clause", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user = new User()
                 user.name = "Tim Merrison"
 
-                const qb = connection
+                const qb = dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(User)
                     .values(user)
                     .returning(
-                        connection.driver.options.type === "mssql"
+                        dataSource.driver.options.type === "mssql"
                             ? "inserted.*"
                             : "*",
                     )
 
                 const sql = qb.getSql()
-                if (connection.driver.options.type === "mssql") {
+                if (dataSource.driver.options.type === "mssql") {
                     expect(sql).to.equal(
                         `INSERT INTO "user"("name") OUTPUT inserted.* VALUES (@0)`,
                     )
-                } else if (connection.driver.options.type === "postgres") {
+                } else if (dataSource.driver.options.type === "postgres") {
                     expect(sql).to.equal(
                         `INSERT INTO "user"("name") VALUES ($1) RETURNING *`,
                     )
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     expect(sql).to.equal(
                         "INSERT INTO `user`(`id`, `name`) VALUES (NULL, @param0) THEN RETURN *",
                     )
@@ -63,34 +62,34 @@ describe("query builder > insert/update/delete returning", () => {
 
     it("should create and perform an UPDATE statement, including RETURNING or OUTPUT clause", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user = new User()
                 user.name = "Tim Merrison"
 
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
-                const qb = connection
+                const qb = dataSource
                     .createQueryBuilder()
                     .update(User)
                     .set({ name: "Joe Bloggs" })
                     .where("name = :name", { name: user.name })
                     .returning(
-                        connection.driver.options.type === "mssql"
+                        dataSource.driver.options.type === "mssql"
                             ? "inserted.*"
                             : "*",
                     )
 
                 const sql = qb.getSql()
 
-                if (connection.driver.options.type === "mssql") {
+                if (dataSource.driver.options.type === "mssql") {
                     expect(sql).to.equal(
                         `UPDATE "user" SET "name" = @0 OUTPUT inserted.* WHERE "name" = @1`,
                     )
-                } else if (connection.driver.options.type === "postgres") {
+                } else if (dataSource.driver.options.type === "postgres") {
                     expect(sql).to.equal(
                         `UPDATE "user" SET "name" = $1 WHERE "name" = $2 RETURNING *`,
                     )
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     expect(sql).to.equal(
                         "UPDATE `user` SET `name` = @param0 WHERE `name` = @param1 THEN RETURN *",
                     )
@@ -105,34 +104,34 @@ describe("query builder > insert/update/delete returning", () => {
 
     it("should create and perform a DELETE statement, including RETURNING or OUTPUT clause", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user = new User()
                 user.name = "Tim Merrison"
 
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
-                const qb = connection
+                const qb = dataSource
                     .createQueryBuilder()
                     .delete()
                     .from(User)
                     .where("name = :name", { name: user.name })
                     .returning(
-                        connection.driver.options.type === "mssql"
+                        dataSource.driver.options.type === "mssql"
                             ? "deleted.*"
                             : "*",
                     )
 
                 const sql = qb.getSql()
 
-                if (connection.driver.options.type === "mssql") {
+                if (dataSource.driver.options.type === "mssql") {
                     expect(sql).to.equal(
                         `DELETE FROM "user" OUTPUT deleted.* WHERE "name" = @0`,
                     )
-                } else if (connection.driver.options.type === "postgres") {
+                } else if (dataSource.driver.options.type === "postgres") {
                     expect(sql).to.equal(
                         `DELETE FROM "user" WHERE "name" = $1 RETURNING *`,
                     )
-                } else if (connection.driver.options.type === "spanner") {
+                } else if (dataSource.driver.options.type === "spanner") {
                     expect(sql).to.equal(
                         "DELETE FROM `user` WHERE `name` = @param0 THEN RETURN *",
                     )

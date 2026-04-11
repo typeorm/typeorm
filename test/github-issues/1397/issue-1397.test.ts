@@ -10,13 +10,12 @@ import { Post } from "./entity/Post"
 
 describe("github issue > #1397 Spaces at the end of values are removed when inserting", () => {
     let dataSources: DataSource[] = []
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -28,11 +27,14 @@ describe("github issue > #1397 Spaces at the end of values are removed when inse
                 await connection.manager.save(post)
                 post.title.should.be.equal(" About My Post   ")
 
-                const loadedPost = await connection.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost = await connection.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
                 expect(loadedPost).not.to.be.null
-                loadedPost!.title.should.be.equal(" About My Post   ")
+                loadedPost.title.should.be.equal(" About My Post   ")
             }),
         ))
 })

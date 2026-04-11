@@ -10,13 +10,12 @@ import type { ObjectLiteral } from "../../../src"
 
 describe("github issues > #922 Support HSTORE column type", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -32,19 +31,19 @@ describe("github issues > #922 Support HSTORE column type", () => {
                 post.hstoreStr = "name => Bob, surname => B, age => 30"
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     id: 1,
                 })
-                ;(loadedPost!.hstoreObj as ObjectLiteral).name.should.be.equal(
+                ;(loadedPost.hstoreObj as ObjectLiteral).name.should.be.equal(
                     "Alice",
                 )
                 ;(
-                    loadedPost!.hstoreObj as ObjectLiteral
+                    loadedPost.hstoreObj as ObjectLiteral
                 ).surname.should.be.equal("A")
-                ;(loadedPost!.hstoreObj as ObjectLiteral).age.should.be.equal(
+                ;(loadedPost.hstoreObj as ObjectLiteral).age.should.be.equal(
                     "25",
                 )
-                loadedPost!.hstoreStr.should.be.equal(
+                loadedPost.hstoreStr.should.be.equal(
                     `"age"=>"30", "name"=>"Bob", "surname"=>"B"`,
                 )
                 table!

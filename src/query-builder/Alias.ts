@@ -21,7 +21,7 @@ export class Alias {
     subQuery?: string
 
     constructor(alias?: Alias) {
-        ObjectUtils.assign(this, alias || {})
+        ObjectUtils.assign(this, alias ?? {})
     }
 
     private _metadata?: EntityMetadata

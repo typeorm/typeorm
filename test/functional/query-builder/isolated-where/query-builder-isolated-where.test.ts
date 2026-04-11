@@ -10,21 +10,20 @@ import { User } from "./entity/User"
 
 describe("query builder > isolated-where", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User],
-                enabledDrivers: ["better-sqlite3"],
-                isolateWhereStatements: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            enabledDrivers: ["better-sqlite3"],
+            isolateWhereStatements: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should correctly apply brackets when where statement isolation is enabled", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const sql = connection.manager
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
                     .createQueryBuilder(User, "user")
                     .where("user.id = :userId", { userId: "user-id" })
                     .andWhere(

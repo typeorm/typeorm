@@ -13,71 +13,70 @@ import { Person } from "./entity/Person"
 
 describe("relations > multiple-primary-keys > other-cases", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should load related entity when entity uses relation ids as primary id", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.name = "Alice"
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.name = "Bob"
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.name = "Clara"
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
                 const person1 = new Person()
                 person1.fullName = "Alice A"
                 person1.user = user1
-                await connection.manager.save(person1)
+                await dataSource.manager.save(person1)
 
                 const person2 = new Person()
                 person2.fullName = "Bob B"
                 person2.user = user2
-                await connection.manager.save(person2)
+                await dataSource.manager.save(person2)
 
                 const event1 = new Event()
                 event1.name = "Event #1"
                 event1.author = person1
-                await connection.manager.save(event1)
+                await dataSource.manager.save(event1)
 
                 const event2 = new Event()
                 event2.name = "Event #2"
                 event2.author = person2
-                await connection.manager.save(event2)
+                await dataSource.manager.save(event2)
 
                 const eventMember1 = new EventMember()
                 eventMember1.user = user1
                 eventMember1.event = event1
-                await connection.manager.save(eventMember1)
+                await dataSource.manager.save(eventMember1)
 
                 const eventMember2 = new EventMember()
                 eventMember2.user = user2
                 eventMember2.event = event1
-                await connection.manager.save(eventMember2)
+                await dataSource.manager.save(eventMember2)
 
                 const eventMember3 = new EventMember()
                 eventMember3.user = user1
                 eventMember3.event = event2
-                await connection.manager.save(eventMember3)
+                await dataSource.manager.save(eventMember3)
 
                 const eventMember4 = new EventMember()
                 eventMember4.user = user3
                 eventMember4.event = event2
-                await connection.manager.save(eventMember4)
+                await dataSource.manager.save(eventMember4)
 
-                const loadedEvents = await connection.manager
+                const loadedEvents = await dataSource.manager
                     .createQueryBuilder(Event, "event")
                     .leftJoinAndSelect("event.author", "author")
                     .leftJoinAndSelect("author.user", "authorUser")
@@ -111,7 +110,7 @@ describe("relations > multiple-primary-keys > other-cases", () => {
                     "Clara",
                 )
 
-                const loadedUsers = await connection.manager
+                const loadedUsers = await dataSource.manager
                     .createQueryBuilder(User, "user")
                     .leftJoinAndSelect("user.members", "members")
                     .leftJoinAndSelect("members.event", "event")

@@ -32,38 +32,37 @@ describe("database schema > simple-enums", () => {
 
     it("should correctly use default values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(SimpleEnumEntity)
+                    dataSource.getRepository(SimpleEnumEntity)
 
                 const enumEntity = new SimpleEnumEntity()
                 enumEntity.id = 1
                 enumEntity.enumWithoutdefault = StringEnum.EDITOR
                 await enumEntityRepository.save(enumEntity)
 
-                const loadedEnumEntity = await enumEntityRepository.findOneBy({
-                    id: 1,
-                })
-                loadedEnumEntity!.numericEnum.should.be.eq(
-                    NumericEnum.MODERATOR,
-                )
-                loadedEnumEntity!.stringEnum.should.be.eq(StringEnum.GHOST)
-                loadedEnumEntity!.stringNumericEnum.should.be.eq(
+                const loadedEnumEntity =
+                    await enumEntityRepository.findOneByOrFail({
+                        id: 1,
+                    })
+                loadedEnumEntity.numericEnum.should.be.eq(NumericEnum.MODERATOR)
+                loadedEnumEntity.stringEnum.should.be.eq(StringEnum.GHOST)
+                loadedEnumEntity.stringNumericEnum.should.be.eq(
                     StringNumericEnum.FOUR,
                 )
-                loadedEnumEntity!.heterogeneousEnum.should.be.eq(
+                loadedEnumEntity.heterogeneousEnum.should.be.eq(
                     HeterogeneousEnum.NO,
                 )
-                loadedEnumEntity!.arrayDefinedStringEnum.should.be.eq("ghost")
-                loadedEnumEntity!.arrayDefinedNumericEnum.should.be.eq(12)
+                loadedEnumEntity.arrayDefinedStringEnum.should.be.eq("ghost")
+                loadedEnumEntity.arrayDefinedNumericEnum.should.be.eq(12)
             }),
         ))
 
     it("should correctly save and retrieve", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(SimpleEnumEntity)
+                    dataSource.getRepository(SimpleEnumEntity)
 
                 const enumEntity = new SimpleEnumEntity()
                 enumEntity.id = 1
@@ -76,19 +75,20 @@ describe("database schema > simple-enums", () => {
                 enumEntity.enumWithoutdefault = StringEnum.ADMIN
                 await enumEntityRepository.save(enumEntity)
 
-                const loadedEnumEntity = await enumEntityRepository.findOneBy({
-                    id: 1,
-                })
-                loadedEnumEntity!.numericEnum.should.be.eq(NumericEnum.EDITOR)
-                loadedEnumEntity!.stringEnum.should.be.eq(StringEnum.ADMIN)
-                loadedEnumEntity!.stringNumericEnum.should.be.eq(
+                const loadedEnumEntity =
+                    await enumEntityRepository.findOneByOrFail({
+                        id: 1,
+                    })
+                loadedEnumEntity.numericEnum.should.be.eq(NumericEnum.EDITOR)
+                loadedEnumEntity.stringEnum.should.be.eq(StringEnum.ADMIN)
+                loadedEnumEntity.stringNumericEnum.should.be.eq(
                     StringNumericEnum.TWO,
                 )
-                loadedEnumEntity!.heterogeneousEnum.should.be.eq(
+                loadedEnumEntity.heterogeneousEnum.should.be.eq(
                     HeterogeneousEnum.YES,
                 )
-                loadedEnumEntity!.arrayDefinedStringEnum.should.be.eq("editor")
-                loadedEnumEntity!.arrayDefinedNumericEnum.should.be.eq(13)
+                loadedEnumEntity.arrayDefinedStringEnum.should.be.eq("editor")
+                loadedEnumEntity.arrayDefinedNumericEnum.should.be.eq(13)
             }),
         ))
 })

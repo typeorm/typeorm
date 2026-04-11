@@ -135,6 +135,7 @@ to be easier to read on GitHub as well as in various git tools.
 One of the following:
 
 - **build**: Changes that affect the build system or external dependencies
+- **chore**: Other changes that don't amend functionality (e.g. updating development dependencies, fixing typos, etc)
 - **ci**: Changes to our CI configuration files and scripts
 - **docs**: Documentation only changes
 - **feat**: A new feature

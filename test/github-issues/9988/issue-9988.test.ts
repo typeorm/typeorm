@@ -13,15 +13,14 @@ import type { FindManyOptions } from "../../../src"
 describe("github issues > #9988 RelationIdLoader reuses the same queryplanner within a transaction", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingDatasources({
-                entities: [Product, Category],
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingDatasources({
+            entities: [Product, Category],
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

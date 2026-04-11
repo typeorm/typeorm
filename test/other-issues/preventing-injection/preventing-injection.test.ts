@@ -11,12 +11,11 @@ import { EntityPropertyNotFoundError } from "../../../src/error/EntityPropertyNo
 
 describe("other issues > preventing-injection", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -123,22 +122,6 @@ describe("other issues > preventing-injection", () => {
                 connection.manager
                     .createQueryBuilder(Post, "post")
                     .skip("(WHERE LIMIT 1)" as any)
-            }).to.throw(Error)
-        })
-    })
-
-    it("should not allow non-allowed values in order by in QueryBuilder", () => {
-        dataSources.forEach((connection) => {
-            expect(() => {
-                connection.manager
-                    .createQueryBuilder(Post, "post")
-                    .orderBy("post.id", "MIX" as any)
-            }).to.throw(Error)
-
-            expect(() => {
-                connection.manager
-                    .createQueryBuilder(Post, "post")
-                    .orderBy("post.id", "DESC", "SOMETHING LAST" as any)
             }).to.throw(Error)
         })
     })

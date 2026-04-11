@@ -12,14 +12,13 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 describe("github issues > #3047 Mysqsl on duplicate key update use current values", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 
@@ -62,7 +61,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
                         expect(loadedUser[0]).to.includes({ is_updated: "yes" })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))
@@ -97,7 +96,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
                         expect(loadedUser[0]).to.includes({ is_updated: "yes" })
                     }
                 } catch (err) {
-                    throw new Error(err)
+                    throw new Error(err, { cause: err })
                 }
             }),
         ))

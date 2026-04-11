@@ -10,13 +10,12 @@ import { ArrayContainedBy } from "../../../../src/find-options/operator/ArrayCon
 
 describe("find options > find operators > ArrayContainedBy", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-                enabledDrivers: ["postgres", "cockroachdb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            enabledDrivers: ["postgres", "cockroachdb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -42,10 +41,10 @@ describe("find options > find operators > ArrayContainedBy", () => {
 
     it("should find entries in regular arrays", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const loadedPost1 = await connection.manager.find(Post, {
+                const loadedPost1 = await dataSource.manager.find(Post, {
                     where: {
                         authors: ArrayContainedBy(["dmitry", "olimjon"]),
                     },
@@ -74,7 +73,7 @@ describe("find options > find operators > ArrayContainedBy", () => {
                     },
                 ])
 
-                const loadedPost2 = await connection.manager.find(Post, {
+                const loadedPost2 = await dataSource.manager.find(Post, {
                     where: {
                         authors: ArrayContainedBy(["olimjon"]),
                     },
@@ -101,10 +100,10 @@ describe("find options > find operators > ArrayContainedBy", () => {
 
     it("should find entries in enum arrays", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const loadedPost1 = await connection.manager.find(Post, {
+                const loadedPost1 = await dataSource.manager.find(Post, {
                     where: {
                         statuses: ArrayContainedBy([
                             PostStatus.draft,
@@ -136,7 +135,7 @@ describe("find options > find operators > ArrayContainedBy", () => {
                     },
                 ])
 
-                const loadedPost2 = await connection.manager.find(Post, {
+                const loadedPost2 = await dataSource.manager.find(Post, {
                     where: {
                         statuses: ArrayContainedBy([PostStatus.published]),
                     },

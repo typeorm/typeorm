@@ -10,16 +10,15 @@ import { TestEntity } from "./entity/TestEntity"
 
 describe('github issues > #9341 "bigNumberStrings:false" is not working for postgres', () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-                driverSpecific: {
-                    parseInt8: true,
-                },
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+            driverSpecific: {
+                parseInt8: true,
+            },
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -30,9 +29,9 @@ describe('github issues > #9341 "bigNumberStrings:false" is not working for post
                 big_decimal: 1.23456789,
             })
 
-            const result = await connection.getRepository(TestEntity).findOne({
-                where: { id: origin.id },
-            })
+            const result = await connection
+                .getRepository(TestEntity)
+                .findOneBy({ id: origin.id })
 
             // count also returns bigint (as string by default)
             const [{ count }] = await connection.query(

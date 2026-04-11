@@ -7,23 +7,21 @@ import {
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
-import { PostRepository } from "./repository/PostRepository"
 
 describe("transaction > single query runner", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should execute all operations in the method in a transaction", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                return connection.transaction(
+            dataSources.map(async (dataSource) => {
+                return dataSource.transaction(
                     async (transactionalEntityManager) => {
                         const originalQueryRunner =
                             transactionalEntityManager.queryRunner
@@ -39,11 +37,6 @@ describe("transaction > single query runner", () => {
                         transactionalEntityManager
                             .getRepository(Post)
                             .manager.should.be.equal(transactionalEntityManager)
-
-                        transactionalEntityManager
-                            .getCustomRepository(PostRepository)
-                            .getManager()
-                            .should.be.equal(transactionalEntityManager)
                     },
                 )
             }),
@@ -51,9 +44,9 @@ describe("transaction > single query runner", () => {
 
     it("should execute all operations in the method in a transaction (#804)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const entityManager = connection.createQueryRunner().manager
-                entityManager.should.not.be.equal(connection.manager)
+            dataSources.map(async (dataSource) => {
+                const entityManager = dataSource.createQueryRunner().manager
+                entityManager.should.not.be.equal(dataSource.manager)
                 entityManager.queryRunner!.should.be.equal(
                     entityManager.queryRunner,
                 )
@@ -61,11 +54,11 @@ describe("transaction > single query runner", () => {
                 await entityManager.save(new Post(undefined, "Hello World"))
 
                 await entityManager.queryRunner!.startTransaction()
-                const loadedPost1 = await entityManager.findOneBy(Post, {
+                const loadedPost1 = await entityManager.findOneByOrFail(Post, {
                     title: "Hello World",
                 })
                 expect(loadedPost1).to.be.eql({ id: 1, title: "Hello World" })
-                await entityManager.remove(loadedPost1!)
+                await entityManager.remove(loadedPost1)
                 const loadedPost2 = await entityManager.findOneBy(Post, {
                     title: "Hello World",
                 })
@@ -84,15 +77,15 @@ describe("transaction > single query runner", () => {
                 expect(loadedPost4).to.be.eql({ id: 1, title: "Hello World" })
 
                 // in Spanner DELETE must have a WHERE clause
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     await entityManager.query(
-                        `DELETE FROM ${connection.driver.escape(
+                        `DELETE FROM ${dataSource.driver.escape(
                             "post",
                         )} WHERE true`,
                     )
                 } else {
                     await entityManager.query(
-                        `DELETE FROM ${connection.driver.escape("post")}`,
+                        `DELETE FROM ${dataSource.driver.escape("post")}`,
                     )
                 }
                 const loadedPost5 = await entityManager.findOneBy(Post, {

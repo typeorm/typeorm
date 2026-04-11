@@ -93,6 +93,7 @@ export class UniqueMetadata {
     /**
      * Builds some depend unique constraint properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     *
      * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
@@ -100,7 +101,7 @@ export class UniqueMetadata {
 
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {
-            let columnPropertyPaths: string[] = []
+            let columnPropertyPaths: string[]
             if (Array.isArray(this.givenColumnNames)) {
                 columnPropertyPaths = this.givenColumnNames.map(
                     (columnName) => {
@@ -114,9 +115,9 @@ export class UniqueMetadata {
                         return columnName.trim()
                     },
                 )
-                columnPropertyPaths.forEach(
-                    (propertyPath) => (map[propertyPath] = 1),
-                )
+                columnPropertyPaths.forEach((propertyPath) => {
+                    map[propertyPath] = 1
+                })
             } else {
                 // if columns is a function that returns array of field names then execute it and get columns names from it
                 const columnsFnResult = this.givenColumnNames(
@@ -126,15 +127,16 @@ export class UniqueMetadata {
                     columnPropertyPaths = columnsFnResult.map((i: any) =>
                         String(i),
                     )
-                    columnPropertyPaths.forEach((name) => (map[name] = 1))
+                    columnPropertyPaths.forEach((name) => {
+                        map[name] = 1
+                    })
                 } else {
                     columnPropertyPaths = Object.keys(columnsFnResult).map(
                         (i: any) => String(i),
                     )
-                    Object.keys(columnsFnResult).forEach(
-                        (columnName) =>
-                            (map[columnName] = columnsFnResult[columnName]),
-                    )
+                    Object.keys(columnsFnResult).forEach((columnName) => {
+                        map[columnName] = columnsFnResult[columnName]
+                    })
                 }
             }
 
@@ -179,12 +181,12 @@ export class UniqueMetadata {
             {} as { [key: string]: number },
         )
 
-        this.name = this.givenName
-            ? this.givenName
-            : namingStrategy.uniqueConstraintName(
-                  this.entityMetadata.tableName,
-                  this.columns.map((column) => column.databaseName),
-              )
+        this.name =
+            this.givenName ??
+            namingStrategy.uniqueConstraintName(
+                this.entityMetadata.tableName,
+                this.columns.map((column) => column.databaseName),
+            )
         return this
     }
 }

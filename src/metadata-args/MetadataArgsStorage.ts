@@ -1,6 +1,5 @@
 import type { RelationMetadataArgs } from "./RelationMetadataArgs"
 import type { ColumnMetadataArgs } from "./ColumnMetadataArgs"
-import type { RelationCountMetadataArgs } from "./RelationCountMetadataArgs"
 import type { IndexMetadataArgs } from "./IndexMetadataArgs"
 import type { EntityListenerMetadataArgs } from "./EntityListenerMetadataArgs"
 import type { TableMetadataArgs } from "./TableMetadataArgs"
@@ -12,7 +11,6 @@ import type { EntitySubscriberMetadataArgs } from "./EntitySubscriberMetadataArg
 import type { RelationIdMetadataArgs } from "./RelationIdMetadataArgs"
 import type { InheritanceMetadataArgs } from "./InheritanceMetadataArgs"
 import type { DiscriminatorValueMetadataArgs } from "./DiscriminatorValueMetadataArgs"
-import type { EntityRepositoryMetadataArgs } from "./EntityRepositoryMetadataArgs"
 import type { TransactionEntityMetadataArgs } from "./TransactionEntityMetadataArgs"
 import type { TransactionRepositoryMetadataArgs } from "./TransactionRepositoryMetadataArgs"
 import { MetadataUtils } from "../metadata-builder/MetadataUtils"
@@ -35,7 +33,6 @@ export class MetadataArgsStorage {
 
     readonly tables: TableMetadataArgs[] = []
     readonly trees: TreeMetadataArgs[] = []
-    readonly entityRepositories: EntityRepositoryMetadataArgs[] = []
     readonly transactionEntityManagers: TransactionEntityMetadataArgs[] = []
     readonly transactionRepositories: TransactionRepositoryMetadataArgs[] = []
     readonly namingStrategies: NamingStrategyMetadataArgs[] = []
@@ -51,7 +48,6 @@ export class MetadataArgsStorage {
     readonly joinColumns: JoinColumnMetadataArgs[] = []
     readonly joinTables: JoinTableMetadataArgs[] = []
     readonly entityListeners: EntityListenerMetadataArgs[] = []
-    readonly relationCounts: RelationCountMetadataArgs[] = []
     readonly relationIds: RelationIdMetadataArgs[] = []
     readonly embeddeds: EmbeddedMetadataArgs[] = []
     readonly inheritances: InheritanceMetadataArgs[] = []
@@ -130,19 +126,6 @@ export class MetadataArgsStorage {
     ): RelationIdMetadataArgs[] {
         return this.filterByTargetAndWithoutDuplicateProperties(
             this.relationIds,
-            target,
-        )
-    }
-
-    filterRelationCounts(target: Function | string): RelationCountMetadataArgs[]
-    filterRelationCounts(
-        target: (Function | string)[],
-    ): RelationCountMetadataArgs[]
-    filterRelationCounts(
-        target: (Function | string) | (Function | string)[],
-    ): RelationCountMetadataArgs[] {
-        return this.filterByTargetAndWithoutDuplicateProperties(
-            this.relationCounts,
             target,
         )
     }
@@ -335,6 +318,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets.
+     *
      * @param array
      * @param target
      */
@@ -351,6 +335,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate property names.
+     *
      * @param array
      * @param target
      */
@@ -376,6 +361,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate relation property names.
+     *
      * @param array
      * @param target
      */
@@ -410,6 +396,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate embedded property names.
+     *
      * @param array
      * @param target
      */

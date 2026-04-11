@@ -1,12 +1,11 @@
 import appRootPath from "app-root-path"
-import path from "path"
+import path from "node:path"
 
 import type { DataSourceOptions } from "../data-source/DataSourceOptions"
 import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 import { importOrRequireFile } from "../util/ImportUtils"
 import { isAbsolute } from "../util/PathUtils"
-import { ConnectionOptionsEnvReader } from "./options-reader/ConnectionOptionsEnvReader"
 
 /**
  * Reads connection options from the ormconfig.
@@ -38,7 +37,7 @@ export class ConnectionOptionsReader {
     /**
      * Returns all connection options read from the ormconfig.
      */
-    async all(): Promise<DataSourceOptions[]> {
+    async get(): Promise<DataSourceOptions[]> {
         const options = await this.load()
         if (!options)
             throw new TypeORMError(
@@ -46,40 +45,6 @@ export class ConnectionOptionsReader {
             )
 
         return options
-    }
-
-    /**
-     * Gets a connection with a given name read from ormconfig.
-     * If connection with such name would not be found then it throw error.
-     * @param name
-     */
-    async get(name: string): Promise<DataSourceOptions> {
-        const allOptions = await this.all()
-        const targetOptions = allOptions.find(
-            (options) =>
-                options.name === name || (name === "default" && !options.name),
-        )
-        if (!targetOptions)
-            throw new TypeORMError(
-                `Cannot find connection ${name} because its not defined in any orm configuration files.`,
-            )
-
-        return targetOptions
-    }
-
-    /**
-     * Checks if there is a TypeORM configuration file.
-     * @param name
-     */
-    async has(name: string): Promise<boolean> {
-        const allOptions = await this.load()
-        if (!allOptions) return false
-
-        const targetOptions = allOptions.find(
-            (options) =>
-                options.name === name || (name === "default" && !options.name),
-        )
-        return !!targetOptions
     }
 
     // -------------------------------------------------------------------------
@@ -97,28 +62,17 @@ export class ConnectionOptionsReader {
             | DataSourceOptions[]
             | undefined = undefined
 
-        const fileFormats = [
-            "env",
-            "js",
-            "mjs",
-            "cjs",
-            "ts",
-            "mts",
-            "cts",
-            "json",
-        ]
+        const fileFormats = ["js", "mjs", "cjs", "ts", "mts", "cts", "json"]
 
         // Detect if baseFilePath contains file extension
-        const possibleExtension = this.baseFilePath.substr(
-            this.baseFilePath.lastIndexOf("."),
-        )
+        const possibleExtension = path.extname(this.baseFilePath)
         const fileExtension = fileFormats.find(
             (extension) => `.${extension}` === possibleExtension,
         )
 
         // try to find any of following configuration formats
         const foundFileFormat =
-            fileExtension ||
+            fileExtension ??
             fileFormats.find((format) => {
                 return PlatformTools.fileExist(this.baseFilePath + "." + format)
             })
@@ -128,34 +82,8 @@ export class ConnectionOptionsReader {
             ? this.baseFilePath
             : this.baseFilePath + "." + foundFileFormat
 
-        // if .env file found then load all its variables into process.env using dotenv package
-        if (foundFileFormat === "env") {
-            try {
-                PlatformTools.dotenv(configFile)
-            } catch (err) {
-                PlatformTools.logWarn(
-                    `Warning: Could not load environment variables from .env file at ${configFile}`,
-                    err instanceof Error ? err.message : String(err),
-                )
-            }
-        } else if (PlatformTools.fileExist(this.baseDirectory + "/.env")) {
-            try {
-                PlatformTools.dotenv(this.baseDirectory + "/.env")
-            } catch (err) {
-                PlatformTools.logWarn(
-                    `Warning: Could not load environment variables from .env file at ${this.baseDirectory + "/.env"}`,
-                    err instanceof Error ? err.message : String(err),
-                )
-            }
-        }
-
         // try to find connection options from any of available sources of configuration
         if (
-            PlatformTools.getEnvVariable("TYPEORM_CONNECTION") ||
-            PlatformTools.getEnvVariable("TYPEORM_URL")
-        ) {
-            connectionOptions = new ConnectionOptionsEnvReader().read()
-        } else if (
             foundFileFormat === "js" ||
             foundFileFormat === "mjs" ||
             foundFileFormat === "cjs" ||
@@ -205,6 +133,7 @@ export class ConnectionOptionsReader {
 
     /**
      * Normalize connection options.
+     *
      * @param connectionOptions
      */
     protected normalizeConnectionOptions(
@@ -217,10 +146,7 @@ export class ConnectionOptionsReader {
             options.baseDirectory = this.baseDirectory
             if (options.entities) {
                 const entities = (options.entities as any[]).map((entity) => {
-                    if (
-                        typeof entity === "string" &&
-                        entity.substr(0, 1) !== "/"
-                    )
+                    if (typeof entity === "string" && !entity.startsWith("/"))
                         return this.baseDirectory + "/" + entity
 
                     return entity
@@ -232,7 +158,7 @@ export class ConnectionOptionsReader {
                     (subscriber) => {
                         if (
                             typeof subscriber === "string" &&
-                            subscriber.substr(0, 1) !== "/"
+                            !subscriber.startsWith("/")
                         )
                             return this.baseDirectory + "/" + subscriber
 
@@ -246,7 +172,7 @@ export class ConnectionOptionsReader {
                     (migration) => {
                         if (
                             typeof migration === "string" &&
-                            migration.substr(0, 1) !== "/"
+                            !migration.startsWith("/")
                         )
                             return this.baseDirectory + "/" + migration
 
@@ -261,8 +187,8 @@ export class ConnectionOptionsReader {
                 if (
                     typeof options.database === "string" &&
                     !isAbsolute(options.database) &&
-                    options.database.substr(0, 1) !== "/" && // unix absolute
-                    options.database.substr(1, 2) !== ":\\" && // windows absolute
+                    !options.database.startsWith("/") && // unix absolute
+                    options.database.substring(1, 3) !== ":\\" && // windows absolute
                     options.database !== ":memory:"
                 ) {
                     Object.assign(options, {

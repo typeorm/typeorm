@@ -11,19 +11,18 @@ import { CategoryEntity } from "./entity/CategoryEntity"
 
 describe("entity schemas > basic functionality", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [PostEntity, CategoryEntity],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [PostEntity, CategoryEntity],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should perform basic operations with entity using repository", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(PostEntity)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(PostEntity)
                 const post = postRepository.create({
                     id: 1,
                     title: "First Post",
@@ -31,14 +30,14 @@ describe("entity schemas > basic functionality", () => {
                 })
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     title: "First Post",
                 })
-                loadedPost!.id.should.be.equal(post.id)
-                loadedPost!.title.should.be.equal("First Post")
-                loadedPost!.text.should.be.equal("About first post")
+                loadedPost.id.should.be.equal(post.id)
+                loadedPost.title.should.be.equal("First Post")
+                loadedPost.text.should.be.equal("About first post")
 
-                await postRepository.remove(loadedPost!)
+                await postRepository.remove(loadedPost)
 
                 const loadedPostAfterRemove = await postRepository.findOneBy({
                     title: "First Post",
@@ -49,26 +48,26 @@ describe("entity schemas > basic functionality", () => {
 
     it("should perform basic operations with entity using manager", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const post = connection.manager.create(PostEntity, {
+            dataSources.map(async (dataSource) => {
+                const post = dataSource.manager.create(PostEntity, {
                     id: 1,
                     title: "First Post",
                     text: "About first post",
                 })
-                await connection.manager.save(PostEntity, post)
+                await dataSource.manager.save(PostEntity, post)
 
-                const loadedPost = await connection.manager.findOneBy(
+                const loadedPost = await dataSource.manager.findOneByOrFail(
                     PostEntity,
                     { title: "First Post" },
                 )
-                loadedPost!.id.should.be.equal(post.id)
-                loadedPost!.title.should.be.equal("First Post")
-                loadedPost!.text.should.be.equal("About first post")
+                loadedPost.id.should.be.equal(post.id)
+                loadedPost.title.should.be.equal("First Post")
+                loadedPost.text.should.be.equal("About first post")
 
-                await connection.manager.remove(PostEntity, loadedPost!)
+                await dataSource.manager.remove(PostEntity, loadedPost)
 
                 const loadedPostAfterRemove =
-                    await connection.manager.findOneBy(PostEntity, {
+                    await dataSource.manager.findOneBy(PostEntity, {
                         title: "First Post",
                     })
                 expect(loadedPostAfterRemove).to.be.null

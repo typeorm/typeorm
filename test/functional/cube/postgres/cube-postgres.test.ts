@@ -23,8 +23,8 @@ describe("cube-postgres", () => {
 
     it("should create correct schema with Postgres' cube type", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
                 expect(schema).not.to.be.undefined
@@ -47,26 +47,26 @@ describe("cube-postgres", () => {
 
     it("should persist cube correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const color = [255, 0, 0]
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.mainColor = color
                 const persistedPost = await postRepo.save(post)
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.mainColor).to.deep.equal(color)
+                expect(foundPost.mainColor).to.deep.equal(color)
             }),
         ))
 
     it("should update cube correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const color = [255, 0, 0]
                 const color2 = [0, 255, 0]
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.mainColor = color
                 const persistedPost = await postRepo.save(post)
@@ -76,20 +76,20 @@ describe("cube-postgres", () => {
                     { mainColor: color2 },
                 )
 
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.mainColor).to.deep.equal(color2)
+                expect(foundPost.mainColor).to.deep.equal(color2)
             }),
         ))
 
     it("should re-save cube correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const color = [255, 0, 0]
                 const color2 = [0, 255, 0]
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.mainColor = color
                 const persistedPost = await postRepo.save(post)
@@ -97,23 +97,23 @@ describe("cube-postgres", () => {
                 persistedPost.mainColor = color2
                 await postRepo.save(persistedPost)
 
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.mainColor).to.deep.equal(color2)
+                expect(foundPost.mainColor).to.deep.equal(color2)
             }),
         ))
 
     it("should persist cube of arity 0 correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Get Postgres version because zero-length cubes are not legal
                 // on all Postgres versions. Zero-length cubes are only tested
                 // to be working on Postgres version >=10.6.
                 if (
                     !DriverUtils.isReleaseVersionOrGreater(
-                        connection.driver,
+                        dataSource.driver,
                         "10.6",
                     )
                 ) {
@@ -121,21 +121,21 @@ describe("cube-postgres", () => {
                 }
 
                 const color: number[] = []
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.mainColor = color
                 const persistedPost = await postRepo.save(post)
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.mainColor).to.deep.equal(color)
+                expect(foundPost.mainColor).to.deep.equal(color)
             }),
         ))
 
     it("should be able to order cube by euclidean distance", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const color1 = [255, 0, 0]
                 const color2 = [255, 255, 0]
                 const color3 = [255, 255, 255]
@@ -146,9 +146,9 @@ describe("cube-postgres", () => {
                 post2.mainColor = color2
                 const post3 = new Post()
                 post3.mainColor = color3
-                await connection.manager.save([post1, post2, post3])
+                await dataSource.manager.save([post1, post2, post3])
 
-                const posts = await connection.manager
+                const posts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("\"mainColor\" <-> '(0, 255, 0)'", "DESC")
                     .getMany()
@@ -160,20 +160,20 @@ describe("cube-postgres", () => {
 
     it("should persist cube array correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const colors = [
                     [255, 0, 0],
                     [255, 255, 0],
                 ]
-                const postRepo = connection.getRepository(Post)
+                const postRepo = dataSource.getRepository(Post)
                 const post = new Post()
                 post.colors = colors
                 const persistedPost = await postRepo.save(post)
-                const foundPost = await postRepo.findOneBy({
+                const foundPost = await postRepo.findOneByOrFail({
                     id: persistedPost.id,
                 })
                 expect(foundPost).to.exist
-                expect(foundPost!.colors).to.deep.equal(colors)
+                expect(foundPost.colors).to.deep.equal(colors)
             }),
         ))
 })

@@ -11,14 +11,13 @@ import { expect } from "chai"
 
 describe("github issues > #2632 createQueryBuilder relation remove works only if using ID", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -47,11 +46,11 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
                     .of(post1)
                     .add(1)
 
-                let loadedPost1 = await connection.manager.findOne(Post, {
+                let loadedPost1 = await connection.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { categories: true },
                 })
-                expect(loadedPost1!.categories).to.deep.include({
+                expect(loadedPost1.categories).to.deep.include({
                     id: 1,
                     title: "category #1",
                 })
@@ -62,11 +61,11 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
                     .of(post1)
                     .remove(1)
 
-                loadedPost1 = await connection.manager.findOne(Post, {
+                loadedPost1 = await connection.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { categories: true },
                 })
-                expect(loadedPost1!.categories).to.be.eql([])
+                expect(loadedPost1.categories).to.be.eql([])
 
                 await connection
                     .createQueryBuilder()
@@ -74,11 +73,14 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
                     .of(2)
                     .add(category2)
 
-                const loadedPost2 = await connection.manager.findOne(Post, {
-                    where: { id: 2 },
-                    relations: { categories: true },
-                })
-                expect(loadedPost2!.categories).to.deep.include({
+                const loadedPost2 = await connection.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: { id: 2 },
+                        relations: { categories: true },
+                    },
+                )
+                expect(loadedPost2.categories).to.deep.include({
                     id: 2,
                     title: "category #2",
                 })
@@ -89,11 +91,11 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
                     .of(2)
                     .remove(category2)
 
-                loadedPost1 = await connection.manager.findOne(Post, {
+                loadedPost1 = await connection.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { categories: true },
                 })
-                expect(loadedPost1!.categories).to.be.eql([])
+                expect(loadedPost1.categories).to.be.eql([])
             }),
         ))
 })

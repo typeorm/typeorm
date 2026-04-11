@@ -26,10 +26,10 @@ describe("column > virtual columns", () => {
             entities: [Company, Employee, TimeSheet, Activity],
         })
 
-        for (const connection of dataSources) {
+        for (const dataSource of dataSources) {
             // By default, MySQL uses backticks instead of quotes for identifiers
-            if (DriverUtils.isMySQLFamily(connection.driver)) {
-                const totalEmployeesCountMetadata = connection
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                const totalEmployeesCountMetadata = dataSource
                     .getMetadata(Company)
                     .columns.find(
                         (columnMetadata) =>
@@ -39,7 +39,7 @@ describe("column > virtual columns", () => {
                 totalEmployeesCountMetadata.query = (alias) =>
                     `SELECT COUNT(\`name\`) FROM \`employees\` WHERE \`companyName\` = ${alias}.\`name\``
 
-                const totalReportedHoursMetadata = connection
+                const totalReportedHoursMetadata = dataSource
                     .getMetadata(Company)
                     .columns.find(
                         (columnMetadata) =>
@@ -53,7 +53,7 @@ describe("column > virtual columns", () => {
                     INNER JOIN \`employees\` ON \`timesheets\`.\`employeeName\` = \`employees\`.\`name\`
                     WHERE \`employees\`.\`companyName\` = ${alias}.\`name\``
 
-                const totalActivityHoursMetadata = connection
+                const totalActivityHoursMetadata = dataSource
                     .getMetadata(TimeSheet)
                     .columns.find(
                         (columnMetadata) =>
@@ -68,7 +68,7 @@ describe("column > virtual columns", () => {
     after(() => closeTestingConnections(dataSources))
 
     it("should generate expected sub-select & select statement", () =>
-        dataSources.map((connection) => {
+        dataSources.map((dataSource) => {
             const options1: FindManyOptions<Company> = {
                 select: {
                     name: true,
@@ -76,20 +76,20 @@ describe("column > virtual columns", () => {
                 },
             }
 
-            const query1 = connection
+            const query1 = dataSource
                 .createQueryBuilder(Company, "Company")
                 .setFindOptions(options1)
                 .getSql()
 
             let expectedQuery = `SELECT "Company"."name" AS "Company_name", (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company"."name") AS "Company_totalEmployeesCount" FROM "companies" "Company"`
-            if (DriverUtils.isMySQLFamily(connection.driver)) {
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
                 expectedQuery = expectedQuery.replaceAll('"', "`")
             }
             expect(query1).to.equal(expectedQuery)
         }))
 
     it("should generate expected sub-select & nested-subselect statement", () =>
-        dataSources.map((connection) => {
+        dataSources.map((dataSource) => {
             const findOptions: FindManyOptions<Company> = {
                 select: {
                     name: true,
@@ -107,14 +107,14 @@ describe("column > virtual columns", () => {
                 },
             }
 
-            const query = connection
+            const query = dataSource
                 .createQueryBuilder(Company, "Company")
                 .setFindOptions(findOptions)
                 .getSql()
 
             let expectedQuery1 = `SELECT "Company"."name" AS "Company_name"`
             let expectedQuery2 = `(SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company"."name") AS "Company_totalEmployeesCount", (SELECT SUM("hours") FROM "activities" WHERE "timesheetId" =`
-            if (DriverUtils.isMySQLFamily(connection.driver)) {
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
                 expectedQuery1 = expectedQuery1.replaceAll('"', "`")
                 expectedQuery2 = expectedQuery2.replaceAll('"', "`")
             }
@@ -123,20 +123,20 @@ describe("column > virtual columns", () => {
         }))
 
     it("should not generate sub-select if column is not selected", () =>
-        dataSources.map((connection) => {
+        dataSources.map((dataSource) => {
             const options: FindManyOptions<Company> = {
                 select: {
                     name: true,
                     totalEmployeesCount: false,
                 },
             }
-            const query = connection
+            const query = dataSource
                 .createQueryBuilder(Company, "Company")
                 .setFindOptions(options)
                 .getSql()
 
             let expectedQuery = `SELECT "Company"."name" AS "Company_name" FROM "companies" "Company"`
-            if (DriverUtils.isMySQLFamily(connection.driver)) {
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
                 expectedQuery = expectedQuery.replaceAll('"', "`")
             }
             expect(query).to.equal(expectedQuery)
@@ -144,8 +144,8 @@ describe("column > virtual columns", () => {
 
     it("should be able to save and find sub-select data in the database", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const companyRepository = connection.getRepository(Company)
+            dataSources.map(async (dataSource) => {
+                const companyRepository = dataSource.getRepository(Company)
 
                 const companyName = "My Company 1"
                 const company = companyRepository.create({
@@ -208,10 +208,10 @@ describe("column > virtual columns", () => {
 
                 // find one
                 let foundCompany =
-                    await companyRepository.findOne(findOneOptions)
-                expect(foundCompany!.totalEmployeesCount).to.equal(4)
+                    await companyRepository.findOneOrFail(findOneOptions)
+                expect(foundCompany.totalEmployeesCount).to.equal(4)
 
-                let [foundTimesheet] = foundCompany!.employees.find(
+                let [foundTimesheet] = foundCompany.employees.find(
                     (e) => e.name === company.employees[0].name,
                 )!.timesheets
                 expect(foundTimesheet.totalActivityHours).to.equal(9)
@@ -232,8 +232,8 @@ describe("column > virtual columns", () => {
 
     it("should be able to save and find sub-select data in the database (with query builder)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const companyRepository = connection.getRepository(Company)
+            dataSources.map(async (dataSource) => {
+                const companyRepository = dataSource.getRepository(Company)
 
                 const companyName = "My Company 2"
                 const company = companyRepository.create({
@@ -263,7 +263,7 @@ describe("column > virtual columns", () => {
                 })
                 await companyRepository.save(company)
 
-                const companyQueryData = await connection
+                const companyQueryData = await dataSource
                     .createQueryBuilder(Company, "company")
                     .select([
                         "company.name",
@@ -281,9 +281,9 @@ describe("column > virtual columns", () => {
                     //    "employees.timesheets.id": "DESC",
                     //    //"employees.timesheets.totalActivityHours": "ASC",
                     //})
-                    .getOne()
+                    .getOneOrFail()
 
-                const foundEmployee = companyQueryData!.employees.find(
+                const foundEmployee = companyQueryData.employees.find(
                     (e) => e.name === company.employees[0].name,
                 )!
                 const [foundEmployeeTimeSheet] = foundEmployee.timesheets
@@ -293,8 +293,8 @@ describe("column > virtual columns", () => {
 
     it("should be able to read non-selectable virtual columns (with query builder)", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const companyRepository = connection.getRepository(Company)
+            dataSources.map(async (dataSource) => {
+                const companyRepository = dataSource.getRepository(Company)
 
                 const companyName = "My Company 3"
                 const company = companyRepository.create({
@@ -324,7 +324,7 @@ describe("column > virtual columns", () => {
                 })
                 await companyRepository.save(company)
 
-                const foundCompany = await connection
+                const foundCompany = await dataSource
                     .createQueryBuilder(Company, "company")
                     .where("company.name = :name", { name: companyName })
                     .getOne()
@@ -332,7 +332,7 @@ describe("column > virtual columns", () => {
                     "totalReportedHours",
                 )
 
-                const foundCompanyWithHours = await connection
+                const foundCompanyWithHours = await dataSource
                     .createQueryBuilder(Company, "company")
                     .addSelect("company.totalReportedHours")
                     .where("company.name = :name", { name: companyName })

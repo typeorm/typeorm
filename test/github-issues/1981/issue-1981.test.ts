@@ -8,13 +8,12 @@ import { Product } from "./entity/Product"
 
 describe("github issues > #1981 Boolean values not casted properly when used in .find() condition", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -25,11 +24,11 @@ describe("github issues > #1981 Boolean values not casted properly when used in 
                 product.liked = true
                 await connection.manager.save(product)
 
-                const loadedProduct = await connection.manager.findOneBy(
+                const loadedProduct = await connection.manager.findOneByOrFail(
                     Product,
                     { liked: true },
                 )
-                loadedProduct!.liked.should.be.equal(true)
+                loadedProduct.liked.should.be.equal(true)
             }),
         ))
 })

@@ -17,10 +17,7 @@ export class NamingStrategyUnderTest
     ): string {
         this.calledJoinTableColumnName.push(true)
         return camelCase(
-            tableName +
-                "_" +
-                (columnName ? columnName : propertyName) +
-                "_forward",
+            tableName + "_" + (columnName ?? propertyName) + "_forward",
         )
     }
 
@@ -31,10 +28,7 @@ export class NamingStrategyUnderTest
     ): string {
         this.calledJoinTableInverseColumnName.push(true)
         return camelCase(
-            tableName +
-                "_" +
-                (columnName ? columnName : propertyName) +
-                "_inverse",
+            tableName + "_" + (columnName ?? propertyName) + "_inverse",
         )
     }
 }

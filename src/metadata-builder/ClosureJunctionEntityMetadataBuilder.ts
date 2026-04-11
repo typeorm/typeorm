@@ -21,22 +21,22 @@ export class ClosureJunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the closure junction of the given closure entity.
+     *
      * @param parentClosureEntityMetadata
      */
     build(parentClosureEntityMetadata: EntityMetadata) {
         // create entity metadata itself
         const entityMetadata = new EntityMetadata({
             parentClosureEntityMetadata: parentClosureEntityMetadata,
-            connection: this.dataSource,
+            dataSource: this.dataSource,
             args: {
                 target: "",
                 name:
-                    parentClosureEntityMetadata.treeOptions &&
-                    parentClosureEntityMetadata.treeOptions.closureTableName
-                        ? parentClosureEntityMetadata.treeOptions
-                              .closureTableName
-                        : parentClosureEntityMetadata.tableNameWithoutPrefix,
+                    parentClosureEntityMetadata.treeOptions?.closureTableName ??
+                    parentClosureEntityMetadata.tableNameWithoutPrefix,
                 type: "closure-junction",
+                schema: parentClosureEntityMetadata.schema,
+                database: parentClosureEntityMetadata.database,
             },
         })
         entityMetadata.build()
@@ -45,30 +45,25 @@ export class ClosureJunctionEntityMetadataBuilder {
         parentClosureEntityMetadata.primaryColumns.forEach((primaryColumn) => {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     closureType: "ancestor",
                     referencedColumn: primaryColumn,
                     args: {
                         target: "",
                         mode: "virtual",
-                        propertyName:
-                            parentClosureEntityMetadata.treeOptions &&
-                            parentClosureEntityMetadata.treeOptions
-                                .ancestorColumnName
-                                ? parentClosureEntityMetadata.treeOptions.ancestorColumnName(
-                                      primaryColumn,
-                                  )
-                                : primaryColumn.propertyName + "_ancestor",
+                        propertyName: parentClosureEntityMetadata.treeOptions
+                            ?.ancestorColumnName
+                            ? parentClosureEntityMetadata.treeOptions.ancestorColumnName(
+                                  primaryColumn,
+                              )
+                            : primaryColumn.propertyName + "_ancestor",
                         options: {
                             primary: true,
                             length: primaryColumn.length,
                             type: primaryColumn.type,
                             unsigned: primaryColumn.unsigned,
-                            width: primaryColumn.width,
                             precision: primaryColumn.precision,
                             scale: primaryColumn.scale,
-                            zerofill: primaryColumn.zerofill,
                             charset: primaryColumn.charset,
                             collation: primaryColumn.collation,
                         },
@@ -77,30 +72,25 @@ export class ClosureJunctionEntityMetadataBuilder {
             )
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     closureType: "descendant",
                     referencedColumn: primaryColumn,
                     args: {
                         target: "",
                         mode: "virtual",
-                        propertyName:
-                            parentClosureEntityMetadata.treeOptions &&
-                            parentClosureEntityMetadata.treeOptions
-                                .descendantColumnName
-                                ? parentClosureEntityMetadata.treeOptions.descendantColumnName(
-                                      primaryColumn,
-                                  )
-                                : primaryColumn.propertyName + "_descendant",
+                        propertyName: parentClosureEntityMetadata.treeOptions
+                            ?.descendantColumnName
+                            ? parentClosureEntityMetadata.treeOptions.descendantColumnName(
+                                  primaryColumn,
+                              )
+                            : primaryColumn.propertyName + "_descendant",
                         options: {
                             primary: true,
                             length: primaryColumn.length,
                             type: primaryColumn.type,
                             unsigned: primaryColumn.unsigned,
-                            width: primaryColumn.width,
                             precision: primaryColumn.precision,
                             scale: primaryColumn.scale,
-                            zerofill: primaryColumn.zerofill,
                             charset: primaryColumn.charset,
                             collation: primaryColumn.collation,
                         },
@@ -132,7 +122,6 @@ export class ClosureJunctionEntityMetadataBuilder {
         if (parentClosureEntityMetadata.treeLevelColumn) {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     args: {
                         target: "",

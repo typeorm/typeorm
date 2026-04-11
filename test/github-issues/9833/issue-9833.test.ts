@@ -16,24 +16,23 @@ import { BaseSchema, ASchema, BSchema, CSchema } from "./schema"
 describe("github issues > #9833 Add support for Single Table Inheritance when using Entity Schemas", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [BaseSchema, ASchema, BSchema, CSchema],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: [
-                    "better-sqlite3",
-                    "cockroachdb",
-                    "mariadb",
-                    "mssql",
-                    "mysql",
-                    "oracle",
-                    "postgres",
-                    "spanner",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [BaseSchema, ASchema, BSchema, CSchema],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: [
+                "better-sqlite3",
+                "cockroachdb",
+                "mariadb",
+                "mssql",
+                "mysql",
+                "oracle",
+                "postgres",
+                "spanner",
+            ],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 

@@ -56,6 +56,7 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Builds a foreign key of the many-to-one or one-to-one owner relations.
+     *
      * @param joinColumns
      * @param relation
      */
@@ -127,6 +128,7 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     *
      * @param joinColumns
      * @param relation
      */
@@ -150,7 +152,7 @@ export class RelationJoinColumnBuilder {
             return relation.inverseEntityMetadata.primaryColumns
         } else {
             // cases with referenced columns defined
-            return joinColumns.map((joinColumn) => {
+            const referencedColumns = joinColumns.map((joinColumn) => {
                 const referencedColumn =
                     relation.inverseEntityMetadata.ownColumns.find(
                         (column) =>
@@ -164,11 +166,29 @@ export class RelationJoinColumnBuilder {
 
                 return referencedColumn
             })
+
+            // Sort to match the referenced entity's primary key order.
+            // Databases like MySQL, MSSQL, and SAP HANA require composite FK
+            // columns to reference PK columns in the same index order.
+            if (referencedColumns.length > 1) {
+                const pkColumns = relation.inverseEntityMetadata.primaryColumns
+                const orderMap = new Map(
+                    pkColumns.map((col, idx) => [col, idx]),
+                )
+                return [...referencedColumns].sort((a, b) => {
+                    const aIdx = orderMap.get(a) ?? Infinity
+                    const bIdx = orderMap.get(b) ?? Infinity
+                    return aIdx - bIdx
+                })
+            }
+
+            return referencedColumns
         }
     }
 
     /**
      * Collects columns from the given join column args.
+     *
      * @param joinColumns
      * @param relation
      * @param referencedColumns
@@ -204,7 +224,6 @@ export class RelationJoinColumnBuilder {
             )
             if (!relationalColumn) {
                 relationalColumn = new ColumnMetadata({
-                    connection: this.dataSource,
                     entityMetadata: relation.entityMetadata,
                     embeddedMetadata: relation.embeddedMetadata,
                     args: {
@@ -230,12 +249,10 @@ export class RelationJoinColumnBuilder {
                                     referencedColumn.type === "uuid")
                                     ? "36"
                                     : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
-                            width: referencedColumn.width,
                             charset: referencedColumn.charset,
                             collation: referencedColumn.collation,
                             precision: referencedColumn.precision,
                             scale: referencedColumn.scale,
-                            zerofill: referencedColumn.zerofill,
                             unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
                             enum: referencedColumn.enum,

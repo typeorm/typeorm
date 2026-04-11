@@ -25,8 +25,8 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should create vector column with specified dimensions", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("document_chunk")
                 await queryRunner.release()
 
@@ -40,8 +40,8 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should persist and hydrate vector values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repository = connection.getRepository(DocumentChunk)
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(DocumentChunk)
 
                 const embedding = Array.from({ length: 1998 }, () =>
                     Math.random(),
@@ -53,16 +53,16 @@ describe("columns > vector type > sqlserver", () => {
 
                 await repository.save(chunk)
 
-                const loadedChunk = await repository.findOne({
-                    where: { id: chunk.id },
+                const loadedChunk = await repository.findOneByOrFail({
+                    id: chunk.id,
                 })
 
                 expect(loadedChunk).to.exist
-                expect(loadedChunk!.embedding).to.be.an("array")
-                expect(loadedChunk!.embedding).to.have.lengthOf(1998)
+                expect(loadedChunk.embedding).to.be.an("array")
+                expect(loadedChunk.embedding).to.have.lengthOf(1998)
 
                 // Check that values are close (floating point comparison)
-                loadedChunk!.embedding.forEach((val, idx) => {
+                loadedChunk.embedding.forEach((val, idx) => {
                     expect(val).to.be.closeTo(embedding[idx], 0.0001)
                 })
             }),
@@ -70,8 +70,8 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should update vector values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repository = connection.getRepository(Point)
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Point)
 
                 const point = new Point()
                 point.name = "Test Point"
@@ -82,19 +82,19 @@ describe("columns > vector type > sqlserver", () => {
                 point.coords = [4.0, 5.0, 6.0]
                 await repository.save(point)
 
-                const loadedPoint = await repository.findOne({
-                    where: { id: point.id },
+                const loadedPoint = await repository.findOneByOrFail({
+                    id: point.id,
                 })
 
                 expect(loadedPoint).to.exist
-                expect(loadedPoint!.coords).to.deep.equal([4.0, 5.0, 6.0])
+                expect(loadedPoint.coords).to.deep.equal([4.0, 5.0, 6.0])
             }),
         ))
 
     it("should perform cosine similarity search using VECTOR_DISTANCE", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repository = connection.getRepository(DocumentChunk)
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(DocumentChunk)
                 const baseEmbedding = Array.from({ length: 1998 }, () =>
                     Math.random(),
                 )
@@ -124,7 +124,7 @@ describe("columns > vector type > sqlserver", () => {
 
                 const query = [1.0, 1.0, 1.05, ...baseEmbedding.slice(3)]
 
-                const results = await connection.query(
+                const results = await dataSource.query(
                     `
                     DECLARE @query AS VECTOR (1998) = '${JSON.stringify(
                         query,
@@ -152,8 +152,8 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should perform euclidean distance search using VECTOR_DISTANCE", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repository = connection.getRepository(Point)
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Point)
 
                 // Create test data with known vectors
                 const points = [
@@ -175,7 +175,7 @@ describe("columns > vector type > sqlserver", () => {
 
                 const origin = [1.0, 1.0, 1.05]
 
-                const results = await connection.query(
+                const results = await dataSource.query(
                     `
                     DECLARE @origin AS VECTOR (3) = '${JSON.stringify(origin)}';
                     SELECT TOP (2) *, VECTOR_DISTANCE('euclidean', @origin, coords) AS distance
@@ -201,8 +201,8 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should handle null vector values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repository = connection.getRepository(DocumentChunk)
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(DocumentChunk)
 
                 const chunk = new DocumentChunk()
                 chunk.content = "No embedding"
@@ -211,12 +211,12 @@ describe("columns > vector type > sqlserver", () => {
 
                 await repository.save(chunk)
 
-                const loadedChunk = await repository.findOne({
-                    where: { id: chunk.id },
+                const loadedChunk = await repository.findOneByOrFail({
+                    id: chunk.id,
                 })
 
                 expect(loadedChunk).to.exist
-                expect(loadedChunk!.embedding).to.be.null
+                expect(loadedChunk.embedding).to.be.null
             }),
         ))
 })

@@ -11,14 +11,13 @@ import { assert } from "chai"
 
 describe("github issues > #5704 Many-to-many gives error ER_DUP_ENTRY everytime I save. This one also related to inverseJoinColumn.", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -28,12 +27,12 @@ describe("github issues > #5704 Many-to-many gives error ER_DUP_ENTRY everytime 
                 const postName = "post for issue #5704"
                 const catName = "cat for issue #5704"
 
-                let post1 = await connection.manager.findOne(Post, {
-                    where: { title: postName },
+                let post1 = await connection.manager.findOneBy(Post, {
+                    title: postName,
                 })
 
-                let category1 = await connection.manager.findOne(Category, {
-                    where: { name: catName },
+                let category1 = await connection.manager.findOneBy(Category, {
+                    name: catName,
                 })
 
                 if (!category1) {

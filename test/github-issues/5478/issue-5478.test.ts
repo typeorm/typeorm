@@ -9,16 +9,15 @@ import { UserEntity } from "./entity/UserEntity"
 
 describe("github issues > #5478 Setting enumName doesn't change how migrations get generated", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                migrations: [],
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-                entities: [UserEntity],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [UserEntity],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should correctly rename enum", () =>

@@ -10,15 +10,14 @@ import { expect } from "chai"
 
 describe("github issues > #3874 Using an (empty string) enum as the type of a primary key column", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Settings],
-                enabledDrivers: ["mysql", "mariadb"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Settings],
+            enabledDrivers: ["mysql", "mariadb"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

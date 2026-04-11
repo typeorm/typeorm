@@ -18,14 +18,13 @@ import { Photo } from "./entity/Photo"
 
 describe("github issues > #7558 Child entities' wrong discriminator value when embedded in parent entity", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -101,7 +100,9 @@ describe("github issues > #7558 Child entities' wrong discriminator value when e
                 await entityManager.save(person)
 
                 // Retrieve it back from the DB.
-                const persons = await personRepo.find({ relations: ["pets"] })
+                const persons = await personRepo.find({
+                    relations: { pets: true },
+                })
                 expect(persons.length).to.equal(1)
 
                 // And check whether the pets are still the same.

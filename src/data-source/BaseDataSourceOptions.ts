@@ -17,13 +17,6 @@ export interface BaseDataSourceOptions {
     readonly type: DatabaseType
 
     /**
-     * Connection name. If connection name is not given then it will be called "default".
-     * Different connections must have different names.
-     * @deprecated
-     */
-    readonly name?: string
-
-    /**
      * Entities to be loaded for this connection.
      * Accepts both entity classes and directories where from entities need to be loaded.
      * Directories support glob patterns.
@@ -152,6 +145,7 @@ export interface BaseDataSourceOptions {
 
     /**
      * Holds reference to the baseDirectory where configuration file are expected.
+     *
      * @internal
      */
     baseDirectory?: string
@@ -219,16 +213,16 @@ export interface BaseDataSourceOptions {
     readonly invalidWhereValuesBehavior?: {
         /**
          * How to handle null values in where conditions.
-         * - 'ignore': Skip null properties (default)
+         * - 'ignore': Skip null properties
          * - 'sql-null': Transform null to SQL NULL
-         * - 'throw': Throw an error when null is encountered
+         * - 'throw': Throw an error when null is encountered (default)
          */
         readonly null?: "ignore" | "sql-null" | "throw"
 
         /**
          * How to handle undefined values in where conditions.
-         * - 'ignore': Skip undefined properties (default)
-         * - 'throw': Throw an error when undefined is encountered
+         * - 'ignore': Skip undefined properties
+         * - 'throw': Throw an error when undefined is encountered (default)
          */
         readonly undefined?: "ignore" | "throw"
     }

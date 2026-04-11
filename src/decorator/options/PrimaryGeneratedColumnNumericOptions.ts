@@ -20,15 +20,6 @@ export interface PrimaryGeneratedColumnNumericOptions {
     comment?: string
 
     /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-     * @deprecated No longer supported in newer MySQL versions, will be removed
-     * from TypeORM in an upcoming version. Use a character column and the
-     * `LPAD` function as suggested by MySQL
-     */
-    zerofill?: boolean
-
-    /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
      */
     unsigned?: boolean

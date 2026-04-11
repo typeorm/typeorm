@@ -49,14 +49,14 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
 
     let dataSources: DataSource[]
     before(async () => {
-        return (dataSources = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [
                 __dirname + "/entity/*{.js,.ts}",
                 UserEntity,
                 UserWithoutObjectIdEntity,
             ],
             enabledDrivers: ["mongodb"],
-        }))
+        })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

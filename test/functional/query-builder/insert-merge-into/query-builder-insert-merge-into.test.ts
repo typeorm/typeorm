@@ -11,26 +11,25 @@ import { MoreThan } from "../../../../src"
 
 describe("query builder > insert > merge into", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["oracle", "mssql", "sap"], // since on merge into statement is only supported in oracle, mssql and sap hana
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["oracle", "mssql", "sap"], // since on merge into statement is only supported in oracle, mssql and sap hana
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should perform insertion correctly using orIgnore", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
                 post1.published = false
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -43,7 +42,7 @@ describe("query builder > insert > merge into", () => {
                 post2.published = false
                 post2.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -51,11 +50,9 @@ describe("query builder > insert > merge into", () => {
                     .orIgnore("date")
                     .execute()
 
-                await connection.manager
-                    .findOne(Post, {
-                        where: {
-                            id: "post#1",
-                        },
+                await dataSource.manager
+                    .findOneBy(Post, {
+                        id: "post#1",
                     })
                     .should.eventually.be.eql({
                         id: "post#1",
@@ -68,14 +65,14 @@ describe("query builder > insert > merge into", () => {
 
     it("should perform insertion correctly using orUpdate", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
                 post1.published = true
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -88,7 +85,7 @@ describe("query builder > insert > merge into", () => {
                 post2.published = false
                 post2.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -103,11 +100,9 @@ describe("query builder > insert > merge into", () => {
                     .setParameter("title", post2.title)
                     .execute()
 
-                await connection.manager
-                    .findOne(Post, {
-                        where: {
-                            id: "post#1",
-                        },
+                await dataSource.manager
+                    .findOneBy(Post, {
+                        id: "post#1",
                     })
                     .should.eventually.be.eql({
                         id: "post#1",
@@ -116,7 +111,7 @@ describe("query builder > insert > merge into", () => {
                         date: new Date("06 Aug 2020 00:12:00 GMT"),
                     })
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -125,11 +120,9 @@ describe("query builder > insert > merge into", () => {
                     .setParameter("title", post2.title)
                     .execute()
 
-                await connection.manager
-                    .findOne(Post, {
-                        where: {
-                            id: "post#1",
-                        },
+                await dataSource.manager
+                    .findOneBy(Post, {
+                        id: "post#1",
                     })
                     .should.eventually.be.eql({
                         id: "post#1",
@@ -142,14 +135,14 @@ describe("query builder > insert > merge into", () => {
 
     it("should perform insertion using overwrite condition and skipping update on no change", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
                 post1.published = false
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                const sql = connection.manager
+                const sql = dataSource.manager
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -163,19 +156,19 @@ describe("query builder > insert > merge into", () => {
                     .setParameter("title", post1.title)
                     .disableEscaping()
                     .getSql()
-                if (connection.options.type === "mssql") {
+                if (dataSource.options.type === "mssql") {
                     expect(sql).to.equal(
                         `MERGE INTO post post USING (VALUES (@0, @1, @2, @3)) mergeIntoSource (id, title, published, date) ON (post.date = mergeIntoSource.date) ` +
                             `WHEN MATCHED AND post.date > @4 AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
                             `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date);`,
                     )
-                } else if (connection.options.type === "sap") {
+                } else if (dataSource.options.type === "sap") {
                     expect(sql).to.equal(
                         `MERGE INTO post post USING (SELECT ? AS id, ? AS title, ? AS published, ? AS date FROM SYS.DUMMY) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
                             `WHEN MATCHED AND post.date > ? AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
                             `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date)`,
                     )
-                } else if (connection.options.type === "oracle") {
+                } else if (dataSource.options.type === "oracle") {
                     expect(sql).to.equal(
                         `MERGE INTO post post USING (SELECT :1 AS id, :2 AS title, :3 AS published, :4 AS date FROM DUAL) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
                             `WHEN MATCHED THEN UPDATE SET post.title = mergeIntoSource.title WHERE post.date > :5 AND post.title != mergeIntoSource.title ` +
@@ -187,9 +180,9 @@ describe("query builder > insert > merge into", () => {
 
     it("should throw error if using indexPredicate and an unsupported driver", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 if (
-                    !connection.driver.supportedUpsertTypes.includes(
+                    !dataSource.driver.supportedUpsertTypes.includes(
                         "on-duplicate-key-update",
                     )
                 )
@@ -199,7 +192,7 @@ describe("query builder > insert > merge into", () => {
                 post1.title = "About post"
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                const builder = connection.manager
+                const builder = dataSource.manager
                     .createQueryBuilder()
                     .insert()
                     .into(Post)

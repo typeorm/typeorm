@@ -10,12 +10,11 @@ import { Role } from "./entity/Role"
 
 describe("other issues > auto-increment id as string", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -36,13 +35,13 @@ describe("other issues > auto-increment id as string", () => {
 
                 const user2 = await connection.manager.save(user)
 
-                const user3 = await connection.manager.findOne(User, {
+                const user3 = await connection.manager.findOneOrFail(User, {
                     where: {
                         userId: user2.userId,
                     },
                     loadRelationIds: true,
                 })
-                user3!.roles.length.should.be.equal(2)
+                user3.roles.length.should.be.equal(2)
             }),
         ))
 })

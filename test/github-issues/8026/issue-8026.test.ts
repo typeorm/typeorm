@@ -11,14 +11,13 @@ import { ScheduledSailing } from "./entity/ScheduledSailing"
 describe("github issues > #8026 Inserting a value for a column that has a relation, and is also a date, results in the value being inserted as DEFAULT", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Sailing, ScheduledSailing],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Sailing, ScheduledSailing],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     after(() => closeTestingConnections(dataSources))
 

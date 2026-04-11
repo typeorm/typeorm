@@ -16,15 +16,14 @@ import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryR
 describe("github issues > #11285 Missing MSSQL input type", () => {
     describe("mssql connection", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [User],
-                    enabledDrivers: ["mssql"],
-                    schemaCreate: true,
-                    dropSchema: true,
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [User],
+                enabledDrivers: ["mssql"],
+                schemaCreate: true,
+                dropSchema: true,
+            })
+        })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
@@ -197,15 +196,14 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
 
     describe("other connections", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [User],
-                    enabledDrivers: ["postgres"],
-                    schemaCreate: true,
-                    dropSchema: true,
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [User],
+                enabledDrivers: ["postgres"],
+                schemaCreate: true,
+                dropSchema: true,
+            })
+        })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))

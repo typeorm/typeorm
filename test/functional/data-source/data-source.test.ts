@@ -34,7 +34,6 @@ describe("DataSource", () => {
         let dataSource: DataSource
         before(() => {
             const options = setupSingleTestingConnection("mysql", {
-                name: "default",
                 entities: [],
             })
             if (!options) return
@@ -155,7 +154,7 @@ describe("DataSource", () => {
 
     describe("working with repositories after connection is established successfully", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
@@ -275,13 +274,13 @@ describe("DataSource", () => {
 
     describe("skip schema generation when synchronize option is set to false", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             dataSources = await createTestingConnections({
                 entities: [View],
                 dropSchema: true,
             })
         })
-        afterEach(() => closeTestingConnections(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("database should be empty after schema sync", () =>
             Promise.all(
@@ -298,16 +297,14 @@ describe("DataSource", () => {
 
     describe("different names of the same content of the schema", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             const dataSources1 = await createTestingConnections({
-                name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "test-schema",
                 dropSchema: true,
             })
             const dataSources2 = await createTestingConnections({
-                name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "another-schema",
@@ -321,7 +318,6 @@ describe("DataSource", () => {
             await Promise.all(dataSources.map((c) => c.synchronize()))
             await closeTestingConnections(dataSources)
             const dataSources1 = await createTestingConnections({
-                name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
                 schema: "test-schema",
@@ -329,7 +325,6 @@ describe("DataSource", () => {
                 schemaCreate: true,
             })
             const dataSources2 = await createTestingConnections({
-                name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
                 schema: "another-schema",
@@ -342,16 +337,14 @@ describe("DataSource", () => {
 
     describe("can change postgres default schema name", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             const dataSources1 = await createTestingConnections({
-                name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "test-schema",
                 dropSchema: true,
             })
             const dataSources2 = await createTestingConnections({
-                name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "another-schema",
@@ -359,7 +352,7 @@ describe("DataSource", () => {
             })
             dataSources = [...dataSources1, ...dataSources2]
         })
-        afterEach(() => closeTestingConnections(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("schema name can be set", () =>
             Promise.all(
@@ -389,14 +382,14 @@ describe("DataSource", () => {
     // GitHub issue #7738
     describe("synchronize with multiple foreign keys to same table", () => {
         let dataSources: DataSource[]
-        beforeEach(async () => {
+        before(async () => {
             dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [Professor, Subject, Site, SiteLocation],
                 dropSchema: true,
             })
         })
-        afterEach(() => closeTestingConnections(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should not fail with constraint already exists error when synchronizing multiple times", () =>
             Promise.all(
@@ -431,9 +424,9 @@ describe("DataSource", () => {
                     })
                     await subjectRepo.save(subject)
 
-                    const loadedSubject = await subjectRepo.findOne({
+                    const loadedSubject = await subjectRepo.findOneOrFail({
                         where: { id: subject.id },
-                        relations: ["professor", "assistant"],
+                        relations: { professor: true, assistant: true },
                     })
 
                     const site = siteRepo.create({ name: "Main Campus" })
@@ -445,19 +438,16 @@ describe("DataSource", () => {
                     })
                     await siteLocationRepo.save(siteLocation)
 
-                    const loadedSiteLocation = await siteLocationRepo.findOne({
-                        where: { id: siteLocation.id },
-                        relations: ["site"],
-                    })
+                    const loadedSiteLocation =
+                        await siteLocationRepo.findOneOrFail({
+                            where: { id: siteLocation.id },
+                            relations: { site: true },
+                        })
 
-                    expect(loadedSiteLocation).to.not.be.null
-                    expect(loadedSiteLocation!.site.name).to.equal(
-                        "Main Campus",
-                    )
+                    expect(loadedSiteLocation.site.name).to.equal("Main Campus")
 
-                    expect(loadedSubject).to.not.be.null
-                    expect(loadedSubject!.professor.name).to.equal("Dr. Smith")
-                    expect(loadedSubject!.assistant.name).to.equal("Dr. Jones")
+                    expect(loadedSubject.professor.name).to.equal("Dr. Smith")
+                    expect(loadedSubject.assistant.name).to.equal("Dr. Jones")
                 }),
             ))
     })

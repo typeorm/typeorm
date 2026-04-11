@@ -20,8 +20,8 @@ describe("query runner > drop table", () => {
 
     it("should correctly drop table without relations and revert drop", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 table!.should.exist
@@ -42,8 +42,8 @@ describe("query runner > drop table", () => {
 
     it("should correctly drop table with relations and revert drop", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let studentTable = await queryRunner.getTable("student")
                 let teacherTable = await queryRunner.getTable("teacher")
@@ -72,6 +72,15 @@ describe("query runner > drop table", () => {
                 teacherTable!.should.exist
                 facultyTable!.should.exist
 
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should not throw when dropping non-existent table with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropTable("non_existent_table", true)
                 await queryRunner.release()
             }),
         ))

@@ -21,20 +21,19 @@ import { CategoryWithVeryLongName } from "./entity/CategoryWithVeryLongName"
  */
 describe("github issues > #3118 shorten alias names (for RDBMS with a limit) when they are longer than 63 characters", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: [
-                    "mysql",
-                    "postgres",
-                    "cockroachdb",
-                    "sap",
-                    "mariadb",
-                    "mssql",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: [
+                "mysql",
+                "postgres",
+                "cockroachdb",
+                "sap",
+                "mariadb",
+                "mssql",
+            ],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

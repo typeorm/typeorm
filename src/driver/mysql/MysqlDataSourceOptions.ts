@@ -4,6 +4,7 @@ import type { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredent
 
 /**
  * MySQL specific connection options.
+ *
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface MysqlDataSourceOptions
@@ -90,7 +91,7 @@ export interface MysqlDataSourceOptions
 
     /**
      * Use spatial functions like GeomFromText and AsText which are removed in MySQL 8.
-     * (Default: true)
+     * (Default: false)
      */
     readonly legacySpatialSupport?: boolean
 
@@ -148,6 +149,7 @@ export interface MysqlDataSourceOptions
 
         /**
          * Default connection pool to use for SELECT queries
+         *
          * @default "slave"
          */
         readonly defaultMode?: ReplicationMode

@@ -19,7 +19,7 @@ describe("commands - migration generate", () => {
     let getConnectionOptionsStub: sinon.SinonStub
     let migrationGenerateCommand: MigrationGenerateCommand
     let connectionOptionsReader: ConnectionOptionsReader
-    let baseConnectionOptions: DataSourceOptions
+    let baseConnectionOptions: DataSourceOptions[]
 
     const enabledDrivers = [
         "postgres",
@@ -67,15 +67,15 @@ describe("commands - migration generate", () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
+            baseConnectionOptions = await connectionOptionsReader.get()
             getConnectionOptionsStub = sinon
                 .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
 
             loadDataSourceStub.resolves(new DataSource(connectionOption))
 
@@ -102,15 +102,15 @@ describe("commands - migration generate", () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
+            baseConnectionOptions = await connectionOptionsReader.get()
             getConnectionOptionsStub = sinon
                 .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
 
             loadDataSourceStub.resolves(new DataSource(connectionOption))
 
@@ -140,15 +140,15 @@ describe("commands - migration generate", () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
+            baseConnectionOptions = await connectionOptionsReader.get()
             getConnectionOptionsStub = sinon
                 .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
 
             loadDataSourceStub.resolves(new DataSource(connectionOption))
 

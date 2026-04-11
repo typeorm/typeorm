@@ -11,18 +11,17 @@ import { PostWithRelation } from "./entity/PostWithRelation"
 // This test is neccessary because finding with eager relation will be run in the different way
 describe(`repository > the global condtion of "non-deleted" with eager relation`, () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it(`The global condition of "non-deleted" should be set for the entity with delete date columns and eager relation`, () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new PostWithRelation()
                 post1.title = "title#1"
                 const post2 = new PostWithRelation()
@@ -30,13 +29,13 @@ describe(`repository > the global condtion of "non-deleted" with eager relation`
                 const post3 = new PostWithRelation()
                 post3.title = "title#3"
 
-                await connection.manager.save(post1)
-                await connection.manager.save(post2)
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post1)
+                await dataSource.manager.save(post2)
+                await dataSource.manager.save(post3)
 
-                await connection.manager.softRemove(post1)
+                await dataSource.manager.softRemove(post1)
 
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(PostWithRelation)
                     .find()
                 loadedPosts!.length.should.be.equal(2)
@@ -53,7 +52,7 @@ describe(`repository > the global condtion of "non-deleted" with eager relation`
 
     it(`The global condition of "non-deleted" should not be set when the option "withDeleted" is set to true`, () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new PostWithRelation()
                 post1.title = "title#1"
                 const post2 = new PostWithRelation()
@@ -61,13 +60,13 @@ describe(`repository > the global condtion of "non-deleted" with eager relation`
                 const post3 = new PostWithRelation()
                 post3.title = "title#3"
 
-                await connection.manager.save(post1)
-                await connection.manager.save(post2)
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post1)
+                await dataSource.manager.save(post2)
+                await dataSource.manager.save(post3)
 
-                await connection.manager.softRemove(post1)
+                await dataSource.manager.softRemove(post1)
 
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .getRepository(PostWithRelation)
                     .find({
                         withDeleted: true,
@@ -87,7 +86,7 @@ describe(`repository > the global condtion of "non-deleted" with eager relation`
                 expect(loadedPost3!.deletedAt).to.equals(null)
                 expect(loadedPost3!.title).to.equals("title#3")
 
-                const loadedPost = await connection
+                const loadedPost = await dataSource
                     .getRepository(PostWithRelation)
                     .findOne({
                         where: {

@@ -11,15 +11,14 @@ import { Post } from "./entity/Post"
 
 describe("sqljs driver > load", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["sqljs"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["sqljs"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

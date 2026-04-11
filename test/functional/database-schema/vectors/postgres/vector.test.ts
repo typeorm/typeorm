@@ -24,9 +24,9 @@ describe("columns > vector type", () => {
 
     it("should create vector column", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
@@ -43,19 +43,19 @@ describe("columns > vector type", () => {
 
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOne({
-                    where: { id: post.id },
+                const loadedPost = await postRepository.findOneByOrFail({
+                    id: post.id,
                 })
 
                 expect(loadedPost).to.exist
-                expect(loadedPost!.embedding).to.deep.equal(embedding)
-                expect(loadedPost!.embedding_three_dimensions).to.deep.equal(
+                expect(loadedPost.embedding).to.deep.equal(embedding)
+                expect(loadedPost.embedding_three_dimensions).to.deep.equal(
                     embedding_three_dimensions,
                 )
-                expect(loadedPost!.halfvec_embedding).to.deep.equal(
+                expect(loadedPost.halfvec_embedding).to.deep.equal(
                     halfvec_embedding,
                 )
-                expect(loadedPost!.halfvec_four_dimensions).to.deep.equal(
+                expect(loadedPost.halfvec_four_dimensions).to.deep.equal(
                     halfvec_four_dimensions,
                 )
 
@@ -82,8 +82,8 @@ describe("columns > vector type", () => {
 
     it("should update vector values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 const post = new Post()
                 post.embedding = [1.0, 2.0]
@@ -96,13 +96,13 @@ describe("columns > vector type", () => {
 
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOne({
-                    where: { id: post.id },
+                const loadedPost = await postRepository.findOneByOrFail({
+                    id: post.id,
                 })
 
                 expect(loadedPost).to.exist
-                expect(loadedPost!.embedding).to.deep.equal([5.0, 6.0])
-                expect(loadedPost!.embedding_three_dimensions).to.deep.equal([
+                expect(loadedPost.embedding).to.deep.equal([5.0, 6.0])
+                expect(loadedPost.embedding_three_dimensions).to.deep.equal([
                     7.0, 8.0, 9.0,
                 ])
             }),

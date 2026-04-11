@@ -15,15 +15,14 @@ import { SettingSubscriber } from "./entity/SettingSubscriber"
 describe("github issues > #8221", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User, Setting],
-                subscribers: [SettingSubscriber],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User, Setting],
+            subscribers: [SettingSubscriber],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     after(() => closeTestingConnections(dataSources))
 

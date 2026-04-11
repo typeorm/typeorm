@@ -13,13 +13,12 @@ import { Locale } from "./entity/Locale"
 
 describe("github issues > #720 `.save()` not updating composite key with Postgres", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -64,21 +63,23 @@ describe("github issues > #720 `.save()` not updating composite key with Postgre
                 const count2 = await connection.manager.count(Participant)
                 expect(count2).to.be.equal(3)
 
-                const loadedParticipant1 = await connection.manager.findOneBy(
-                    Participant,
-                    { order_id: 1, distance: "one" },
-                )
-                expect(loadedParticipant1!.order_id).to.be.equal(1)
-                expect(loadedParticipant1!.distance).to.be.equal("one")
-                expect(loadedParticipant1!.price).to.be.equal("150$")
+                const loadedParticipant1 =
+                    await connection.manager.findOneByOrFail(Participant, {
+                        order_id: 1,
+                        distance: "one",
+                    })
+                expect(loadedParticipant1.order_id).to.be.equal(1)
+                expect(loadedParticipant1.distance).to.be.equal("one")
+                expect(loadedParticipant1.price).to.be.equal("150$")
 
-                const loadedParticipant2 = await connection.manager.findOneBy(
-                    Participant,
-                    { order_id: 1, distance: "two" },
-                )
-                expect(loadedParticipant2!.order_id).to.be.equal(1)
-                expect(loadedParticipant2!.distance).to.be.equal("two")
-                expect(loadedParticipant2!.price).to.be.equal("250$")
+                const loadedParticipant2 =
+                    await connection.manager.findOneByOrFail(Participant, {
+                        order_id: 1,
+                        distance: "two",
+                    })
+                expect(loadedParticipant2.order_id).to.be.equal(1)
+                expect(loadedParticipant2.distance).to.be.equal("two")
+                expect(loadedParticipant2.price).to.be.equal("250$")
             }),
         ))
 

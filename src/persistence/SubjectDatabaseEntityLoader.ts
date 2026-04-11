@@ -30,6 +30,7 @@ export class SubjectDatabaseEntityLoader {
      *
      * loadAllRelations flag is used to load all relation ids of the object, no matter if they present in subject entity or not.
      * This option is used for deletion.
+     *
      * @param operationType
      */
     async load(
@@ -101,14 +102,15 @@ export class SubjectDatabaseEntityLoader {
                         relations: loadRelationPropertyPaths,
                         disableMixedMap: true,
                     },
-                    // the soft-deleted entities should be included in the loaded entities for recover operation
+                    // include soft-deleted entities so save, soft-remove, recover,
+                    // and remove can find them by PK and load their relation IDs
                     withDeleted: true,
                 }
 
                 // load database entities for all given ids
-                let entities: any[] = []
+                let entities: any[]
                 if (
-                    this.queryRunner.connection.driver.options.type ===
+                    this.queryRunner.dataSource.driver.options.type ===
                     "mongodb"
                 ) {
                     const mongoRepo =
