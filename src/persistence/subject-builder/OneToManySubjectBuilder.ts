@@ -184,7 +184,7 @@ export class OneToManySubjectBuilder {
 
         const orphanedRowAction = relation.isOrphanedRowActionSet
             ? relation.orphanedRowAction
-            : relation.inverseRelation?.orphanedRowAction
+            : (relation.inverseRelation?.orphanedRowAction ?? "nullify")
 
         // find what related entities were added and what were removed based on difference between what we save and what database has
         if (orphanedRowAction !== "disable") {
@@ -203,21 +203,29 @@ export class OneToManySubjectBuilder {
                     identifier: removedRelatedEntityRelationId,
                 })
 
-                if (
-                    !relation.inverseRelation ||
-                    orphanedRowAction === "nullify"
-                ) {
-                    removedRelatedEntitySubject.canBeUpdated = true
-                    removedRelatedEntitySubject.changeMaps = [
-                        {
-                            relation: relation.inverseRelation!,
-                            value: null,
-                        },
-                    ]
-                } else if (orphanedRowAction === "delete") {
+                if (orphanedRowAction === "delete") {
                     removedRelatedEntitySubject.mustBeRemoved = true
                 } else if (orphanedRowAction === "soft-delete") {
                     removedRelatedEntitySubject.canBeSoftRemoved = true
+                } else if (relation.inverseRelation) {
+                    // nullify: set FK to null on the inverse side
+                    const allColumnsNullable =
+                        relation.inverseRelation.joinColumns.every(
+                            (column) => column.isNullable,
+                        )
+
+                    if (allColumnsNullable) {
+                        removedRelatedEntitySubject.canBeUpdated = true
+                        removedRelatedEntitySubject.changeMaps = [
+                            {
+                                relation: relation.inverseRelation,
+                                value: null,
+                            },
+                        ]
+                    } else {
+                        // FK is not nullable — delete the orphaned row instead
+                        removedRelatedEntitySubject.mustBeRemoved = true
+                    }
                 }
 
                 this.subjects.push(removedRelatedEntitySubject)
