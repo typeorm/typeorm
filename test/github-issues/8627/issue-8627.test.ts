@@ -3,23 +3,20 @@ import {
     createTestingConnections,
     closeTestingConnections,
     reloadTestingDatabases,
-    generateRandomText,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { ThisIsARealLongNameForAnEntityBecauseThisIsNecessary } from "./entity/long-name.entity"
 
 describe("github issues > #8627 junction aliases are not unique", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                dropSchema: true,
-                schemaCreate: true,
-                name: generateRandomText(10), // Use a different name to avoid a random failure in build pipeline
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

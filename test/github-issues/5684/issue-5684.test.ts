@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource, In } from "../../../src"
+import type { DataSource } from "../../../src"
+import { In } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,14 +12,13 @@ import { User } from "./entity/User"
 
 describe("github issues > #5684 eager relation skips children relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User, Company],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User, Company],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -43,19 +43,15 @@ describe("github issues > #5684 eager relation skips children relations", () => 
                 await connection.getRepository(Company).save(company)
 
                 const assert = (user: User | undefined | null): void => {
-                    expect(
-                        user && user.company && user.company.admin,
-                    ).to.be.a.instanceOf(
+                    expect(user?.company?.admin).to.be.a.instanceOf(
                         User,
                         "loads nested relation of an eager relation",
                     )
-                    expect(
-                        user && user.company && user.company.staff,
-                    ).to.have.length(
+                    expect(user?.company?.staff).to.have.length(
                         2,
                         "loads nested relation of an eager relation",
                     )
-                    for (const member of (user && user.company.staff) || []) {
+                    for (const member of user?.company.staff ?? []) {
                         expect(member).to.be.a.instanceOf(
                             User,
                             "loads nested relation of an eager relation",

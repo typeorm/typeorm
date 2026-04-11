@@ -4,30 +4,29 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { expect } from "chai"
 
 describe("repository > aggregate methods with relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     describe("sum with relation filter", () => {
         it("should return the aggregate sum when filtering by relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "Author 1",
@@ -52,9 +51,9 @@ describe("repository > aggregate methods with relations", () => {
 
         it("should return null when no records match relation filter", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "Author 1",
@@ -72,9 +71,9 @@ describe("repository > aggregate methods with relations", () => {
     describe("average with relation filter", () => {
         it("should return the aggregate average when filtering by relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "Author 1",
@@ -99,9 +98,9 @@ describe("repository > aggregate methods with relations", () => {
 
         it("should return null when no records match relation filter", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "Author 1",
@@ -119,9 +118,9 @@ describe("repository > aggregate methods with relations", () => {
     describe("minimum with relation filter", () => {
         it("should return the aggregate minimum when filtering by relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "Author 1",
@@ -146,9 +145,9 @@ describe("repository > aggregate methods with relations", () => {
 
         it("should return null when no records match relation filter", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "Author 1",
@@ -166,9 +165,9 @@ describe("repository > aggregate methods with relations", () => {
     describe("maximum with relation filter", () => {
         it("should return the aggregate maximum when filtering by relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "Author 1",
@@ -193,9 +192,9 @@ describe("repository > aggregate methods with relations", () => {
 
         it("should return null when no records match relation filter", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "Author 1",
@@ -213,9 +212,9 @@ describe("repository > aggregate methods with relations", () => {
     describe("aggregate methods with nested relation filters", () => {
         it("should handle complex relation filters correctly", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "John Doe",
@@ -243,9 +242,9 @@ describe("repository > aggregate methods with relations", () => {
     describe("aggregate methods with multiple tables having same column name", () => {
         it("should correctly qualify column names to avoid ambiguous references", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const authorRepo = connection.getRepository(Author)
-                    const postRepo = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const authorRepo = dataSource.getRepository(Author)
+                    const postRepo = dataSource.getRepository(Post)
 
                     const author1 = await authorRepo.save({
                         name: "Author 1",

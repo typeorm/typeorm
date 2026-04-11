@@ -4,18 +4,17 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Cat } from "./entity/Cat"
 import { Dog } from "./entity/Dog"
 
 describe("github issues > #620 Feature Request: Flexibility in Foreign Key names", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -34,10 +33,10 @@ describe("github issues > #620 Feature Request: Flexibility in Foreign Key names
                 const loadedCat = await connection.manager
                     .createQueryBuilder(Cat, "cat")
                     .leftJoinAndSelect("cat.dog", "dog")
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedCat!.id.should.be.equal(1)
-                loadedCat!.dog.DogID.should.be.equal("Simba")
+                loadedCat.id.should.be.equal(1)
+                loadedCat.dog.DogID.should.be.equal("Simba")
             }),
         ))
 })

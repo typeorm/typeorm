@@ -1,4 +1,5 @@
-import { Name, NameEntitySchema } from "./Name"
+import type { Name } from "./Name"
+import { NameEntitySchema } from "./Name"
 import { EntitySchema } from "../../../../../../src"
 
 export interface User {

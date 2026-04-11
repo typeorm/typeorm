@@ -1,11 +1,11 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
 import { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
-import { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArgs"
+import type { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArgs"
 import { User } from "./entity/User"
 
 describe("github issues > #1623 NOT NULL constraint failed after a new column is added (SQLite)", () => {
@@ -21,13 +21,12 @@ describe("github issues > #1623 NOT NULL constraint failed after a new column is
 
     it("should correctly add new column", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Spanner does not support adding new NOT NULL column to existing table
-                if (connection.driver.options.type === "spanner") return
+                if (dataSource.driver.options.type === "spanner") return
 
-                const userMetadata = connection.getMetadata(User)
+                const userMetadata = dataSource.getMetadata(User)
                 const columnMetadata = new ColumnMetadata({
-                    connection: connection,
                     entityMetadata: userMetadata,
                     args: <ColumnMetadataArgs>{
                         target: User,
@@ -39,13 +38,13 @@ describe("github issues > #1623 NOT NULL constraint failed after a new column is
                         },
                     },
                 })
-                columnMetadata.build(connection)
+                columnMetadata.build(dataSource)
 
                 userMetadata.columns.push(columnMetadata)
 
-                await connection.synchronize()
+                await dataSource.synchronize()
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 const column1 = table!.findColumnByName("userName")!
                 await queryRunner.release()

@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -22,12 +22,12 @@ describe("multi-schema-and-database > custom-junction-schema", () => {
 
     it("should correctly create tables when custom table schema used", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("yoman.post")
                 const categoryTable =
                     await queryRunner.getTable("yoman.category")
-                const junctionMetadata = connection.getManyToManyMetadata(
+                const junctionMetadata = dataSource.getManyToManyMetadata(
                     Post,
                     "categories",
                 )!

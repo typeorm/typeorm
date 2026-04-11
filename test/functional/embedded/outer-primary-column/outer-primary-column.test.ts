@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -11,19 +11,18 @@ import {
 
 describe("embedded > outer-primary-column", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should insert, load, update and remove entities with embeddeds when primary column defined only in embedded entity", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 const post1 = new Post()
                 post1.title = "About cars"
@@ -33,7 +32,7 @@ describe("embedded > outer-primary-column", () => {
                 post1.counters.comments = 1
                 post1.counters.favorites = 2
                 post1.counters.likes = 3
-                await connection.getRepository(Post).save(post1)
+                await dataSource.getRepository(Post).save(post1)
 
                 const post2 = new Post()
                 post2.title = "About airplanes"
@@ -45,58 +44,55 @@ describe("embedded > outer-primary-column", () => {
                 post2.counters.likes = 4
                 await postRepository.save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.counters.code")
                     .getMany()
 
                 expect(loadedPosts[0].title).to.be.equal("About cars")
-                expect(
-                    loadedPosts[0].counters.should.be.eql({
-                        code: 1,
-                        comments: 1,
-                        favorites: 2,
-                        likes: 3,
-                    }),
-                )
+                expect(loadedPosts[0].counters).to.be.eql({
+                    code: 1,
+                    comments: 1,
+                    favorites: 2,
+                    likes: 3,
+                })
                 expect(loadedPosts[1].title).to.be.equal("About airplanes")
-                expect(
-                    loadedPosts[1].counters.should.be.eql({
-                        code: 2,
-                        comments: 2,
-                        favorites: 3,
-                        likes: 4,
-                    }),
-                )
+                expect(loadedPosts[1].counters).to.be.eql({
+                    code: 2,
+                    comments: 2,
+                    favorites: 3,
+                    likes: 4,
+                })
 
-                const loadedPost = (await postRepository.findOneById(1))!
-                expect(loadedPost.title).to.be.equal("About cars")
-                expect(
-                    loadedPost.counters.should.be.eql({
-                        code: 1,
-                        comments: 1,
-                        favorites: 2,
-                        likes: 3,
-                    }),
-                )
+                const loadedPost = await postRepository.findOneByOrFail({
+                    counters: { code: 1 },
+                })
+                expect(loadedPost?.title).to.be.equal("About cars")
+                expect(loadedPost?.counters).to.be.eql({
+                    code: 1,
+                    comments: 1,
+                    favorites: 2,
+                    likes: 3,
+                })
 
                 loadedPost.counters.favorites += 1
                 await postRepository.save(loadedPost)
 
-                const loadedPost2 = (await postRepository.findOneById(1))!
-                expect(loadedPost.title).to.be.equal("About cars")
-                expect(
-                    loadedPost.counters.should.be.eql({
-                        code: 1,
-                        comments: 1,
-                        favorites: 3,
-                        likes: 3,
-                    }),
-                )
+                const loadedPost2 = await postRepository.findOneByOrFail({
+                    counters: { code: 1 },
+                })
+
+                expect(loadedPost2?.title).to.be.equal("About cars")
+                expect(loadedPost2?.counters).to.be.eql({
+                    code: 1,
+                    comments: 1,
+                    favorites: 3,
+                    likes: 3,
+                })
 
                 await postRepository.remove(loadedPost2)
 
-                const loadedPosts2 = (await postRepository.find())!
+                const loadedPosts2 = await postRepository.find()
                 expect(loadedPosts2.length).to.be.equal(1)
                 expect(loadedPosts2[0].title).to.be.equal("About airplanes")
             }),

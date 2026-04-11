@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
 import {
     createTestingConnections,
@@ -12,21 +12,20 @@ import { ParentEntity } from "./entity/ParentEntity"
 describe("github issues > #6815 RelationId() on nullable relation returns 'null' string", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: [
-                    "cockroachdb",
-                    "mariadb",
-                    "mssql",
-                    "mysql",
-                    "postgres",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: [
+                "cockroachdb",
+                "mariadb",
+                "mssql",
+                "mysql",
+                "postgres",
+            ],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
@@ -38,10 +37,8 @@ describe("github issues > #6815 RelationId() on nullable relation returns 'null'
                 const parent = em.create(ParentEntity)
                 await em.save(parent)
 
-                const loaded = await em.findOneOrFail(ParentEntity, {
-                    where: {
-                        id: parent.id,
-                    },
+                const loaded = await em.findOneByOrFail(ParentEntity, {
+                    id: parent.id,
                 })
                 expect(loaded.childId).to.be.null
             }),
@@ -58,10 +55,8 @@ describe("github issues > #6815 RelationId() on nullable relation returns 'null'
                 parent.child = child
                 await em.save(parent)
 
-                const loaded = await em.findOneOrFail(ParentEntity, {
-                    where: {
-                        id: parent.id,
-                    },
+                const loaded = await em.findOneByOrFail(ParentEntity, {
+                    id: parent.id,
                 })
 
                 if (connection.driver.options.type === "cockroachdb") {

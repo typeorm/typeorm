@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
@@ -19,12 +19,11 @@ describe("repository > find options > relations", () => {
     // -------------------------------------------------------------------------
 
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -34,26 +33,26 @@ describe("repository > find options > relations", () => {
 
     beforeEach(() =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const postUser = new User()
                 postUser.name = "Timber"
-                await connection.manager.save(postUser)
+                await dataSource.manager.save(postUser)
                 const postCountersUser = new User()
                 postCountersUser.name = "Post Counters Timber"
-                await connection.manager.save(postCountersUser)
+                await dataSource.manager.save(postCountersUser)
                 const photoCountersUser = new User()
                 photoCountersUser.name = "Photo Counters Timber"
-                await connection.manager.save(photoCountersUser)
+                await dataSource.manager.save(photoCountersUser)
                 const photoUser = new User()
                 photoUser.name = "Photo Timber"
-                await connection.manager.save(photoUser)
+                await dataSource.manager.save(photoUser)
 
                 const category1 = new Category()
                 category1.name = "category1"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
                 const category2 = new Category()
                 category2.name = "category2"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const photo1 = new Photo()
                 photo1.filename = "photo1.jpg"
@@ -62,19 +61,19 @@ describe("repository > find options > relations", () => {
                 photo1.counters.commentCount = 19
                 photo1.counters.author = photoCountersUser
                 photo1.user = photoUser
-                await connection.manager.save(photo1)
+                await dataSource.manager.save(photo1)
                 const photo2 = new Photo()
                 photo2.filename = "photo2.jpg"
                 photo2.counters = new Counters()
                 photo2.counters.stars = 3
                 photo2.counters.commentCount = 20
-                await connection.manager.save(photo2)
+                await dataSource.manager.save(photo2)
                 const photo3 = new Photo()
                 photo3.filename = "photo3.jpg"
                 photo3.counters = new Counters()
                 photo3.counters.stars = 4
                 photo3.counters.commentCount = 21
-                await connection.manager.save(photo3)
+                await dataSource.manager.save(photo3)
 
                 const postCounters = new Counters()
                 postCounters.commentCount = 1
@@ -87,7 +86,7 @@ describe("repository > find options > relations", () => {
                 post.user = postUser
                 post.categories = [category1, category2]
                 post.photos = [photo1, photo2, photo3]
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
             }),
         ),
     )
@@ -98,13 +97,11 @@ describe("repository > find options > relations", () => {
 
     it("should not any relations if they are not specified", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const loadedPost = await connection
+            dataSources.map(async (dataSource) => {
+                const loadedPost = await dataSource
                     .getRepository(Post)
-                    .findOne({
-                        where: {
-                            id: 1,
-                        },
+                    .findOneBy({
+                        id: 1,
                     })
                 loadedPost!.should.be.eql({
                     id: 1,
@@ -119,8 +116,8 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations case 1", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const loadedPost = await connection
+            dataSources.map(async (dataSource) => {
+                const loadedPost = await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -163,8 +160,8 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations case 2", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const loadedPost = await connection
+            dataSources.map(async (dataSource) => {
+                const loadedPost = await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -221,8 +218,8 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations and their sub-relations case 1", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const loadedPost = await connection
+            dataSources.map(async (dataSource) => {
+                const loadedPost = await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -287,8 +284,8 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations and their sub-relations case 2", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const loadedPost = await connection
+            dataSources.map(async (dataSource) => {
+                const loadedPost = await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -351,8 +348,8 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations and their sub-relations case 3", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const loadedPost = await connection
+            dataSources.map(async (dataSource) => {
+                const loadedPost = await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -424,8 +421,8 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 1", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection
+            dataSources.map(async (dataSource) => {
+                await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -444,8 +441,8 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 2", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection
+            dataSources.map(async (dataSource) => {
+                await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -467,8 +464,8 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 3", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection
+            dataSources.map(async (dataSource) => {
+                await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -490,8 +487,8 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 4", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection
+            dataSources.map(async (dataSource) => {
+                await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -514,8 +511,8 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 5", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection
+            dataSources.map(async (dataSource) => {
+                await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {
@@ -534,8 +531,8 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 6", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await connection
+            dataSources.map(async (dataSource) => {
+                await dataSource
                     .getRepository(Post)
                     .findOne({
                         where: {

@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -29,8 +29,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should set the table database / schema", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const table = (await queryRunner.getTable("post"))!
                     await queryRunner.release()
 
@@ -41,8 +41,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly get the table primary keys when custom table schema used", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const table = (await queryRunner.getTable("post"))!
                     await queryRunner.release()
 
@@ -53,26 +53,26 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly create tables when custom table schema used", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const table = await queryRunner.getTable("post")
                     await queryRunner.release()
 
                     const post = new Post()
                     post.name = "Post #1"
-                    await connection.getRepository(Post).save(post)
+                    await dataSource.getRepository(Post).save(post)
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: 1 })
                         .getSql()
 
-                    if (connection.driver.options.type === "postgres")
+                    if (dataSource.driver.options.type === "postgres")
                         sql.should.be.equal(
                             `SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = $1`,
                         )
 
-                    if (connection.driver.options.type === "mssql")
+                    if (dataSource.driver.options.type === "mssql")
                         sql.should.be.equal(
                             `SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = @0`,
                         )
@@ -83,26 +83,26 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly create tables when custom table schema used in Entity decorator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const table = await queryRunner.getTable("userSchema.user")
                     await queryRunner.release()
 
                     const user = new User()
                     user.name = "User #1"
-                    await connection.getRepository(User).save(user)
+                    await dataSource.getRepository(User).save(user)
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(User, "user")
                         .where("user.id = :id", { id: 1 })
                         .getSql()
 
-                    if (connection.driver.options.type === "postgres")
+                    if (dataSource.driver.options.type === "postgres")
                         sql.should.be.equal(
                             `SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = $1`,
                         )
 
-                    if (connection.driver.options.type === "mssql")
+                    if (dataSource.driver.options.type === "mssql")
                         sql.should.be.equal(
                             `SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = @0`,
                         )
@@ -113,21 +113,21 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly work with cross-schema queries", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const table = await queryRunner.getTable("guest.category")
                     await queryRunner.release()
 
                     const post = new Post()
                     post.name = "Post #1"
-                    await connection.getRepository(Post).save(post)
+                    await dataSource.getRepository(Post).save(post)
 
                     const category = new Category()
                     category.name = "Category #1"
                     category.post = post
-                    await connection.getRepository(Category).save(category)
+                    await dataSource.getRepository(Category).save(category)
 
-                    const loadedCategory = await connection
+                    const loadedCategory = await dataSource
                         .createQueryBuilder(Category, "category")
                         .innerJoinAndSelect("category.post", "post")
                         .where("category.id = :id", { id: 1 })
@@ -137,20 +137,20 @@ describe("multi-schema-and-database > basic-functionality", () => {
                     loadedCategory!.post.should.be.not.empty
                     loadedCategory!.post.id.should.be.equal(1)
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(Category, "category")
                         .innerJoinAndSelect("category.post", "post")
                         .where("category.id = :id", { id: 1 })
                         .getSql()
 
-                    if (connection.driver.options.type === "postgres")
+                    if (dataSource.driver.options.type === "postgres")
                         sql.should.be.equal(
                             `SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                                 ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
                                 ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = $1`,
                         )
 
-                    if (connection.driver.options.type === "mssql")
+                    if (dataSource.driver.options.type === "mssql")
                         sql.should.be.equal(
                             `SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                                 ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
@@ -163,21 +163,21 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly work with QueryBuilder", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const post = new Post()
                     post.name = "Post #1"
-                    await connection.getRepository(Post).save(post)
+                    await dataSource.getRepository(Post).save(post)
 
                     const user = new User()
                     user.name = "User #1"
-                    await connection.getRepository(User).save(user)
+                    await dataSource.getRepository(User).save(user)
 
                     const category = new Category()
                     category.name = "Category #1"
                     category.post = post
-                    await connection.getRepository(Category).save(category)
+                    await dataSource.getRepository(Category).save(category)
 
-                    const query = connection
+                    const query = dataSource
                         .createQueryBuilder()
                         .select()
                         .from(Category, "category")
@@ -188,7 +188,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
                     ;(await query.getRawOne())!.should.be.not.empty
 
-                    if (connection.driver.options.type === "postgres")
+                    if (dataSource.driver.options.type === "postgres")
                         query
                             .getSql()
                             .should.be.equal(
@@ -196,7 +196,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                                     ` "custom"."post" "post" WHERE "category"."id" = $1 AND "post"."id" = "category"."postId"`,
                             )
 
-                    if (connection.driver.options.type === "mssql")
+                    if (dataSource.driver.options.type === "mssql")
                         query
                             .getSql()
                             .should.be.equal(
@@ -220,8 +220,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should set the table database / schema", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const table = (await queryRunner.getTable(
                         "testDB.questions.question",
                     ))!
@@ -235,8 +235,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly get the table primary keys when custom table schema used", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const table = (await queryRunner.getTable(
                         "testDB.questions.question",
                     ))!
@@ -249,8 +249,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly create tables when custom database and custom schema used in Entity decorator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const table = await queryRunner.getTable(
                         "testDB.questions.question",
                     )
@@ -258,9 +258,9 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
                     const question = new Question()
                     question.name = "Question #1"
-                    await connection.getRepository(Question).save(question)
+                    await dataSource.getRepository(Question).save(question)
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(Question, "question")
                         .where("question.id = :id", { id: 1 })
                         .getSql()
@@ -274,8 +274,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly work with cross-schema and cross-database queries in QueryBuilder", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const questionTable = await queryRunner.getTable(
                         "testDB.questions.question",
                     )
@@ -286,19 +286,19 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
                     const question = new Question()
                     question.name = "Question #1"
-                    await connection.getRepository(Question).save(question)
+                    await dataSource.getRepository(Question).save(question)
 
                     const answer1 = new Answer()
                     answer1.text = "answer 1"
                     answer1.questionId = question.id
-                    await connection.getRepository(Answer).save(answer1)
+                    await dataSource.getRepository(Answer).save(answer1)
 
                     const answer2 = new Answer()
                     answer2.text = "answer 2"
                     answer2.questionId = question.id
-                    await connection.getRepository(Answer).save(answer2)
+                    await dataSource.getRepository(Answer).save(answer2)
 
-                    const query = connection
+                    const query = dataSource
                         .createQueryBuilder()
                         .select()
                         .from(Question, "question")
@@ -336,10 +336,10 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly create tables when custom database used in Entity decorator", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const tablePath =
-                        connection.driver.options.type === "mssql"
+                        dataSource.driver.options.type === "mssql"
                             ? "secondDB..person"
                             : "secondDB.person"
                     const table = await queryRunner.getTable(tablePath)
@@ -347,19 +347,19 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
                     const person = new Person()
                     person.name = "Person #1"
-                    await connection.getRepository(Person).save(person)
+                    await dataSource.getRepository(Person).save(person)
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(Person, "person")
                         .where("person.id = :id", { id: 1 })
                         .getSql()
 
-                    if (connection.driver.options.type === "mssql")
+                    if (dataSource.driver.options.type === "mssql")
                         sql.should.be.equal(
                             `SELECT "person"."id" AS "person_id", "person"."name" AS "person_name" FROM "secondDB".."person" "person" WHERE "person"."id" = @0`,
                         )
 
-                    if (DriverUtils.isMySQLFamily(connection.driver))
+                    if (DriverUtils.isMySQLFamily(dataSource.driver))
                         sql.should.be.equal(
                             "SELECT `person`.`id` AS `person_id`, `person`.`name` AS `person_name` FROM `secondDB`.`person` `person` WHERE `person`.`id` = ?",
                         )

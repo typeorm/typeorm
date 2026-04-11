@@ -4,21 +4,20 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { Migration } from "../../../src/migration/Migration"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import type { Migration } from "../../../src/migration/Migration"
 import { ForbiddenTransactionModeOverrideError } from "../../../src/error/ForbiddenTransactionModeOverrideError"
 
 describe("github issues > #7087 Allow to specify transaction property for individual migrations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-                schemaCreate: false,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            schemaCreate: false,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

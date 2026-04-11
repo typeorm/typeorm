@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -31,9 +31,9 @@ describe("github issues > #3949 sqlite date hydration is susceptible to corrupti
                 [1, sqlDateString],
             )
 
-            const post = await repo.findOneBy({ id: 1 })
+            const post = await repo.findOneByOrFail({ id: 1 })
 
-            post!.date.should.eql(new Date(jsDateString))
+            post.date.should.eql(new Date(jsDateString))
         }
 
     it("should correctly read date column that was inserted raw in canonical format", () =>

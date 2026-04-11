@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     createTestingConnections,
     reloadTestingDatabases,
@@ -39,16 +39,14 @@ describe("standard geometric types", () => {
     describe("Point type", () => {
         it("should handle point with string input", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         point: "(10.5,20.3)",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.point).to.deep.equal({ x: 10.5, y: 20.3 })
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -57,16 +55,14 @@ describe("standard geometric types", () => {
 
         it("should handle point with object input", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         point: { x: -5, y: 15 },
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.point).to.deep.equal({ x: -5, y: 15 })
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -77,16 +73,14 @@ describe("standard geometric types", () => {
     describe("Circle type", () => {
         it("should handle circle with string input", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         circle: "<(4,5),12>",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.circle).to.deep.equal({
                         x: 4,
                         y: 5,
@@ -98,16 +92,14 @@ describe("standard geometric types", () => {
 
         it("should handle circle with object input", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         circle: { x: 10, y: 20, radius: 5 },
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.circle).to.deep.equal({
                         x: 10,
                         y: 20,
@@ -122,16 +114,14 @@ describe("standard geometric types", () => {
     describe("Box type", () => {
         it("should handle box round-trip with string input", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         box: "(1,2),(3,4)",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.box).to.be.a("string")
                     expect(loaded.box).to.equal("(3,4),(1,2)") // Postgres reorders box corners as upper-right, lower-left
 
@@ -143,16 +133,14 @@ describe("standard geometric types", () => {
     describe("Line type", () => {
         it("should handle line with string input", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         line: "{1,2,3}",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.line).to.equal("{1,2,3}")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -161,16 +149,14 @@ describe("standard geometric types", () => {
 
         it("should handle line alternative input format", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         line: "[(1,2),(3,4)]",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.line).to.be.a("string")
                     expect(loaded.line).to.equal("{1,-1,1}") // Postgres converts line to its canonical form Ax + By + C = 0 {A,B,C}
 
@@ -182,16 +168,14 @@ describe("standard geometric types", () => {
     describe("Line Segment (lseg) type", () => {
         it("should handle lseg with string input", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         lseg: "[(1,2),(3,4)]",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.lseg).to.equal("[(1,2),(3,4)]")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -200,16 +184,14 @@ describe("standard geometric types", () => {
 
         it("should handle lseg alternative format", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         lseg: "(1,2), (3,4)",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.lseg).to.equal("[(1,2),(3,4)]")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -220,16 +202,14 @@ describe("standard geometric types", () => {
     describe("Path type", () => {
         it("should handle open path", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         path: "[(1,2),(3,4),(5,6)]",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.path).to.equal("[(1,2),(3,4),(5,6)]")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -238,16 +218,14 @@ describe("standard geometric types", () => {
 
         it("should handle closed path", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         path: "((3,1),(2,8),(10,4))",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.path).to.equal("((3,1),(2,8),(10,4))")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -258,16 +236,14 @@ describe("standard geometric types", () => {
     describe("Polygon type", () => {
         it("should handle polygon", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         polygon: "((3,1),(2,8),(10,4))",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.polygon).to.equal("((3,1),(2,8),(10,4))")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -276,16 +252,14 @@ describe("standard geometric types", () => {
 
         it("should handle polygon alternative format", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         polygon: "(0,0), (1,1), (2,0)",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.polygon).to.be.a("string")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -296,8 +270,8 @@ describe("standard geometric types", () => {
     describe("Mixed geometry types", () => {
         it("should handle all geometry types in a single entity", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.getRepository(GeometryEntity)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
                         point: "(1,2)",
@@ -309,9 +283,7 @@ describe("standard geometric types", () => {
                         polygon: "((3,1),(2,8),(10,4))",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
 
                     expect(loaded.point).to.deep.equal({ x: 1, y: 2 })
                     expect(loaded.circle).to.deep.equal({

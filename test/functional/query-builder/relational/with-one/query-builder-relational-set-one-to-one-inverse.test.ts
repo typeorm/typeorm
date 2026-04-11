@@ -7,53 +7,52 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational query builder > set operation > one-to-one non owner side", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should set entity relation of a given entity by entity objects", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const image1 = new Image()
                 image1.url = "image #1"
-                await connection.manager.save(image1)
+                await dataSource.manager.save(image1)
 
                 const image2 = new Image()
                 image2.url = "image #2"
-                await connection.manager.save(image2)
+                await dataSource.manager.save(image2)
 
                 const image3 = new Image()
                 image3.url = "image #3"
-                await connection.manager.save(image3)
+                await dataSource.manager.save(image3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Image, "post")
                     .of(image1)
                     .set(post1)
 
-                let loadedPost1 = await connection.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -61,9 +60,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.eql({ id: 1, url: "image #1" })
+                expect(loadedPost1.image).to.be.eql({ id: 1, url: "image #1" })
 
-                let loadedPost2 = await connection.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -71,9 +70,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                let loadedPost3 = await connection.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -81,15 +80,15 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Image, "post")
                     .of(image1)
                     .set(null)
 
-                loadedPost1 = await connection.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -97,9 +96,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                loadedPost2 = await connection.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -107,9 +106,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                loadedPost3 = await connection.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -117,44 +116,44 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
             }),
         ))
 
     it("should set entity relation of a given entity by entity id", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const image1 = new Image()
                 image1.url = "image #1"
-                await connection.manager.save(image1)
+                await dataSource.manager.save(image1)
 
                 const image2 = new Image()
                 image2.url = "image #2"
-                await connection.manager.save(image2)
+                await dataSource.manager.save(image2)
 
                 const image3 = new Image()
                 image3.url = "image #3"
-                await connection.manager.save(image3)
+                await dataSource.manager.save(image3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Image, "post")
                     .of(2)
                     .set(2)
 
-                let loadedPost1 = await connection.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -162,9 +161,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                let loadedPost2 = await connection.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -172,9 +171,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.eql({ id: 2, url: "image #2" })
+                expect(loadedPost2.image).to.be.eql({ id: 2, url: "image #2" })
 
-                let loadedPost3 = await connection.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -182,15 +181,15 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Image, "post")
                     .of(2)
                     .set(null)
 
-                loadedPost1 = await connection.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -198,9 +197,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                loadedPost2 = await connection.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -208,9 +207,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                loadedPost3 = await connection.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -218,44 +217,44 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
             }),
         ))
 
     it("should set entity relation of a given entity by entity id map", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const image1 = new Image()
                 image1.url = "image #1"
-                await connection.manager.save(image1)
+                await dataSource.manager.save(image1)
 
                 const image2 = new Image()
                 image2.url = "image #2"
-                await connection.manager.save(image2)
+                await dataSource.manager.save(image2)
 
                 const image3 = new Image()
                 image3.url = "image #3"
-                await connection.manager.save(image3)
+                await dataSource.manager.save(image3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Image, "post")
                     .of({ id: 3 })
                     .set({ id: 3 })
 
-                let loadedPost1 = await connection.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -263,9 +262,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                let loadedPost2 = await connection.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -273,9 +272,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                let loadedPost3 = await connection.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -283,15 +282,15 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.eql({ id: 3, url: "image #3" })
+                expect(loadedPost3.image).to.be.eql({ id: 3, url: "image #3" })
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .relation(Image, "post")
                     .of({ id: 3 })
                     .set(null)
 
-                loadedPost1 = await connection.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -299,9 +298,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                loadedPost2 = await connection.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -309,9 +308,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                loadedPost3 = await connection.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -319,40 +318,40 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
             }),
         ))
 
     it("should raise error when setting entity relation of a multiple entities", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const image1 = new Image()
                 image1.url = "image #1"
-                await connection.manager.save(image1)
+                await dataSource.manager.save(image1)
 
                 const image2 = new Image()
                 image2.url = "image #2"
-                await connection.manager.save(image2)
+                await dataSource.manager.save(image2)
 
                 const image3 = new Image()
                 image3.url = "image #3"
-                await connection.manager.save(image3)
+                await dataSource.manager.save(image3)
 
                 const post1 = new Post()
                 post1.title = "post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "post #2"
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
                 const post3 = new Post()
                 post3.title = "post #3"
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post3)
 
                 let error: null | Error = null
                 try {
-                    await connection
+                    await dataSource
                         .createQueryBuilder()
                         .relation(Image, "post")
                         .of({ id: 3 })
@@ -363,35 +362,44 @@ describe("query builder > relational query builder > set operation > one-to-one 
 
                 expect(error).to.be.an.instanceof(Error)
 
-                const loadedPost1 = await connection.manager.findOne(Post, {
-                    where: {
-                        id: 1,
+                const loadedPost1 = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 1,
+                        },
+                        relations: {
+                            image: true,
+                        },
                     },
-                    relations: {
-                        image: true,
-                    },
-                })
-                expect(loadedPost1!.image).to.be.null
+                )
+                expect(loadedPost1.image).to.be.null
 
-                const loadedPost2 = await connection.manager.findOne(Post, {
-                    where: {
-                        id: 2,
+                const loadedPost2 = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 2,
+                        },
+                        relations: {
+                            image: true,
+                        },
                     },
-                    relations: {
-                        image: true,
-                    },
-                })
-                expect(loadedPost2!.image).to.be.null
+                )
+                expect(loadedPost2.image).to.be.null
 
-                const loadedPost3 = await connection.manager.findOne(Post, {
-                    where: {
-                        id: 3,
+                const loadedPost3 = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 3,
+                        },
+                        relations: {
+                            image: true,
+                        },
                     },
-                    relations: {
-                        image: true,
-                    },
-                })
-                expect(loadedPost3!.image).to.be.null
+                )
+                expect(loadedPost3.image).to.be.null
             }),
         ))
 })

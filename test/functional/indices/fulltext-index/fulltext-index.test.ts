@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -23,8 +23,8 @@ describe("indices > fulltext index", () => {
 
     it("should correctly create fulltext indices", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
 
                 table!.indices.length.should.be.equal(2)
@@ -37,8 +37,8 @@ describe("indices > fulltext index", () => {
 
     it("with default parser", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 const text = "This is text"
                 const post = new Post()
@@ -66,8 +66,8 @@ describe("indices > fulltext index", () => {
 
     it("with ngram parser", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 const text = "This is text"
                 const post = new Post()

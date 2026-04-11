@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,33 +10,32 @@ import { Post } from "./entity/Post"
 
 describe("table inheritance > regular inheritance using extends keyword", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should work correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post = new Post()
                 post.name = "Super title"
                 post.text = "About this post"
-                await connection.manager.save(post)
+                await dataSource.manager.save(post)
 
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.name).not.to.be.undefined
-                expect(loadedPost!.text).not.to.be.undefined
-                loadedPost!.name.should.be.equal("Super title")
-                loadedPost!.text.should.be.equal("About this post")
+                expect(loadedPost.name).not.to.be.undefined
+                expect(loadedPost.text).not.to.be.undefined
+                loadedPost.name.should.be.equal("Super title")
+                loadedPost.text.should.be.equal("About this post")
             }),
         ))
 })

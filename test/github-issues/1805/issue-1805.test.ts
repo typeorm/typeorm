@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -29,10 +29,10 @@ describe("github issues > #1805 bigint PK incorrectly returning as a number (exp
 
                 await accountRepository.save(account)
 
-                const loadedAccount = await accountRepository.findOneBy({
+                const loadedAccount = await accountRepository.findOneByOrFail({
                     id: bigIntId,
                 })
-                loadedAccount!.id.should.be.equal(bigIntId)
+                loadedAccount.id.should.be.equal(bigIntId)
             }),
         ))
 })

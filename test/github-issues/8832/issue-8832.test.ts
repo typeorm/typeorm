@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { ConnectionMetadataBuilder } from "../../../src/connection/ConnectionMetadataBuilder"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { EntityMetadataValidator } from "../../../src/metadata-builder/EntityMetadataValidator"
@@ -62,19 +62,18 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
                     inet6: "2001:0db8:0000:0000:0000:ff00:0042:8329",
                 })
 
-                const savedUser = await userRepository.findOneOrFail({
-                    where: { uuid: newUser.uuid },
+                const savedUser = await userRepository.findOneByOrFail({
+                    uuid: newUser.uuid,
                 })
 
-                const foundUser = await userRepository.findOne({
-                    where: { id: savedUser.id },
+                const foundUser = await userRepository.findOneByOrFail({
+                    id: savedUser.id,
                 })
 
-                expect(foundUser).to.not.be.null
-                expect(foundUser!.uuid).to.deep.equal(newUser.uuid)
-                expect(foundUser!.inet4).to.deep.equal(newUser.inet4)
-                expect(foundUser!.inet6).to.deep.equal("2001:db8::ff00:42:8329")
-                expect(foundUser!.another_uuid_field).to.not.be.undefined
+                expect(foundUser.uuid).to.deep.equal(newUser.uuid)
+                expect(foundUser.inet4).to.deep.equal(newUser.inet4)
+                expect(foundUser.inet6).to.deep.equal("2001:db8::ff00:42:8329")
+                expect(foundUser.another_uuid_field).to.not.be.undefined
 
                 const columnTypes: {
                     COLUMN_NAME: string
@@ -113,7 +112,7 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
                 await addressRepository.save(newAddress)
 
                 const foundAddress = await addressRepository.findOne({
-                    where: { user: { id: foundUser!.id } },
+                    where: { user: { id: foundUser.id } },
                 })
 
                 expect(foundAddress).to.not.be.null

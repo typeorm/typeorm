@@ -5,7 +5,7 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { StrictlyInitializedEntity } from "./entity/StrictlyInitializedEntity"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe("github issues > #8444 entitySkipConstructor not working", () => {
     describe("without entitySkipConstructor", () => {
@@ -39,7 +39,7 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
 
     describe("with entitySkipConstructor", () => {
         let dataSources: DataSource[] = []
-        afterEach(() => closeTestingConnections(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("createTestingConnections should succeed", async () => {
             dataSources = await createTestingConnections({

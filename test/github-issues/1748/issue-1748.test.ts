@@ -5,18 +5,18 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, Equal } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Equal } from "../../../src"
 import { Post, Uuid } from "./entity/Post"
 
 describe("github issues > #1748 PrimaryColumn combined with transformer leads to error on save", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post],
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -38,11 +38,11 @@ describe("github issues > #1748 PrimaryColumn combined with transformer leads to
                 await postRepository.save(post)
 
                 // check if all columns are updated except for readonly columns
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     id: Equal(id),
                 })
-                expect(loadedPost!.id).to.deep.eq(id)
-                expect(loadedPost!.title).to.be.equal("About columns1")
+                expect(loadedPost.id).to.deep.eq(id)
+                expect(loadedPost.title).to.be.equal("About columns1")
             }),
         ))
 })

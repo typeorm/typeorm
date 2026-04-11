@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -29,12 +29,11 @@ describe("github issues > #485 If I set the datatype of PrimaryGeneratedColumn t
 
                 const post = new Post()
                 const savedPost = await postRepository.save(post)
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     id: savedPost.id,
                 })
 
-                expect(loadedPost).to.be.not.undefined
-                expect(loadedPost!.id).to.equal(savedPost.id)
+                expect(loadedPost.id).to.equal(savedPost.id)
                 table!.findColumnByName("id")!.type.should.be.equal("uuid")
             }),
         ))

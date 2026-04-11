@@ -2,7 +2,7 @@ import "reflect-metadata"
 
 import { expect } from "chai"
 
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -13,14 +13,13 @@ import { Foo } from "./entity/Foo"
 
 describe("github issues > #2251 - Unexpected behavior when passing duplicate entities to repository.save()", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
@@ -35,7 +34,7 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
                     { description: "test2" },
                 ])
 
-                let bars = await repo.find()
+                await repo.find()
                 await repo.save([
                     { id: 1, description: "test1a" },
                     { id: 2, description: "test2a" },
@@ -43,7 +42,7 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
                     { id: 2, description: "test2a" },
                 ])
 
-                bars = await repo.find()
+                const bars = await repo.find()
 
                 expect(bars.length).to.equal(2)
             }),
@@ -77,13 +76,13 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
                 // remove the reference of another and insert a 3rd.
                 expect(bars.length).to.equal(3)
 
-                const bar = await barRepo.findOneBy({ id: 1 })
+                const bar = await barRepo.findOneByOrFail({ id: 1 })
 
                 expect(bar).not.to.be.null
 
                 // Did not observe the same behavior with unwanted inserts. Current behavior is
                 // that the first duplicate goes through and the rest are ignored.
-                expect(bar!.description).to.equal("test2a-1")
+                expect(bar.description).to.equal("test2a-1")
             }),
         ))
 })

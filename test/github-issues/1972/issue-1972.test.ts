@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { assert } from "chai"
 import { User } from "./entity/User"
 import { TournamentUserParticipant } from "./entity/TournamentUserParticipant"
@@ -12,13 +12,12 @@ import { TournamentSquadParticipant } from "./entity/TournamentSquadParticipant"
 describe("github issues > #1972 STI problem - empty columns", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql"],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 

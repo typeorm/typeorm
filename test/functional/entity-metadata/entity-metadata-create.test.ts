@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -11,21 +11,20 @@ import { TestCreate } from "./entity/TestCreate"
 describe("entity-metadata > create", () => {
     describe("without entitySkipConstructor", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["better-sqlite3"],
-                    entities: [TestCreate],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["better-sqlite3"],
+                entities: [TestCreate],
+            })
+        })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
         it("should call the constructor when creating an object", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const entity = connection.manager.create(TestCreate)
+                dataSources.map(async (dataSource) => {
+                    const entity = dataSource.manager.create(TestCreate)
 
                     expect(entity.hasCalledConstructor).to.be.true
                 }),
@@ -33,8 +32,8 @@ describe("entity-metadata > create", () => {
 
         it("should set the default property values", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const entity = connection.manager.create(TestCreate)
+                dataSources.map(async (dataSource) => {
+                    const entity = dataSource.manager.create(TestCreate)
 
                     expect(entity.foo).to.be.equal("bar")
                 }),
@@ -42,8 +41,8 @@ describe("entity-metadata > create", () => {
 
         it("should call the constructor when retrieving an object", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.manager.getRepository(TestCreate)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.manager.getRepository(TestCreate)
 
                     const { id } = await repo.save({ foo: "baz" })
 
@@ -56,24 +55,23 @@ describe("entity-metadata > create", () => {
 
     describe("with entitySkipConstructor", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    enabledDrivers: ["better-sqlite3"],
-                    entities: [TestCreate],
-                    driverSpecific: {
-                        entitySkipConstructor: true,
-                    },
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["better-sqlite3"],
+                entities: [TestCreate],
+                driverSpecific: {
+                    entitySkipConstructor: true,
+                },
+            })
+        })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
         it("should call the constructor when creating an object", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const entity = connection.manager.create(TestCreate)
+                dataSources.map(async (dataSource) => {
+                    const entity = dataSource.manager.create(TestCreate)
 
                     expect(entity.hasCalledConstructor).to.be.true
                 }),
@@ -81,8 +79,8 @@ describe("entity-metadata > create", () => {
 
         it("should set the default property values when creating an object", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const entity = connection.manager.create(TestCreate)
+                dataSources.map(async (dataSource) => {
+                    const entity = dataSource.manager.create(TestCreate)
 
                     expect(entity.foo).to.be.equal("bar")
                 }),
@@ -90,8 +88,8 @@ describe("entity-metadata > create", () => {
 
         it("should not call the constructor when retrieving an object", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
-                    const repo = connection.manager.getRepository(TestCreate)
+                dataSources.map(async (dataSource) => {
+                    const repo = dataSource.manager.getRepository(TestCreate)
 
                     const { id } = await repo.save({ foo: "baz" })
 

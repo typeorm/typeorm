@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
-import { DataSource } from "../../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { Counters } from "./entity/Counters"
@@ -14,45 +14,44 @@ import { Subcounters } from "./entity/Subcounters"
 
 describe("query builder > relation-id > one-to-many > embedded", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should load ids when loadRelationIdAndMap used on embedded and nested embedded tables", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.name = "Alice"
-                await connection.manager.save(user1)
+                await dataSource.manager.save(user1)
 
                 const user2 = new User()
                 user2.name = "Bob"
-                await connection.manager.save(user2)
+                await dataSource.manager.save(user2)
 
                 const user3 = new User()
                 user3.name = "Clara"
-                await connection.manager.save(user3)
+                await dataSource.manager.save(user3)
 
                 const category1 = new Category()
                 category1.name = "cars"
-                await connection.manager.save(category1)
+                await dataSource.manager.save(category1)
 
                 const category2 = new Category()
                 category2.name = "BMW"
-                await connection.manager.save(category2)
+                await dataSource.manager.save(category2)
 
                 const category3 = new Category()
                 category3.name = "airplanes"
-                await connection.manager.save(category3)
+                await dataSource.manager.save(category3)
 
                 const category4 = new Category()
                 category4.name = "Boeing"
-                await connection.manager.save(category4)
+                await dataSource.manager.save(category4)
 
                 const post1 = new Post()
                 post1.title = "About BMW"
@@ -65,7 +64,7 @@ describe("query builder > relation-id > one-to-many > embedded", () => {
                 post1.counters.subcounters.version = 1
                 post1.counters.subcounters.watches = 2
                 post1.counters.subcounters.watchedUsers = [user1, user2]
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
                 const post2 = new Post()
                 post2.title = "About Boeing"
@@ -78,9 +77,9 @@ describe("query builder > relation-id > one-to-many > embedded", () => {
                 post2.counters.subcounters.version = 1
                 post2.counters.subcounters.watches = 1
                 post2.counters.subcounters.watchedUsers = [user3]
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap(
                         "post.counters.categoryIds",

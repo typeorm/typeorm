@@ -4,41 +4,40 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("repository > clear method", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should remove everything", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // save dummy data
                 for (let i = 0; i < 100; i++) {
                     const post = new Post()
                     post.id = i
                     post.title = "post #" + i
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
                 }
 
                 // check if they all are saved
-                const loadedPosts = await connection.manager.find(Post)
+                const loadedPosts = await dataSource.manager.find(Post)
                 loadedPosts.should.be.instanceOf(Array)
                 loadedPosts.length.should.be.equal(100)
 
-                await connection.getRepository(Post).clear()
+                await dataSource.getRepository(Post).clear()
 
                 // check find method
                 const loadedPostsAfterClear =
-                    await connection.manager.find(Post)
+                    await dataSource.manager.find(Post)
                 loadedPostsAfterClear.should.be.instanceOf(Array)
                 loadedPostsAfterClear.length.should.be.equal(0)
             }),
@@ -46,25 +45,25 @@ describe("repository > clear method", () => {
 
     it("called from entity managed should remove everything as well", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // save dummy data
                 for (let i = 0; i < 100; i++) {
                     const post = new Post()
                     post.id = i
                     post.title = "post #" + i
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
                 }
 
                 // check if they all are saved
-                const loadedPosts = await connection.manager.find(Post)
+                const loadedPosts = await dataSource.manager.find(Post)
                 loadedPosts.should.be.instanceOf(Array)
                 loadedPosts.length.should.be.equal(100)
 
-                await connection.manager.clear(Post)
+                await dataSource.manager.clear(Post)
 
                 // check find method
                 const loadedPostsAfterClear =
-                    await connection.manager.find(Post)
+                    await dataSource.manager.find(Post)
                 loadedPostsAfterClear.should.be.instanceOf(Array)
                 loadedPostsAfterClear.length.should.be.equal(0)
             }),

@@ -4,18 +4,17 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("github issues > #4719 HStore with empty string values", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -37,10 +36,8 @@ describe("github issues > #4719 HStore with empty string values", () => {
                 }
                 const { id } = await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneOrFail({
-                    where: {
-                        id: id,
-                    },
+                const loadedPost = await postRepository.findOneByOrFail({
+                    id: id,
                 })
                 loadedPost.hstoreObj.should.be.deep.equal({
                     name: "Alice",
@@ -65,10 +62,8 @@ describe("github issues > #4719 HStore with empty string values", () => {
                 post.hstoreObj = { username: `", admin=>"1`, admin: "0" }
                 const { id } = await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneOrFail({
-                    where: {
-                        id: id,
-                    },
+                const loadedPost = await postRepository.findOneByOrFail({
+                    id: id,
                 })
                 loadedPost.hstoreObj.should.be.deep.equal({
                     username: `", admin=>"1`,

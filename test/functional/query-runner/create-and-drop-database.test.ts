@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -20,8 +20,8 @@ describe("query runner > create and drop database", () => {
 
     it("should correctly create and drop database and revert it", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 await queryRunner.createDatabase("myTestDatabase", true)
                 let hasDatabase =
@@ -37,6 +37,15 @@ describe("query runner > create and drop database", () => {
                 hasDatabase = await queryRunner.hasDatabase("myTestDatabase")
                 hasDatabase.should.be.false
 
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should not throw when dropping non-existent database with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropDatabase("non_existent_database", true)
                 await queryRunner.release()
             }),
         ))

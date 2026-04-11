@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Tag } from "./entity/Tag"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
@@ -16,66 +16,65 @@ import { Photo } from "./entity/Photo"
 
 describe("query builder > joins", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     describe("leftJoinAndSelect", () => {
         it("should load data for all relation types", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Alex Messer"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const image3 = new Image()
                     image3.name = "image3"
-                    await connection.manager.save(image3)
+                    await dataSource.manager.save(image3)
 
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.images = [image1, image2]
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const category3 = new Category()
                     category3.name = "airplanes"
                     category3.images = [image3]
-                    await connection.manager.save(category3)
+                    await dataSource.manager.save(category3)
 
                     const post1 = new Post()
                     post1.title = "about BMW"
                     post1.categories = [category1, category2]
                     post1.tag = tag
                     post1.author = user
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.title = "about Boeing"
                     post2.categories = [category3]
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect("post.tag", "tag")
                         .leftJoinAndSelect("post.author", "author")
@@ -112,7 +111,7 @@ describe("query builder > joins", () => {
                         loadedPosts![1].categories[0].images[0].id,
                     ).to.be.equal(3)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect("post.tag", "tag")
                         .leftJoinAndSelect("post.author", "author")
@@ -120,61 +119,61 @@ describe("query builder > joins", () => {
                         .leftJoinAndSelect("categories.images", "images")
                         .where("post.id = :id", { id: 1 })
                         .orderBy("post.id, categories.id")
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag instanceof Tag).to.be.true
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0] instanceof Category).to.be
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag instanceof Tag).to.be.true
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0] instanceof Category).to.be
                         .true
-                    expect(loadedPost!.categories[0].id).to.be.equal(1)
-                    expect(loadedPost!.categories[1].id).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images[0] instanceof Image)
+                    expect(loadedPost.categories[0].id).to.be.equal(1)
+                    expect(loadedPost.categories[1].id).to.be.equal(2)
+                    expect(loadedPost.categories[0].images[0] instanceof Image)
                         .to.be.true
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.categories[1].images).to.be.eql([])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author instanceof User).to.be.true
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.categories[1].images).to.be.eql([])
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author instanceof User).to.be.true
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
         it("should load data when additional condition used", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.images = [image1, image2]
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.categories = [category1, category2]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.categories",
@@ -188,34 +187,32 @@ describe("query builder > joins", () => {
                         )
                         .where("post.id = :id", { id: post.id })
                         .setParameters({ categoryId: 1, imageId: 2 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(1)
-                    expect(loadedPost!.categories[0].id).to.be.equal(1)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(1)
+                    expect(loadedPost.categories[0].id).to.be.equal(1)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         1,
                     )
-                    expect(loadedPost!.categories[0].images[0].id).to.be.equal(
-                        2,
-                    )
+                    expect(loadedPost.categories[0].images[0].id).to.be.equal(2)
                 }),
             ))
 
         it("should load data when join tables does not have direct relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category = new Category()
                     category.name = "cars"
-                    await connection.manager.save(category)
+                    await dataSource.manager.save(category)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.categories = [category]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedRawPost = await connection.manager
+                    const loadedRawPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post_categories_category",
@@ -230,7 +227,7 @@ describe("query builder > joins", () => {
                         .where("post.id = :id", { id: post.id })
                         .getRawOne()
 
-                    if (connection.driver.options.type === "cockroachdb") {
+                    if (dataSource.driver.options.type === "cockroachdb") {
                         expect(loadedRawPost!["categories_id"]).to.be.equal("1")
                     } else {
                         expect(loadedRawPost!["categories_id"]).to.be.equal(1)
@@ -242,87 +239,87 @@ describe("query builder > joins", () => {
     describe("innerJoinAndSelect", () => {
         it("should load only exist data for all relation types", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Alex Messer"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.images = [image1, image2]
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.categories = [category1, category2]
                     post.tag = tag
                     post.author = user
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndSelect("post.tag", "tag")
                         .innerJoinAndSelect("post.author", "author")
                         .innerJoinAndSelect("post.categories", "categories")
                         .innerJoinAndSelect("categories.images", "images")
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(1)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(1)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
         it("should load data when additional condition used", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.images = [image1, image2]
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.categories = [category1, category2]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndSelect(
                             "post.categories",
@@ -336,35 +333,33 @@ describe("query builder > joins", () => {
                         )
                         .where("post.id = :id", { id: post.id })
                         .setParameters({ categoryId: 1, imageId: 2 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(1)
-                    expect(loadedPost!.categories[0].id).to.be.equal(1)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(1)
+                    expect(loadedPost.categories[0].id).to.be.equal(1)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         1,
                     )
-                    expect(loadedPost!.categories[0].images[0].id).to.be.equal(
-                        2,
-                    )
+                    expect(loadedPost.categories[0].images[0].id).to.be.equal(2)
                 }),
             ))
 
         it("should not return any result when related data does not exist", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const post = new Post()
                     post.title = "about BMW"
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndSelect("post.tag", "tag")
                         .where("post.id = :id", { id: post.id })
                         .getOne()
 
-                    expect(loadedPost!).to.be.null
+                    expect(loadedPost).to.be.null
                 }),
             ))
     })
@@ -372,38 +367,38 @@ describe("query builder > joins", () => {
     describe("leftJoinAndMap", () => {
         it("should load and map selected data when entity used as join argument", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Alex Messer"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const category1 = new Category()
                     category1.name = "cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.tag = tag
                     post.author = user
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndMapOne(
                             "post.tag",
@@ -436,60 +431,60 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             imageIds: [1, 2],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
         it("should load and map selected data when table name used as join argument", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Alex Messer"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const category1 = new Category()
                     category1.name = "cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.tag = tag
                     post.author = user
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndMapOne(
                             "post.tag",
@@ -522,39 +517,39 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             imageIds: [1, 2],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
         it("should load and map selected data when query builder used as join argument", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const post = new Post()
                     post.title = "about China"
                     post.tag = tag
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndMapOne(
                             "post.tag",
@@ -565,26 +560,26 @@ describe("query builder > joins", () => {
                             Tag,
                         )
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
                 }),
             ))
 
         it("should not load join data when join subquery does not find results", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const post = new Post()
                     post.title = "about China"
                     post.tag = tag
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndMapOne(
                             "post.tag",
@@ -601,32 +596,32 @@ describe("query builder > joins", () => {
                             Tag,
                         )
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.be.null
+                    expect(loadedPost.tag).to.be.null
                 }),
             ))
 
         it("should load and map selected data when data will given from same entity but with different conditions", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.name = "cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const category3 = new Category()
                     category3.name = "bmw"
-                    await connection.manager.save(category3)
+                    await dataSource.manager.save(category3)
 
                     const post = new Post()
                     post.title = "about BMW"
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndMapMany(
                             "post.categories",
@@ -645,69 +640,69 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             subcategoryIds: [3],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.subcategories).to.not.be.eql([])
-                    expect(loadedPost!.subcategories.length).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.subcategories).to.not.be.eql([])
+                    expect(loadedPost.subcategories.length).to.be.equal(1)
                 }),
             ))
 
         it("should load and map selected data when data will given from same property but with different conditions", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const image3 = new Image()
                     image3.name = "image3"
                     image3.isRemoved = true
-                    await connection.manager.save(image3)
+                    await dataSource.manager.save(image3)
 
                     const image4 = new Image()
                     image4.name = "image4"
                     image4.isRemoved = true
-                    await connection.manager.save(image4)
+                    await dataSource.manager.save(image4)
 
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.images = [image1, image2, image3, image4]
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
                     category2.images = [image1, image2, image3, image4]
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const category3 = new Category()
                     category3.name = "bmw"
                     category3.isRemoved = true
                     category3.images = [image1, image3]
-                    await connection.manager.save(category3)
+                    await dataSource.manager.save(category3)
 
                     const category4 = new Category()
                     category4.name = "citroen"
                     category4.isRemoved = true
                     category4.images = [image2, image4]
-                    await connection.manager.save(category4)
+                    await dataSource.manager.save(category4)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.categories = [category1, category2, category3]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
                     const post2 = new Post()
                     post2.title = "about Citroen"
                     post2.categories = [category1, category4]
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndMapMany(
                             "post.removedCategories",
@@ -797,7 +792,7 @@ describe("query builder > joins", () => {
                         loadedPosts![1].subcategories[0].titleImage.id,
                     ).to.be.equal(1)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndMapMany(
                             "post.removedCategories",
@@ -829,27 +824,27 @@ describe("query builder > joins", () => {
                             titleImageId: 1,
                         })
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.removedCategories).to.not.be.eql([])
-                    expect(loadedPost!.removedCategories.length).to.be.equal(1)
-                    expect(loadedPost!.removedCategories[0].id).to.be.equal(3)
-                    expect(loadedPost!.removedCategories[0] instanceof Category)
+                    expect(loadedPost.removedCategories).to.not.be.eql([])
+                    expect(loadedPost.removedCategories.length).to.be.equal(1)
+                    expect(loadedPost.removedCategories[0].id).to.be.equal(3)
+                    expect(loadedPost.removedCategories[0] instanceof Category)
                         .to.be.true
                     expect(
-                        loadedPost!.removedCategories[0].removedImages.length,
+                        loadedPost.removedCategories[0].removedImages.length,
                     ).to.be.equal(1)
                     expect(
-                        loadedPost!.removedCategories[0]
+                        loadedPost.removedCategories[0]
                             .removedImages[0] instanceof Image,
                     ).to.be.true
                     expect(
-                        loadedPost!.removedCategories[0].removedImages[0].id,
+                        loadedPost.removedCategories[0].removedImages[0].id,
                     ).to.be.equal(3)
-                    expect(loadedPost!.subcategories).to.not.be.eql([])
-                    expect(loadedPost!.subcategories.length).to.be.equal(2)
+                    expect(loadedPost.subcategories).to.not.be.eql([])
+                    expect(loadedPost.subcategories.length).to.be.equal(2)
                     expect(
-                        loadedPost!.subcategories[0].titleImage.id,
+                        loadedPost.subcategories[0].titleImage.id,
                     ).to.be.equal(1)
                 }),
             ))
@@ -858,38 +853,38 @@ describe("query builder > joins", () => {
     describe("innerJoinAndMap", () => {
         it("should load and map selected data when entity used as join argument", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Alex Messer"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const category1 = new Category()
                     category1.name = "cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.tag = tag
                     post.author = user
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndMapOne(
                             "post.tag",
@@ -922,60 +917,60 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             imageIds: [1, 2],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
         it("should load and map selected data when table name used as join argument", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Alex Messer"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const category1 = new Category()
                     category1.name = "cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.tag = tag
                     post.author = user
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndMapOne(
                             "post.tag",
@@ -1008,39 +1003,39 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             imageIds: [1, 2],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
         it("should load and map selected data when query builder used as join argument", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const post = new Post()
                     post.title = "about China"
                     post.tag = tag
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndMapOne(
                             "post.tag",
@@ -1051,26 +1046,26 @@ describe("query builder > joins", () => {
                             Tag,
                         )
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
                 }),
             ))
 
         it("should not find results when join subquery with conditions does not find join data", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const tag = new Tag()
                     tag.name = "audi"
-                    await connection.manager.save(tag)
+                    await dataSource.manager.save(tag)
 
                     const post = new Post()
                     post.title = "about China"
                     post.tag = tag
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndMapOne(
                             "post.tag",
@@ -1095,24 +1090,24 @@ describe("query builder > joins", () => {
 
         it("should load and map selected data when data will given from same entity but with different conditions", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.name = "cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const category3 = new Category()
                     category3.name = "bmw"
-                    await connection.manager.save(category3)
+                    await dataSource.manager.save(category3)
 
                     const post = new Post()
                     post.title = "about BMW"
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndMapMany(
                             "post.categories",
@@ -1131,69 +1126,69 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             subcategoryIds: [3],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.subcategories).to.not.be.eql([])
-                    expect(loadedPost!.subcategories.length).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.subcategories).to.not.be.eql([])
+                    expect(loadedPost.subcategories.length).to.be.equal(1)
                 }),
             ))
 
         it("should load and map selected data when data will given from same property but with different conditions", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const image1 = new Image()
                     image1.name = "image1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.name = "image2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const image3 = new Image()
                     image3.name = "image3"
                     image3.isRemoved = true
-                    await connection.manager.save(image3)
+                    await dataSource.manager.save(image3)
 
                     const image4 = new Image()
                     image4.name = "image4"
                     image4.isRemoved = true
-                    await connection.manager.save(image4)
+                    await dataSource.manager.save(image4)
 
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.images = [image1, image2, image3, image4]
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "germany"
                     category2.images = [image1, image2, image3, image4]
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const category3 = new Category()
                     category3.name = "bmw"
                     category3.isRemoved = true
                     category3.images = [image1, image3]
-                    await connection.manager.save(category3)
+                    await dataSource.manager.save(category3)
 
                     const category4 = new Category()
                     category4.name = "citroen"
                     category4.isRemoved = true
                     category4.images = [image2, image4]
-                    await connection.manager.save(category4)
+                    await dataSource.manager.save(category4)
 
                     const post = new Post()
                     post.title = "about BMW"
                     post.categories = [category1, category2, category3]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
                     const post2 = new Post()
                     post2.title = "about Citroen"
                     post2.categories = [category1, category4]
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndMapMany(
                             "post.removedCategories",
@@ -1283,7 +1278,7 @@ describe("query builder > joins", () => {
                         loadedPosts![1].subcategories[0].titleImage.id,
                     ).to.be.equal(1)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndMapMany(
                             "post.removedCategories",
@@ -1315,39 +1310,39 @@ describe("query builder > joins", () => {
                             titleImageId: 1,
                         })
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.removedCategories).to.not.be.eql([])
-                    expect(loadedPost!.removedCategories.length).to.be.equal(1)
-                    expect(loadedPost!.removedCategories[0].id).to.be.equal(3)
-                    expect(loadedPost!.removedCategories[0] instanceof Category)
+                    expect(loadedPost.removedCategories).to.not.be.eql([])
+                    expect(loadedPost.removedCategories.length).to.be.equal(1)
+                    expect(loadedPost.removedCategories[0].id).to.be.equal(3)
+                    expect(loadedPost.removedCategories[0] instanceof Category)
                         .to.be.true
                     expect(
-                        loadedPost!.removedCategories[0].removedImages.length,
+                        loadedPost.removedCategories[0].removedImages.length,
                     ).to.be.equal(1)
                     expect(
-                        loadedPost!.removedCategories[0]
+                        loadedPost.removedCategories[0]
                             .removedImages[0] instanceof Image,
                     ).to.be.true
                     expect(
-                        loadedPost!.removedCategories[0].removedImages[0].id,
+                        loadedPost.removedCategories[0].removedImages[0].id,
                     ).to.be.equal(3)
-                    expect(loadedPost!.subcategories).to.not.be.eql([])
-                    expect(loadedPost!.subcategories.length).to.be.equal(2)
+                    expect(loadedPost.subcategories).to.not.be.eql([])
+                    expect(loadedPost.subcategories.length).to.be.equal(2)
                     expect(
-                        loadedPost!.subcategories[0].titleImage.id,
+                        loadedPost.subcategories[0].titleImage.id,
                     ).to.be.equal(1)
                 }),
             ))
 
         it("should not return any result when related data does not exist", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const post = new Post()
                     post.title = "about BMW"
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
-                    const loadedPost1 = await connection.manager
+                    const loadedPost1 = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndMapOne(
                             "post.author",
@@ -1359,9 +1354,9 @@ describe("query builder > joins", () => {
                         .setParameters({ userId: 1 })
                         .getOne()
 
-                    expect(loadedPost1!).to.be.null
+                    expect(loadedPost1).to.be.null
 
-                    const loadedPost2 = await connection.manager
+                    const loadedPost2 = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndMapMany(
                             "post.categories",
@@ -1373,7 +1368,7 @@ describe("query builder > joins", () => {
                         .setParameters({ categoryId: 1 })
                         .getOne()
 
-                    expect(loadedPost2!).to.be.null
+                    expect(loadedPost2).to.be.null
                 }),
             ))
     })
@@ -1381,37 +1376,37 @@ describe("query builder > joins", () => {
     describe("leftJoin with skip/take pagination", () => {
         it("should work correctly when leftJoin used with addSelect and pagination without primary key", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user1 = new User()
                     user1.name = "Test User 1"
-                    await connection.manager.save(user1)
+                    await dataSource.manager.save(user1)
 
                     const user2 = new User()
                     user2.name = "Test User 2"
-                    await connection.manager.save(user2)
+                    await dataSource.manager.save(user2)
 
                     const category1 = new Category()
                     category1.name = "Category 1"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "Category 2"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post1 = new Post()
                     post1.title = "Post 1"
                     post1.author = user1
                     post1.categories = [category1, category2]
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.title = "Post 2"
                     post2.author = user2
                     post2.categories = [category1]
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
                     // This is the problematic query that was fixed
-                    const result = await connection
+                    const result = await dataSource
                         .getRepository(Post)
                         .createQueryBuilder("post")
                         .leftJoin("post.categories", "category")
@@ -1446,27 +1441,27 @@ describe("query builder > joins", () => {
 
         it("should work correctly with leftJoinAndSelect as comparison", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Test User"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const category1 = new Category()
                     category1.name = "Category 1"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "Category 2"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "Test Post"
                     post.author = user
                     post.categories = [category1, category2]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
                     // This should work without issues
-                    const result = await connection
+                    const result = await dataSource
                         .getRepository(Post)
                         .createQueryBuilder("post")
                         .leftJoinAndSelect("post.categories", "category")
@@ -1485,27 +1480,27 @@ describe("query builder > joins", () => {
 
         it("should work correctly with explicit primary key selection", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Test User"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const category1 = new Category()
                     category1.name = "Category 1"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.name = "Category 2"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "Test Post"
                     post.author = user
                     post.categories = [category1, category2]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
                     // This works because primary key is explicitly selected
-                    const result = await connection
+                    const result = await dataSource
                         .getRepository(Post)
                         .createQueryBuilder("post")
                         .leftJoin("post.categories", "category")
@@ -1532,31 +1527,31 @@ describe("query builder > joins", () => {
     describe("leftJoin with composite primary keys", () => {
         it("should work correctly when all composite primary key columns are selected", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Test User"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const category1 = new CategoryWithCompositePK()
                     category1.categoryId = 1
                     category1.categoryType = "tech"
                     category1.name = "Technology"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new CategoryWithCompositePK()
                     category2.categoryId = 2
                     category2.categoryType = "science"
                     category2.name = "Science"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "Test Post"
                     post.author = user
                     post.compositePKCategories = [category1, category2]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
                     // All composite PK columns selected - should work correctly
-                    const result = await connection
+                    const result = await dataSource
                         .getRepository(Post)
                         .createQueryBuilder("post")
                         .leftJoin(
@@ -1586,31 +1581,31 @@ describe("query builder > joins", () => {
 
         it("should work correctly when only part of composite primary key is selected", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Test User"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const category1 = new CategoryWithCompositePK()
                     category1.categoryId = 1
                     category1.categoryType = "tech"
                     category1.name = "Technology"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new CategoryWithCompositePK()
                     category2.categoryId = 2
                     category2.categoryType = "science"
                     category2.name = "Science"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "Test Post"
                     post.author = user
                     post.compositePKCategories = [category1, category2]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
                     // Only one of the composite PK columns selected (partial PK)
-                    const result = await connection
+                    const result = await dataSource
                         .getRepository(Post)
                         .createQueryBuilder("post")
                         .leftJoin(
@@ -1638,31 +1633,31 @@ describe("query builder > joins", () => {
 
         it("should work correctly when no composite primary key columns are selected", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user = new User()
                     user.name = "Test User"
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
 
                     const category1 = new CategoryWithCompositePK()
                     category1.categoryId = 1
                     category1.categoryType = "tech"
                     category1.name = "Technology"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new CategoryWithCompositePK()
                     category2.categoryId = 2
                     category2.categoryType = "science"
                     category2.name = "Science"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post = new Post()
                     post.title = "Test Post"
                     post.author = user
                     post.compositePKCategories = [category1, category2]
-                    await connection.manager.save(post)
+                    await dataSource.manager.save(post)
 
                     // No composite PK columns selected - only name
-                    const result = await connection
+                    const result = await dataSource
                         .getRepository(Post)
                         .createQueryBuilder("post")
                         .leftJoin(
@@ -1689,8 +1684,8 @@ describe("query builder > joins", () => {
 
     it("should return correct number of results when limit is used with left joins", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const manager = connection.manager
+            dataSources.map(async (dataSource) => {
+                const manager = dataSource.manager
 
                 for (let i = 1; i <= 7; i++) {
                     const user = new User()

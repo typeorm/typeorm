@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -102,7 +102,7 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
 
                     const actual = (await connection
                         .getRepository(Post)
-                        .findOne({ where: { id } }))!.jsonField
+                        .findOneBy({ id }))!.jsonField
 
                     expect(actual).to.be.eql(expected, message)
                 }
@@ -164,7 +164,7 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
                 const repo = connection.getRepository(Post)
 
                 const getJson = async (id: number) =>
-                    (await repo.findOne({ where: { id } }))!.jsonField
+                    (await repo.findOneBy({ id }))!.jsonField
 
                 await expect(getJson(1)).to.be.rejected
             }),

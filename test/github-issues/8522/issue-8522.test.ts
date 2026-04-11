@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -17,23 +17,15 @@ describe("github issues > #8522 Single table inheritance returns the same discri
     let dataSources: DataSource[]
 
     after(() => closeTestingConnections(dataSources))
-    afterEach(() => closeTestingConnections(dataSources))
 
     describe("Unrelated tables", () => {
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [
-                        BaseEntity,
-                        InternalUser,
-                        InternalRole,
-                        Role,
-                        User,
-                    ],
-                    schemaCreate: true,
-                    dropSchema: true,
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [BaseEntity, InternalUser, InternalRole, Role, User],
+                schemaCreate: true,
+                dropSchema: true,
+            })
+        })
         beforeEach(() => reloadTestingDatabases(dataSources))
 
         it("should loads internal user and internal role", () =>

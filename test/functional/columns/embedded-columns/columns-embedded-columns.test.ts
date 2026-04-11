@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -16,19 +16,18 @@ import { Department } from "./entity/Department"
 
 describe("columns > embedded columns", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should insert / update / remove entity with embedded correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(SimplePost)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(SimplePost)
 
                 // save few posts
                 const post = new SimplePost()
@@ -42,24 +41,23 @@ describe("columns > embedded columns", () => {
                 post.counters.information.description = "Hello post"
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     title: "Post",
                 })
 
-                expect(loadedPost).to.be.not.empty
-                expect(loadedPost!.counters).to.be.not.empty
-                expect(loadedPost!.counters.information).to.be.not.empty
-                loadedPost!.should.be.instanceOf(SimplePost)
-                loadedPost!.title.should.be.equal("Post")
-                loadedPost!.text.should.be.equal("Everything about post")
-                loadedPost!.counters.should.be.instanceOf(SimpleCounters)
-                loadedPost!.counters.likes.should.be.equal(5)
-                loadedPost!.counters.comments.should.be.equal(1)
-                loadedPost!.counters.favorites.should.be.equal(10)
-                loadedPost!.counters.information.should.be.instanceOf(
+                expect(loadedPost.counters).to.be.not.empty
+                expect(loadedPost.counters.information).to.be.not.empty
+                loadedPost.should.be.instanceOf(SimplePost)
+                loadedPost.title.should.be.equal("Post")
+                loadedPost.text.should.be.equal("Everything about post")
+                loadedPost.counters.should.be.instanceOf(SimpleCounters)
+                loadedPost.counters.likes.should.be.equal(5)
+                loadedPost.counters.comments.should.be.equal(1)
+                loadedPost.counters.favorites.should.be.equal(10)
+                loadedPost.counters.information.should.be.instanceOf(
                     Information,
                 )
-                loadedPost!.counters.information.description.should.be.equal(
+                loadedPost.counters.information.description.should.be.equal(
                     "Hello post",
                 )
 
@@ -68,24 +66,23 @@ describe("columns > embedded columns", () => {
                 post.counters.information.description = "Hello updated post"
                 await postRepository.save(post)
 
-                const loadedUpdatedPost = await postRepository.findOneBy({
+                const loadedUpdatedPost = await postRepository.findOneByOrFail({
                     title: "Updated post",
                 })
 
-                expect(loadedUpdatedPost).to.be.not.empty
-                expect(loadedUpdatedPost!.counters).to.be.not.empty
-                expect(loadedUpdatedPost!.counters.information).to.be.not.empty
-                loadedUpdatedPost!.should.be.instanceOf(SimplePost)
-                loadedUpdatedPost!.title.should.be.equal("Updated post")
-                loadedUpdatedPost!.text.should.be.equal("Everything about post")
-                loadedUpdatedPost!.counters.should.be.instanceOf(SimpleCounters)
-                loadedUpdatedPost!.counters.likes.should.be.equal(5)
-                loadedUpdatedPost!.counters.comments.should.be.equal(2)
-                loadedUpdatedPost!.counters.favorites.should.be.equal(10)
-                loadedUpdatedPost!.counters.information.should.be.instanceOf(
+                expect(loadedUpdatedPost.counters).to.be.not.empty
+                expect(loadedUpdatedPost.counters.information).to.be.not.empty
+                loadedUpdatedPost.should.be.instanceOf(SimplePost)
+                loadedUpdatedPost.title.should.be.equal("Updated post")
+                loadedUpdatedPost.text.should.be.equal("Everything about post")
+                loadedUpdatedPost.counters.should.be.instanceOf(SimpleCounters)
+                loadedUpdatedPost.counters.likes.should.be.equal(5)
+                loadedUpdatedPost.counters.comments.should.be.equal(2)
+                loadedUpdatedPost.counters.favorites.should.be.equal(10)
+                loadedUpdatedPost.counters.information.should.be.instanceOf(
                     Information,
                 )
-                loadedUpdatedPost!.counters.information.description.should.be.equal(
+                loadedUpdatedPost.counters.information.description.should.be.equal(
                     "Hello updated post",
                 )
 
@@ -104,8 +101,8 @@ describe("columns > embedded columns", () => {
 
     it("should properly generate column names", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
                 const columns = postRepository.metadata.columns
                 const databaseColumns = columns.map((c) => c.databaseName)
 
@@ -166,9 +163,9 @@ describe("columns > embedded columns", () => {
     // GitHub issue #10578 - updating embedded columns with relations doesn't work
     it("should update embedded columns when saving entity with relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const parentRepository = connection.getRepository("Parent")
-                const accountRepository = connection.getRepository("Account")
+            dataSources.map(async (dataSource) => {
+                const parentRepository = dataSource.getRepository("Parent")
+                const accountRepository = dataSource.getRepository("Account")
 
                 const account = new Account()
                 account.name = "Account #1"
@@ -178,11 +175,11 @@ describe("columns > embedded columns", () => {
                 parent.department = new Department()
                 parent.department.account = account
                 await parentRepository.save(parent)
-                const loadedParent = await parentRepository.findOne({
-                    where: { id: parent.id },
+                const loadedParent = await parentRepository.findOneByOrFail({
+                    id: parent.id,
                 })
 
-                loadedParent!.should.be.eql({
+                loadedParent.should.be.eql({
                     id: parent.id,
                     department: {
                         account: {
@@ -195,11 +192,11 @@ describe("columns > embedded columns", () => {
                 parent.department.account.name = "Updated Account #1"
                 await parentRepository.save(parent)
 
-                const loadedParent1 = await parentRepository.findOne({
-                    where: { id: parent.id },
+                const loadedParent1 = await parentRepository.findOneByOrFail({
+                    id: parent.id,
                 })
 
-                loadedParent1!.should.be.eql({
+                loadedParent1.should.be.eql({
                     id: parent.id,
                     department: {
                         account: {

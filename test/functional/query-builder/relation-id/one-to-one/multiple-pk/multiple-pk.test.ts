@@ -5,53 +5,52 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
-import { DataSource } from "../../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { Image } from "./entity/Image"
 
 describe("query builder > relation-id > one-to-one > multiple-pk", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     describe("owner side", () => {
         it("should load ids when both entities have multiple primary keys", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
                     category1.name = "cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.id = 2
                     category2.code = 1
                     category2.name = "airplanes"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post1 = new Post()
                     post1.id = 1
                     post1.authorId = 1
                     post1.title = "About BMW"
                     post1.category = category1
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
                     post2.authorId = 1
                     post2.title = "About Boeing"
                     post2.category = category2
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .loadRelationIdAndMap(
                             "post.categoryId",
@@ -69,7 +68,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         code: 1,
                     })
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .loadRelationIdAndMap(
                             "post.categoryId",
@@ -77,40 +76,40 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("post.id = :id", { id: 1 })
                         .andWhere("post.authorId = :authorId", { authorId: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 })
+                    expect(loadedPost.categoryId).to.be.eql({ id: 1, code: 1 })
                 }),
             ))
 
         it("should load ids when only one entity have multiple primary keys", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const image1 = new Image()
                     image1.id = 1
                     image1.name = "Image #1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.id = 2
                     image2.name = "Image #2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
                     category1.name = "cars"
                     category1.image = image1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.id = 2
                     category2.code = 1
                     category2.name = "airplanes"
                     category2.image = image2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
-                    const loadedCategories = await connection.manager
+                    const loadedCategories = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .loadRelationIdAndMap(
                             "category.imageId",
@@ -122,7 +121,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                     expect(loadedCategories[0].imageId).to.be.equal(1)
                     expect(loadedCategories[1].imageId).to.be.equal(2)
 
-                    const loadedCategory = await connection.manager
+                    const loadedCategory = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .loadRelationIdAndMap(
                             "category.imageId",
@@ -130,42 +129,42 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("category.id = :id", { id: 1 })
                         .andWhere("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.imageId).to.be.equal(1)
+                    expect(loadedCategory.imageId).to.be.equal(1)
                 }),
             ))
 
         it("should load ids when both entities have multiple primary keys and related entity does not have inverse side", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
                     category1.name = "cars"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.id = 2
                     category2.code = 1
                     category2.name = "airplanes"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post1 = new Post()
                     post1.id = 1
                     post1.authorId = 1
                     post1.title = "About BMW"
                     post1.subcategory = category1
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
                     post2.authorId = 1
                     post2.title = "About Boeing"
                     post2.subcategory = category2
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .loadRelationIdAndMap(
                             "post.categoryId",
@@ -183,7 +182,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         code: 1,
                     })
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .loadRelationIdAndMap(
                             "post.categoryId",
@@ -191,54 +190,54 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("post.id = :id", { id: 1 })
                         .andWhere("post.authorId = :authorId", { authorId: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 })
+                    expect(loadedPost.categoryId).to.be.eql({ id: 1, code: 1 })
                 }),
             ))
 
         it("should load ids when loadRelationIdAndMap used on nested relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const image1 = new Image()
                     image1.id = 1
                     image1.name = "Image #1"
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.id = 2
                     image2.name = "Image #2"
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
                     category1.name = "cars"
                     category1.image = image1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.id = 2
                     category2.code = 1
                     category2.name = "airplanes"
                     category2.image = image2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const post1 = new Post()
                     post1.id = 1
                     post1.authorId = 1
                     post1.title = "About BMW"
                     post1.category = category1
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
                     post2.authorId = 1
                     post2.title = "About Boeing"
                     post2.category = category2
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .loadRelationIdAndMap(
                             "post.categoryId",
@@ -263,7 +262,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                     })
                     expect(loadedPosts[1].category.imageId).to.be.equal(2)
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .loadRelationIdAndMap(
                             "post.categoryId",
@@ -276,10 +275,10 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("post.id = :id", { id: 1 })
                         .andWhere("post.authorId = :authorId", { authorId: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 })
-                    expect(loadedPost!.category.imageId).to.be.equal(1)
+                    expect(loadedPost.categoryId).to.be.eql({ id: 1, code: 1 })
+                    expect(loadedPost.category.imageId).to.be.equal(1)
                 }),
             ))
     })
@@ -287,34 +286,34 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
     describe("inverse side", () => {
         it("should load ids when both entities have multiple primary keys", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.authorId = 1
                     post1.title = "About BMW"
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
                     post2.authorId = 1
                     post2.title = "About Boeing"
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
                     category1.name = "cars"
                     category1.post = post1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.id = 2
                     category2.code = 1
                     category2.name = "airplanes"
                     category2.post = post2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
-                    const loadedCategories = await connection.manager
+                    const loadedCategories = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .loadRelationIdAndMap(
                             "category.postId",
@@ -332,7 +331,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         authorId: 1,
                     })
 
-                    const loadedCategory = await connection.manager
+                    const loadedCategory = await dataSource.manager
                         .createQueryBuilder(Category, "category")
                         .loadRelationIdAndMap(
                             "category.postId",
@@ -340,9 +339,9 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         )
                         .where("category.id = :id", { id: 1 })
                         .andWhere("category.code = :code", { code: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedCategory!.postId).to.be.eql({
+                    expect(loadedCategory.postId).to.be.eql({
                         id: 1,
                         authorId: 1,
                     })
@@ -351,32 +350,32 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
 
         it("should load ids when only one entity have multiple primary keys", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
                     category1.name = "category #1"
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.id = 2
                     category2.code = 1
                     category2.name = "category #2"
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const image1 = new Image()
                     image1.id = 1
                     image1.name = "Image #1"
                     image1.category = category1
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.id = 2
                     image2.name = "Image #2"
                     image2.category = category2
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
-                    const loadedImages = await connection.manager
+                    const loadedImages = await dataSource.manager
                         .createQueryBuilder(Image, "image")
                         .loadRelationIdAndMap(
                             "image.categoryId",
@@ -394,16 +393,16 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         code: 1,
                     })
 
-                    const loadedImage = await connection.manager
+                    const loadedImage = await dataSource.manager
                         .createQueryBuilder(Image, "image")
                         .loadRelationIdAndMap(
                             "image.categoryId",
                             "image.category",
                         )
                         .where("image.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedImage!.categoryId).to.be.eql({
+                    expect(loadedImage.categoryId).to.be.eql({
                         id: 1,
                         code: 1,
                     })
@@ -412,46 +411,46 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
 
         it("should load ids when loadRelationIdAndMap used on nested relation", () =>
             Promise.all(
-                dataSources.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.authorId = 1
                     post1.title = "About BMW"
-                    await connection.manager.save(post1)
+                    await dataSource.manager.save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
                     post2.authorId = 1
                     post2.title = "About Boeing"
-                    await connection.manager.save(post2)
+                    await dataSource.manager.save(post2)
 
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
                     category1.name = "cars"
                     category1.post = post1
-                    await connection.manager.save(category1)
+                    await dataSource.manager.save(category1)
 
                     const category2 = new Category()
                     category2.id = 2
                     category2.code = 1
                     category2.name = "BMW"
                     category2.post = post2
-                    await connection.manager.save(category2)
+                    await dataSource.manager.save(category2)
 
                     const image1 = new Image()
                     image1.id = 1
                     image1.name = "Image #1"
                     image1.category = category1
-                    await connection.manager.save(image1)
+                    await dataSource.manager.save(image1)
 
                     const image2 = new Image()
                     image2.id = 2
                     image2.name = "Image #2"
                     image2.category = category2
-                    await connection.manager.save(image2)
+                    await dataSource.manager.save(image2)
 
-                    const loadedImages = await connection.manager
+                    const loadedImages = await dataSource.manager
                         .createQueryBuilder(Image, "image")
                         .loadRelationIdAndMap(
                             "image.categoryId",
@@ -481,7 +480,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                         authorId: 1,
                     })
 
-                    const loadedImage = await connection.manager
+                    const loadedImage = await dataSource.manager
                         .createQueryBuilder(Image, "image")
                         .loadRelationIdAndMap(
                             "image.categoryId",
@@ -493,13 +492,13 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "category.post",
                         )
                         .where("image.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedImage!.categoryId).to.be.eql({
+                    expect(loadedImage.categoryId).to.be.eql({
                         id: 1,
                         code: 1,
                     })
-                    expect(loadedImage!.category.postId).to.be.eql({
+                    expect(loadedImage.category.postId).to.be.eql({
                         id: 1,
                         authorId: 1,
                     })

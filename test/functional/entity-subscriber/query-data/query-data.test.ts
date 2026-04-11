@@ -1,4 +1,4 @@
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,15 +9,14 @@ import { Example } from "./entity/Example"
 
 describe("entity subscriber > query data", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Example],
-                subscribers: [MockSubscriber],
-                dropSchema: true,
-                schemaCreate: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Example],
+            subscribers: [MockSubscriber],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
     beforeEach(() => {
         if (!dataSources.length) return
         ;(dataSources[0].subscribers[0] as MockSubscriber).calledData.length = 0

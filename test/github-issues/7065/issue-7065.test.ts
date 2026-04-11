@@ -5,7 +5,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { expect } from "chai"
 import { Contact, Email, Phone, User } from "./entity"
 
@@ -17,15 +17,14 @@ import { Contact, Email, Phone, User } from "./entity"
 
 describe("github issues > #7065 ChildEntity type relationship produces unexpected results", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Contact, Email, Phone, User],
-                schemaCreate: true,
-                dropSchema: true,
-                relationLoadStrategy: "join", // TODO: fix it later
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Contact, Email, Phone, User],
+            schemaCreate: true,
+            dropSchema: true,
+            relationLoadStrategy: "join", // TODO: fix it later
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -46,17 +45,17 @@ describe("github issues > #7065 ChildEntity type relationship produces unexpecte
                 user.phones = [phone]
                 await userRepo.save(user)
 
-                const result = await userRepo.findOne({
+                const result = await userRepo.findOneOrFail({
                     where: {
                         id: 1,
                     },
                     relations: { emails: true, phones: true },
                 })
 
-                expect(result!.emails.length).eq(1)
-                expect(result!.emails[0].value).eq("email")
-                expect(result!.phones.length).eq(1)
-                expect(result!.phones[0].value).eq("phone")
+                expect(result.emails.length).eq(1)
+                expect(result.emails[0].value).eq("email")
+                expect(result.phones.length).eq(1)
+                expect(result.phones[0].value).eq("phone")
             }),
         ))
 })

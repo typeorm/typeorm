@@ -1,0 +1,74 @@
+import "reflect-metadata"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../../../utils/test-utils"
+import { Category } from "./entity/Category"
+import { Question } from "./entity/Question"
+import { DriverUtils } from "../../../../../src/driver/DriverUtils"
+
+describe("schema builder > update primary keys", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    it("should correctly update composite primary keys", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // CockroachDB and Spanner does not support changing primary key constraint
+                if (
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                )
+                    return
+
+                const metadata = dataSource.getMetadata(Category)
+                const nameColumn = metadata.findColumnWithPropertyName("name")
+                nameColumn!.isPrimary = true
+
+                await dataSource.synchronize()
+
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("category")
+                table!.findColumnByName("id")!.isPrimary.should.be.true
+                table!.findColumnByName("name")!.isPrimary.should.be.true
+
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should correctly update composite primary keys when table already have primary generated column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Sqlite does not support AUTOINCREMENT on composite primary key
+                if (DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
+                // CockroachDB and Spanner does not support changing primary key constraint
+                if (
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                )
+                    return
+
+                const metadata = dataSource.getMetadata(Question)
+                const nameColumn = metadata.findColumnWithPropertyName("name")
+                nameColumn!.isPrimary = true
+
+                await dataSource.synchronize()
+
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("question")
+                table!.findColumnByName("id")!.isPrimary.should.be.true
+                table!.findColumnByName("name")!.isPrimary.should.be.true
+
+                await queryRunner.release()
+            }),
+        ))
+})

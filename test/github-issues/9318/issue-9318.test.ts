@@ -1,8 +1,8 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource } from "../../../src"
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import type { DataSource } from "../../../src"
+import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,15 +12,14 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #9318 Change version query from SHOW server_version to SELECT version", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [],
-                schemaCreate: false,
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [],
+            schemaCreate: false,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

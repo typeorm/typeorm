@@ -6,16 +6,15 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe("entity-model", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -30,14 +29,12 @@ describe("entity-model", () => {
             post.text = "Huge discussion how good or bad ActiveRecord is."
             await post.save()
 
-            const loadedPost = await Post.findOne({
-                where: { id: post.id },
-            })
+            const loadedPost = await Post.findOneByOrFail({ id: post.id })
 
-            loadedPost!.should.be.instanceOf(Post)
-            loadedPost!.id.should.be.eql(post.id)
-            loadedPost!.title.should.be.eql("About ActiveRecord")
-            loadedPost!.text.should.be.eql(
+            loadedPost.should.be.instanceOf(Post)
+            loadedPost.id.should.be.eql(post.id)
+            loadedPost.title.should.be.eql("About ActiveRecord")
+            loadedPost.text.should.be.eql(
                 "Huge discussion how good or bad ActiveRecord is.",
             )
         }

@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,21 +12,20 @@ import { expect } from "chai"
 
 describe("find options > relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("basic relation", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts1 = await connection
+                const posts1 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         relations: {
@@ -88,7 +87,7 @@ describe("find options > relations", () => {
                     },
                 ])
 
-                const posts2 = await connection
+                const posts2 = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         relations: { author: true },
@@ -152,10 +151,10 @@ describe("find options > relations", () => {
 
     it("complex relation #1", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         select: {
@@ -275,10 +274,10 @@ describe("find options > relations", () => {
 
     it("complex relation #2", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         select: {
@@ -407,10 +406,10 @@ describe("find options > relations", () => {
 
     it("relation in embed", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                await prepareData(connection.manager)
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
 
-                const posts = await connection
+                const posts = await dataSource
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         relations: {

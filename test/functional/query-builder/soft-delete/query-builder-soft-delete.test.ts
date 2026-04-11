@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
 import { Not, IsNull } from "../../../../src"
@@ -16,31 +16,30 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > soft-delete", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should perform soft deletion and recovery correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .softDelete()
                     .from(User)
                     .where("name = :name", { name: "Alex Messer" })
                     .execute()
 
-                const loadedUser1 = await connection
+                const loadedUser1 = await dataSource
                     .getRepository(User)
                     .findOne({
                         where: {
@@ -51,7 +50,7 @@ describe("query builder > soft-delete", () => {
                 expect(loadedUser1).to.exist
                 expect(loadedUser1!.deletedAt).to.be.instanceof(Date)
 
-                await connection
+                await dataSource
                     .getRepository(User)
                     .createQueryBuilder()
                     .restore()
@@ -59,7 +58,7 @@ describe("query builder > soft-delete", () => {
                     .where("name = :name", { name: "Alex Messer" })
                     .execute()
 
-                const loadedUser2 = await connection
+                const loadedUser2 = await dataSource
                     .getRepository(User)
                     .findOneBy({ name: "Alex Messer" })
                 expect(loadedUser2).to.exist
@@ -69,9 +68,9 @@ describe("query builder > soft-delete", () => {
 
     it("should soft-delete and restore properties inside embeds as well", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // save few photos
-                await connection.manager.save(Photo, {
+                await dataSource.manager.save(Photo, {
                     url: "1.jpg",
                     counters: {
                         likes: 2,
@@ -79,7 +78,7 @@ describe("query builder > soft-delete", () => {
                         comments: 1,
                     },
                 })
-                await connection.manager.save(Photo, {
+                await dataSource.manager.save(Photo, {
                     url: "2.jpg",
                     counters: {
                         likes: 0,
@@ -89,7 +88,7 @@ describe("query builder > soft-delete", () => {
                 })
 
                 // soft-delete photo now
-                await connection
+                await dataSource
                     .getRepository(Photo)
                     .createQueryBuilder("photo")
                     .softDelete()
@@ -100,12 +99,12 @@ describe("query builder > soft-delete", () => {
                     })
                     .execute()
 
-                const loadedPhoto1 = await connection
+                const loadedPhoto1 = await dataSource
                     .getRepository(Photo)
                     .findOneBy({ url: "1.jpg" })
                 expect(loadedPhoto1).to.be.null
 
-                const loadedPhoto2 = await connection
+                const loadedPhoto2 = await dataSource
                     .getRepository(Photo)
                     .findOneBy({ url: "2.jpg" })
                 loadedPhoto2!.should.be.eql({
@@ -121,7 +120,7 @@ describe("query builder > soft-delete", () => {
                 })
 
                 // restore photo now
-                await connection
+                await dataSource
                     .getRepository(Photo)
                     .createQueryBuilder("photo")
                     .restore()
@@ -132,7 +131,7 @@ describe("query builder > soft-delete", () => {
                     })
                     .execute()
 
-                const restoredPhoto2 = await connection
+                const restoredPhoto2 = await dataSource
                     .getRepository(Photo)
                     .findOneBy({ url: "1.jpg" })
                 restoredPhoto2!.should.be.eql({
@@ -151,7 +150,7 @@ describe("query builder > soft-delete", () => {
 
     it("should perform soft delete with limit correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.name = "Alex Messer"
                 const user2 = new User()
@@ -159,19 +158,19 @@ describe("query builder > soft-delete", () => {
                 const user3 = new User()
                 user3.name = "Brad Porter"
 
-                await connection.manager.save([user1, user2, user3])
+                await dataSource.manager.save([user1, user2, user3])
 
                 const limitNum = 2
 
-                if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    await connection
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    await dataSource
                         .createQueryBuilder()
                         .softDelete()
                         .from(User)
                         .limit(limitNum)
                         .execute()
 
-                    const loadedUsers = await connection
+                    const loadedUsers = await dataSource
                         .getRepository(User)
                         .find({
                             where: {
@@ -182,7 +181,7 @@ describe("query builder > soft-delete", () => {
                     expect(loadedUsers).to.exist
                     loadedUsers!.length.should.be.equal(limitNum)
                 } else {
-                    await connection
+                    await dataSource
                         .createQueryBuilder()
                         .softDelete()
                         .from(User)
@@ -195,7 +194,7 @@ describe("query builder > soft-delete", () => {
 
     it("should perform restory with limit correctly", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user1 = new User()
                 user1.name = "Alex Messer"
                 const user2 = new User()
@@ -203,31 +202,31 @@ describe("query builder > soft-delete", () => {
                 const user3 = new User()
                 user3.name = "Brad Porter"
 
-                await connection.manager.save([user1, user2, user3])
+                await dataSource.manager.save([user1, user2, user3])
 
                 const limitNum = 2
 
-                if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    await connection
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    await dataSource
                         .createQueryBuilder()
                         .softDelete()
                         .from(User)
                         .execute()
 
-                    await connection
+                    await dataSource
                         .createQueryBuilder()
                         .restore()
                         .from(User)
                         .limit(limitNum)
                         .execute()
 
-                    const loadedUsers = await connection
+                    const loadedUsers = await dataSource
                         .getRepository(User)
                         .find()
                     expect(loadedUsers).to.exist
                     loadedUsers!.length.should.be.equal(limitNum)
                 } else {
-                    await connection
+                    await dataSource
                         .createQueryBuilder()
                         .restore()
                         .from(User)
@@ -240,15 +239,15 @@ describe("query builder > soft-delete", () => {
 
     it("should throw error when delete date column is missing", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const user = new UserWithoutDeleteDate()
                 user.name = "Alex Messer"
 
-                await connection.manager.save(user)
+                await dataSource.manager.save(user)
 
                 let error1: Error | undefined
                 try {
-                    await connection
+                    await dataSource
                         .createQueryBuilder()
                         .softDelete()
                         .from(UserWithoutDeleteDate)
@@ -261,7 +260,7 @@ describe("query builder > soft-delete", () => {
 
                 let error2: Error | undefined
                 try {
-                    await connection
+                    await dataSource
                         .createQueryBuilder()
                         .restore()
                         .from(UserWithoutDeleteDate)
@@ -276,9 +275,9 @@ describe("query builder > soft-delete", () => {
 
     it("should find with soft deleted relations", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const photoRepository = connection.getRepository(Photo)
-                const userRepository = connection.getRepository(User)
+            dataSources.map(async (dataSource) => {
+                const photoRepository = dataSource.getRepository(Photo)
+                const userRepository = dataSource.getRepository(User)
 
                 const photo1 = new Photo()
                 photo1.url = "image-1.jpg"

@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { EverythingEntity, SampleEnum } from "./entity/EverythingEntity"
 
 const options: DataSourceOptions = {
@@ -92,7 +93,7 @@ dataSource.initialize().then(
                 }) as Promise<EverythingEntity>
             })
             .then((entity) => {
-                return postRepository.findOneById(entity.id)
+                return postRepository.findOneBy({ id: entity.id })
             })
             .then((entity) => {
                 console.log("Entity is loaded: ", entity)

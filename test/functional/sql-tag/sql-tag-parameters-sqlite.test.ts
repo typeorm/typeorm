@@ -6,29 +6,28 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe("sql tag parameters (sqlite)", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Example],
-                enabledDrivers: ["better-sqlite3"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Example],
+            enabledDrivers: ["better-sqlite3"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should handle basic SQL tag parameters", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save({ id: "basic" })
 
                 const [example] =
-                    await connection.sql`SELECT * FROM example WHERE id = ${"basic"}`
+                    await dataSource.sql`SELECT * FROM example WHERE id = ${"basic"}`
 
                 expect(example?.id).to.be.equal("basic")
             }),
@@ -36,15 +35,15 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle multiple parameters in a single query", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save([
                     { id: "first", name: "test1", value: 10 },
                     { id: "second", name: "test2", value: 20 },
                 ])
 
-                const examples = await connection.sql`
+                const examples = await dataSource.sql`
                     SELECT * FROM example
                     WHERE id IN (${() => ["first", "second"]})
                     AND name LIKE ${"test%"}
@@ -59,8 +58,8 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle complex SQL with nested queries and parameters", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save([
                     { id: "parent1", parentId: null, value: 100 },
@@ -70,7 +69,7 @@ describe("sql tag parameters (sqlite)", () => {
 
                 const parentId = "parent1"
                 const minValue = 150
-                const examples = await connection.sql`
+                const examples = await dataSource.sql`
                     WITH RECURSIVE children AS (
                         SELECT * FROM example WHERE id = ${parentId}
                         UNION ALL
@@ -89,8 +88,8 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle SQL tag parameters with complex conditions and ordering", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save([
                     { id: "test1", value: 10, name: "a" },
@@ -101,7 +100,7 @@ describe("sql tag parameters (sqlite)", () => {
                 const minValue = 15
                 const maxValue = 25
                 const namePattern = "b"
-                const [example] = await connection.sql`SELECT * FROM example
+                const [example] = await dataSource.sql`SELECT * FROM example
                     WHERE value > ${minValue}
                     AND value < ${maxValue}
                     AND name LIKE ${namePattern}
@@ -114,15 +113,15 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle SQL tag parameters with NULL values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save([
                     { id: "null1", value: null },
                     { id: "null2", value: 10 },
                 ])
 
-                const examples = await connection.sql`
+                const examples = await dataSource.sql`
                     SELECT * FROM example WHERE value IS ${null}
                 `
 
@@ -135,8 +134,8 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle SQL tag parameters with boolean values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save([
                     { id: "true1", active: true },
@@ -145,7 +144,7 @@ describe("sql tag parameters (sqlite)", () => {
 
                 const value = true
 
-                const examples = await connection.sql`
+                const examples = await dataSource.sql`
                     SELECT * FROM example WHERE active = ${value}
                 `
 
@@ -158,8 +157,8 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle SQL tag parameters with array values", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Example)
 
                 await repo.save([
                     { id: "array1", tags: "tag1,tag2" },
@@ -169,7 +168,7 @@ describe("sql tag parameters (sqlite)", () => {
 
                 const searchTags = ["tag1", "tag3"]
 
-                const examples = await connection.sql`
+                const examples = await dataSource.sql`
                     SELECT * FROM example
                     WHERE (
                         SELECT COUNT(*) FROM (

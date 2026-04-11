@@ -4,18 +4,17 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { expect } from "chai"
 
 describe("github issues > #6958 Promises never get resolved in specific cases", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

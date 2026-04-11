@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Table, TableColumn, TableUnique } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table, TableColumn, TableUnique } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -29,8 +30,8 @@ describe("query runner > drop unique constraint", () => {
 
     it("should correctly drop unique constraint and revert drop", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 table!.uniques.length.should.be.equal(2)
@@ -55,8 +56,8 @@ describe("query runner > drop unique constraint", () => {
 
     it("should drop all unique constraints without skipping any when iterating over array", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.connect()
 
                 try {
@@ -68,7 +69,7 @@ describe("query runner > drop unique constraint", () => {
                                 new TableColumn({
                                     name: "id",
                                     type: DriverUtils.isSQLiteFamily(
-                                        connection.driver,
+                                        dataSource.driver,
                                     )
                                         ? "integer"
                                         : "int",
@@ -177,6 +178,19 @@ describe("query runner > drop unique constraint", () => {
                 } finally {
                     await queryRunner.release()
                 }
+            }),
+        ))
+
+    it("should not throw when dropping non-existent unique constraint with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropUniqueConstraint(
+                    "post",
+                    "non_existent_unique",
+                    true,
+                )
+                await queryRunner.release()
             }),
         ))
 })

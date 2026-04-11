@@ -3,29 +3,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { EntitySchema } from "../../../src"
 import { Author, AuthorSchema } from "./entity/Author"
-import { Post, PostSchema } from "./entity/Post"
+import type { Post } from "./entity/Post"
+import { PostSchema } from "./entity/Post"
 
 describe("github issues > #1308 Raw Postgresql Update query result is always an empty array", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [
-                    new EntitySchema<Author>(AuthorSchema),
-                    new EntitySchema<Post>(PostSchema),
-                ],
-                dropSchema: true,
-                enabledDrivers: [
-                    "postgres",
-                    "mysql",
-                    "mariadb",
-                    "aurora-mysql",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [
+                new EntitySchema<Author>(AuthorSchema),
+                new EntitySchema<Post>(PostSchema),
+            ],
+            dropSchema: true,
+            enabledDrivers: ["postgres", "mysql", "mariadb", "aurora-mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
