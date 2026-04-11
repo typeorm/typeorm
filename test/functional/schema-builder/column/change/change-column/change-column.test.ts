@@ -140,9 +140,12 @@ describe("schema builder > change column", () => {
                     const repo = connection.getRepository(Post)
                     const testData = "test data"
                     await repo.save({
+                        id: 1,
                         name: testData,
                         version: "1.0",
                         text: "Some content",
+                        tag: "test",
+                        likesCount: 1,
                     })
 
                     // Verify data exists before migration
@@ -315,9 +318,12 @@ describe("schema builder > change column", () => {
                     const repo = connection.getRepository(Post)
                     const testValue = 1.5
                     await repo.save({
+                        id: 1,
                         name: "test",
                         version: testValue.toString(),
                         text: "content",
+                        tag: "test",
+                        likesCount: 1,
                     })
 
                     // Verify data exists before migration
@@ -481,9 +487,12 @@ describe("schema builder > change column", () => {
                     // Insert data BEFORE migration to test survival
                     const repo = connection.getRepository(Post)
                     await repo.save({
+                        id: 1,
                         name: "test",
                         version: "1.0",
                         text: "content",
+                        tag: "test",
+                        likesCount: 1,
                     })
 
                     // Verify data exists before migration
