@@ -4,7 +4,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
 } from "../../../../../../../src"
-import { OrderStatus } from "./order.entity.ts"
+import { OrderStatus } from "./order.entity"
 
 @Entity()
 export class OrderProduct extends BaseEntity {

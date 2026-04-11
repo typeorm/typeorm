@@ -24,7 +24,6 @@ describe("schema builder > column type > uuid > primary key", () => {
         Promise.all(
             dataSources.map(async function (connection) {
                 const post = new Post()
-                post.id = 1
                 post.name = "hello world"
                 await connection.manager.save(post)
 

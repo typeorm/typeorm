@@ -81,7 +81,7 @@ describe("schema builder > column type > enum > enum down migration", () => {
                 expect(defaultOperator4!.default).to.equal(`'greaterthan'`)
 
                 // revert update
-                for (const query of downQueries.reverse()) {
+                for (const query of downQueries.toReversed()) {
                     await dataSource.query(query)
                 }
 

@@ -86,8 +86,7 @@ describe("cascades > insert with composite primary keys", () => {
             }),
         ))
 
-    // cascade remove are not supported
-    it.skip("throws a \"update or delete on table 'message' violates foreign key constraint on table 'recipient'\" error on delete", () =>
+    it("should cascade-remove recipients when removing a single message", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const user1 = new User({
@@ -143,26 +142,26 @@ describe("cascades > insert with composite primary keys", () => {
                     }),
                 )
 
-                const message = await connection
-                    .createQueryBuilder(Message, "message")
-                    .getOne()
+                const message = await connection.manager.findOneOrFail(
+                    Message,
+                    {
+                        where: { content: "I should buy a boat" },
+                        relations: { recipients: true },
+                    },
+                )
+                await connection.getRepository(Message).remove(message)
 
-                if (message) {
-                    await connection.getRepository(Message).remove(message)
-                } else {
-                    throw new Error("Cannot get message")
-                }
-
+                // one of the two messages removed
                 const messages = await connection.manager.find(Message)
-                expect(messages.length).to.equal(0)
+                expect(messages.length).to.equal(1)
 
+                // recipient of the removed message should be cascade-removed
                 const recipients = await connection.manager.find(Recipient)
-                expect(recipients.length).to.equal(0)
+                expect(recipients.length).to.equal(1)
             }),
         ))
 
-    // cascade remove are not supported
-    it.skip("throws a \"null value in column 'userId' violates not-null constraint\" error on delete", () =>
+    it("should cascade-remove recipients when removing all messages", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const user1 = new User({
@@ -230,8 +229,7 @@ describe("cascades > insert with composite primary keys", () => {
             }),
         ))
 
-    // cascade remove are not supported
-    it.skip('throws a "Subject Recipient must have an identifier to perform operation" internal error on delete', () =>
+    it("should remove recipients directly", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const user1 = new User({

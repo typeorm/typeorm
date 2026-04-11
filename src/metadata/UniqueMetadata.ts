@@ -181,12 +181,12 @@ export class UniqueMetadata {
             {} as { [key: string]: number },
         )
 
-        this.name = this.givenName
-            ? this.givenName
-            : namingStrategy.uniqueConstraintName(
-                  this.entityMetadata.tableName,
-                  this.columns.map((column) => column.databaseName),
-              )
+        this.name =
+            this.givenName ??
+            namingStrategy.uniqueConstraintName(
+                this.entityMetadata.tableName,
+                this.columns.map((column) => column.databaseName),
+            )
         return this
     }
 }

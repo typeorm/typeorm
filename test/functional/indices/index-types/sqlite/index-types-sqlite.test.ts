@@ -7,7 +7,7 @@ import {
 import { User2 } from "../entity/User2"
 import { User3 } from "../entity/User3"
 
-describe("github issues > Add support of 'hash' indexes for postgres", () => {
+describe("indices > index types > sqlite", () => {
     it("Should throw an error if index type is set and sqlite does not support index types", async () => {
         const connections = await createTestingConnections({
             entities: [User3],

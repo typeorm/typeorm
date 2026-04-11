@@ -49,9 +49,7 @@ describe("schema builder > add column", () => {
                             type: numericType,
                             name: "secondId",
                             nullable:
-                                dataSource.driver.options.type === "spanner"
-                                    ? true
-                                    : false,
+                                dataSource.driver.options.type === "spanner",
                         },
                     },
                 })
@@ -68,9 +66,7 @@ describe("schema builder > add column", () => {
                             name: "description",
                             length: 100,
                             nullable:
-                                dataSource.driver.options.type === "spanner"
-                                    ? true
-                                    : false,
+                                dataSource.driver.options.type === "spanner",
                         },
                     },
                 })

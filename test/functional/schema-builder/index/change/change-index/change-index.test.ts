@@ -120,7 +120,7 @@ describe("schema builder > change index", () => {
                         .true
                 } else {
                     teacherTable!.indices.length.should.be.equal(1)
-                    teacherTable!.indices[0].isUnique!.should.be.true
+                    teacherTable!.indices[0].isUnique.should.be.true
                 }
 
                 await dataSource.synchronize()
@@ -134,7 +134,7 @@ describe("schema builder > change index", () => {
                         .false
                 } else {
                     teacherTable!.indices.length.should.be.equal(1)
-                    teacherTable!.indices[0].isUnique!.should.be.true
+                    teacherTable!.indices[0].isUnique.should.be.true
                 }
 
                 await queryRunner.release()

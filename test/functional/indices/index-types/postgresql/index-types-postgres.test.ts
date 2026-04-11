@@ -9,7 +9,7 @@ import { User } from "../entity/User"
 import { User4 } from "../entity/User4"
 import { User5 } from "../entity/User5"
 
-describe("github issues > Add support of 'hash' indexes for postgres", () => {
+describe("indices > index types > postgres", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

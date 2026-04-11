@@ -1,8 +1,8 @@
 ---
-sidebar_label: Indices
+sidebar_label: Indexes
 ---
 
-# Using indices
+# Using indexes
 
 Indexes speed up query performance in the database by reducing the amount of data scanned. TypeORM supports creating indexes on table columns using the `@Index` decorator.
 
@@ -20,4 +20,4 @@ export class User {
 }
 ```
 
-For a comprehensive overview of different types of indexes, read the [Indices](../indices.md) guide.
+For a comprehensive overview of different types of indexes, read the [Indexes](../indexes.md) guide.

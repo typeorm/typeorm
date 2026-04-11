@@ -32,7 +32,9 @@ export class DbQueryResultCache implements QueryResultCache {
             typeof this.dataSource.options.cache === "object"
                 ? this.dataSource.options.cache
                 : {}
-        const cacheTableName = cacheOptions.tableName || "query-result-cache"
+        const tableName =
+            cacheOptions.tableName === "" ? undefined : cacheOptions.tableName
+        const cacheTableName = tableName ?? "query-result-cache"
 
         this.queryResultCacheDatabase = database
         this.queryResultCacheSchema = schema
@@ -244,7 +246,7 @@ export class DbQueryResultCache implements QueryResultCache {
             }
         }
 
-        if (savedCache && savedCache.identifier) {
+        if (savedCache?.identifier) {
             // if exist then update
             const qb = queryRunner.manager
                 .createQueryBuilder()
@@ -255,7 +257,7 @@ export class DbQueryResultCache implements QueryResultCache {
                 condition: insertedValues.identifier,
             })
             await qb.execute()
-        } else if (savedCache && savedCache.query) {
+        } else if (savedCache?.query) {
             // if exist then update
             const qb = queryRunner.manager
                 .createQueryBuilder()
@@ -317,7 +319,7 @@ export class DbQueryResultCache implements QueryResultCache {
         identifiers: string[],
         queryRunner?: QueryRunner,
     ): Promise<void> {
-        const _queryRunner: QueryRunner = queryRunner || this.getQueryRunner()
+        const _queryRunner: QueryRunner = queryRunner ?? this.getQueryRunner()
         await Promise.all(
             identifiers.map((identifier) => {
                 const qb = _queryRunner.manager.createQueryBuilder()

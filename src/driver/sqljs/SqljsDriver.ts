@@ -69,7 +69,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner) this.queryRunner = new SqljsQueryRunner(this)
+        this.queryRunner ??= new SqljsQueryRunner(this)
 
         return this.queryRunner
     }
@@ -308,12 +308,12 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         if (PlatformTools.type === "browser") {
-            const sqlite = this.options.driver || window.SQL
+            const sqlite = this.options.driver ?? window.SQL
             this.sqlite = sqlite
         } else {
             try {
                 const sqlite =
-                    this.options.driver || PlatformTools.load("sql.js")
+                    this.options.driver ?? PlatformTools.load("sql.js")
                 this.sqlite = sqlite
             } catch (e) {
                 throw new DriverPackageNotInstalledError("sql.js", "sql.js")

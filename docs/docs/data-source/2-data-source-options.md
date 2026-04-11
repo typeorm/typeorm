@@ -59,7 +59,7 @@ Different RDBMS-es have their own specific options.
   This option is useful during debug and development.
   As an alternative to it, you can use CLI and run schema:sync command.
   Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
-  Instead, it syncs just by creating indices.
+  Instead, it syncs just by creating indexes.
 
 - `migrations` - [Migrations](../migrations/01-why.md) to be loaded and used for this data source
 

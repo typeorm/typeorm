@@ -5,7 +5,7 @@ import { PrimaryGeneratedColumn } from "../../../../../../../src/decorator/colum
 @Entity()
 export class Post {
     @PrimaryGeneratedColumn("uuid")
-    id: number
+    id: string
 
     @Column()
     name: string

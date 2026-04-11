@@ -36,10 +36,10 @@ describe("schema builder > column type > enum > enum function values", () => {
 
                     // WHEN
                     const loadedOrderEntity =
-                        await orderEntityRepository.findOneBy({ id: 1 })
+                        await orderEntityRepository.findOneByOrFail({ id: 1 })
 
                     // THEN
-                    loadedOrderEntity!.order.should.be.eq(Order.SECOND)
+                    loadedOrderEntity.order.should.be.eq(Order.SECOND)
                 }),
             ))
 
@@ -57,10 +57,10 @@ describe("schema builder > column type > enum > enum function values", () => {
 
                     // WHEN
                     const loadedOrderEntity =
-                        await orderEntityRepository.findOneBy({ id: 1 })
+                        await orderEntityRepository.findOneByOrFail({ id: 1 })
 
                     // THEN
-                    loadedOrderEntity!.orders.should.be.eql([
+                    loadedOrderEntity.orders.should.be.eql([
                         Order.SECOND,
                         Order.THIRD,
                     ])
@@ -88,7 +88,7 @@ describe("schema builder > column type > enum > enum function values", () => {
                         .createSchemaBuilder()
                         .log()
 
-                    sqlInMemory!.upQueries.length.should.be.greaterThan(0)
+                    sqlInMemory.upQueries.length.should.be.greaterThan(0)
                     sqlInMemory.upQueries.forEach((query) => {
                         // there should be no function string in query when our ENUM TYPE is provided
                         query.query.should.not.contain("function")
