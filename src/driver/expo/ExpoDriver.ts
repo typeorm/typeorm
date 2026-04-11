@@ -1,15 +1,15 @@
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ExpoConnectionOptions } from "./ExpoConnectionOptions"
-import { ExpoQueryRunner } from "./ExpoQueryRunner"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataSource } from "../../data-source/DataSource"
+import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import type { ExpoDataSourceOptions } from "./ExpoDataSourceOptions"
+import { ExpoQueryRunner } from "./ExpoQueryRunner"
 
 export class ExpoDriver extends AbstractSqliteDriver {
-    declare options: ExpoConnectionOptions
+    declare options: ExpoDataSourceOptions
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
         if (this.isLegacyDriver) {
             throw new TypeORMError("Legacy Expo driver is not supported.")
@@ -25,7 +25,7 @@ export class ExpoDriver extends AbstractSqliteDriver {
     }
 
     createQueryRunner(): QueryRunner {
-        if (!this.queryRunner) this.queryRunner = new ExpoQueryRunner(this)
+        this.queryRunner ??= new ExpoQueryRunner(this)
 
         return this.queryRunner
     }

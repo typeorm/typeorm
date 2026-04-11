@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Table, TableColumn, TableForeignKey } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table, TableColumn, TableForeignKey } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,21 +10,21 @@ import {
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop foreign key", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly drop foreign key and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("student")
                 table!.foreignKeys.length.should.be.equal(2)
@@ -44,13 +45,13 @@ describe("query runner > drop foreign key", () => {
 
     it("should drop all foreign keys without skipping any when iterating over array", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // Skip databases that don't support foreign keys
-                if (connection.driver.options.type === "spanner") {
+                if (dataSource.driver.options.type === "spanner") {
                     return
                 }
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.connect()
 
                 try {
@@ -62,7 +63,7 @@ describe("query runner > drop foreign key", () => {
                                 new TableColumn({
                                     name: "id",
                                     type: DriverUtils.isSQLiteFamily(
-                                        connection.driver,
+                                        dataSource.driver,
                                     )
                                         ? "integer"
                                         : "int",
@@ -88,7 +89,7 @@ describe("query runner > drop foreign key", () => {
                                 new TableColumn({
                                     name: "id",
                                     type: DriverUtils.isSQLiteFamily(
-                                        connection.driver,
+                                        dataSource.driver,
                                     )
                                         ? "integer"
                                         : "int",
@@ -198,6 +199,19 @@ describe("query runner > drop foreign key", () => {
                 } finally {
                     await queryRunner.release()
                 }
+            }),
+        ))
+
+    it("should not throw when dropping non-existent foreign key with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropForeignKey(
+                    "post",
+                    "non_existent_fk",
+                    true,
+                )
+                await queryRunner.release()
             }),
         ))
 })

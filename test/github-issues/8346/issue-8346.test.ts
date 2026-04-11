@@ -4,27 +4,26 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Customer } from "./entity/Customer"
 import { CustomerContact } from "./entity/CustomerContact"
 
 describe("github issues > #8346 MySQL: Regression when using take, orderBy, and getMany on a joined relation", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return customers ordered by contacts", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const [user1, user2] = await connection
                     .getRepository(Customer)
                     .save([{ name: "userA" }, { name: "userB" }])
