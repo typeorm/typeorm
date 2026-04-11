@@ -1,13 +1,16 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
-import { ObjectType } from "../../common/ObjectType"
-import { RelationOptions } from "../options/RelationOptions"
+import type { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
+import type { ObjectType } from "../../common/ObjectType"
+import type { RelationOptions } from "../options/RelationOptions"
 import { ObjectUtils } from "../../util/ObjectUtils"
 import { TypeORMError } from "../../error"
 
 /**
  * One-to-one relation allows the creation of a direct relation between two entities. Entity1 has only one Entity2.
  * Entity1 is the owner of the relationship, and stores Entity2 id on its own side.
+ *
+ * @param typeFunctionOrTarget
+ * @param options
  */
 export function OneToOne<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
@@ -17,6 +20,10 @@ export function OneToOne<T>(
 /**
  * One-to-one relation allows the creation of a direct relation between two entities. Entity1 has only one Entity2.
  * Entity1 is the owner of the relationship, and stores Entity2 id on its own side.
+ *
+ * @param typeFunctionOrTarget
+ * @param inverseSide
+ * @param options
  */
 export function OneToOne<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
@@ -27,6 +34,10 @@ export function OneToOne<T>(
 /**
  * One-to-one relation allows the creation of a direct relation between two entities. Entity1 has only one Entity2.
  * Entity1 is the owner of the relationship, and stores Entity2 id on its own side.
+ *
+ * @param typeFunctionOrTarget
+ * @param inverseSideOrOptions
+ * @param options
  */
 export function OneToOne<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
@@ -42,7 +53,7 @@ export function OneToOne<T>(
     }
 
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        options ??= {} as RelationOptions
 
         if (options.polymorphic) {
             if (typeof options.polymorphic !== "object") {
@@ -74,7 +85,7 @@ export function OneToOne<T>(
         }
 
         // now try to determine it its lazy relation
-        let isLazy = options && options.lazy === true ? true : false
+        let isLazy = options?.lazy === true ? true : false
         if (!isLazy && Reflect && (Reflect as any).getMetadata) {
             // automatic determination
             const reflectedType = (Reflect as any).getMetadata(

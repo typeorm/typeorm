@@ -1,32 +1,31 @@
 import { promisify } from "node:util"
-import {
-    ColumnType,
-    DataSource,
-    EntityMetadata,
-    ObjectLiteral,
-    Table,
-    TableColumn,
-    TableForeignKey,
-} from "../.."
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { TypeORMError } from "../../error/TypeORMError"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { View } from "../../schema-builder/view/View"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
+import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { UpsertType } from "../types/UpsertType"
-import { SapConnectionOptions } from "./SapConnectionOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import type { UpsertType } from "../types/UpsertType"
+import type { SapDataSourceOptions } from "./SapDataSourceOptions"
 import { SapQueryRunner } from "./SapQueryRunner"
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -35,13 +34,42 @@ import { SapQueryRunner } from "./SapQueryRunner"
  */
 export class SapDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://help.sap.com/docs/SAP_HANA_PLATFORM/4fe29514fd584807ac9f2a04f6754767/d91cbe21f56e4b82b3b7e4ff2b35acf8.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = SapDriver.supportedIsolationLevels
+
+    /**
+     * DataSource used by the driver.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * SAP HANA Client Pool instance.
@@ -68,9 +96,9 @@ export class SapDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
-    options: SapConnectionOptions
+    options: SapDataSourceOptions
 
     /**
      * Version of SAP HANA. Requires a SQL query to the DB, so it is not always set
@@ -225,6 +253,7 @@ export class SapDriver implements Driver {
 
     /**
      * Max length allowed by SAP HANA for aliases (identifiers).
+     *
      * @see https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/system-limitations
      */
     maxAliasLength = 128
@@ -239,9 +268,9 @@ export class SapDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as SapConnectionOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as SapDataSourceOptions
         this.loadDependencies()
 
         this.database = DriverUtils.buildDriverOptions(this.options).database
@@ -283,14 +312,11 @@ export class SapDriver implements Driver {
         const poolOptions: any = {
             maxConnectedOrPooled:
                 this.options.pool?.maxConnectedOrPooled ??
-                this.options.pool?.max ??
                 this.options.poolSize ??
                 10,
-            maxPooledIdleTime:
-                this.options.pool?.maxPooledIdleTime ??
-                (this.options.pool?.idleTimeout
-                    ? this.options.pool.idleTimeout / 1000
-                    : 30),
+            maxPooledIdleTime: this.options.pool?.maxPooledIdleTime ?? 30,
+            maxWaitTimeoutIfPoolExhausted:
+                this.options.pool?.maxWaitTimeoutIfPoolExhausted ?? 0,
         }
         if (this.options.pool?.pingCheck) {
             poolOptions.pingCheck = this.options.pool.pingCheck
@@ -302,7 +328,7 @@ export class SapDriver implements Driver {
         this.poolErrorHandler =
             this.options.pool?.poolErrorHandler ??
             ((error: Error) => {
-                this.connection.logger.log(
+                this.dataSource.logger.log(
                     "warn",
                     `SAP HANA pool raised an error: ${error}`,
                 )
@@ -322,9 +348,7 @@ export class SapDriver implements Driver {
         this.version = version
         this.database = database
 
-        if (!this.schema) {
-            this.schema = await queryRunner.getCurrentSchema()
-        }
+        this.schema ??= await queryRunner.getCurrentSchema()
 
         await queryRunner.release()
     }
@@ -386,11 +410,13 @@ export class SapDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
      * Creates a query runner used to execute database queries.
+     *
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new SapQueryRunner(this, mode)
@@ -399,23 +425,15 @@ export class SapDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
+     * @param sql
+     * @param parameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => {
-                if (nativeParameters[key] instanceof Date)
-                    return DateUtils.mixedDateToDatetimeString(
-                        nativeParameters[key],
-                        true,
-                    )
-
-                return nativeParameters[key]
-            },
-        )
+        const escapedParameters: any[] = []
 
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
@@ -445,10 +463,6 @@ export class SapDriver implements Driver {
                     return value()
                 }
 
-                if (value instanceof Date) {
-                    return DateUtils.mixedDateToDatetimeString(value, true)
-                }
-
                 escapedParameters.push(value)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
@@ -458,14 +472,19 @@ export class SapDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
+     * @param columnName
      */
     escape(columnName: string): string {
-        return `"${columnName}"`
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
      * Build full table name with schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
+     * @param tableName
+     * @param schema
      */
     buildTableName(tableName: string, schema?: string): string {
         const tablePath = [tableName]
@@ -479,6 +498,8 @@ export class SapDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -490,8 +511,8 @@ export class SapDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -501,11 +522,11 @@ export class SapDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -514,8 +535,8 @@ export class SapDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -524,13 +545,16 @@ export class SapDriver implements Driver {
 
         return {
             database: driverDatabase,
-            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
+            schema: (parts.length > 1 ? parts[0] : undefined) ?? driverSchema,
             tableName: parts.length > 1 ? parts[1] : parts[0],
         }
     }
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -569,6 +593,9 @@ export class SapDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -610,6 +637,12 @@ export class SapDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type?: ColumnType
@@ -639,7 +672,10 @@ export class SapDriver implements Driver {
             return "timestamp"
         } else if (column.type === Boolean) {
             return "boolean"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         } else if (column.type === "uuid") {
             return "nvarchar"
@@ -683,6 +719,8 @@ export class SapDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -712,6 +750,8 @@ export class SapDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.indices.some(
@@ -724,6 +764,8 @@ export class SapDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     *
+     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -747,6 +789,8 @@ export class SapDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     *
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -775,6 +819,9 @@ export class SapDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
         const generatedMap = metadata.generatedColumns.reduce(
@@ -804,6 +851,9 @@ export class SapDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -865,6 +915,9 @@ export class SapDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return "?"
@@ -878,7 +931,7 @@ export class SapDriver implements Driver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        const client = this.options.driver ?? this.options.hanaClientDriver
+        const client = this.options.driver
         if (client) {
             this.client = client
 
@@ -901,6 +954,8 @@ export class SapDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     *
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment

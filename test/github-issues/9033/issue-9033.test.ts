@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/index"
+import type { DataSource } from "../../../src/data-source/index"
 import { expect } from "chai"
 
 import { CatEntity } from "./entity/Cat"
@@ -13,14 +13,13 @@ import { AnimalEntity } from "./entity/Animal"
 describe("github issues > #9033 Cannot manually insert type in discriminator column of parent entity class when\
 using single table inheritance when creating instance of parent entity", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

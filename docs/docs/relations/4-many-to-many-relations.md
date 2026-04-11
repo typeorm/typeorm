@@ -48,6 +48,7 @@ export class Question {
 
 `@JoinTable()` is required for `@ManyToMany` relations.
 You must put `@JoinTable` on one (owning) side of relation.
+The `deferrable` relation option applies to both foreign keys on the junction table; see [relation options](./1-relations.md#relation-options).
 
 This example will produce following tables:
 
@@ -158,6 +159,10 @@ export class Question {
     categories: Category[]
 }
 ```
+
+### Recovering soft-deleted entities
+
+When you call `recover` on a soft-deleted entity that has many-to-many relations, the junction table rows are preserved — `softRemove` only sets `deletedAt` on the entity, it does not touch junction table entries. TypeORM correctly detects these existing junction rows during recovery and avoids duplicate inserts.
 
 ## Loading many-to-many relations
 

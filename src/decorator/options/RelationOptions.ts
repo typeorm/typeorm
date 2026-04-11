@@ -1,6 +1,6 @@
-import { DeferrableType } from "../../metadata/types/DeferrableType"
-import { OnDeleteType } from "../../metadata/types/OnDeleteType"
-import { OnUpdateType } from "../../metadata/types/OnUpdateType"
+import type { DeferrableType } from "../../metadata/types/DeferrableType"
+import type { OnDeleteType } from "../../metadata/types/OnDeleteType"
+import type { OnUpdateType } from "../../metadata/types/OnUpdateType"
 
 /**
  * Describes all relation's options.
@@ -11,7 +11,9 @@ export interface RelationOptions {
      * If set to true then it means that related object can be allowed to be inserted or updated in the database.
      * You can separately restrict cascades to insertion or updation using following syntax:
      *
+     * @example
      * cascade: ["insert", "update", "remove", "soft-remove", "recover"] // include or exclude one of them
+     *
      */
     cascade?:
         | boolean
