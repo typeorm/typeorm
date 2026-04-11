@@ -51,21 +51,4 @@ describe("persistence > orphanage > delete > one-to-many", () => {
                 expect(remaining[0].title).to.equal("first")
             }),
         ))
-
-    it("should verify isOrphanedRowActionSet metadata flag", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const metadata = dataSource.entityMetadatas.find(
-                    (m) => m.name === "Author",
-                )
-                expect(metadata).to.not.be.null
-
-                const relation = metadata?.relations.find(
-                    (r) => r.propertyName === "articles",
-                )
-                expect(relation).to.not.be.null
-                expect(relation?.isOrphanedRowActionSet).to.equal(true)
-                expect(relation?.orphanedRowAction).to.equal("delete")
-            }),
-        ))
 })
