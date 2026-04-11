@@ -226,6 +226,9 @@ export class OneToManySubjectBuilder {
                         // FK is not nullable — delete the orphaned row instead
                         removedRelatedEntitySubject.mustBeRemoved = true
                     }
+                } else {
+                    // No inverse relation available for nullify — skip
+                    return
                 }
 
                 this.subjects.push(removedRelatedEntitySubject)
