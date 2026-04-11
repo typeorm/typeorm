@@ -254,8 +254,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         return this.dataSource.driver.buildTableName(
             parsed.tableName,
-            parsed.schema || this.currentSchema,
-            parsed.database || this.currentDatabase,
+            parsed.schema ?? this.currentSchema,
+            parsed.database ?? this.currentDatabase,
         )
     }
 
@@ -283,10 +283,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     )
                     return (
                         !metadataFK ||
-                        (metadataFK.onDelete &&
-                            metadataFK.onDelete !== tableForeignKey.onDelete) ||
-                        (metadataFK.onUpdate &&
-                            metadataFK.onUpdate !== tableForeignKey.onUpdate)
+                        !!(
+                            metadataFK.onDelete &&
+                            metadataFK.onDelete !== tableForeignKey.onDelete
+                        ) ||
+                        !!(
+                            metadataFK.onUpdate &&
+                            metadataFK.onUpdate !== tableForeignKey.onUpdate
+                        )
                     )
                 },
             )
@@ -1033,7 +1037,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     viewExpression === metadataExpression
                 )
             })
-            if (!view || !view.materialized) continue
+            if (!view?.materialized) continue
 
             const newIndices = metadata.indices
                 .filter(

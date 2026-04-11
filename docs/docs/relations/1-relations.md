@@ -212,6 +212,8 @@ You can also join multiple columns. Note that they do not reference the primary 
 category: Category;
 ```
 
+> **Note:** When using composite `@JoinColumn` or `@JoinTable`, TypeORM automatically sorts the foreign key columns to match the referenced entity's primary key order. This ensures compatibility with databases like MySQL, MSSQL, and SAP HANA that require FK columns to reference PK columns in index order.
+
 ## `@JoinTable` options
 
 `@JoinTable` is used for `many-to-many` relations and describes join columns of the "junction" table.

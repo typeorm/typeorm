@@ -270,9 +270,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         entityOrTableNameUpdateSet?: EntityTarget<any> | ObjectLiteral,
         maybeUpdateSet?: ObjectLiteral,
     ): UpdateQueryBuilder<any> {
-        const updateSet = maybeUpdateSet
-            ? maybeUpdateSet
-            : (entityOrTableNameUpdateSet as ObjectLiteral | undefined)
+        const updateSet =
+            maybeUpdateSet ??
+            (entityOrTableNameUpdateSet as ObjectLiteral | undefined)
         entityOrTableNameUpdateSet = InstanceChecker.isEntitySchema(
             entityOrTableNameUpdateSet,
         )
@@ -477,10 +477,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         )
 
         // add discriminator column parameter if it exist
-        if (
-            this.expressionMap.mainAlias &&
-            this.expressionMap.mainAlias.hasMetadata
-        ) {
+        if (this.expressionMap.mainAlias?.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const values = metadata.childEntityMetadatas
@@ -631,7 +628,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         this.expressionMap.commonTableExpressions.push({
             queryBuilder,
             alias,
-            options: options || {},
+            options: options ?? {},
         })
         return this
     }
@@ -1693,7 +1690,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Creates a query builder used to execute sql queries inside this query builder.
      */
     protected obtainQueryRunner() {
-        return this.queryRunner || this.dataSource.createQueryRunner()
+        return this.queryRunner ?? this.dataSource.createQueryRunner()
     }
 
     protected hasCommonTableExpressions(): boolean {
