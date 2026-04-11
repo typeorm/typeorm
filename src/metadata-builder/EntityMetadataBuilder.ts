@@ -463,7 +463,7 @@ export class EntityMetadataBuilder {
         // if single table inheritance used, we need to copy all children columns in to parent table
         let singleTableChildrenTargets: any[]
         if (
-            (tableInheritance && tableInheritance.pattern === "STI") ||
+            tableInheritance?.pattern === "STI" ||
             tableArgs.type === "entity-child"
         ) {
             singleTableChildrenTargets = this.metadataArgsStorage
@@ -562,7 +562,7 @@ export class EntityMetadataBuilder {
                             c.propertyName === args.propertyName &&
                             c.target === entityMetadata.target,
                     )
-                    if (childArgs && childArgs.options.default) {
+                    if (childArgs?.options.default) {
                         args.options.default = childArgs.options.default
                     }
                 }
@@ -585,11 +585,9 @@ export class EntityMetadataBuilder {
 
         // for table inheritance we need to add a discriminator column
         //
-        if (entityInheritance && entityInheritance.column) {
+        if (entityInheritance?.column) {
             const discriminatorColumnName =
-                entityInheritance.column && entityInheritance.column.name
-                    ? entityInheritance.column.name
-                    : "type"
+                entityInheritance.column?.name ?? "type"
             let discriminatorColumn = entityMetadata.ownColumns.find(
                 (column) => column.propertyName === discriminatorColumnName,
             )

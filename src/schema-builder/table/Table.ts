@@ -114,10 +114,10 @@ export class Table {
                         new TableForeignKey({
                             ...foreignKey,
                             referencedDatabase:
-                                foreignKey?.referencedDatabase ||
+                                foreignKey?.referencedDatabase ??
                                 options.database,
                             referencedSchema:
-                                foreignKey?.referencedSchema || options.schema,
+                                foreignKey?.referencedSchema ?? options.schema,
                         }),
                 )
 

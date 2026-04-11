@@ -89,12 +89,11 @@ export class OneToManySubjectBuilder {
         let relatedEntities: ObjectLiteral[] = relation.getEntityValue(
             subject.entity!,
         )
-        if (relatedEntities === null)
-            // we treat relations set to null as removed, so we don't skip it
-            relatedEntities = [] as ObjectLiteral[]
         if (relatedEntities === undefined)
             // if relation is undefined then nothing to update
             return
+        // we treat relations set to null as removed, so we don't skip it
+        relatedEntities ??= [] as ObjectLiteral[]
 
         // extract only relation ids from the related entities, since we only need them for comparison
         // by example: extract from categories only relation ids (category id, or let's say category title, depend on join column options)

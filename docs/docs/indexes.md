@@ -1,9 +1,9 @@
-# Indices
+# Indexes
 
-## Column indices
+## Column indexes
 
 You can create a database index for a specific column by using `@Index` on a column you want to make an index.
-You can create indices for any columns of your entity.
+You can create indexes for any columns of your entity.
 Example:
 
 ```typescript
@@ -44,11 +44,11 @@ export class User {
 }
 ```
 
-## Unique indices
+## Unique indexes
 
 To create a unique index you need to specify `{ unique: true }` in the index options:
 
-> Note: CockroachDB stores unique indices as `UNIQUE` constraints
+> Note: CockroachDB stores unique indexes as `UNIQUE` constraints
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm"
@@ -68,7 +68,7 @@ export class User {
 }
 ```
 
-## Indices with multiple columns
+## Indexes with multiple columns
 
 To create an index with multiple columns you need to put `@Index` on the entity itself
 and specify all column property names which should be included in the index.
@@ -95,9 +95,9 @@ export class User {
 }
 ```
 
-## Spatial Indices
+## Spatial Indexes
 
-MySQL, CockroachDB and PostgreSQL (when PostGIS is available) supports spatial indices.
+MySQL, CockroachDB and PostgreSQL (when PostGIS is available) supports spatial indexes.
 
 To create a spatial index on a column in MySQL, add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `point`, `linestring`,
 `polygon`, `multipoint`, `multilinestring`, `multipolygon`,
@@ -157,8 +157,8 @@ This feature is currently supported only for PostgreSQL.
 ## Disabling synchronization
 
 TypeORM does not support some index options and definitions (e.g. `lower`, `pg_trgm`) due to many database-specific differences and multiple
-issues with getting information about existing database indices and synchronizing them automatically. In such cases you should create the index manually
-(for example, in [the migrations](./migrations/01-why.md)) with any index signature you want. To make TypeORM ignore these indices during synchronization, use `synchronize: false`
+issues with getting information about existing database indexes and synchronizing them automatically. In such cases you should create the index manually
+(for example, in [the migrations](./migrations/01-why.md)) with any index signature you want. To make TypeORM ignore these indexes during synchronization, use `synchronize: false`
 option on the `@Index` decorator.
 
 For example, you create an index with case-insensitive comparison:

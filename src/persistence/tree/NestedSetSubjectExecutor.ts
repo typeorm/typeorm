@@ -43,11 +43,11 @@ export class NestedSetSubjectExecutor {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+        if (!parent && subject.parentSubject?.entity)
             // if entity was attached via children
-            parent = subject.parentSubject.insertedValueSet
-                ? subject.parentSubject.insertedValueSet
-                : subject.parentSubject.entity
+            parent =
+                subject.parentSubject.insertedValueSet ??
+                subject.parentSubject.entity
         const parentId = subject.metadata.getEntityIdMap(parent)
 
         let parentNsRight: number | undefined = undefined
@@ -110,7 +110,7 @@ export class NestedSetSubjectExecutor {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+        if (!parent && subject.parentSubject?.entity)
             // if entity was attached via children
             parent = subject.parentSubject.entity
 

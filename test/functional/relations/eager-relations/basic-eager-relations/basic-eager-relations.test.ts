@@ -233,7 +233,7 @@ describe("relations > eager relations > basic", () => {
                 // The user table should only be joined once, not twice
                 // Previously, eager relations with DeleteDateColumn would
                 // cause the user table to be joined twice with different aliases
-                const userJoinCount = (sql.match(/LEFT JOIN .user./gi) || [])
+                const userJoinCount = (sql.match(/LEFT JOIN .user./gi) ?? [])
                     .length
                 expect(userJoinCount).to.equal(1)
             }),
