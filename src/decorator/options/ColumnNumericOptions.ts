@@ -13,11 +13,4 @@ export interface ColumnNumericOptions {
      * of digits to the right of the decimal point and must not be greater than precision.
      */
     scale?: number
-
-    /**
-     * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
-     * @deprecated MySQL deprecated the UNSIGNED attribute for non-integer
-     * numeric types. This will also be removed from TypeORM in an upcoming version.
-     */
-    unsigned?: boolean
 }

@@ -1,57 +1,50 @@
 [
   {
     "skip": false,
-    "name": "mysql",
     "type": "mysql",
     "host": "localhost",
     "port": 3306,
     "username": "root",
     "password": "admin",
-    "database": "test",
-    "legacySpatialSupport": false,
+    "database": "typeorm",
     "logging": false
   },
   {
     "skip": false,
-    "name": "mariadb",
     "type": "mariadb",
     "host": "localhost",
     "port": 3307,
     "username": "root",
     "password": "admin",
-    "database": "test",
-    "legacySpatialSupport": false,
+    "database": "typeorm",
     "logging": false
   },
   {
     "skip": false,
-    "name": "better-sqlite3",
     "type": "better-sqlite3",
     "database": "temp/better-sqlite3.db",
     "logging": false
   },
   {
-    "skip": true,
-    "name": "sqljs",
+    "skip": false,
     "type": "sqljs",
     "logging": false
   },
   {
     "skip": false,
-    "name": "postgres",
     "type": "postgres",
     "host": "localhost",
     "port": 5432,
-    "username": "test",
-    "password": "test",
-    "database": "test",
+    "username": "username",
+    "password": "password",
+    "database": "typeorm",
     "logging": false
   },
   {
     "skip": false,
-    "name": "mssql",
     "type": "mssql",
     "host": "localhost",
+    "port": 1433,
     "username": "sa",
     "password": "Admin12345",
     "database": "tempdb",
@@ -62,28 +55,26 @@
   },
   {
     "skip": false,
-    "name": "oracle",
     "type": "oracle",
     "host": "localhost",
+    "port": 1521,
     "username": "typeorm",
     "password": "oracle",
-    "port": 1521,
     "serviceName": "FREEPDB1",
     "logging": false
   },
   {
     "skip": false,
-    "name": "cockroachdb",
     "type": "cockroachdb",
     "host": "localhost",
     "port": 26257,
     "username": "root",
     "password": "",
-    "database": "defaultdb"
+    "database": "defaultdb",
+    "logging": false
   },
   {
     "skip": false,
-    "name": "hanaexpress",
     "type": "sap",
     "host": "localhost",
     "port": 39041,
@@ -94,14 +85,14 @@
   {
     "skip": false,
     "disabledIfNotEnabledImplicitly": true,
-    "name": "mongodb",
     "type": "mongodb",
+    "host": "localhost",
+    "port": 27017,
     "database": "test",
     "logging": false
   },
   {
     "skip": true,
-    "name": "aurora-mysql",
     "type": "aurora-mysql",
     "region": "us-east-1",
     "secretArn": "mysecret",
@@ -114,7 +105,6 @@
   },
   {
     "skip": true,
-    "name": "aurora-postgres",
     "type": "aurora-postgres",
     "region": "us-east-1",
     "secretArn": "mysecret",
@@ -127,13 +117,12 @@
   },
   {
     "skip": false,
-    "name": "spanner",
     "type": "spanner",
     "host": "localhost",
+    "port": 9010,
     "projectId": "test-project",
     "instanceId": "test-instance",
     "databaseId": "test-db",
-    "port": 9010,
     "logging": false
   }
 ]

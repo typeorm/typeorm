@@ -15,7 +15,7 @@ describe("github issues > #6284 cli support for cjs extension", () => {
         await writeFile(cjsConfigPath, config)
         try {
             const reader = new ConnectionOptionsReader({ root: __dirname })
-            results = await reader.all()
+            results = await reader.get()
         } finally {
             await unlink(cjsConfigPath)
         }

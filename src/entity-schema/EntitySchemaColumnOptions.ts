@@ -10,7 +10,7 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     primary?: boolean
 
     /**
-     * Indicates if this column is of type ObjectId
+     * Indicates if this column is of type `ObjectId`.
      */
     objectId?: boolean
 
@@ -69,15 +69,6 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * Indicates if column's value can be set to NULL.
      */
     nullable?: boolean
-
-    /**
-     * Indicates if column value is not updated by "save" operation.
-     * It means you'll be able to write this value only when you first time insert the object.
-     * Default value is "false".
-     * @deprecated Please use the `update` option instead.  Careful, it takes
-     * the opposite value to readonly.
-     */
-    readonly?: boolean
 
     /**
      * Indicates if column value is updated by "save" operation.
@@ -209,6 +200,7 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     *
      * @see https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
     query?: (alias: string) => string

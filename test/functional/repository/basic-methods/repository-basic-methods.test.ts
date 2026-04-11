@@ -388,7 +388,7 @@ describe("repository > basic methods", () => {
         it("should update existing entity using transformers", () =>
             Promise.all(
                 dataSources
-                    .filter((c) => c.name === "better-sqlite3")
+                    .filter((c) => c.options.type === "better-sqlite3")
                     .map(async (dataSource) => {
                         if (
                             !dataSource ||
@@ -827,6 +827,49 @@ describe("repository > basic methods", () => {
                             embedded: { id: "bar3" },
                         })
                     ).embedded.value.should.be.equal("value3 2")
+                }),
+            ))
+        it("github issues > #10889: should not update columns with update:false during upsert", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!dataSource.driver.supportedUpsertTypes.length) return
+
+                    const postRepository = dataSource.getRepository(Post)
+                    const externalId = "external-readonly-test"
+
+                    // Insert with readonlyField set
+                    await postRepository.upsert(
+                        {
+                            externalId,
+                            title: "Initial title",
+                            readonlyField: "initial-value",
+                        },
+                        ["externalId"],
+                    )
+
+                    const initial = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+                    initial.readonlyField!.should.be.equal("initial-value")
+
+                    // Upsert again - readonlyField should NOT be updated
+                    await postRepository.upsert(
+                        {
+                            externalId,
+                            title: "Updated title",
+                            readonlyField: "should-be-ignored",
+                        },
+                        ["externalId"],
+                    )
+
+                    const updated = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+                    updated.title.should.be.equal("Updated title")
+                    updated.readonlyField!.should.be.equal(
+                        "initial-value",
+                        "readonlyField should not be updated by upsert",
+                    )
                 }),
             ))
         it("should throw if using an unsupported driver", () =>

@@ -39,4 +39,13 @@ describe("query runner > create and drop schema", () => {
                 await queryRunner.release()
             }),
         ))
+
+    it("should not throw when dropping non-existent schema with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropSchema("non_existent_schema", true)
+                await queryRunner.release()
+            }),
+        ))
 })

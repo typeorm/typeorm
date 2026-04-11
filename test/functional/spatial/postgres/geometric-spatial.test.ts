@@ -46,9 +46,7 @@ describe("standard geometric types", () => {
                         point: "(10.5,20.3)",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.point).to.deep.equal({ x: 10.5, y: 20.3 })
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -64,9 +62,7 @@ describe("standard geometric types", () => {
                         point: { x: -5, y: 15 },
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.point).to.deep.equal({ x: -5, y: 15 })
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -84,9 +80,7 @@ describe("standard geometric types", () => {
                         circle: "<(4,5),12>",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.circle).to.deep.equal({
                         x: 4,
                         y: 5,
@@ -105,9 +99,7 @@ describe("standard geometric types", () => {
                         circle: { x: 10, y: 20, radius: 5 },
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.circle).to.deep.equal({
                         x: 10,
                         y: 20,
@@ -129,9 +121,7 @@ describe("standard geometric types", () => {
                         box: "(1,2),(3,4)",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.box).to.be.a("string")
                     expect(loaded.box).to.equal("(3,4),(1,2)") // Postgres reorders box corners as upper-right, lower-left
 
@@ -150,9 +140,7 @@ describe("standard geometric types", () => {
                         line: "{1,2,3}",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.line).to.equal("{1,2,3}")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -168,9 +156,7 @@ describe("standard geometric types", () => {
                         line: "[(1,2),(3,4)]",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.line).to.be.a("string")
                     expect(loaded.line).to.equal("{1,-1,1}") // Postgres converts line to its canonical form Ax + By + C = 0 {A,B,C}
 
@@ -189,9 +175,7 @@ describe("standard geometric types", () => {
                         lseg: "[(1,2),(3,4)]",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.lseg).to.equal("[(1,2),(3,4)]")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -207,9 +191,7 @@ describe("standard geometric types", () => {
                         lseg: "(1,2), (3,4)",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.lseg).to.equal("[(1,2),(3,4)]")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -227,9 +209,7 @@ describe("standard geometric types", () => {
                         path: "[(1,2),(3,4),(5,6)]",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.path).to.equal("[(1,2),(3,4),(5,6)]")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -245,9 +225,7 @@ describe("standard geometric types", () => {
                         path: "((3,1),(2,8),(10,4))",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.path).to.equal("((3,1),(2,8),(10,4))")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -265,9 +243,7 @@ describe("standard geometric types", () => {
                         polygon: "((3,1),(2,8),(10,4))",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.polygon).to.equal("((3,1),(2,8),(10,4))")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -283,9 +259,7 @@ describe("standard geometric types", () => {
                         polygon: "(0,0), (1,1), (2,0)",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
                     expect(loaded.polygon).to.be.a("string")
 
                     await expect(repo.save(loaded)).to.be.fulfilled
@@ -309,9 +283,7 @@ describe("standard geometric types", () => {
                         polygon: "((3,1),(2,8),(10,4))",
                     } as GeometryEntity)
 
-                    const loaded = await repo.findOneOrFail({
-                        where: { id: entity.id },
-                    })
+                    const loaded = await repo.findOneByOrFail({ id: entity.id })
 
                     expect(loaded.point).to.deep.equal({ x: 1, y: 2 })
                     expect(loaded.circle).to.deep.equal({

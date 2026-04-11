@@ -40,24 +40,23 @@ describe("mongodb > embedded columns", () => {
                 post.counters.information.description = "Hello post"
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     title: "Post",
                 })
 
-                expect(loadedPost).to.be.not.empty
-                expect(loadedPost!.counters).to.be.not.empty
-                expect(loadedPost!.counters.information).to.be.not.empty
-                loadedPost!.should.be.instanceOf(Post)
-                loadedPost!.title.should.be.equal("Post")
-                loadedPost!.text.should.be.equal("Everything about post")
-                loadedPost!.counters.should.be.instanceOf(Counters)
-                loadedPost!.counters.likes.should.be.equal(5)
-                loadedPost!.counters.comments.should.be.equal(1)
-                loadedPost!.counters.favorites.should.be.equal(10)
-                loadedPost!.counters.information.should.be.instanceOf(
+                expect(loadedPost.counters).to.be.not.empty
+                expect(loadedPost.counters.information).to.be.not.empty
+                loadedPost.should.be.instanceOf(Post)
+                loadedPost.title.should.be.equal("Post")
+                loadedPost.text.should.be.equal("Everything about post")
+                loadedPost.counters.should.be.instanceOf(Counters)
+                loadedPost.counters.likes.should.be.equal(5)
+                loadedPost.counters.comments.should.be.equal(1)
+                loadedPost.counters.favorites.should.be.equal(10)
+                loadedPost.counters.information.should.be.instanceOf(
                     Information,
                 )
-                loadedPost!.counters.information.description.should.be.equal(
+                loadedPost.counters.information.description.should.be.equal(
                     "Hello post",
                 )
 
@@ -66,24 +65,23 @@ describe("mongodb > embedded columns", () => {
                 post.counters.information.description = "Hello updated post"
                 await postRepository.save(post)
 
-                const loadedUpdatedPost = await postRepository.findOneBy({
+                const loadedUpdatedPost = await postRepository.findOneByOrFail({
                     title: "Updated post",
                 })
 
-                expect(loadedUpdatedPost).to.be.not.empty
-                expect(loadedUpdatedPost!.counters).to.be.not.empty
-                expect(loadedUpdatedPost!.counters.information).to.be.not.empty
-                loadedUpdatedPost!.should.be.instanceOf(Post)
-                loadedUpdatedPost!.title.should.be.equal("Updated post")
-                loadedUpdatedPost!.text.should.be.equal("Everything about post")
-                loadedUpdatedPost!.counters.should.be.instanceOf(Counters)
-                loadedUpdatedPost!.counters.likes.should.be.equal(5)
-                loadedUpdatedPost!.counters.comments.should.be.equal(2)
-                loadedUpdatedPost!.counters.favorites.should.be.equal(10)
-                loadedUpdatedPost!.counters.information.should.be.instanceOf(
+                expect(loadedUpdatedPost.counters).to.be.not.empty
+                expect(loadedUpdatedPost.counters.information).to.be.not.empty
+                loadedUpdatedPost.should.be.instanceOf(Post)
+                loadedUpdatedPost.title.should.be.equal("Updated post")
+                loadedUpdatedPost.text.should.be.equal("Everything about post")
+                loadedUpdatedPost.counters.should.be.instanceOf(Counters)
+                loadedUpdatedPost.counters.likes.should.be.equal(5)
+                loadedUpdatedPost.counters.comments.should.be.equal(2)
+                loadedUpdatedPost.counters.favorites.should.be.equal(10)
+                loadedUpdatedPost.counters.information.should.be.instanceOf(
                     Information,
                 )
-                loadedUpdatedPost!.counters.information.description.should.be.equal(
+                loadedUpdatedPost.counters.information.description.should.be.equal(
                     "Hello updated post",
                 )
 

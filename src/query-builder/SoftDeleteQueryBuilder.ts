@@ -163,6 +163,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Specifies FROM which entity's table select/update/delete/soft-delete will be executed.
      * Also sets a main string alias of the selection data.
+     *
      * @param entityTarget
      * @param aliasName
      */
@@ -183,6 +184,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
+     *
      * @param where
      * @param parameters
      */
@@ -208,6 +210,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     *
      * @param where
      * @param parameters
      */
@@ -231,6 +234,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     *
      * @param where
      * @param parameters
      */
@@ -253,6 +257,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
+     *
      * @param ids
      */
     whereInIds(ids: any | any[]): this {
@@ -261,6 +266,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
+     *
      * @param ids
      */
     andWhereInIds(ids: any | any[]): this {
@@ -269,6 +275,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
+     *
      * @param ids
      */
     orWhereInIds(ids: any | any[]): this {
@@ -293,6 +300,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     *
      * @param output
      */
     output(output: string | string[]): this {
@@ -318,11 +326,12 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     *
      * @param returning
      */
     returning(returning: string | string[]): this {
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported("update")) {
+        if (!this.dataSource.driver.isReturningSqlSupported("update")) {
             throw new ReturningStatementNotSupportedError()
         }
 
@@ -361,6 +370,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
      * Sets ORDER BY condition in the query builder.
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
+     *
      * @param sort
      * @param order
      * @param nulls
@@ -372,8 +382,10 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         if (sort) {
             if (typeof sort === "object") {
-                this.expressionMap.orderBys = sort as OrderByCondition
+                this.validateOrderByCondition(sort)
+                this.expressionMap.orderBys = sort
             } else {
+                this.assertNoSemicolon(sort, "orderBy sort key")
                 if (nulls) {
                     this.expressionMap.orderBys = {
                         [sort as string]: { order, nulls },
@@ -390,6 +402,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds ORDER BY condition in the query builder.
+     *
      * @param sort
      * @param order
      * @param nulls
@@ -399,6 +412,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
+        this.assertNoSemicolon(sort, "orderBy sort key")
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }
         } else {
@@ -409,6 +423,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets LIMIT - maximum number of rows to be selected.
+     *
      * @param limit
      */
     limit(limit?: number): this {
@@ -420,6 +435,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
      * Indicates if entity must be updated after update operation.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
+     *
      * @param entity
      */
     whereEntity(entity: Entity | Entity[]): this {
@@ -449,6 +465,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
      * Indicates if entity must be updated after update operation.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
+     *
      * @param enabled
      */
     updateEntity(enabled: boolean): this {
@@ -534,7 +551,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(", ")}${whereExpression}` // todo: how do we replace aliases in where to nothing?
         }
-        if (this.connection.driver.options.type === "mssql") {
+        if (this.dataSource.driver.options.type === "mssql") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(
@@ -559,14 +576,10 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                 Object.keys(orderBys)
                     .map((columnName) => {
                         if (typeof orderBys[columnName] === "string") {
-                            return (
-                                this.replacePropertyNames(columnName) +
-                                " " +
-                                orderBys[columnName]
-                            )
+                            return columnName + " " + orderBys[columnName]
                         } else {
                             return (
-                                this.replacePropertyNames(columnName) +
+                                columnName +
                                 " " +
                                 (orderBys[columnName] as any).order +
                                 " " +
@@ -587,7 +600,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         const limit: number | undefined = this.expressionMap.limit
 
         if (limit) {
-            if (DriverUtils.isMySQLFamily(this.connection.driver)) {
+            if (DriverUtils.isMySQLFamily(this.dataSource.driver)) {
                 return " LIMIT " + limit
             } else {
                 throw new LimitOnUpdateNotSupportedError()

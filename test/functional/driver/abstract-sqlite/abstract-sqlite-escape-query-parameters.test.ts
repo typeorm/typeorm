@@ -22,7 +22,6 @@ describe("escape sqlite query parameters", () => {
             const [_, parameters] = connection.driver.escapeQueryWithParameters(
                 "SELECT nothing FROM irrelevant WHERE a = :param1",
                 { param1: true },
-                {},
             )
 
             expect(parameters).to.deep.equal([1])
@@ -33,29 +32,6 @@ describe("escape sqlite query parameters", () => {
             const [_, parameters] = connection.driver.escapeQueryWithParameters(
                 "SELECT nothing FROM irrelevant WHERE a = :param1",
                 { param1: false },
-                {},
-            )
-
-            expect(parameters).to.deep.equal([0])
-        }))
-
-    it("should transform boolean nativeParameters with value `true` into `1`", () =>
-        dataSources.map((connection) => {
-            const [_, parameters] = connection.driver.escapeQueryWithParameters(
-                "SELECT nothing FROM irrelevant",
-                {},
-                { nativeParam1: true },
-            )
-
-            expect(parameters).to.deep.equal([1])
-        }))
-
-    it("should transform boolean nativeParameters with value `false` into 0", () =>
-        dataSources.map((connection) => {
-            const [_, parameters] = connection.driver.escapeQueryWithParameters(
-                "SELECT nothing FROM irrelevant",
-                {},
-                { nativeParam1: false },
             )
 
             expect(parameters).to.deep.equal([0])

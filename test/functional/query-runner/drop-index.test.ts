@@ -179,4 +179,13 @@ describe("query runner > drop index", () => {
                 }
             }),
         ))
+
+    it("should not throw when dropping non-existent index with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropIndex("post", "non_existent_index", true)
+                await queryRunner.release()
+            }),
+        ))
 })

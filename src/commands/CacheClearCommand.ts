@@ -51,7 +51,7 @@ export class CacheClearCommand implements yargs.CommandModule {
         } catch (err) {
             PlatformTools.logCmdErr("Error during cache clear.", err)
 
-            if (dataSource && dataSource.isInitialized)
+            if (dataSource?.isInitialized)
                 await (dataSource as DataSource).destroy()
 
             process.exit(1)

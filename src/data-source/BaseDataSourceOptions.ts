@@ -2,6 +2,7 @@ import type { EntitySchema } from "../entity-schema/EntitySchema"
 import type { LoggerOptions } from "../logger/LoggerOptions"
 import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
 import type { DatabaseType } from "../driver/types/DatabaseType"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import type { Logger } from "../logger/Logger"
 import type { DataSource } from "../data-source/DataSource"
 import type { QueryResultCache } from "../cache/QueryResultCache"
@@ -17,13 +18,6 @@ export interface BaseDataSourceOptions {
     readonly type: DatabaseType
 
     /**
-     * Connection name. If connection name is not given then it will be called "default".
-     * Different connections must have different names.
-     * @deprecated
-     */
-    readonly name?: string
-
-    /**
      * Entities to be loaded for this connection.
      * Accepts both entity classes and directories where from entities need to be loaded.
      * Directories support glob patterns.
@@ -36,6 +30,14 @@ export interface BaseDataSourceOptions {
      * Directories support glob patterns.
      */
     readonly subscribers?: MixedList<Function | string>
+
+    /**
+     * Default isolation level for transactions. When set, all transactions started
+     * without an explicit level will use this value. An explicit isolation level
+     * passed to `transaction()` or `startTransaction()` overrides this default.
+     * Must be a level supported by the driver.
+     */
+    readonly isolationLevel?: IsolationLevel
 
     /**
      * Migrations to be loaded for this connection.
@@ -152,6 +154,7 @@ export interface BaseDataSourceOptions {
 
     /**
      * Holds reference to the baseDirectory where configuration file are expected.
+     *
      * @internal
      */
     baseDirectory?: string
@@ -219,16 +222,16 @@ export interface BaseDataSourceOptions {
     readonly invalidWhereValuesBehavior?: {
         /**
          * How to handle null values in where conditions.
-         * - 'ignore': Skip null properties (default)
+         * - 'ignore': Skip null properties
          * - 'sql-null': Transform null to SQL NULL
-         * - 'throw': Throw an error when null is encountered
+         * - 'throw': Throw an error when null is encountered (default)
          */
         readonly null?: "ignore" | "sql-null" | "throw"
 
         /**
          * How to handle undefined values in where conditions.
-         * - 'ignore': Skip undefined properties (default)
-         * - 'throw': Throw an error when undefined is encountered
+         * - 'ignore': Skip undefined properties
+         * - 'throw': Throw an error when undefined is encountered (default)
          */
         readonly undefined?: "ignore" | "throw"
     }

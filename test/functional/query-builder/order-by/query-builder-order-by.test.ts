@@ -32,9 +32,9 @@ describe("query builder > order-by", () => {
 
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.myOrder).to.be.equal(2)
+                expect(loadedPost.myOrder).to.be.equal(2)
             }),
         ))
 
@@ -51,9 +51,9 @@ describe("query builder > order-by", () => {
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder", "ASC")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.myOrder).to.be.equal(1)
+                expect(loadedPost.myOrder).to.be.equal(1)
             }),
         ))
 
@@ -74,16 +74,16 @@ describe("query builder > order-by", () => {
                 const loadedPost1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder", "ASC", "NULLS FIRST")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost1!.myOrder).to.be.equal(1)
+                expect(loadedPost1.myOrder).to.be.equal(1)
 
                 const loadedPost2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder", "ASC", "NULLS LAST")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost2!.myOrder).to.be.equal(1)
+                expect(loadedPost2.myOrder).to.be.equal(1)
             }),
         ))
 
@@ -104,16 +104,16 @@ describe("query builder > order-by", () => {
                 const loadedPost1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder IS NULL", "ASC")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost1!.myOrder).to.be.equal(1)
+                expect(loadedPost1.myOrder).to.be.equal(1)
 
                 const loadedPost2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder IS NOT NULL", "ASC")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost2!.myOrder).to.be.equal(1)
+                expect(loadedPost2.myOrder).to.be.equal(1)
             }),
         ))
 
@@ -136,18 +136,18 @@ describe("query builder > order-by", () => {
                 const loadedPost1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.num1 DIV post.num2")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost1!.num1).to.be.equal(10)
-                expect(loadedPost1!.num2).to.be.equal(5)
+                expect(loadedPost1.num1).to.be.equal(10)
+                expect(loadedPost1.num2).to.be.equal(5)
 
                 const loadedPost2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.num1 DIV post.num2", "DESC")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost2!.num1).to.be.equal(10)
-                expect(loadedPost2!.num2).to.be.equal(2)
+                expect(loadedPost2.num1).to.be.equal(10)
+                expect(loadedPost2.num2).to.be.equal(2)
             }),
         ))
 
@@ -270,6 +270,66 @@ describe("query builder > order-by", () => {
                 expect(result[0].post).to.not.be.undefined
             }),
         ))
+
+    describe("expression-based orderBy", () => {
+        const titleLength = (dataSource: DataSource): string => {
+            switch (dataSource.options.type) {
+                case "mssql":
+                    return "LEN([post].[title])"
+                case "mysql":
+                case "mariadb":
+                    return "CHAR_LENGTH(`post`.`title`)"
+                default:
+                    return 'LENGTH("post"."title")'
+            }
+        }
+
+        it("should allow expression-based orderBy keys with explicit direction", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const short = new Post()
+                    short.myOrder = 1
+                    short.title = "hi"
+
+                    const long = new Post()
+                    long.myOrder = 2
+                    long.title = "hello world"
+                    await dataSource.manager.save([short, long])
+
+                    const loadedPosts = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .orderBy(titleLength(dataSource), "DESC")
+                        .getMany()
+
+                    expect(loadedPosts[0].title).to.be.equal("hello world")
+                    expect(loadedPosts[1].title).to.be.equal("hi")
+                }),
+            ))
+
+        it("should allow expression-based orderBy keys without explicit direction", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const short = new Post()
+                    short.myOrder = 1
+                    short.title = "hi"
+
+                    const long = new Post()
+                    long.myOrder = 2
+                    long.title = "hello world"
+                    await dataSource.manager.save([short, long])
+
+                    const loadedPosts = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .orderBy(titleLength(dataSource))
+                        .getMany()
+
+                    // default direction is ASC
+                    expect(loadedPosts[0].title).to.be.equal("hi")
+                    expect(loadedPosts[1].title).to.be.equal("hello world")
+                }),
+            ))
+    })
+
     it("should properly escape column names or aliases in order by", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
