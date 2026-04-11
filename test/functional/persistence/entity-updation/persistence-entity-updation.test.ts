@@ -40,13 +40,13 @@ describe("persistence > entity updation", () => {
                 const post = new PostUuid()
                 post.text = "Hello Post"
                 await dataSource.manager.save(post)
-                const loadedPost = await dataSource.manager.findOneBy(
+                const loadedPost = await dataSource.manager.findOneByOrFail(
                     PostUuid,
                     {
                         id: post.id,
                     },
                 )
-                post.id.should.be.equal(loadedPost!.id)
+                post.id.should.be.equal(loadedPost.id)
             }),
         ))
 
@@ -115,16 +115,16 @@ describe("persistence > entity updation", () => {
                 post!.embed.version.should.be.equal(1)
                 post!.text.should.be.equal("Hello Complexity")
 
-                const loadedPost = await dataSource.manager.findOneBy(
+                const loadedPost = await dataSource.manager.findOneByOrFail(
                     PostComplex,
                     { firstId: 1, embed: { secondId: 3 } },
                 )
-                loadedPost!.firstId.should.be.equal(1)
-                loadedPost!.embed.secondId.should.be.equal(3)
-                loadedPost!.embed.createDate.should.be.instanceof(Date)
-                loadedPost!.embed.updateDate.should.be.instanceof(Date)
-                loadedPost!.embed.version.should.be.equal(1)
-                loadedPost!.text.should.be.equal("Hello Complexity")
+                loadedPost.firstId.should.be.equal(1)
+                loadedPost.embed.secondId.should.be.equal(3)
+                loadedPost.embed.createDate.should.be.instanceof(Date)
+                loadedPost.embed.updateDate.should.be.instanceof(Date)
+                loadedPost.embed.version.should.be.equal(1)
+                loadedPost.text.should.be.equal("Hello Complexity")
             }),
         ))
 })

@@ -18,7 +18,7 @@ describe("github issues > #1233 column updatedDate must appear in the GROUP BY c
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should filter correctly using findByIds", () =>
+    it("should filter correctly using findAndCount with skip and take", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const post1 = new Post()

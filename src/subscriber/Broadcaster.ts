@@ -121,6 +121,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -141,14 +142,15 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeInsert
                 ) {
                     const executionResult = subscriber.beforeInsert({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
@@ -169,6 +171,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -196,21 +199,22 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeUpdate
                 ) {
                     const executionResult = subscriber.beforeUpdate({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || [],
+                        updatedColumns: updatedColumns ?? [],
+                        updatedRelations: updatedRelations ?? [],
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -227,6 +231,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -251,14 +256,15 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeRemove
                 ) {
                     const executionResult = subscriber.beforeRemove({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
@@ -283,6 +289,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -307,14 +314,15 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeSoftRemove
                 ) {
                     const executionResult = subscriber.beforeSoftRemove({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
@@ -339,6 +347,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -363,14 +372,15 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeRecover
                 ) {
                     const executionResult = subscriber.beforeRecover({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
@@ -395,6 +405,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -417,14 +428,15 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterInsert
                 ) {
                     const executionResult = subscriber.afterInsert({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
@@ -441,6 +453,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_QUERY" event.
+     *
      * @param result
      * @param query
      * @param parameters
@@ -450,11 +463,12 @@ export class Broadcaster {
         query: string,
         parameters: undefined | any[],
     ): void {
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeQuery) {
                     const executionResult = subscriber.beforeQuery({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         query: query,
@@ -470,6 +484,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_QUERY" event.
+     *
      * @param result
      * @param query
      * @param parameters
@@ -487,11 +502,12 @@ export class Broadcaster {
         rawResults: undefined | any,
         error: undefined | any,
     ): void {
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterQuery) {
                     const executionResult = subscriber.afterQuery({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         query: query,
@@ -511,14 +527,16 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_TRANSACTION_START" event.
+     *
      * @param result
      */
     broadcastBeforeTransactionStartEvent(result: BroadcasterResult): void {
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionStart) {
                     const executionResult = subscriber.beforeTransactionStart({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                     })
@@ -532,14 +550,16 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_TRANSACTION_START" event.
+     *
      * @param result
      */
     broadcastAfterTransactionStartEvent(result: BroadcasterResult): void {
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionStart) {
                     const executionResult = subscriber.afterTransactionStart({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                     })
@@ -553,14 +573,16 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_TRANSACTION_COMMIT" event.
+     *
      * @param result
      */
     broadcastBeforeTransactionCommitEvent(result: BroadcasterResult): void {
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionCommit) {
                     const executionResult = subscriber.beforeTransactionCommit({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                     })
@@ -574,14 +596,16 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_TRANSACTION_COMMIT" event.
+     *
      * @param result
      */
     broadcastAfterTransactionCommitEvent(result: BroadcasterResult): void {
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionCommit) {
                     const executionResult = subscriber.afterTransactionCommit({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                     })
@@ -595,15 +619,17 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_TRANSACTION_ROLLBACK" event.
+     *
      * @param result
      */
     broadcastBeforeTransactionRollbackEvent(result: BroadcasterResult): void {
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionRollback) {
                     const executionResult =
                         subscriber.beforeTransactionRollback({
-                            connection: this.queryRunner.connection,
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
                             queryRunner: this.queryRunner,
                             manager: this.queryRunner.manager,
                         })
@@ -617,15 +643,17 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_TRANSACTION_ROLLBACK" event.
+     *
      * @param result
      */
     broadcastAfterTransactionRollbackEvent(result: BroadcasterResult): void {
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionRollback) {
                     const executionResult = subscriber.afterTransactionRollback(
                         {
-                            connection: this.queryRunner.connection,
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
                             queryRunner: this.queryRunner,
                             manager: this.queryRunner.manager,
                         },
@@ -645,6 +673,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -671,21 +700,22 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterUpdate
                 ) {
                     const executionResult = subscriber.afterUpdate({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || [],
+                        updatedColumns: updatedColumns ?? [],
+                        updatedRelations: updatedRelations ?? [],
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -702,6 +732,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -726,14 +757,15 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterRemove
                 ) {
                     const executionResult = subscriber.afterRemove({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
@@ -758,6 +790,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -782,14 +815,15 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterSoftRemove
                 ) {
                     const executionResult = subscriber.afterSoftRemove({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
@@ -814,6 +848,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entity
@@ -838,14 +873,15 @@ export class Broadcaster {
             })
         }
 
-        if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+        if (this.queryRunner.dataSource.subscribers.length) {
+            this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterRecover
                 ) {
                     const executionResult = subscriber.afterRecover({
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
@@ -870,6 +906,7 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     *
      * @param result
      * @param metadata
      * @param entities
@@ -881,7 +918,7 @@ export class Broadcaster {
     ): void {
         // Calculate which subscribers are fitting for the given entity type
         const fittingSubscribers =
-            this.queryRunner.connection.subscribers.filter(
+            this.queryRunner.dataSource.subscribers.filter(
                 (subscriber) =>
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterLoad,
@@ -935,11 +972,12 @@ export class Broadcaster {
             fittingSubscribers.forEach((subscriber) => {
                 nonPromiseEntities.forEach((entity) => {
                     const executionResult = subscriber.afterLoad!(entity, {
-                        entity,
-                        metadata,
-                        connection: this.queryRunner.connection,
+                        dataSource: this.queryRunner.dataSource,
+                        connection: this.queryRunner.dataSource,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
+                        entity,
+                        metadata,
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -956,6 +994,7 @@ export class Broadcaster {
     /**
      * Checks if subscriber's methods can be executed by checking if its don't listen to the particular entity,
      * or listens our entity.
+     *
      * @param subscriber
      * @param target
      */
@@ -964,8 +1003,7 @@ export class Broadcaster {
         target: Function | string,
     ): boolean {
         return (
-            !subscriber.listenTo ||
-            !subscriber.listenTo() ||
+            !subscriber.listenTo?.() ||
             subscriber.listenTo() === Object ||
             subscriber.listenTo() === target ||
             subscriber.listenTo().isPrototypeOf(target)

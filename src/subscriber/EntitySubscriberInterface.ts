@@ -32,12 +32,12 @@ export interface EntitySubscriberInterface<Entity = any> {
     /**
      * Called before query is executed.
      */
-    beforeQuery?(event: BeforeQueryEvent<Entity>): Promise<any> | void
+    beforeQuery?(event: BeforeQueryEvent): Promise<any> | void
 
     /**
      * Called after query is executed.
      */
-    afterQuery?(event: AfterQueryEvent<Entity>): Promise<any> | void
+    afterQuery?(event: AfterQueryEvent): Promise<any> | void
 
     /**
      * Called before entity is inserted to the database.

@@ -29,13 +29,13 @@ describe("other issues > entity listeners must work in embeddeds as well", () =>
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: post.id })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.title).not.to.be.undefined
-                expect(loadedPost!.text).not.to.be.undefined
-                loadedPost!.title.should.be.equal("Super title")
-                loadedPost!.text.should.be.equal("About this post")
+                expect(loadedPost.title).not.to.be.undefined
+                expect(loadedPost.text).not.to.be.undefined
+                loadedPost.title.should.be.equal("Super title")
+                loadedPost.text.should.be.equal("About this post")
             }),
         ))
 })
