@@ -1,5 +1,4 @@
 {
-  "*.ts": ["eslint", "prettier --write"],
-  "*/**/*.json": ["prettier --write"],
-  "./!(package-lock).json": ["sort-package-json", "prettier --write"]
+  "*.ts": ["eslint --fix", "prettier --write"],
+  "*.{json,md,mjs,toml,yml,yaml}": ["prettier --write"]
 }

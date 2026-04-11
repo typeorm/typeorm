@@ -1,4 +1,4 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { TypeORMError } from "../error"
 
@@ -21,7 +21,7 @@ export class Alias {
     subQuery?: string
 
     constructor(alias?: Alias) {
-        ObjectUtils.assign(this, alias || {})
+        ObjectUtils.assign(this, alias ?? {})
     }
 
     private _metadata?: EntityMetadata

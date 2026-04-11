@@ -1,7 +1,8 @@
 import { AbstractLogger } from "./AbstractLogger"
-import { debug, Debugger } from "debug"
-import { LogLevel, LogMessage, LogMessageType } from "./Logger"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { Debugger } from "debug"
+import { debug } from "debug"
+import type { LogLevel, LogMessage, LogMessageType } from "./Logger"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Performs logging of the events in TypeORM via debug library.
@@ -24,6 +25,8 @@ export class DebugLogger extends AbstractLogger {
 
     /**
      * Check is logging for level or message type is enabled.
+     *
+     * @param type
      */
     protected isLogEnabledFor(type?: LogLevel | LogMessageType) {
         switch (type) {
@@ -59,6 +62,10 @@ export class DebugLogger extends AbstractLogger {
 
     /**
      * Write log to specific output.
+     *
+     * @param level
+     * @param logMessage
+     * @param queryRunner
      */
     protected writeLog(
         level: LogLevel,
@@ -82,7 +89,7 @@ export class DebugLogger extends AbstractLogger {
                     this.logger[messageTypeOrLevel](message.message)
                 }
 
-                if (message.parameters && message.parameters.length) {
+                if (message.parameters?.length) {
                     this.logger[messageTypeOrLevel](
                         "parameters:",
                         message.parameters,

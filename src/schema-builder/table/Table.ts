@@ -120,10 +120,10 @@ export class Table {
                         new TableForeignKey({
                             ...foreignKey,
                             referencedDatabase:
-                                foreignKey?.referencedDatabase ||
+                                foreignKey?.referencedDatabase ??
                                 options.database,
                             referencedSchema:
-                                foreignKey?.referencedSchema || options.schema,
+                                foreignKey?.referencedSchema ?? options.schema,
                         }),
                 )
 
@@ -193,6 +193,8 @@ export class Table {
 
     /**
      * Add column and creates its constraints.
+     *
+     * @param column
      */
     addColumn(column: TableColumn): void {
         this.columns.push(column)
@@ -200,6 +202,8 @@ export class Table {
 
     /**
      * Remove column and its constraints.
+     *
+     * @param column
      */
     removeColumn(column: TableColumn): void {
         const foundColumn = this.columns.find((c) => c.name === column.name)
@@ -209,6 +213,8 @@ export class Table {
 
     /**
      * Adds unique constraint.
+     *
+     * @param uniqueConstraint
      */
     addUniqueConstraint(uniqueConstraint: TableUnique): void {
         this.uniques.push(uniqueConstraint)
@@ -222,6 +228,8 @@ export class Table {
 
     /**
      * Removes unique constraint.
+     *
+     * @param removedUnique
      */
     removeUniqueConstraint(removedUnique: TableUnique): void {
         const foundUnique = this.uniques.find(
@@ -240,6 +248,8 @@ export class Table {
 
     /**
      * Adds check constraint.
+     *
+     * @param checkConstraint
      */
     addCheckConstraint(checkConstraint: TableCheck): void {
         this.checks.push(checkConstraint)
@@ -247,6 +257,8 @@ export class Table {
 
     /**
      * Removes check constraint.
+     *
+     * @param removedCheck
      */
     removeCheckConstraint(removedCheck: TableCheck): void {
         const foundCheck = this.checks.find(
@@ -259,6 +271,8 @@ export class Table {
 
     /**
      * Adds exclusion constraint.
+     *
+     * @param exclusionConstraint
      */
     addExclusionConstraint(exclusionConstraint: TableExclusion): void {
         this.exclusions.push(exclusionConstraint)
@@ -266,6 +280,8 @@ export class Table {
 
     /**
      * Removes exclusion constraint.
+     *
+     * @param removedExclusion
      */
     removeExclusionConstraint(removedExclusion: TableExclusion): void {
         const foundExclusion = this.exclusions.find(
@@ -278,6 +294,8 @@ export class Table {
 
     /**
      * Adds foreign keys.
+     *
+     * @param foreignKey
      */
     addForeignKey(foreignKey: TableForeignKey): void {
         this.foreignKeys.push(foreignKey)
@@ -285,6 +303,8 @@ export class Table {
 
     /**
      * Removes foreign key.
+     *
+     * @param removedForeignKey
      */
     removeForeignKey(removedForeignKey: TableForeignKey): void {
         const fk = this.foreignKeys.find(
@@ -295,6 +315,9 @@ export class Table {
 
     /**
      * Adds index.
+     *
+     * @param index
+     * @param isMysql
      */
     addIndex(index: TableIndex, isMysql: boolean = false): void {
         this.indices.push(index)
@@ -311,6 +334,9 @@ export class Table {
 
     /**
      * Removes index.
+     *
+     * @param tableIndex
+     * @param isMysql
      */
     removeIndex(tableIndex: TableIndex, isMysql: boolean = false): void {
         const index = this.indices.find(
@@ -342,6 +368,8 @@ export class Table {
 
     /**
      * Returns all column indices.
+     *
+     * @param column
      */
     findColumnIndices(column: TableColumn): TableIndex[] {
         return this.indices.filter((index) => {
@@ -353,6 +381,8 @@ export class Table {
 
     /**
      * Returns all column foreign keys.
+     *
+     * @param column
      */
     findColumnForeignKeys(column: TableColumn): TableForeignKey[] {
         return this.foreignKeys.filter((foreignKey) => {
@@ -364,6 +394,8 @@ export class Table {
 
     /**
      * Returns all column uniques.
+     *
+     * @param column
      */
     findColumnUniques(column: TableColumn): TableUnique[] {
         return this.uniques.filter((unique) => {
@@ -375,6 +407,8 @@ export class Table {
 
     /**
      * Returns all column checks.
+     *
+     * @param column
      */
     findColumnChecks(column: TableColumn): TableCheck[] {
         return this.checks.filter((check) => {
@@ -390,6 +424,9 @@ export class Table {
 
     /**
      * Creates table from a given entity metadata.
+     *
+     * @param entityMetadata
+     * @param driver
      */
     static create(entityMetadata: EntityMetadata, driver: Driver): Table {
         const database =
