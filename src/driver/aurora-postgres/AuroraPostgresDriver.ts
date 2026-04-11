@@ -2,9 +2,9 @@ import type { DataSource } from "../../data-source/DataSource"
 import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import { PostgresDriver } from "../postgres/PostgresDriver"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { AuroraPostgresDataSourceOptions } from "./AuroraPostgresDataSourceOptions"
 import { AuroraPostgresQueryRunner } from "./AuroraPostgresQueryRunner"
@@ -15,15 +15,22 @@ abstract class PostgresWrapper extends PostgresDriver {
     abstract createQueryRunner(mode: ReplicationMode): any
 }
 
-export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
+export class AuroraPostgresDriver extends PostgresWrapper {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Aurora Data API does not support setting transaction isolation levels.
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
-    /**
-     * Connection used by driver.
-     */
-    connection: DataSource
+    /** Isolation levels supported by this driver. */
+    supportedIsolationLevels = AuroraPostgresDriver.supportedIsolationLevels
 
     /**
      * Aurora Data API underlying library.
@@ -42,7 +49,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: AuroraPostgresDataSourceOptions
 
@@ -55,10 +62,10 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
+    constructor(dataSource: DataSource) {
         super()
-        this.connection = connection
-        this.options = connection.options as AuroraPostgresDataSourceOptions
+        this.dataSource = dataSource
+        this.options = dataSource.options as AuroraPostgresDataSourceOptions
         this.isReplicated = false
 
         // load data-api package
@@ -70,7 +77,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
             this.options.resourceArn,
             this.options.database,
             (query: string, parameters?: any[]) =>
-                this.connection.logger.logQuery(query, parameters),
+                this.dataSource.logger.logQuery(query, parameters),
             this.options.serviceConfigOptions,
             this.options.formatOptions,
         )
@@ -96,9 +103,10 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
-    createQueryRunner(mode: ReplicationMode) {
+    createQueryRunner(mode: ReplicationMode): AuroraPostgresQueryRunner {
         return new AuroraPostgresQueryRunner(
             this,
             new this.DataApiDriver(
@@ -107,7 +115,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
                 this.options.resourceArn,
                 this.options.database,
                 (query: string, parameters?: any[]) =>
-                    this.connection.logger.logQuery(query, parameters),
+                    this.dataSource.logger.logQuery(query, parameters),
                 this.options.serviceConfigOptions,
                 this.options.formatOptions,
             ),
@@ -117,14 +125,12 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (
-            this.options.formatOptions &&
-            this.options.formatOptions.castParameters === false
-        ) {
+        if (this.options.formatOptions?.castParameters === false) {
             return super.preparePersistentValue(value, columnMetadata)
         }
 
@@ -139,14 +145,12 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (
-            this.options.formatOptions &&
-            this.options.formatOptions.castParameters === false
-        ) {
+        if (this.options.formatOptions?.castParameters === false) {
             return super.prepareHydratedValue(value, columnMetadata)
         }
 
@@ -168,7 +172,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
      */
     protected loadDependencies(): void {
         const driver =
-            this.options.driver ||
+            this.options.driver ??
             PlatformTools.load("typeorm-aurora-data-api-driver")
         const { pg } = driver
 
@@ -177,11 +181,12 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Executes given query.
+     *
      * @param connection
      * @param query
      */
     protected executeQuery(connection: any, query: string) {
-        return this.connection.query(query)
+        return this.dataSource.query(query)
     }
 
     /**
@@ -191,7 +196,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
         const extensionsMetadata = await this.checkMetadataForExtensions()
 
         if (extensionsMetadata.hasExtensions) {
-            await this.enableExtensions(extensionsMetadata, this.connection)
+            await this.enableExtensions(extensionsMetadata, this.dataSource)
         }
 
         return Promise.resolve()

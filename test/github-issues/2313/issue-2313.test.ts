@@ -33,18 +33,14 @@ describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () 
             post2.data = 456
             await post2.save()
 
-            const result1 = await Post.findOneOrFail({
-                where: {
-                    id: 1,
-                },
+            const result1 = await Post.findOneByOrFail({
+                id: 1,
             })
 
             result1.data.should.be.eql(123)
 
-            const result2 = await Post.findOneOrFail({
-                where: {
-                    id: 2,
-                },
+            const result2 = await Post.findOneByOrFail({
+                id: 2,
             })
 
             result2.data.should.be.eql(456)

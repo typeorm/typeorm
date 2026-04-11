@@ -1,32 +1,13 @@
-import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import type { RelationMetadata } from "../../metadata/RelationMetadata"
-import type { EntityManager } from "../../entity-manager/EntityManager"
-import type { QueryRunner } from "../../query-runner/QueryRunner"
-import type { DataSource } from "../../data-source/DataSource"
-import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { RelationMetadata } from "../../metadata/RelationMetadata"
+import type { BaseEvent } from "./BaseEvent"
 
 /**
  * UpdateEvent is an object that broadcaster sends to the entity subscriber when entity is being updated in the database.
  */
-export interface UpdateEvent<Entity> {
-    /**
-     * Connection used in the event.
-     */
-    connection: DataSource
-
-    /**
-     * QueryRunner used in the event transaction.
-     * All database operations in the subscribed event listener should be performed using this query runner instance.
-     */
-    queryRunner: QueryRunner
-
-    /**
-     * EntityManager used in the event transaction.
-     * All database operations in the subscribed event listener should be performed using this entity manager instance.
-     */
-    manager: EntityManager
-
+export interface UpdateEvent<Entity> extends BaseEvent {
     /**
      * Updating entity.
      *
