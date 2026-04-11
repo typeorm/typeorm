@@ -219,7 +219,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
      * @param parameters
      */
     protected static queryParams(parameters: any[] | undefined): string {
-        if (!parameters || !parameters.length) {
+        if (!parameters?.length) {
             return ""
         }
 

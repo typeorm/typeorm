@@ -34,7 +34,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                 await connection.manager.save(ticket)
 
                 const loadedTicketWithRequest =
-                    await connection.manager.findOne(Ticket, {
+                    await connection.manager.findOneOrFail(Ticket, {
                         where: {
                             id: 1,
                         },
@@ -44,7 +44,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                     })
 
                 expect(loadedTicketWithRequest).not.to.be.null
-                loadedTicketWithRequest!.should.be.eql({
+                loadedTicketWithRequest.should.be.eql({
                     id: 1,
                     name: "ticket #1",
                     request: {
@@ -56,7 +56,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                 })
 
                 const loadedRequestWithTicket =
-                    await connection.manager.findOne(Request, {
+                    await connection.manager.findOneOrFail(Request, {
                         where: {
                             id: 1,
                         },
@@ -65,7 +65,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                         },
                     })
 
-                loadedRequestWithTicket!.should.be.eql({
+                loadedRequestWithTicket.should.be.eql({
                     id: 1,
                     owner: "Umed",
                     type: "ticket",
@@ -101,7 +101,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
 
                 await connection.manager.save(ticket)
 
-                const loadedRequest = await connection.manager.findOne(
+                const loadedRequest = await connection.manager.findOneOrFail(
                     Request,
                     {
                         where: {
@@ -114,7 +114,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                 )
 
                 expect(loadedRequest).not.to.be.null
-                loadedRequest!.should.be.eql({
+                loadedRequest.should.be.eql({
                     id: 2,
                     owner: "somebody",
                     type: "ticket",

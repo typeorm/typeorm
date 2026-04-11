@@ -55,7 +55,7 @@ export function ManyToMany<T>(
     }
 
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        options ??= {} as RelationOptions
 
         // now try to determine it its lazy relation
         let isLazy = options.lazy === true

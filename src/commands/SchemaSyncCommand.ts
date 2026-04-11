@@ -46,8 +46,7 @@ export class SchemaSyncCommand implements yargs.CommandModule {
         } catch (err) {
             PlatformTools.logCmdErr("Error during schema synchronization:", err)
 
-            if (dataSource && dataSource.isInitialized)
-                await dataSource.destroy()
+            if (dataSource?.isInitialized) await dataSource.destroy()
 
             process.exit(1)
         }

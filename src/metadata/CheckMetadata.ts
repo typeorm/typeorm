@@ -65,12 +65,12 @@ export class CheckMetadata {
      * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
-        this.name = this.givenName
-            ? this.givenName
-            : namingStrategy.checkConstraintName(
-                  this.entityMetadata.tableName,
-                  this.expression,
-              )
+        this.name =
+            this.givenName ??
+            namingStrategy.checkConstraintName(
+                this.entityMetadata.tableName,
+                this.expression,
+            )
         return this
     }
 }

@@ -12,8 +12,7 @@ import Post, { PostSchema } from "./entity/Post"
 import PostTag, { PostTagSchema } from "./entity/PostTag"
 import PostAttachment, { PostAttachmentSchema } from "./entity/PostAttachment"
 
-// TODO: composite FK column ordering bug — explicit joinColumn order doesn't match PK index order on MySQL/MSSQL/SAP
-describe.skip("cascades > insert with composite primary key duplicate constraint", () => {
+describe("cascades > insert with composite primary key duplicate constraint", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

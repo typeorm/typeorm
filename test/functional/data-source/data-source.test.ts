@@ -424,7 +424,7 @@ describe("DataSource", () => {
                     })
                     await subjectRepo.save(subject)
 
-                    const loadedSubject = await subjectRepo.findOne({
+                    const loadedSubject = await subjectRepo.findOneOrFail({
                         where: { id: subject.id },
                         relations: { professor: true, assistant: true },
                     })
@@ -438,19 +438,16 @@ describe("DataSource", () => {
                     })
                     await siteLocationRepo.save(siteLocation)
 
-                    const loadedSiteLocation = await siteLocationRepo.findOne({
-                        where: { id: siteLocation.id },
-                        relations: { site: true },
-                    })
+                    const loadedSiteLocation =
+                        await siteLocationRepo.findOneOrFail({
+                            where: { id: siteLocation.id },
+                            relations: { site: true },
+                        })
 
-                    expect(loadedSiteLocation).to.not.be.null
-                    expect(loadedSiteLocation!.site.name).to.equal(
-                        "Main Campus",
-                    )
+                    expect(loadedSiteLocation.site.name).to.equal("Main Campus")
 
-                    expect(loadedSubject).to.not.be.null
-                    expect(loadedSubject!.professor.name).to.equal("Dr. Smith")
-                    expect(loadedSubject!.assistant.name).to.equal("Dr. Jones")
+                    expect(loadedSubject.professor.name).to.equal("Dr. Smith")
+                    expect(loadedSubject.assistant.name).to.equal("Dr. Jones")
                 }),
             ))
     })

@@ -43,7 +43,7 @@ export function snakeCase(str: string): string {
 export function titleCase(str: string): string {
     return str.replace(
         /\w\S*/g,
-        (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(),
+        (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase(),
     )
 }
 
@@ -59,7 +59,7 @@ export function abbreviate(str: string, abbrLettersCount: number = 1): string {
         .replace(/([a-z\xE0-\xFF])([A-Z\xC0\xDF])/g, "$1 $2")
         .split(" ")
     return words.reduce((res, word) => {
-        res += word.substr(0, abbrLettersCount)
+        res += word.substring(0, abbrLettersCount)
         return res
     }, "")
 }
@@ -107,7 +107,7 @@ export function shorten(input: string, options: IShortenOptions = {}): string {
         // "OrderItemList" becomes "OrItLi", while "company" becomes "comp"
         const length = segmentTerms.length > 1 ? termLength : segmentLength
         const shortSegment = segmentTerms
-            .map((term) => term.substr(0, length))
+            .map((term) => term.substring(0, length))
             .join("")
 
         acc.push(shortSegment)

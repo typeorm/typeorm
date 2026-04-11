@@ -100,10 +100,8 @@ describe("repository > find options > relations", () => {
             dataSources.map(async (dataSource) => {
                 const loadedPost = await dataSource
                     .getRepository(Post)
-                    .findOne({
-                        where: {
-                            id: 1,
-                        },
+                    .findOneBy({
+                        id: 1,
                     })
                 loadedPost!.should.be.eql({
                     id: 1,
