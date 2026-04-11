@@ -59,7 +59,7 @@ export function PrimaryColumn(
         } else {
             options = Object.assign({}, <PrimaryColumnOptions>typeOrOptions)
         }
-        if (!options) options = {} as PrimaryColumnOptions
+        options ??= {} as PrimaryColumnOptions
 
         // if type is not given explicitly then try to guess it
         const reflectMetadataType =

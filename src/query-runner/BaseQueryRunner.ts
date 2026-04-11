@@ -583,18 +583,18 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             oldColumn.scale !== newColumn.scale ||
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only
             oldColumn.asExpression !== newColumn.asExpression ||
-            (checkDefault && oldColumn.default !== newColumn.default) ||
+            (!!checkDefault && oldColumn.default !== newColumn.default) ||
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
-            (checkComment && oldColumn.comment !== newColumn.comment) ||
+            (!!checkComment && oldColumn.comment !== newColumn.comment) ||
             (checkEnum && this.isEnumChanged(oldColumn, newColumn))
         )
     }
 
     protected isEnumChanged(oldColumn: TableColumn, newColumn: TableColumn) {
         return !OrmUtils.isArraysEqual(
-            oldColumn.enum || [],
-            newColumn.enum || [],
+            oldColumn.enum ?? [],
+            newColumn.enum ?? [],
         )
     }
 
@@ -624,11 +624,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             }
         }
 
-        if (
-            this.dataSource.driver.dataTypeDefaults &&
-            this.dataSource.driver.dataTypeDefaults[column.type] &&
-            this.dataSource.driver.dataTypeDefaults[column.type].length
-        ) {
+        if (this.dataSource.driver.dataTypeDefaults?.[column.type]?.length) {
             return (
                 this.dataSource.driver.dataTypeDefaults[
                     column.type
@@ -658,20 +654,17 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
                 column.name,
             )
             if (
-                columnMetadata &&
-                columnMetadata.precision !== null &&
-                columnMetadata.precision !== undefined
+                columnMetadata?.precision !== null &&
+                columnMetadata?.precision !== undefined
             )
                 return false
         }
 
         if (
-            this.dataSource.driver.dataTypeDefaults &&
-            this.dataSource.driver.dataTypeDefaults[column.type] &&
-            this.dataSource.driver.dataTypeDefaults[column.type].precision !==
-                null &&
-            this.dataSource.driver.dataTypeDefaults[column.type].precision !==
-                undefined
+            this.dataSource.driver.dataTypeDefaults?.[column.type]
+                ?.precision !== null &&
+            this.dataSource.driver.dataTypeDefaults?.[column.type]
+                ?.precision !== undefined
         )
             return (
                 this.dataSource.driver.dataTypeDefaults[column.type]
@@ -700,19 +693,16 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
                 column.name,
             )
             if (
-                columnMetadata &&
-                columnMetadata.scale !== null &&
-                columnMetadata.scale !== undefined
+                columnMetadata?.scale !== null &&
+                columnMetadata?.scale !== undefined
             )
                 return false
         }
 
         if (
-            this.dataSource.driver.dataTypeDefaults &&
-            this.dataSource.driver.dataTypeDefaults[column.type] &&
-            this.dataSource.driver.dataTypeDefaults[column.type].scale !==
+            this.dataSource.driver.dataTypeDefaults?.[column.type]?.scale !==
                 null &&
-            this.dataSource.driver.dataTypeDefaults[column.type].scale !==
+            this.dataSource.driver.dataTypeDefaults?.[column.type]?.scale !==
                 undefined
         )
             return (

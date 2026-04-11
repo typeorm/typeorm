@@ -130,10 +130,7 @@ export class AuroraPostgresDriver extends PostgresWrapper {
      * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (
-            this.options.formatOptions &&
-            this.options.formatOptions.castParameters === false
-        ) {
+        if (this.options.formatOptions?.castParameters === false) {
             return super.preparePersistentValue(value, columnMetadata)
         }
 
@@ -153,10 +150,7 @@ export class AuroraPostgresDriver extends PostgresWrapper {
      * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (
-            this.options.formatOptions &&
-            this.options.formatOptions.castParameters === false
-        ) {
+        if (this.options.formatOptions?.castParameters === false) {
             return super.prepareHydratedValue(value, columnMetadata)
         }
 
@@ -178,7 +172,7 @@ export class AuroraPostgresDriver extends PostgresWrapper {
      */
     protected loadDependencies(): void {
         const driver =
-            this.options.driver ||
+            this.options.driver ??
             PlatformTools.load("typeorm-aurora-data-api-driver")
         const { pg } = driver
 
