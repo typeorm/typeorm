@@ -57,6 +57,10 @@ LEFT JOIN "videos" ON "videos"."id" = "user"."videoId"
 LEFT JOIN "video_attributes" ON "video_attributes"."id" = "videos"."video_attributesId"
 ```
 
+- `relationLoadStrategy` - controls how relations are loaded: `"join"` (default) uses SQL JOINs, `"query"` uses separate queries. See [Eager and Lazy Relations](../relations/5-eager-and-lazy-relations.md#relation-load-strategy) for details.
+
+- `loadEagerRelations` - controls whether eager relations (marked with `eager: true`) are automatically loaded. Defaults to `true`. See [Eager and Lazy Relations](../relations/5-eager-and-lazy-relations.md#relation-load-strategy) for details.
+
 - `where` - simple conditions by which entity should be queried.
 
 ```typescript
@@ -216,14 +220,6 @@ or
     mode: "pessimistic_read" |
         "pessimistic_write" |
         "dirty_read" |
-        /*
-            "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
-            will be removed in a future version.
-
-            Use onLocked instead.
-         */
-        "pessimistic_partial_write" |
-        "pessimistic_write_or_fail" |
         "for_no_key_update" |
         "for_key_share",
 
@@ -243,7 +239,9 @@ userRepository.findOne({
 })
 ```
 
-See [lock modes](../query-builder/1-select-query-builder.md#lock-modes) for more information
+See [lock modes](../query-builder/1-select-query-builder.md#lock-modes) for more information.
+
+## Example
 
 Complete example of find options:
 
@@ -268,6 +266,10 @@ userRepository.find({
     order: {
         name: "ASC",
         id: "DESC",
+    },
+    lock: {
+        mode: "pessimistic_write",
+        onLocked: "nowait",
     },
     skip: 5,
     take: 10,
@@ -529,6 +531,22 @@ will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "categories" && '{TypeScript}'
+```
+
+- `JsonContains` (PostgreSQL/CockroachDB only)
+
+```ts
+import { JsonContains } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    metadata: JsonContains({ author: { name: "John" } }),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "metadata" ::jsonb @> '{"author":{"name":"John"}}'
 ```
 
 - `Raw`

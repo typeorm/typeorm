@@ -1,4 +1,4 @@
-import { RelationMetadata } from "../metadata/RelationMetadata"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { TypeORMError } from "./TypeORMError"
 
 /**

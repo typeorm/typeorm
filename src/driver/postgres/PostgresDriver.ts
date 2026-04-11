@@ -1,13 +1,20 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source/DataSource"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { IndexMetadata } from "../../metadata/IndexMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { TableIndex } from "../../schema-builder/table/TableIndex"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { OrmUtils } from "../../util/OrmUtils"
@@ -28,23 +35,59 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType"
-import { IndexMetadata } from "../../metadata/IndexMetadata"
-import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import type { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import type { UpsertType } from "../types/UpsertType"
+import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
+import type { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
+import { PostgresQueryRunner } from "./PostgresQueryRunner"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
  */
 export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://www.postgresql.org/docs/current/transaction-iso.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Postgres underlying library.
@@ -72,9 +115,9 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
-    options: PostgresConnectionOptions
+    options: PostgresDataSourceOptions
 
     /**
      * Version of Postgres. Requires a SQL query to the DB, so it is set on the first
@@ -305,6 +348,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Max length allowed by Postgres for aliases.
+     *
      * @see https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
      */
     maxAliasLength = 63
@@ -378,13 +422,13 @@ export class PostgresDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection?: DataSource) {
-        if (!connection) {
+    constructor(dataSource?: DataSource) {
+        if (!dataSource) {
             return
         }
 
-        this.connection = connection
-        this.options = connection.options as PostgresConnectionOptions
+        this.dataSource = dataSource
+        this.options = dataSource.options as PostgresDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
         if (this.options.useUTC) {
             process.env.PGTZ = "UTC"
@@ -437,24 +481,16 @@ export class PostgresDriver implements Driver {
         if (!this.version || !this.database || !this.searchSchema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.version) {
-                this.version = await queryRunner.getVersion()
-            }
+            this.version ??= await queryRunner.getVersion()
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
+            this.searchSchema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
 
-        if (!this.schema) {
-            this.schema = this.searchSchema
-        }
+        this.schema ??= this.searchSchema
     }
 
     /**
@@ -494,7 +530,7 @@ export class PostgresDriver implements Driver {
 
     protected async getAvailableExtensions(connection: any) {
         const availableExtensions = new Set<string>()
-        const { logger } = this.connection
+        const { logger } = this.dataSource
         try {
             const result: any = await this.executeQuery(
                 connection,
@@ -515,7 +551,7 @@ export class PostgresDriver implements Driver {
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {
-        const { logger } = this.connection
+        const { logger } = this.dataSource
 
         const {
             hasUuidColumns,
@@ -533,14 +569,14 @@ export class PostgresDriver implements Driver {
                 await this.executeQuery(
                     connection,
                     `CREATE EXTENSION IF NOT EXISTS "${
-                        this.options.uuidExtension || "uuid-ossp"
+                        this.options.uuidExtension ?? "uuid-ossp"
                     }"`,
                 )
             } catch (_) {
                 logger.log(
                     "warn",
                     `At least one of the entities has uuid column, but the '${
-                        this.options.uuidExtension || "uuid-ossp"
+                        this.options.uuidExtension ?? "uuid-ossp"
                     }' extension cannot be installed automatically. Please install it manually using superuser rights, or select another uuid extension.`,
                 )
             }
@@ -637,7 +673,7 @@ export class PostgresDriver implements Driver {
         connection: any,
     ) {
         if (!extensionsToInstall) return
-        const logger = this.connection.logger
+        const logger = this.dataSource.logger
         for (const extension of extensionsToInstall) {
             if (availableExtensions.has(extension)) {
                 try {
@@ -661,7 +697,7 @@ export class PostgresDriver implements Driver {
     }
 
     protected async checkMetadataForExtensions() {
-        const hasUuidColumns = this.connection.entityMetadatas.some(
+        const hasUuidColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.generatedColumns.filter(
@@ -670,7 +706,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasCitextColumns = this.connection.entityMetadatas.some(
+        const hasCitextColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter(
@@ -679,7 +715,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasHstoreColumns = this.connection.entityMetadatas.some(
+        const hasHstoreColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter(
@@ -688,7 +724,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasCubeColumns = this.connection.entityMetadatas.some(
+        const hasCubeColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter((column) => column.type === "cube")
@@ -696,7 +732,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasGeometryColumns = this.connection.entityMetadatas.some(
+        const hasGeometryColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter(
@@ -705,7 +741,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasLtreeColumns = this.connection.entityMetadatas.some(
+        const hasLtreeColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter((column) => column.type === "ltree")
@@ -713,7 +749,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasVectorColumns = this.connection.entityMetadatas.some(
+        const hasVectorColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return metadata.columns.some(
                     (column) =>
@@ -721,7 +757,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasExclusionConstraints = this.connection.entityMetadatas.some(
+        const hasExclusionConstraints = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return metadata.exclusions.length > 0
             },
@@ -766,7 +802,7 @@ export class PostgresDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -803,6 +839,7 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
+            columnMetadata.type === "timestamptz" ||
             columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp without time zone"
         ) {
@@ -911,6 +948,7 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
+            columnMetadata.type === "timestamptz" ||
             columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp without time zone"
         ) {
@@ -968,7 +1006,7 @@ export class PostgresDriver implements Driver {
                 const unparsedArrayString = value
 
                 value = []
-                let cube: RegExpExecArray | null = null
+                let cube: RegExpExecArray | null
                 // Iterate through all regexp matches for cubes/null in array
                 while ((cube = regexp.exec(unparsedArrayString)) !== null) {
                     if (cube[1] !== undefined) {
@@ -1039,11 +1077,8 @@ export class PostgresDriver implements Driver {
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -1090,7 +1125,7 @@ export class PostgresDriver implements Driver {
      * @param columnName
      */
     escape(columnName: string): string {
-        return '"' + columnName + '"'
+        return `"${columnName.replaceAll('"', '""')}"`
     }
 
     /**
@@ -1123,8 +1158,8 @@ export class PostgresDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -1134,11 +1169,11 @@ export class PostgresDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -1147,8 +1182,8 @@ export class PostgresDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -1157,7 +1192,7 @@ export class PostgresDriver implements Driver {
 
         return {
             database: driverDatabase,
-            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
+            schema: (parts.length > 1 ? parts[0] : undefined) ?? driverSchema,
             tableName: parts.length > 1 ? parts[1] : parts[0],
         }
     }
@@ -1257,7 +1292,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (typeof defaultValue === "object") {
-            return `'${JSON.stringify(defaultValue)}'`
+            return `'${JSON.stringify(defaultValue).replaceAll("'", "''")}'`
         }
 
         return `${defaultValue}`
@@ -1273,30 +1308,63 @@ export class PostgresDriver implements Driver {
         columnMetadata: ColumnMetadata,
         tableColumn: TableColumn,
     ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
         if (
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
-            const tableColumnDefault =
-                typeof tableColumn.default === "string"
-                    ? JSON.parse(
-                          tableColumn.default.substring(
-                              1,
-                              tableColumn.default.length - 1,
-                          ),
-                      )
-                    : tableColumn.default
-
-            return OrmUtils.deepCompare(
-                columnMetadata.default,
-                tableColumnDefault,
-            )
+            return this.compareJsonDefaults(columnMetadata, tableColumn)
         }
 
         const columnDefault = this.lowerDefaultValueIfNecessary(
             this.normalizeDefault(columnMetadata),
         )
         return columnDefault === tableColumn.default
+    }
+
+    /**
+     * Compares json/jsonb default values of the column.
+     *
+     * @param columnMetadata
+     * @param tableColumn
+     */
+    private compareJsonDefaults(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        let jsonString = tableColumn.default
+        if (typeof jsonString === "string") {
+            jsonString = jsonString.trim()
+            if (jsonString.startsWith("'") && jsonString.endsWith("'")) {
+                jsonString = jsonString.slice(1, -1).replaceAll("''", "'")
+            }
+        }
+
+        if (typeof jsonString === "string") {
+            try {
+                const tableColumnDefault = JSON.parse(jsonString)
+                return OrmUtils.deepCompare(
+                    columnMetadata.default,
+                    tableColumnDefault,
+                )
+            } catch (err) {
+                if (!(err instanceof SyntaxError)) {
+                    throw new TypeORMError(
+                        `Failed to compare default values of ${columnMetadata.propertyName} column`,
+                    )
+                }
+            }
+        } else {
+            return OrmUtils.deepCompare(columnMetadata.default, jsonString)
+        }
+        return false
     }
 
     /**
@@ -1486,19 +1554,21 @@ export class PostgresDriver implements Driver {
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
                 tableColumn.enumName !== columnMetadata.enumName ||
-                (tableColumn.enum &&
+                !!(
+                    tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
                         tableColumn.enum,
                         columnMetadata.enum.map((val) => val + ""),
-                    )) || // enums in postgres are always strings
+                    )
+                ) || // enums in postgres are always strings
                 tableColumn.isGenerated !== columnMetadata.isGenerated ||
-                (tableColumn.spatialFeatureType || "").toLowerCase() !==
-                    (columnMetadata.spatialFeatureType || "").toLowerCase() ||
+                (tableColumn.spatialFeatureType ?? "").toLowerCase() !==
+                    (columnMetadata.spatialFeatureType ?? "").toLowerCase() ||
                 tableColumn.srid !== columnMetadata.srid ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
-                (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim() ||
+                (tableColumn.asExpression ?? "").trim() !==
+                    (columnMetadata.asExpression ?? "").trim() ||
                 tableColumn.collation !== columnMetadata.collation
 
             // DEBUG SECTION
@@ -1688,11 +1758,11 @@ export class PostgresDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const postgres = this.options.driver || PlatformTools.load("pg")
+            const postgres = this.options.driver ?? PlatformTools.load("pg")
             this.postgres = postgres
             try {
                 const pgNative =
-                    this.options.nativeDriver || PlatformTools.load("pg-native")
+                    this.options.nativeDriver ?? PlatformTools.load("pg-native")
                 if (pgNative && this.postgres.native)
                     this.postgres = this.postgres.native
             } catch (e) {}
@@ -1708,10 +1778,10 @@ export class PostgresDriver implements Driver {
      * @param credentials
      */
     protected async createPool(
-        options: PostgresConnectionOptions,
+        options: PostgresDataSourceOptions,
         credentials: PostgresConnectionCredentialsOptions,
     ): Promise<any> {
-        const { logger } = this.connection
+        const { logger } = this.dataSource
         credentials = Object.assign({}, credentials)
 
         // build connection options for the driver
@@ -1731,7 +1801,7 @@ export class PostgresDriver implements Driver {
                     options.applicationName ?? credentials.applicationName,
                 max: options.poolSize,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         if (options.parseInt8 !== undefined) {
@@ -1755,7 +1825,7 @@ export class PostgresDriver implements Driver {
         const pool = new this.postgres.Pool(connectionOptions)
 
         const poolErrorHandler =
-            options.poolErrorHandler ||
+            options.poolErrorHandler ??
             ((error: any) =>
                 logger.log("warn", `Postgres pool raised an error. ${error}`))
 
@@ -1772,12 +1842,12 @@ export class PostgresDriver implements Driver {
                 if (options.logNotifications) {
                     connection.on("notice", (msg: any) => {
                         if (msg) {
-                            this.connection.logger.log("info", msg.message)
+                            this.dataSource.logger.log("info", msg.message)
                         }
                     })
                     connection.on("notification", (msg: any) => {
                         if (msg) {
-                            this.connection.logger.log(
+                            this.dataSource.logger.log(
                                 "info",
                                 `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
                             )
@@ -1810,7 +1880,7 @@ export class PostgresDriver implements Driver {
      * @param query
      */
     protected executeQuery(connection: any, query: string) {
-        this.connection.logger.logQuery(query)
+        this.dataSource.logger.logQuery(query)
 
         return new Promise((ok, fail) => {
             connection.query(query, (err: any, result: any) =>

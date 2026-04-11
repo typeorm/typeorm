@@ -1,9 +1,9 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { DriverUtils } from "../driver/DriverUtils"
 import { TypeORMError } from "../error/TypeORMError"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import { FindTreeOptions } from "../find-options/FindTreeOptions"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { FindTreeOptions } from "../find-options/FindTreeOptions"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { TreeRepositoryUtils } from "../util/TreeRepositoryUtils"
 import { Repository } from "./Repository"
 
@@ -36,13 +36,13 @@ export class TreeRepository<
      */
     findRoots(options?: FindTreeOptions): Promise<Entity[]> {
         const escapeAlias = (alias: string) =>
-            this.manager.connection.driver.escape(alias)
+            this.manager.dataSource.driver.escape(alias)
         const escapeColumn = (column: string) =>
-            this.manager.connection.driver.escape(column)
+            this.manager.dataSource.driver.escape(column)
 
         const joinColumn = this.metadata.treeParentRelation!.joinColumns[0]
         const parentPropertyName =
-            joinColumn.givenDatabaseName || joinColumn.databaseName
+            joinColumn.givenDatabaseName ?? joinColumn.databaseName
 
         const qb = this.createQueryBuilder("treeEntity")
         FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options)
@@ -139,7 +139,7 @@ export class TreeRepository<
     ): SelectQueryBuilder<Entity> {
         // create shortcuts for better readability
         const escape = (alias: string) =>
-            this.manager.connection.driver.escape(alias)
+            this.manager.dataSource.driver.escape(alias)
 
         if (this.metadata.treeType === "closure-table") {
             const joinCondition =
@@ -175,7 +175,7 @@ export class TreeRepository<
 
             return this.createQueryBuilder(alias)
                 .innerJoin(
-                    this.metadata.closureJunctionTable.tableName,
+                    this.metadata.closureJunctionTable.tablePath,
                     closureTableAlias,
                     joinCondition,
                 )
@@ -323,7 +323,7 @@ export class TreeRepository<
         entity: Entity,
     ): SelectQueryBuilder<Entity> {
         // create shortcuts for better readability
-        // const escape = (alias: string) => this.manager.connection.driver.escape(alias);
+        // const escape = (alias: string) => this.manager.dataSource.driver.escape(alias);
 
         if (this.metadata.treeType === "closure-table") {
             const joinCondition =
@@ -359,7 +359,7 @@ export class TreeRepository<
 
             return this.createQueryBuilder(alias)
                 .innerJoin(
-                    this.metadata.closureJunctionTable.tableName,
+                    this.metadata.closureJunctionTable.tablePath,
                     closureTableAlias,
                     joinCondition,
                 )

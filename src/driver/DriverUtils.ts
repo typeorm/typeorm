@@ -1,4 +1,4 @@
-import { Driver } from "./Driver"
+import type { Driver } from "./Driver"
 import { hash, shorten } from "../util/StringUtils"
 import { VersionUtils } from "../util/VersionUtils"
 
@@ -17,14 +17,13 @@ export class DriverUtils {
      */
     static isSQLiteFamily(driver: Driver): boolean {
         return [
-            "sqlite",
-            "cordova",
-            "react-native",
-            "nativescript",
-            "sqljs",
-            "expo",
             "better-sqlite3",
             "capacitor",
+            "cordova",
+            "expo",
+            "nativescript",
+            "react-native",
+            "sqljs",
         ].includes(driver.options.type)
     }
 
@@ -394,8 +393,7 @@ export class DriverUtils {
         buildOptions: { shorten?: boolean; joiner?: string } | undefined,
         ...alias: string[]
     ): string {
-        const joiner =
-            buildOptions && buildOptions.joiner ? buildOptions.joiner : "_"
+        const joiner = buildOptions?.joiner ?? "_"
 
         const newAlias = alias.length === 1 ? alias[0] : alias.join(joiner)
 
@@ -404,7 +402,7 @@ export class DriverUtils {
             maxAliasLength > 0 &&
             newAlias.length > maxAliasLength
         ) {
-            if (buildOptions && buildOptions.shorten === true) {
+            if (buildOptions?.shorten === true) {
                 const shortenedAlias = shorten(newAlias)
                 if (shortenedAlias.length < maxAliasLength) {
                     return shortenedAlias
@@ -456,27 +454,29 @@ export class DriverUtils {
     private static parseConnectionUrl(url: string) {
         const type = url.split(":")[0]
         const firstSlashes = url.indexOf("//")
-        const preBase = url.substr(firstSlashes + 2)
+        const preBase = url.substring(firstSlashes + 2)
         const secondSlash = preBase.indexOf("/")
         const base =
-            secondSlash !== -1 ? preBase.substr(0, secondSlash) : preBase
+            secondSlash !== -1 ? preBase.substring(0, secondSlash) : preBase
         let afterBase =
-            secondSlash !== -1 ? preBase.substr(secondSlash + 1) : undefined
+            secondSlash !== -1 ? preBase.substring(secondSlash + 1) : undefined
         // remove mongodb query params
         if (afterBase && afterBase.indexOf("?") !== -1) {
-            afterBase = afterBase.substr(0, afterBase.indexOf("?"))
+            afterBase = afterBase.substring(0, afterBase.indexOf("?"))
         }
+        // normalize empty string to undefined so downstream ?? works correctly
+        if (afterBase === "") afterBase = undefined
 
         const lastAtSign = base.lastIndexOf("@")
-        const usernameAndPassword = base.substr(0, lastAtSign)
-        const hostAndPort = base.substr(lastAtSign + 1)
+        const usernameAndPassword = base.substring(0, lastAtSign)
+        const hostAndPort = base.substring(lastAtSign + 1)
 
         let username = usernameAndPassword
         let password = ""
         const firstColon = usernameAndPassword.indexOf(":")
         if (firstColon !== -1) {
-            username = usernameAndPassword.substr(0, firstColon)
-            password = usernameAndPassword.substr(firstColon + 1)
+            username = usernameAndPassword.substring(0, firstColon)
+            password = usernameAndPassword.substring(firstColon + 1)
         }
         const [host, port] = hostAndPort.split(":")
 
@@ -486,7 +486,7 @@ export class DriverUtils {
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
+            database: afterBase ?? undefined,
         }
     }
 
@@ -497,13 +497,15 @@ export class DriverUtils {
     private static parseMongoDBConnectionUrl(url: string) {
         const type = url.split(":")[0]
         const firstSlashes = url.indexOf("//")
-        const preBase = url.substr(firstSlashes + 2)
+        const preBase = url.substring(firstSlashes + 2)
         const secondSlash = preBase.indexOf("/")
         const base =
-            secondSlash !== -1 ? preBase.substr(0, secondSlash) : preBase
+            secondSlash !== -1 ? preBase.substring(0, secondSlash) : preBase
         let afterBase =
-            secondSlash !== -1 ? preBase.substr(secondSlash + 1) : undefined
-        let afterQuestionMark = ""
+            secondSlash !== -1 ? preBase.substring(secondSlash + 1) : undefined
+        // normalize empty string to undefined so downstream ?? works correctly
+        if (afterBase === "") afterBase = undefined
+        let afterQuestionMark: string
         let host = undefined
         let port = undefined
         let hostReplicaSet = undefined
@@ -513,7 +515,7 @@ export class DriverUtils {
 
         if (afterBase && afterBase.indexOf("?") !== -1) {
             // split params
-            afterQuestionMark = afterBase.substr(
+            afterQuestionMark = afterBase.substring(
                 afterBase.indexOf("?") + 1,
                 afterBase.length,
             )
@@ -531,19 +533,19 @@ export class DriverUtils {
 
             // specific replicaSet value to set options about hostReplicaSet
             replicaSet = optionsObject["replicaSet"]
-            afterBase = afterBase.substr(0, afterBase.indexOf("?"))
+            afterBase = afterBase.substring(0, afterBase.indexOf("?"))
         }
 
         const lastAtSign = base.lastIndexOf("@")
-        const usernameAndPassword = base.substr(0, lastAtSign)
-        const hostAndPort = base.substr(lastAtSign + 1)
+        const usernameAndPassword = base.substring(0, lastAtSign)
+        const hostAndPort = base.substring(lastAtSign + 1)
 
         let username = usernameAndPassword
         let password = ""
         const firstColon = usernameAndPassword.indexOf(":")
         if (firstColon !== -1) {
-            username = usernameAndPassword.substr(0, firstColon)
-            password = usernameAndPassword.substr(firstColon + 1)
+            username = usernameAndPassword.substring(0, firstColon)
+            password = usernameAndPassword.substring(firstColon + 1)
         }
 
         // If replicaSet have value set It as hostlist, If not set like standalone host
@@ -560,7 +562,7 @@ export class DriverUtils {
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
+            database: afterBase ?? undefined,
         }
 
         // Loop to set every options in connectionUrl to object

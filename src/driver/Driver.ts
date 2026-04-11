@@ -28,7 +28,7 @@ export type ReturningType = "insert" | "update" | "delete"
  */
 export interface Driver {
     /**
-     * Connection options.
+     * Data Source options.
      */
     options: BaseDataSourceOptions
 
@@ -177,7 +177,6 @@ export interface Driver {
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]]
 
     /**

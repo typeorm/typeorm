@@ -1,4 +1,4 @@
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import "../../../utils/test-setup"
 import {
     closeTestingConnections,
@@ -8,25 +8,29 @@ import {
 import { Post } from "./entity/Post"
 
 describe("json > defaults", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Post],
-                enabledDrivers: ["postgres"], // because only postgres supports jsonb type
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post],
+            enabledDrivers: [
+                "postgres",
+                "cockroachdb",
+                "better-sqlite3",
+                "sqljs",
+            ],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert default values properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.title = "Post #1"
-                await connection.manager.save(post1)
+                await dataSource.manager.save(post1)
 
-                const loadedPost1 = await connection.manager.findBy(Post, {
+                const loadedPost1 = await dataSource.manager.findBy(Post, {
                     title: "Post #1",
                 })
                 loadedPost1.should.be.eql([
@@ -47,9 +51,9 @@ describe("json > defaults", () => {
                     { name: "JavaScript" },
                     { name: "ECMAScript" },
                 ]
-                await connection.manager.save(post2)
+                await dataSource.manager.save(post2)
 
-                const loadedPost2 = await connection.manager.findBy(Post, {
+                const loadedPost2 = await dataSource.manager.findBy(Post, {
                     title: "Post #2",
                 })
                 loadedPost2.should.be.eql([

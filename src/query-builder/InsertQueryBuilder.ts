@@ -1,24 +1,26 @@
-import { EntityTarget } from "../common/EntityTarget"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { DriverUtils } from "../driver/DriverUtils"
-import { MysqlDriver } from "../driver/mysql/MysqlDriver"
-import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
+import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
+import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { TypeORMError } from "../error"
 import { InsertValuesMissingError } from "../error/InsertValuesMissingError"
 import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { RandomGenerator } from "../util/RandomGenerator"
-import { InsertOrUpdateOptions } from "./InsertOrUpdateOptions"
+import type { InsertOrUpdateOptions } from "./InsertOrUpdateOptions"
 import { QueryBuilder } from "./QueryBuilder"
-import { QueryDeepPartialEntity } from "./QueryPartialEntity"
+import type { QueryDeepPartialEntity } from "./QueryPartialEntity"
 import { InsertResult } from "./result/InsertResult"
 import { ReturningResultsEntityUpdator } from "./ReturningResultsEntityUpdator"
-import { SelectQueryBuilder } from "./SelectQueryBuilder"
-import { WhereClause } from "./WhereClause"
+import type { SelectQueryBuilder } from "./SelectQueryBuilder"
+import type { WhereClause } from "./WhereClause"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -126,7 +128,7 @@ export class InsertQueryBuilder<
                 if (
                     !(
                         valueSets.length > 1 &&
-                        this.connection.driver.options.type === "oracle"
+                        this.dataSource.driver.options.type === "oracle"
                     )
                 ) {
                     this.expressionMap.extraReturningColumns =
@@ -142,10 +144,10 @@ export class InsertQueryBuilder<
 
             if (
                 returningColumns.length > 0 &&
-                this.connection.driver.options.type === "mssql"
+                this.dataSource.driver.options.type === "mssql"
             ) {
                 declareSql = (
-                    this.connection.driver as SqlServerDriver
+                    this.dataSource.driver as SqlServerDriver
                 ).buildTableVariableDeclaration(
                     "@OutputTable",
                     returningColumns,
@@ -247,7 +249,7 @@ export class InsertQueryBuilder<
             : entityTarget
         const mainAlias = this.createFromAlias(entityTarget)
         this.expressionMap.setMainAlias(mainAlias)
-        this.expressionMap.insertColumns = columns || []
+        this.expressionMap.insertColumns = columns ?? []
         return this as any as InsertQueryBuilder<T>
     }
 
@@ -351,7 +353,7 @@ export class InsertQueryBuilder<
      */
     returning(returning: string | string[]): this {
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported("insert")) {
+        if (!this.dataSource.driver.isReturningSqlSupported("insert")) {
             throw new ReturningStatementNotSupportedError()
         }
 
@@ -400,12 +402,6 @@ export class InsertQueryBuilder<
      *
      * is now `.orUpdate(['title'], ['date'])`
      */
-    orUpdate(statement?: {
-        columns?: string[]
-        overwrite?: string[]
-        conflict_target?: string | string[]
-    }): this
-
     orUpdate(
         overwrite: string[],
         conflictTarget?: string | string[],
@@ -438,21 +434,8 @@ export class InsertQueryBuilder<
         }
         if (parameters) this.setParameters(parameters)
 
-        if (!Array.isArray(statementOrOverwrite)) {
-            this.expressionMap.onUpdate = {
-                conflict: statementOrOverwrite?.conflict_target,
-                columns: statementOrOverwrite?.columns,
-                overwrite: statementOrOverwrite?.overwrite,
-                skipUpdateIfNoValuesChanged:
-                    orUpdateOptions?.skipUpdateIfNoValuesChanged,
-                upsertType: orUpdateOptions?.upsertType,
-                overwriteCondition: wheres,
-            }
-            return this
-        }
-
         this.expressionMap.onUpdate = {
-            overwrite: statementOrOverwrite,
+            overwrite: overwrite,
             conflict: conflictTarget,
             skipUpdateIfNoValuesChanged:
                 orUpdateOptions?.skipUpdateIfNoValuesChanged,
@@ -475,7 +458,7 @@ export class InsertQueryBuilder<
             if (
                 (this.expressionMap.onUpdate?.upsertType ?? "merge-into") ===
                     "merge-into" &&
-                this.connection.driver.supportedUpsertTypes.includes(
+                this.dataSource.driver.supportedUpsertTypes.includes(
                     "merge-into",
                 )
             )
@@ -488,7 +471,7 @@ export class InsertQueryBuilder<
                 : tableName
         const valuesExpression = this.createValuesExpression() // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
         const returningExpression =
-            this.connection.driver.options.type === "oracle" &&
+            this.dataSource.driver.options.type === "oracle" &&
             this.getValueSets().length > 1
                 ? null
                 : this.createReturningExpression("insert") // oracle doesnt support returning with multi-row insert
@@ -500,8 +483,8 @@ export class InsertQueryBuilder<
         }
 
         if (
-            DriverUtils.isMySQLFamily(this.connection.driver) ||
-            this.connection.driver.options.type === "aurora-mysql"
+            DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+            this.dataSource.driver.options.type === "aurora-mysql"
         ) {
             query += `${this.expressionMap.onIgnore ? " IGNORE " : ""}`
         }
@@ -510,7 +493,7 @@ export class InsertQueryBuilder<
 
         if (
             this.alias !== this.getMainTableName() &&
-            DriverUtils.isPostgresFamily(this.connection.driver)
+            DriverUtils.isPostgresFamily(this.dataSource.driver)
         ) {
             query += ` AS "${this.alias}"`
         }
@@ -521,8 +504,8 @@ export class InsertQueryBuilder<
         } else {
             if (
                 !valuesExpression &&
-                (DriverUtils.isMySQLFamily(this.connection.driver) ||
-                    this.connection.driver.options.type === "aurora-mysql")
+                (DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+                    this.dataSource.driver.options.type === "aurora-mysql")
             )
                 // special syntax for mysql DEFAULT VALUES insertion
                 query += "()"
@@ -534,7 +517,7 @@ export class InsertQueryBuilder<
             // add OUTPUT expression
             if (
                 returningExpression &&
-                this.connection.driver.options.type === "mssql"
+                this.dataSource.driver.options.type === "mssql"
             ) {
                 query += ` OUTPUT ${returningExpression}`
             }
@@ -542,8 +525,8 @@ export class InsertQueryBuilder<
             // add VALUES expression
             if (valuesExpression) {
                 if (
-                    (this.connection.driver.options.type === "oracle" ||
-                        this.connection.driver.options.type === "sap") &&
+                    (this.dataSource.driver.options.type === "oracle" ||
+                        this.dataSource.driver.options.type === "sap") &&
                     this.getValueSets().length > 1
                 ) {
                     query += ` ${valuesExpression}`
@@ -552,8 +535,8 @@ export class InsertQueryBuilder<
                 }
             } else {
                 if (
-                    DriverUtils.isMySQLFamily(this.connection.driver) ||
-                    this.connection.driver.options.type === "aurora-mysql"
+                    DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+                    this.dataSource.driver.options.type === "aurora-mysql"
                 ) {
                     // special syntax for mysql DEFAULT VALUES insertion
                     query += " VALUES ()"
@@ -564,14 +547,12 @@ export class InsertQueryBuilder<
         }
         if (this.expressionMap.onUpdate?.upsertType !== "primary-key") {
             if (
-                this.connection.driver.supportedUpsertTypes.includes(
+                this.dataSource.driver.supportedUpsertTypes.includes(
                     "on-conflict-do-update",
                 )
             ) {
                 if (this.expressionMap.onIgnore) {
                     query += " ON CONFLICT DO NOTHING "
-                } else if (this.expressionMap.onConflict) {
-                    query += ` ON CONFLICT ${this.expressionMap.onConflict} `
                 } else if (this.expressionMap.onUpdate) {
                     const {
                         overwrite,
@@ -624,14 +605,38 @@ export class InsertQueryBuilder<
                         )
                     } else if (columns) {
                         updatePart.push(
-                            ...columns.map(
-                                (column) =>
-                                    `${this.escape(column)} = :${column}`,
-                            ),
+                            ...columns.map((column) => {
+                                let expression = `:${column}`
+                                if (
+                                    this.expressionMap.mainAlias!.hasMetadata &&
+                                    DriverUtils.isSQLiteFamily(
+                                        this.dataSource.driver,
+                                    )
+                                ) {
+                                    const col =
+                                        this.expressionMap.mainAlias?.metadata.findColumnWithDatabaseName(
+                                            column,
+                                        )
+                                    if (col) {
+                                        expression = (
+                                            this.dataSource.driver as
+                                                | AbstractSqliteDriver
+                                                | ReactNativeDriver
+                                        ).wrapWithJsonFunction(
+                                            expression,
+                                            col,
+                                            true,
+                                        )
+                                    }
+                                }
+                                return `${this.escape(column)} = ${expression}`
+                            }),
                         )
                     }
 
-                    if (updatePart.length > 0) {
+                    if (updatePart.length === 0) {
+                        query += ` ${conflictTarget} DO NOTHING `
+                    } else {
                         query += ` ${conflictTarget} DO UPDATE SET `
 
                         updatePart.push(
@@ -643,7 +648,7 @@ export class InsertQueryBuilder<
                                             column.databaseName,
                                         ) &&
                                         !(
-                                            (this.connection.driver.options
+                                            (this.dataSource.driver.options
                                                 .type === "oracle" &&
                                                 this.getValueSets().length >
                                                     1) ||
@@ -655,7 +660,7 @@ export class InsertQueryBuilder<
                                                 ) === "LIMIT_OFFSET") ||
                                             this.connection.driver.options
                                                 .type === "sap" ||
-                                            this.connection.driver.options
+                                            this.dataSource.driver.options
                                                 .type === "spanner"
                                         ),
                                 )
@@ -672,6 +677,7 @@ export class InsertQueryBuilder<
 
                     if (
                         Array.isArray(overwrite) &&
+                        overwrite.length > 0 &&
                         skipUpdateIfNoValuesChanged
                     ) {
                         this.expressionMap.onUpdate.overwriteCondition ??= []
@@ -700,14 +706,22 @@ export class InsertQueryBuilder<
                     }
                 }
             } else if (
-                this.connection.driver.supportedUpsertTypes.includes(
+                this.dataSource.driver.supportedUpsertTypes.includes(
                     "on-duplicate-key-update",
                 )
             ) {
                 if (this.expressionMap.onUpdate) {
                     const { overwrite, columns } = this.expressionMap.onUpdate
 
-                    if (Array.isArray(overwrite)) {
+                    if (Array.isArray(overwrite) && overwrite.length === 0) {
+                        // No columns to update — degrade to INSERT IGNORE
+                        // The IGNORE keyword was not added above, so we
+                        // rewrite the query to include it.
+                        query = query.replace(
+                            /^INSERT INTO/,
+                            "INSERT IGNORE INTO",
+                        )
+                    } else if (Array.isArray(overwrite)) {
                         query += " ON DUPLICATE KEY UPDATE "
                         query += overwrite
                             .map(
@@ -752,7 +766,7 @@ export class InsertQueryBuilder<
 
         if (
             returningExpression &&
-            this.connection.driver.options.type === "spanner"
+            this.dataSource.driver.options.type === "spanner"
         ) {
             query += ` THEN RETURN ${returningExpression}`
         }
@@ -760,7 +774,7 @@ export class InsertQueryBuilder<
         // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
         // IDENTITY_INSERT can only be enabled for tables where there is an IDENTITY column and only if there is a value to be inserted (i.e. supplying DEFAULT is prohibited if IDENTITY_INSERT is enabled)
         if (
-            this.connection.driver.options.type === "mssql" &&
+            this.dataSource.driver.options.type === "mssql" &&
             this.expressionMap.mainAlias!.hasMetadata &&
             this.expressionMap
                 .mainAlias!.metadata.columns.filter((column) =>
@@ -815,7 +829,7 @@ export class InsertQueryBuilder<
                         ) === "GROUP_CONCAT" ||
                         this.connection.driver.options.type ===
                             "aurora-mysql" ||
-                        this.connection.driver.options.type === "oracle")
+                        this.dataSource.driver.options.type === "oracle")
                 )
                     return false
 
@@ -838,7 +852,7 @@ export class InsertQueryBuilder<
                     ) !== "GROUP_CONCAT" &&
                     !(this.connection.driver.options.type === "aurora-mysql") &&
                     !(
-                        this.connection.driver.options.type === "mssql" &&
+                        this.dataSource.driver.options.type === "mssql" &&
                         this.isOverridingAutoIncrementBehavior(column)
                     )
                 )
@@ -892,12 +906,12 @@ export class InsertQueryBuilder<
                 columns.forEach((column, columnIndex) => {
                     if (columnIndex === 0) {
                         if (
-                            this.connection.driver.options.type === "oracle" &&
+                            this.dataSource.driver.options.type === "oracle" &&
                             valueSets.length > 1
                         ) {
                             expression += " SELECT "
                         } else if (
-                            this.connection.driver.options.type === "sap" &&
+                            this.dataSource.driver.options.type === "sap" &&
                             valueSets.length > 1
                         ) {
                             expression += " SELECT "
@@ -916,26 +930,26 @@ export class InsertQueryBuilder<
                         if (valueSetIndex === valueSets.length - 1) {
                             if (
                                 ["oracle", "sap"].includes(
-                                    this.connection.driver.options.type,
+                                    this.dataSource.driver.options.type,
                                 ) &&
                                 valueSets.length > 1
                             ) {
                                 expression +=
                                     " FROM " +
-                                    this.connection.driver.dummyTableName
+                                    this.dataSource.driver.dummyTableName
                             } else {
                                 expression += ")"
                             }
                         } else {
                             if (
                                 ["oracle", "sap"].includes(
-                                    this.connection.driver.options.type,
+                                    this.dataSource.driver.options.type,
                                 ) &&
                                 valueSets.length > 1
                             ) {
                                 expression +=
                                     " FROM " +
-                                    this.connection.driver.dummyTableName +
+                                    this.dataSource.driver.dummyTableName +
                                     " UNION ALL "
                             } else {
                                 expression += "), "
@@ -970,7 +984,7 @@ export class InsertQueryBuilder<
                         // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
                         if (
-                            (this.connection.driver.options.type === "oracle" &&
+                            (this.dataSource.driver.options.type === "oracle" &&
                                 valueSets.length > 1) ||
                             (DriverUtils.getUpsertStyle(
                                 this.connection.driver,
@@ -987,7 +1001,7 @@ export class InsertQueryBuilder<
                         }
                     } else if (
                         value === null &&
-                        this.connection.driver.options.type === "spanner"
+                        this.dataSource.driver.options.type === "spanner"
                     ) {
                         // just any other regular value
                     } else {
@@ -1050,7 +1064,7 @@ export class InsertQueryBuilder<
      * Creates MERGE express used to perform insert query.
      */
     protected createMergeExpression() {
-        if (!this.connection.driver.supportedUpsertTypes.includes("merge-into"))
+        if (!this.dataSource.driver.supportedUpsertTypes.includes("merge-into"))
             throw new TypeORMError(
                 `Upsert type "merge-into" is not supported by current database driver`,
             )
@@ -1224,8 +1238,8 @@ export class InsertQueryBuilder<
                 this.createUpsertConditionExpression(tableAlias)
             if (updateExpression.trim()) {
                 if (
-                    (this.connection.driver.options.type === "mssql" ||
-                        this.connection.driver.options.type === "sap") &&
+                    (this.dataSource.driver.options.type === "mssql" ||
+                        this.dataSource.driver.options.type === "sap") &&
                     mergeCondition != ""
                 ) {
                     query += ` WHEN MATCHED AND ${mergeCondition} THEN UPDATE SET ${updateExpression}`
@@ -1241,7 +1255,7 @@ export class InsertQueryBuilder<
         const valuesExpression =
             this.createMergeIntoInsertValuesExpression(mergeSourceAlias)
         const returningExpression =
-            this.connection.driver.options.type === "mssql"
+            this.dataSource.driver.options.type === "mssql"
                 ? this.createReturningExpression("insert")
                 : null
 
@@ -1260,11 +1274,11 @@ export class InsertQueryBuilder<
         // add OUTPUT expression
         if (
             returningExpression &&
-            this.connection.driver.options.type === "mssql"
+            this.dataSource.driver.options.type === "mssql"
         ) {
             query += ` OUTPUT ${returningExpression}`
         }
-        if (this.connection.driver.options.type === "mssql") {
+        if (this.dataSource.driver.options.type === "mssql") {
             query += `;`
         }
         return query
@@ -1290,7 +1304,7 @@ export class InsertQueryBuilder<
             // drivers (e.g. Oracle, SAP HANA) we clone the select and set
             // the select aliases to the target column database names so
             // references like `mergeIntoSource.email` resolve correctly.
-            if (this.connection.driver.options.type === "mssql") {
+            if (this.dataSource.driver.options.type === "mssql") {
                 expression += this.expressionMap.insertFromSelect.getQuery()
             } else {
                 // Clone the SelectQueryBuilder and modify its select expressions
@@ -1323,7 +1337,7 @@ export class InsertQueryBuilder<
 
             expression += `) ${mergeSourceAlias}`
             // MSSQL requires column list after the alias
-            if (this.connection.driver.options.type === "mssql") {
+            if (this.dataSource.driver.options.type === "mssql") {
                 expression += ` (${columns
                     .map((column) => this.escape(column.databaseName))
                     .join(", ")})`
@@ -1336,13 +1350,13 @@ export class InsertQueryBuilder<
 
         // if column metadatas are given then apply all necessary operations with values
         if (columns.length > 0) {
-            if (this.connection.driver.options.type === "mssql") {
+            if (this.dataSource.driver.options.type === "mssql") {
                 expression += "VALUES "
             }
             valueSets.forEach((valueSet, valueSetIndex) => {
                 columns.forEach((column, columnIndex) => {
                     if (columnIndex === 0) {
-                        if (this.connection.driver.options.type === "mssql") {
+                        if (this.dataSource.driver.options.type === "mssql") {
                             expression += "("
                         } else {
                             expression += "SELECT "
@@ -1356,7 +1370,7 @@ export class InsertQueryBuilder<
                         !(
                             column.isGenerated &&
                             column.generationStrategy === "uuid" &&
-                            !this.connection.driver.isUUIDGenerationSupported()
+                            !this.dataSource.driver.isUUIDGenerationSupported()
                         )
                     ) {
                         if (
@@ -1365,7 +1379,7 @@ export class InsertQueryBuilder<
                         ) {
                             // try to use default defined in the column
                             expression +=
-                                this.connection.driver.normalizeDefault(column)
+                                this.dataSource.driver.normalizeDefault(column)
                         } else {
                             expression += "NULL" // otherwise simply use NULL and pray if column is nullable
                         }
@@ -1379,37 +1393,37 @@ export class InsertQueryBuilder<
                         )
                     }
 
-                    if (this.connection.driver.options.type !== "mssql")
+                    if (this.dataSource.driver.options.type !== "mssql")
                         expression += ` AS ${this.escape(column.databaseName)}`
 
                     if (columnIndex === columns.length - 1) {
                         if (valueSetIndex === valueSets.length - 1) {
                             if (
                                 ["oracle", "sap"].includes(
-                                    this.connection.driver.options.type,
+                                    this.dataSource.driver.options.type,
                                 )
                             ) {
                                 expression +=
                                     " FROM " +
-                                    this.connection.driver.dummyTableName
+                                    this.dataSource.driver.dummyTableName
                             } else if (
-                                this.connection.driver.options.type === "mssql"
+                                this.dataSource.driver.options.type === "mssql"
                             ) {
                                 expression += ")"
                             }
                         } else {
                             if (
                                 ["oracle", "sap"].includes(
-                                    this.connection.driver.options.type,
+                                    this.dataSource.driver.options.type,
                                 ) &&
                                 valueSets.length > 1
                             ) {
                                 expression +=
                                     " FROM " +
-                                    this.connection.driver.dummyTableName +
+                                    this.dataSource.driver.dummyTableName +
                                     " UNION ALL "
                             } else if (
-                                this.connection.driver.options.type === "mssql"
+                                this.dataSource.driver.options.type === "mssql"
                             ) {
                                 expression += "), "
                             } else {
@@ -1428,7 +1442,7 @@ export class InsertQueryBuilder<
             )
         }
         expression += `) ${mergeSourceAlias}`
-        if (this.connection.driver.options.type === "mssql")
+        if (this.dataSource.driver.options.type === "mssql")
             expression += ` (${columns
                 .map((column) => this.escape(column.databaseName))
                 .join(", ")})`
@@ -1455,7 +1469,7 @@ export class InsertQueryBuilder<
                 if (
                     (column.isGenerated &&
                         column.generationStrategy === "uuid" &&
-                        this.connection.driver.isUUIDGenerationSupported()) ||
+                        this.dataSource.driver.isUUIDGenerationSupported()) ||
                     (column.isGenerated && column.generationStrategy !== "uuid")
                 ) {
                     expression += `DEFAULT`
@@ -1556,16 +1570,9 @@ export class InsertQueryBuilder<
         // extract real value from the entity
         let value = column.getEntityValue(valueSet)
 
-        // if column is relational and value is an object then get real referenced column value from this object
-        // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
-        // and we extract "1" from this object
-        /*if (column.referencedColumn && value instanceof Object && !(typeof value === "function")) { // todo: check if we still need it since getEntityValue already has similar code
-            value = column.referencedColumn.getEntityValue(value);
-        }*/
-
         if (!(typeof value === "function")) {
             // make sure our value is normalized by a driver
-            value = this.connection.driver.preparePersistentValue(value, column)
+            value = this.dataSource.driver.preparePersistentValue(value, column)
         }
 
         // newly inserted entities always have a version equal to 1 (first version)
@@ -1574,14 +1581,14 @@ export class InsertQueryBuilder<
             expression += "1"
 
             // } else if (column.isNestedSetLeft) {
-            //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-            //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+            //     const tableName = this.dataSource.driver.escape(column.entityMetadata.tablePath);
+            //     const rightColumnName = this.dataSource.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
             //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
             //     expression += subQuery;
             //
             // } else if (column.isNestedSetRight) {
-            //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-            //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+            //     const tableName = this.dataSource.driver.escape(column.entityMetadata.tablePath);
+            //     const rightColumnName = this.dataSource.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
             //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
             //     expression += subQuery;
         } else if (column.isDiscriminator) {
@@ -1600,7 +1607,7 @@ export class InsertQueryBuilder<
         } else if (
             column.isGenerated &&
             column.generationStrategy === "uuid" &&
-            !this.connection.driver.isUUIDGenerationSupported() &&
+            !this.dataSource.driver.isUUIDGenerationSupported() &&
             value === undefined
         ) {
             value = RandomGenerator.uuidv4()
@@ -1617,7 +1624,7 @@ export class InsertQueryBuilder<
             // if value for this column was not provided then insert default value
         } else if (value === undefined) {
             if (
-                (this.connection.driver.options.type === "oracle" &&
+                (this.dataSource.driver.options.type === "oracle" &&
                     valueSets.length > 1) ||
                 (DriverUtils.getUpsertStyle(this.connection.driver) ===
                     "ON_CONFLICT" &&
@@ -1630,9 +1637,9 @@ export class InsertQueryBuilder<
                 if (column.default !== undefined && column.default !== null) {
                     // try to use default defined in the column
                     expression +=
-                        this.connection.driver.normalizeDefault(column)
+                        this.dataSource.driver.normalizeDefault(column)
                 } else if (
-                    this.connection.driver.options.type === "spanner" &&
+                    this.dataSource.driver.options.type === "spanner" &&
                     column.isGenerated &&
                     column.generationStrategy === "uuid"
                 ) {
@@ -1645,8 +1652,8 @@ export class InsertQueryBuilder<
             }
         } else if (
             value === null &&
-            (this.connection.driver.options.type === "spanner" ||
-                this.connection.driver.options.type === "oracle")
+            (this.dataSource.driver.options.type === "spanner" ||
+                this.dataSource.driver.options.type === "oracle")
         ) {
             expression += "NULL"
 
@@ -1656,9 +1663,9 @@ export class InsertQueryBuilder<
 
             // just any other regular value
         } else {
-            if (this.connection.driver.options.type === "mssql")
+            if (this.dataSource.driver.options.type === "mssql")
                 value = (
-                    this.connection.driver as SqlServerDriver
+                    this.dataSource.driver as SqlServerDriver
                 ).parametrizeValue(column, value)
 
             // we need to store array values in a special class to make sure parameter replacement will work correctly
@@ -1668,12 +1675,12 @@ export class InsertQueryBuilder<
             const paramName = this.createParameter(value)
 
             if (
-                (DriverUtils.isMySQLFamily(this.connection.driver) ||
-                    this.connection.driver.options.type === "aurora-mysql") &&
-                this.connection.driver.spatialTypes.includes(column.type)
+                (DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+                    this.dataSource.driver.options.type === "aurora-mysql") &&
+                this.dataSource.driver.spatialTypes.includes(column.type)
             ) {
                 const useLegacy = (
-                    this.connection.driver as MysqlDriver | AuroraMysqlDriver
+                    this.dataSource.driver as MysqlDriver | AuroraMysqlDriver
                 ).options.legacySpatialSupport
                 const geomFromText = useLegacy
                     ? "GeomFromText"
@@ -1684,8 +1691,8 @@ export class InsertQueryBuilder<
                     expression += `${geomFromText}(${paramName})`
                 }
             } else if (
-                DriverUtils.isPostgresFamily(this.connection.driver) &&
-                this.connection.driver.spatialTypes.includes(column.type)
+                DriverUtils.isPostgresFamily(this.dataSource.driver) &&
+                this.dataSource.driver.spatialTypes.includes(column.type)
             ) {
                 if (column.srid != null) {
                     expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
@@ -1693,16 +1700,20 @@ export class InsertQueryBuilder<
                     expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`
                 }
             } else if (
-                this.connection.driver.options.type === "mssql" &&
-                this.connection.driver.spatialTypes.includes(column.type)
+                this.dataSource.driver.options.type === "mssql" &&
+                this.dataSource.driver.spatialTypes.includes(column.type)
             ) {
                 expression +=
                     column.type +
                     "::STGeomFromText(" +
                     paramName +
                     ", " +
-                    (column.srid || "0") +
+                    (column.srid ?? "0") +
                     ")"
+            } else if (DriverUtils.isSQLiteFamily(this.dataSource.driver)) {
+                expression = (
+                    this.dataSource.driver as AbstractSqliteDriver
+                ).wrapWithJsonFunction(paramName, column, true)
             } else {
                 expression += paramName
             }

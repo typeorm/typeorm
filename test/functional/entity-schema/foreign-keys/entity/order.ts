@@ -1,5 +1,5 @@
 import { EntitySchema } from "../../../../../src"
-import { Order } from "../model/order"
+import type { Order } from "../model/order"
 import { CityEntity } from "./city"
 import { CountryEntity } from "./country"
 

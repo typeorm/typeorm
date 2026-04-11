@@ -1,8 +1,8 @@
-import { DataSource } from "../data-source/DataSource"
-import { SchemaBuilder } from "./SchemaBuilder"
-import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
+import type { DataSource } from "../data-source/DataSource"
+import type { SchemaBuilder } from "./SchemaBuilder"
+import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import { SqlInMemory } from "../driver/SqlInMemory"
-import { CreateIndexesOptions } from "../driver/mongodb/typings"
+import type { CreateIndexesOptions } from "../driver/mongodb/typings"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -23,7 +23,7 @@ export class MongoSchemaBuilder implements SchemaBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {}
+    constructor(protected dataSource: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -34,9 +34,9 @@ export class MongoSchemaBuilder implements SchemaBuilder {
      */
     async build(): Promise<void> {
         const queryRunner =
-            this.connection.createQueryRunner() as MongoQueryRunner
+            this.dataSource.createQueryRunner() as MongoQueryRunner
         const promises: Promise<any>[] = []
-        this.connection.entityMetadatas.forEach((metadata) => {
+        this.dataSource.entityMetadatas.forEach((metadata) => {
             metadata.indices.forEach((index) => {
                 const options: CreateIndexesOptions = Object.assign(
                     {},

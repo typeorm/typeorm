@@ -1,4 +1,7 @@
-import { Driver } from "../Driver"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
+import type { DataSourceOptions } from "../../data-source/DataSourceOptions"
+import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { CteCapabilities } from "../types/CteCapabilities"
@@ -7,30 +10,39 @@ import { MongoQueryRunner } from "./MongoQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source/DataSource"
-import { MongoConnectionOptions } from "./MongoConnectionOptions"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
 import { MongoSchemaBuilder } from "../../schema-builder/MongoSchemaBuilder"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { DataSourceOptions } from "../../data-source/DataSourceOptions"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { ObjectUtils } from "../../util/ObjectUtils"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { DriverUtils } from "../DriverUtils"
-import { TypeORMError } from "../../error"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType"
+import { ObjectUtils } from "../../util/ObjectUtils"
+import type { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import type { UpsertType } from "../types/UpsertType"
+import type { MongoDataSourceOptions } from "./MongoDataSourceOptions"
+import { MongoQueryRunner } from "./MongoQueryRunner"
 
 /**
  * Organizes communication with MongoDB.
  */
 export class MongoDriver implements Driver {
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -51,9 +63,9 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
-    options: MongoConnectionOptions
+    options: MongoDataSourceOptions
 
     /**
      * Master database used to perform all write queries.
@@ -226,8 +238,6 @@ export class MongoDriver implements Driver {
         "family",
         "forceServerObjectId",
         "ignoreUndefined",
-        "keepAlive",
-        "keepAliveInitialDelay",
         "localThresholdMS",
         "maxStalenessSeconds",
         "minPoolSize",
@@ -245,45 +255,28 @@ export class MongoDriver implements Driver {
         "retryWrites",
         "serializeFunctions",
         "socketTimeoutMS",
-        "ssl",
-        "sslCA",
-        "sslCRL",
-        "sslCert",
-        "sslKey",
-        "sslPass",
-        "sslValidate",
         "tls",
         "tlsAllowInvalidCertificates",
         "tlsCAFile",
         "tlsCertificateKeyFile",
         "tlsCertificateKeyFilePassword",
-        "w",
         "writeConcern",
-        "wtimeoutMS",
         // Proxy configuration for Socks5
         "proxyHost",
         "proxyPort",
         "proxyUsername",
         "proxyPassword",
-        // Undocumented deprecated options
-        // todo: remove next major version
-        "appname",
-        "fsync",
-        "j",
-        "useNewUrlParser",
-        "useUnifiedTopology",
-        "wtimeout",
     ]
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {
-        this.options = connection.options as MongoConnectionOptions
+    constructor(protected dataSource: DataSource) {
+        this.options = dataSource.options as MongoDataSourceOptions
 
         // validate options to make sure everything is correct and driver will be able to establish connection
-        this.validateOptions(connection.options)
+        this.validateOptions(dataSource.options)
 
         // load mongodb package
         this.loadDependencies()
@@ -308,9 +301,9 @@ export class MongoDriver implements Driver {
             this.buildConnectionOptions(options),
         )
 
-        this.queryRunner = new MongoQueryRunner(this.connection, client)
+        this.queryRunner = new MongoQueryRunner(this.dataSource, client)
         ObjectUtils.assign(this.queryRunner, {
-            manager: this.connection.manager,
+            manager: this.dataSource.manager,
         })
     }
 
@@ -335,7 +328,7 @@ export class MongoDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new MongoSchemaBuilder(this.connection)
+        return new MongoSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -356,7 +349,6 @@ export class MongoDriver implements Driver {
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
         throw new TypeORMError(
             `This operation is not supported by Mongodb driver.`,
@@ -596,7 +588,7 @@ export class MongoDriver implements Driver {
      */
     protected loadDependencies(): any {
         try {
-            const mongodb = this.options.driver || PlatformTools.load("mongodb")
+            const mongodb = this.options.driver ?? PlatformTools.load("mongodb")
             this.mongodb = mongodb
         } catch (e) {
             throw new DriverPackageNotInstalledError("MongoDB", "mongodb")
@@ -616,19 +608,18 @@ export class MongoDriver implements Driver {
                 : ""
 
         const portUrlPart =
-            schemaUrlPart === "mongodb+srv" ? "" : `:${options.port || "27017"}`
+            schemaUrlPart === "mongodb+srv" ? "" : `:${options.port ?? "27017"}`
 
         let connectionString: string
         if (options.replicaSet) {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${
-                options.hostReplicaSet ||
-                options.host + portUrlPart ||
-                "127.0.0.1" + portUrlPart
-            }/${options.database || ""}`
+                options.hostReplicaSet ??
+                `${options.host ?? "127.0.0.1"}${portUrlPart}`
+            }/${options.database ?? ""}`
         } else {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${
-                options.host || "127.0.0.1"
-            }${portUrlPart}/${options.database || ""}`
+                options.host ?? "127.0.0.1"
+            }${portUrlPart}/${options.database ?? ""}`
         }
 
         return connectionString

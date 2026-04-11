@@ -22,6 +22,10 @@ export class VersionUtils {
     }
 }
 
+/**
+ *
+ * @param version
+ */
 function parseVersion(version: string): number[] {
     return version.split(".").map((value) => parseInt(value, 10))
 }
