@@ -1,9 +1,0 @@
-<connections>
-    <connection type="mysql" name="default">
-        <host>localhost</host>
-        <username>root</username>
-        <password>admin</password>
-        <port>3000</port>
-        <logging>true</logging>
-    </connection>
-</connections>

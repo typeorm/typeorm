@@ -22,6 +22,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 - `encrypt` - Whether to encrypt the connection. For example, `true`.
 - `sslValidateCertificate` - Whether to validate the SSL certificate. For example, `true`.
 - `key`, `cert` and `ca` - Private key, public certificate and certificate authority for the encrypted connection.
+- `driver` - Optional explicit `@sap/hana-client` module instance. If omitted, TypeORM loads `@sap/hana-client` automatically.
 - `pool` — Connection pool configuration object:
     - `maxConnectedOrPooled` (number) — Max active or idle connections in the pool (default: 10).
     - `maxPooledIdleTime` (seconds) — Time before an idle connection is closed (default: 30).

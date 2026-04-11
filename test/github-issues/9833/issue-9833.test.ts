@@ -7,8 +7,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { Repository } from "../../../src"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import type { Repository } from "../../../src"
 
 import { Base, A, B, C } from "./entity"
 import { BaseSchema, ASchema, BSchema, CSchema } from "./schema"
@@ -16,25 +16,23 @@ import { BaseSchema, ASchema, BSchema, CSchema } from "./schema"
 describe("github issues > #9833 Add support for Single Table Inheritance when using Entity Schemas", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [BaseSchema, ASchema, BSchema, CSchema],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: [
-                    "better-sqlite3",
-                    "cockroachdb",
-                    "mariadb",
-                    "mssql",
-                    "mysql",
-                    "oracle",
-                    "postgres",
-                    "spanner",
-                    "sqlite",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [BaseSchema, ASchema, BSchema, CSchema],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: [
+                "better-sqlite3",
+                "cockroachdb",
+                "mariadb",
+                "mssql",
+                "mysql",
+                "oracle",
+                "postgres",
+                "spanner",
+            ],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 

@@ -4,26 +4,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
 
 describe("github issues > #996 already loaded via query builder relations should not be loaded again when they are lazily loaded", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql"], // only one driver is enabled because this example uses lazy relations
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql"], // only one driver is enabled because this example uses lazy relations
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be able to find by object reference", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "Category #1"
                 await connection.manager.save(category1)
@@ -40,10 +38,9 @@ describe("github issues > #996 already loaded via query builder relations should
                 const loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost).to.not.be.undefined
-                const categories = await loadedPost!.categories
+                const categories = await loadedPost.categories
                 categories.should.be.eql([
                     {
                         id: 1,

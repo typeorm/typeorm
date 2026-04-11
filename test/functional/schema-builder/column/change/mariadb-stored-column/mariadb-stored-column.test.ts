@@ -1,0 +1,31 @@
+import "reflect-metadata"
+import type { DataSource } from "../../../../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../../../../utils/test-utils"
+import { Test } from "./entity/Test"
+
+describe("schema builder > column > change > mariadb stored column", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["mariadb"],
+            entities: [Test],
+            schemaCreate: false,
+            dropSchema: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    it("should not generate queries with NULL or NOT NULL for stored columns in mariadb", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const sqlInMemory = await connection.driver
+                    .createSchemaBuilder()
+                    .log()
+
+                sqlInMemory.upQueries.length.should.be.greaterThan(0)
+            }),
+        ))
+})

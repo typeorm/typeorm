@@ -1,9 +1,10 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { DateUtils } from "../util/DateUtils"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { OrmUtils } from "../util/OrmUtils"
-import { Subject } from "./Subject"
+import type { Subject } from "./Subject"
+import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -15,6 +16,7 @@ export class SubjectChangedColumnsComputer {
 
     /**
      * Finds what columns are changed in the subject entities.
+     *
      * @param subjects List of subjects for which to compute changed columns.
      */
     compute(subjects: Subject[]) {
@@ -30,6 +32,7 @@ export class SubjectChangedColumnsComputer {
 
     /**
      * Differentiate columns from the updated entity and entity stored in the database.
+     *
      * @param subject Subject for which to compute differentiated columns.
      */
     protected computeDiffColumns(subject: Subject): void {
@@ -83,15 +86,29 @@ export class SubjectChangedColumnsComputer {
                     if (value !== null && value !== undefined) return
                 }
                 let normalizedValue = entityValue
+
+                if (
+                    column.transformer &&
+                    shouldTransformDatabaseEntity &&
+                    entityValue !== null
+                ) {
+                    normalizedValue = ApplyValueTransformers.transformTo(
+                        column.transformer,
+                        entityValue,
+                    )
+                }
+
                 // if both values are not null, normalize special values to make proper comparision
-                if (entityValue !== null && databaseValue !== null) {
+                if (normalizedValue !== null && databaseValue !== null) {
                     switch (column.type) {
                         case "date":
                             normalizedValue = column.isArray
-                                ? entityValue.map((date: Date) =>
+                                ? normalizedValue.map((date: Date) =>
                                       DateUtils.mixedDateToDateString(date),
                                   )
-                                : DateUtils.mixedDateToDateString(entityValue)
+                                : DateUtils.mixedDateToDateString(
+                                      normalizedValue,
+                                  )
                             databaseValue = column.isArray
                                 ? databaseValue.map((date: Date) =>
                                       DateUtils.mixedDateToDateString(date),
@@ -104,10 +121,12 @@ export class SubjectChangedColumnsComputer {
                         case "time without time zone":
                         case "timetz":
                             normalizedValue = column.isArray
-                                ? entityValue.map((date: Date) =>
+                                ? normalizedValue.map((date: Date) =>
                                       DateUtils.mixedDateToTimeString(date),
                                   )
-                                : DateUtils.mixedDateToTimeString(entityValue)
+                                : DateUtils.mixedDateToTimeString(
+                                      normalizedValue,
+                                  )
                             databaseValue = column.isArray
                                 ? databaseValue.map((date: Date) =>
                                       DateUtils.mixedDateToTimeString(date),
@@ -124,13 +143,13 @@ export class SubjectChangedColumnsComputer {
                         case "timestamp with local time zone":
                         case "timestamptz":
                             normalizedValue = column.isArray
-                                ? entityValue.map((date: Date) =>
+                                ? normalizedValue.map((date: Date) =>
                                       DateUtils.mixedDateToUtcDatetimeString(
                                           date,
                                       ),
                                   )
                                 : DateUtils.mixedDateToUtcDatetimeString(
-                                      entityValue,
+                                      normalizedValue,
                                   )
 
                             databaseValue = column.isArray
@@ -151,36 +170,32 @@ export class SubjectChangedColumnsComputer {
                             // If you try to save json '[{"messages": "", "attribute Key": "", "level":""}] ' as jsonb,
                             // then postgresql will save it as '[{"level": "", "message":"", "attributeKey": ""}]'
                             if (
-                                OrmUtils.deepCompare(entityValue, databaseValue)
+                                OrmUtils.deepCompare(
+                                    normalizedValue,
+                                    databaseValue,
+                                )
                             )
                                 return
                             break
 
                         case "simple-array":
                             normalizedValue =
-                                DateUtils.simpleArrayToString(entityValue)
+                                DateUtils.simpleArrayToString(normalizedValue)
                             databaseValue =
                                 DateUtils.simpleArrayToString(databaseValue)
                             break
                         case "simple-enum":
                             normalizedValue =
-                                DateUtils.simpleEnumToString(entityValue)
+                                DateUtils.simpleEnumToString(normalizedValue)
                             databaseValue =
                                 DateUtils.simpleEnumToString(databaseValue)
                             break
                         case "simple-json":
                             normalizedValue =
-                                DateUtils.simpleJsonToString(entityValue)
+                                DateUtils.simpleJsonToString(normalizedValue)
                             databaseValue =
                                 DateUtils.simpleJsonToString(databaseValue)
                             break
-                    }
-
-                    if (column.transformer) {
-                        normalizedValue = ApplyValueTransformers.transformTo(
-                            column.transformer,
-                            entityValue,
-                        )
                     }
                 }
 
@@ -189,10 +204,10 @@ export class SubjectChangedColumnsComputer {
                     if (OrmUtils.deepCompare(normalizedValue, databaseValue))
                         return
                 } else if (
-                    Buffer.isBuffer(normalizedValue) &&
-                    Buffer.isBuffer(databaseValue)
+                    isUint8Array(normalizedValue) &&
+                    isUint8Array(databaseValue)
                 ) {
-                    if (normalizedValue.equals(databaseValue)) {
+                    if (areUint8ArraysEqual(normalizedValue, databaseValue)) {
                         return
                     }
                 } else {
@@ -212,6 +227,7 @@ export class SubjectChangedColumnsComputer {
 
     /**
      * Difference columns of the owning one-to-one and many-to-one columns.
+     *
      * @param allSubjects List of all subjects in the current operation.
      * @param subject Subject for which to compute differentiated relational columns.
      */
