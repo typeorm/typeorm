@@ -4,26 +4,26 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, UpdateValuesMissingError } from "../../../src/"
+import type { DataSource } from "../../../src/"
+import { UpdateValuesMissingError } from "../../../src/"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
 
 describe("github issues > #8393 When trying to update `update: false` column with `@UpdateDateColumn` the update column is updated", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not update the @UpdateDateColumn column when trying to update un-updatable column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "Control flow based type analysis"
                 post.readOnlyColumn = 1
@@ -43,21 +43,24 @@ describe("github issues > #8393 When trying to update `update: false` column wit
                     UpdateValuesMissingError,
                 )
 
-                const updatedPost = await connection.manager.findOne(Post, {
-                    where: {
-                        id: post.id,
+                const updatedPost = await connection.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: post.id,
+                        },
                     },
-                })
+                )
 
                 expect(updatedPost).to.be.an("object")
 
                 expect(post.readOnlyColumn).to.be.equal(
-                    updatedPost!.readOnlyColumn,
+                    updatedPost.readOnlyColumn,
                 )
 
                 // Gonna be false
                 expect(post.lastUpdated.toString()).to.be.eql(
-                    updatedPost!.lastUpdated.toString(),
+                    updatedPost.lastUpdated.toString(),
                 )
             }),
         ))

@@ -1,31 +1,33 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source/DataSource"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { Table } from "../../schema-builder/table/Table"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { View } from "../../schema-builder/view/View"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
-import { Driver, ReturningType } from "../Driver"
+import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
-import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { UpsertType } from "../types/UpsertType"
-import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
-import { MysqlConnectionOptions } from "./MysqlConnectionOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { CteCapabilities } from "../types/CteCapabilities"
+import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { MappedColumnTypes } from "../types/MappedColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import type { UpsertType } from "../types/UpsertType"
+import type { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
+import type { MysqlDataSourceOptions } from "./MysqlDataSourceOptions"
 import { MysqlQueryRunner } from "./MysqlQueryRunner"
 
 /**
@@ -33,13 +35,38 @@ import { MysqlQueryRunner } from "./MysqlQueryRunner"
  */
 export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Mysql underlying library.
@@ -62,9 +89,9 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
-    options: MysqlConnectionOptions
+    options: MysqlDataSourceOptions
 
     /**
      * Version of MySQL. Requires a SQL query to the DB, so it is not always set
@@ -192,18 +219,6 @@ export class MysqlDriver implements Driver {
     ]
 
     /**
-     * Gets list of column data types that support the unsigned attribute by a driver.
-     */
-    unsignedColumnTypes: UnsignedColumnType[] = [
-        "tinyint",
-        "smallint",
-        "mediumint",
-        "int",
-        "integer",
-        "bigint",
-    ]
-
-    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = [
@@ -288,17 +303,11 @@ export class MysqlDriver implements Driver {
         time: { precision: 0 },
         datetime: { precision: 0 },
         timestamp: { precision: 0 },
-        bit: { width: 1 },
-        int: { width: 11 },
-        integer: { width: 11 },
-        tinyint: { width: 4 },
-        smallint: { width: 6 },
-        mediumint: { width: 9 },
-        bigint: { width: 20 },
     }
 
     /**
      * Max length allowed by MySQL for aliases.
+     *
      * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
      */
     maxAliasLength = 63
@@ -325,12 +334,12 @@ export class MysqlDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
         this.options = {
-            legacySpatialSupport: true,
-            ...connection.options,
-        } as MysqlConnectionOptions
+            legacySpatialSupport: false,
+            ...dataSource.options,
+        } as MysqlDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
 
         // load mysql package
@@ -453,11 +462,13 @@ export class MysqlDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
      * Creates a query runner used to execute database queries.
+     *
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new MysqlQueryRunner(this, mode)
@@ -466,15 +477,15 @@ export class MysqlDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
+     * @param sql
+     * @param parameters
      */
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => nativeParameters[key],
-        )
+        const escapedParameters: any[] = []
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
@@ -512,14 +523,20 @@ export class MysqlDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
+     * @param columnName
      */
     escape(columnName: string): string {
-        return "`" + columnName + "`"
+        return "`" + columnName.replaceAll("`", "``") + "`"
     }
 
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -537,6 +554,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -548,8 +567,8 @@ export class MysqlDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -559,11 +578,11 @@ export class MysqlDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -572,8 +591,8 @@ export class MysqlDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -582,7 +601,7 @@ export class MysqlDriver implements Driver {
 
         return {
             database:
-                (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
+                (parts.length > 1 ? parts[0] : undefined) ?? driverDatabase,
             schema: driverSchema,
             tableName: parts.length > 1 ? parts[1] : parts[0],
         }
@@ -590,6 +609,9 @@ export class MysqlDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -637,6 +659,9 @@ export class MysqlDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -710,6 +735,12 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type: ColumnType
@@ -723,7 +754,10 @@ export class MysqlDriver implements Driver {
             return "varchar"
         } else if (column.type === Date) {
             return "datetime"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         } else if (column.type === Boolean) {
             return "tinyint"
@@ -776,6 +810,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -819,6 +855,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.indices.some(
@@ -831,6 +869,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     *
+     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -860,6 +900,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     *
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -867,8 +909,6 @@ export class MysqlDriver implements Driver {
         // used 'getColumnLength()' method, because MySQL requires column length for `varchar`, `nvarchar` and `varbinary` data types
         if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`
-        } else if (column.width) {
-            type += `(${column.width})`
         } else if (
             column.precision !== null &&
             column.precision !== undefined &&
@@ -948,6 +988,10 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
+     * @param metadata
+     * @param insertResult
+     * @param entityIndex
      */
     createGeneratedMap(
         metadata: EntityMetadata,
@@ -1001,6 +1045,9 @@ export class MysqlDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -1016,12 +1063,10 @@ export class MysqlDriver implements Driver {
                 tableColumn.name !== columnMetadata.databaseName ||
                 this.isColumnDataTypeChanged(tableColumn, columnMetadata) ||
                 tableColumn.length !== this.getColumnLength(columnMetadata) ||
-                tableColumn.width !== columnMetadata.width ||
                 (columnMetadata.precision !== undefined &&
                     tableColumn.precision !== columnMetadata.precision) ||
                 (columnMetadata.scale !== undefined &&
                     tableColumn.scale !== columnMetadata.scale) ||
-                tableColumn.zerofill !== columnMetadata.zerofill ||
                 tableColumn.unsigned !== columnMetadata.unsigned ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
@@ -1031,12 +1076,14 @@ export class MysqlDriver implements Driver {
                     this.normalizeDefault(columnMetadata),
                     tableColumn.default,
                 ) ||
-                (tableColumn.enum &&
+                !!(
+                    tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
                         tableColumn.enum,
                         columnMetadata.enum.map((val) => val + ""),
-                    )) ||
+                    )
+                ) ||
                 tableColumn.onUpdate !==
                     this.normalizeDatetimeFunction(columnMetadata.onUpdate) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
@@ -1046,101 +1093,14 @@ export class MysqlDriver implements Driver {
                 (columnMetadata.generationStrategy !== "uuid" &&
                     tableColumn.isGenerated !== columnMetadata.isGenerated)
 
-            // DEBUG SECTION
-            // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName)
-            //     console.log(
-            //         "name:",
-            //         tableColumn.name,
-            //         columnMetadata.databaseName,
-            //     )
-            //     console.log(
-            //         "type:",
-            //         tableColumn.type,
-            //         this.normalizeType(columnMetadata),
-            //     )
-            //     console.log(
-            //         "length:",
-            //         tableColumn.length,
-            //         columnMetadata.length,
-            //     )
-            //     console.log("width:", tableColumn.width, columnMetadata.width)
-            //     console.log(
-            //         "precision:",
-            //         tableColumn.precision,
-            //         columnMetadata.precision,
-            //     )
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
-            //     console.log(
-            //         "zerofill:",
-            //         tableColumn.zerofill,
-            //         columnMetadata.zerofill,
-            //     )
-            //     console.log(
-            //         "unsigned:",
-            //         tableColumn.unsigned,
-            //         columnMetadata.unsigned,
-            //     )
-            //     console.log(
-            //         "asExpression:",
-            //         tableColumn.asExpression,
-            //         columnMetadata.asExpression,
-            //     )
-            //     console.log(
-            //         "generatedType:",
-            //         tableColumn.generatedType,
-            //         columnMetadata.generatedType,
-            //     )
-            //     console.log(
-            //         "comment:",
-            //         tableColumn.comment,
-            //         this.escapeComment(columnMetadata.comment),
-            //     )
-            //     console.log(
-            //         "default:",
-            //         tableColumn.default,
-            //         this.normalizeDefault(columnMetadata),
-            //     )
-            //     console.log("enum:", tableColumn.enum, columnMetadata.enum)
-            //     console.log(
-            //         "default changed:",
-            //         !this.compareDefaultValues(
-            //             this.normalizeDefault(columnMetadata),
-            //             tableColumn.default,
-            //         ),
-            //     )
-            //     console.log(
-            //         "isPrimary:",
-            //         tableColumn.isPrimary,
-            //         columnMetadata.isPrimary,
-            //     )
-            //     console.log(
-            //         "isNullable changed:",
-            //         !this.compareNullableValues(columnMetadata, tableColumn),
-            //     )
-            //     console.log(
-            //         "isUnique:",
-            //         tableColumn.isUnique,
-            //         this.normalizeIsUnique(columnMetadata),
-            //     )
-            //     console.log(
-            //         "isGenerated:",
-            //         tableColumn.isGenerated,
-            //         columnMetadata.isGenerated,
-            //     )
-            //     console.log(
-            //         columnMetadata.generationStrategy !== "uuid" &&
-            //             tableColumn.isGenerated !== columnMetadata.isGenerated,
-            //     )
-            //     console.log("==========================================")
-            // }
-
             return isColumnChanged
         })
     }
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
+     * @param returningType
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
         return this._isReturningSqlSupported[returningType]
@@ -1162,6 +1122,9 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return "?"
@@ -1176,7 +1139,7 @@ export class MysqlDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.mysql = this.options.driver || PlatformTools.load("mysql2")
+            this.mysql = this.options.driver ?? PlatformTools.load("mysql2")
         } catch (e) {
             throw new DriverPackageNotInstalledError("Mysql", "mysql2")
         }
@@ -1184,9 +1147,12 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
+     * @param options
+     * @param credentials
      */
     protected createConnectionOptions(
-        options: MysqlConnectionOptions,
+        options: MysqlDataSourceOptions,
         credentials: MysqlConnectionCredentialsOptions,
     ): Promise<any> {
         credentials = Object.assign(
@@ -1203,14 +1169,8 @@ export class MysqlDriver implements Driver {
                 timezone: options.timezone,
                 connectTimeout: options.connectTimeout,
                 insecureAuth: options.insecureAuth,
-                supportBigNumbers:
-                    options.supportBigNumbers !== undefined
-                        ? options.supportBigNumbers
-                        : true,
-                bigNumberStrings:
-                    options.bigNumberStrings !== undefined
-                        ? options.bigNumberStrings
-                        : true,
+                supportBigNumbers: options.supportBigNumbers ?? true,
+                bigNumberStrings: options.bigNumberStrings ?? true,
                 dateStrings: options.dateStrings,
                 debug: options.debug,
                 trace: options.trace,
@@ -1231,12 +1191,14 @@ export class MysqlDriver implements Driver {
             options.acquireTimeout === undefined
                 ? {}
                 : { acquireTimeout: options.acquireTimeout },
-            options.extra || {},
+            options.extra ?? {},
         )
     }
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
+     * @param connectionOptions
      */
     protected createPool(connectionOptions: any): Promise<any> {
         // create a connection pool
@@ -1257,9 +1219,11 @@ export class MysqlDriver implements Driver {
 
     /**
      * Attaches all required base handlers to a database connection, such as the unhandled error handler.
+     *
+     * @param connection
      */
     private prepareDbConnection(connection: any): any {
-        const { logger } = this.connection
+        const { logger } = this.dataSource
         /*
          * Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
          * cause the hosting app to crash.
@@ -1277,6 +1241,9 @@ export class MysqlDriver implements Driver {
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
+     *
+     * @param columnMetadataValue
+     * @param databaseValue
      */
     protected compareDefaultValues(
         columnMetadataValue: string | undefined,
@@ -1311,6 +1278,8 @@ export class MysqlDriver implements Driver {
     /**
      * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
      * Otherwise returns original input.
+     *
+     * @param value
      */
     protected normalizeDatetimeFunction(value?: string) {
         if (!value) return value
@@ -1339,6 +1308,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     *
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment
@@ -1352,6 +1323,9 @@ export class MysqlDriver implements Driver {
      * A helper to check if column data types have changed
      * This can be used to manage checking any types the
      * database may alias
+     *
+     * @param tableColumn
+     * @param columnMetadata
      */
     private isColumnDataTypeChanged(
         tableColumn: TableColumn,

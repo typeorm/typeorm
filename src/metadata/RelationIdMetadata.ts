@@ -1,8 +1,8 @@
-import { RelationIdMetadataArgs } from "../metadata-args/RelationIdMetadataArgs"
-import { EntityMetadata } from "./EntityMetadata"
-import { RelationMetadata } from "./RelationMetadata"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { RelationIdMetadataArgs } from "../metadata-args/RelationIdMetadataArgs"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { RelationMetadata } from "./RelationMetadata"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { TypeORMError } from "../error"
 
 /**
@@ -74,6 +74,8 @@ export class RelationIdMetadata {
      * Sets relation id value from the given entity.
      *
      * todo: make it to work in embeds as well.
+     *
+     * @param entity
      */
     setValue(entity: ObjectLiteral) {
         const inverseEntity = this.relation.getEntityValue(entity)

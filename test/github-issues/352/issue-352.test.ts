@@ -4,26 +4,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
 import { MssqlParameter } from "../../../src/driver/sqlserver/MssqlParameter"
 
 describe("github issues > #352 double precision round to int in mssql", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mssql"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mssql"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("real number should be successfully stored and loaded from db including value in parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const posts: Post[] = []
                 for (let i = 1; i <= 25; i++) {
                     const post = new Post()
@@ -38,10 +37,9 @@ describe("github issues > #352 double precision round to int in mssql", () => {
                     .where("post.id = :id", {
                         id: new MssqlParameter(1.234567789, "float"),
                     })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost).to.exist
-                expect(loadedPost!.id).to.be.equal(1.234567789)
+                expect(loadedPost.id).to.be.equal(1.234567789)
             }),
         ))
 })
