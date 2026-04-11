@@ -1,0 +1,78 @@
+import "reflect-metadata"
+import type { DataSource } from "../../../../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../../../../utils/test-utils"
+import { expect } from "chai"
+
+describe("schema builder > drop column", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    it("should correctly drop column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const studentMetadata = dataSource.getMetadata("student")
+                const removedColumns = studentMetadata.columns.filter(
+                    (column) =>
+                        ["name", "faculty"].indexOf(column.propertyName) !== -1,
+                )
+                removedColumns.forEach((column) => {
+                    studentMetadata.columns.splice(
+                        studentMetadata.columns.indexOf(column),
+                        1,
+                    )
+                })
+
+                // in real sync indices removes automatically
+                studentMetadata.indices = studentMetadata.indices.filter(
+                    (index) => {
+                        return !index.columns.find(
+                            (column) =>
+                                ["name", "facultyId"].indexOf(
+                                    column.databaseName,
+                                ) !== -1,
+                        )
+                    },
+                )
+
+                const removedForeignKey = studentMetadata.foreignKeys.find(
+                    (fk) => {
+                        return !!fk.columns.find(
+                            (column) => column.propertyName === "faculty",
+                        )
+                    },
+                )
+                studentMetadata.foreignKeys.splice(
+                    studentMetadata.foreignKeys.indexOf(removedForeignKey!),
+                    1,
+                )
+
+                await dataSource.synchronize()
+
+                const queryRunner = dataSource.createQueryRunner()
+                const studentTable = await queryRunner.getTable("student")
+                await queryRunner.release()
+
+                expect(studentTable!.findColumnByName("name")).to.be.undefined
+                expect(studentTable!.findColumnByName("faculty")).to.be
+                    .undefined
+
+                // CockroachDB creates indices for foreign keys
+                if (dataSource.driver.options.type === "cockroachdb") {
+                    studentTable!.indices.length.should.be.equal(1)
+                } else {
+                    studentTable!.indices.length.should.be.equal(0)
+                }
+                studentTable!.foreignKeys.length.should.be.equal(1)
+            }),
+        ))
+})

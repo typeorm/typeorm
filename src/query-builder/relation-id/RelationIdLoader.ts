@@ -1,8 +1,8 @@
-import { RelationIdAttribute } from "./RelationIdAttribute"
-import { DataSource } from "../../data-source/DataSource"
-import { RelationIdLoadResult } from "./RelationIdLoadResult"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { RelationIdAttribute } from "./RelationIdAttribute"
+import type { DataSource } from "../../data-source/DataSource"
+import type { RelationIdLoadResult } from "./RelationIdLoadResult"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { DriverUtils } from "../../driver/DriverUtils"
 import { TypeORMError } from "../../error/TypeORMError"
 import { OrmUtils } from "../../util/OrmUtils"
@@ -13,9 +13,10 @@ export class RelationIdLoader {
     // -------------------------------------------------------------------------
 
     constructor(
-        protected connection: DataSource,
+        protected dataSource: DataSource,
         protected queryRunner: QueryRunner | undefined,
         protected relationIdAttributes: RelationIdAttribute[],
+        protected withDeleted: boolean = false,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -46,10 +47,10 @@ export class RelationIdLoader {
                             relationIdAttr.relation.joinColumns.forEach(
                                 (joinColumn) => {
                                     result[joinColumn.databaseName] =
-                                        this.connection.driver.prepareHydratedValue(
+                                        this.dataSource.driver.prepareHydratedValue(
                                             rawEntity[
                                                 DriverUtils.buildAlias(
-                                                    this.connection.driver,
+                                                    this.dataSource.driver,
                                                     undefined,
                                                     relationIdAttr.parentAlias,
                                                     joinColumn.databaseName,
@@ -73,10 +74,10 @@ export class RelationIdLoader {
                             relationIdAttr.relation.entityMetadata.primaryColumns.forEach(
                                 (primaryColumn) => {
                                     result[primaryColumn.databaseName] =
-                                        this.connection.driver.prepareHydratedValue(
+                                        this.dataSource.driver.prepareHydratedValue(
                                             rawEntity[
                                                 DriverUtils.buildAlias(
-                                                    this.connection.driver,
+                                                    this.dataSource.driver,
                                                     undefined,
                                                     relationIdAttr.parentAlias,
                                                     primaryColumn.databaseName,
@@ -125,7 +126,7 @@ export class RelationIdLoader {
                         : relation.inverseRelation!.joinColumns
                     const table = relation.inverseEntityMetadata.target // category
                     const tableName = relation.inverseEntityMetadata.tableName // category
-                    const tableAlias = relationIdAttr.alias || tableName // if condition (custom query builder factory) is set then relationIdAttr.alias defined
+                    const tableAlias = relationIdAttr.alias ?? tableName // if condition (custom query builder factory) is set then relationIdAttr.alias defined
 
                     const duplicates: { [duplicateKey: string]: boolean } = {}
                     const parameters: ObjectLiteral = {}
@@ -140,7 +141,7 @@ export class RelationIdLoader {
                                     const parameterValue =
                                         rawEntity[
                                             DriverUtils.buildAlias(
-                                                this.connection.driver,
+                                                this.dataSource.driver,
                                                 undefined,
                                                 relationIdAttr.parentAlias,
                                                 joinColumn.referencedColumn!
@@ -191,7 +192,7 @@ export class RelationIdLoader {
 
                     // generate query:
                     // SELECT category.id, category.postId FROM category category ON category.postId = :postId
-                    const qb = this.connection.createQueryBuilder(
+                    const qb = this.dataSource.createQueryBuilder(
                         this.queryRunner,
                     )
 
@@ -223,7 +224,7 @@ export class RelationIdLoader {
                     results.forEach((result) => {
                         joinColumns.forEach((column) => {
                             result[column.databaseName] =
-                                this.connection.driver.prepareHydratedValue(
+                                this.dataSource.driver.prepareHydratedValue(
                                     result[column.databaseName],
                                     column.referencedColumn!,
                                 )
@@ -231,7 +232,7 @@ export class RelationIdLoader {
                         relation.inverseRelation!.entityMetadata.primaryColumns.forEach(
                             (column) => {
                                 result[column.databaseName] =
-                                    this.connection.driver.prepareHydratedValue(
+                                    this.dataSource.driver.prepareHydratedValue(
                                         result[column.databaseName],
                                         column,
                                     )
@@ -261,7 +262,7 @@ export class RelationIdLoader {
                     const inverseSideTableName =
                         relationIdAttr.joinInverseSideMetadata.tableName
                     const inverseSideTableAlias =
-                        relationIdAttr.alias || inverseSideTableName
+                        relationIdAttr.alias ?? inverseSideTableName
                     const junctionTableName = relation.isOwning
                         ? relation.junctionEntityMetadata!.tableName
                         : relation.inverseRelation!.junctionEntityMetadata!
@@ -272,7 +273,7 @@ export class RelationIdLoader {
                             map[joinColumn.propertyPath] =
                                 rawEntity[
                                     DriverUtils.buildAlias(
-                                        this.connection.driver,
+                                        this.dataSource.driver,
                                         undefined,
                                         relationIdAttr.parentAlias,
                                         joinColumn.referencedColumn!
@@ -359,7 +360,7 @@ export class RelationIdLoader {
                         })
                         .join(" OR ")
 
-                    const qb = this.connection.createQueryBuilder(
+                    const qb = this.dataSource.createQueryBuilder(
                         this.queryRunner,
                     )
 
@@ -385,6 +386,8 @@ export class RelationIdLoader {
                         .innerJoin(junctionTableName, junctionAlias, condition)
                         .setParameters(parameters)
 
+                    if (this.withDeleted) qb.withDeleted()
+
                     // apply condition (custom query builder factory)
                     if (relationIdAttr.queryBuilderFactory)
                         relationIdAttr.queryBuilderFactory(qb)
@@ -394,7 +397,7 @@ export class RelationIdLoader {
                         ;[...joinColumns, ...inverseJoinColumns].forEach(
                             (column) => {
                                 result[column.databaseName] =
-                                    this.connection.driver.prepareHydratedValue(
+                                    this.dataSource.driver.prepareHydratedValue(
                                         result[column.databaseName],
                                         column.referencedColumn!,
                                     )

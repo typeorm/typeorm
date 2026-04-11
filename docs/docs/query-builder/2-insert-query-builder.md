@@ -130,3 +130,67 @@ await dataSource
     })
     .execute()
 ```
+
+## Insert from Select
+
+You can insert data from one table into another using a `SELECT` query with the `valuesFromSelect()` method. This creates an `INSERT INTO ... SELECT FROM` statement, which is useful for data migration, archiving, or copying data between tables.
+
+### Using a SelectQueryBuilder directly
+
+```typescript
+// Create a select query to get the source data
+const selectQuery = dataSource
+    .createQueryBuilder()
+    .select(["user.firstName", "user.lastName"])
+    .from(User, "user")
+    .where("user.isActive = :isActive", { isActive: true })
+
+// Insert the selected data into another table
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(ArchivedUser, ["firstName", "lastName"])
+    .valuesFromSelect(selectQuery)
+    .execute()
+```
+
+### Using a callback function
+
+You can also use a callback function to build the select query:
+
+```typescript
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(ArchivedUser, ["firstName", "lastName", "archivedAt"])
+    .valuesFromSelect((qb) =>
+        qb
+            .select(["user.firstName", "user.lastName", "NOW()"])
+            .from(User, "user")
+            .where("user.deletedAt IS NOT NULL"),
+    )
+    .execute()
+```
+
+### With joins
+
+You can use joins in the select query to combine data from multiple tables:
+
+```typescript
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(UserReport, ["userName", "orderCount"])
+    .valuesFromSelect((qb) =>
+        qb
+            .select(["user.name", "COUNT(order.id)"])
+            .from(User, "user")
+            .leftJoin("user.orders", "order")
+            .groupBy("user.id"),
+    )
+    .execute()
+```
+
+> **Note:** When using `valuesFromSelect()`, entity listeners and subscribers (`@BeforeInsert`, `@AfterInsert`) are not called because no entity instances are created during the insert operation.
+
+> **Note:** The `updateEntity` option has no effect with `valuesFromSelect()` since there are no entity instances to update.

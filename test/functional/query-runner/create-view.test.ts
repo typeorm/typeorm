@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,22 +9,22 @@ import { View } from "../../../src/schema-builder/view/View"
 import { expect } from "chai"
 
 describe("query runner > create view", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/view/*{.js,.ts}"],
             enabledDrivers: ["postgres", "oracle"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create VIEW and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const view = new View({
                     name: "new_post_view",
                     expression: `SELECT * from "post"`,
@@ -45,8 +45,8 @@ describe("query runner > create view", () => {
 
     it("should correctly create MATERIALIZED VIEW and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const view = new View({
                     name: "new_post_materialized_view",
                     expression: `SELECT * from "post"`,

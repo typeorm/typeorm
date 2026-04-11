@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -11,20 +11,19 @@ import {
 import { Subcounters } from "./entity/Subcounters"
 
 describe("embedded > multiple-primary-columns-with-nested-embed", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert, load, update and remove entities with embeddeds when primary column defined in main and in embedded entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
 
                 const post1 = new Post()
                 post1.id = 1
@@ -37,7 +36,7 @@ describe("embedded > multiple-primary-columns-with-nested-embed", () => {
                 post1.counters.subcounters = new Subcounters()
                 post1.counters.subcounters.version = 1
                 post1.counters.subcounters.watches = 5
-                await connection.getRepository(Post).save(post1)
+                await dataSource.getRepository(Post).save(post1)
 
                 const post2 = new Post()
                 post2.id = 2
@@ -52,7 +51,7 @@ describe("embedded > multiple-primary-columns-with-nested-embed", () => {
                 post2.counters.subcounters.watches = 10
                 await postRepository.save(post2)
 
-                const loadedPosts = await connection.manager
+                const loadedPosts = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.id")
                     .getMany()

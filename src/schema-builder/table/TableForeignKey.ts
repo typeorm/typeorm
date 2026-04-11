@@ -1,6 +1,6 @@
-import { ForeignKeyMetadata } from "../../metadata/ForeignKeyMetadata"
-import { TableForeignKeyOptions } from "../options/TableForeignKeyOptions"
-import { Driver } from "../../driver/Driver"
+import type { ForeignKeyMetadata } from "../../metadata/ForeignKeyMetadata"
+import type { TableForeignKeyOptions } from "../options/TableForeignKeyOptions"
+import type { Driver } from "../../driver/Driver"
 
 /**
  * Foreign key from the database stored in this class.
@@ -103,6 +103,9 @@ export class TableForeignKey {
 
     /**
      * Creates a new table foreign key from the given foreign key metadata.
+     *
+     * @param metadata
+     * @param driver
      */
     static create(
         metadata: ForeignKeyMetadata,
