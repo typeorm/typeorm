@@ -1,10 +1,10 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { MissingPrimaryColumnError } from "../error/MissingPrimaryColumnError"
 import { CircularRelationsError } from "../error/CircularRelationsError"
 import { DepGraph } from "../util/DepGraph"
-import { Driver } from "../driver/Driver"
+import type { Driver } from "../driver/Driver"
 import { DataTypeNotSupportedError } from "../error/DataTypeNotSupportedError"
-import { ColumnType } from "../driver/types/ColumnTypes"
+import type { ColumnType } from "../driver/types/ColumnTypes"
 import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
@@ -37,6 +37,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates all given entity metadatas.
+     *
      * @param entityMetadatas
      * @param driver
      */
@@ -50,6 +51,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates given entity metadata.
+     *
      * @param entityMetadata
      * @param allEntityMetadatas
      * @param driver
@@ -116,16 +118,6 @@ export class EntityMetadataValidator {
                     `Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`,
                 )
         }
-
-        entityMetadata.relationCounts.forEach((relationCount) => {
-            if (
-                relationCount.relation.isManyToOne ||
-                relationCount.relation.isOneToOne
-            )
-                throw new TypeORMError(
-                    `Relation count can not be implemented on ManyToOne or OneToOne relations.`,
-                )
-        })
 
         if (!(driver.options.type === "mongodb")) {
             entityMetadata.columns
@@ -247,46 +239,6 @@ export class EntityMetadataValidator {
                     `OnUpdateType "${relation.onUpdate}" is not valid for ${driver.options.type}!`,
                 )
             }
-
-            // check join tables:
-            // using JoinTable is possible only on one side of the many-to-many relation
-            // todo(dima): fix
-            // if (relation.joinTable) {
-            //     if (!relation.isManyToMany)
-            //         throw new UsingJoinTableIsNotAllowedError(entityMetadata, relation);
-            //     // if there is inverse side of the relation, then check if it does not have join table too
-            //     if (relation.hasInverseSide && relation.inverseRelation.joinTable)
-            //         throw new UsingJoinTableOnlyOnOneSideAllowedError(entityMetadata, relation);
-            // }
-            // check join columns:
-            // using JoinColumn is possible only on one side of the relation and on one-to-one, many-to-one relation types
-            // first check if relation is one-to-one or many-to-one
-            // todo(dima): fix
-            /*if (relation.joinColumn) {
-
-                // join column can be applied only on one-to-one and many-to-one relations
-                if (!relation.isOneToOne && !relation.isManyToOne)
-                    throw new UsingJoinColumnIsNotAllowedError(entityMetadata, relation);
-
-                // if there is inverse side of the relation, then check if it does not have join table too
-                if (relation.hasInverseSide && relation.inverseRelation.joinColumn && relation.isOneToOne)
-                    throw new UsingJoinColumnOnlyOnOneSideAllowedError(entityMetadata, relation);
-
-                // check if join column really has referenced column
-                if (relation.joinColumn && !relation.joinColumn.referencedColumn)
-                    throw new TypeORMError(`Join column does not have referenced column set`);
-
-            }
-
-            // if its a one-to-one relation and JoinColumn is missing on both sides of the relation
-            // or its one-side relation without JoinColumn we should give an error
-            if (!relation.joinColumn && relation.isOneToOne && (!relation.hasInverseSide || !relation.inverseRelation.joinColumn))
-                throw new MissingJoinColumnError(entityMetadata, relation);*/
-            // if its a many-to-many relation and JoinTable is missing on both sides of the relation
-            // or its one-side relation without JoinTable we should give an error
-            // todo(dima): fix it
-            // if (!relation.joinTable && relation.isManyToMany && (!relation.hasInverseSide || !relation.inverseRelation.joinTable))
-            //     throw new MissingJoinTableError(entityMetadata, relation);
             // todo: validate if its one-to-one and side which does not have join column MUST have inverse side
             // todo: validate if its many-to-many and side which does not have join table MUST have inverse side
             // todo: if there is a relation, and inverse side is specified only on one side, shall we give error
@@ -304,8 +256,7 @@ export class EntityMetadataValidator {
         entityMetadata.relations.forEach((relation) => {
             const isCircularCascadeRemove =
                 relation.isCascadeRemove &&
-                relation.inverseRelation &&
-                relation.inverseRelation!.isCascadeRemove
+                relation.inverseRelation?.isCascadeRemove
             if (isCircularCascadeRemove)
                 throw new TypeORMError(
                     `Relation ${entityMetadata.name}#${
@@ -320,6 +271,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates dependencies of the entity metadatas.
+     *
      * @param entityMetadatas
      */
     protected validateDependencies(entityMetadatas: EntityMetadata[]) {
@@ -348,15 +300,13 @@ export class EntityMetadataValidator {
 
     /**
      * Validates eager relations to prevent circular dependency in them.
+     *
      * @param entityMetadatas
      */
     protected validateEagerRelations(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach((entityMetadata) => {
             entityMetadata.eagerRelations.forEach((relation) => {
-                if (
-                    relation.inverseRelation &&
-                    relation.inverseRelation.isEager
-                )
+                if (relation.inverseRelation?.isEager)
                     throw new TypeORMError(
                         `Circular eager relations are disallowed. ` +
                             `${entityMetadata.targetName}#${relation.propertyPath} contains "eager: true", and its inverse side ` +

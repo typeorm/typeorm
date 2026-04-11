@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Table } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,20 +9,20 @@ import {
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > rename column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly rename column and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 const textColumn = table!.findColumnByName("text")!
@@ -56,8 +57,8 @@ describe("query runner > rename column", () => {
 
     it("should correctly rename column with all constraints and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 const idColumn = table!.findColumnByName("id")!
@@ -65,7 +66,7 @@ describe("query runner > rename column", () => {
 
                 // should successfully drop pk if pk constraint was correctly renamed.
                 // CockroachDB does not allow to drop PK
-                if (!(connection.driver.options.type === "cockroachdb"))
+                if (!(dataSource.driver.options.type === "cockroachdb"))
                     await queryRunner.dropPrimaryKey(table!)
 
                 table = await queryRunner.getTable("post")
@@ -74,11 +75,11 @@ describe("query runner > rename column", () => {
 
                 // MySql and SAP does not support unique constraints
                 if (
-                    !DriverUtils.isMySQLFamily(connection.driver) &&
-                    !(connection.driver.options.type === "sap")
+                    !DriverUtils.isMySQLFamily(dataSource.driver) &&
+                    !(dataSource.driver.options.type === "sap")
                 ) {
                     const oldUniqueConstraintName =
-                        connection.namingStrategy.uniqueConstraintName(table!, [
+                        dataSource.namingStrategy.uniqueConstraintName(table!, [
                             "text",
                             "tag",
                         ])
@@ -93,7 +94,7 @@ describe("query runner > rename column", () => {
 
                     table = await queryRunner.getTable("post")
                     const newUniqueConstraintName =
-                        connection.namingStrategy.uniqueConstraintName(table!, [
+                        dataSource.namingStrategy.uniqueConstraintName(table!, [
                             "text2",
                             "tag",
                         ])
@@ -117,24 +118,24 @@ describe("query runner > rename column", () => {
 
     it("should correctly rename column with all constraints in custom table schema and database and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 let table: Table | undefined
 
                 let questionTableName: string = "question"
                 let categoryTableName: string = "category"
 
                 // create different names to test renaming with custom schema and database.
-                if (connection.driver.options.type === "mssql") {
+                if (dataSource.driver.options.type === "mssql") {
                     questionTableName = "testDB.testSchema.question"
                     categoryTableName = "testDB.testSchema.category"
                     await queryRunner.createDatabase("testDB", true)
                     await queryRunner.createSchema("testDB.testSchema", true)
-                } else if (connection.driver.options.type === "postgres") {
+                } else if (dataSource.driver.options.type === "postgres") {
                     questionTableName = "testSchema.question"
                     categoryTableName = "testSchema.category"
                     await queryRunner.createSchema("testSchema", true)
-                } else if (DriverUtils.isMySQLFamily(connection.driver)) {
+                } else if (DriverUtils.isMySQLFamily(dataSource.driver)) {
                     questionTableName = "testDB.question"
                     categoryTableName = "testDB.category"
                     await queryRunner.createDatabase("testDB", true)
@@ -147,7 +148,7 @@ describe("query runner > rename column", () => {
                             {
                                 name: "id",
                                 type: DriverUtils.isSQLiteFamily(
-                                    connection.driver,
+                                    dataSource.driver,
                                 )
                                     ? "integer"
                                     : "int",
@@ -172,7 +173,7 @@ describe("query runner > rename column", () => {
                             {
                                 name: "id",
                                 type: DriverUtils.isSQLiteFamily(
-                                    connection.driver,
+                                    dataSource.driver,
                                 )
                                     ? "integer"
                                     : "int",
@@ -206,7 +207,7 @@ describe("query runner > rename column", () => {
                     "name2",
                 )
                 table = await queryRunner.getTable(questionTableName)
-                const newIndexName = connection.namingStrategy.indexName(
+                const newIndexName = dataSource.namingStrategy.indexName(
                     table!,
                     ["name2"],
                 )
@@ -219,7 +220,7 @@ describe("query runner > rename column", () => {
                 )
                 table = await queryRunner.getTable(categoryTableName)
                 const newForeignKeyName =
-                    connection.namingStrategy.foreignKeyName(
+                    dataSource.namingStrategy.foreignKeyName(
                         table!,
                         ["questionId2"],
                         "question",

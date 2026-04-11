@@ -1,10 +1,11 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
-import { RelationOptions } from "../options/RelationOptions"
+import type { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
+import type { RelationOptions } from "../options/RelationOptions"
 
 /**
  * Marks an entity property as a children of the tree.
  * "Tree children" will contain all children (bind) of this entity.
+ *
  * @param options
  * @param options.cascade
  */
@@ -14,7 +15,7 @@ export function TreeChildren(options?: {
         | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
 }): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        options ??= {} as RelationOptions
 
         // now try to determine it its lazy relation
         const reflectedType =
@@ -24,7 +25,7 @@ export function TreeChildren(options?: {
         const isLazy =
             (reflectedType &&
                 typeof reflectedType.name === "string" &&
-                reflectedType.name.toLowerCase() === "promise") ||
+                reflectedType.name.toLowerCase() === "promise") ??
             false
 
         // add one-to-many relation for this

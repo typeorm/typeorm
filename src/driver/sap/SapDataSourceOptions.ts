@@ -1,5 +1,5 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
-import { SapConnectionCredentialsOptions } from "./SapConnectionCredentialsOptions"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { SapConnectionCredentialsOptions } from "./SapConnectionCredentialsOptions"
 
 /**
  * SAP Hana specific connection options.
@@ -23,11 +23,6 @@ export interface SapDataSourceOptions
     readonly driver?: any
 
     /**
-     * @deprecated Use {@link driver} instead.
-     */
-    readonly hanaClientDriver?: any
-
-    /**
      * Pool options.
      */
     readonly pool?: {
@@ -48,6 +43,7 @@ export interface SapDataSourceOptions
          * Defines the maximum time, in milliseconds, to wait for a connection
          * to become available once the specified number of `maxConnectedOrPooled`
          * open connections have been reached (default: 0, no wait).
+         *
          * @remarks Requires `@sap/hana-client` version `2.27` or later.
          */
         readonly maxWaitTimeoutIfPoolExhausted?: number
@@ -63,42 +59,6 @@ export interface SapDataSourceOptions
          * be reused (default: 0, no limit).
          */
         readonly poolCapacity?: number
-
-        /**
-         * Max number of connections.
-         * @deprecated Use {@link maxConnectedOrPooled} instead.
-         */
-        readonly max?: number
-
-        /**
-         * Minimum number of connections.
-         * @deprecated Obsolete, no alternative exists.
-         */
-        readonly min?: number
-
-        /**
-         * Maximum number of waiting requests allowed.
-         * @deprecated Obsolete, no alternative exists.
-         */
-        readonly maxWaitingRequests?: number
-
-        /**
-         * Max milliseconds a request will wait for a resource before timing out.
-         * @deprecated Use {@link maxWaitTimeoutIfPoolExhausted} instead.
-         */
-        readonly requestTimeout?: number
-
-        /**
-         * How often to run resource timeout checks.
-         * @deprecated Obsolete, no alternative exists.
-         */
-        readonly checkInterval?: number
-
-        /**
-         * Idle timeout (in milliseconds).
-         * @deprecated Use {@link maxPooledIdleTime} (in seconds) instead .
-         */
-        readonly idleTimeout?: number
 
         /**
          * Function handling errors thrown by drivers pool.

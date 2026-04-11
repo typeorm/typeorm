@@ -17,11 +17,12 @@ There are several options you can specify for relations:
 - `eager: boolean` (default: `false`) - If set to true, the relation will always be loaded with the main entity when using `find*` methods or `QueryBuilder` on this entity
 - `cascade: boolean | ("insert" | "update")[]` (default: `false`) - If set to true, the related object will be inserted and updated in the database. You can also specify an array of [cascade options](#cascade-options).
 - `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` (default: `RESTRICT`) - specifies how foreign key should behave when referenced object is deleted
-- `nullable: boolean` (default: `true`) - Indicates whether this relation's column is nullable or not. By default it is nullable.
-- `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` (default: `disable`) - When a parent is saved (cascading enabled) without a child/children that still exists in database, this will control what shall happen to them.
+- `deferrable: "INITIALLY DEFERRED"|"INITIALLY IMMEDIATE"` - When set, foreign key constraints are deferrable (e.g. validated at commit time). For many-to-many relations this applies to both junction-table foreign keys. Supported on PostgreSQL, better-sqlite3, and SAP HANA.
+- `nullable: boolean` (default: `true`) - Indicates whether this relation's column is nullable or not. By default it is nullable. For `ManyToOne` and owning `OneToOne` relations, setting `nullable: false` also causes TypeORM to use `INNER JOIN` instead of `LEFT JOIN` when loading the relation, since the related entity is guaranteed to exist.
+- `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` (default: `nullify`) - When a parent is saved (cascading enabled) without a child/children that still exists in database, this will control what shall happen to them.
+    - _nullify_ will remove the relation key. If the foreign key column is non-nullable, the orphaned row will be deleted instead since it cannot be set to `null`.
     - _delete_ will remove these children from database.
     - _soft-delete_ will mark children as soft-deleted.
-    - _nullify_ will remove the relation key.
     - _disable_ will keep the relation intact. To delete, one has to use their own repository.
 
 ## Cascades
@@ -150,6 +151,19 @@ export class Post {
 }
 ```
 
+:::note Cascade remove
+When using `cascade: ["remove"]` or `cascade: true`, calling `manager.remove(entity)` will also remove related entities that are loaded on the entity instance. TypeORM only traverses relations that are populated on the object — if a relation is not loaded, its children will not be cascade-removed. Make sure to load relations before removing:
+
+```typescript
+const post = await manager.findOne(Post, {
+    where: { id: 1 },
+    relations: { categories: true },
+})
+await manager.remove(post) // categories will also be removed
+```
+
+:::
+
 ## `@JoinColumn` options
 
 `@JoinColumn` not only defines which side of the relation contains the join column with a foreign key,
@@ -197,6 +211,8 @@ You can also join multiple columns. Note that they do not reference the primary 
 ])
 category: Category;
 ```
+
+> **Note:** When using composite `@JoinColumn` or `@JoinTable`, TypeORM automatically sorts the foreign key columns to match the referenced entity's primary key order. This ensures compatibility with databases like MySQL, MSSQL, and SAP HANA that require FK columns to reference PK columns in index order.
 
 ## `@JoinTable` options
 

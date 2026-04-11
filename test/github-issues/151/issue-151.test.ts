@@ -4,25 +4,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
 describe("github issues > #151 joinAndSelect can't find entity from inverse side of relation", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should cascade persist successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category = new Category()
                 category.name = "post category"
 
@@ -32,20 +31,20 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
 
                 await connection.manager.save(post)
 
-                const loadedPost = await connection.manager.findOne(Post, {
-                    where: {
-                        id: 1,
-                    },
-                    join: {
-                        alias: "post",
-                        innerJoinAndSelect: {
-                            category: "post.category",
+                const loadedPost = await connection.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 1,
+                        },
+                        relations: {
+                            category: true,
                         },
                     },
-                })
+                )
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "Hello post",
                     category: {

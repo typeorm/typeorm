@@ -4,25 +4,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("github issues > #345 Join query on ManyToMany relations not working", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("embedded with custom column name should persist and load without errors", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 for (let i = 0; i < 20; i++) {
                     const category = new Category()
                     category.name = "Category #" + i
@@ -39,10 +38,10 @@ describe("github issues > #345 Join query on ManyToMany relations not working", 
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "category")
                     .where("category.category_id IN (:...ids)", { ids: [21] })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.categories).not.to.be.undefined
+                expect(loadedPost.categories).not.to.be.undefined
             }),
         ))
 })

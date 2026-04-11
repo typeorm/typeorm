@@ -1,5 +1,5 @@
 import { assert, AssertionError } from "chai"
-import { AsyncFunc, Context, Func, Test, TestFunction } from "mocha"
+import type { AsyncFunc, Context, Func, Test, TestFunction } from "mocha"
 
 type XFailFunction = {
     it: TestFunction

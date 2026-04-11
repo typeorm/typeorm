@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource, In, IsNull } from "../../../src"
+import type { DataSource } from "../../../src"
+import { In, IsNull } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,12 +13,11 @@ import { prepareDataManyToOne, prepareDataOneToOne } from "./issue-8890-utils"
 
 describe("github issues > #8890 it should be possible to query IS NULL on ManyToOne relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -129,12 +129,11 @@ describe("github issues > #8890 it should be possible to query IS NULL on ManyTo
 
 describe("github issues > #8890 it should be possible to query IS NULL on OneToOne relations on owner side", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -26,16 +26,16 @@ Different RDBMS-es have their own specific options.
   It accepts both entity classes and directories from which to load.
   Directories support glob patterns.
   Example: `subscribers: [PostSubscriber, AppSubscriber, "subscribers/*.js", "modules/**/subscribers/*.js"]`.
-  Learn more about [Subscribers](../advanced-topics/4-listeners-and-subscribers.md).
+  Learn more about [Subscribers](../listeners-and-subscribers.md).
 
 - `logging` - Indicates if logging is enabled or not.
   If set to `true` then query and error logging will be enabled.
   You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
-  Learn more about [Logging](../advanced-topics/5-logging.md).
+  Learn more about [Logging](../logging.md).
 
 - `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "formatted-console", "simple-console" and "file".
   Default is "advanced-console". You can also specify a logger class that implements `Logger` interface.
-  Learn more about [Logging](../advanced-topics/5-logging.md).
+  Learn more about [Logging](../logging.md).
 
 - `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
   then logger will log this query.
@@ -59,7 +59,7 @@ Different RDBMS-es have their own specific options.
   This option is useful during debug and development.
   As an alternative to it, you can use CLI and run schema:sync command.
   Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
-  Instead, it syncs just by creating indices.
+  Instead, it syncs just by creating indexes.
 
 - `migrations` - [Migrations](../migrations/01-why.md) to be loaded and used for this data source
 
@@ -78,16 +78,16 @@ Different RDBMS-es have their own specific options.
 - `isolateWhereStatements` - Enables where statement isolation, wrapping each where clause in brackets automatically.
   eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
 
-- `invalidWhereValuesBehavior` - Controls how null and undefined values are handled in where conditions across all TypeORM operations (find operations, query builders, repository methods).
+- `invalidWhereValuesBehavior` - Controls how null and undefined values are handled in where conditions for high-level operations (find operations, repository methods, EntityManager methods). Does not affect QueryBuilder's `.where()` directly.
     - `null` behavior options:
-        - `'ignore'` (default) - skips null properties
+        - `'ignore'` - skips null properties
         - `'sql-null'` - transforms null to SQL NULL
-        - `'throw'` - throws an error
+        - `'throw'` (default) - throws an error
     - `undefined` behavior options:
-        - `'ignore'` (default) - skips undefined properties
-        - `'throw'` - throws an error
+        - `'ignore'` - skips undefined properties
+        - `'throw'` (default) - throws an error
 
-    Example: `invalidWhereValuesBehavior: { null: 'sql-null', undefined: 'throw' }`.
+    Example: `invalidWhereValuesBehavior: { null: 'sql-null', undefined: 'ignore' }`.
 
     Learn more about [Null and Undefined Handling](./5-null-and-undefined-handling.md).
 
