@@ -73,12 +73,12 @@ describe("decorators > relation-id-decorator > many-to-one", () => {
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryId).to.not.be.undefined
-                expect(loadedPost!.categoryId).to.be.equal(1)
-                expect(loadedPost!.categoryName).to.not.be.undefined
-                expect(loadedPost!.categoryName).to.be.equal("BMW")
+                expect(loadedPost.categoryId).to.not.be.undefined
+                expect(loadedPost.categoryId).to.be.equal(1)
+                expect(loadedPost.categoryName).to.not.be.undefined
+                expect(loadedPost.categoryName).to.be.equal("BMW")
             }),
         ))
 })

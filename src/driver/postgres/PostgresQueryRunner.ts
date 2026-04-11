@@ -136,6 +136,7 @@ export class PostgresQueryRunner
     /**
      * Release a connection back to the pool, optionally specifying an Error to release with.
      * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
+     *
      * @param err
      */
     private async releasePostgresConnection(err?: Error) {
@@ -166,6 +167,7 @@ export class PostgresQueryRunner
 
     /**
      * Starts transaction.
+     *
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
@@ -243,6 +245,7 @@ export class PostgresQueryRunner
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -342,6 +345,7 @@ export class PostgresQueryRunner
 
     /**
      * Returns raw data stream.
+     *
      * @param query
      * @param parameters
      * @param onEnd
@@ -377,6 +381,7 @@ export class PostgresQueryRunner
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     *
      * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
@@ -385,6 +390,7 @@ export class PostgresQueryRunner
 
     /**
      * Checks if database with the given name exist.
+     *
      * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
@@ -405,6 +411,7 @@ export class PostgresQueryRunner
 
     /**
      * Checks if schema with the given name exist.
+     *
      * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
@@ -425,14 +432,13 @@ export class PostgresQueryRunner
 
     /**
      * Checks if table with the given name exist in the database.
+     *
      * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
 
-        if (!parsedTableName.schema) {
-            parsedTableName.schema = await this.getCurrentSchema()
-        }
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
         const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = $1 AND "table_name" = $2`
         const result = await this.query(sql, [
@@ -444,6 +450,7 @@ export class PostgresQueryRunner
 
     /**
      * Checks if column with the given name exist in the given table.
+     *
      * @param tableOrName
      * @param columnName
      */
@@ -453,9 +460,7 @@ export class PostgresQueryRunner
     ): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
 
-        if (!parsedTableName.schema) {
-            parsedTableName.schema = await this.getCurrentSchema()
-        }
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
         const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = $1 AND "table_name" = $2 AND "column_name" = $3`
         const result = await this.query(sql, [
@@ -469,6 +474,7 @@ export class PostgresQueryRunner
     /**
      * Creates a new database.
      * Note: Postgres does not support database creation inside a transaction block.
+     *
      * @param database
      * @param ifNotExists
      */
@@ -490,6 +496,7 @@ export class PostgresQueryRunner
     /**
      * Drops database.
      * Note: Postgres does not support database dropping inside a transaction block.
+     *
      * @param database
      * @param ifExists
      */
@@ -503,6 +510,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new table schema.
+     *
      * @param schemaPath
      * @param ifNotExists
      */
@@ -525,6 +533,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops table schema.
+     *
      * @param schemaPath
      * @param ifExists
      * @param isCascade
@@ -549,6 +558,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new table.
+     *
      * @param table
      * @param ifNotExists
      * @param createForeignKeys
@@ -631,12 +641,11 @@ export class PostgresQueryRunner
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                if (!index.name)
-                    index.name = this.dataSource.namingStrategy.indexName(
-                        table,
-                        index.columnNames,
-                        index.where,
-                    )
+                index.name ??= this.dataSource.namingStrategy.indexName(
+                    table,
+                    index.columnNames,
+                    index.where,
+                )
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(table, index))
             })
@@ -661,6 +670,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops the table.
+     *
      * @param target
      * @param ifExists
      * @param dropForeignKeys
@@ -738,6 +748,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new view.
+     *
      * @param view
      * @param syncWithMetadata
      */
@@ -758,6 +769,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops the view.
+     *
      * @param target
      * @param ifExists
      */
@@ -786,6 +798,7 @@ export class PostgresQueryRunner
 
     /**
      * Renames the given table.
+     *
      * @param oldTableOrName
      * @param newTableName
      */
@@ -1042,6 +1055,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new column from the column in the table.
+     *
      * @param tableOrName
      * @param column
      */
@@ -1084,12 +1098,12 @@ export class PostgresQueryRunner
             const primaryColumns = clonedTable.primaryColumns
             // if table already have primary key, me must drop it and recreate again
             if (primaryColumns.length > 0) {
-                const pkName = primaryColumns[0].primaryKeyConstraintName
-                    ? primaryColumns[0].primaryKeyConstraintName
-                    : this.dataSource.namingStrategy.primaryKeyName(
-                          clonedTable,
-                          primaryColumns.map((column) => column.name),
-                      )
+                const pkName =
+                    primaryColumns[0].primaryKeyConstraintName ??
+                    this.dataSource.namingStrategy.primaryKeyName(
+                        clonedTable,
+                        primaryColumns.map((column) => column.name),
+                    )
 
                 const columnNames = primaryColumns
                     .map((column) => `"${column.name}"`)
@@ -1112,12 +1126,12 @@ export class PostgresQueryRunner
             }
 
             primaryColumns.push(column)
-            const pkName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
-                : this.dataSource.namingStrategy.primaryKeyName(
-                      clonedTable,
-                      primaryColumns.map((column) => column.name),
-                  )
+            const pkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    primaryColumns.map((column) => column.name),
+                )
 
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
@@ -1230,6 +1244,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new columns from the column in the table.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -1244,6 +1259,7 @@ export class PostgresQueryRunner
 
     /**
      * Renames column in the given table.
+     *
      * @param tableOrName
      * @param oldTableColumnOrName
      * @param newTableColumnOrName
@@ -1277,6 +1293,7 @@ export class PostgresQueryRunner
 
     /**
      * Changes a column in the table.
+     *
      * @param tableOrName
      * @param oldTableColumnOrName
      * @param newColumn
@@ -1883,12 +1900,12 @@ export class PostgresQueryRunner
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName = primaryColumns[0].primaryKeyConstraintName
-                        ? primaryColumns[0].primaryKeyConstraintName
-                        : this.dataSource.namingStrategy.primaryKeyName(
-                              clonedTable,
-                              primaryColumns.map((column) => column.name),
-                          )
+                    const pkName =
+                        primaryColumns[0].primaryKeyConstraintName ??
+                        this.dataSource.namingStrategy.primaryKeyName(
+                            clonedTable,
+                            primaryColumns.map((column) => column.name),
+                        )
 
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
@@ -1917,12 +1934,12 @@ export class PostgresQueryRunner
                         (column) => column.name === newColumn.name,
                     )
                     column!.isPrimary = true
-                    const pkName = primaryColumns[0].primaryKeyConstraintName
-                        ? primaryColumns[0].primaryKeyConstraintName
-                        : this.dataSource.namingStrategy.primaryKeyName(
-                              clonedTable,
-                              primaryColumns.map((column) => column.name),
-                          )
+                    const pkName =
+                        primaryColumns[0].primaryKeyConstraintName ??
+                        this.dataSource.namingStrategy.primaryKeyName(
+                            clonedTable,
+                            primaryColumns.map((column) => column.name),
+                        )
 
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
@@ -1959,13 +1976,12 @@ export class PostgresQueryRunner
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName = primaryColumns[0]
-                            .primaryKeyConstraintName
-                            ? primaryColumns[0].primaryKeyConstraintName
-                            : this.dataSource.namingStrategy.primaryKeyName(
-                                  clonedTable,
-                                  primaryColumns.map((column) => column.name),
-                              )
+                        const pkName =
+                            primaryColumns[0].primaryKeyConstraintName ??
+                            this.dataSource.namingStrategy.primaryKeyName(
+                                clonedTable,
+                                primaryColumns.map((column) => column.name),
+                            )
 
                         const columnNames = primaryColumns
                             .map((column) => `"${column.name}"`)
@@ -2301,8 +2317,8 @@ export class PostgresQueryRunner
             }
 
             if (
-                (newColumn.spatialFeatureType || "").toLowerCase() !==
-                    (oldColumn.spatialFeatureType || "").toLowerCase() ||
+                (newColumn.spatialFeatureType ?? "").toLowerCase() !==
+                    (oldColumn.spatialFeatureType ?? "").toLowerCase() ||
                 newColumn.srid !== oldColumn.srid
             ) {
                 upQueries.push(
@@ -2448,6 +2464,7 @@ export class PostgresQueryRunner
 
     /**
      * Changes a column in the table.
+     *
      * @param tableOrName
      * @param changedColumns
      */
@@ -2462,6 +2479,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops column in the table.
+     *
      * @param tableOrName
      * @param columnOrName
      * @param ifExists
@@ -2490,12 +2508,12 @@ export class PostgresQueryRunner
 
         // drop primary key constraint
         if (column.isPrimary) {
-            const pkName = column.primaryKeyConstraintName
-                ? column.primaryKeyConstraintName
-                : this.dataSource.namingStrategy.primaryKeyName(
-                      clonedTable,
-                      clonedTable.primaryColumns.map((column) => column.name),
-                  )
+            const pkName =
+                column.primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    clonedTable.primaryColumns.map((column) => column.name),
+                )
 
             const columnNames = clonedTable.primaryColumns
                 .map((primaryColumn) => `"${primaryColumn.name}"`)
@@ -2522,15 +2540,12 @@ export class PostgresQueryRunner
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = clonedTable.primaryColumns[0]
-                    .primaryKeyConstraintName
-                    ? clonedTable.primaryColumns[0].primaryKeyConstraintName
-                    : this.dataSource.namingStrategy.primaryKeyName(
-                          clonedTable,
-                          clonedTable.primaryColumns.map(
-                              (column) => column.name,
-                          ),
-                      )
+                const pkName =
+                    clonedTable.primaryColumns[0].primaryKeyConstraintName ??
+                    this.dataSource.namingStrategy.primaryKeyName(
+                        clonedTable,
+                        clonedTable.primaryColumns.map((column) => column.name),
+                    )
 
                 const columnNames = clonedTable.primaryColumns
                     .map((primaryColumn) => `"${primaryColumn.name}"`)
@@ -2669,6 +2684,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops the columns in the table.
+     *
      * @param tableOrName
      * @param columns
      * @param ifExists
@@ -2685,6 +2701,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new primary key.
+     *
      * @param tableOrName
      * @param columnNames
      * @param constraintName
@@ -2714,6 +2731,7 @@ export class PostgresQueryRunner
 
     /**
      * Updates composite primary keys.
+     *
      * @param tableOrName
      * @param columns
      */
@@ -2732,12 +2750,12 @@ export class PostgresQueryRunner
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
-                : this.dataSource.namingStrategy.primaryKeyName(
-                      clonedTable,
-                      primaryColumns.map((column) => column.name),
-                  )
+            const pkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    primaryColumns.map((column) => column.name),
+                )
 
             const columnNamesString = primaryColumns
                 .map((column) => `"${column.name}"`)
@@ -2766,12 +2784,12 @@ export class PostgresQueryRunner
                 column.isPrimary = true
             })
 
-        const pkName = primaryColumns[0]?.primaryKeyConstraintName
-            ? primaryColumns[0].primaryKeyConstraintName
-            : this.dataSource.namingStrategy.primaryKeyName(
-                  clonedTable,
-                  columnNames,
-              )
+        const pkName =
+            primaryColumns[0]?.primaryKeyConstraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(
+                clonedTable,
+                columnNames,
+            )
 
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
@@ -2798,6 +2816,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops a primary key.
+     *
      * @param tableOrName
      * @param constraintName
      * @param ifExists
@@ -2824,6 +2843,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new unique constraint.
+     *
      * @param tableOrName
      * @param uniqueConstraint
      */
@@ -2836,12 +2856,11 @@ export class PostgresQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!uniqueConstraint.name)
-            uniqueConstraint.name =
-                this.dataSource.namingStrategy.uniqueConstraintName(
-                    table,
-                    uniqueConstraint.columnNames,
-                )
+        uniqueConstraint.name ??=
+            this.dataSource.namingStrategy.uniqueConstraintName(
+                table,
+                uniqueConstraint.columnNames,
+            )
 
         const up = this.createUniqueConstraintSql(table, uniqueConstraint)
         const down = this.dropUniqueConstraintSql(table, uniqueConstraint)
@@ -2851,6 +2870,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      */
@@ -2865,6 +2885,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops unique constraint.
+     *
      * @param tableOrName
      * @param uniqueOrName
      * @param ifExists
@@ -2899,6 +2920,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops unique constraints.
+     *
      * @param tableOrName
      * @param uniqueConstraints
      * @param ifExists
@@ -2919,6 +2941,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new check constraint.
+     *
      * @param tableOrName
      * @param checkConstraint
      */
@@ -2931,12 +2954,11 @@ export class PostgresQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!checkConstraint.name)
-            checkConstraint.name =
-                this.dataSource.namingStrategy.checkConstraintName(
-                    table,
-                    checkConstraint.expression!,
-                )
+        checkConstraint.name ??=
+            this.dataSource.namingStrategy.checkConstraintName(
+                table,
+                checkConstraint.expression!,
+            )
 
         const up = this.createCheckConstraintSql(table, checkConstraint)
         const down = this.dropCheckConstraintSql(table, checkConstraint)
@@ -2946,6 +2968,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      */
@@ -2961,6 +2984,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops check constraint.
+     *
      * @param tableOrName
      * @param checkOrName
      * @param ifExists
@@ -2991,6 +3015,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops check constraints.
+     *
      * @param tableOrName
      * @param checkConstraints
      * @param ifExists
@@ -3008,6 +3033,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionConstraint
      */
@@ -3020,12 +3046,11 @@ export class PostgresQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!exclusionConstraint.name)
-            exclusionConstraint.name =
-                this.dataSource.namingStrategy.exclusionConstraintName(
-                    table,
-                    exclusionConstraint.expression!,
-                )
+        exclusionConstraint.name ??=
+            this.dataSource.namingStrategy.exclusionConstraintName(
+                table,
+                exclusionConstraint.expression!,
+            )
 
         const up = this.createExclusionConstraintSql(table, exclusionConstraint)
         const down = this.dropExclusionConstraintSql(table, exclusionConstraint)
@@ -3035,6 +3060,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      */
@@ -3050,6 +3076,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops exclusion constraint.
+     *
      * @param tableOrName
      * @param exclusionOrName
      * @param ifExists
@@ -3089,6 +3116,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops exclusion constraints.
+     *
      * @param tableOrName
      * @param exclusionConstraints
      * @param ifExists
@@ -3110,6 +3138,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new foreign key.
+     *
      * @param tableOrName
      * @param foreignKey
      */
@@ -3122,13 +3151,12 @@ export class PostgresQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new FK may be passed without name. In this case we generate FK name manually.
-        if (!foreignKey.name)
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
@@ -3138,6 +3166,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new foreign keys.
+     *
      * @param tableOrName
      * @param foreignKeys
      */
@@ -3152,6 +3181,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops a foreign key from the table.
+     *
      * @param tableOrName
      * @param foreignKeyOrName
      * @param ifExists
@@ -3174,14 +3204,12 @@ export class PostgresQueryRunner
             )
         }
 
-        if (!foreignKey.name) {
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
-        }
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.dropForeignKeySql(table, foreignKey, ifExists)
         const down = this.createForeignKeySql(table, foreignKey)
@@ -3191,6 +3219,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops a foreign keys from the table.
+     *
      * @param tableOrName
      * @param foreignKeys
      * @param ifExists
@@ -3207,6 +3236,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new index.
+     *
      * @param tableOrName
      * @param index
      */
@@ -3219,7 +3249,7 @@ export class PostgresQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -3229,6 +3259,7 @@ export class PostgresQueryRunner
 
     /**
      * Create a new view index.
+     *
      * @param viewOrName
      * @param index
      */
@@ -3241,7 +3272,7 @@ export class PostgresQueryRunner
             : await this.getCachedView(viewOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(view, index)
+        index.name ??= this.generateIndexName(view, index)
 
         const up = this.createViewIndexSql(view, index)
         const down = this.dropIndexSql(view, index)
@@ -3251,6 +3282,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates a new indices
+     *
      * @param tableOrName
      * @param indices
      */
@@ -3265,6 +3297,7 @@ export class PostgresQueryRunner
 
     /**
      * Creates new view indices
+     *
      * @param viewOrName
      * @param indices
      */
@@ -3279,6 +3312,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops an index from the table.
+     *
      * @param tableOrName
      * @param indexOrName
      * @param ifExists
@@ -3301,7 +3335,7 @@ export class PostgresQueryRunner
             )
         }
         // old index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index, ifExists)
         const down = this.createIndexSql(table, index)
@@ -3311,6 +3345,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops an index from a view.
+     *
      * @param viewOrName
      * @param indexOrName
      */
@@ -3329,7 +3364,7 @@ export class PostgresQueryRunner
                 `Supplied index ${indexOrName} was not found in view ${view.name}`,
             )
         // old index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(view, index)
+        index.name ??= this.generateIndexName(view, index)
 
         const up = this.dropIndexSql(view, index)
         const down = this.createViewIndexSql(view, index)
@@ -3339,6 +3374,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops an indices from the table.
+     *
      * @param tableOrName
      * @param indices
      * @param ifExists
@@ -3356,6 +3392,7 @@ export class PostgresQueryRunner
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     *
      * @param tableName
      * @param options
      * @param options.cascade
@@ -3465,9 +3502,7 @@ export class PostgresQueryRunner
 
         if (!hasTable) return []
 
-        if (!viewNames) {
-            viewNames = []
-        }
+        viewNames ??= []
 
         const currentDatabase = await this.getCurrentDatabase()
         const currentSchema = await this.getCurrentSchema()
@@ -3477,10 +3512,7 @@ export class PostgresQueryRunner
                 : viewNames
                       .map((tableName) => this.driver.parseTableName(tableName))
                       .map(({ schema, tableName }) => {
-                          if (!schema) {
-                              schema =
-                                  this.driver.options.schema || currentSchema
-                          }
+                          schema ??= this.driver.options.schema ?? currentSchema
 
                           return `("t"."schema" = '${schema}' AND "t"."name" = '${tableName}')`
                       })
@@ -3492,10 +3524,7 @@ export class PostgresQueryRunner
                 : viewNames
                       .map((tableName) => this.driver.parseTableName(tableName))
                       .map(({ schema, tableName }) => {
-                          if (!schema) {
-                              schema =
-                                  this.driver.options.schema || currentSchema
-                          }
+                          schema ??= this.driver.options.schema ?? currentSchema
 
                           return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${tableName}')`
                       })
@@ -3577,11 +3606,12 @@ export class PostgresQueryRunner
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     *
      * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -3602,7 +3632,7 @@ export class PostgresQueryRunner
                 .map((tableName) => this.driver.parseTableName(tableName))
                 .map(({ schema, tableName }) => {
                     return `("table_schema" = '${
-                        schema || currentSchema
+                        schema ?? currentSchema
                     }' AND "table_name" = '${tableName}')`
                 })
                 .join(" OR ")
@@ -3621,6 +3651,7 @@ export class PostgresQueryRunner
         /**
          * Uses standard SQL information_schema.columns table and postgres-specific
          * pg_catalog.pg_attribute table to get column information.
+         *
          * @see https://stackoverflow.com/a/19541865
          */
         const columnsCondition = dbTables
@@ -3769,7 +3800,7 @@ export class PostgresQueryRunner
                                 ].match(
                                     /^(?:vector|halfvec|sparsevec)\((\d+)\)$/,
                                 )
-                                if (lengthMatch && lengthMatch[1]) {
+                                if (lengthMatch?.[1]) {
                                     tableColumn.length = lengthMatch[1]
                                 }
                             }
@@ -3884,7 +3915,7 @@ export class PostgresQueryRunner
                                     `WHERE "n"."nspname" = '${
                                         dbTable["table_schema"]
                                     }' AND "t"."typname" = '${
-                                        enumName || name
+                                        enumName ?? name
                                     }'`
                                 const results: ObjectLiteral[] =
                                     await this.query(sql)
@@ -4119,16 +4150,15 @@ export class PostgresQueryRunner
                                     asExpressionQuery.query,
                                     asExpressionQuery.parameters,
                                 )
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""
                                 }
                             }
 
-                            tableColumn.comment = dbColumn["description"]
-                                ? dbColumn["description"]
-                                : undefined
+                            tableColumn.comment =
+                                dbColumn["description"] ?? undefined
                             if (dbColumn["character_set_name"])
                                 tableColumn.charset =
                                     dbColumn["character_set_name"]
@@ -4312,6 +4342,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create table sql.
+     *
      * @param table
      * @param createForeignKeys
      */
@@ -4344,12 +4375,12 @@ export class PostgresQueryRunner
         if (table.uniques.length > 0) {
             const uniquesSql = table.uniques
                 .map((unique) => {
-                    const uniqueName = unique.name
-                        ? unique.name
-                        : this.dataSource.namingStrategy.uniqueConstraintName(
-                              table,
-                              unique.columnNames,
-                          )
+                    const uniqueName =
+                        unique.name ??
+                        this.dataSource.namingStrategy.uniqueConstraintName(
+                            table,
+                            unique.columnNames,
+                        )
                     const columnNames = unique.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
@@ -4366,12 +4397,12 @@ export class PostgresQueryRunner
         if (table.checks.length > 0) {
             const checksSql = table.checks
                 .map((check) => {
-                    const checkName = check.name
-                        ? check.name
-                        : this.dataSource.namingStrategy.checkConstraintName(
-                              table,
-                              check.expression!,
-                          )
+                    const checkName =
+                        check.name ??
+                        this.dataSource.namingStrategy.checkConstraintName(
+                            table,
+                            check.expression!,
+                        )
                     return `CONSTRAINT "${checkName}" CHECK (${check.expression})`
                 })
                 .join(", ")
@@ -4382,12 +4413,12 @@ export class PostgresQueryRunner
         if (table.exclusions.length > 0) {
             const exclusionsSql = table.exclusions
                 .map((exclusion) => {
-                    const exclusionName = exclusion.name
-                        ? exclusion.name
-                        : this.dataSource.namingStrategy.exclusionConstraintName(
-                              table,
-                              exclusion.expression!,
-                          )
+                    const exclusionName =
+                        exclusion.name ??
+                        this.dataSource.namingStrategy.exclusionConstraintName(
+                            table,
+                            exclusion.expression!,
+                        )
                     let constraint = `CONSTRAINT "${exclusionName}" EXCLUDE ${exclusion.expression}`
                     if (exclusion.deferrable)
                         constraint += ` DEFERRABLE ${exclusion.deferrable}`
@@ -4404,13 +4435,12 @@ export class PostgresQueryRunner
                     const columnNames = fk.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
-                            table,
-                            fk.columnNames,
-                            this.getTablePath(fk),
-                            fk.referencedColumnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        table,
+                        fk.columnNames,
+                        this.getTablePath(fk),
+                        fk.referencedColumnNames,
+                    )
 
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `"${columnName}"`)
@@ -4437,12 +4467,12 @@ export class PostgresQueryRunner
             (column) => column.isPrimary,
         )
         if (primaryColumns.length > 0) {
-            const primaryKeyName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
-                : this.dataSource.namingStrategy.primaryKeyName(
-                      table,
-                      primaryColumns.map((column) => column.name),
-                  )
+            const primaryKeyName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    table,
+                    primaryColumns.map((column) => column.name),
+                )
 
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
@@ -4484,6 +4514,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop table sql.
+     *
      * @param tableOrPath
      */
     protected dropTableSql(tableOrPath: Table | string): Query {
@@ -4511,10 +4542,7 @@ export class PostgresQueryRunner
         const currentSchema = await this.getCurrentSchema()
 
         let { schema, tableName: name } = this.driver.parseTableName(view)
-
-        if (!schema) {
-            schema = currentSchema
-        }
+        schema ??= currentSchema
 
         const type = view.materialized
             ? MetadataTableType.MATERIALIZED_VIEW
@@ -4533,6 +4561,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop view sql.
+     *
      * @param view
      * @param ifExists
      */
@@ -4546,16 +4575,14 @@ export class PostgresQueryRunner
 
     /**
      * Builds remove view sql.
+     *
      * @param view
      */
     protected async deleteViewDefinitionSql(view: View): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
 
         let { schema, tableName: name } = this.driver.parseTableName(view)
-
-        if (!schema) {
-            schema = currentSchema
-        }
+        schema ??= currentSchema
 
         const type = view.materialized
             ? MetadataTableType.MATERIALIZED_VIEW
@@ -4565,6 +4592,7 @@ export class PostgresQueryRunner
 
     /**
      * Drops ENUM type from given schemas.
+     *
      * @param schemaNames
      */
     protected async dropEnumTypes(schemaNames: string[]): Promise<void> {
@@ -4584,6 +4612,7 @@ export class PostgresQueryRunner
 
     /**
      * Checks if enum with the given name exist in the database.
+     *
      * @param table
      * @param column
      */
@@ -4592,10 +4621,7 @@ export class PostgresQueryRunner
         column: TableColumn,
     ): Promise<boolean> {
         let { schema } = this.driver.parseTableName(table)
-
-        if (!schema) {
-            schema = await this.getCurrentSchema()
-        }
+        schema ??= await this.getCurrentSchema()
 
         const enumName = this.buildEnumName(table, column, false, true)
         const sql =
@@ -4608,6 +4634,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create ENUM type sql.
+     *
      * @param table
      * @param column
      * @param enumName
@@ -4617,7 +4644,7 @@ export class PostgresQueryRunner
         column: TableColumn,
         enumName?: string,
     ): Query {
-        if (!enumName) enumName = this.buildEnumName(table, column)
+        enumName ??= this.buildEnumName(table, column)
         const enumValues = column
             .enum!.map((value) => `'${value.replaceAll("'", "''")}'`)
             .join(", ")
@@ -4626,6 +4653,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create ENUM type sql.
+     *
      * @param table
      * @param column
      * @param enumName
@@ -4635,7 +4663,7 @@ export class PostgresQueryRunner
         column: TableColumn,
         enumName?: string,
     ): Query {
-        if (!enumName) enumName = this.buildEnumName(table, column)
+        enumName ??= this.buildEnumName(table, column)
         return new Query(`DROP TYPE ${enumName}`)
     }
 
@@ -4653,6 +4681,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create index sql.
+     *
      * @param table
      * @param index
      */
@@ -4673,6 +4702,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create view index sql.
+     *
      * @param view
      * @param index
      */
@@ -4693,6 +4723,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop index sql.
+     *
      * @param table
      * @param indexOrName
      * @param ifExists
@@ -4725,6 +4756,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create primary key sql.
+     *
      * @param table
      * @param columnNames
      * @param constraintName
@@ -4734,9 +4766,9 @@ export class PostgresQueryRunner
         columnNames: string[],
         constraintName?: string,
     ): Query {
-        const primaryKeyName = constraintName
-            ? constraintName
-            : this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
+        const primaryKeyName =
+            constraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
 
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
@@ -4751,6 +4783,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop primary key sql.
+     *
      * @param table
      * @param ifExists
      */
@@ -4760,9 +4793,9 @@ export class PostgresQueryRunner
 
         const columnNames = table.primaryColumns.map((column) => column.name)
         const constraintName = table.primaryColumns[0].primaryKeyConstraintName
-        const primaryKeyName = constraintName
-            ? constraintName
-            : this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
+        const primaryKeyName =
+            constraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
 
         const ifExistsClause = ifExists ? "IF EXISTS " : ""
         return new Query(
@@ -4774,6 +4807,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create unique constraint sql.
+     *
      * @param table
      * @param uniqueConstraint
      */
@@ -4794,6 +4828,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop unique constraint sql.
+     *
      * @param table
      * @param uniqueOrName
      * @param ifExists
@@ -4816,6 +4851,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create check constraint sql.
+     *
      * @param table
      * @param checkConstraint
      */
@@ -4832,6 +4868,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop check constraint sql.
+     *
      * @param table
      * @param checkOrName
      * @param ifExists
@@ -4854,6 +4891,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create exclusion constraint sql.
+     *
      * @param table
      * @param exclusionConstraint
      */
@@ -4873,6 +4911,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop exclusion constraint sql.
+     *
      * @param table
      * @param exclusionOrName
      * @param ifExists
@@ -4895,6 +4934,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds create foreign key sql.
+     *
      * @param table
      * @param foreignKey
      */
@@ -4924,6 +4964,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds drop foreign key sql.
+     *
      * @param table
      * @param foreignKeyOrName
      * @param ifExists
@@ -4948,6 +4989,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds sequence name from given table and column.
+     *
      * @param table
      * @param columnOrName
      */
@@ -4987,6 +5029,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds ENUM type name from given table and column.
+     *
      * @param table
      * @param column
      * @param withSchema
@@ -5001,9 +5044,8 @@ export class PostgresQueryRunner
         toOld?: boolean,
     ): string {
         const { schema, tableName } = this.driver.parseTableName(table)
-        let enumName = column.enumName
-            ? column.enumName
-            : `${tableName}_${column.name.toLowerCase()}_enum`
+        let enumName =
+            column.enumName ?? `${tableName}_${column.name.toLowerCase()}_enum`
         if (schema && withSchema) enumName = `${schema}.${enumName}`
         if (toOld) enumName = enumName + "_old"
         return enumName
@@ -5016,10 +5058,7 @@ export class PostgresQueryRunner
 
     protected async getUserDefinedTypeName(table: Table, column: TableColumn) {
         let { schema, tableName: name } = this.driver.parseTableName(table)
-
-        if (!schema) {
-            schema = await this.getCurrentSchema()
-        }
+        schema ??= await this.getCurrentSchema()
 
         const result = await this.query(
             `SELECT "udt_schema", "udt_name" ` +
@@ -5033,7 +5072,7 @@ export class PostgresQueryRunner
         // so, we must remove this underscore character from enum type name
         let udtName = result[0]["udt_name"]
         if (udtName.indexOf("_") === 0) {
-            udtName = udtName.substr(1, udtName.length)
+            udtName = udtName.substring(1, udtName.length)
         }
         return {
             schema: result[0]["udt_schema"],
@@ -5043,6 +5082,7 @@ export class PostgresQueryRunner
 
     /**
      * Escapes a given comment so it's safe to include in a query.
+     *
      * @param comment
      */
     protected escapeComment(comment?: string) {
@@ -5057,6 +5097,7 @@ export class PostgresQueryRunner
 
     /**
      * Escapes given table or view path.
+     *
      * @param target
      */
     protected escapePath(target: Table | View | string): string {
@@ -5072,6 +5113,7 @@ export class PostgresQueryRunner
     /**
      * Get the table name with table schema
      * Note: Without ' or "
+     *
      * @param target
      */
     protected async getTableNameWithSchema(target: Table | string) {
@@ -5087,6 +5129,7 @@ export class PostgresQueryRunner
 
     /**
      * Builds a query for create column.
+     *
      * @param table
      * @param column
      */
@@ -5099,7 +5142,7 @@ export class PostgresQueryRunner
             if (column.generationStrategy === "identity") {
                 // Postgres 10+ Identity generated column
                 const generatedIdentityOrDefault =
-                    column.generatedIdentity || "BY DEFAULT"
+                    column.generatedIdentity ?? "BY DEFAULT"
                 c += ` ${column.type} GENERATED ${generatedIdentityOrDefault} AS IDENTITY`
             } else {
                 // classic SERIAL primary column
@@ -5154,6 +5197,7 @@ export class PostgresQueryRunner
 
     /**
      * Change table comment.
+     *
      * @param tableOrName
      * @param newComment
      */

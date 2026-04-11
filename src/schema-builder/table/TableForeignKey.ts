@@ -103,6 +103,7 @@ export class TableForeignKey {
 
     /**
      * Creates a new table foreign key from the given foreign key metadata.
+     *
      * @param metadata
      * @param driver
      */

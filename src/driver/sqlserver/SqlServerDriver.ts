@@ -42,6 +42,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Transaction isolation levels supported by this driver.
+     *
      * @see https://learn.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql
      */
     static readonly supportedIsolationLevels: IsolationLevel[] = [
@@ -63,6 +64,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * DataSource used by the driver.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -131,6 +133,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql
      */
     supportedDataTypes: ColumnType[] = [
@@ -272,6 +275,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Max length allowed by MSSQL Server for aliases (identifiers).
+     *
      * @see https://docs.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server
      */
     maxAliasLength = 128
@@ -332,20 +336,14 @@ export class SqlServerDriver implements Driver {
         if (!this.database || !this.searchSchema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
+            this.searchSchema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
 
-        if (!this.schema) {
-            this.schema = this.searchSchema
-        }
+        this.schema ??= this.searchSchema
     }
 
     /**
@@ -370,6 +368,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Closes connection pool.
+     *
      * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
@@ -387,6 +386,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
@@ -396,6 +396,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
      * @param sql
      * @param parameters
      */
@@ -447,6 +448,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
      * @param columnName
      */
     escape(columnName: string): string {
@@ -456,6 +458,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     *
      * @param tableName
      * @param schema
      * @param database
@@ -484,6 +487,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
      * @param target
      */
     parseTableName(
@@ -496,8 +500,8 @@ export class SqlServerDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -507,11 +511,11 @@ export class SqlServerDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -520,8 +524,8 @@ export class SqlServerDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -551,6 +555,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -599,6 +604,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -657,6 +663,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
      * @param column
      * @param column.type
      * @param column.length
@@ -704,6 +711,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -738,6 +746,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
      * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -748,6 +757,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     *
      * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
@@ -765,6 +775,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     *
      * @param column
      */
     createFullType(column: TableColumn): string {
@@ -827,6 +838,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
      * @param metadata
      * @param insertResult
      */
@@ -850,6 +862,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
      * @param tableColumns
      * @param columnMetadatas
      */
@@ -966,13 +979,11 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     *
      * @param returningType
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
-        if (
-            this.options.options &&
-            this.options.options.disableOutputReturning
-        ) {
+        if (this.options.options?.disableOutputReturning) {
             return false
         }
         return true
@@ -994,6 +1005,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
      * @param parameterName
      * @param index
      */
@@ -1008,6 +1020,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps given value into MssqlParameter based on its column definition.
+     *
      * @param column
      * @param value
      */
@@ -1064,6 +1077,7 @@ export class SqlServerDriver implements Driver {
      *
      * This ensures SQL Server receives properly typed parameters for queries involving operators like
      * In, MoreThan, Between, etc.
+     *
      * @param column
      * @param value
      */
@@ -1085,6 +1099,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps all values of the given object into MssqlParameter based on their column definitions in the given table.
+     *
      * @param tablePath
      * @param map
      */
@@ -1137,7 +1152,7 @@ export class SqlServerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const mssql = this.options.driver || PlatformTools.load("mssql")
+            const mssql = this.options.driver ?? PlatformTools.load("mssql")
             this.mssql = mssql
         } catch (e) {
             // todo: better error for browser env
@@ -1185,6 +1200,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     *
      * @param options
      * @param credentials
      */
@@ -1241,7 +1257,7 @@ export class SqlServerDriver implements Driver {
                 password: credentials.password,
                 authentication: credentials.authentication,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         // set default useUTC option if it hasn't been set
@@ -1263,7 +1279,7 @@ export class SqlServerDriver implements Driver {
             const { logger } = this.dataSource
 
             const poolErrorHandler =
-                (options.pool && options.pool.errorHandler) ||
+                options.pool?.errorHandler ??
                 ((error: any) =>
                     logger.log("warn", `MSSQL pool raised an error. ${error}`))
             /**
@@ -1282,6 +1298,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Converts string literal of isolation level to enum.
      * The underlying mssql driver requires an enum for the isolation level.
+     *
      * @param isolation
      */
     convertIsolationLevel(isolation: IsolationLevel): number {

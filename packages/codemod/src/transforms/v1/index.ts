@@ -32,7 +32,8 @@ import * as useContainer from "./use-container"
 import { transformer } from "../transformer"
 
 export const description = "Migrate from v0.3.x to v1.0"
-export const migrationGuide = "https://typeorm.io/docs/guides/migration-v1"
+export const upgradingGuide =
+    "https://typeorm.io/docs/releases/1.0/upgrading-from-0.3"
 
 /**
  * Ordered list of v1 transforms. Order matters — connection renames

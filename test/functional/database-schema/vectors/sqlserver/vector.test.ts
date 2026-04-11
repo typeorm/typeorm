@@ -53,16 +53,16 @@ describe("columns > vector type > sqlserver", () => {
 
                 await repository.save(chunk)
 
-                const loadedChunk = await repository.findOne({
-                    where: { id: chunk.id },
+                const loadedChunk = await repository.findOneByOrFail({
+                    id: chunk.id,
                 })
 
                 expect(loadedChunk).to.exist
-                expect(loadedChunk!.embedding).to.be.an("array")
-                expect(loadedChunk!.embedding).to.have.lengthOf(1998)
+                expect(loadedChunk.embedding).to.be.an("array")
+                expect(loadedChunk.embedding).to.have.lengthOf(1998)
 
                 // Check that values are close (floating point comparison)
-                loadedChunk!.embedding.forEach((val, idx) => {
+                loadedChunk.embedding.forEach((val, idx) => {
                     expect(val).to.be.closeTo(embedding[idx], 0.0001)
                 })
             }),
@@ -82,12 +82,12 @@ describe("columns > vector type > sqlserver", () => {
                 point.coords = [4.0, 5.0, 6.0]
                 await repository.save(point)
 
-                const loadedPoint = await repository.findOne({
-                    where: { id: point.id },
+                const loadedPoint = await repository.findOneByOrFail({
+                    id: point.id,
                 })
 
                 expect(loadedPoint).to.exist
-                expect(loadedPoint!.coords).to.deep.equal([4.0, 5.0, 6.0])
+                expect(loadedPoint.coords).to.deep.equal([4.0, 5.0, 6.0])
             }),
         ))
 
@@ -211,12 +211,12 @@ describe("columns > vector type > sqlserver", () => {
 
                 await repository.save(chunk)
 
-                const loadedChunk = await repository.findOne({
-                    where: { id: chunk.id },
+                const loadedChunk = await repository.findOneByOrFail({
+                    id: chunk.id,
                 })
 
                 expect(loadedChunk).to.exist
-                expect(loadedChunk!.embedding).to.be.null
+                expect(loadedChunk.embedding).to.be.null
             }),
         ))
 })

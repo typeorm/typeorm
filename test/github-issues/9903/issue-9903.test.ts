@@ -11,7 +11,7 @@ import { User } from "./entity/User"
 describe("github issues > #9903 json data type", () => {
     let dataSources: DataSource[]
 
-    afterEach(() => closeTestingConnections(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("json supported type for mariadb", () => {
         const expectedJsonString = JSON.stringify({
@@ -43,8 +43,8 @@ describe("github issues > #9903 json data type", () => {
 
                     await userRepository.save(newUser)
 
-                    const savedUser = await userRepository.findOneOrFail({
-                        where: { id: newUser.id },
+                    const savedUser = await userRepository.findOneByOrFail({
+                        id: newUser.id,
                     })
 
                     expect(savedUser).to.not.be.null

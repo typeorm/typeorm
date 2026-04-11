@@ -85,20 +85,20 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                         .createQueryBuilder(Student, "student")
                         .leftJoinAndSelect("student.faculties", "faculty")
                         .where("student.name = :name", { name: "Alice" })
-                        .getOne()
+                        .getOneOrFail()
 
-                    loadedStudent!.should.have.all.keys(
+                    loadedStudent.should.have.all.keys(
                         "id",
                         "name",
                         "faculties",
                     )
-                    loadedStudent!.id.should.equal(1)
-                    loadedStudent!.name.should.equal("Alice")
-                    loadedStudent!.faculties.length.should.equal(2)
-                    loadedStudent!.faculties
+                    loadedStudent.id.should.equal(1)
+                    loadedStudent.name.should.equal("Alice")
+                    loadedStudent.faculties.length.should.equal(2)
+                    loadedStudent.faculties
                         .map((f) => f.name)
                         .should.deep.include("Economics")
-                    loadedStudent!.faculties
+                    loadedStudent.faculties
                         .map((f) => f.name)
                         .should.deep.include("Programming")
 
@@ -109,24 +109,24 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                             "specialization",
                         )
                         .where("teacher.name = :name", { name: "Mr. Garrison" })
-                        .getOne()
+                        .getOneOrFail()
 
-                    loadedTeacher!.should.have.all.keys(
+                    loadedTeacher.should.have.all.keys(
                         "id",
                         "name",
                         "specializations",
                         "salary",
                     )
-                    loadedTeacher!.id.should.equal(2)
-                    loadedTeacher!.name.should.equal("Mr. Garrison")
-                    loadedTeacher!.specializations.length.should.equal(2)
-                    loadedTeacher!.specializations
+                    loadedTeacher.id.should.equal(2)
+                    loadedTeacher.name.should.equal("Mr. Garrison")
+                    loadedTeacher.specializations.length.should.equal(2)
+                    loadedTeacher.specializations
                         .map((f) => f.name)
                         .should.deep.include("Geography")
-                    loadedTeacher!.specializations
+                    loadedTeacher.specializations
                         .map((f) => f.name)
                         .should.deep.include("Economist")
-                    loadedTeacher!.salary.should.equal(2000)
+                    loadedTeacher.salary.should.equal(2000)
 
                     const loadedAccountant = await dataSource.manager
                         .createQueryBuilder(Accountant, "accountant")
@@ -135,24 +135,24 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                             "department",
                         )
                         .where("accountant.name = :name", { name: "Mr. Burns" })
-                        .getOne()
+                        .getOneOrFail()
 
-                    loadedAccountant!.should.have.all.keys(
+                    loadedAccountant.should.have.all.keys(
                         "id",
                         "name",
                         "departments",
                         "salary",
                     )
-                    loadedAccountant!.id.should.equal(3)
-                    loadedAccountant!.name.should.equal("Mr. Burns")
-                    loadedAccountant!.departments.length.should.equal(2)
-                    loadedAccountant!.departments
+                    loadedAccountant.id.should.equal(3)
+                    loadedAccountant.name.should.equal("Mr. Burns")
+                    loadedAccountant.departments.length.should.equal(2)
+                    loadedAccountant.departments
                         .map((f) => f.name)
                         .should.deep.include("Bookkeeping")
-                    loadedAccountant!.departments
+                    loadedAccountant.departments
                         .map((f) => f.name)
                         .should.deep.include("HR")
-                    loadedAccountant!.salary.should.equal(3000)
+                    loadedAccountant.salary.should.equal(3000)
 
                     const loadedEmployees = await dataSource.manager
                         .createQueryBuilder(Employee, "employee")

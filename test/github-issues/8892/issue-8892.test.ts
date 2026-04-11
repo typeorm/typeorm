@@ -2,6 +2,7 @@ import "../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
+    reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { expect } from "chai"
 import { City } from "./entity/city"
@@ -12,14 +13,15 @@ import type { DataSource } from "../../../src"
 describe('github issues > #8892 ManyToMany relations save throws "Violation of PRIMARY KEY constraint"', () => {
     let dataSources: DataSource[]
 
-    beforeEach(async () => {
+    before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    afterEach(() => closeTestingConnections(dataSources))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work perfectly with with many to many relation with primary key from related object is a primary key from an many to one relation", async () =>
         await Promise.all(
