@@ -88,7 +88,7 @@ describe("repository > sql injection", () => {
                         try {
                             const result = await dataSource
                                 .getRepository(Post)
-                                .findOne({ where: { name: malicious } })
+                                .findOneBy({ name: malicious })
                             expect(result).to.be.null
                         } catch {
                             // some drivers reject certain byte sequences

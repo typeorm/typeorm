@@ -19,6 +19,7 @@ import { FindOperator } from "../find-options/FindOperator"
 import { Equal } from "../find-options/operator/Equal"
 import { In } from "../find-options/operator/In"
 import { TypeORMError } from "../error"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
 import type { WhereClause, WhereClauseCondition } from "./WhereClause"
 import type { NotBrackets } from "./NotBrackets"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
@@ -59,6 +60,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * DataSource on which QueryBuilder was created.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     get connection(): DataSource {
@@ -110,6 +112,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
+     *
      * @param connectionOrQueryBuilder
      * @param queryRunner
      */
@@ -183,6 +186,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
+     *
      * @param selection
      * @param selectionAliasName
      */
@@ -192,10 +196,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                this.assertNoSemicolon(s, "select")
+            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
         } else if (selection) {
+            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -223,6 +231,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     update(): UpdateQueryBuilder<Entity>
 
     /**
+     * Creates UPDATE query for the given entity.
+     */
+    update<Entity extends ObjectLiteral>(
+        entity: EntityTarget<Entity>,
+    ): UpdateQueryBuilder<Entity>
+
+    /**
      * Creates UPDATE query and applies given update values.
      */
     update(
@@ -247,6 +262,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Creates UPDATE query and applies given update values.
+     *
      * @param entityOrTableNameUpdateSet
      * @param maybeUpdateSet
      */
@@ -254,9 +270,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         entityOrTableNameUpdateSet?: EntityTarget<any> | ObjectLiteral,
         maybeUpdateSet?: ObjectLiteral,
     ): UpdateQueryBuilder<any> {
-        const updateSet = maybeUpdateSet
-            ? maybeUpdateSet
-            : (entityOrTableNameUpdateSet as ObjectLiteral | undefined)
+        const updateSet =
+            maybeUpdateSet ??
+            (entityOrTableNameUpdateSet as ObjectLiteral | undefined)
         entityOrTableNameUpdateSet = InstanceChecker.isEntitySchema(
             entityOrTableNameUpdateSet,
         )
@@ -321,6 +337,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Sets entity's relation with which this query builder gonna work.
+     *
      * @param entityTargetOrPropertyPath
      * @param maybePropertyPath
      */
@@ -369,6 +386,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Returns true if relation exists, false otherwise.
      *
      * todo: move this method to manager? or create a shortcut?
+     *
      * @param target
      * @param relation
      */
@@ -385,6 +403,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Check the existence of a parameter for this query builder.
+     *
      * @param key
      */
     hasParameter(key: string): boolean {
@@ -398,6 +417,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Sets parameter name and its value.
      *
      * The key for this parameter may contain numbers, letters, underscores, or periods.
+     *
      * @param key
      * @param value
      */
@@ -424,6 +444,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Adds all parameters from the given object.
+     *
      * @param parameters
      */
     setParameters(parameters: ObjectLiteral): this {
@@ -456,10 +477,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         )
 
         // add discriminator column parameter if it exist
-        if (
-            this.expressionMap.mainAlias &&
-            this.expressionMap.mainAlias.hasMetadata
-        ) {
+        if (this.expressionMap.mainAlias?.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const values = metadata.childEntityMetadatas
@@ -473,15 +491,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         }
 
         return parameters
-    }
-
-    /**
-     * Logs the generated sql query using the configured logger.
-     */
-    logQuery(): this {
-        const [query, parameters] = this.getQueryAndParameters()
-        this.dataSource.logger.logQuery(query, parameters)
-        return this
     }
 
     /**
@@ -523,6 +532,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Creates a completely new query builder.
      * Uses same query runner as current QueryBuilder.
+     *
      * @param queryRunner
      */
     createQueryBuilder(queryRunner?: QueryRunner): this {
@@ -546,6 +556,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Includes a Query comment in the query builder.  This is helpful for debugging purposes,
      * such as finding a specific query in the database server's logs, or for categorization using
      * an APM product.
+     *
      * @param comment
      */
     comment(comment: string): this {
@@ -563,6 +574,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Escapes table name, column name or alias name using current database's escaping character.
+     *
      * @param name
      */
     escape(name: string): string {
@@ -572,6 +584,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Sets or overrides query builder's QueryRunner.
+     *
      * @param queryRunner
      */
     setQueryRunner(queryRunner: QueryRunner): this {
@@ -582,6 +595,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Indicates if listeners and subscribers must be called before and after query execution.
      * Enabled by default.
+     *
      * @param enabled
      */
     callListeners(enabled: boolean): this {
@@ -591,6 +605,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * If set to true the query will be wrapped into a transaction.
+     *
      * @param enabled
      */
     useTransaction(enabled: boolean): this {
@@ -600,6 +615,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Adds CTE to query
+     *
      * @param queryBuilder
      * @param alias
      * @param options
@@ -612,7 +628,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         this.expressionMap.commonTableExpressions.push({
             queryBuilder,
             alias,
-            options: options || {},
+            options: options ?? {},
         })
         return this
     }
@@ -624,6 +640,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Gets escaped table name with schema name if SqlServer driver used with custom
      * schema name, otherwise returns escaped table name.
+     *
      * @param tablePath
      */
     protected getTableName(tablePath: string): string {
@@ -655,6 +672,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
+     *
      * @param entityTarget
      * @param aliasName
      */
@@ -706,6 +724,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Replaces all entity's propertyName to name in the given SQL string.
+     *
      * @param statement
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
@@ -912,6 +931,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Creates "RETURNING" / "OUTPUT" expression.
+     *
      * @param returningType
      */
     protected createReturningExpression(returningType: ReturningType): string {
@@ -1055,6 +1075,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
+     *
      * @param condition
      * @param alwaysWrap
      */
@@ -1229,6 +1250,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Creates "WHERE" condition for an in-ids condition.
+     *
      * @param ids
      */
     protected getWhereInIdsCondition(
@@ -1357,6 +1379,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Creates a property paths for a given ObjectLiteral.
+     *
      * @param metadata
      * @param entity
      * @param prefix
@@ -1667,10 +1690,49 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Creates a query builder used to execute sql queries inside this query builder.
      */
     protected obtainQueryRunner() {
-        return this.queryRunner || this.dataSource.createQueryRunner()
+        return this.queryRunner ?? this.dataSource.createQueryRunner()
     }
 
     protected hasCommonTableExpressions(): boolean {
         return this.expressionMap.commonTableExpressions.length > 0
+    }
+
+    protected assertNoSemicolon(value: string, context: string): void {
+        if (value.includes(";")) {
+            throw new TypeORMError(
+                `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
+            )
+        }
+    }
+
+    protected validateOrderByCondition(sort: OrderByCondition): void {
+        const validOrders = ["ASC", "DESC"]
+        const validNulls = ["NULLS FIRST", "NULLS LAST"]
+
+        for (const [key, value] of Object.entries(sort)) {
+            this.assertNoSemicolon(key, "orderBy sort key")
+            if (typeof value === "string") {
+                if (!validOrders.includes(value))
+                    throw new TypeORMError(
+                        `Invalid order direction "${value}" for "${key}". Allowed values: ${validOrders.join(", ")}.`,
+                    )
+            } else if (typeof value === "object" && value !== null) {
+                if (!validOrders.includes(value.order))
+                    throw new TypeORMError(
+                        `Invalid order direction "${value.order}" for "${key}". Allowed values: ${validOrders.join(", ")}.`,
+                    )
+                if (
+                    value.nulls !== undefined &&
+                    !validNulls.includes(value.nulls)
+                )
+                    throw new TypeORMError(
+                        `Invalid nulls option "${value.nulls}" for "${key}". Allowed values: ${validNulls.join(", ")}.`,
+                    )
+            } else {
+                throw new TypeORMError(
+                    `Invalid order-by value for "${key}". Expected "ASC", "DESC", or { order, nulls } object.`,
+                )
+            }
+        }
     }
 }

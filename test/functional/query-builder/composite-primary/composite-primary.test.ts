@@ -35,10 +35,8 @@ describe("query builder > composite primary", () => {
 
                 const loadedBar = await dataSource.manager
                     .getRepository(Bar)
-                    .findOne({
-                        where: {
-                            foo,
-                        },
+                    .findOneBy({
+                        foo,
                     })
 
                 expect(loadedBar!.id).to.be.equal(bar.id)

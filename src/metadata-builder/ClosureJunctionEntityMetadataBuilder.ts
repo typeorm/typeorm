@@ -21,6 +21,7 @@ export class ClosureJunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the closure junction of the given closure entity.
+     *
      * @param parentClosureEntityMetadata
      */
     build(parentClosureEntityMetadata: EntityMetadata) {
@@ -31,11 +32,8 @@ export class ClosureJunctionEntityMetadataBuilder {
             args: {
                 target: "",
                 name:
-                    parentClosureEntityMetadata.treeOptions &&
-                    parentClosureEntityMetadata.treeOptions.closureTableName
-                        ? parentClosureEntityMetadata.treeOptions
-                              .closureTableName
-                        : parentClosureEntityMetadata.tableNameWithoutPrefix,
+                    parentClosureEntityMetadata.treeOptions?.closureTableName ??
+                    parentClosureEntityMetadata.tableNameWithoutPrefix,
                 type: "closure-junction",
                 schema: parentClosureEntityMetadata.schema,
                 database: parentClosureEntityMetadata.database,
@@ -53,14 +51,12 @@ export class ClosureJunctionEntityMetadataBuilder {
                     args: {
                         target: "",
                         mode: "virtual",
-                        propertyName:
-                            parentClosureEntityMetadata.treeOptions &&
-                            parentClosureEntityMetadata.treeOptions
-                                .ancestorColumnName
-                                ? parentClosureEntityMetadata.treeOptions.ancestorColumnName(
-                                      primaryColumn,
-                                  )
-                                : primaryColumn.propertyName + "_ancestor",
+                        propertyName: parentClosureEntityMetadata.treeOptions
+                            ?.ancestorColumnName
+                            ? parentClosureEntityMetadata.treeOptions.ancestorColumnName(
+                                  primaryColumn,
+                              )
+                            : primaryColumn.propertyName + "_ancestor",
                         options: {
                             primary: true,
                             length: primaryColumn.length,
@@ -82,14 +78,12 @@ export class ClosureJunctionEntityMetadataBuilder {
                     args: {
                         target: "",
                         mode: "virtual",
-                        propertyName:
-                            parentClosureEntityMetadata.treeOptions &&
-                            parentClosureEntityMetadata.treeOptions
-                                .descendantColumnName
-                                ? parentClosureEntityMetadata.treeOptions.descendantColumnName(
-                                      primaryColumn,
-                                  )
-                                : primaryColumn.propertyName + "_descendant",
+                        propertyName: parentClosureEntityMetadata.treeOptions
+                            ?.descendantColumnName
+                            ? parentClosureEntityMetadata.treeOptions.descendantColumnName(
+                                  primaryColumn,
+                              )
+                            : primaryColumn.propertyName + "_descendant",
                         options: {
                             primary: true,
                             length: primaryColumn.length,

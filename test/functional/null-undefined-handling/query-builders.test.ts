@@ -274,14 +274,14 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
                 title: "Updated",
             })
 
-            const updated = await connection.manager.findOneBy(Post, {
+            const updated = await connection.manager.findOneByOrFail(Post, {
                 id: post.id,
             })
-            const notUpdated = await connection.manager.findOneBy(Post, {
+            const notUpdated = await connection.manager.findOneByOrFail(Post, {
                 id: post2.id,
             })
-            expect(updated!.title).to.equal("Updated")
-            expect(notUpdated!.title).to.equal("Other Post")
+            expect(updated.title).to.equal("Updated")
+            expect(notUpdated.title).to.equal("Other Post")
         }
     })
 
@@ -383,10 +383,10 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
                 { text: "Updated" },
             )
 
-            const updated = await connection.manager.findOneBy(Post, {
+            const updated = await connection.manager.findOneByOrFail(Post, {
                 id: post.id,
             })
-            expect(updated!.text).to.equal("Updated")
+            expect(updated.text).to.equal("Updated")
         }
     })
 

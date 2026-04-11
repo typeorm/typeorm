@@ -15,11 +15,9 @@ describe("persistence > one-to-many", function () {
     // -------------------------------------------------------------------------
 
     let dataSources: DataSource[]
-    before(() => {
-        return createTestingConnections({
+    before(async () => {
+        dataSources = await createTestingConnections({
             entities: [Post, Category],
-        }).then((all) => {
-            dataSources = all
         })
     })
     after(() => closeTestingConnections(dataSources))
@@ -48,7 +46,7 @@ describe("persistence > one-to-many", function () {
                 newPost.categories = [newCategory]
                 await postRepository.save(newPost)
 
-                const loadedPost = await postRepository.findOne({
+                const loadedPost = await postRepository.findOneOrFail({
                     where: {
                         id: newPost.id,
                     },
@@ -56,9 +54,9 @@ describe("persistence > one-to-many", function () {
                         categories: true,
                     },
                 })
-                expect(loadedPost!).not.to.be.null
-                expect(loadedPost!.categories).not.to.be.undefined
-                expect(loadedPost!.categories![0]).not.to.be.undefined
+                expect(loadedPost).not.to.be.null
+                expect(loadedPost.categories).not.to.be.undefined
+                expect(loadedPost.categories![0]).not.to.be.undefined
             }),
         ))
 
@@ -79,7 +77,7 @@ describe("persistence > one-to-many", function () {
                 newPost.categories = [newCategory]
                 await postRepository.save(newPost)
 
-                const loadedPost = await postRepository.findOne({
+                const loadedPost = await postRepository.findOneOrFail({
                     where: {
                         id: newPost.id,
                     },
@@ -88,8 +86,8 @@ describe("persistence > one-to-many", function () {
                     },
                 })
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.categories).not.to.be.undefined
-                expect(loadedPost!.categories![0]).not.to.be.undefined
+                expect(loadedPost.categories).not.to.be.undefined
+                expect(loadedPost.categories![0]).not.to.be.undefined
             }),
         ))
 
@@ -120,7 +118,7 @@ describe("persistence > one-to-many", function () {
                 newPost.categories = [firstNewCategory]
                 await postRepository.save(newPost)
 
-                const loadedPost = await postRepository.findOne({
+                const loadedPost = await postRepository.findOneOrFail({
                     where: {
                         id: newPost.id,
                     },
@@ -129,9 +127,9 @@ describe("persistence > one-to-many", function () {
                     },
                 })
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.categories).not.to.be.undefined
-                expect(loadedPost!.categories![0]).not.to.be.undefined
-                expect(loadedPost!.categories![1]).to.be.undefined
+                expect(loadedPost.categories).not.to.be.undefined
+                expect(loadedPost.categories![0]).not.to.be.undefined
+                expect(loadedPost.categories![1]).to.be.undefined
             }),
         ))
 
@@ -162,7 +160,7 @@ describe("persistence > one-to-many", function () {
                 newPost.categories = []
                 await postRepository.save(newPost)
 
-                const loadedPost = await postRepository.findOne({
+                const loadedPost = await postRepository.findOneOrFail({
                     where: {
                         id: newPost.id,
                     },
@@ -171,7 +169,7 @@ describe("persistence > one-to-many", function () {
                     },
                 })
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.categories).to.be.eql([])
+                expect(loadedPost.categories).to.be.eql([])
             }),
         ))
 

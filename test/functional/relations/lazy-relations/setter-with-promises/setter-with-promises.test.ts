@@ -36,16 +36,16 @@ describe("relations > lazy relations > setter with promises", () => {
                 await connection.manager.save(circle)
 
                 users.push(user)
-                const circleFromDB = await connection.manager.findOneBy(
+                const circleFromDB = await connection.manager.findOneByOrFail(
                     Circle,
                     { id: circle.getId() } as any, // id is private
                 )
                 expect(circleFromDB).is.not.null
 
                 // Setting users with setter
-                circleFromDB!.setUsers(Promise.resolve(users))
+                circleFromDB.setUsers(Promise.resolve(users))
                 await Promise.resolve() // this is unpleasant way to fix this issue
-                expect(users).deep.equal(await circleFromDB!.getUsers())
+                expect(users).deep.equal(await circleFromDB.getUsers())
             }),
         ))
 })

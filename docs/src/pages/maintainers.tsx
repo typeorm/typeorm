@@ -1,88 +1,73 @@
-import type { ReactNode } from "react"
+import type { PropsWithChildren, ReactNode } from "react"
 import React from "react"
 import Layout from "@theme/Layout"
 import Heading from "@theme/Heading"
 import Link from "@docusaurus/Link"
-
+import { GitHubIcon } from "../components/icons/github-icon"
+import { LinkedInIcon } from "../components/icons/linkedin-icon"
 import styles from "./maintainers.module.css"
+import maintainers from "./maintainers.json"
 
-const maintainers = [
-    {
-        name: "Michael Bromley",
-        github: "michaelbromley",
-        role: "Steering, Technical Liaison",
-    },
-    {
-        name: "David Höck",
-        github: "dlhck",
-        role: "Steering, External Relations",
-    },
-    {
-        name: "Lucian Mocanu",
-        github: "alumni",
-        role: "Technical Lead",
-    },
-    {
-        name: "Naor Peled",
-        github: "naorpeled",
-        role: "Maintainer",
-    },
-    {
-        name: "Giorgio Boa",
-        github: "gioboa",
-        role: "Maintainer",
-    },
-    {
-        name: "Piotr Kuczynski",
-        github: "pkuczynski",
-        role: "Maintainer",
-    },
-    {
-        name: "Mohammed Gomaa",
-        github: "G0maa",
-        role: "Maintainer",
-    },
-    {
-        name: "Julian Pufler",
-        github: "pujux",
-        role: "Maintainer",
-    },
-    {
-        name: "Simon Garner",
-        github: "sgarner",
-        role: "Maintainer",
-    },
-    {
-        name: "Pieter Wigboldus",
-        github: "w3nl",
-        role: "Maintainer",
-    },
-    {
-        name: "Mike Guida",
-        github: "mguida22",
-        role: "Maintainer",
-    },
-]
+type Maintainer = (typeof maintainers)[number]
 
-function MaintainerCard({ name, github, role }) {
+const SocialLink = ({
+    href,
+    title,
+    className,
+    children,
+}: PropsWithChildren<{
+    href: string
+    title?: string
+    className?: string
+    children: ReactNode
+}>) => (
+    <Link
+        href={href}
+        target="_blank"
+        rel="noopener"
+        title={title}
+        aria-label={title}
+        className={className}
+    >
+        {children}
+    </Link>
+)
+
+const MaintainerCard = ({ name, github, role, linkedin }: Maintainer) => {
+    const profileUrl = linkedin || `https://github.com/${github}`
     return (
-        <Link
-            href={`https://github.com/${github}`}
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-        >
-            <img
-                src={`https://avatars.githubusercontent.com/${github}?s=150`}
-                alt={name}
-                className={styles.avatar}
-                loading="lazy"
-            />
+        <div className={styles.card}>
+            <SocialLink href={profileUrl}>
+                <img
+                    src={`https://avatars.githubusercontent.com/${github}?s=150`}
+                    alt={name}
+                    className={styles.avatar}
+                    loading="lazy"
+                />
+            </SocialLink>
+
             <div className={styles.cardInfo}>
-                <span className={styles.cardName}>{name}</span>
+                <SocialLink href={profileUrl} className={styles.cardName}>
+                    {name}
+                </SocialLink>
+
                 <span className={styles.cardRole}>{role}</span>
+
+                <div className={styles.socialLinks}>
+                    <SocialLink
+                        href={`https://github.com/${github}`}
+                        title="GitHub"
+                    >
+                        <GitHubIcon />
+                    </SocialLink>
+                    {linkedin && (
+                        <SocialLink href={linkedin} title="LinkedIn">
+                            <LinkedInIcon />
+                        </SocialLink>
+                    )}
+                </div>
             </div>
-        </Link>
+        </div>
     )
 }
 
@@ -97,7 +82,7 @@ export default function Maintainers(): ReactNode {
                         <Link
                             href="https://github.com/pleerock"
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel="noopener"
                         >
                             Umed Khudoiberdiev
                         </Link>{" "}
@@ -112,8 +97,12 @@ export default function Maintainers(): ReactNode {
                 <section className={styles.teamSection}>
                     <div className="container">
                         <div className={styles.grid}>
-                            {maintainers.map((m) => (
-                                <MaintainerCard key={m.github} {...m} />
+                            {maintainers.map(({ github, ...rest }) => (
+                                <MaintainerCard
+                                    key={github}
+                                    github={github}
+                                    {...rest}
+                                />
                             ))}
                         </div>
                     </div>
