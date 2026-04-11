@@ -4,25 +4,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("github issues > #815 @RelationId properties are not updated after entity saving", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work perfectly with many-to-one relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "About relation id"
                 await connection.manager.save(post)
@@ -65,7 +64,7 @@ describe("github issues > #815 @RelationId properties are not updated after enti
 
     it("should work perfectly with one-to-many relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.firstId = 2
                 category1.secondId = 3
@@ -126,7 +125,7 @@ describe("github issues > #815 @RelationId properties are not updated after enti
 
     it("should work perfectly with many-to-many relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.title = "About relation id1"
                 await connection.manager.save(post1)
@@ -192,7 +191,7 @@ describe("github issues > #815 @RelationId properties are not updated after enti
 
     it("should work perfectly with many-to-many relation (inverse side)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.firstId = 2
                 category1.secondId = 3

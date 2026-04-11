@@ -1,4 +1,5 @@
-import { MigrationInterface, QueryRunner, TableColumn } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
+import { TableColumn } from "../../../../src"
 
 export class amendFoo1675779246631 implements MigrationInterface {
     public async up(q: QueryRunner): Promise<void> {

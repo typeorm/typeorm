@@ -1,6 +1,6 @@
-import { IndexMetadata } from "../../metadata/IndexMetadata"
-import { TableIndexOptions } from "../options/TableIndexOptions"
-import { TableIndexTypes } from "../options/TableIndexTypes"
+import type { IndexMetadata } from "../../metadata/IndexMetadata"
+import type { TableIndexOptions } from "../options/TableIndexOptions"
+import type { TableIndexTypes } from "../options/TableIndexTypes"
 
 /**
  * Database's table index stored in this class.
@@ -85,7 +85,7 @@ export class TableIndex {
         this.isFulltext = !!options.isFulltext
         this.isNullFiltered = !!options.isNullFiltered
         this.parser = options.parser
-        this.where = options.where ? options.where : ""
+        this.where = options.where ?? ""
         this.type = options.type
     }
 
@@ -117,6 +117,7 @@ export class TableIndex {
 
     /**
      * Creates index from the index metadata object.
+     *
      * @param indexMetadata
      */
     static create(indexMetadata: IndexMetadata): TableIndex {

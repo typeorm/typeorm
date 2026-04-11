@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,28 +7,28 @@ import {
 } from "../../utils/test-utils"
 
 describe("query runner > drop primary key", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly drop primary key and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // CockroachDB does not allow dropping primary key
                 if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
                 )
                     return
 
-                const queryRunner = connection.createQueryRunner()
+                const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 table!.findColumnByName("id")!.isPrimary.should.be.true
@@ -43,6 +43,26 @@ describe("query runner > drop primary key", () => {
                 table = await queryRunner.getTable("post")
                 table!.findColumnByName("id")!.isPrimary.should.be.true
 
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should not throw when dropping non-existent primary key with ifExists", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // CockroachDB does not allow dropping primary key
+                if (
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                )
+                    return
+
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropPrimaryKey(
+                    "post",
+                    "non_existent_pk",
+                    true,
+                )
                 await queryRunner.release()
             }),
         ))
