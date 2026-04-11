@@ -117,17 +117,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles length-only fast path changes for MySQL family.
      * Returns true if the change was handled.
      *
-     * @param options
      */
-    private handleMysqlLengthOnlyFastPathChangeColumn(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private alterColumnLength(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): boolean {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): boolean {
         // Parse lengths as integers if present
         const oldLen =
             oldColumn.length == null
@@ -188,17 +186,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles safe ALTER COLUMN changes for MySQL family.
      * Returns true if the change was handled.
      *
-     * @param options
      */
-    private async handleSafeAlterMysql(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): Promise<boolean> {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): Promise<boolean> {
         // Skip generated/computed columns (MySQL can't freely MODIFY these)
         if (oldColumn.asExpression || newColumn.asExpression) return false
 
@@ -1461,28 +1457,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             let safeAlterHandled = false
 
             if (oldColumn.type !== newColumn.type) {
-                safeAlterHandled = await this.handleSafeAlterMysql({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                safeAlterHandled = await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
             } else if (
                 !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length
             ) {
                 safeAlterHandled =
-                    this.handleMysqlLengthOnlyFastPathChangeColumn({
-                        table,
-                        clonedTable,
-                        oldColumn,
-                        newColumn,
-                        upQueries,
-                        downQueries,
-                    })
+                    this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
             }
 
             // Skip this block if safe alter already handled the change to avoid double ALTER
@@ -2634,7 +2616,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
      * @param tableOrName
-     * @param options
      * @param options.cascade
      */
     async clearTable(

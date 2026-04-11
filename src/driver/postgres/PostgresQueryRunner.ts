@@ -1624,14 +1624,7 @@ export class PostgresQueryRunner
             let typeChangeHandled = false
             if (oldColumn.type !== newColumn.type) {
                 typeChangeHandled = true
-                await this.handleSafeAlterPostgres({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
             } else if (
                 !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
@@ -1642,14 +1635,7 @@ export class PostgresQueryRunner
                     String(oldColumn?.type ?? ""),
                 )
             ) {
-                this.handlePostgresLengthOnlyFastPath({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
             }
 
             // Handle scale and precision changes without recreating the column, e.g.:
@@ -3443,7 +3429,6 @@ export class PostgresQueryRunner
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
      * @param tableName
-     * @param options
      * @param options.cascade
      */
     async clearTable(
@@ -5245,17 +5230,15 @@ export class PostgresQueryRunner
      * Handles length-only fast path changes for PostgreSQL.
      * Returns true if change was handled.
      *
-     * @param options
      */
-    private handlePostgresLengthOnlyFastPath(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private alterColumnLength(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): boolean {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): boolean {
         const oldLen = normalizeColumnLength(
             oldColumn.length == null
                 ? undefined
@@ -5354,17 +5337,15 @@ export class PostgresQueryRunner
      * Handles safe ALTER COLUMN changes for PostgreSQL.
      * Returns true if change was handled.
      *
-     * @param options
      */
-    private async handleSafeAlterPostgres(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): Promise<boolean> {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): Promise<boolean> {
         // Skip generated/computed/identity/serial-like columns (cannot freely change type without extra steps)
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)

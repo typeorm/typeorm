@@ -922,26 +922,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable = table.clone()
         } else {
             if (oldColumn.type !== newColumn.type) {
-                await this.handleSafeAlterSpanner({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
             } else if (
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
             ) {
-                await this.handleSpannerLengthOnlyFastPath({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                await this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
             }
 
             if (
@@ -1656,7 +1642,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Spanner does not support TRUNCATE TABLE statement, so we use DELETE FROM.
      *
      * @param tableName
-     * @param options
      * @param options.cascade
      */
     async clearTable(
@@ -2467,17 +2452,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles length-only fast path changes for Spanner.
      * Returns true if change was handled.
      *
-     * @param options
      */
-    private async handleSpannerLengthOnlyFastPath(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private async alterColumnLength(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): Promise<boolean> {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): Promise<boolean> {
         const oldLen = oldColumn.length
             ? Number.parseInt(String(oldColumn.length), 10)
             : undefined
@@ -2536,17 +2519,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles safe ALTER COLUMN changes for Spanner.
      * Returns true if change was handled.
      *
-     * @param options
      */
-    private async handleSafeAlterSpanner(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): Promise<boolean> {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): Promise<boolean> {
         // Skip generated/computed/identity columns (cannot freely change)
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)

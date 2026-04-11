@@ -184,17 +184,15 @@ export class CockroachQueryRunner
      * Handles length-only fast path changes for CockroachDB.
      * Returns true if change was handled.
      *
-     * @param options
      */
-    private handleCockroachLengthOnlyFastPath(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private alterColumnLength(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): boolean {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): boolean {
         const parseLen = (v?: string | number | null) =>
             v != null && String(v).trim() !== ""
                 ? Number.parseInt(String(v), 10)
@@ -286,17 +284,15 @@ export class CockroachQueryRunner
      * Handles safe ALTER COLUMN changes for CockroachDB.
      * Returns true if change was handled.
      *
-     * @param options
      */
-    private async handleSafeAlterCockroach(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): Promise<boolean> {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): Promise<boolean> {
         // Skip generated/computed/identity columns
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)
@@ -1896,14 +1892,7 @@ export class CockroachQueryRunner
             }
 
             if (oldColumn.type !== newColumn.type) {
-                await this.handleSafeAlterCockroach({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
             }
 
             if (
@@ -1913,14 +1902,7 @@ export class CockroachQueryRunner
                 !newColumn?.isArray &&
                 !oldColumn?.isArray
             ) {
-                this.handleCockroachLengthOnlyFastPath({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
             }
 
             if (
@@ -3289,7 +3271,6 @@ export class CockroachQueryRunner
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
      * @param tableName
-     * @param options
      * @param options.cascade
      */
     async clearTable(

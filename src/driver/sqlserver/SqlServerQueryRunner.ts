@@ -1729,14 +1729,7 @@ export class SqlServerQueryRunner
                     )
                 }
 
-                await this.handleSafeAlterSqlServer({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
 
                 if (safeAlterColIndex) {
                     upQueries.push(
@@ -1764,12 +1757,7 @@ export class SqlServerQueryRunner
                 oldColumn.length !== newColumn.length
             ) {
                 // BEGIN pre-truncate oversized values when shrinking, then length-only ALTER
-                this.handleColumnLengthChange({
-                    oldColumn,
-                    newColumn,
-                    table,
-                    upQueries,
-                })
+                this.alterColumnLength(oldColumn, newColumn, table, upQueries)
                 // END length-only ALTER
             }
 
@@ -2950,7 +2938,6 @@ export class SqlServerQueryRunner
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
      * @param tablePath
-     * @param options
      * @param options.cascade
      */
     async clearTable(
@@ -4576,15 +4563,13 @@ export class SqlServerQueryRunner
     /**
      * Handles column length changes for SQL Server.
      *
-     * @param options
      */
-    private handleColumnLengthChange(options: {
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        table: Table
+    private alterColumnLength(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        table: Table,
         upQueries: Query[]
-    }): void {
-        const { oldColumn, newColumn, table, upQueries } = options
+    ): void {
         const oldLen =
             typeof oldColumn.length === "string"
                 ? Number.parseInt(oldColumn.length, 10)
@@ -4656,17 +4641,15 @@ export class SqlServerQueryRunner
      * Handles safe ALTER COLUMN changes for SQL Server.
      * Returns true if change was handled.
      *
-     * @param options
      */
-    private async handleSafeAlterSqlServer(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): Promise<boolean> {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): Promise<boolean> {
         // Skip computed/identity columns (cannot freely ALTER type)
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)

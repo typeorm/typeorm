@@ -180,7 +180,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Switches AUTOCOMMIT mode on/off
      *
      * @see https://help.sap.com/docs/HANA_SERVICE_CF/7c78579ce9b14a669c1f3295b0d8ca16/d538d11053bd4f3f847ec5ce817a3d4c.html?locale=en-US
-     * @param options
      * @param options.status
      */
     async setAutoCommit(options: { status: "on" | "off" }) {
@@ -1258,14 +1257,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // Handle type changes with safe alter if possible
         if (oldColumn.type !== newColumn.type) {
-            await this.handleSafeAlterSap({
-                table,
-                clonedTable,
-                oldColumn,
-                newColumn,
-                upQueries,
-                downQueries,
-            })
+            await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
         }
 
         // Handle length-only fast path changes
@@ -1297,14 +1289,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             newColumn?.comment === oldColumn?.comment &&
             newColumn?.isUnique === oldColumn?.isUnique
         ) {
-            this.handleHanaLengthOnlyFastPath({
-                table,
-                clonedTable,
-                oldColumn,
-                newColumn,
-                upQueries,
-                downQueries,
-            })
+            this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
         }
 
         if (
@@ -2729,7 +2714,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
      * @param tablePath
-     * @param options
      * @param options.cascade
      */
     async clearTable(
@@ -3742,17 +3726,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles length-only fast path changes for SAP HANA.
      * Returns true if change was handled.
      *
-     * @param options
      */
-    private handleHanaLengthOnlyFastPath(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private alterColumnLength(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): boolean {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): boolean {
         // Check for dependent indexes, foreign keys, checks, or uniques
         const colName: string = String(oldColumn.name)
         const hasIndex = Boolean(
@@ -4029,17 +4011,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles safe ALTER COLUMN changes for SAP HANA.
      * Returns true if change was handled.
      *
-     * @param options
      */
-    private async handleSafeAlterSap(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): Promise<boolean> {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): Promise<boolean> {
         // Skip generated/computed/identity
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)

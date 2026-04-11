@@ -95,17 +95,15 @@ export class AuroraMysqlQueryRunner
      * Handles length-only fast path changes for MySQL family.
      * Returns true if the change was handled.
      *
-     * @param options
      */
-    private async handleMysqlLengthOnlyFastPath(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private async alterColumnLength(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): Promise<boolean> {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): Promise<boolean> {
         // Only use this path when no other column attributes changed.
         const newColumnExceptLength: TableColumn = newColumn?.clone
             ? newColumn.clone()
@@ -204,17 +202,15 @@ export class AuroraMysqlQueryRunner
      * Handles safe ALTER COLUMN changes for MySQL family.
      * Returns true if the change was handled.
      *
-     * @param options
      */
-    private async handleSafeAlter(options: {
-        table: Table
-        clonedTable: Table
-        oldColumn: TableColumn
-        newColumn: TableColumn
-        upQueries: Query[]
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
         downQueries: Query[]
-    }): Promise<boolean> {
-        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
+    ): Promise<boolean> {
         // Do not touch generated/computed columns
         if (oldColumn.asExpression || newColumn.asExpression) return false
 
@@ -1211,28 +1207,14 @@ export class AuroraMysqlQueryRunner
             }
 
             if (oldColumn.type !== newColumn.type) {
-                const handled = await this.handleSafeAlter({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                const handled = await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
                 if (handled) return
             } else if (
                 !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length
             ) {
-                const handled = await this.handleMysqlLengthOnlyFastPath({
-                    table,
-                    clonedTable,
-                    oldColumn,
-                    newColumn,
-                    upQueries,
-                    downQueries,
-                })
+                const handled = await this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
                 if (handled) return
             }
 
@@ -2276,7 +2258,6 @@ export class AuroraMysqlQueryRunner
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
      * @param tableOrName
-     * @param options
      * @param options.cascade
      */
     async clearTable(
