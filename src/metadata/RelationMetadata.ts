@@ -333,9 +333,7 @@ export class RelationMetadata {
         this.isEager = args.options.eager ?? false
         this.persistenceEnabled =
             args.options.persistence === false ? false : true
-        this.isOrphanedRowActionSet =
-            Object.hasOwn(args.options, "orphanedRowAction") &&
-            args.options.orphanedRowAction !== undefined
+        this.isOrphanedRowActionSet = !!args.options.orphanedRowAction
         this.orphanedRowAction = args.options.orphanedRowAction ?? "nullify"
         this.isTreeParent = args.isTreeParent ?? false
         this.isTreeChildren = args.isTreeChildren ?? false
