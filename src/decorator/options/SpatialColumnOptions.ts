@@ -1,4 +1,4 @@
-import { Geometry } from "../../driver/types/GeoJsonTypes"
+import type { Geometry } from "../../driver/types/GeoJsonTypes"
 
 /**
  * Options for spatial columns.

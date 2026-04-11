@@ -1,6 +1,6 @@
-import { QueryBuilder } from "./QueryBuilder"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryExpressionMap } from "./QueryExpressionMap"
+import type { QueryBuilder } from "./QueryBuilder"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { QueryExpressionMap } from "./QueryExpressionMap"
 import { TypeORMError } from "../error"
 import { ObjectUtils } from "../util/ObjectUtils"
 
@@ -25,6 +25,8 @@ export class RelationUpdater {
 
     /**
      * Performs set or add operation on a relation.
+     *
+     * @param value
      */
     async update(value: any | any[]): Promise<void> {
         const relation = this.expressionMap.relationMetadata
@@ -161,8 +163,8 @@ export class RelationUpdater {
             if (!bulkInserted.length) return
 
             if (
-                this.queryBuilder.connection.driver.options.type === "oracle" ||
-                this.queryBuilder.connection.driver.options.type === "sap"
+                this.queryBuilder.dataSource.driver.options.type === "oracle" ||
+                this.queryBuilder.dataSource.driver.options.type === "sap"
             ) {
                 await Promise.all(
                     bulkInserted.map((value) => {

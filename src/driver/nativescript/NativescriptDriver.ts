@@ -1,11 +1,11 @@
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { NativescriptConnectionOptions } from "./NativescriptConnectionOptions"
-import { NativescriptQueryRunner } from "./NativescriptQueryRunner"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataSource } from "../../data-source/DataSource"
+import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ColumnType } from "../types/ColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { NativescriptDataSourceOptions } from "./NativescriptDataSourceOptions"
+import { NativescriptQueryRunner } from "./NativescriptQueryRunner"
 
 /**
  * Organizes communication with sqlite DBMS within Nativescript.
@@ -16,9 +16,9 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
-    options: NativescriptConnectionOptions
+    options: NativescriptDataSourceOptions
 
     /**
      * Nativescript driver module
@@ -31,11 +31,9 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
-        this.connection = connection
-        this.options = connection.options as NativescriptConnectionOptions
         this.database = this.options.database
         this.driver = this.options.driver
 
@@ -59,11 +57,11 @@ export class NativescriptDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner) {
-            this.queryRunner = new NativescriptQueryRunner(this)
-        }
+        this.queryRunner ??= new NativescriptQueryRunner(this)
 
         return this.queryRunner
     }
@@ -74,7 +72,10 @@ export class NativescriptDriver extends AbstractSqliteDriver {
         precision?: number | null
         scale?: number
     }): string {
-        if ((column.type as any) === Buffer) {
+        if (
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
+        ) {
             return "blob"
         }
 
@@ -99,7 +100,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
                     iosFlags: this.options.iosFlags,
                     androidFlags: this.options.androidFlags,
                 },
-                this.options.extra || {},
+                this.options.extra ?? {},
             )
 
             new this.sqlite(

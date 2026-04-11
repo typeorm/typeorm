@@ -1,7 +1,8 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { EntityManager } from "../../entity-manager/EntityManager"
-import { RelationMetadata } from "../../metadata/RelationMetadata"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { EntityManager } from "../../entity-manager/EntityManager"
+import type { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
+import type { RelationMetadata } from "../../metadata/RelationMetadata"
 
 /**
  */
@@ -128,17 +129,28 @@ export class PlainObjectToDatabaseEntityTransformer {
         }
         fillLoadMap(plainObject, metadata)
         // load all entities and store them in the load map
+        const isMongoDb =
+            this.manager.dataSource.driver.options.type === "mongodb"
         await Promise.all(
-            loadMap.groupByTargetIds().map((targetWithIds) => {
-                // todo: fix type hinting
-                return this.manager
-                    .findByIds<ObjectLiteral>(
-                        targetWithIds.target as any,
+            loadMap.groupByTargetIds().map(async (targetWithIds) => {
+                let entities: ObjectLiteral[]
+                if (isMongoDb) {
+                    const mongoManager = this
+                        .manager as unknown as MongoEntityManager
+                    entities = await mongoManager.findByIds(
+                        targetWithIds.target,
                         targetWithIds.ids,
                     )
-                    .then((entities) =>
-                        loadMap.fillEntities(targetWithIds.target, entities),
-                    )
+                } else {
+                    entities = await this.manager
+                        .getRepository<ObjectLiteral>(
+                            targetWithIds.target as any,
+                        )
+                        .createQueryBuilder()
+                        .whereInIds(targetWithIds.ids)
+                        .getMany()
+                }
+                loadMap.fillEntities(targetWithIds.target, entities)
             }),
         )
 
@@ -147,8 +159,7 @@ export class PlainObjectToDatabaseEntityTransformer {
             if (
                 !loadMapItem.relation ||
                 !loadMapItem.entity ||
-                !loadMapItem.parentLoadMapItem ||
-                !loadMapItem.parentLoadMapItem.entity
+                !loadMapItem.parentLoadMapItem?.entity
             )
                 return
 
@@ -156,14 +167,9 @@ export class PlainObjectToDatabaseEntityTransformer {
                 loadMapItem.relation.isManyToMany ||
                 loadMapItem.relation.isOneToMany
             ) {
-                if (
-                    !loadMapItem.parentLoadMapItem.entity[
-                        loadMapItem.relation.propertyName
-                    ]
-                )
-                    loadMapItem.parentLoadMapItem.entity[
-                        loadMapItem.relation.propertyName
-                    ] = []
+                loadMapItem.parentLoadMapItem.entity[
+                    loadMapItem.relation.propertyName
+                ] ??= []
                 loadMapItem.parentLoadMapItem.entity[
                     loadMapItem.relation.propertyName
                 ].push(loadMapItem.entity)

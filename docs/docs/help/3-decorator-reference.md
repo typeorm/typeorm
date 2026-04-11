@@ -19,6 +19,7 @@ You can also specify some additional entity options:
 - `name` - table name. If not specified, then table name is generated from entity class name.
 - `database` - database name in selected DB server.
 - `schema` - schema name.
+- `comment` - Database table comment. Not supported by all database types. Currently supported by MySQL, MariaDB, PostgreSQL, SAP HANA.
 - `engine` - database engine to be set during table creation (works only in some databases).
 - `synchronize` - entities marked with `false` are skipped from schema updates.
 - `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
@@ -31,6 +32,7 @@ Example:
     engine: "MyISAM",
     database: "example_dev",
     schema: "schema_with_best_tables",
+    comment: "This is users table",
     synchronize: false,
     orderBy: {
         name: "ASC",
@@ -244,9 +246,9 @@ Learn more about [entity columns](../entity/1-entities.md#entity-columns).
 
 #### `@ObjectIdColumn`
 
-Marks a property in your entity as ObjectId.
+Marks a property in your entity as `ObjectId`.
 This decorator is only used in MongoDB.
-Every entity in MongoDB must have a ObjectId column.
+Every entity in MongoDB must have an `ObjectId` column.
 Example:
 
 ```typescript
@@ -585,7 +587,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeInsert`
 
@@ -603,7 +605,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterInsert`
 
@@ -621,7 +623,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeUpdate`
 
@@ -639,7 +641,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterUpdate`
 
@@ -657,7 +659,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeRemove`
 
@@ -675,7 +677,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterRemove`
 
@@ -693,7 +695,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeSoftRemove`
 
@@ -711,7 +713,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterSoftRemove`
 
@@ -729,7 +731,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeRecover`
 
@@ -747,7 +749,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterRecover`
 
@@ -765,7 +767,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@EventSubscriber`
 
@@ -807,7 +809,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
 }
 ```
 
-Learn more about [subscribers](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [subscribers](../listeners-and-subscribers.md).
 
 ## Other decorators
 
@@ -850,7 +852,7 @@ export class User {
 }
 ```
 
-Learn more about [indices](../advanced-topics/3-indices.md).
+Learn more about [indexes](../indexes.md).
 
 #### `@Unique`
 
@@ -877,7 +879,7 @@ export class User {
 }
 ```
 
-> Note: MySQL stores unique constraints as unique indices
+> Note: MySQL stores unique constraints as unique indexes
 
 #### `@Check`
 

@@ -1,4 +1,4 @@
-import { Logger } from "../../../src/logger/Logger"
+import type { Logger } from "../../../src/logger/Logger"
 
 export class MemoryLogger implements Logger {
     constructor(public enabled = true) {}

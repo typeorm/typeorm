@@ -1,0 +1,86 @@
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
+import { Post } from "./entity/explicit-join-entity/Post"
+import { Category } from "./entity/explicit-join-entity/Category"
+import { PostCategory } from "./entity/explicit-join-entity/PostCategory"
+import { expect } from "chai"
+
+describe("relations > multiple-primary-keys > many-to-many > explicit join entity", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/explicit-join-entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should persist and load join entity with extra columns", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const category1 = new Category()
+                category1.name = "category #1"
+
+                const category2 = new Category()
+                category2.name = "category #2"
+
+                const post = new Post()
+                post.title = "Hello Post #1"
+
+                const postCategory1 = new PostCategory()
+                postCategory1.addedByAdmin = true
+                postCategory1.addedByUser = false
+                postCategory1.category = category1
+                postCategory1.post = post
+
+                const postCategory2 = new PostCategory()
+                postCategory2.addedByAdmin = false
+                postCategory2.addedByUser = true
+                postCategory2.category = category2
+                postCategory2.post = post
+
+                await dataSource.manager.save(postCategory1)
+                await dataSource.manager.save(postCategory2)
+
+                const loadedPost = await dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .innerJoinAndSelect("post.categories", "postCategory")
+                    .innerJoinAndSelect("postCategory.category", "category")
+                    .addOrderBy("postCategory.categoryId")
+                    .getOneOrFail()
+
+                expect(loadedPost).not.to.be.null
+                loadedPost.should.be.eql({
+                    id: 1,
+                    title: "Hello Post #1",
+                    categories: [
+                        {
+                            categoryId: 1,
+                            postId: 1,
+                            addedByAdmin: true,
+                            addedByUser: false,
+                            category: {
+                                id: 1,
+                                name: "category #1",
+                            },
+                        },
+                        {
+                            categoryId: 2,
+                            postId: 1,
+                            addedByAdmin: false,
+                            addedByUser: true,
+                            category: {
+                                id: 2,
+                                name: "category #2",
+                            },
+                        },
+                    ],
+                })
+            }),
+        ))
+})

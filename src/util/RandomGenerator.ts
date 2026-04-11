@@ -60,6 +60,7 @@ export class RandomGenerator {
      *      note 1: in a steaming fashion for faster and more efficient hashing
      *   example 1: sha1('Kevin van Zonneveld')
      *   returns 1: '54916d2e62f65b3afa6e192e6a601cdbe5cb5897'
+     *
      * @param str String to be hashed.
      * @returns SHA-1 hex digest
      */

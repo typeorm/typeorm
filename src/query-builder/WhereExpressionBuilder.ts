@@ -1,5 +1,5 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { Brackets } from "./Brackets"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { Brackets } from "./Brackets"
 
 /**
  * Query Builders can implement this interface to support where expression
@@ -137,8 +137,3 @@ export interface WhereExpressionBuilder {
      */
     orWhereInIds(ids: any | any[]): this
 }
-
-/**
- * @deprecated Use `WhereExpressionBuilder` instead
- */
-export interface WhereExpression extends WhereExpressionBuilder {}

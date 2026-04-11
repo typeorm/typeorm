@@ -4,9 +4,9 @@ import { TypeORMError } from "./TypeORMError"
  * Thrown when consumer tries to connect when he already connected.
  */
 export class CannotConnectAlreadyConnectedError extends TypeORMError {
-    constructor(connectionName: string) {
+    constructor() {
         super(
-            `Cannot create a "${connectionName}" connection because connection to the database already established.`,
+            `Cannot initialize DataSource because it is already connected to the database.`,
         )
     }
 }

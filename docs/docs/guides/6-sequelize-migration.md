@@ -302,4 +302,4 @@ In TypeORM you do:
 export class User {}
 ```
 
-Learn more about [Indices](../advanced-topics/3-indices.md)
+Learn more about [Indexes](../indexes.md)

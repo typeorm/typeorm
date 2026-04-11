@@ -4,25 +4,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
 
 describe("decorators > embedded", () => {
-    let connections: DataSource[]
-    beforeEach(() =>
-        createTestingConnections({
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
             entities: [Post, Counters],
-        }).then((all) => (connections = all)),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    afterEach(() => closeTestingConnections(connections))
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("basic functionality", function () {
         it("should persist and load entities with embeddeds properly", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     const post = new Post()
                     post.title = "Hello post"
@@ -53,8 +53,8 @@ describe("decorators > embedded", () => {
 
         it("should be used with prop", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
 
                     const post1 = new Post()
                     post1.title = "Hello post #1"

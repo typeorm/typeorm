@@ -1,4 +1,4 @@
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,23 +8,22 @@ import { UserEntitySchema } from "./entity/User"
 import { expect } from "chai"
 
 describe("entity-schema > embedded - plain-object", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [UserEntitySchema],
-            })),
-    )
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [UserEntitySchema],
+        })
+    })
 
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save entity with embedded", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const userRepository =
-                    connection.getRepository(UserEntitySchema)
+                    dataSource.getRepository(UserEntitySchema)
                 const newUser = userRepository.create({
                     isActive: true,
                     name: {
@@ -43,9 +42,9 @@ describe("entity-schema > embedded - plain-object", () => {
 
     it("should contains instance of plain object for embedded entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const userRepository =
-                    connection.getRepository(UserEntitySchema)
+                    dataSource.getRepository(UserEntitySchema)
                 const newUser = userRepository.create({
                     isActive: true,
                     name: {
