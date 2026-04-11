@@ -1,0 +1,51 @@
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
+import { User } from "./entity/User"
+import { Circle } from "./entity/Circle"
+import { expect } from "chai"
+
+describe("relations > lazy relations > setter with promises", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql"], // we are using lazy relations that's why we are using a single driver
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should set members in circle", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const users: User[] = []
+
+                const user: User = new User()
+                user.setId("1")
+
+                const circle: Circle = new Circle()
+                circle.setId("1")
+
+                // Entities persistence
+                await connection.manager.save(user)
+                await connection.manager.save(circle)
+
+                users.push(user)
+                const circleFromDB = await connection.manager.findOneByOrFail(
+                    Circle,
+                    { id: circle.getId() } as any, // id is private
+                )
+                expect(circleFromDB).is.not.null
+
+                // Setting users with setter
+                circleFromDB.setUsers(Promise.resolve(users))
+                await Promise.resolve() // this is unpleasant way to fix this issue
+                expect(users).deep.equal(await circleFromDB.getUsers())
+            }),
+        ))
+})

@@ -1,4 +1,4 @@
-import { MongoFindOneOptions } from "./MongoFindOneOptions"
+import type { MongoFindOneOptions } from "./MongoFindOneOptions"
 
 /**
  * Defines a special criteria to find specific entities.

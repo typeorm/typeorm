@@ -1,27 +1,25 @@
-import { RelationMetadataArgs } from "./RelationMetadataArgs"
-import { ColumnMetadataArgs } from "./ColumnMetadataArgs"
-import { RelationCountMetadataArgs } from "./RelationCountMetadataArgs"
-import { IndexMetadataArgs } from "./IndexMetadataArgs"
-import { EntityListenerMetadataArgs } from "./EntityListenerMetadataArgs"
-import { TableMetadataArgs } from "./TableMetadataArgs"
-import { NamingStrategyMetadataArgs } from "./NamingStrategyMetadataArgs"
-import { JoinTableMetadataArgs } from "./JoinTableMetadataArgs"
-import { JoinColumnMetadataArgs } from "./JoinColumnMetadataArgs"
-import { EmbeddedMetadataArgs } from "./EmbeddedMetadataArgs"
-import { EntitySubscriberMetadataArgs } from "./EntitySubscriberMetadataArgs"
-import { RelationIdMetadataArgs } from "./RelationIdMetadataArgs"
-import { InheritanceMetadataArgs } from "./InheritanceMetadataArgs"
-import { DiscriminatorValueMetadataArgs } from "./DiscriminatorValueMetadataArgs"
-import { EntityRepositoryMetadataArgs } from "./EntityRepositoryMetadataArgs"
-import { TransactionEntityMetadataArgs } from "./TransactionEntityMetadataArgs"
-import { TransactionRepositoryMetadataArgs } from "./TransactionRepositoryMetadataArgs"
+import type { RelationMetadataArgs } from "./RelationMetadataArgs"
+import type { ColumnMetadataArgs } from "./ColumnMetadataArgs"
+import type { IndexMetadataArgs } from "./IndexMetadataArgs"
+import type { EntityListenerMetadataArgs } from "./EntityListenerMetadataArgs"
+import type { TableMetadataArgs } from "./TableMetadataArgs"
+import type { NamingStrategyMetadataArgs } from "./NamingStrategyMetadataArgs"
+import type { JoinTableMetadataArgs } from "./JoinTableMetadataArgs"
+import type { JoinColumnMetadataArgs } from "./JoinColumnMetadataArgs"
+import type { EmbeddedMetadataArgs } from "./EmbeddedMetadataArgs"
+import type { EntitySubscriberMetadataArgs } from "./EntitySubscriberMetadataArgs"
+import type { RelationIdMetadataArgs } from "./RelationIdMetadataArgs"
+import type { InheritanceMetadataArgs } from "./InheritanceMetadataArgs"
+import type { DiscriminatorValueMetadataArgs } from "./DiscriminatorValueMetadataArgs"
+import type { TransactionEntityMetadataArgs } from "./TransactionEntityMetadataArgs"
+import type { TransactionRepositoryMetadataArgs } from "./TransactionRepositoryMetadataArgs"
 import { MetadataUtils } from "../metadata-builder/MetadataUtils"
-import { GeneratedMetadataArgs } from "./GeneratedMetadataArgs"
-import { TreeMetadataArgs } from "./TreeMetadataArgs"
-import { UniqueMetadataArgs } from "./UniqueMetadataArgs"
-import { CheckMetadataArgs } from "./CheckMetadataArgs"
-import { ExclusionMetadataArgs } from "./ExclusionMetadataArgs"
-import { ForeignKeyMetadataArgs } from "./ForeignKeyMetadataArgs"
+import type { GeneratedMetadataArgs } from "./GeneratedMetadataArgs"
+import type { TreeMetadataArgs } from "./TreeMetadataArgs"
+import type { UniqueMetadataArgs } from "./UniqueMetadataArgs"
+import type { CheckMetadataArgs } from "./CheckMetadataArgs"
+import type { ExclusionMetadataArgs } from "./ExclusionMetadataArgs"
+import type { ForeignKeyMetadataArgs } from "./ForeignKeyMetadataArgs"
 
 /**
  * Storage all metadatas args of all available types: tables, columns, subscribers, relations, etc.
@@ -35,7 +33,6 @@ export class MetadataArgsStorage {
 
     readonly tables: TableMetadataArgs[] = []
     readonly trees: TreeMetadataArgs[] = []
-    readonly entityRepositories: EntityRepositoryMetadataArgs[] = []
     readonly transactionEntityManagers: TransactionEntityMetadataArgs[] = []
     readonly transactionRepositories: TransactionRepositoryMetadataArgs[] = []
     readonly namingStrategies: NamingStrategyMetadataArgs[] = []
@@ -51,7 +48,6 @@ export class MetadataArgsStorage {
     readonly joinColumns: JoinColumnMetadataArgs[] = []
     readonly joinTables: JoinTableMetadataArgs[] = []
     readonly entityListeners: EntityListenerMetadataArgs[] = []
-    readonly relationCounts: RelationCountMetadataArgs[] = []
     readonly relationIds: RelationIdMetadataArgs[] = []
     readonly embeddeds: EmbeddedMetadataArgs[] = []
     readonly inheritances: InheritanceMetadataArgs[] = []
@@ -130,19 +126,6 @@ export class MetadataArgsStorage {
     ): RelationIdMetadataArgs[] {
         return this.filterByTargetAndWithoutDuplicateProperties(
             this.relationIds,
-            target,
-        )
-    }
-
-    filterRelationCounts(target: Function | string): RelationCountMetadataArgs[]
-    filterRelationCounts(
-        target: (Function | string)[],
-    ): RelationCountMetadataArgs[]
-    filterRelationCounts(
-        target: (Function | string) | (Function | string)[],
-    ): RelationCountMetadataArgs[] {
-        return this.filterByTargetAndWithoutDuplicateProperties(
-            this.relationCounts,
             target,
         )
     }
@@ -335,6 +318,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets.
+     *
      * @param array
      * @param target
      */
@@ -351,6 +335,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate property names.
+     *
      * @param array
      * @param target
      */
@@ -376,6 +361,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate relation property names.
+     *
      * @param array
      * @param target
      */
@@ -410,6 +396,7 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate embedded property names.
+     *
      * @param array
      * @param target
      */

@@ -1,6 +1,6 @@
 import ansi from "ansis"
 import path from "path"
-import yargs from "yargs"
+import type yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
 import { camelCase } from "../util/StringUtils"
 import { CommandUtils } from "./CommandUtils"
@@ -79,6 +79,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the migration file.
+     *
      * @param name
      * @param timestamp
      */
@@ -102,6 +103,7 @@ export class ${camelCase(
 
     /**
      * Gets contents of the migration file in Javascript.
+     *
      * @param name
      * @param timestamp
      * @param esm

@@ -1,5 +1,6 @@
 import { expect } from "chai"
-import { Brackets, DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Brackets } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,21 +9,20 @@ import {
 import { User } from "./entity/user"
 
 describe("github issues > #3685 Brackets syntax failed when use where with object literal", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                dropSchema: true,
-                schemaCreate: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => connections && closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            dropSchema: true,
+            schemaCreate: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => dataSources && closeTestingConnections(dataSources))
 
     it("should accept objects in .where method (github issue #3685)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager.save(
                     Object.assign(new User(), {
                         firstName: "Jean",

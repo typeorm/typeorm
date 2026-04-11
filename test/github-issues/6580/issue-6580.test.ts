@@ -1,5 +1,5 @@
-import { DeepPartial } from "../../../src"
-import { Comment } from "./entity/Comment"
+import type { DeepPartial } from "../../../src"
+import type { Comment } from "./entity/Comment"
 
 describe("github issues > #6580 DeepPartial does not handle `any` and `{[k: string]}`", () => {
     function attemptDeepPartial(_: DeepPartial<Comment>): void {}

@@ -1,5 +1,5 @@
 import Sinon, { spy } from "sinon"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

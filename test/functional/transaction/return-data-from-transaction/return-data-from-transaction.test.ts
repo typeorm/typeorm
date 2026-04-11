@@ -4,28 +4,27 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("transaction > return data from transaction", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql", "better-sqlite3", "postgres"], // todo: for some reasons mariadb tests are not passing here
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "better-sqlite3", "postgres"], // todo: for some reasons mariadb tests are not passing here
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should allow to return typed data from transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const { postId, categoryId } =
-                    await connection.manager.transaction<{
+                    await dataSource.manager.transaction<{
                         postId: number
                         categoryId: number
                     }>(async (entityManager) => {
@@ -43,20 +42,23 @@ describe("transaction > return data from transaction", () => {
                         }
                     })
 
-                const post = await connection.manager.findOne(Post, {
-                    where: { title: "Post #1" },
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
-                post!.should.be.eql({
+                post.should.be.eql({
                     id: postId,
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
-                    where: { name: "Category #1" },
-                })
+                const category = await dataSource.manager.findOneOrFail(
+                    Category,
+                    {
+                        where: { name: "Category #1" },
+                    },
+                )
                 expect(category).not.to.be.null
-                category!.should.be.eql({
+                category.should.be.eql({
                     id: categoryId,
                     name: "Category #1",
                 })
@@ -65,9 +67,9 @@ describe("transaction > return data from transaction", () => {
 
     it("should allow to return typed data from transaction using type inference", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const { postId, categoryId } =
-                    await connection.manager.transaction(
+                    await dataSource.manager.transaction(
                         async (entityManager) => {
                             const post = new Post()
                             post.title = "Post #1"
@@ -84,20 +86,23 @@ describe("transaction > return data from transaction", () => {
                         },
                     )
 
-                const post = await connection.manager.findOne(Post, {
-                    where: { title: "Post #1" },
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
-                post!.should.be.eql({
+                post.should.be.eql({
                     id: postId,
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
-                    where: { name: "Category #1" },
-                })
+                const category = await dataSource.manager.findOneOrFail(
+                    Category,
+                    {
+                        where: { name: "Category #1" },
+                    },
+                )
                 expect(category).not.to.be.null
-                category!.should.be.eql({
+                category.should.be.eql({
                     id: categoryId,
                     name: "Category #1",
                 })
