@@ -852,7 +852,7 @@ export class User {
 }
 ```
 
-Learn more about [indices](../indices.md).
+Learn more about [indexes](../indexes.md).
 
 #### `@Unique`
 
@@ -879,7 +879,7 @@ export class User {
 }
 ```
 
-> Note: MySQL stores unique constraints as unique indices
+> Note: MySQL stores unique constraints as unique indexes
 
 #### `@Check`
 

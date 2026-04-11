@@ -567,8 +567,8 @@ export class MysqlDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -578,11 +578,11 @@ export class MysqlDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -591,8 +591,8 @@ export class MysqlDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -601,7 +601,7 @@ export class MysqlDriver implements Driver {
 
         return {
             database:
-                (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
+                (parts.length > 1 ? parts[0] : undefined) ?? driverDatabase,
             schema: driverSchema,
             tableName: parts.length > 1 ? parts[1] : parts[0],
         }
@@ -1076,12 +1076,14 @@ export class MysqlDriver implements Driver {
                     this.normalizeDefault(columnMetadata),
                     tableColumn.default,
                 ) ||
-                (tableColumn.enum &&
+                !!(
+                    tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
                         tableColumn.enum,
                         columnMetadata.enum.map((val) => val + ""),
-                    )) ||
+                    )
+                ) ||
                 tableColumn.onUpdate !==
                     this.normalizeDatetimeFunction(columnMetadata.onUpdate) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
@@ -1137,7 +1139,7 @@ export class MysqlDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.mysql = this.options.driver || PlatformTools.load("mysql2")
+            this.mysql = this.options.driver ?? PlatformTools.load("mysql2")
         } catch (e) {
             throw new DriverPackageNotInstalledError("Mysql", "mysql2")
         }
@@ -1167,14 +1169,8 @@ export class MysqlDriver implements Driver {
                 timezone: options.timezone,
                 connectTimeout: options.connectTimeout,
                 insecureAuth: options.insecureAuth,
-                supportBigNumbers:
-                    options.supportBigNumbers !== undefined
-                        ? options.supportBigNumbers
-                        : true,
-                bigNumberStrings:
-                    options.bigNumberStrings !== undefined
-                        ? options.bigNumberStrings
-                        : true,
+                supportBigNumbers: options.supportBigNumbers ?? true,
+                bigNumberStrings: options.bigNumberStrings ?? true,
                 dateStrings: options.dateStrings,
                 debug: options.debug,
                 trace: options.trace,
@@ -1195,7 +1191,7 @@ export class MysqlDriver implements Driver {
             options.acquireTimeout === undefined
                 ? {}
                 : { acquireTimeout: options.acquireTimeout },
-            options.extra || {},
+            options.extra ?? {},
         )
     }
 

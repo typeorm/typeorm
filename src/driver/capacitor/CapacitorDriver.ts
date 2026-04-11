@@ -53,7 +53,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner) this.queryRunner = new CapacitorQueryRunner(this)
+        this.queryRunner ??= new CapacitorQueryRunner(this)
 
         return this.queryRunner
     }
@@ -66,7 +66,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
      * Creates connection with the database.
      */
     protected async createDatabaseConnection() {
-        const databaseMode = this.options.mode || "no-encryption"
+        const databaseMode = this.options.mode ?? "no-encryption"
         const isDatabaseEncryted = databaseMode !== "no-encryption"
         const databaseVersion =
             typeof this.options.version === "undefined"

@@ -346,13 +346,9 @@ export class OracleDriver implements Driver {
         if (!this.database || !this.schema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.schema) {
-                this.schema = await queryRunner.getCurrentSchema()
-            }
+            this.schema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
@@ -493,8 +489,8 @@ export class OracleDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -504,11 +500,11 @@ export class OracleDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -517,8 +513,8 @@ export class OracleDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -1053,7 +1049,7 @@ export class OracleDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const oracle = this.options.driver || PlatformTools.load("oracledb")
+            const oracle = this.options.driver ?? PlatformTools.load("oracledb")
             this.oracle = oracle
         } catch {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
@@ -1120,7 +1116,7 @@ export class OracleDriver implements Driver {
             {
                 poolMax: options.poolSize,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         // pooling is enabled either when its set explicitly to true,

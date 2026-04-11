@@ -73,12 +73,12 @@ describe("decorators > relation-id > one-to-one", () => {
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryId).to.not.be.undefined
-                expect(loadedPost!.categoryId).to.be.equal(1)
-                expect(loadedPost!.categoryName).to.not.be.undefined
-                expect(loadedPost!.categoryName).to.be.equal("BMW")
+                expect(loadedPost.categoryId).to.not.be.undefined
+                expect(loadedPost.categoryId).to.be.equal(1)
+                expect(loadedPost.categoryName).to.not.be.undefined
+                expect(loadedPost.categoryName).to.be.equal("BMW")
             }),
         ))
 
@@ -120,10 +120,10 @@ describe("decorators > relation-id > one-to-one", () => {
                 const loadedCategory = await dataSource.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.postId).to.not.be.undefined
-                expect(loadedCategory!.postId).to.be.equal(1)
+                expect(loadedCategory.postId).to.not.be.undefined
+                expect(loadedCategory.postId).to.be.equal(1)
             }),
         ))
 })

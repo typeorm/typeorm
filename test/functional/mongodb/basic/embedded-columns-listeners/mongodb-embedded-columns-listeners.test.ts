@@ -35,35 +35,33 @@ describe("mongodb > embedded columns listeners", () => {
                 post.counters.information = new Information()
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     title: "Post",
                 })
 
-                expect(loadedPost).to.be.not.empty
-                expect(loadedPost!.counters).to.be.not.empty
-                expect(loadedPost!.counters!.information).to.be.not.empty
-                loadedPost!.should.be.instanceOf(Post)
-                loadedPost!.title.should.be.equal("Post")
-                loadedPost!.text.should.be.equal("Everything about post")
+                expect(loadedPost.counters).to.be.not.empty
+                expect(loadedPost.counters!.information).to.be.not.empty
+                loadedPost.should.be.instanceOf(Post)
+                loadedPost.title.should.be.equal("Post")
+                loadedPost.text.should.be.equal("Everything about post")
 
                 post.title = "Updated post"
                 await postRepository.save(post)
 
-                const loadedUpdatedPost = await postRepository.findOneBy({
+                const loadedUpdatedPost = await postRepository.findOneByOrFail({
                     title: "Updated post",
                 })
 
-                expect(loadedUpdatedPost).to.be.not.empty
-                expect(loadedUpdatedPost!.counters).to.be.not.empty
-                expect(loadedUpdatedPost!.counters!.likes).to.be.eq(100)
+                expect(loadedUpdatedPost.counters).to.be.not.empty
+                expect(loadedUpdatedPost.counters?.likes).to.be.eq(100)
                 expect(
-                    loadedUpdatedPost!.counters!.information!.comments,
+                    loadedUpdatedPost.counters?.information?.comments,
                 ).to.be.eq(1)
-                expect(loadedUpdatedPost!.counters!.information!.description).to
+                expect(loadedUpdatedPost.counters?.information?.description).to
                     .be.not.empty
-                loadedUpdatedPost!.should.be.instanceOf(Post)
-                loadedUpdatedPost!.title.should.be.equal("Updated post")
-                loadedUpdatedPost!.text.should.be.equal("Everything about post")
+                loadedUpdatedPost.should.be.instanceOf(Post)
+                loadedUpdatedPost.title.should.be.equal("Updated post")
+                loadedUpdatedPost.text.should.be.equal("Everything about post")
 
                 await postRepository.remove(post)
             }),
@@ -109,9 +107,9 @@ describe("mongodb > embedded columns listeners", () => {
 
                 loadedPost.title.should.be.eql("Post")
                 loadedPost.text.should.be.eql("Everything about post")
-                expect(loadedPost!.tags).to.be.not.empty
-                loadedPost!.tags![0].used.should.be.equal(100)
-                loadedPost!.tags![1].name.should.be.equal("Tag #2")
+                expect(loadedPost.tags).to.be.not.empty
+                loadedPost.tags![0].used.should.be.equal(100)
+                loadedPost.tags![1].name.should.be.equal("Tag #2")
             }),
         ))
 })
