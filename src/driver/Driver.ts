@@ -14,6 +14,7 @@ import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import type { TableIndex } from "../schema-builder/table/TableIndex"
 import type { View } from "../schema-builder/view/View"
 import type { ColumnType } from "./types/ColumnTypes"
+import type { IsolationLevel } from "./types/IsolationLevel"
 import type { CteCapabilities } from "./types/CteCapabilities"
 import type { DataTypeDefaults } from "./types/DataTypeDefaults"
 import type { MappedColumnTypes } from "./types/MappedColumnTypes"
@@ -66,6 +67,11 @@ export interface Driver {
      * Gets list of supported column data types by a driver.
      */
     supportedDataTypes: ColumnType[]
+
+    /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels: readonly IsolationLevel[]
 
     /**
      * Returns type of upsert supported by driver if any

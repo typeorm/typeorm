@@ -2,6 +2,7 @@ import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { CordovaDataSourceOptions } from "./CordovaDataSourceOptions"
 import { CordovaQueryRunner } from "./CordovaQueryRunner"
@@ -15,6 +16,20 @@ declare let window: Window
 
 export class CordovaDriver extends AbstractSqliteDriver {
     declare options: CordovaDataSourceOptions
+
+    // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /** Cordova does not support transactions. */
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /** Isolation levels supported by this driver. */
+    supportedIsolationLevels = CordovaDriver.supportedIsolationLevels
 
     transactionSupport = "none" as const
 
