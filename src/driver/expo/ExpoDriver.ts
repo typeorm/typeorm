@@ -8,8 +8,8 @@ import { ExpoQueryRunner } from "./ExpoQueryRunner"
 export class ExpoDriver extends AbstractSqliteDriver {
     declare options: ExpoDataSourceOptions
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
         if (this.isLegacyDriver) {
             throw new TypeORMError("Legacy Expo driver is not supported.")
@@ -25,7 +25,7 @@ export class ExpoDriver extends AbstractSqliteDriver {
     }
 
     createQueryRunner(): QueryRunner {
-        if (!this.queryRunner) this.queryRunner = new ExpoQueryRunner(this)
+        this.queryRunner ??= new ExpoQueryRunner(this)
 
         return this.queryRunner
     }

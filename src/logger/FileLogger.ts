@@ -27,6 +27,7 @@ export class FileLogger extends AbstractLogger {
 
     /**
      * Write log to specific output.
+     *
      * @param level
      * @param logMessage
      * @param queryRunner
@@ -94,13 +95,14 @@ export class FileLogger extends AbstractLogger {
 
     /**
      * Writes given strings into the log file.
+     *
      * @param strings
      */
     protected write(strings: string | string[]) {
         strings = Array.isArray(strings) ? strings : [strings]
         const basePath = appRootPath.path + "/"
         let logPath = "ormlogs.log"
-        if (this.fileLoggerOptions && this.fileLoggerOptions.logPath) {
+        if (this.fileLoggerOptions?.logPath) {
             logPath = PlatformTools.pathNormalize(
                 this.fileLoggerOptions.logPath,
             )

@@ -21,9 +21,16 @@ import type { ReplicationMode } from "../driver/types/ReplicationMode"
  */
 export interface QueryRunner extends AsyncDisposable {
     /**
-     * Connection used by this query runner.
+     * DataSource used by this query runner.
      */
-    readonly connection: DataSource
+    readonly dataSource: DataSource
+
+    /**
+     * DataSource used by this query runner.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource
 
     /**
      * Broadcaster used on this query runner to broadcast entity events.
@@ -51,18 +58,6 @@ export interface QueryRunner extends AsyncDisposable {
      * Useful for sharing data with subscribers.
      */
     data: ObjectLiteral
-
-    /**
-     * All synchronized tables in the database.
-     * @deprecated Call `getTables()`
-     */
-    loadedTables: Table[]
-
-    /**
-     * All synchronized views in the database.
-     * @deprecated Call `getViews()`
-     */
-    loadedViews: View[]
 
     /**
      * Creates/uses database connection from the connection pool to perform further operations.
@@ -131,7 +126,10 @@ export interface QueryRunner extends AsyncDisposable {
      * Template expressions are automatically transformed into database parameters.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
-     * Example: queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @example
+     * queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
      */
     sql<T = any>(
         strings: TemplateStringsArray,

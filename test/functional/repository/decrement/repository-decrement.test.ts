@@ -49,19 +49,25 @@ describe("repository > decrement method", () => {
                     )
 
                     // load and check counter
-                    const loadedPost1 = await dataSource.manager.findOne(Post, {
-                        where: {
-                            id: 1,
+                    const loadedPost1 = await dataSource.manager.findOneOrFail(
+                        Post,
+                        {
+                            where: {
+                                id: 1,
+                            },
                         },
-                    })
-                    loadedPost1!.counter.should.be.equal(1)
+                    )
+                    loadedPost1.counter.should.be.equal(1)
 
-                    const loadedPost2 = await dataSource.manager.findOne(Post, {
-                        where: {
-                            id: 2,
+                    const loadedPost2 = await dataSource.manager.findOneOrFail(
+                        Post,
+                        {
+                            where: {
+                                id: 2,
+                            },
                         },
-                    })
-                    loadedPost2!.counter.should.be.equal(2)
+                    )
+                    loadedPost2.counter.should.be.equal(2)
                 }),
             ))
 
@@ -93,19 +99,25 @@ describe("repository > decrement method", () => {
                     )
 
                     // load and check counter
-                    const loadedPost1 = await dataSource.manager.findOne(Post, {
-                        where: {
-                            id: 1,
+                    const loadedPost1 = await dataSource.manager.findOneOrFail(
+                        Post,
+                        {
+                            where: {
+                                id: 1,
+                            },
                         },
-                    })
-                    loadedPost1!.counter.should.be.equal(1)
+                    )
+                    loadedPost1.counter.should.be.equal(1)
 
-                    const loadedPost2 = await dataSource.manager.findOne(Post, {
-                        where: {
-                            id: 2,
+                    const loadedPost2 = await dataSource.manager.findOneOrFail(
+                        Post,
+                        {
+                            where: {
+                                id: 2,
+                            },
                         },
-                    })
-                    loadedPost2!.counter.should.be.equal(2)
+                    )
+                    loadedPost2.counter.should.be.equal(2)
                 }),
             ))
 
@@ -212,7 +224,7 @@ describe("repository > decrement method", () => {
                     )
 
                     // load and check counter
-                    const loadedPost1 = await dataSource.manager.findOne(
+                    const loadedPost1 = await dataSource.manager.findOneOrFail(
                         PostBigInt,
                         {
                             where: {
@@ -220,9 +232,9 @@ describe("repository > decrement method", () => {
                             },
                         },
                     )
-                    loadedPost1!.counter.should.be.equal("1")
+                    loadedPost1.counter.should.be.equal("1")
 
-                    const loadedPost2 = await dataSource.manager.findOne(
+                    const loadedPost2 = await dataSource.manager.findOneOrFail(
                         PostBigInt,
                         {
                             where: {
@@ -230,7 +242,7 @@ describe("repository > decrement method", () => {
                             },
                         },
                     )
-                    loadedPost2!.counter.should.be.equal("2")
+                    loadedPost2.counter.should.be.equal("2")
                 }),
             ))
     })
@@ -256,7 +268,7 @@ describe("repository > decrement method", () => {
                         .getRepository(UserWithEmbededEntity)
                         .decrement({ id: 1 }, "friend.sent", 15)
 
-                    const loadedUser = await dataSource.manager.findOne(
+                    const loadedUser = await dataSource.manager.findOneOrFail(
                         UserWithEmbededEntity,
                         {
                             where: {
@@ -264,7 +276,7 @@ describe("repository > decrement method", () => {
                             },
                         },
                     )
-                    loadedUser!.friend.sent.should.be.equal(-15)
+                    loadedUser.friend.sent.should.be.equal(-15)
                 }),
             ))
     })

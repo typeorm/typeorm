@@ -52,26 +52,26 @@ describe("query builder > relational query builder > add operation > one to many
                     .of(category1)
                     .add(post1)
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1.category).to.be.eql({
                     id: 1,
                     name: "category #1",
                 })
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
 
                 await dataSource
                     .createQueryBuilder()
@@ -79,23 +79,23 @@ describe("query builder > relational query builder > add operation > one to many
                     .of(category1)
                     .remove(post1)
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
             }),
         ))
 
@@ -132,26 +132,26 @@ describe("query builder > relational query builder > add operation > one to many
                     .of(2) // category id
                     .add(2) // post id
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.eql({
+                expect(loadedPost2.category).to.be.eql({
                     id: 2,
                     name: "category #2",
                 })
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
 
                 await dataSource
                     .createQueryBuilder()
@@ -159,23 +159,23 @@ describe("query builder > relational query builder > add operation > one to many
                     .of(2) // category id
                     .remove(2) // post id
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
             }),
         ))
 
@@ -212,23 +212,23 @@ describe("query builder > relational query builder > add operation > one to many
                     .of({ id: 3 }) // category id
                     .add({ id: 3 }) // post id
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
@@ -239,23 +239,23 @@ describe("query builder > relational query builder > add operation > one to many
                     .of({ id: 3 }) // category id
                     .remove({ id: 3 }) // post id
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
             }),
         ))
 
@@ -292,26 +292,26 @@ describe("query builder > relational query builder > add operation > one to many
                     .of({ id: 3 }) // category
                     .add([{ id: 1 }, { id: 3 }]) // posts
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
@@ -322,23 +322,23 @@ describe("query builder > relational query builder > add operation > one to many
                     .of({ id: 3 }) // category
                     .remove([{ id: 1 }, { id: 3 }]) // posts
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
             }),
         ))
 
@@ -376,11 +376,11 @@ describe("query builder > relational query builder > add operation > one to many
                     .of(category3) // category
                     .add(post2) // post
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
@@ -392,11 +392,11 @@ describe("query builder > relational query builder > add operation > one to many
                     .of(category3) // category
                     .addAndRemove([], []) // post
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
@@ -408,19 +408,19 @@ describe("query builder > relational query builder > add operation > one to many
                     .of(category3) // category
                     .addAndRemove([post1, post3], [post2]) // post
 
-                const loadedCategory = await dataSource.manager.findOne(
+                const loadedCategory = await dataSource.manager.findOneOrFail(
                     Category,
                     { where: { id: 3 }, relations: { posts: true } },
                 )
-                expect(loadedCategory!.posts).to.deep.include({
+                expect(loadedCategory.posts).to.deep.include({
                     id: 1,
                     title: "post #1",
                 })
-                expect(loadedCategory!.posts).to.not.contain({
+                expect(loadedCategory.posts).to.not.contain({
                     id: 2,
                     title: "post #2",
                 })
-                expect(loadedCategory!.posts).to.deep.include({
+                expect(loadedCategory.posts).to.deep.include({
                     id: 3,
                     title: "post #3",
                 })

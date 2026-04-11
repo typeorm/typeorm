@@ -36,6 +36,7 @@ export class SubjectTopologicalSorter {
 
     /**
      * Sorts (orders) subjects in their topological order.
+     *
      * @param direction
      */
     sort(direction: "insert" | "delete"): Subject[] {
@@ -104,6 +105,7 @@ export class SubjectTopologicalSorter {
 
     /**
      * Removes already sorted subjects from this.subjects list of subjects.
+     *
      * @param subjects
      */
     protected removeAlreadySorted(subjects: Subject[]) {
@@ -114,6 +116,7 @@ export class SubjectTopologicalSorter {
 
     /**
      * Extracts all unique metadatas from the given subjects.
+     *
      * @param subjects
      */
     protected getUniqueMetadatas(subjects: Subject[]) {
@@ -166,6 +169,7 @@ export class SubjectTopologicalSorter {
      * Sorts given graph using topological sorting algorithm.
      *
      * Algorithm is kindly taken from https://github.com/marcelklehr/toposort repository.
+     *
      * @param edges
      */
     protected toposort(edges: any[][]) {

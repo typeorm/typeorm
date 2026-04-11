@@ -1,6 +1,5 @@
 import { importClassesFromDirectories } from "../util/DirectoryExportedClassesLoader"
 import { OrmUtils } from "../util/OrmUtils"
-import { getFromContainer } from "../container"
 import type { MigrationInterface } from "../migration/MigrationInterface"
 import { getMetadataArgsStorage } from "../globals"
 import { EntityMetadataBuilder } from "../metadata-builder/EntityMetadataBuilder"
@@ -27,6 +26,7 @@ export class ConnectionMetadataBuilder {
 
     /**
      * Builds migration instances for the given classes or directories.
+     *
      * @param migrations
      */
     async buildMigrations(
@@ -41,13 +41,15 @@ export class ConnectionMetadataBuilder {
                 migrationDirectories,
             )),
         ]
-        return allMigrationClasses.map((migrationClass) =>
-            getFromContainer<MigrationInterface>(migrationClass),
+        return allMigrationClasses.map(
+            (migrationClass) =>
+                new (migrationClass as new () => MigrationInterface)(),
         )
     }
 
     /**
      * Builds subscriber instances for the given classes or directories.
+     *
      * @param subscribers
      */
     async buildSubscribers(
@@ -64,15 +66,15 @@ export class ConnectionMetadataBuilder {
         ]
         return getMetadataArgsStorage()
             .filterSubscribers(allSubscriberClasses)
-            .map((metadata) =>
-                getFromContainer<EntitySubscriberInterface<any>>(
-                    metadata.target,
-                ),
+            .map(
+                (metadata) =>
+                    new (metadata.target as new () => EntitySubscriberInterface<any>)(),
             )
     }
 
     /**
      * Builds entity metadatas for the given classes or directories.
+     *
      * @param entities
      */
     async buildEntityMetadatas(

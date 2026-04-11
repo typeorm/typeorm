@@ -25,6 +25,7 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the junction of the given many-to-many relation.
+     *
      * @param relation
      * @param joinTable
      */
@@ -42,7 +43,7 @@ export class JunctionEntityMetadataBuilder {
         )
 
         const joinTableName =
-            joinTable.name ||
+            joinTable.name ??
             this.dataSource.namingStrategy.joinTableName(
                 relation.entityMetadata.tableNameWithoutPrefix,
                 relation.inverseEntityMetadata.tableNameWithoutPrefix,
@@ -53,14 +54,14 @@ export class JunctionEntityMetadataBuilder {
             )
 
         const entityMetadata = new EntityMetadata({
-            connection: this.dataSource,
+            dataSource: this.dataSource,
             args: {
                 target: "",
                 name: joinTableName,
                 type: "junction",
                 database:
-                    joinTable.database || relation.entityMetadata.database,
-                schema: joinTable.schema || relation.entityMetadata.schema,
+                    joinTable.database ?? relation.entityMetadata.database,
+                schema: joinTable.schema ?? relation.entityMetadata.schema,
                 synchronize: joinTable.synchronize,
             },
         })
@@ -79,16 +80,14 @@ export class JunctionEntityMetadataBuilder {
                   })
                 : undefined
             const columnName =
-                joinColumn && joinColumn.name
-                    ? joinColumn.name
-                    : this.dataSource.namingStrategy.joinTableColumnName(
-                          relation.entityMetadata.tableNameWithoutPrefix,
-                          referencedColumn.propertyName,
-                          referencedColumn.databaseName,
-                      )
+                joinColumn?.name ??
+                this.dataSource.namingStrategy.joinTableColumnName(
+                    relation.entityMetadata.tableNameWithoutPrefix,
+                    referencedColumn.propertyName,
+                    referencedColumn.databaseName,
+                )
 
             return new ColumnMetadata({
-                connection: this.dataSource,
                 entityMetadata: entityMetadata,
                 referencedColumn: referencedColumn,
                 args: {
@@ -143,18 +142,15 @@ export class JunctionEntityMetadataBuilder {
                       })
                     : undefined
                 const columnName =
-                    joinColumn && joinColumn.name
-                        ? joinColumn.name
-                        : this.dataSource.namingStrategy.joinTableInverseColumnName(
-                              relation.inverseEntityMetadata
-                                  .tableNameWithoutPrefix,
-                              inverseReferencedColumn.propertyName,
-                              inverseReferencedColumn.databaseName,
-                          )
+                    joinColumn?.name ??
+                    this.dataSource.namingStrategy.joinTableInverseColumnName(
+                        relation.inverseEntityMetadata.tableNameWithoutPrefix,
+                        inverseReferencedColumn.propertyName,
+                        inverseReferencedColumn.databaseName,
+                    )
 
                 return new ColumnMetadata({
-                    connection: this.dataSource,
-                    entityMetadata: entityMetadata,
+                    entityMetadata,
                     referencedColumn: inverseReferencedColumn,
                     args: {
                         target: "",
@@ -226,12 +222,13 @@ export class JunctionEntityMetadataBuilder {
                       onDelete:
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : relation.onDelete || "CASCADE",
+                              : (relation.onDelete ?? "CASCADE"),
                       onUpdate:
                           this.dataSource.driver.options.type === "oracle" ||
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : relation.onUpdate || "CASCADE",
+                              : (relation.onUpdate ?? "CASCADE"),
+                      deferrable: relation.deferrable,
                   }),
                   new ForeignKeyMetadata({
                       entityMetadata: entityMetadata,
@@ -252,6 +249,9 @@ export class JunctionEntityMetadataBuilder {
                               : relation.inverseRelation
                                 ? relation.inverseRelation.onUpdate
                                 : "CASCADE",
+                      deferrable: relation.inverseRelation
+                          ? relation.inverseRelation.deferrable
+                          : relation.deferrable,
                   }),
               ]
             : []
@@ -287,6 +287,7 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     *
      * @param relation
      * @param joinTable
      */
@@ -307,23 +308,42 @@ export class JunctionEntityMetadataBuilder {
                 (column) => column.isPrimary,
             )
         } else {
-            return joinTable.joinColumns.map((joinColumn) => {
-                const referencedColumn = relation.entityMetadata.columns.find(
-                    (column) =>
-                        column.propertyName === joinColumn.referencedColumnName,
-                )
-                if (!referencedColumn)
-                    throw new TypeORMError(
-                        `Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.entityMetadata.name}`,
-                    )
+            const referencedColumns = joinTable.joinColumns.map(
+                (joinColumn) => {
+                    const referencedColumn =
+                        relation.entityMetadata.columns.find(
+                            (column) =>
+                                column.propertyName ===
+                                joinColumn.referencedColumnName,
+                        )
+                    if (!referencedColumn)
+                        throw new TypeORMError(
+                            `Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.entityMetadata.name}`,
+                        )
 
-                return referencedColumn
-            })
+                    return referencedColumn
+                },
+            )
+
+            if (referencedColumns.length > 1) {
+                const pkColumns = relation.entityMetadata.primaryColumns
+                const orderMap = new Map(
+                    pkColumns.map((col, idx) => [col, idx]),
+                )
+                return [...referencedColumns].sort(
+                    (a, b) =>
+                        (orderMap.get(a) ?? Infinity) -
+                        (orderMap.get(b) ?? Infinity),
+                )
+            }
+
+            return referencedColumns
         }
     }
 
     /**
      * Collects inverse referenced columns from the given join column args.
+     *
      * @param relation
      * @param joinTable
      */
@@ -331,19 +351,19 @@ export class JunctionEntityMetadataBuilder {
         relation: RelationMetadata,
         joinTable: JoinTableMetadataArgs,
     ): ColumnMetadata[] {
-        const hasInverseJoinColumns = !!joinTable.inverseJoinColumns
-        const hasAnyInverseReferencedColumnName = hasInverseJoinColumns
-            ? joinTable.inverseJoinColumns!.find(
+        const inverseJoinColumns = joinTable.inverseJoinColumns
+        const hasAnyInverseReferencedColumnName = inverseJoinColumns
+            ? inverseJoinColumns.find(
                   (joinColumn) => !!joinColumn.referencedColumnName,
               )
             : false
         if (
-            !hasInverseJoinColumns ||
-            (hasInverseJoinColumns && !hasAnyInverseReferencedColumnName)
+            !inverseJoinColumns ||
+            (inverseJoinColumns && !hasAnyInverseReferencedColumnName)
         ) {
             return relation.inverseEntityMetadata.primaryColumns
         } else {
-            return joinTable.inverseJoinColumns!.map((joinColumn) => {
+            const referencedColumns = inverseJoinColumns.map((joinColumn) => {
                 const referencedColumn =
                     relation.inverseEntityMetadata.ownColumns.find(
                         (column) =>
@@ -357,6 +377,20 @@ export class JunctionEntityMetadataBuilder {
 
                 return referencedColumn
             })
+
+            if (referencedColumns.length > 1) {
+                const pkColumns = relation.inverseEntityMetadata.primaryColumns
+                const orderMap = new Map(
+                    pkColumns.map((col, idx) => [col, idx]),
+                )
+                return [...referencedColumns].sort(
+                    (a, b) =>
+                        (orderMap.get(a) ?? Infinity) -
+                        (orderMap.get(b) ?? Infinity),
+                )
+            }
+
+            return referencedColumns
         }
     }
 

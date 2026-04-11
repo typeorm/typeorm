@@ -52,7 +52,7 @@ describe("query builder > relational query builder > set operation > many to one
                     .of(post1)
                     .set(category1)
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -60,12 +60,12 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1.category).to.be.eql({
                     id: 1,
                     name: "category #1",
                 })
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -73,9 +73,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -83,7 +83,7 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
 
                 await dataSource
                     .createQueryBuilder()
@@ -91,7 +91,7 @@ describe("query builder > relational query builder > set operation > many to one
                     .of(post1)
                     .set(null)
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -99,9 +99,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -109,9 +109,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -119,7 +119,7 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
             }),
         ))
 
@@ -156,7 +156,7 @@ describe("query builder > relational query builder > set operation > many to one
                     .of(2)
                     .set(2)
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -164,9 +164,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -174,12 +174,12 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost2!.category).to.be.eql({
+                expect(loadedPost2.category).to.be.eql({
                     id: 2,
                     name: "category #2",
                 })
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -187,7 +187,7 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
 
                 await dataSource
                     .createQueryBuilder()
@@ -195,7 +195,7 @@ describe("query builder > relational query builder > set operation > many to one
                     .of(2)
                     .set(null)
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -203,9 +203,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -213,9 +213,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -223,7 +223,7 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
             }),
         ))
 
@@ -260,7 +260,7 @@ describe("query builder > relational query builder > set operation > many to one
                     .of({ id: 3 })
                     .set({ id: 3 })
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -268,9 +268,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -278,9 +278,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -288,7 +288,7 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
@@ -299,7 +299,7 @@ describe("query builder > relational query builder > set operation > many to one
                     .of({ id: 3 })
                     .set(null)
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -307,9 +307,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -317,9 +317,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -327,7 +327,7 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
             }),
         ))
 
@@ -364,7 +364,7 @@ describe("query builder > relational query builder > set operation > many to one
                     .of([{ id: 1 }, { id: 3 }])
                     .set({ id: 3 })
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -372,12 +372,12 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -385,9 +385,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -395,7 +395,7 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3.category).to.be.eql({
                     id: 3,
                     name: "category #3",
                 })
@@ -406,7 +406,7 @@ describe("query builder > relational query builder > set operation > many to one
                     .of([{ id: 1 }, { id: 3 }])
                     .set(null)
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -414,9 +414,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost1!.category).to.be.null
+                expect(loadedPost1.category).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -424,9 +424,9 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost2!.category).to.be.null
+                expect(loadedPost2.category).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -434,7 +434,7 @@ describe("query builder > relational query builder > set operation > many to one
                         category: true,
                     },
                 })
-                expect(loadedPost3!.category).to.be.null
+                expect(loadedPost3.category).to.be.null
             }),
         ))
 })

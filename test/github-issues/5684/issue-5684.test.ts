@@ -43,19 +43,15 @@ describe("github issues > #5684 eager relation skips children relations", () => 
                 await connection.getRepository(Company).save(company)
 
                 const assert = (user: User | undefined | null): void => {
-                    expect(
-                        user && user.company && user.company.admin,
-                    ).to.be.a.instanceOf(
+                    expect(user?.company?.admin).to.be.a.instanceOf(
                         User,
                         "loads nested relation of an eager relation",
                     )
-                    expect(
-                        user && user.company && user.company.staff,
-                    ).to.have.length(
+                    expect(user?.company?.staff).to.have.length(
                         2,
                         "loads nested relation of an eager relation",
                     )
-                    for (const member of (user && user.company.staff) || []) {
+                    for (const member of user?.company.staff ?? []) {
                         expect(member).to.be.a.instanceOf(
                             User,
                             "loads nested relation of an eager relation",

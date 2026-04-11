@@ -9,7 +9,7 @@ import { expect } from "chai"
 import { Post } from "./entity/Post"
 import { In } from "../../../src"
 
-describe("github issues > #1245 `findByIds` ignores `FindManyOptions`", () => {
+describe("github issues > #1245 `findBy` with `In` ignores `FindManyOptions`", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -21,7 +21,7 @@ describe("github issues > #1245 `findByIds` ignores `FindManyOptions`", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should filter correctly using findByIds", () =>
+    it("should filter correctly using findBy with In", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const post1 = new Post()
@@ -44,7 +44,7 @@ describe("github issues > #1245 `findByIds` ignores `FindManyOptions`", () => {
             }),
         ))
 
-    it("should filter correctly using findByIds", () =>
+    it("should filter correctly using findBy with In", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const post1 = new Post()

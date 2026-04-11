@@ -6,8 +6,7 @@
     "port": 3306,
     "username": "root",
     "password": "admin",
-    "database": "test",
-    "legacySpatialSupport": false,
+    "database": "typeorm",
     "logging": false
   },
   {
@@ -17,8 +16,7 @@
     "port": 3307,
     "username": "root",
     "password": "admin",
-    "database": "test",
-    "legacySpatialSupport": false,
+    "database": "typeorm",
     "logging": false
   },
   {
@@ -28,7 +26,7 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "type": "sqljs",
     "logging": false
   },
@@ -37,15 +35,16 @@
     "type": "postgres",
     "host": "localhost",
     "port": 5432,
-    "username": "test",
-    "password": "test",
-    "database": "test",
+    "username": "username",
+    "password": "password",
+    "database": "typeorm",
     "logging": false
   },
   {
     "skip": false,
     "type": "mssql",
     "host": "localhost",
+    "port": 1433,
     "username": "sa",
     "password": "Admin12345",
     "database": "tempdb",
@@ -58,9 +57,9 @@
     "skip": false,
     "type": "oracle",
     "host": "localhost",
+    "port": 1521,
     "username": "typeorm",
     "password": "oracle",
-    "port": 1521,
     "serviceName": "FREEPDB1",
     "logging": false
   },
@@ -71,7 +70,8 @@
     "port": 26257,
     "username": "root",
     "password": "",
-    "database": "defaultdb"
+    "database": "defaultdb",
+    "logging": false
   },
   {
     "skip": false,
@@ -86,6 +86,8 @@
     "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "type": "mongodb",
+    "host": "localhost",
+    "port": 27017,
     "database": "test",
     "logging": false
   },
@@ -117,10 +119,10 @@
     "skip": false,
     "type": "spanner",
     "host": "localhost",
+    "port": 9010,
     "projectId": "test-project",
     "instanceId": "test-instance",
     "databaseId": "test-db",
-    "port": 9010,
     "logging": false
   }
 ]
