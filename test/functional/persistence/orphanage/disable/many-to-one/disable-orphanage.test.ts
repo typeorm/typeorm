@@ -1,16 +1,16 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import type { DataSource, Repository } from "../../../../../src/index"
+import type { DataSource, Repository } from "../../../../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../../utils/test-utils"
+} from "../../../../../utils/test-utils"
 import { Setting } from "./entity/Setting"
 import { User } from "./entity/User"
 
-describe("persistence > orphanage > disable", () => {
+describe("persistence > orphanage > disable > many-to-one", () => {
     // -------------------------------------------------------------------------
     // Configuration
     // -------------------------------------------------------------------------

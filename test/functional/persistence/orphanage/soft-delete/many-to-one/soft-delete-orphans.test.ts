@@ -1,15 +1,15 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import type { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../../utils/test-utils"
+} from "../../../../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
-describe("persistence > orphanage > soft-delete", () => {
+describe("persistence > orphanage > soft-delete > many-to-one", () => {
     // -------------------------------------------------------------------------
     // Configuration
     // -------------------------------------------------------------------------
