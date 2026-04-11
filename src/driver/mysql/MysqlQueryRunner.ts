@@ -117,22 +117,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles length-only fast path changes for MySQL family.
      * Returns true if the change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private handleMysqlLengthOnlyFastPathChangeColumn({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private handleMysqlLengthOnlyFastPathChangeColumn(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -140,6 +127,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries: Query[]
         downQueries: Query[]
     }): boolean {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Parse lengths as integers if present
         const oldLen =
             oldColumn.length == null
@@ -200,22 +188,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles safe ALTER COLUMN changes for MySQL family.
      * Returns true if the change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private async handleSafeAlterMysql({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private async handleSafeAlterMysql(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -223,6 +198,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries: Query[]
         downQueries: Query[]
     }): Promise<boolean> {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Skip generated/computed columns (MySQL can't freely MODIFY these)
         if (oldColumn.asExpression || newColumn.asExpression) return false
 

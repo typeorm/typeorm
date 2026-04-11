@@ -3462,22 +3462,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles length-only fast path changes for Oracle.
      * Returns true if change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private handleOracleLengthOnlyFastPath({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private handleOracleLengthOnlyFastPath(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -3485,6 +3472,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries: Query[]
         downQueries: Query[]
     }): boolean {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         const oldLen = normalizeColumnLength(oldColumn.length)
         const newLen = normalizeColumnLength(newColumn.length)
         const col: string = String(oldColumn.name)
@@ -3531,22 +3519,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles safe ALTER COLUMN changes for Oracle.
      * Returns true if change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private async handleSafeAlterOracle({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private async handleSafeAlterOracle(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -3554,6 +3529,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries: Query[]
         downQueries: Query[]
     }): Promise<boolean> {
+        const { table, clonedTable: _clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Skip generated/computed/identity columns (Oracle won't freely MODIFY these)
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)

@@ -4576,23 +4576,15 @@ export class SqlServerQueryRunner
     /**
      * Handles column length changes for SQL Server.
      *
-     * @param root0
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.table
-     * @param root0.upQueries
+     * @param options
      */
-    private handleColumnLengthChange({
-        oldColumn,
-        newColumn,
-        table,
-        upQueries,
-    }: {
+    private handleColumnLengthChange(options: {
         oldColumn: TableColumn
         newColumn: TableColumn
         table: Table
         upQueries: Query[]
     }): void {
+        const { oldColumn, newColumn, table, upQueries } = options
         const oldLen =
             typeof oldColumn.length === "string"
                 ? Number.parseInt(oldColumn.length, 10)
@@ -4664,22 +4656,9 @@ export class SqlServerQueryRunner
      * Handles safe ALTER COLUMN changes for SQL Server.
      * Returns true if change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private async handleSafeAlterSqlServer({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private async handleSafeAlterSqlServer(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -4687,6 +4666,7 @@ export class SqlServerQueryRunner
         upQueries: Query[]
         downQueries: Query[]
     }): Promise<boolean> {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Skip computed/identity columns (cannot freely ALTER type)
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)

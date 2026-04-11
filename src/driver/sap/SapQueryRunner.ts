@@ -3742,22 +3742,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles length-only fast path changes for SAP HANA.
      * Returns true if change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private handleHanaLengthOnlyFastPath({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private handleHanaLengthOnlyFastPath(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -3765,6 +3752,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries: Query[]
         downQueries: Query[]
     }): boolean {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Check for dependent indexes, foreign keys, checks, or uniques
         const colName: string = String(oldColumn.name)
         const hasIndex = Boolean(
@@ -4041,22 +4029,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Handles safe ALTER COLUMN changes for SAP HANA.
      * Returns true if change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private async handleSafeAlterSap({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private async handleSafeAlterSap(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -4064,6 +4039,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries: Query[]
         downQueries: Query[]
     }): Promise<boolean> {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Skip generated/computed/identity
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)

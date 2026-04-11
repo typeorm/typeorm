@@ -184,22 +184,9 @@ export class CockroachQueryRunner
      * Handles length-only fast path changes for CockroachDB.
      * Returns true if change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private handleCockroachLengthOnlyFastPath({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private handleCockroachLengthOnlyFastPath(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -207,6 +194,7 @@ export class CockroachQueryRunner
         upQueries: Query[]
         downQueries: Query[]
     }): boolean {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         const parseLen = (v?: string | number | null) =>
             v != null && String(v).trim() !== ""
                 ? Number.parseInt(String(v), 10)
@@ -298,22 +286,9 @@ export class CockroachQueryRunner
      * Handles safe ALTER COLUMN changes for CockroachDB.
      * Returns true if change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private async handleSafeAlterCockroach({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private async handleSafeAlterCockroach(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -321,6 +296,7 @@ export class CockroachQueryRunner
         upQueries: Query[]
         downQueries: Query[]
     }): Promise<boolean> {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Skip generated/computed/identity columns
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)

@@ -95,22 +95,9 @@ export class AuroraMysqlQueryRunner
      * Handles length-only fast path changes for MySQL family.
      * Returns true if the change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private async handleMysqlLengthOnlyFastPath({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private async handleMysqlLengthOnlyFastPath(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -118,6 +105,7 @@ export class AuroraMysqlQueryRunner
         upQueries: Query[]
         downQueries: Query[]
     }): Promise<boolean> {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Only use this path when no other column attributes changed.
         const newColumnExceptLength: TableColumn = newColumn?.clone
             ? newColumn.clone()
@@ -216,22 +204,9 @@ export class AuroraMysqlQueryRunner
      * Handles safe ALTER COLUMN changes for MySQL family.
      * Returns true if the change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private async handleSafeAlter({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private async handleSafeAlter(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -239,6 +214,7 @@ export class AuroraMysqlQueryRunner
         upQueries: Query[]
         downQueries: Query[]
     }): Promise<boolean> {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Do not touch generated/computed columns
         if (oldColumn.asExpression || newColumn.asExpression) return false
 

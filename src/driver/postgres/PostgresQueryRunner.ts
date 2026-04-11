@@ -5245,22 +5245,9 @@ export class PostgresQueryRunner
      * Handles length-only fast path changes for PostgreSQL.
      * Returns true if change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private handlePostgresLengthOnlyFastPath({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private handlePostgresLengthOnlyFastPath(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -5268,6 +5255,7 @@ export class PostgresQueryRunner
         upQueries: Query[]
         downQueries: Query[]
     }): boolean {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         const oldLen = normalizeColumnLength(
             oldColumn.length == null
                 ? undefined
@@ -5366,22 +5354,9 @@ export class PostgresQueryRunner
      * Handles safe ALTER COLUMN changes for PostgreSQL.
      * Returns true if change was handled.
      *
-     * @param root0
-     * @param root0.table
-     * @param root0.clonedTable
-     * @param root0.oldColumn
-     * @param root0.newColumn
-     * @param root0.upQueries
-     * @param root0.downQueries
+     * @param options
      */
-    private async handleSafeAlterPostgres({
-        table,
-        clonedTable,
-        oldColumn,
-        newColumn,
-        upQueries,
-        downQueries,
-    }: {
+    private async handleSafeAlterPostgres(options: {
         table: Table
         clonedTable: Table
         oldColumn: TableColumn
@@ -5389,6 +5364,7 @@ export class PostgresQueryRunner
         upQueries: Query[]
         downQueries: Query[]
     }): Promise<boolean> {
+        const { table, clonedTable, oldColumn, newColumn, upQueries, downQueries } = options
         // Skip generated/computed/identity/serial-like columns (cannot freely change type without extra steps)
         if (oldColumn.asExpression || newColumn.asExpression) return false
         if (oldColumn.generatedIdentity || newColumn.generatedIdentity)
