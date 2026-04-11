@@ -1,0 +1,133 @@
+.heroBanner {
+    padding: 4rem 0;
+    text-align: center;
+    color: #ffffff;
+    background: linear-gradient(
+        165deg,
+        var(--ifm-color-primary-lightest) 0%,
+        var(--ifm-color-primary) 100%
+    );
+}
+
+[data-theme="dark"] .heroBanner {
+    background: linear-gradient(
+        165deg,
+        var(--ifm-color-primary-darker) 0%,
+        var(--ifm-color-primary) 100%
+    );
+}
+
+.heroBanner h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.heroSubtitle {
+    max-width: 700px;
+    margin: 0 auto;
+    font-size: 1.15rem;
+    opacity: 0.95;
+    line-height: 1.6;
+}
+
+.heroSubtitle a {
+    color: #ffffff;
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.teamSection {
+    padding: 4rem 0;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 1rem;
+    border-radius: 10px;
+    background-color: var(--ifm-color-emphasis-100);
+}
+
+.avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0.5rem;
+    border: 3px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.avatar:hover {
+    border-color: var(--ifm-color-primary);
+}
+
+.cardInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.cardName {
+    font-weight: 700;
+    font-size: 1rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.cardName:hover {
+    text-decoration: none;
+    color: var(--ifm-color-primary);
+}
+
+.cardRole {
+    font-size: 0.85rem;
+    color: var(--ifm-color-emphasis-600);
+}
+
+.socialLinks {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.socialLinks a {
+    color: var(--ifm-color-emphasis-500);
+    transition: color 0.2s ease;
+}
+
+.socialLinks a:hover {
+    color: var(--ifm-color-primary);
+}
+
+@media (max-width: 996px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .heroBanner {
+        padding: 2rem 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}

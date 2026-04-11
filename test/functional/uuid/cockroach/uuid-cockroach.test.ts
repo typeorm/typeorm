@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import { Record } from "./entity/Record"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,20 +11,20 @@ import { Post } from "./entity/Post"
 import { Question } from "./entity/Question"
 
 describe("uuid-cockroach", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should make correct schema with CockroachDB uuid type", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("record")
                 await queryRunner.release()
                 expect(table).not.to.be.undefined
@@ -41,18 +41,16 @@ describe("uuid-cockroach", () => {
 
     it("should persist uuid correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const recordRepo = connection.getRepository(Record)
+            dataSources.map(async (dataSource) => {
+                const recordRepo = dataSource.getRepository(Record)
                 const record = new Record()
                 record.id = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 const persistedRecord = await recordRepo.save(record)
-                const foundRecord = await recordRepo.findOne({
-                    where: {
-                        id: persistedRecord.id,
-                    },
+                const foundRecord = await recordRepo.findOneByOrFail({
+                    id: persistedRecord.id,
                 })
                 expect(foundRecord).to.be.exist
-                expect(foundRecord!.id).to.eq(
+                expect(foundRecord.id).to.eq(
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
                 )
             }),
@@ -60,22 +58,20 @@ describe("uuid-cockroach", () => {
 
     it("should persist uuid correctly when it is generated non primary column", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-                const questionRepository = connection.getRepository(Question)
-                const queryRunner = connection.createQueryRunner()
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const questionRepository = dataSource.getRepository(Question)
+                const queryRunner = dataSource.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 const questionTable = await queryRunner.getTable("question")
                 await queryRunner.release()
 
                 const post = new Post()
                 await postRepository.save(post)
-                const loadedPost = await postRepository.findOne({
-                    where: {
-                        id: post.id,
-                    },
+                const loadedPost = await postRepository.findOneByOrFail({
+                    id: post.id,
                 })
-                expect(loadedPost!.uuid).to.be.exist
+                expect(loadedPost.uuid).to.be.exist
                 postTable!
                     .findColumnByName("uuid")!
                     .type.should.be.equal("uuid")
@@ -83,12 +79,10 @@ describe("uuid-cockroach", () => {
                 const post2 = new Post()
                 post2.uuid = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 await postRepository.save(post2)
-                const loadedPost2 = await postRepository.findOne({
-                    where: {
-                        id: post2.id,
-                    },
+                const loadedPost2 = await postRepository.findOneByOrFail({
+                    id: post2.id,
                 })
-                expect(loadedPost2!.uuid).to.equal(
+                expect(loadedPost2.uuid).to.equal(
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
                 )
 
@@ -104,18 +98,18 @@ describe("uuid-cockroach", () => {
                 expect(savedQuestion!.uuid3).to.be.null
                 expect(savedQuestion!.uuid4).to.be.exist
 
-                const loadedQuestion = await questionRepository.findOne({
-                    where: {
+                const loadedQuestion = await questionRepository.findOneByOrFail(
+                    {
                         id: savedQuestion.id,
                     },
-                })
-                expect(loadedQuestion!.id).to.be.exist
-                expect(loadedQuestion!.uuid).to.be.exist
-                expect(loadedQuestion!.uuid2).to.equal(
+                )
+                expect(loadedQuestion.id).to.be.exist
+                expect(loadedQuestion.uuid).to.be.exist
+                expect(loadedQuestion.uuid2).to.equal(
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
                 )
-                expect(loadedQuestion!.uuid3).to.be.null
-                expect(loadedQuestion!.uuid4).to.be.exist
+                expect(loadedQuestion.uuid3).to.be.null
+                expect(loadedQuestion.uuid4).to.be.exist
                 questionTable!
                     .findColumnByName("id")!
                     .type.should.be.equal("uuid")
@@ -136,22 +130,21 @@ describe("uuid-cockroach", () => {
                 question2.uuid3 = null
                 question2.uuid4 = null
                 await questionRepository.save(question2)
-                const loadedQuestion2 = await questionRepository.findOne({
-                    where: {
+                const loadedQuestion2 =
+                    await questionRepository.findOneByOrFail({
                         id: "1ecad7f6-23ee-453e-bb44-16eca26d5189",
-                    },
-                })
-                expect(loadedQuestion2!.id).to.equal(
+                    })
+                expect(loadedQuestion2.id).to.equal(
                     "1ecad7f6-23ee-453e-bb44-16eca26d5189",
                 )
-                expect(loadedQuestion2!.uuid).to.equal(
+                expect(loadedQuestion2.uuid).to.equal(
                     "35b44650-b2cd-44ec-aa54-137fbdf1c373",
                 )
-                expect(loadedQuestion2!.uuid2).to.equal(
+                expect(loadedQuestion2.uuid2).to.equal(
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
                 )
-                expect(loadedQuestion2!.uuid3).to.be.null
-                expect(loadedQuestion2!.uuid4).to.be.null
+                expect(loadedQuestion2.uuid3).to.be.null
+                expect(loadedQuestion2.uuid4).to.be.null
             }),
         ))
 })

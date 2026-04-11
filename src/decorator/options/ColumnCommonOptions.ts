@@ -1,4 +1,4 @@
-import { ValueTransformer } from "./ValueTransformer"
+import type { ValueTransformer } from "./ValueTransformer"
 
 /**
  * Column options specific to all column types.

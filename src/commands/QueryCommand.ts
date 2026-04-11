@@ -1,10 +1,10 @@
 import ansi from "ansis"
 import path from "path"
 import process from "process"
-import yargs from "yargs"
-import { DataSource } from "../data-source/DataSource"
+import type yargs from "yargs"
+import type { DataSource } from "../data-source/DataSource"
 import { PlatformTools } from "../platform/PlatformTools"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { CommandUtils } from "./CommandUtils"
 
 /**
@@ -71,8 +71,7 @@ export class QueryCommand implements yargs.CommandModule {
             PlatformTools.logCmdErr("Error during query execution:", err)
 
             if (queryRunner) await (queryRunner as QueryRunner).release()
-            if (dataSource && dataSource.isInitialized)
-                await dataSource.destroy()
+            if (dataSource?.isInitialized) await dataSource.destroy()
 
             process.exit(1)
         }

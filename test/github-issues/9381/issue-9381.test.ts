@@ -40,10 +40,8 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
                         value: 63,
                     },
                 ])
-                const findEqualsTransformer = await repository.findOne({
-                    where: {
-                        id: "1",
-                    },
+                const findEqualsTransformer = await repository.findOneBy({
+                    id: "1",
                 })
                 expect(findEqualsTransformer).to.be.eql({ id: "1", value: 15 })
             }),

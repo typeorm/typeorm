@@ -1,14 +1,15 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { DriverUtils } from "../driver/DriverUtils"
 import { TypeORMError } from "../error/TypeORMError"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import { FindTreeOptions } from "../find-options/FindTreeOptions"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { FindTreeOptions } from "../find-options/FindTreeOptions"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { TreeRepositoryUtils } from "../util/TreeRepositoryUtils"
 import { Repository } from "./Repository"
 
 /**
  * Repository with additional functions to work with trees.
+ *
  * @see Repository
  */
 export class TreeRepository<
@@ -20,6 +21,7 @@ export class TreeRepository<
 
     /**
      * Gets complete trees for all roots in the table.
+     *
      * @param options
      */
     async findTrees(options?: FindTreeOptions): Promise<Entity[]> {
@@ -32,17 +34,18 @@ export class TreeRepository<
 
     /**
      * Roots are entities that have no ancestors. Finds them all.
+     *
      * @param options
      */
     findRoots(options?: FindTreeOptions): Promise<Entity[]> {
         const escapeAlias = (alias: string) =>
-            this.manager.connection.driver.escape(alias)
+            this.manager.dataSource.driver.escape(alias)
         const escapeColumn = (column: string) =>
-            this.manager.connection.driver.escape(column)
+            this.manager.dataSource.driver.escape(column)
 
         const joinColumn = this.metadata.treeParentRelation!.joinColumns[0]
         const parentPropertyName =
-            joinColumn.givenDatabaseName || joinColumn.databaseName
+            joinColumn.givenDatabaseName ?? joinColumn.databaseName
 
         const qb = this.createQueryBuilder("treeEntity")
         FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options)
@@ -58,6 +61,7 @@ export class TreeRepository<
 
     /**
      * Gets all children (descendants) of the given entity. Returns them all in a flat array.
+     *
      * @param entity
      * @param options
      */
@@ -76,6 +80,7 @@ export class TreeRepository<
 
     /**
      * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
+     *
      * @param entity
      * @param options
      */
@@ -116,6 +121,7 @@ export class TreeRepository<
 
     /**
      * Gets number of descendants of the entity.
+     *
      * @param entity
      */
     countDescendants(entity: Entity): Promise<number> {
@@ -128,6 +134,7 @@ export class TreeRepository<
 
     /**
      * Creates a query builder used to get descendants of the entities in a tree.
+     *
      * @param alias
      * @param closureTableAlias
      * @param entity
@@ -139,7 +146,7 @@ export class TreeRepository<
     ): SelectQueryBuilder<Entity> {
         // create shortcuts for better readability
         const escape = (alias: string) =>
-            this.manager.connection.driver.escape(alias)
+            this.manager.dataSource.driver.escape(alias)
 
         if (this.metadata.treeType === "closure-table") {
             const joinCondition =
@@ -175,7 +182,7 @@ export class TreeRepository<
 
             return this.createQueryBuilder(alias)
                 .innerJoin(
-                    this.metadata.closureJunctionTable.tableName,
+                    this.metadata.closureJunctionTable.tablePath,
                     closureTableAlias,
                     joinCondition,
                 )
@@ -227,7 +234,7 @@ export class TreeRepository<
                     .whereInIds(this.metadata.getEntityIdMap(entity))
 
                 if (
-                    DriverUtils.isSQLiteFamily(this.manager.connection.driver)
+                    DriverUtils.isSQLiteFamily(this.manager.dataSource.driver)
                 ) {
                     return `${alias}.${
                         this.metadata.materializedPathColumn!.propertyPath
@@ -245,6 +252,7 @@ export class TreeRepository<
 
     /**
      * Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
+     *
      * @param entity
      * @param options
      */
@@ -263,6 +271,7 @@ export class TreeRepository<
 
     /**
      * Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
+     *
      * @param entity
      * @param options
      */
@@ -296,6 +305,7 @@ export class TreeRepository<
 
     /**
      * Gets number of ancestors of the entity.
+     *
      * @param entity
      */
     countAncestors(entity: Entity): Promise<number> {
@@ -308,6 +318,7 @@ export class TreeRepository<
 
     /**
      * Creates a query builder used to get ancestors of the entities in the tree.
+     *
      * @param alias
      * @param closureTableAlias
      * @param entity
@@ -318,7 +329,7 @@ export class TreeRepository<
         entity: Entity,
     ): SelectQueryBuilder<Entity> {
         // create shortcuts for better readability
-        // const escape = (alias: string) => this.manager.connection.driver.escape(alias);
+        // const escape = (alias: string) => this.manager.dataSource.driver.escape(alias);
 
         if (this.metadata.treeType === "closure-table") {
             const joinCondition =
@@ -354,7 +365,7 @@ export class TreeRepository<
 
             return this.createQueryBuilder(alias)
                 .innerJoin(
-                    this.metadata.closureJunctionTable.tableName,
+                    this.metadata.closureJunctionTable.tablePath,
                     closureTableAlias,
                     joinCondition,
                 )
@@ -409,7 +420,7 @@ export class TreeRepository<
                     .whereInIds(this.metadata.getEntityIdMap(entity))
 
                 if (
-                    DriverUtils.isSQLiteFamily(this.manager.connection.driver)
+                    DriverUtils.isSQLiteFamily(this.manager.dataSource.driver)
                 ) {
                     return `${subQuery.getQuery()} LIKE ${alias}.${
                         this.metadata.materializedPathColumn!.propertyPath
