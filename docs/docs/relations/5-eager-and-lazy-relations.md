@@ -68,6 +68,38 @@ using `eager: true` on both sides of relationship is disallowed.
 
 By default, eager relations are loaded using `LEFT JOIN`. If the relation is also marked `nullable: false` (and it owns the join column, i.e. `ManyToOne` or owning `OneToOne`), TypeORM uses `INNER JOIN` instead, which can produce more efficient query plans.
 
+### Relation load strategy
+
+By default, eager relations are loaded by adding SQL JOINs to the main query (`"join"` strategy). If you are loading too much data with nested joins, you can switch to the `"query"` strategy, which loads relations via separate database queries instead:
+
+```typescript
+// per-query
+const questions = await questionRepository.find({
+    relationLoadStrategy: "query",
+})
+
+// or set as the default for the entire DataSource
+const dataSource = new DataSource({
+    // ...
+    relationLoadStrategy: "query",
+})
+```
+
+You can also control whether eager relations are loaded at all using `loadEagerRelations`:
+
+```typescript
+// disable eager relation loading entirely
+const questions = await questionRepository.find({
+    loadEagerRelations: false,
+})
+
+// load explicit relations only, suppress nested eager relations
+const questions = await questionRepository.find({
+    relations: { categories: true },
+    loadEagerRelations: false,
+})
+```
+
 ## Lazy relations
 
 Entities in lazy relations are loaded once you access them.

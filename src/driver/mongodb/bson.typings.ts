@@ -618,6 +618,7 @@ export declare class Decimal128 extends BSONValue {
      * > d = Decimal128.fromStringWithRounding('37.499999999999999196428571428571375')
      * new Decimal128("37.49999999999999919642857142857138")
      * ```
+     *
      * @param representation - a numeric string representation.
      */
     static fromStringWithRounding(representation: string): Decimal128;

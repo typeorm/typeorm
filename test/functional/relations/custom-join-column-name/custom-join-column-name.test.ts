@@ -38,11 +38,11 @@ describe("relations > custom-join-column-name", () => {
                     .createQueryBuilder(Artikel, "artikel")
                     .innerJoinAndSelect("artikel.kollektion", "kollektion")
                     .where("artikel.id=:id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(kollektion).not.to.be.null
                 expect(loadedArtikel).not.to.be.null
-                loadedArtikel!.should.be.eql({
+                loadedArtikel.should.be.eql({
                     id: 1,
                     nummer: "1",
                     name: "artikel #1",

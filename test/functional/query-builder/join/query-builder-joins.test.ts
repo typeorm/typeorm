@@ -119,32 +119,32 @@ describe("query builder > joins", () => {
                         .leftJoinAndSelect("categories.images", "images")
                         .where("post.id = :id", { id: 1 })
                         .orderBy("post.id, categories.id")
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag instanceof Tag).to.be.true
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0] instanceof Category).to.be
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag instanceof Tag).to.be.true
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0] instanceof Category).to.be
                         .true
-                    expect(loadedPost!.categories[0].id).to.be.equal(1)
-                    expect(loadedPost!.categories[1].id).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images[0] instanceof Image)
+                    expect(loadedPost.categories[0].id).to.be.equal(1)
+                    expect(loadedPost.categories[1].id).to.be.equal(2)
+                    expect(loadedPost.categories[0].images[0] instanceof Image)
                         .to.be.true
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.categories[1].images).to.be.eql([])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author instanceof User).to.be.true
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.categories[1].images).to.be.eql([])
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author instanceof User).to.be.true
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
@@ -187,18 +187,16 @@ describe("query builder > joins", () => {
                         )
                         .where("post.id = :id", { id: post.id })
                         .setParameters({ categoryId: 1, imageId: 2 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(1)
-                    expect(loadedPost!.categories[0].id).to.be.equal(1)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(1)
+                    expect(loadedPost.categories[0].id).to.be.equal(1)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         1,
                     )
-                    expect(loadedPost!.categories[0].images[0].id).to.be.equal(
-                        2,
-                    )
+                    expect(loadedPost.categories[0].images[0].id).to.be.equal(2)
                 }),
             ))
 
@@ -281,18 +279,18 @@ describe("query builder > joins", () => {
                         .innerJoinAndSelect("post.categories", "categories")
                         .innerJoinAndSelect("categories.images", "images")
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(1)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(1)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
@@ -335,18 +333,16 @@ describe("query builder > joins", () => {
                         )
                         .where("post.id = :id", { id: post.id })
                         .setParameters({ categoryId: 1, imageId: 2 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(1)
-                    expect(loadedPost!.categories[0].id).to.be.equal(1)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(1)
+                    expect(loadedPost.categories[0].id).to.be.equal(1)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         1,
                     )
-                    expect(loadedPost!.categories[0].images[0].id).to.be.equal(
-                        2,
-                    )
+                    expect(loadedPost.categories[0].images[0].id).to.be.equal(2)
                 }),
             ))
 
@@ -363,7 +359,7 @@ describe("query builder > joins", () => {
                         .where("post.id = :id", { id: post.id })
                         .getOne()
 
-                    expect(loadedPost!).to.be.null
+                    expect(loadedPost).to.be.null
                 }),
             ))
     })
@@ -435,23 +431,23 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             imageIds: [1, 2],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
@@ -521,23 +517,23 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             imageIds: [1, 2],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
@@ -564,10 +560,10 @@ describe("query builder > joins", () => {
                             Tag,
                         )
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
                 }),
             ))
 
@@ -600,9 +596,9 @@ describe("query builder > joins", () => {
                             Tag,
                         )
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.be.null
+                    expect(loadedPost.tag).to.be.null
                 }),
             ))
 
@@ -644,12 +640,12 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             subcategoryIds: [3],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.subcategories).to.not.be.eql([])
-                    expect(loadedPost!.subcategories.length).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.subcategories).to.not.be.eql([])
+                    expect(loadedPost.subcategories.length).to.be.equal(1)
                 }),
             ))
 
@@ -828,27 +824,27 @@ describe("query builder > joins", () => {
                             titleImageId: 1,
                         })
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.removedCategories).to.not.be.eql([])
-                    expect(loadedPost!.removedCategories.length).to.be.equal(1)
-                    expect(loadedPost!.removedCategories[0].id).to.be.equal(3)
-                    expect(loadedPost!.removedCategories[0] instanceof Category)
+                    expect(loadedPost.removedCategories).to.not.be.eql([])
+                    expect(loadedPost.removedCategories.length).to.be.equal(1)
+                    expect(loadedPost.removedCategories[0].id).to.be.equal(3)
+                    expect(loadedPost.removedCategories[0] instanceof Category)
                         .to.be.true
                     expect(
-                        loadedPost!.removedCategories[0].removedImages.length,
+                        loadedPost.removedCategories[0].removedImages.length,
                     ).to.be.equal(1)
                     expect(
-                        loadedPost!.removedCategories[0]
+                        loadedPost.removedCategories[0]
                             .removedImages[0] instanceof Image,
                     ).to.be.true
                     expect(
-                        loadedPost!.removedCategories[0].removedImages[0].id,
+                        loadedPost.removedCategories[0].removedImages[0].id,
                     ).to.be.equal(3)
-                    expect(loadedPost!.subcategories).to.not.be.eql([])
-                    expect(loadedPost!.subcategories.length).to.be.equal(2)
+                    expect(loadedPost.subcategories).to.not.be.eql([])
+                    expect(loadedPost.subcategories.length).to.be.equal(2)
                     expect(
-                        loadedPost!.subcategories[0].titleImage.id,
+                        loadedPost.subcategories[0].titleImage.id,
                     ).to.be.equal(1)
                 }),
             ))
@@ -921,23 +917,23 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             imageIds: [1, 2],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
@@ -1007,23 +1003,23 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             imageIds: [1, 2],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.categories[0].images).to.not.be.eql([])
-                    expect(loadedPost!.categories[0].images.length).to.be.equal(
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.categories[0].images).to.not.be.eql([])
+                    expect(loadedPost.categories[0].images.length).to.be.equal(
                         2,
                     )
                     expect(
-                        loadedPost!.categories[0].images.map(
+                        loadedPost.categories[0].images.map(
                             (image) => image.id,
                         ),
                     ).to.have.members([1, 2])
-                    expect(loadedPost!.author).to.not.be.undefined
-                    expect(loadedPost!.author.id).to.be.equal(1)
+                    expect(loadedPost.author).to.not.be.undefined
+                    expect(loadedPost.author.id).to.be.equal(1)
                 }),
             ))
 
@@ -1050,10 +1046,10 @@ describe("query builder > joins", () => {
                             Tag,
                         )
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
                 }),
             ))
 
@@ -1130,12 +1126,12 @@ describe("query builder > joins", () => {
                             categoryIds: [1, 2],
                             subcategoryIds: [3],
                         })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categories).to.not.be.eql([])
-                    expect(loadedPost!.categories.length).to.be.equal(2)
-                    expect(loadedPost!.subcategories).to.not.be.eql([])
-                    expect(loadedPost!.subcategories.length).to.be.equal(1)
+                    expect(loadedPost.categories).to.not.be.eql([])
+                    expect(loadedPost.categories.length).to.be.equal(2)
+                    expect(loadedPost.subcategories).to.not.be.eql([])
+                    expect(loadedPost.subcategories.length).to.be.equal(1)
                 }),
             ))
 
@@ -1314,27 +1310,27 @@ describe("query builder > joins", () => {
                             titleImageId: 1,
                         })
                         .where("post.id = :id", { id: post.id })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.removedCategories).to.not.be.eql([])
-                    expect(loadedPost!.removedCategories.length).to.be.equal(1)
-                    expect(loadedPost!.removedCategories[0].id).to.be.equal(3)
-                    expect(loadedPost!.removedCategories[0] instanceof Category)
+                    expect(loadedPost.removedCategories).to.not.be.eql([])
+                    expect(loadedPost.removedCategories.length).to.be.equal(1)
+                    expect(loadedPost.removedCategories[0].id).to.be.equal(3)
+                    expect(loadedPost.removedCategories[0] instanceof Category)
                         .to.be.true
                     expect(
-                        loadedPost!.removedCategories[0].removedImages.length,
+                        loadedPost.removedCategories[0].removedImages.length,
                     ).to.be.equal(1)
                     expect(
-                        loadedPost!.removedCategories[0]
+                        loadedPost.removedCategories[0]
                             .removedImages[0] instanceof Image,
                     ).to.be.true
                     expect(
-                        loadedPost!.removedCategories[0].removedImages[0].id,
+                        loadedPost.removedCategories[0].removedImages[0].id,
                     ).to.be.equal(3)
-                    expect(loadedPost!.subcategories).to.not.be.eql([])
-                    expect(loadedPost!.subcategories.length).to.be.equal(2)
+                    expect(loadedPost.subcategories).to.not.be.eql([])
+                    expect(loadedPost.subcategories.length).to.be.equal(2)
                     expect(
-                        loadedPost!.subcategories[0].titleImage.id,
+                        loadedPost.subcategories[0].titleImage.id,
                     ).to.be.equal(1)
                 }),
             ))
@@ -1358,7 +1354,7 @@ describe("query builder > joins", () => {
                         .setParameters({ userId: 1 })
                         .getOne()
 
-                    expect(loadedPost1!).to.be.null
+                    expect(loadedPost1).to.be.null
 
                     const loadedPost2 = await dataSource.manager
                         .createQueryBuilder(Post, "post")
@@ -1372,7 +1368,7 @@ describe("query builder > joins", () => {
                         .setParameters({ categoryId: 1 })
                         .getOne()
 
-                    expect(loadedPost2!).to.be.null
+                    expect(loadedPost2).to.be.null
                 }),
             ))
     })

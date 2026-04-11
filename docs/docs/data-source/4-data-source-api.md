@@ -7,7 +7,7 @@
 const dataSourceOptions: DataSourceOptions = dataSource.options
 ```
 
-- `isInitialized` - Indicates if DataSource was initialized and initial connection / connection pool with database was established or not.
+- `isInitialized` - Indicates if the `DataSource` was initialized and the connection / connection pool with the database was established or not.
 
 ```typescript
 const isInitialized: boolean = dataSource.isInitialized
@@ -125,7 +125,7 @@ const category2 = await categoryCursor.next()
 ```
 
 - `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
-  Learn more about [Transactions](../advanced-topics/2-transactions.md).
+  Learn more about [Transactions](../transactions.md).
 
 ```typescript
 await dataSource.transaction(async (manager) => {

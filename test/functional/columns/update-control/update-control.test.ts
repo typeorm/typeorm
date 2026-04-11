@@ -32,11 +32,11 @@ describe("columns > update-control", () => {
                 post.authorLastName = "Good"
                 await postRepository.save(post)
 
-                let loadedPost = await postRepository.findOneBy({
+                let loadedPost = await postRepository.findOneByOrFail({
                     id: post.id,
                 })
-                expect(loadedPost!.authorFirstName).to.be.equal("Umed")
-                expect(loadedPost!.authorLastName).to.be.equal("Default")
+                expect(loadedPost.authorFirstName).to.be.equal("Umed")
+                expect(loadedPost.authorLastName).to.be.equal("Default")
 
                 post.title = "About columns1"
                 post.text = "Some text about columns1"
@@ -44,11 +44,13 @@ describe("columns > update-control", () => {
                 post.authorLastName = "Good1"
                 await postRepository.save(post)
 
-                loadedPost = await postRepository.findOneBy({ id: post.id })
-                expect(loadedPost!.title).to.be.equal("About columns1")
-                expect(loadedPost!.text).to.be.equal("Some text about columns1")
-                expect(loadedPost!.authorFirstName).to.be.equal("Umed")
-                expect(loadedPost!.authorLastName).to.be.equal("Default")
+                loadedPost = await postRepository.findOneByOrFail({
+                    id: post.id,
+                })
+                expect(loadedPost.title).to.be.equal("About columns1")
+                expect(loadedPost.text).to.be.equal("Some text about columns1")
+                expect(loadedPost.authorFirstName).to.be.equal("Umed")
+                expect(loadedPost.authorLastName).to.be.equal("Default")
             }),
         ))
 })

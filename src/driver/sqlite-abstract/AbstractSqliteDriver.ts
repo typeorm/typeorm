@@ -21,6 +21,7 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 
 type DatabasesMap = Record<
@@ -37,13 +38,36 @@ type DatabasesMap = Record<
  */
 export abstract class AbstractSqliteDriver implements Driver {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://www.sqlite.org/isolation.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     *
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Sqlite has a single QueryRunner because it works on a single database connection.
@@ -60,7 +84,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: BaseDataSourceOptions
 
@@ -91,6 +115,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://www.tutorialspoint.com/sqlite/sqlite_data_types.htm
      * @see https://sqlite.org/datatype3.html
      */
@@ -244,9 +269,9 @@ export abstract class AbstractSqliteDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        this.connection = connection
-        this.options = connection.options as BaseDataSourceOptions
+    constructor(dataSource: DataSource) {
+        this.dataSource = dataSource
+        this.options = dataSource.options as BaseDataSourceOptions
 
         this.database = DriverUtils.buildDriverOptions(this.options).database
     }
@@ -310,11 +335,12 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -362,6 +388,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Prepares given value to a value to be hydrated, based on its column type or metadata.
+     *
      * @param value
      * @param columnMetadata
      */
@@ -445,6 +472,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     *
      * @param sql
      * @param parameters
      */
@@ -513,6 +541,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Escapes a column name.
+     *
      * @param columnName
      */
     escape(columnName: string): string {
@@ -524,6 +553,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      *
      * Returns only simple table name because all inherited drivers does not supports schema and database.
+     *
      * @param tableName
      * @param schema
      * @param database
@@ -538,6 +568,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     *
      * @param target
      */
     parseTableName(
@@ -554,8 +585,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             )
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -565,11 +596,11 @@ export abstract class AbstractSqliteDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -578,8 +609,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -612,6 +643,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     *
      * @param column
      * @param column.type
      * @param column.length
@@ -647,6 +679,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -695,6 +728,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     *
      * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
@@ -705,6 +739,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Calculates column length taking into account the default length values.
+     *
      * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
@@ -713,6 +748,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
      * @param column
      */
     createFullType(column: TableColumn): string {
@@ -761,6 +797,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
      * @param metadata
      * @param insertResult
      * @param entityIndex
@@ -800,6 +837,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Compares json/jsonb default values of the column.
+     *
      * @param columnMetadata
      * @param tableColumn
      */
@@ -858,6 +896,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Compares "default" value of the column.
+     *
      * @param columnMetadata
      * @param tableColumn
      */
@@ -886,6 +925,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     *
      * @param tableColumns
      * @param columnMetadatas
      */
@@ -912,84 +952,16 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
-                (tableColumn.enum &&
+                !!(
+                    tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
                         tableColumn.enum,
                         columnMetadata.enum.map((val) => val + ""),
-                    )) ||
+                    )
+                ) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
                     tableColumn.isGenerated !== columnMetadata.isGenerated)
-
-            // DEBUG SECTION
-            // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName)
-            //     console.log(
-            //         "name:",
-            //         tableColumn.name,
-            //         columnMetadata.databaseName,
-            //     )
-            //     console.log(
-            //         "type:",
-            //         tableColumn.type,
-            //         this.normalizeType(columnMetadata),
-            //     )
-            //     console.log(
-            //         "length:",
-            //         tableColumn.length,
-            //         columnMetadata.length,
-            //     )
-            //     console.log(
-            //         "precision:",
-            //         tableColumn.precision,
-            //         columnMetadata.precision,
-            //     )
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
-            //     console.log(
-            //         "default:",
-            //         this.normalizeDefault(columnMetadata),
-            //         columnMetadata.default,
-            //     )
-            //     console.log(
-            //         "isPrimary:",
-            //         tableColumn.isPrimary,
-            //         columnMetadata.isPrimary,
-            //     )
-            //     console.log(
-            //         "isNullable:",
-            //         tableColumn.isNullable,
-            //         columnMetadata.isNullable,
-            //     )
-            //     console.log(
-            //         "generatedType:",
-            //         tableColumn.generatedType,
-            //         columnMetadata.generatedType,
-            //     )
-            //     console.log(
-            //         "asExpression:",
-            //         tableColumn.asExpression,
-            //         columnMetadata.asExpression,
-            //     )
-            //     console.log(
-            //         "isUnique:",
-            //         tableColumn.isUnique,
-            //         this.normalizeIsUnique(columnMetadata),
-            //     )
-            //     console.log(
-            //         "enum:",
-            //         tableColumn.enum &&
-            //             columnMetadata.enum &&
-            //             !OrmUtils.isArraysEqual(
-            //                 tableColumn.enum,
-            //                 columnMetadata.enum.map((val) => val + ""),
-            //             ),
-            //     )
-            //     console.log(
-            //         "isGenerated:",
-            //         tableColumn.isGenerated,
-            //         columnMetadata.isGenerated,
-            //     )
-            // }
 
             return isColumnChanged
         })
@@ -1018,6 +990,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     *
      * @param parameterName
      * @param index
      */
@@ -1029,6 +1002,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     /**
      * Wraps key with json/jsonb function if required.
+     *
      * @param value
      * @param column
      * @param jsonb

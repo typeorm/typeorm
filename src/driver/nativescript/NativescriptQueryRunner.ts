@@ -23,7 +23,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
     constructor(driver: NativescriptDriver) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
     }
 
@@ -43,6 +43,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -58,12 +59,12 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
         if (parameters && !Array.isArray(parameters))
             throw new NamedPlaceholdersNotSupportedError()
 
-        const connection = this.driver.connection
+        const connection = this.driver.dataSource
 
         const databaseConnection = await this.connect()
 
         return new Promise((ok, fail) => {
-            const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
+            const isInsertQuery = query.startsWith("INSERT INTO")
             connection.logger.logQuery(query, parameters, this)
 
             const handler = (err: any, raw: any) => {
@@ -124,6 +125,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     *
      * @param objectLiteral
      * @param startIndex
      */

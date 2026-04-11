@@ -145,13 +145,10 @@ export class IndexMetadata {
     }) {
         // check if index type is supported
         if (
-            options.args &&
-            options.args.type &&
-            ((options.entityMetadata.connection.driver.supportedIndexTypes &&
-                !options.entityMetadata.connection.driver.supportedIndexTypes.find(
-                    (idx) => idx === options.args?.type,
-                )) ||
-                !options.entityMetadata.connection.driver.supportedIndexTypes)
+            options.args?.type &&
+            !options.entityMetadata.dataSource.driver.supportedIndexTypes?.includes(
+                options.args.type,
+            )
         ) {
             throw new TypeORMError(`Unsupported index type`)
         }
@@ -191,6 +188,7 @@ export class IndexMetadata {
     /**
      * Builds some depend index properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     *
      * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
@@ -284,13 +282,13 @@ export class IndexMetadata {
             {} as { [key: string]: number },
         )
 
-        this.name = this.givenName
-            ? this.givenName
-            : namingStrategy.indexName(
-                  this.entityMetadata.tableName,
-                  this.columns.map((column) => column.databaseName),
-                  this.where,
-              )
+        this.name =
+            this.givenName ??
+            namingStrategy.indexName(
+                this.entityMetadata.tableName,
+                this.columns.map((column) => column.databaseName),
+                this.where,
+            )
         return this
     }
 }
