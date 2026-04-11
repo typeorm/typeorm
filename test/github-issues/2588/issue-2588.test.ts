@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,19 +12,18 @@ import { Post } from "./entity/Post"
 import { PostReview } from "./entity/PostReview"
 
 describe("github issues > #2588 - createQueryBuilder always does left joins on relations", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("Should allow joins with conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepo = connection.getRepository(Post)
                 const postReviewRepo = connection.getRepository(PostReview)
 
@@ -42,9 +41,9 @@ describe("github issues > #2588 - createQueryBuilder always does left joins on r
                 }
 
                 // Load the post
-                let postFromDb = await postRepo.findOneBy({ id: post.id })
+                let postFromDb = await postRepo.findOneByOrFail({ id: post.id })
                 expect(postFromDb).to.exist
-                expect(postFromDb!.reviews).lengthOf(5)
+                expect(postFromDb.reviews).lengthOf(5)
 
                 const joinCondition = `${connection.driver.escape(
                     "post_review",
@@ -66,9 +65,8 @@ describe("github issues > #2588 - createQueryBuilder always does left joins on r
                         "post_review",
                         joinCondition,
                     )
-                    .getOne()
-                expect(postFromDb).to.exist
-                expect(postFromDb!.reviews).lengthOf(3)
+                    .getOneOrFail()
+                expect(postFromDb.reviews).lengthOf(3)
             }),
         ))
 })

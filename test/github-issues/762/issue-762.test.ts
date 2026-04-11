@@ -4,25 +4,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Foo } from "./entity/Foo"
 import { FooMetadata } from "./entity/FooMetadata"
 import { FooChildMetadata } from "./entity/FooChildMetadata"
 
 describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work perfectly with all data set", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const foo = new Foo()
                 foo.name = "Apple"
                 foo.metadata = new FooMetadata()
@@ -51,7 +50,7 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
 
     it("should work perfectly with some data not set", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const foo = new Foo()
                 foo.name = "Apple"
                 foo.metadata = new FooMetadata()
@@ -121,7 +120,7 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
 
     it("should work perfectly without any data set", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const foo = new Foo()
                 foo.name = "Orange"
                 await connection.manager.save(foo)

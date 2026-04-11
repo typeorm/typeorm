@@ -1,4 +1,4 @@
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 
 export interface EntitySchemaRelationIdOptions {
     /**

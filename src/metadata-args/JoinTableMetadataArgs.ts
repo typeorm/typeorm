@@ -1,4 +1,4 @@
-import { JoinColumnMetadataArgs } from "./JoinColumnMetadataArgs"
+import type { JoinColumnMetadataArgs } from "./JoinColumnMetadataArgs"
 
 /**
  * Arguments for JoinTableMetadata class.
