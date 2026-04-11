@@ -1,5 +1,5 @@
 /**
- * Column types used for @PrimaryGeneratedColumn() decorator.
+ * Column types used for `@PrimaryGeneratedColumn()` decorator.
  */
 export type PrimaryGeneratedColumnType =
     | "int" // mysql, mssql, oracle, sqlite, sap
@@ -202,7 +202,7 @@ export type SimpleColumnType =
     | "uuid" // postgres, cockroachdb, mariadb
     | "xml" // mssql, postgres
     | "json" // mysql, postgres, cockroachdb, spanner
-    | "jsonb" // postgres, cockroachdb
+    | "jsonb" // postgres, cockroachdb, sqlite
     | "jsonpath" // postgres
     | "varbinary" // mssql, sap
     | "hierarchyid" // mssql

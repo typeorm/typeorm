@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -12,36 +12,35 @@ import { Subcounters } from "./entity/Subcounters"
 import { User } from "./entity/User"
 
 describe("embedded > embedded-one-to-one", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("owner side", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having OneToOne relation", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const user1 = new User()
                     user1.id = 1
                     user1.name = "Alice"
-                    await connection.getRepository(User).save(user1)
+                    await dataSource.getRepository(User).save(user1)
 
                     const user2 = new User()
                     user2.id = 2
                     user2.name = "Bob"
-                    await connection.getRepository(User).save(user2)
+                    await dataSource.getRepository(User).save(user2)
 
                     const user3 = new User()
                     user3.id = 3
                     user3.name = "Clara"
-                    await connection.getRepository(User).save(user3)
+                    await dataSource.getRepository(User).save(user3)
 
-                    const postRepository = connection.getRepository(Post)
+                    const postRepository = dataSource.getRepository(Post)
 
                     const post1 = new Post()
                     post1.id = 1
@@ -71,7 +70,7 @@ describe("embedded > embedded-one-to-one", () => {
                     post2.counters.subcounters.watches = 10
                     await postRepository.save(post2)
 
-                    const loadedPosts = await connection.manager
+                    const loadedPosts = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.counters.likedUser",
@@ -115,17 +114,17 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    const loadedPost = await connection.manager
+                    const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.counters.likedUser",
                             "likedUser",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost.should.be.eql({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -142,22 +141,22 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    loadedPost!.counters.favorites += 1
-                    loadedPost!.counters.subcounters.watches += 1
-                    loadedPost!.counters.likedUser = user3
-                    await postRepository.save(loadedPost!)
+                    loadedPost.counters.favorites += 1
+                    loadedPost.counters.subcounters.watches += 1
+                    loadedPost.counters.likedUser = user3
+                    await postRepository.save(loadedPost)
 
-                    const loadedPost2 = await connection.manager
+                    const loadedPost2 = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect(
                             "post.counters.likedUser",
                             "likedUser",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedPost2!.should.be.eql({
+                        loadedPost2.should.be.eql({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -174,7 +173,7 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    await postRepository.remove(loadedPost2!)
+                    await postRepository.remove(loadedPost2)
 
                     const loadedPosts2 = (await postRepository.find())!
                     expect(loadedPosts2.length).to.be.equal(1)
@@ -187,7 +186,7 @@ describe("embedded > embedded-one-to-one", () => {
     describe.skip("inverse side", () => {
         it("should insert, load, update and remove entities with embeddeds when embedded entity having OneToOne relation", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.title = "About cars"
@@ -199,7 +198,7 @@ describe("embedded > embedded-one-to-one", () => {
                     post1.counters.subcounters = new Subcounters()
                     post1.counters.subcounters.version = 1
                     post1.counters.subcounters.watches = 5
-                    await connection.getRepository(Post).save(post1)
+                    await dataSource.getRepository(Post).save(post1)
 
                     const post2 = new Post()
                     post2.id = 2
@@ -212,7 +211,7 @@ describe("embedded > embedded-one-to-one", () => {
                     post2.counters.subcounters = new Subcounters()
                     post2.counters.subcounters.version = 1
                     post2.counters.subcounters.watches = 10
-                    await connection.getRepository(Post).save(post2)
+                    await dataSource.getRepository(Post).save(post2)
 
                     const post3 = new Post()
                     post3.id = 3
@@ -225,21 +224,21 @@ describe("embedded > embedded-one-to-one", () => {
                     post3.counters.subcounters = new Subcounters()
                     post3.counters.subcounters.version = 1
                     post3.counters.subcounters.watches = 12
-                    await connection.getRepository(Post).save(post3)
+                    await dataSource.getRepository(Post).save(post3)
 
                     const user1 = new User()
                     user1.id = 1
                     user1.name = "Alice"
                     user1.likedPost = post1
-                    await connection.getRepository(User).save(user1)
+                    await dataSource.getRepository(User).save(user1)
 
                     const user2 = new User()
                     user2.id = 2
                     user2.name = "Bob"
                     user2.likedPost = post2
-                    await connection.getRepository(User).save(user2)
+                    await dataSource.getRepository(User).save(user2)
 
-                    let loadedUsers = await connection.manager
+                    let loadedUsers = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPost", "likedPost")
                         .orderBy("user.id")
@@ -286,14 +285,14 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    let loadedUser = await connection.manager
+                    let loadedUser = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPost", "likedPost")
                         .where("user.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser.should.be.eql({
                             id: 1,
                             name: "Alice",
                             likedPost: {
@@ -313,18 +312,18 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    loadedUser!.name = "Anna"
-                    loadedUser!.likedPost = post3
-                    await connection.getRepository(User).save(loadedUser!)
+                    loadedUser.name = "Anna"
+                    loadedUser.likedPost = post3
+                    await dataSource.getRepository(User).save(loadedUser)
 
-                    loadedUser = await connection.manager
+                    loadedUser = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPost", "likedPost")
                         .where("user.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser.should.be.eql({
                             id: 1,
                             name: "Anna",
                             likedPost: {
@@ -344,9 +343,9 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    await connection.getRepository(User).remove(loadedUser!)
+                    await dataSource.getRepository(User).remove(loadedUser)
 
-                    loadedUsers = (await connection
+                    loadedUsers = (await dataSource
                         .getRepository(User)
                         .find({ order: { name: "ASC" } }))!
                     expect(loadedUsers.length).to.be.equal(1)

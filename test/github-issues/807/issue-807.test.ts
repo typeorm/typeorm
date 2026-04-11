@@ -4,23 +4,22 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Tournament } from "./entity/Tournament"
 
 describe("github issues > #807 Error in persisting dates", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be able to save dates as objects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const tournament = new Tournament()
                 tournament.name = "One"
                 tournament.startDate = new Date()
@@ -31,7 +30,7 @@ describe("github issues > #807 Error in persisting dates", () => {
 
     it("should be able to save dates as strings", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const tournament = Object.assign(new Tournament(), {
                     name: "One",
                     startDate: "2017-08-28T00:00:00.000Z",

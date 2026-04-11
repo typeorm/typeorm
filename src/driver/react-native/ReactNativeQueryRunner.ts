@@ -1,11 +1,11 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { ReactNativeDriver } from "./ReactNativeDriver"
+import type { ReactNativeDriver } from "./ReactNativeDriver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -24,7 +24,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     constructor(driver: ReactNativeDriver) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
     }
 
@@ -44,6 +44,10 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -54,7 +58,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
         const databaseConnection = await this.connect()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
@@ -86,7 +90,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                             maxQueryExecutionTime &&
                             queryExecutionTime > maxQueryExecutionTime
                         )
-                            this.driver.connection.logger.logQuerySlow(
+                            this.driver.dataSource.logger.logQuerySlow(
                                 queryExecutionTime,
                                 query,
                                 parameters,
@@ -113,7 +117,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                         }
 
                         // return id of inserted row, if query was insert statement.
-                        if (query.substr(0, 11) === "INSERT INTO") {
+                        if (query.startsWith("INSERT INTO")) {
                             result.raw = raw.insertId
                         }
 
@@ -124,7 +128,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                         }
                     },
                     (err: any) => {
-                        this.driver.connection.logger.logQueryError(
+                        this.driver.dataSource.logger.logQueryError(
                             err,
                             query,
                             parameters,
@@ -157,6 +161,9 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     *
+     * @param objectLiteral
+     * @param startIndex
      */
     protected parametrize(
         objectLiteral: ObjectLiteral,

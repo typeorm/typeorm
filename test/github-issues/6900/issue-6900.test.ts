@@ -1,34 +1,42 @@
 import { expect } from "chai"
+import type { MongoClient } from "mongodb"
+import type { DataSourceOptions } from "../../../src"
+import { DataSource } from "../../../src"
+import type { MongoDataSourceOptions } from "../../../src/driver/mongodb/MongoDataSourceOptions"
+import type { MongoDriver } from "../../../src/driver/mongodb/MongoDriver"
 import {
     closeTestingConnections,
     reloadTestingDatabases,
     setupTestingConnections,
 } from "../../utils/test-utils"
-import { MongoDriver } from "../../../src/driver/mongodb/MongoDriver"
-import { DataSource, DataSourceOptions, MongoClient } from "../../../src"
 import { Warn } from "./entity/Warn"
-import { MongoConnectionOptions } from "../../../src/driver/mongodb/MongoConnectionOptions"
 
 describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given database, creates new database "test" instead', () => {
+    let options: MongoDataSourceOptions
     const connections: DataSource[] = []
+
+    before(function () {
+        const optionsArray = setupTestingConnections({
+            enabledDrivers: ["mongodb"],
+        })
+
+        if (optionsArray.length === 0) {
+            this.skip() // Skip if we can't grab the mongodb
+        }
+
+        options = optionsArray[0] as MongoDataSourceOptions
+    })
+
     afterEach(async () => {
         await closeTestingConnections(connections)
         connections.length = 0
     })
 
     it("should connect to the expected database", async () => {
-        const options = setupTestingConnections({ enabledDrivers: ["mongodb"] })
-
-        if (options.length === 0) {
-            // Skip if we can't grab the mongodb
-            return
-        }
-
-        const host: string =
-            (options[0] as MongoConnectionOptions).host || "localhost"
+        const host = options.host ?? "localhost"
 
         const dataSource = new DataSource({
-            ...options[0],
+            ...options,
             url: `mongodb://${host}`,
             database: "foo",
         } as DataSourceOptions)
@@ -39,25 +47,17 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
 
         const mongoDriver = dataSource.driver as MongoDriver
         const client = mongoDriver.queryRunner!
-            .databaseConnection as any as MongoClient
+            .databaseConnection as unknown as MongoClient
 
         expect(client.db().databaseName).to.be.equal("foo")
         expect(mongoDriver.database).to.be.equal("foo")
     })
 
     it("should write data to the correct database", async () => {
-        const options = setupTestingConnections({ enabledDrivers: ["mongodb"] })
-
-        if (options.length === 0) {
-            // Skip if we can't grab the mongodb
-            return
-        }
-
-        const host: string =
-            (options[0] as MongoConnectionOptions).host || "localhost"
+        const host = options.host ?? "localhost"
 
         const dataSource = new DataSource({
-            ...options[0],
+            ...options,
             entities: [Warn],
             url: `mongodb://${host}`,
             database: "foo",
@@ -75,16 +75,16 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
             guild: "Hello",
             user: "WORLD",
             moderator: "Good Moderator",
-            reason: "For Mongo not writing correctly to the databsae!",
+            reason: "For Mongo not writing correctly to the database!",
             createdAt: new Date(),
         })
 
         const mongoDriver = dataSource.driver as MongoDriver
         const client = mongoDriver.queryRunner!
-            .databaseConnection as any as MongoClient
+            .databaseConnection as unknown as MongoClient
 
         expect(
-            await client.db("foo").collection("warnings").count({}),
+            await client.db("foo").collection("warnings").countDocuments(),
         ).to.be.greaterThan(0)
     })
 })

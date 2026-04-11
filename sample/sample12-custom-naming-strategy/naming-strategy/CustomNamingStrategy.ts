@@ -1,4 +1,4 @@
-import { NamingStrategyInterface } from "../../../src/naming-strategy/NamingStrategyInterface"
+import type { NamingStrategyInterface } from "../../../src/naming-strategy/NamingStrategyInterface"
 import { DefaultNamingStrategy } from "../../../src/naming-strategy/DefaultNamingStrategy"
 import { snakeCase } from "../../../src/util/StringUtils"
 
