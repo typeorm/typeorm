@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
@@ -7,21 +7,20 @@ import {
 import { Post } from "./entity/Post"
 
 describe("github issues > #7479 Only first single quote in comments is escaped", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["postgres", "cockroachdb", "mysql"],
-                schemaCreate: true,
-                dropSchema: true,
-                entities: [Post],
-            })),
-    )
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres", "cockroachdb", "mysql"],
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [Post],
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("should properly escape quotes in comments", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 const table = await queryRunner.getTable("post")

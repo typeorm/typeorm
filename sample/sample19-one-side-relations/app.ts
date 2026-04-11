@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { Category } from "./entity/Category"
@@ -52,13 +53,10 @@ dataSource.initialize().then(
 
                 console.log("Now lets load posts with all their relations:")
                 return postRepository.find({
-                    join: {
-                        alias: "post",
-                        leftJoinAndSelect: {
-                            author: "post.author",
-                            metadata: "post.metadata",
-                            categories: "post.categories",
-                        },
+                    relations: {
+                        author: true,
+                        metadata: true,
+                        categories: true,
                     },
                 })
             })

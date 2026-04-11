@@ -7,14 +7,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import {
-    And,
-    DataSource,
-    In,
-    MssqlParameter,
-    Not,
-    Raw,
-} from "../../../src/index.js"
+import type { DataSource } from "../../../src/index.js"
+import { And, In, MssqlParameter, Not, Raw } from "../../../src/index.js"
 import { SqlServerQueryRunner } from "../../../src/driver/sqlserver/SqlServerQueryRunner"
 import { User } from "./entity/user"
 import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
@@ -22,15 +16,14 @@ import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryR
 describe("github issues > #11285 Missing MSSQL input type", () => {
     describe("mssql connection", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [User],
-                    enabledDrivers: ["mssql"],
-                    schemaCreate: true,
-                    dropSchema: true,
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [User],
+                enabledDrivers: ["mssql"],
+                schemaCreate: true,
+                dropSchema: true,
+            })
+        })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
@@ -203,15 +196,14 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
 
     describe("other connections", () => {
         let dataSources: DataSource[]
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [User],
-                    enabledDrivers: ["postgres"],
-                    schemaCreate: true,
-                    dropSchema: true,
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [User],
+                enabledDrivers: ["postgres"],
+                schemaCreate: true,
+                dropSchema: true,
+            })
+        })
 
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
