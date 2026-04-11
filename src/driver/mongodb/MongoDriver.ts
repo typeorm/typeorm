@@ -45,6 +45,11 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = MongoDriver.supportedIsolationLevels
+
+    /**
      * Underlying mongodb library.
      */
     mongodb: any
