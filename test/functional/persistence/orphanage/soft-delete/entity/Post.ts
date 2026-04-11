@@ -4,6 +4,7 @@ import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/
 import { Column } from "../../../../../../src/decorator/columns/Column"
 import { ManyToOne } from "../../../../../../src/decorator/relations/ManyToOne"
 import { JoinColumn } from "../../../../../../src/decorator/relations/JoinColumn"
+import { DeleteDateColumn } from "../../../../../../src"
 
 @Entity()
 export class Post {
@@ -14,8 +15,11 @@ export class Post {
     categoryId: string
 
     @ManyToOne(() => Category, (category) => category.posts, {
-        orphanedRowAction: "delete",
+        orphanedRowAction: "soft-delete",
     })
     @JoinColumn({ name: "categoryId" })
     category: Category
+
+    @DeleteDateColumn()
+    deletedAt?: Date
 }
