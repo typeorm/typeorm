@@ -197,7 +197,7 @@ export class MongoEntityManager extends EntityManager {
         const query =
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
-            ) || {}
+            ) ?? {}
         const objectIdClass = PlatformTools.load("mongodb").ObjectId
         query["_id"] = {
             $in: ids.map((id) => {
@@ -357,7 +357,7 @@ export class MongoEntityManager extends EntityManager {
 
             result.raw = updateResults.map((r) => r.raw)
             result.affected = updateResults
-                .map((r) => r.affected || 0)
+                .map((r) => r.affected ?? 0)
                 .reduce((c, r) => c + r, 0)
             result.generatedMaps = updateResults.reduce(
                 (c, r) => c.concat(r.generatedMaps),
@@ -411,7 +411,7 @@ export class MongoEntityManager extends EntityManager {
 
             result.raw = deleteResults.map((r) => r.raw)
             result.affected = deleteResults
-                .map((r) => r.affected || 0)
+                .map((r) => r.affected ?? 0)
                 .reduce((c, r) => c + r, 0)
         } else {
             const mongoResult = await this.deleteMany(
@@ -1337,7 +1337,7 @@ export class MongoEntityManager extends EntityManager {
                 this.convertFindOneOptionsOrConditionsToMongodbQuery(
                     findOneOptionsOrConditions,
                 ),
-            ) || {}
+            ) ?? {}
         if (id) {
             query["_id"] =
                 id instanceof objectIdClass ? id : new objectIdClass(id)

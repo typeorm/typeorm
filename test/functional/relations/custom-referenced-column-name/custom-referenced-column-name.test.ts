@@ -57,10 +57,10 @@ describe("relations > custom-referenced-column-name", () => {
                     const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryName).to.not.be.undefined
-                    expect(loadedPost!.categoryName).to.be.equal("cars")
+                    expect(loadedPost.categoryName).to.not.be.undefined
+                    expect(loadedPost.categoryName).to.be.equal("cars")
                 }),
             ))
 
@@ -108,9 +108,9 @@ describe("relations > custom-referenced-column-name", () => {
                             "post.categoryWithEmptyJoinCol",
                             "categoryWithEmptyJoinCol",
                         )
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryWithEmptyJoinCol.id).to.be.equal(
+                    expect(loadedPost.categoryWithEmptyJoinCol.id).to.be.equal(
                         1,
                     )
                 }),
@@ -148,9 +148,9 @@ describe("relations > custom-referenced-column-name", () => {
                     const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryId).to.be.equal(1)
+                    expect(loadedPost.categoryId).to.be.equal(1)
                 }),
             ))
 
@@ -198,9 +198,9 @@ describe("relations > custom-referenced-column-name", () => {
                             "categoryWithoutColName",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryWithoutColName.id).to.be.equal(1)
+                    expect(loadedPost.categoryWithoutColName.id).to.be.equal(1)
                 }),
             ))
 
@@ -252,12 +252,12 @@ describe("relations > custom-referenced-column-name", () => {
                             "categoryWithoutRefColName2",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.categoryWithoutRefColName2).to.not.be
+                    expect(loadedPost.categoryWithoutRefColName2).to.not.be
                         .undefined
                     expect(
-                        loadedPost!.categoryWithoutRefColName2.id,
+                        loadedPost.categoryWithoutRefColName2.id,
                     ).to.be.equal(1)
                 }),
             ))
@@ -298,10 +298,10 @@ describe("relations > custom-referenced-column-name", () => {
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect("post.category", "category")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.category).to.not.be.undefined
-                    expect(loadedPost!.category.id).to.be.equal(1)
+                    expect(loadedPost.category).to.not.be.undefined
+                    expect(loadedPost.category.id).to.be.equal(1)
                 }),
             ))
     })
@@ -341,10 +341,10 @@ describe("relations > custom-referenced-column-name", () => {
                     const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tagName).to.not.be.undefined
-                    expect(loadedPost!.tagName).to.be.equal("tag #1")
+                    expect(loadedPost.tagName).to.not.be.undefined
+                    expect(loadedPost.tagName).to.be.equal("tag #1")
                 }),
             ))
 
@@ -392,9 +392,9 @@ describe("relations > custom-referenced-column-name", () => {
                             "tagWithEmptyJoinCol",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tagWithEmptyJoinCol.id).to.be.equal(1)
+                    expect(loadedPost.tagWithEmptyJoinCol.id).to.be.equal(1)
                 }),
             ))
 
@@ -430,9 +430,9 @@ describe("relations > custom-referenced-column-name", () => {
                     const loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tagId).to.be.equal(1)
+                    expect(loadedPost.tagId).to.be.equal(1)
                 }),
             ))
 
@@ -476,9 +476,9 @@ describe("relations > custom-referenced-column-name", () => {
                             "tagWithoutColName",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tagWithoutColName.id).to.be.equal(1)
+                    expect(loadedPost.tagWithoutColName.id).to.be.equal(1)
                 }),
             ))
 
@@ -530,11 +530,10 @@ describe("relations > custom-referenced-column-name", () => {
                             "tagWithoutRefColName2",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tagWithoutRefColName2).to.not.be
-                        .undefined
-                    expect(loadedPost!.tagWithoutRefColName2.id).to.be.equal(1)
+                    expect(loadedPost.tagWithoutRefColName2).to.not.be.undefined
+                    expect(loadedPost.tagWithoutRefColName2.id).to.be.equal(1)
                 }),
             ))
 
@@ -574,10 +573,10 @@ describe("relations > custom-referenced-column-name", () => {
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect("post.tag", "category")
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)
+                    expect(loadedPost.tag).to.not.be.undefined
+                    expect(loadedPost.tag.id).to.be.equal(1)
                 }),
             ))
     })

@@ -64,10 +64,9 @@ describe("embedded > outer-primary-column", () => {
                     likes: 4,
                 })
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     counters: { code: 1 },
                 })
-                expect(loadedPost).to.not.be.null
                 expect(loadedPost?.title).to.be.equal("About cars")
                 expect(loadedPost?.counters).to.be.eql({
                     code: 1,
@@ -76,14 +75,13 @@ describe("embedded > outer-primary-column", () => {
                     likes: 3,
                 })
 
-                loadedPost!.counters.favorites += 1
-                await postRepository.save(loadedPost!)
+                loadedPost.counters.favorites += 1
+                await postRepository.save(loadedPost)
 
-                const loadedPost2 = await postRepository.findOneBy({
+                const loadedPost2 = await postRepository.findOneByOrFail({
                     counters: { code: 1 },
                 })
 
-                expect(loadedPost2).to.not.be.null
                 expect(loadedPost2?.title).to.be.equal("About cars")
                 expect(loadedPost2?.counters).to.be.eql({
                     code: 1,
@@ -92,7 +90,7 @@ describe("embedded > outer-primary-column", () => {
                     likes: 3,
                 })
 
-                await postRepository.remove(loadedPost2!)
+                await postRepository.remove(loadedPost2)
 
                 const loadedPosts2 = await postRepository.find()
                 expect(loadedPosts2.length).to.be.equal(1)

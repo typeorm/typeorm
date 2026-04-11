@@ -41,12 +41,12 @@ describe("other issues > mongodb entity change in listeners should affect persis
                 await postRepository.save(loadedPost!)
 
                 // check if update listener was triggered and entity was really updated by the changes in the listener
-                const loadedUpdatedPost = await postRepository.findOneBy({
+                const loadedUpdatedPost = await postRepository.findOneByOrFail({
                     _id: post.id,
                 })
 
                 expect(loadedUpdatedPost).not.to.be.null
-                loadedUpdatedPost!.title.should.be.equal("hello!")
+                loadedUpdatedPost.title.should.be.equal("hello!")
                 await connection.manager.save(loadedPost!)
             }),
         ))

@@ -40,7 +40,7 @@ export function JoinColumn(
     return function (object: Object, propertyName: string) {
         const options = Array.isArray(optionsOrOptionsArray)
             ? optionsOrOptionsArray
-            : [optionsOrOptionsArray || {}]
+            : [optionsOrOptionsArray ?? {}]
         options.forEach((options) => {
             getMetadataArgsStorage().joinColumns.push({
                 target: object.constructor,

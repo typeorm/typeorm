@@ -71,8 +71,7 @@ export class QueryCommand implements yargs.CommandModule {
             PlatformTools.logCmdErr("Error during query execution:", err)
 
             if (queryRunner) await (queryRunner as QueryRunner).release()
-            if (dataSource && dataSource.isInitialized)
-                await dataSource.destroy()
+            if (dataSource?.isInitialized) await dataSource.destroy()
 
             process.exit(1)
         }
