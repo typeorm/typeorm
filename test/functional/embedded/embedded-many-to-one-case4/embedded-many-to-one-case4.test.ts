@@ -128,10 +128,10 @@ describe("embedded > embedded-many-to-one-case4", () => {
                             "likedUser",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost.should.be.eql({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -152,10 +152,10 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         }),
                     )
 
-                    loadedPost!.counters.favorites += 1
-                    loadedPost!.counters.subcounters.watches += 1
-                    loadedPost!.counters.likedUser = user3
-                    await postRepository.save(loadedPost!)
+                    loadedPost.counters.favorites += 1
+                    loadedPost.counters.subcounters.watches += 1
+                    loadedPost.counters.likedUser = user3
+                    await postRepository.save(loadedPost)
 
                     loadedPost = await dataSource.manager
                         .createQueryBuilder(Post, "post")
@@ -164,10 +164,10 @@ describe("embedded > embedded-many-to-one-case4", () => {
                             "likedUser",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost.should.be.eql({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -188,7 +188,7 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         }),
                     )
 
-                    await postRepository.remove(loadedPost!)
+                    await postRepository.remove(loadedPost)
 
                     loadedPosts = (await postRepository.find())!
                     expect(loadedPosts.length).to.be.equal(1)
@@ -326,10 +326,10 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         .leftJoinAndSelect("user.likedPosts", "likedPost")
                         .orderBy("likedPost.id")
                         .where("user.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser.should.be.eql({
                             id: 1,
                             personId: 1,
                             name: "Alice",
@@ -366,19 +366,19 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         }),
                     )
 
-                    loadedUser!.name = "Anna"
-                    loadedUser!.likedPosts = [post1]
-                    await dataSource.getRepository(User).save(loadedUser!)
+                    loadedUser.name = "Anna"
+                    loadedUser.likedPosts = [post1]
+                    await dataSource.getRepository(User).save(loadedUser)
 
                     loadedUser = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPosts", "likedPost")
                         .orderBy("likedPost.id")
                         .where("user.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser.should.be.eql({
                             id: 1,
                             personId: 1,
                             name: "Anna",
@@ -408,9 +408,9 @@ describe("embedded > embedded-many-to-one-case4", () => {
                             "likedUser",
                         )
                         .where("post.id = :id", { id: 2 })
-                        .getOne()
+                        .getOneOrFail()
 
-                    expect(loadedPost!.counters.likedUser).to.be.null
+                    expect(loadedPost.counters.likedUser).to.be.null
                 }),
             ))
     })

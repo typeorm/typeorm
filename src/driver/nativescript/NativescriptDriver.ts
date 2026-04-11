@@ -61,9 +61,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner) {
-            this.queryRunner = new NativescriptQueryRunner(this)
-        }
+        this.queryRunner ??= new NativescriptQueryRunner(this)
 
         return this.queryRunner
     }
@@ -102,7 +100,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
                     iosFlags: this.options.iosFlags,
                     androidFlags: this.options.androidFlags,
                 },
-                this.options.extra || {},
+                this.options.extra ?? {},
             )
 
             new this.sqlite(

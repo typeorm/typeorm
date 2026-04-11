@@ -298,11 +298,6 @@ export class RelationMetadata {
             this.givenInverseSidePropertyFactory = args.inverseSideProperty
 
         this.isLazy = args.isLazy || false
-        // this.isCascadeInsert = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("insert") !== -1);
-        // this.isCascadeUpdate = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("update") !== -1);
-        // this.isCascadeRemove = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("remove") !== -1);
-        // this.isCascadeSoftRemove = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("soft-remove") !== -1);
-        // this.isCascadeRecover = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("recover") !== -1);
         this.isCascadeInsert =
             args.options.cascade === true ||
             (Array.isArray(args.options.cascade) &&
@@ -323,7 +318,6 @@ export class RelationMetadata {
             args.options.cascade === true ||
             (Array.isArray(args.options.cascade) &&
                 args.options.cascade.indexOf("recover") !== -1)
-        // this.isPrimary = args.options.primary || false;
         this.isNullable =
             args.options.nullable === false || this.isPrimary ? false : true
         this.onDelete = args.options.onDelete
@@ -331,12 +325,12 @@ export class RelationMetadata {
         this.deferrable = args.options.deferrable
         this.createForeignKeyConstraints =
             args.options.createForeignKeyConstraints === false ? false : true
-        this.isEager = args.options.eager || false
+        this.isEager = args.options.eager ?? false
         this.persistenceEnabled =
             args.options.persistence === false ? false : true
-        this.orphanedRowAction = args.options.orphanedRowAction || "nullify"
-        this.isTreeParent = args.isTreeParent || false
-        this.isTreeChildren = args.isTreeChildren || false
+        this.orphanedRowAction = args.options.orphanedRowAction ?? "nullify"
+        this.isTreeParent = args.isTreeParent ?? false
+        this.isTreeChildren = args.isTreeChildren ?? false
 
         if (typeof args.type === "function") {
             this.type =
@@ -513,9 +507,8 @@ export class RelationMetadata {
 
                 const embeddedMetadata = embeddedMetadatas.shift()
                 if (embeddedMetadata) {
-                    if (!map[embeddedMetadata.propertyName])
-                        map[embeddedMetadata.propertyName] =
-                            embeddedMetadata.create()
+                    map[embeddedMetadata.propertyName] ??=
+                        embeddedMetadata.create()
 
                     extractEmbeddedColumnValue(
                         embeddedMetadatas,
@@ -674,10 +667,7 @@ export class RelationMetadata {
      * Builds relation's property path based on its embedded tree.
      */
     buildPropertyPath(): string {
-        if (
-            !this.embeddedMetadata ||
-            !this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (!this.embeddedMetadata?.parentPropertyNames.length)
             return this.propertyName
 
         return (

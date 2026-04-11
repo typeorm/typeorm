@@ -26,11 +26,14 @@ describe("github issues > #499 postgres DATE hydrated as DATETIME object", () =>
                 post.date = "2017-01-25"
                 await connection.manager.save(post)
 
-                const loadedPost = await connection.manager.findOne(Post, {
-                    where: { title: "Hello Post #1" },
-                })
-                expect(loadedPost!).not.to.be.null
-                loadedPost!.date.should.be.equal("2017-01-25")
+                const loadedPost = await connection.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: { title: "Hello Post #1" },
+                    },
+                )
+                expect(loadedPost).not.to.be.null
+                loadedPost.date.should.be.equal("2017-01-25")
             }),
         ))
 })
