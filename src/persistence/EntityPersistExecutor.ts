@@ -49,7 +49,7 @@ export class EntityPersistExecutor {
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
         const queryRunner =
-            this.queryRunner || this.dataSource.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
 
         // save data in the query runner - this is useful functionality to share data from outside of the world
         // with third classes - like subscribers and listener methods
@@ -75,9 +75,7 @@ export class EntityPersistExecutor {
 
                     // create subjects for all entities we received for the persistence
                     entities.forEach((entity) => {
-                        const entityTarget = this.target
-                            ? this.target
-                            : entity.constructor
+                        const entityTarget = this.target ?? entity.constructor
                         if (entityTarget === Object)
                             throw new CannotDetermineEntityError(this.mode)
 

@@ -28,7 +28,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     constructor(driver: SqljsDriver) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
     }
 
@@ -74,6 +74,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -90,7 +91,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
 
         const databaseConnection = this.driver.databaseConnection
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
@@ -117,7 +118,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             )
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
@@ -167,7 +168,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 statement.free()
             }
 
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,

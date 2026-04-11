@@ -1,10 +1,10 @@
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import type { CapacitorDriver } from "./CapacitorDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import type { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryResult } from "../../query-runner/QueryResult"
 import type { QueryOptions } from "../../query-runner/QueryOptions"
 
 /**
@@ -23,7 +23,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
     constructor(driver: CapacitorDriver) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
     }
 
@@ -51,6 +51,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -69,7 +70,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
         const databaseConnection = await this.connect()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
 
         const command = query.substring(
             0,
@@ -93,7 +94,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
             } else if (["INSERT", "UPDATE", "DELETE"].indexOf(command) !== -1) {
                 raw = await databaseConnection.run(query, parameters, false)
             } else {
-                raw = await databaseConnection.query(query, parameters || [])
+                raw = await databaseConnection.query(query, parameters ?? [])
             }
 
             const result = new QueryResult()
@@ -105,7 +106,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
             if (raw?.hasOwnProperty("changes")) {
                 result.affected = raw.changes.changes
-                result.raw = raw.changes.lastId || raw.changes.changes
+                result.raw = raw.changes.lastId ?? raw.changes.changes
             }
 
             if (!useStructuredResult) {
@@ -114,7 +115,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
             return result
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -131,6 +132,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     *
      * @param objectLiteral
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {

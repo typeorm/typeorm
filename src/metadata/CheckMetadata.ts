@@ -61,15 +61,16 @@ export class CheckMetadata {
     /**
      * Builds some depend check constraint properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     *
      * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
-        this.name = this.givenName
-            ? this.givenName
-            : namingStrategy.checkConstraintName(
-                  this.entityMetadata.tableName,
-                  this.expression,
-              )
+        this.name =
+            this.givenName ??
+            namingStrategy.checkConstraintName(
+                this.entityMetadata.tableName,
+                this.expression,
+            )
         return this
     }
 }

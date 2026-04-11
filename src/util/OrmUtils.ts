@@ -16,6 +16,7 @@ export class OrmUtils {
 
     /**
      * Chunks array into pieces.
+     *
      * @param array
      * @param size
      */
@@ -89,6 +90,7 @@ export class OrmUtils {
 
     /**
      * Deep Object.assign.
+     *
      * @param target
      * @param sources
      */
@@ -109,6 +111,7 @@ export class OrmUtils {
 
     /**
      * Creates a shallow copy of the object, without invoking the constructor
+     *
      * @param object
      */
     public static cloneObject<T extends object>(object: T): T {
@@ -124,6 +127,7 @@ export class OrmUtils {
 
     /**
      * Deep compare objects.
+     *
      * @param args
      * @see http://stackoverflow.com/a/1144249
      */
@@ -156,6 +160,7 @@ export class OrmUtils {
 
     /**
      * Gets deeper value of object.
+     *
      * @param obj
      * @param path
      */
@@ -209,6 +214,7 @@ export class OrmUtils {
 
     /**
      * Check if two entity-id-maps are the same
+     *
      * @param firstId
      * @param secondId
      */
@@ -241,6 +247,7 @@ export class OrmUtils {
 
     /**
      * Transforms given value into boolean value.
+     *
      * @param value
      */
     public static toBoolean(value: any): boolean {
@@ -255,6 +262,7 @@ export class OrmUtils {
 
     /**
      * Checks if two arrays of unique values contain the same values
+     *
      * @param arr1
      * @param arr2
      */
@@ -268,6 +276,7 @@ export class OrmUtils {
 
     /**
      * Returns items that are missing/extraneous in the second array
+     *
      * @param arr1
      * @param arr2
      */
@@ -298,6 +307,7 @@ export class OrmUtils {
      * Parses the CHECK constraint on the specified column and returns
      * all values allowed by the constraint or undefined if the constraint
      * is not present.
+     *
      * @param sql
      * @param columnName
      */
@@ -311,7 +321,7 @@ export class OrmUtils {
             ),
         )
 
-        if (enumMatch && enumMatch.index) {
+        if (enumMatch?.index != null) {
             const afterMatch = sql.substring(
                 enumMatch.index + enumMatch[0].length,
             )
@@ -373,6 +383,7 @@ export class OrmUtils {
 
     /**
      * Checks if given criteria is null or empty.
+     *
      * @param criteria
      */
     public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
@@ -389,6 +400,7 @@ export class OrmUtils {
     /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
+     *
      * @param criteria
      */
     public static isSinglePrimitiveCriteria(
@@ -403,6 +415,7 @@ export class OrmUtils {
 
     /**
      * Checks if given criteria is a primitive value or an array of primitive values.
+     *
      * @param criteria
      */
     public static isPrimitiveCriteria(
@@ -576,9 +589,7 @@ export class OrmUtils {
             return
         }
 
-        if (!target[key]) {
-            target[key] = Array.isArray(value) ? [] : {}
-        }
+        target[key] ??= Array.isArray(value) ? [] : {}
 
         memo.set(value, target[key])
         OrmUtils.merge(target[key], value, memo)
@@ -643,6 +654,7 @@ export class OrmUtils {
     /**
      * Recursively validates an object where clause, throwing for null/undefined
      * based on the provided invalidWhereValuesBehavior config.
+     *
      * @param criteria
      * @param options
      * @param options.null
@@ -665,7 +677,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined || "throw"
+                const behavior = options?.undefined ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -674,7 +686,7 @@ export class OrmUtils {
                 }
                 // "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null || "throw"
+                const behavior = options?.null ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +

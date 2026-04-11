@@ -1,11 +1,11 @@
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
-import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import type { BetterSqlite3Driver } from "./BetterSqlite3Driver"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
 import type { QueryOptions } from "../../query-runner/QueryOptions"
+import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
+import type { BetterSqlite3Driver } from "./BetterSqlite3Driver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -26,7 +26,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
     constructor(driver: BetterSqlite3Driver) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
         if (typeof this.driver.options.statementCacheSize === "number") {
             this.cacheSize = this.driver.options.statementCacheSize
@@ -77,6 +77,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -93,7 +94,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                 : optionsOrUseStructuredResult?.useStructuredResult === true
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        const connection = this.driver.connection
+        const dataSource = this.driver.dataSource
 
         // better-sqlite3 cannot bind booleans, convert to 0/1
         const normalizedParameters = parameters.map((p) =>
@@ -102,7 +103,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
         const broadcasterResult = new BroadcasterResult()
 
-        this.driver.connection.logger.logQuery(
+        this.driver.dataSource.logger.logQuery(
             query,
             normalizedParameters,
             this,
@@ -142,7 +143,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             )
-                connection.logger.logQuerySlow(
+                dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     normalizedParameters,
@@ -165,7 +166,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
             return result
         } catch (err) {
-            connection.logger.logQueryError(
+            dataSource.logger.logQueryError(
                 err,
                 query,
                 normalizedParameters,

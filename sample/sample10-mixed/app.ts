@@ -51,6 +51,6 @@ dataSource
         postRepository
             .save(post)
             .then((result) => console.log(result))
-            .catch((error) => console.log(error.stack ? error.stack : error))
+            .catch((error) => console.log(error.stack ?? error))
     })
-    .catch((error) => console.log(error.stack ? error.stack : error))
+    .catch((error) => console.log(error.stack ?? error))

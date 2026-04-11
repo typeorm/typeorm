@@ -30,6 +30,7 @@ export function Column(): PropertyDecorator
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param options
  */
 export function Column(options: ColumnOptions): PropertyDecorator
@@ -37,6 +38,7 @@ export function Column(options: ColumnOptions): PropertyDecorator
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param type
  * @param options
  */
@@ -48,6 +50,7 @@ export function Column(
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param type
  * @param options
  */
@@ -59,6 +62,7 @@ export function Column(
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param type
  * @param options
  */
@@ -70,6 +74,7 @@ export function Column(
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param type
  * @param options
  */
@@ -81,6 +86,7 @@ export function Column(
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param type
  * @param options
  */
@@ -92,6 +98,7 @@ export function Column(
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param type
  * @param options
  */
@@ -103,6 +110,7 @@ export function Column(
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param type
  * @param options
  */
@@ -114,6 +122,7 @@ export function Column(
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param type
  * @param options
  */
@@ -125,6 +134,7 @@ export function Column(
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param type
  * @param options
  */
@@ -140,6 +150,7 @@ export function Column(
  * Property in entity can be marked as Embedded, and on persist all columns from the embedded are mapped to the
  * single table of the entity where Embedded is used. And on hydration all columns which supposed to be in the
  * embedded will be mapped to it from the single table.
+ *
  * @param type
  * @param options
  */
@@ -151,6 +162,7 @@ export function Column(
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ *
  * @param typeOrOptions
  * @param options
  */
@@ -173,7 +185,7 @@ export function Column(
             options = <ColumnOptions>typeOrOptions
             type = typeOrOptions.type
         }
-        if (!options) options = {} as ColumnOptions
+        options ??= {} as ColumnOptions
 
         // if type is not given explicitly then try to guess it
         const reflectMetadataType =
@@ -203,8 +215,7 @@ export function Column(
                 propertyName: propertyName,
                 isArray:
                     reflectMetadataType === Array || options.array === true,
-                prefix:
-                    options.prefix !== undefined ? options.prefix : undefined,
+                prefix: options.prefix ?? undefined,
                 type: typeOrOptions as (type?: any) => Function,
             } as EmbeddedMetadataArgs)
         } else {

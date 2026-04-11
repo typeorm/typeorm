@@ -70,9 +70,9 @@ describe("query builder > relation-id > many-to-one > multiple-pk", () => {
                     .loadRelationIdAndMap("post.categoryId", "post.category")
                     .where("post.id = :id", { id: 1 })
                     .andWhere("post.authorId = :authorId", { authorId: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 })
+                expect(loadedPost.categoryId).to.be.eql({ id: 1, code: 1 })
             }),
         ))
 
@@ -115,9 +115,9 @@ describe("query builder > relation-id > many-to-one > multiple-pk", () => {
                     .loadRelationIdAndMap("category.imageId", "category.image")
                     .where("category.id = :id", { id: 1 })
                     .andWhere("category.code = :code", { code: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.imageId).to.be.equal(1)
+                expect(loadedCategory.imageId).to.be.equal(1)
             }),
         ))
 
@@ -171,9 +171,9 @@ describe("query builder > relation-id > many-to-one > multiple-pk", () => {
                     .loadRelationIdAndMap("post.categoryId", "post.subcategory")
                     .where("post.id = :id", { id: 1 })
                     .andWhere("post.authorId = :authorId", { authorId: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 })
+                expect(loadedPost.categoryId).to.be.eql({ id: 1, code: 1 })
             }),
         ))
 
@@ -235,10 +235,10 @@ describe("query builder > relation-id > many-to-one > multiple-pk", () => {
                     .loadRelationIdAndMap("category.imageId", "category.image")
                     .where("post.id = :id", { id: 1 })
                     .andWhere("post.authorId = :authorId", { authorId: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryId).to.be.eql({ id: 1, code: 1 })
-                expect(loadedPost!.category.imageId).to.be.equal(1)
+                expect(loadedPost.categoryId).to.be.eql({ id: 1, code: 1 })
+                expect(loadedPost.category.imageId).to.be.equal(1)
             }),
         ))
 })

@@ -5,6 +5,7 @@ import type { ColumnOptions } from "../options/ColumnOptions"
 /**
  * This column will store an update date of the updated object.
  * This date is being updated each time you persist the object.
+ *
  * @param options
  */
 export function UpdateDateColumn(options?: ColumnOptions): PropertyDecorator {
@@ -13,7 +14,7 @@ export function UpdateDateColumn(options?: ColumnOptions): PropertyDecorator {
             target: object.constructor,
             propertyName: propertyName,
             mode: "updateDate",
-            options: options ? options : {},
+            options: options ?? {},
         } as ColumnMetadataArgs)
     }
 }
