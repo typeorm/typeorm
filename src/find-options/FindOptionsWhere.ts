@@ -1,6 +1,6 @@
-import { FindOperator } from "./FindOperator"
-import { ObjectId } from "../driver/mongodb/typings"
-import { EqualOperator } from "./EqualOperator"
+import type { FindOperator } from "./FindOperator"
+import type { ObjectId } from "../driver/mongodb/typings"
+import type { EqualOperator } from "./EqualOperator"
 
 /**
  * A single property handler for FindOptionsWhere.
@@ -19,7 +19,7 @@ export type FindOptionsWhereProperty<
           ? FindOptionsWhereProperty<NonNullable<I>>
           : PropertyToBeNarrowed extends Function
             ? never
-            : PropertyToBeNarrowed extends Buffer
+            : PropertyToBeNarrowed extends Uint8Array
               ? Property | FindOperator<Property>
               : PropertyToBeNarrowed extends Date
                 ? Property | FindOperator<Property>

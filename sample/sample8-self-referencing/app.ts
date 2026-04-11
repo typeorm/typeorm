@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Category } from "./entity/Category"
 
 const options: DataSourceOptions = {
@@ -34,12 +35,8 @@ dataSource.initialize().then(
                 console.log("saved category: ", savedCategory)
             })
             .catch((error) =>
-                console.log(
-                    "Cannot save. Error: ",
-                    error.stack ? error.stack : error,
-                ),
+                console.log("Cannot save. Error: ", error.stack ?? error),
             )
     },
-    (error) =>
-        console.log("Cannot connect: ", error.stack ? error.stack : error),
+    (error) => console.log("Cannot connect: ", error.stack ?? error),
 )

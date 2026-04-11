@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { Child1 } from "./entity/Child1"
 import { Child2 } from "./entity/Child2"
 import { Root } from "./entity/Root"
@@ -57,21 +57,20 @@ describe("github issues > #5691 RelationId is too slow", () => {
         }
     }
 
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Root, Child1, Child2, Shared],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Root, Child1, Child2, Shared],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be as fast as separate queries", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // skip test for oracle for now
                 if (connection.driver.options.type === "oracle") return
 

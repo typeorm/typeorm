@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,19 +11,18 @@ import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 
 describe("other issues > getId should not return undefined for composite primary keys with lazy relations", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("getId should not return undefined", () =>
         Promise.all(
-            connections.map(async ({ manager }) => {
+            dataSources.map(async ({ manager }) => {
                 const post = manager.create(Post, {
                     content: "Sample Post",
                 })

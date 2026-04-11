@@ -4,25 +4,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Ticket } from "./entity/Ticket"
 import { Request } from "./entity/Request"
 import { expect } from "chai"
 
 describe("github issues > #161 joinAndSelect can't find entity from inverse side of relation", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const request = new Request()
                 request.owner = "Umed"
                 request.type = "ticket"
@@ -35,20 +34,17 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                 await connection.manager.save(ticket)
 
                 const loadedTicketWithRequest =
-                    await connection.manager.findOne(Ticket, {
+                    await connection.manager.findOneOrFail(Ticket, {
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "ticket",
-                            innerJoinAndSelect: {
-                                request: "ticket.request",
-                            },
+                        relations: {
+                            request: true,
                         },
                     })
 
                 expect(loadedTicketWithRequest).not.to.be.null
-                loadedTicketWithRequest!.should.be.eql({
+                loadedTicketWithRequest.should.be.eql({
                     id: 1,
                     name: "ticket #1",
                     request: {
@@ -60,19 +56,16 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
                 })
 
                 const loadedRequestWithTicket =
-                    await connection.manager.findOne(Request, {
+                    await connection.manager.findOneOrFail(Request, {
                         where: {
                             id: 1,
                         },
-                        join: {
-                            alias: "request",
-                            innerJoinAndSelect: {
-                                ticket: "request.ticket",
-                            },
+                        relations: {
+                            ticket: true,
                         },
                     })
 
-                loadedRequestWithTicket!.should.be.eql({
+                loadedRequestWithTicket.should.be.eql({
                     id: 1,
                     owner: "Umed",
                     type: "ticket",
@@ -87,7 +80,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
 
     it("should return joined relation successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const authRequest = new Request()
                 authRequest.owner = "somebody"
                 authRequest.type = "authenticate"
@@ -108,21 +101,20 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
 
                 await connection.manager.save(ticket)
 
-                const loadedRequest = await connection.manager.findOne(
+                const loadedRequest = await connection.manager.findOneOrFail(
                     Request,
                     {
                         where: {
                             id: 2,
                         },
-                        join: {
-                            alias: "request",
-                            innerJoinAndSelect: { ticket: "request.ticket" },
+                        relations: {
+                            ticket: true,
                         },
                     },
                 )
 
                 expect(loadedRequest).not.to.be.null
-                loadedRequest!.should.be.eql({
+                loadedRequest.should.be.eql({
                     id: 2,
                     owner: "somebody",
                     type: "ticket",
