@@ -57,7 +57,7 @@ describe("persistence > orphanage > disable > many-to-one", () => {
             await userRepo.save(user)
             userId = user.id
 
-            const userToUpdate = (await userRepo.findOneBy({ id: userId }))!
+            const userToUpdate = await userRepo.findOneByOrFail({ id: userId })
             userToUpdate.settings = [
                 // untouched setting
                 userToUpdate.settings[0],

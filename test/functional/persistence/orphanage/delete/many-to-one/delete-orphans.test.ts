@@ -35,9 +35,9 @@ describe("persistence > orphanage > delete > many-to-one", () => {
                 category.posts = [new Post(), new Post()]
                 await categoryRepository.save(category)
 
-                const loaded = (await categoryRepository.findOneBy({
+                const loaded = await categoryRepository.findOneByOrFail({
                     id: category.id,
-                }))!
+                })
                 loaded.posts = category.posts.filter((p) => p.id === 1)
                 await categoryRepository.save(loaded)
 
