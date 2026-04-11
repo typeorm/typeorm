@@ -15,7 +15,7 @@ export function CreateDateColumn(options?: ColumnOptions): PropertyDecorator {
             target: object.constructor,
             propertyName: propertyName,
             mode: "createDate",
-            options: options || {},
+            options: options ?? {},
         } as ColumnMetadataArgs)
     }
 }

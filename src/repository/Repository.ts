@@ -85,8 +85,8 @@ export class Repository<Entity extends ObjectLiteral> {
     ): SelectQueryBuilder<Entity> {
         return this.manager.createQueryBuilder<Entity>(
             this.metadata.target as any,
-            alias || this.metadata.targetName,
-            queryRunner || this.queryRunner,
+            alias ?? this.metadata.targetName,
+            queryRunner ?? this.queryRunner,
         )
     }
 

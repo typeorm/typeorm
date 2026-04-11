@@ -259,7 +259,7 @@ export class MongoRepository<
      * @param options
      */
     count(query?: ObjectLiteral, options?: CountOptions): Promise<number> {
-        return this.manager.count(this.metadata.target, query || {}, options)
+        return this.manager.count(this.metadata.target, query ?? {}, options)
     }
 
     /**
@@ -274,7 +274,7 @@ export class MongoRepository<
     ): Promise<number> {
         return this.manager.countDocuments(
             this.metadata.target,
-            query || {},
+            query ?? {},
             options,
         )
     }

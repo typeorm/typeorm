@@ -162,7 +162,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): AggregationCursor<any> {
         return this.getCollection(collectionName).aggregate(
             pipeline,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -180,7 +180,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<BulkWriteResult> {
         return await this.getCollection(collectionName).bulkWrite(
             operations,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -198,7 +198,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<number> {
         return this.getCollection(collectionName).count(
             filter || {},
-            options || {},
+            options ?? {},
         )
     }
 
@@ -216,7 +216,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<any> {
         return this.getCollection(collectionName).countDocuments(
             filter || {},
-            options || {},
+            options ?? {},
         )
     }
 
@@ -234,7 +234,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<string> {
         return this.getCollection(collectionName).createIndex(
             indexSpec,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -284,7 +284,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<DeleteResult> {
         return this.getCollection(collectionName).deleteOne(
             filter,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -305,7 +305,7 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).distinct(
             key,
             filter,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -323,7 +323,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<Document> {
         return this.getCollection(collectionName).dropIndex(
             indexName,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -350,7 +350,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<Document | null> {
         return this.getCollection(collectionName).findOneAndDelete(
             filter,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -371,7 +371,7 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).findOneAndReplace(
             filter,
             replacement,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -392,7 +392,7 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).findOneAndUpdate(
             filter,
             update,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -429,7 +429,7 @@ export class MongoQueryRunner implements QueryRunner {
         options?: IndexInformationOptions,
     ): Promise<any> {
         return this.getCollection(collectionName).indexInformation(
-            options || {},
+            options ?? {},
         )
     }
 
@@ -477,7 +477,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<InsertManyResult> {
         return this.getCollection(collectionName).insertMany(
             docs,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -493,7 +493,7 @@ export class MongoQueryRunner implements QueryRunner {
         doc: OptionalId<Document>,
         options?: InsertOneOptions,
     ): Promise<InsertOneResult> {
-        return this.getCollection(collectionName).insertOne(doc, options || {})
+        return this.getCollection(collectionName).insertOne(doc, options ?? {})
     }
 
     /**
@@ -530,7 +530,7 @@ export class MongoQueryRunner implements QueryRunner {
         newName: string,
         options?: RenameOptions,
     ): Promise<Collection<Document>> {
-        return this.getCollection(collectionName).rename(newName, options || {})
+        return this.getCollection(collectionName).rename(newName, options ?? {})
     }
 
     /**
@@ -550,7 +550,7 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).replaceOne(
             filter,
             replacement,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -586,7 +586,7 @@ export class MongoQueryRunner implements QueryRunner {
         return this.getCollection(collectionName).updateMany(
             filter,
             update,
-            options || {},
+            options ?? {},
         )
     }
 
@@ -607,7 +607,7 @@ export class MongoQueryRunner implements QueryRunner {
         return await this.getCollection(collectionName).updateOne(
             filter,
             update,
-            options || {},
+            options ?? {},
         )
     }
 
