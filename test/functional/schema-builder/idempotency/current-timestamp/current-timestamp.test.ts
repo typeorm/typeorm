@@ -1,0 +1,29 @@
+import { expect } from "chai"
+import "reflect-metadata"
+
+import type { DataSource } from "../../../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
+
+describe("schema builder > idempotency > CURRENT_TIMESTAMP precision", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "mariadb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should not want to execute migrations twice", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const sql1 = await connection.driver.createSchemaBuilder().log()
+                expect(sql1.upQueries).to.eql([])
+            }),
+        ))
+})

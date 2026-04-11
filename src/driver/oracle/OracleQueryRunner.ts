@@ -1,16 +1,16 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ReadStream } from "../../platform/PlatformTools"
+import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -20,10 +20,11 @@ import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
-import { ColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { ReplicationMode } from "../types/ReplicationMode"
 import { OracleDriver } from "./OracleDriver"
 
 /**
@@ -55,7 +56,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     constructor(driver: OracleDriver, mode: ReplicationMode) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
         this.mode = mode
     }
@@ -111,21 +112,17 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Starts transaction.
+     *
+     * @param isolationLevel
      */
     async startTransaction(
         isolationLevel: IsolationLevel = "READ COMMITTED",
     ): Promise<void> {
+        validateIsolationLevel(
+            OracleDriver.supportedIsolationLevels,
+            isolationLevel,
+        )
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
-
-        // await this.query("START TRANSACTION");
-        if (
-            isolationLevel !== "SERIALIZABLE" &&
-            isolationLevel !== "READ COMMITTED"
-        ) {
-            throw new TypeORMError(
-                `Oracle only supports SERIALIZABLE and READ COMMITTED isolation`,
-            )
-        }
 
         this.isTransactionActive = true
         try {
@@ -189,6 +186,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -199,7 +200,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const databaseConnection = await this.connect()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
@@ -213,7 +214,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             const raw = await databaseConnection.execute(
                 query,
-                parameters || {},
+                parameters ?? {},
                 executionOptions,
             )
 
@@ -237,7 +238,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             )
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
@@ -247,9 +248,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const result = new QueryResult()
 
             result.raw =
-                raw.rows ||
-                raw.outBinds ||
-                raw.rowsAffected ||
+                raw.rows ??
+                raw.outBinds ??
+                raw.rowsAffected ??
                 raw.implicitResults
 
             if (raw?.hasOwnProperty("rows") && Array.isArray(raw.rows)) {
@@ -280,7 +281,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return result.raw
             }
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -304,6 +305,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Returns raw data stream.
+     *
+     * @param query
+     * @param parameters
+     * @param onEnd
+     * @param onError
      */
     async stream(
         query: string,
@@ -322,7 +328,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const databaseConnection = await this.connect()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
 
         try {
             const stream = databaseConnection.queryStream(
@@ -340,7 +346,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return stream
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -360,6 +366,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     *
+     * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
         return Promise.resolve([])
@@ -367,11 +375,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if database with the given name exist.
+     *
+     * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
         try {
             const query = await this.query(
-                `SELECT 1 AS "exists" FROM global_name@"${database}"`,
+                `SELECT 1 AS "exists" FROM global_name@${this.driver.escape(database)}`,
             )
 
             return query.length > 0
@@ -392,6 +402,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if schema with the given name exist.
+     *
+     * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
         return Promise.resolve(false)
@@ -409,40 +421,50 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if table with the given name exist in the database.
+     *
+     * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const { tableName } = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = '${tableName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = :1`
+        const result = await this.query(sql, [tableName])
         return result.length ? true : false
     }
 
     /**
      * Checks if column with the given name exist in the given table.
+     *
+     * @param tableOrName
+     * @param columnName
      */
     async hasColumn(
         tableOrName: Table | string,
         columnName: string,
     ): Promise<boolean> {
         const { tableName } = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = '${tableName}' AND "COLUMN_NAME" = '${columnName}'`
-        const result = await this.query(sql)
+        const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = :1 AND "COLUMN_NAME" = :2`
+        const result = await this.query(sql, [tableName, columnName])
         return result.length ? true : false
     }
 
     /**
      * Creates a new database.
+     *
+     * @param database
+     * @param ifNotExists
      */
     async createDatabase(
         database: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         // Even with `IF NOT EXISTS` we get:
         //   ORA-01501: CREATE DATABASE failed
         //   ORA-01100: database already mounted
-        if (ifNotExist) {
+        if (ifNotExists) {
             try {
-                await this.query(`CREATE DATABASE IF NOT EXISTS "${database}";`)
+                await this.query(
+                    `CREATE DATABASE IF NOT EXISTS ${this.driver.escape(database)};`,
+                )
             } catch (e) {
                 // if (e instanceof QueryFailedError) {
                 if (e.message.includes("ORA-01100: database already mounted")) {
@@ -453,23 +475,29 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 throw e
             }
         } else {
-            await this.query(`CREATE DATABASE "${database}"`)
+            await this.query(`CREATE DATABASE ${this.driver.escape(database)}`)
         }
     }
 
     /**
      * Drops database.
+     *
+     * @param database
+     * @param ifExists
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+    async dropDatabase(database: string, ifExists?: boolean): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Creates a new table schema.
+     *
+     * @param schemaPath
+     * @param ifNotExists
      */
     async createSchema(
         schemaPath: string,
-        ifNotExist?: boolean,
+        ifNotExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema create queries are not supported by Oracle driver.`,
@@ -478,8 +506,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops table schema.
+     *
+     * @param schemaPath
+     * @param ifExists
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    async dropSchema(schemaPath: string, ifExists?: boolean): Promise<void> {
         throw new TypeORMError(
             `Schema drop queries are not supported by Oracle driver.`,
         )
@@ -487,14 +518,19 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new table.
+     *
+     * @param table
+     * @param ifNotExists
+     * @param createForeignKeys
+     * @param createIndices
      */
     async createTable(
         table: Table,
-        ifNotExist: boolean = false,
+        ifNotExists: boolean = false,
         createForeignKeys: boolean = true,
         createIndices: boolean = true,
     ): Promise<void> {
-        if (ifNotExist) {
+        if (ifNotExists) {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
@@ -514,12 +550,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(
-                        table,
-                        index.columnNames,
-                        index.where,
-                    )
+                index.name ??= this.dataSource.namingStrategy.indexName(
+                    table,
+                    index.columnNames,
+                    index.where,
+                )
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(index))
             })
@@ -553,16 +588,21 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the table.
+     *
+     * @param tableOrName
+     * @param ifExists
+     * @param dropForeignKeys
+     * @param dropIndices
      */
     async dropTable(
         tableOrName: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
         dropForeignKeys: boolean = true,
         dropIndices: boolean = true,
     ): Promise<void> {
         // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
         // to perform drop queries for foreign keys and indices.
-        if (ifExist) {
+        if (ifExists) {
             const isTableExist = await this.hasTable(tableOrName)
             if (!isTableExist) return Promise.resolve()
         }
@@ -620,6 +660,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new view.
+     *
+     * @param view
+     * @param syncWithMetadata
      */
     async createView(
         view: View,
@@ -637,10 +680,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the view.
+     *
+     * @param target
+     * @param ifExists
      */
-    async dropView(target: View | string): Promise<void> {
+    async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
-        const view = await this.getCachedView(viewName)
+        const view = ifExists
+            ? await this.getCachedView(viewName).catch(() => undefined)
+            : await this.getCachedView(viewName)
+        if (!view) return
 
         const upQueries: Query[] = []
         const downQueries: Query[] = []
@@ -653,6 +702,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Renames the given table.
+     *
+     * @param oldTableOrName
+     * @param newTableName
      */
     async renameTable(
         oldTableOrName: Table | string,
@@ -695,11 +747,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 (column) => column.name,
             )
 
-            const oldPkName = this.connection.namingStrategy.primaryKeyName(
+            const oldPkName = this.dataSource.namingStrategy.primaryKeyName(
                 oldTable,
                 columnNames,
             )
-            const newPkName = this.connection.namingStrategy.primaryKeyName(
+            const newPkName = this.dataSource.namingStrategy.primaryKeyName(
                 newTable,
                 columnNames,
             )
@@ -724,7 +776,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
             const oldUniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     oldTable,
                     unique.columnNames,
                 )
@@ -734,7 +786,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // build new constraint name
             const newUniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     newTable,
                     unique.columnNames,
                 )
@@ -765,7 +817,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // rename index constraints
         newTable.indices.forEach((index) => {
-            const oldIndexName = this.connection.namingStrategy.indexName(
+            const oldIndexName = this.dataSource.namingStrategy.indexName(
                 oldTable,
                 index.columnNames,
                 index.where,
@@ -775,7 +827,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (index.name !== oldIndexName) return
 
             // build new constraint name
-            const newIndexName = this.connection.namingStrategy.indexName(
+            const newIndexName = this.dataSource.namingStrategy.indexName(
                 newTable,
                 index.columnNames,
                 index.where,
@@ -800,7 +852,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
             const oldForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     oldTable,
                     foreignKey.columnNames,
                     this.getTablePath(foreignKey),
@@ -812,7 +864,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // build new constraint name
             const newForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     newTable,
                     foreignKey.columnNames,
                     this.getTablePath(foreignKey),
@@ -852,6 +904,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new column from the column in the table.
+     *
+     * @param tableOrName
+     * @param column
      */
     async addColumn(
         tableOrName: Table | string,
@@ -884,12 +939,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const primaryColumns = clonedTable.primaryColumns
             // if table already have primary key, me must drop it and recreate again
             if (primaryColumns.length > 0) {
-                const pkName = primaryColumns[0].primaryKeyConstraintName
-                    ? primaryColumns[0].primaryKeyConstraintName
-                    : this.connection.namingStrategy.primaryKeyName(
-                          clonedTable,
-                          primaryColumns.map((column) => column.name),
-                      )
+                const pkName =
+                    primaryColumns[0].primaryKeyConstraintName ??
+                    this.dataSource.namingStrategy.primaryKeyName(
+                        clonedTable,
+                        primaryColumns.map((column) => column.name),
+                    )
 
                 const columnNames = primaryColumns
                     .map((column) => `"${column.name}"`)
@@ -912,12 +967,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             primaryColumns.push(column)
-            const pkName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
-                      clonedTable,
-                      primaryColumns.map((column) => column.name),
-                  )
+            const pkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    primaryColumns.map((column) => column.name),
+                )
 
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
@@ -957,7 +1012,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // create unique constraint
         if (column.isUnique) {
             const uniqueConstraint = new TableUnique({
-                name: this.connection.namingStrategy.uniqueConstraintName(
+                name: this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     [column.name],
                 ),
@@ -1006,6 +1061,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new columns from the column in the table.
+     *
+     * @param tableOrName
+     * @param columns
      */
     async addColumns(
         tableOrName: Table | string,
@@ -1018,6 +1076,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Renames column in the given table.
+     *
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newTableColumnOrName
      */
     async renameColumn(
         tableOrName: Table | string,
@@ -1037,7 +1099,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} table.`,
             )
 
-        let newColumn: TableColumn | undefined = undefined
+        let newColumn: TableColumn
         if (InstanceChecker.isTableColumn(newTableColumnOrName)) {
             newColumn = newTableColumnOrName
         } else {
@@ -1050,6 +1112,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     *
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newColumn
      */
     async changeColumn(
         tableOrName: Table | string,
@@ -1120,7 +1186,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         (column) => column.name,
                     )
                     const oldPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1131,7 +1197,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     // build new primary constraint name
                     const newPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1155,7 +1221,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach((unique) => {
                     const oldUniqueName =
-                        this.connection.namingStrategy.uniqueConstraintName(
+                        this.dataSource.namingStrategy.uniqueConstraintName(
                             clonedTable,
                             unique.columnNames,
                         )
@@ -1170,7 +1236,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                     unique.columnNames.push(newColumn.name)
                     const newUniqueName =
-                        this.connection.namingStrategy.uniqueConstraintName(
+                        this.dataSource.namingStrategy.uniqueConstraintName(
                             clonedTable,
                             unique.columnNames,
                         )
@@ -1202,7 +1268,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
                     const oldIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -1218,7 +1284,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                     index.columnNames.push(newColumn.name)
                     const newIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -1245,7 +1311,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
                         const foreignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                                 this.getTablePath(foreignKey),
@@ -1262,7 +1328,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )
                         foreignKey.columnNames.push(newColumn.name)
                         const newForeignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                                 this.getTablePath(foreignKey),
@@ -1347,7 +1413,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} MODIFY "${
                             oldColumn.name
-                        }" ${this.connection.driver.createFullType(
+                        }" ${this.dataSource.driver.createFullType(
                             newColumn,
                         )} ${defaultUp} ${nullableUp}`,
                     ),
@@ -1356,7 +1422,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} MODIFY "${
                             oldColumn.name
-                        }" ${this.connection.driver.createFullType(
+                        }" ${this.dataSource.driver.createFullType(
                             oldColumn,
                         )} ${defaultDown} ${nullableDown}`,
                     ),
@@ -1368,12 +1434,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName = primaryColumns[0].primaryKeyConstraintName
-                        ? primaryColumns[0].primaryKeyConstraintName
-                        : this.connection.namingStrategy.primaryKeyName(
-                              clonedTable,
-                              primaryColumns.map((column) => column.name),
-                          )
+                    const pkName =
+                        primaryColumns[0].primaryKeyConstraintName ??
+                        this.dataSource.namingStrategy.primaryKeyName(
+                            clonedTable,
+                            primaryColumns.map((column) => column.name),
+                        )
 
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
@@ -1402,12 +1468,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         (column) => column.name === newColumn.name,
                     )
                     column!.isPrimary = true
-                    const pkName = primaryColumns[0].primaryKeyConstraintName
-                        ? primaryColumns[0].primaryKeyConstraintName
-                        : this.connection.namingStrategy.primaryKeyName(
-                              clonedTable,
-                              primaryColumns.map((column) => column.name),
-                          )
+                    const pkName =
+                        primaryColumns[0].primaryKeyConstraintName ??
+                        this.dataSource.namingStrategy.primaryKeyName(
+                            clonedTable,
+                            primaryColumns.map((column) => column.name),
+                        )
 
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
@@ -1444,13 +1510,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName = primaryColumns[0]
-                            .primaryKeyConstraintName
-                            ? primaryColumns[0].primaryKeyConstraintName
-                            : this.connection.namingStrategy.primaryKeyName(
-                                  clonedTable,
-                                  primaryColumns.map((column) => column.name),
-                              )
+                        const pkName =
+                            primaryColumns[0].primaryKeyConstraintName ??
+                            this.dataSource.namingStrategy.primaryKeyName(
+                                clonedTable,
+                                primaryColumns.map((column) => column.name),
+                            )
 
                         const columnNames = primaryColumns
                             .map((column) => `"${column.name}"`)
@@ -1477,7 +1542,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueConstraint = new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(
+                        name: this.dataSource.namingStrategy.uniqueConstraintName(
                             table,
                             [newColumn.name],
                         ),
@@ -1542,6 +1607,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     *
+     * @param tableOrName
+     * @param changedColumns
      */
     async changeColumns(
         tableOrName: Table | string,
@@ -1554,10 +1622,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops column in the table.
+     *
+     * @param tableOrName
+     * @param columnOrName
+     * @param ifExists
      */
     async dropColumn(
         tableOrName: Table | string,
         columnOrName: TableColumn | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1565,12 +1638,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const column = InstanceChecker.isTableColumn(columnOrName)
             ? columnOrName
             : table.findColumnByName(columnOrName)
-        if (!column)
+        if (!column) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Column "${columnOrName}" was not found in table ${this.escapePath(
                     table,
                 )}`,
             )
+        }
 
         const clonedTable = table.clone()
         const upQueries: Query[] = []
@@ -1578,12 +1653,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // drop primary key constraint
         if (column.isPrimary) {
-            const pkName = column.primaryKeyConstraintName
-                ? column.primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
-                      clonedTable,
-                      clonedTable.primaryColumns.map((column) => column.name),
-                  )
+            const pkName =
+                column.primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    clonedTable.primaryColumns.map((column) => column.name),
+                )
 
             const columnNames = clonedTable.primaryColumns
                 .map((primaryColumn) => `"${primaryColumn.name}"`)
@@ -1610,15 +1685,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = clonedTable.primaryColumns[0]
-                    .primaryKeyConstraintName
-                    ? clonedTable.primaryColumns[0].primaryKeyConstraintName
-                    : this.connection.namingStrategy.primaryKeyName(
-                          clonedTable,
-                          clonedTable.primaryColumns.map(
-                              (column) => column.name,
-                          ),
-                      )
+                const pkName =
+                    clonedTable.primaryColumns[0].primaryKeyConstraintName ??
+                    this.dataSource.namingStrategy.primaryKeyName(
+                        clonedTable,
+                        clonedTable.primaryColumns.map((column) => column.name),
+                    )
 
                 const columnNames = clonedTable.primaryColumns
                     .map((primaryColumn) => `"${primaryColumn.name}"`)
@@ -1725,18 +1797,27 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the columns in the table.
+     *
+     * @param tableOrName
+     * @param columns
+     * @param ifExists
      */
     async dropColumns(
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
+        ifExists?: boolean,
     ): Promise<void> {
         for (const column of [...columns]) {
-            await this.dropColumn(tableOrName, column)
+            await this.dropColumn(tableOrName, column, ifExists)
         }
     }
 
     /**
      * Creates a new primary key.
+     *
+     * @param tableOrName
+     * @param columnNames
+     * @param constraintName
      */
     async createPrimaryKey(
         tableOrName: Table | string,
@@ -1763,6 +1844,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Updates composite primary keys.
+     *
+     * @param tableOrName
+     * @param columns
      */
     async updatePrimaryKeys(
         tableOrName: Table | string,
@@ -1779,12 +1863,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
-                      clonedTable,
-                      primaryColumns.map((column) => column.name),
-                  )
+            const pkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    primaryColumns.map((column) => column.name),
+                )
 
             const columnNamesString = primaryColumns
                 .map((column) => `"${column.name}"`)
@@ -1809,14 +1893,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
-        const pkName = primaryColumns[0].primaryKeyConstraintName
-            ? primaryColumns[0].primaryKeyConstraintName
-            : this.connection.namingStrategy.primaryKeyName(
-                  clonedTable,
-                  columnNames,
-              )
+        const pkName =
+            primaryColumns[0].primaryKeyConstraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(
+                clonedTable,
+                columnNames,
+            )
 
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
@@ -1842,14 +1928,21 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a primary key.
+     *
+     * @param tableOrName
+     * @param constraintName
+     * @param ifExists
      */
     async dropPrimaryKey(
         tableOrName: Table | string,
         constraintName?: string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
+        if (ifExists && table.primaryColumns.length === 0) return
+
         const up = this.dropPrimaryKeySql(table)
         const down = this.createPrimaryKeySql(
             table,
@@ -1864,6 +1957,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new unique constraint.
+     *
+     * @param tableOrName
+     * @param uniqueConstraint
      */
     async createUniqueConstraint(
         tableOrName: Table | string,
@@ -1874,12 +1970,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!uniqueConstraint.name)
-            uniqueConstraint.name =
-                this.connection.namingStrategy.uniqueConstraintName(
-                    table,
-                    uniqueConstraint.columnNames,
-                )
+        uniqueConstraint.name ??=
+            this.dataSource.namingStrategy.uniqueConstraintName(
+                table,
+                uniqueConstraint.columnNames,
+            )
 
         const up = this.createUniqueConstraintSql(table, uniqueConstraint)
         const down = this.dropUniqueConstraintSql(table, uniqueConstraint)
@@ -1889,6 +1984,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new unique constraints.
+     *
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async createUniqueConstraints(
         tableOrName: Table | string,
@@ -1902,10 +2000,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a unique constraint.
+     *
+     * @param tableOrName
+     * @param uniqueOrName
+     * @param ifExists
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1913,10 +2016,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const uniqueConstraint = InstanceChecker.isTableUnique(uniqueOrName)
             ? uniqueOrName
             : table.uniques.find((u) => u.name === uniqueOrName)
-        if (!uniqueConstraint)
+        if (!uniqueConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropUniqueConstraintSql(table, uniqueConstraint)
         const down = this.createUniqueConstraintSql(table, uniqueConstraint)
@@ -1925,20 +2030,28 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a unique constraints.
+     * Drops unique constraints.
+     *
+     * @param tableOrName
+     * @param uniqueConstraints
+     * @param ifExists
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = uniqueConstraints.map((uniqueConstraint) =>
-            this.dropUniqueConstraint(tableOrName, uniqueConstraint),
+            this.dropUniqueConstraint(tableOrName, uniqueConstraint, ifExists),
         )
         await Promise.all(promises)
     }
 
     /**
      * Creates new check constraint.
+     *
+     * @param tableOrName
+     * @param checkConstraint
      */
     async createCheckConstraint(
         tableOrName: Table | string,
@@ -1949,12 +2062,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!checkConstraint.name)
-            checkConstraint.name =
-                this.connection.namingStrategy.checkConstraintName(
-                    table,
-                    checkConstraint.expression!,
-                )
+        checkConstraint.name ??=
+            this.dataSource.namingStrategy.checkConstraintName(
+                table,
+                checkConstraint.expression!,
+            )
 
         const up = this.createCheckConstraintSql(table, checkConstraint)
         const down = this.dropCheckConstraintSql(table, checkConstraint)
@@ -1964,6 +2076,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates new check constraints.
+     *
+     * @param tableOrName
+     * @param checkConstraints
      */
     async createCheckConstraints(
         tableOrName: Table | string,
@@ -1977,10 +2092,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraint.
+     *
+     * @param tableOrName
+     * @param checkOrName
+     * @param ifExists
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -1988,10 +2108,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
             ? checkOrName
             : table.checks.find((c) => c.name === checkOrName)
-        if (!checkConstraint)
+        if (!checkConstraint) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied check constraint was not found in table ${table.name}`,
             )
+        }
 
         const up = this.dropCheckConstraintSql(table, checkConstraint)
         const down = this.createCheckConstraintSql(table, checkConstraint)
@@ -2001,19 +2123,27 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraints.
+     *
+     * @param tableOrName
+     * @param checkConstraints
+     * @param ifExists
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = checkConstraints.map((checkConstraint) =>
-            this.dropCheckConstraint(tableOrName, checkConstraint),
+            this.dropCheckConstraint(tableOrName, checkConstraint, ifExists),
         )
         await Promise.all(promises)
     }
 
     /**
      * Creates a new exclusion constraint.
+     *
+     * @param tableOrName
+     * @param exclusionConstraint
      */
     async createExclusionConstraint(
         tableOrName: Table | string,
@@ -2024,6 +2154,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new exclusion constraints.
+     *
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async createExclusionConstraints(
         tableOrName: Table | string,
@@ -2034,26 +2167,39 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops exclusion constraint.
+     *
+     * @param tableOrName
+     * @param exclusionOrName
+     * @param ifExists
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
         exclusionOrName: TableExclusion | string,
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`Oracle does not support exclusion constraints.`)
     }
 
     /**
      * Drops exclusion constraints.
+     *
+     * @param tableOrName
+     * @param exclusionConstraints
+     * @param ifExists
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
+        ifExists?: boolean,
     ): Promise<void> {
         throw new TypeORMError(`Oracle does not support exclusion constraints.`)
     }
 
     /**
      * Creates a new foreign key.
+     *
+     * @param tableOrName
+     * @param foreignKey
      */
     async createForeignKey(
         tableOrName: Table | string,
@@ -2064,13 +2210,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new FK may be passed without name. In this case we generate FK name manually.
-        if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
@@ -2080,6 +2225,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new foreign keys.
+     *
+     * @param tableOrName
+     * @param foreignKeys
      */
     async createForeignKeys(
         tableOrName: Table | string,
@@ -2093,10 +2241,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign key from the table.
+     *
+     * @param tableOrName
+     * @param foreignKeyOrName
+     * @param ifExists
      */
     async dropForeignKey(
         tableOrName: Table | string,
         foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2104,19 +2257,19 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
             ? foreignKeyOrName
             : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
-        if (!foreignKey)
+        if (!foreignKey) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
-
-        if (!foreignKey.name) {
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
-                table,
-                foreignKey.columnNames,
-                this.getTablePath(foreignKey),
-                foreignKey.referencedColumnNames,
-            )
         }
+
+        foreignKey.name ??= this.dataSource.namingStrategy.foreignKeyName(
+            table,
+            foreignKey.columnNames,
+            this.getTablePath(foreignKey),
+            foreignKey.referencedColumnNames,
+        )
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
@@ -2126,19 +2279,27 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign keys from the table.
+     *
+     * @param tableOrName
+     * @param foreignKeys
+     * @param ifExists
      */
     async dropForeignKeys(
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = foreignKeys.map((foreignKey) =>
-            this.dropForeignKey(tableOrName, foreignKey),
+            this.dropForeignKey(tableOrName, foreignKey, ifExists),
         )
         await Promise.all(promises)
     }
 
     /**
      * Creates a new index.
+     *
+     * @param tableOrName
+     * @param index
      */
     async createIndex(
         tableOrName: Table | string,
@@ -2149,7 +2310,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(index)
@@ -2159,6 +2320,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new indices
+     *
+     * @param tableOrName
+     * @param indices
      */
     async createIndices(
         tableOrName: Table | string,
@@ -2172,10 +2336,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops an index from the table.
+     *
+     * @param tableOrName
+     * @param indexOrName
+     * @param ifExists
      */
     async dropIndex(
         tableOrName: Table | string,
         indexOrName: TableIndex | string,
+        ifExists?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2183,12 +2352,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : table.indices.find((i) => i.name === indexOrName)
-        if (!index)
+        if (!index) {
+            if (ifExists) return
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        }
         // old index may be passed without name. In this case we generate index name manually.
-        if (!index.name) index.name = this.generateIndexName(table, index)
+        index.name ??= this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(index)
         const down = this.createIndexSql(table, index)
@@ -2198,13 +2369,18 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops an indices from the table.
+     *
+     * @param tableOrName
+     * @param indices
+     * @param ifExists
      */
     async dropIndices(
         tableOrName: Table | string,
         indices: TableIndex[],
+        ifExists?: boolean,
     ): Promise<void> {
         const promises = indices.map((index) =>
-            this.dropIndex(tableOrName, index),
+            this.dropIndex(tableOrName, index, ifExists),
         )
         await Promise.all(promises)
     }
@@ -2212,9 +2388,19 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     *
+     * @param tableName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`)
+    async clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        const cascade = options?.cascade ? " CASCADE" : ""
+        await this.query(
+            `TRUNCATE TABLE ${this.escapePath(tableName)}${cascade}`,
+        )
     }
 
     /**
@@ -2268,9 +2454,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             return []
         }
 
-        if (!viewNames) {
-            viewNames = []
-        }
+        viewNames ??= []
 
         const currentDatabase = await this.getCurrentDatabase()
         const currentSchema = await this.getCurrentSchema()
@@ -2278,9 +2462,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const viewsCondition = viewNames
             .map((viewName) => this.driver.parseTableName(viewName))
             .map(({ schema, tableName }) => {
-                if (!schema) {
-                    schema = this.driver.options.schema || currentSchema
-                }
+                schema ??= this.driver.options.schema ?? currentSchema
 
                 return `("T"."schema" = '${schema}' AND "T"."name" = '${tableName}')`
             })
@@ -2300,8 +2482,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             const view = new View()
             view.database =
-                parsedName.database || dbView["database"] || currentDatabase
-            view.schema = parsedName.schema || dbView["schema"] || currentSchema
+                parsedName.database ?? dbView["database"] ?? currentDatabase
+            view.schema = parsedName.schema ?? dbView["schema"] ?? currentSchema
             view.name = parsedName.tableName
             view.expression = dbView["value"]
             view.materialized =
@@ -2312,9 +2494,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     *
+     * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
-        if (tableNames && tableNames.length === 0) {
+        if (tableNames?.length === 0) {
             return []
         }
 
@@ -2574,7 +2758,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                                 // build default primary key constraint name
                                 const pkName =
-                                    this.connection.namingStrategy.primaryKeyName(
+                                    this.dataSource.namingStrategy.primaryKeyName(
                                         table,
                                         columnNames,
                                     )
@@ -2616,7 +2800,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                                     asExpressionQuery.query,
                                     asExpressionQuery.parameters,
                                 )
-                                if (results[0] && results[0].value) {
+                                if (results[0]?.value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
                                     tableColumn.asExpression = ""
@@ -2781,6 +2965,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds and returns SQL for create table.
+     *
+     * @param table
+     * @param createForeignKeys
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns
@@ -2799,7 +2986,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (!isUniqueExist)
                     table.uniques.push(
                         new TableUnique({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -2811,12 +2998,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (table.uniques.length > 0) {
             const uniquesSql = table.uniques
                 .map((unique) => {
-                    const uniqueName = unique.name
-                        ? unique.name
-                        : this.connection.namingStrategy.uniqueConstraintName(
-                              table,
-                              unique.columnNames,
-                          )
+                    const uniqueName =
+                        unique.name ??
+                        this.dataSource.namingStrategy.uniqueConstraintName(
+                            table,
+                            unique.columnNames,
+                        )
                     const columnNames = unique.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
@@ -2830,12 +3017,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (table.checks.length > 0) {
             const checksSql = table.checks
                 .map((check) => {
-                    const checkName = check.name
-                        ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
-                              table,
-                              check.expression!,
-                          )
+                    const checkName =
+                        check.name ??
+                        this.dataSource.namingStrategy.checkConstraintName(
+                            table,
+                            check.expression!,
+                        )
                     return `CONSTRAINT "${checkName}" CHECK (${check.expression})`
                 })
                 .join(", ")
@@ -2849,13 +3036,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const columnNames = fk.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
-                    if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
-                            table,
-                            fk.columnNames,
-                            this.getTablePath(fk),
-                            fk.referencedColumnNames,
-                        )
+                    fk.name ??= this.dataSource.namingStrategy.foreignKeyName(
+                        table,
+                        fk.columnNames,
+                        this.getTablePath(fk),
+                        fk.referencedColumnNames,
+                    )
                     const referencedColumnNames = fk.referencedColumnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
@@ -2879,12 +3065,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             (column) => column.isPrimary,
         )
         if (primaryColumns.length > 0) {
-            const primaryKeyName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
-                      table,
-                      primaryColumns.map((column) => column.name),
-                  )
+            const primaryKeyName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    table,
+                    primaryColumns.map((column) => column.name),
+                )
 
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
@@ -2899,12 +3085,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop table sql.
+     *
+     * @param tableOrName
+     * @param ifExists
      */
     protected dropTableSql(
         tableOrName: Table | string,
-        ifExist?: boolean,
+        ifExists?: boolean,
     ): Query {
-        const query = ifExist
+        const query = ifExists
             ? `DROP TABLE IF EXISTS ${this.escapePath(tableOrName)}`
             : `DROP TABLE ${this.escapePath(tableOrName)}`
         return new Query(query)
@@ -2922,7 +3111,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             return new Query(
                 `CREATE ${materializedClause}VIEW ${this.escapePath(
                     view,
-                )} AS ${view.expression(this.connection).getQuery()}`,
+                )} AS ${view.expression(this.dataSource).getQuery()}`,
             )
         }
     }
@@ -2931,7 +3120,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         const type = view.materialized
             ? MetadataTableType.MATERIALIZED_VIEW
             : MetadataTableType.VIEW
@@ -2946,6 +3135,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop view sql.
+     *
+     * @param view
      */
     protected dropViewSql(view: View): Query {
         const materializedClause = view.materialized ? "MATERIALIZED " : ""
@@ -2956,6 +3147,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds remove view sql.
+     *
+     * @param view
      */
     protected deleteViewDefinitionSql(view: View): Query {
         const type = view.materialized
@@ -2966,6 +3159,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create index sql.
+     *
+     * @param table
+     * @param index
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
@@ -2980,6 +3176,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop index sql.
+     *
+     * @param indexOrName
      */
     protected dropIndexSql(indexOrName: TableIndex | string): Query {
         const indexName = InstanceChecker.isTableIndex(indexOrName)
@@ -2990,15 +3188,19 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create primary key sql.
+     *
+     * @param table
+     * @param columnNames
+     * @param constraintName
      */
     protected createPrimaryKeySql(
         table: Table,
         columnNames: string[],
         constraintName?: string,
     ): Query {
-        const primaryKeyName = constraintName
-            ? constraintName
-            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+        const primaryKeyName =
+            constraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
 
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
@@ -3013,6 +3215,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop primary key sql.
+     *
+     * @param table
      */
     protected dropPrimaryKeySql(table: Table): Query {
         if (!table.primaryColumns.length)
@@ -3020,9 +3224,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const columnNames = table.primaryColumns.map((column) => column.name)
         const constraintName = table.primaryColumns[0].primaryKeyConstraintName
-        const primaryKeyName = constraintName
-            ? constraintName
-            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+        const primaryKeyName =
+            constraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
 
         return new Query(
             `ALTER TABLE ${this.escapePath(
@@ -3033,6 +3237,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create unique constraint sql.
+     *
+     * @param table
+     * @param uniqueConstraint
      */
     protected createUniqueConstraintSql(
         table: Table,
@@ -3050,6 +3257,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop unique constraint sql.
+     *
+     * @param table
+     * @param uniqueOrName
      */
     protected dropUniqueConstraintSql(
         table: Table,
@@ -3067,6 +3277,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create check constraint sql.
+     *
+     * @param table
+     * @param checkConstraint
      */
     protected createCheckConstraintSql(
         table: Table,
@@ -3081,6 +3294,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop check constraint sql.
+     *
+     * @param table
+     * @param checkOrName
      */
     protected dropCheckConstraintSql(
         table: Table,
@@ -3098,6 +3314,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create foreign key sql.
+     *
+     * @param table
+     * @param foreignKey
      */
     protected createForeignKeySql(
         table: Table,
@@ -3125,6 +3344,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop foreign key sql.
+     *
+     * @param table
+     * @param foreignKeyOrName
      */
     protected dropForeignKeySql(
         table: Table,
@@ -3144,10 +3366,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds a query for create column.
+     *
+     * @param column
      */
     protected buildCreateColumnSql(column: TableColumn) {
         let c =
-            `"${column.name}" ` + this.connection.driver.createFullType(column)
+            `"${column.name}" ` + this.dataSource.driver.createFullType(column)
         if (column.charset) c += " CHARACTER SET " + column.charset
         if (column.collation) c += " COLLATE " + column.collation
 
@@ -3170,6 +3394,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Escapes given table or view path.
+     *
+     * @param target
      */
     protected escapePath(target: Table | View | string): string {
         // Ignore database when escaping paths
@@ -3184,6 +3410,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Change table comment.
+     *
+     * @param tableOrName
+     * @param comment
      */
     changeTableComment(
         tableOrName: Table | string,

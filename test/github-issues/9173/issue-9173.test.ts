@@ -4,31 +4,26 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, Table } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table } from "../../../src"
 import { View } from "../../../src/schema-builder/view/View"
 import { expect } from "chai"
 
 describe("github issues > #9173 missing typeorm_metadata", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: [
-                    "sqlite",
-                    "mysql",
-                    "postgres",
-                    "better-sqlite3",
-                ],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mysql", "postgres", "better-sqlite3"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create a view without view entity", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await connection.runMigrations({
                 transaction: "all",
             })

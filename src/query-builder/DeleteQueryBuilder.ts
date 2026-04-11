@@ -1,10 +1,10 @@
 import { QueryBuilder } from "./QueryBuilder"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { EntityTarget } from "../common/EntityTarget"
-import { DataSource } from "../data-source/DataSource"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { WhereExpressionBuilder } from "./WhereExpressionBuilder"
-import { Brackets } from "./Brackets"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { DataSource } from "../data-source/DataSource"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { WhereExpressionBuilder } from "./WhereExpressionBuilder"
+import type { Brackets } from "./Brackets"
 import { DeleteResult } from "./result/DeleteResult"
 import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -115,6 +115,9 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
+     *
+     * @param entityTarget
+     * @param aliasName
      */
     from<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
@@ -133,6 +136,9 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
+     *
+     * @param where
+     * @param parameters
      */
     where(
         where:
@@ -156,6 +162,9 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     *
+     * @param where
+     * @param parameters
      */
     andWhere(
         where:
@@ -177,6 +186,9 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     *
+     * @param where
+     * @param parameters
      */
     orWhere(
         where:
@@ -199,6 +211,8 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
      * Sets WHERE condition in the query builder with a condition for the given ids.
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
+     *
+     * @param ids
      */
     whereInIds(ids: any | any[]): this {
         return this.where(this.getWhereInIdsCondition(ids))
@@ -206,6 +220,8 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
+     *
+     * @param ids
      */
     andWhereInIds(ids: any | any[]): this {
         return this.andWhere(this.getWhereInIdsCondition(ids))
@@ -213,6 +229,8 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
+     *
+     * @param ids
      */
     orWhereInIds(ids: any | any[]): this {
         return this.orWhere(this.getWhereInIdsCondition(ids))
@@ -236,6 +254,8 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     *
+     * @param output
      */
     output(output: string | string[]): this {
         return this.returning(output)
@@ -260,10 +280,12 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     *
+     * @param returning
      */
     returning(returning: string | string[]): this {
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported("delete")) {
+        if (!this.dataSource.driver.isReturningSqlSupported("delete")) {
             throw new ReturningStatementNotSupportedError()
         }
 
@@ -286,10 +308,10 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
         if (returningExpression === "") {
             return `DELETE FROM ${tableName}${whereExpression}`
         }
-        if (this.connection.driver.options.type === "mssql") {
+        if (this.dataSource.driver.options.type === "mssql") {
             return `DELETE FROM ${tableName} OUTPUT ${returningExpression}${whereExpression}`
         }
-        if (this.connection.driver.options.type === "spanner") {
+        if (this.dataSource.driver.options.type === "spanner") {
             return `DELETE FROM ${tableName}${whereExpression} THEN RETURN ${returningExpression}`
         }
         return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`

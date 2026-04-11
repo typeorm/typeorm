@@ -9,8 +9,8 @@ You can achieve this using custom repositories.
 
 There are several ways how custom repositories can be created.
 
--   [How to create custom repository](#how-to-create-custom-repository)
--   [Using custom repositories in transactions](#using-custom-repositories-in-transactions)
+- [How to create custom repository](#how-to-create-custom-repository)
+- [Using custom repositories in transactions](#using-custom-repositories-in-transactions)
 
 ## How to create custom repository?
 
@@ -59,7 +59,7 @@ and its `getRepository` method. In order to use custom repositories within trans
 you must use `withRepository` method of the provided entity manager instance:
 
 ```typescript
-await connection.transaction(async (manager) => {
+await dataSource.transaction(async (manager) => {
     // in transactions you MUST use manager instance provided by a transaction,
     // you cannot use global entity managers or repositories,
     // because this manager is exclusive and transactional
