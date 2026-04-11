@@ -1,7 +1,7 @@
 import ansi from "ansis"
 import { exec } from "child_process"
 import path from "path"
-import yargs from "yargs"
+import type yargs from "yargs"
 import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
@@ -62,7 +62,7 @@ export class InitCommand implements yargs.CommandModule {
 
     async handler(args: yargs.Arguments) {
         try {
-            const database: string = (args.database as any) || "postgres"
+            const database: string = (args.database as any) ?? "postgres"
             const isExpress = args.express !== undefined ? true : false
             const isDocker = args.docker !== undefined ? true : false
             const basePath = process.cwd() + (args.name ? "/" + args.name : "")
@@ -177,6 +177,7 @@ export class InitCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the ormconfig file.
+     *
      * @param isEsm
      * @param database
      */
@@ -192,9 +193,9 @@ export class InitCommand implements yargs.CommandModule {
                     'type: "mysql"',
                     'host: "localhost"',
                     "port: 3306",
-                    'username: "test"',
-                    'password: "test"',
-                    'database: "test"',
+                    'username: "root"',
+                    'password: "password"',
+                    'database: "typeorm"',
                 ]
                 break
 
@@ -203,9 +204,9 @@ export class InitCommand implements yargs.CommandModule {
                     'type: "mariadb"',
                     'host: "localhost"',
                     "port: 3306",
-                    'username: "test"',
-                    'password: "test"',
-                    'database: "test"',
+                    'username: "root"',
+                    'password: "password"',
+                    'database: "typeorm"',
                 ]
                 break
 
@@ -221,9 +222,9 @@ export class InitCommand implements yargs.CommandModule {
                     'type: "postgres"',
                     'host: "localhost"',
                     "port: 5432",
-                    'username: "test"',
-                    'password: "test"',
-                    'database: "test"',
+                    'username: "root"',
+                    'password: "password"',
+                    'database: "typeorm"',
                 ]
                 break
 
@@ -293,6 +294,7 @@ ${dbSettings.map((s) => `    ${s},`).join("\n")}
 
     /**
      * Gets contents of the ormconfig file.
+     *
      * @param esmModule
      */
     protected static getTsConfigTemplate(esmModule: boolean): string {
@@ -347,14 +349,15 @@ temp/`
 
     /**
      * Gets contents of the user entity.
+     *
      * @param database
      */
     protected static getUserEntityTemplate(database: string): string {
-        return `import { Entity, ${
+        return `${
             database === "mongodb"
-                ? "ObjectIdColumn, ObjectId"
-                : "PrimaryGeneratedColumn"
-        }, Column } from "typeorm"
+                ? `import { Entity, ObjectIdColumn, Column } from "typeorm"\nimport { ObjectId } from "mongodb"`
+                : `import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"`
+        }
 
 @Entity()
 export class User {
@@ -381,6 +384,7 @@ export class User {
 
     /**
      * Gets contents of the route file (used when express is enabled).
+     *
      * @param isEsm
      */
     protected static getRoutesTemplate(isEsm: boolean): string {
@@ -413,6 +417,7 @@ export const Routes = [{
 
     /**
      * Gets contents of the user controller file (used when express is enabled).
+     *
      * @param isEsm
      */
     protected static getControllerTemplate(isEsm: boolean): string {
@@ -475,6 +480,7 @@ export class UserController {
 
     /**
      * Gets contents of the main (index) application file.
+     *
      * @param express
      * @param isEsm
      */
@@ -565,6 +571,7 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new package.json file.
+     *
      * @param projectName
      * @param projectIsEsm
      */
@@ -574,7 +581,7 @@ AppDataSource.initialize().then(async () => {
     ): string {
         return JSON.stringify(
             {
-                name: projectName || "typeorm-sample",
+                name: projectName ?? "typeorm-sample",
                 version: "0.0.1",
                 description: "Awesome project developed with TypeORM.",
                 type: projectIsEsm ? "module" : "commonjs",
@@ -589,6 +596,7 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new docker-compose.yml file.
+     *
      * @param database
      */
     protected static getDockerComposeTemplate(database: string): string {
@@ -601,10 +609,8 @@ AppDataSource.initialize().then(async () => {
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
 `
             case "mariadb":
@@ -615,10 +621,8 @@ AppDataSource.initialize().then(async () => {
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "typeorm"
 
 `
             case "postgres":
@@ -629,9 +633,9 @@ AppDataSource.initialize().then(async () => {
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: "root"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "typeorm"
 
 `
             case "cockroachdb":
@@ -691,6 +695,7 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new readme.md file.
+     *
      * @param options
      * @param options.docker
      */
@@ -717,6 +722,7 @@ Steps to run this project:
 
     /**
      * Appends to a given package.json template everything needed.
+     *
      * @param packageJsonContents
      * @param database
      * @param express
@@ -730,10 +736,12 @@ Steps to run this project:
     ): Promise<string> {
         const packageJson = JSON.parse(packageJsonContents)
         const ourPackageJson = JSON.parse(
-            await CommandUtils.readFile(`${__dirname}/../package.json`),
+            await CommandUtils.readFile(
+                path.resolve(__dirname, "..", "package.json"),
+            ),
         )
 
-        if (!packageJson.devDependencies) packageJson.devDependencies = {}
+        packageJson.devDependencies ??= {}
         packageJson.devDependencies = {
             "@types/node": ourPackageJson.devDependencies["@types/node"],
             "ts-node": ourPackageJson.devDependencies["ts-node"],
@@ -741,7 +749,7 @@ Steps to run this project:
             ...packageJson.devDependencies,
         }
 
-        if (!packageJson.dependencies) packageJson.dependencies = {}
+        packageJson.dependencies ??= {}
         packageJson.dependencies = {
             ...packageJson.dependencies,
             "reflect-metadata": ourPackageJson.dependencies["reflect-metadata"],
@@ -786,7 +794,7 @@ Steps to run this project:
             packageJson.dependencies["body-parser"] = "^1.20.3"
         }
 
-        if (!packageJson.scripts) packageJson.scripts = {}
+        packageJson.scripts ??= {}
 
         if (projectIsEsm)
             Object.assign(packageJson.scripts, {

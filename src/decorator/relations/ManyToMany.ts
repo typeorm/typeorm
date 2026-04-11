@@ -1,13 +1,14 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
-import { ObjectType } from "../../common/ObjectType"
-import { RelationOptions } from "../options/RelationOptions"
+import type { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
+import type { ObjectType } from "../../common/ObjectType"
+import type { RelationOptions } from "../options/RelationOptions"
 import { ObjectUtils } from "../../util/ObjectUtils"
 
 /**
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
  * multiple instances of Entity1. To achieve it, this type of relation creates a junction table, where it storage
  * entity1 and entity2 ids. This is owner side of the relationship.
+ *
  * @param typeFunctionOrTarget
  * @param options
  */
@@ -20,6 +21,7 @@ export function ManyToMany<T>(
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
  * multiple instances of Entity1. To achieve it, this type of relation creates a junction table, where it storage
  * entity1 and entity2 ids. This is owner side of the relationship.
+ *
  * @param typeFunctionOrTarget
  * @param inverseSide
  * @param options
@@ -34,6 +36,7 @@ export function ManyToMany<T>(
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
  * multiple instances of Entity1. To achieve it, this type of relation creates a junction table, where it storage
  * entity1 and entity2 ids. This is owner side of the relationship.
+ *
  * @param typeFunctionOrTarget
  * @param inverseSideOrOptions
  * @param options
@@ -52,7 +55,7 @@ export function ManyToMany<T>(
     }
 
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        options ??= {} as RelationOptions
 
         // now try to determine it its lazy relation
         let isLazy = options.lazy === true

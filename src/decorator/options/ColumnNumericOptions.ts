@@ -13,22 +13,4 @@ export interface ColumnNumericOptions {
      * of digits to the right of the decimal point and must not be greater than precision.
      */
     scale?: number
-
-    /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds
-     * the UNSIGNED attribute to the column
-     * @deprecated MySQL deprecated and removed the ZEROFILL attribute. This
-     * will also be removed from TypeORM in an upcoming version. Use a character
-     * column and the `LPAD` function as suggested by MySQL or handle the
-     * formatting in the application layer.
-     */
-    zerofill?: boolean
-
-    /**
-     * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
-     * @deprecated MySQL deprecated the UNSIGNED attribute for non-integer
-     * numeric types. This will also be removed from TypeORM in an upcoming version.
-     */
-    unsigned?: boolean
 }

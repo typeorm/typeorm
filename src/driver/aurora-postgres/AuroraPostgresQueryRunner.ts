@@ -1,12 +1,12 @@
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { AuroraPostgresDriver } from "./AuroraPostgresDriver"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { IsolationLevel } from "../types/IsolationLevel"
+import type { AuroraPostgresDriver } from "./AuroraPostgresDriver"
 import { PostgresQueryRunner } from "../postgres/PostgresQueryRunner"
-import { ReplicationMode } from "../types/ReplicationMode"
+import type { ReplicationMode } from "../types/ReplicationMode"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { Table } from "../../schema-builder/table/Table"
+import type { Table } from "../../schema-builder/table/Table"
 import { TypeORMError } from "../../error"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
@@ -90,9 +90,18 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Starts transaction on the current connection.
+     *
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
+        if (isolationLevel) {
+            throw new TypeORMError(
+                `Setting transaction isolation level is not supported by the Aurora Data API`,
+            )
+        }
+
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
@@ -157,6 +166,7 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Executes a given SQL query.
+     *
      * @param query
      * @param parameters
      * @param useStructuredResult
@@ -191,6 +201,7 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Change table comment.
+     *
      * @param tableOrName
      * @param comment
      */

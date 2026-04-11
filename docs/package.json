@@ -26,22 +26,24 @@
     ]
   },
   "dependencies": {
-    "@docusaurus/core": "3.9.2",
+    "@docusaurus/core": "^3.9.2",
     "@docusaurus/plugin-client-redirects": "^3.9.2",
-    "@docusaurus/preset-classic": "3.9.2",
+    "@docusaurus/preset-classic": "^3.9.2",
     "@mdx-js/react": "^3.1.1",
     "@signalwire/docusaurus-plugin-llms-txt": "^1.2.2",
     "clsx": "^2.1.1",
-    "docusaurus-theme-search-typesense": "^0.26.0",
+    "docusaurus-lunr-search": "^3.6.0",
+    "lucide-react": "^1.7.0",
+    "lunr": "^2.3.9",
     "prism-react-renderer": "^2.4.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.9.2",
-    "@docusaurus/tsconfig": "3.9.2",
-    "@docusaurus/types": "3.9.2",
-    "typescript": "~5.9.3"
+    "@docusaurus/module-type-aliases": "^3.9.2",
+    "@docusaurus/tsconfig": "^3.9.2",
+    "@docusaurus/types": "^3.9.2",
+    "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@10.30.1",
   "engines": {
@@ -49,7 +51,6 @@
   },
   "pnpm": {
     "ignoredBuiltDependencies": [
-      "typesense-instantsearch-adapter",
       "core-js-pure",
       "core-js"
     ]

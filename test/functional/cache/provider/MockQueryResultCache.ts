@@ -1,12 +1,12 @@
-import { ObjectLiteral } from "../../../../src/common/ObjectLiteral"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import { PostgresDataSourceOptions } from "../../../../src/driver/postgres/PostgresDataSourceOptions"
+import type { ObjectLiteral } from "../../../../src/common/ObjectLiteral"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import type { PostgresDataSourceOptions } from "../../../../src/driver/postgres/PostgresDataSourceOptions"
 import { MssqlParameter } from "../../../../src/driver/sqlserver/MssqlParameter"
-import { SqlServerDataSourceOptions } from "../../../../src/driver/sqlserver/SqlServerDataSourceOptions"
-import { QueryRunner } from "../../../../src/query-runner/QueryRunner"
+import type { SqlServerDataSourceOptions } from "../../../../src/driver/sqlserver/SqlServerDataSourceOptions"
+import type { QueryRunner } from "../../../../src/query-runner/QueryRunner"
 import { Table } from "../../../../src/schema-builder/table/Table"
-import { QueryResultCache } from "../../../../src/cache/QueryResultCache"
-import { QueryResultCacheOptions } from "../../../../src/cache/QueryResultCacheOptions"
+import type { QueryResultCache } from "../../../../src/cache/QueryResultCache"
+import type { QueryResultCacheOptions } from "../../../../src/cache/QueryResultCacheOptions"
 
 /**
  * Caches query result into current database, into separate table called "mock-query-result-cache".
@@ -31,7 +31,7 @@ export class MockQueryResultCache implements QueryResultCache {
                 ? this.connection.options.cache
                 : {}
         const cacheTableName =
-            cacheOptions.tableName || "mock-query-result-cache"
+            cacheOptions.tableName ?? "mock-query-result-cache"
 
         this.queryResultCacheTable = this.connection.driver.buildTableName(
             cacheTableName,
@@ -216,7 +216,7 @@ export class MockQueryResultCache implements QueryResultCache {
             }
         }
 
-        if (savedCache && savedCache.identifier) {
+        if (savedCache?.identifier) {
             // if exist then update
             const qb = queryRunner.manager
                 .createQueryBuilder()
@@ -227,7 +227,7 @@ export class MockQueryResultCache implements QueryResultCache {
                 condition: insertedValues.identifier,
             })
             await qb.execute()
-        } else if (savedCache && savedCache.query) {
+        } else if (savedCache?.query) {
             // if exist then update
             const qb = queryRunner.manager
                 .createQueryBuilder()

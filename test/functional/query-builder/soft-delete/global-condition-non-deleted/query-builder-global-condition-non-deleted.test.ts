@@ -4,23 +4,22 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe(`query builder > find with the global condition of "non-deleted"`, () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it(`The global condition of "non-deleted" should be set for the entity with delete date columns`, () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.title = "title#1"
                 const post2 = new Post()
@@ -28,36 +27,36 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
                 const post3 = new Post()
                 post3.title = "title#3"
 
-                await connection.manager.save(post1)
-                await connection.manager.save(post2)
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post1)
+                await dataSource.manager.save(post2)
+                await dataSource.manager.save(post3)
 
-                await connection.manager.softRemove(post1)
+                await dataSource.manager.softRemove(post1)
 
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .createQueryBuilder()
                     .select("post")
                     .from(Post, "post")
                     .orderBy("post.id")
                     .getMany()
 
-                loadedPosts!.length.should.be.equal(2)
-                loadedPosts![0].title.should.be.equals("title#2")
-                loadedPosts![1].title.should.be.equals("title#3")
+                loadedPosts.length.should.be.equal(2)
+                loadedPosts[0].title.should.be.equals("title#2")
+                loadedPosts[1].title.should.be.equals("title#3")
 
-                const loadedPost = await connection
+                const loadedPost = await dataSource
                     .createQueryBuilder()
                     .select("post")
                     .from(Post, "post")
                     .orderBy("post.id")
-                    .getOne()
+                    .getOneOrFail()
                 loadedPost!.title.should.be.equals("title#2")
             }),
         ))
 
     it(`The global condition of "non-deleted" should not be set when "withDeleted" is called`, () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.title = "title#1"
                 const post2 = new Post()
@@ -65,13 +64,13 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
                 const post3 = new Post()
                 post3.title = "title#3"
 
-                await connection.manager.save(post1)
-                await connection.manager.save(post2)
-                await connection.manager.save(post3)
+                await dataSource.manager.save(post1)
+                await dataSource.manager.save(post2)
+                await dataSource.manager.save(post3)
 
-                await connection.manager.softRemove(post1)
+                await dataSource.manager.softRemove(post1)
 
-                const loadedPosts = await connection
+                const loadedPosts = await dataSource
                     .createQueryBuilder()
                     .select("post")
                     .from(Post, "post")
@@ -79,18 +78,18 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
                     .orderBy("post.id")
                     .getMany()
 
-                loadedPosts!.length.should.be.equal(3)
-                loadedPosts![0].title.should.be.equals("title#1")
-                loadedPosts![1].title.should.be.equals("title#2")
-                loadedPosts![2].title.should.be.equals("title#3")
+                loadedPosts.length.should.be.equal(3)
+                loadedPosts[0].title.should.be.equals("title#1")
+                loadedPosts[1].title.should.be.equals("title#2")
+                loadedPosts[2].title.should.be.equals("title#3")
 
-                const loadedPost = await connection
+                const loadedPost = await dataSource
                     .createQueryBuilder()
                     .select("post")
                     .from(Post, "post")
                     .withDeleted()
                     .orderBy("post.id")
-                    .getOne()
+                    .getOneOrFail()
                 loadedPost!.title.should.be.equals("title#1")
             }),
         ))
