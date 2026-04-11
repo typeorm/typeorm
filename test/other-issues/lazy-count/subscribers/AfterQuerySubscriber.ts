@@ -6,13 +6,13 @@ import {
 
 @EventSubscriber()
 export class AfterQuerySubscriber implements EntitySubscriberInterface {
-    private calledQueries: any[] = []
+    private calledQueries: string[] = []
 
-    afterQuery(event: AfterQueryEvent<any>): void {
+    afterQuery(event: AfterQueryEvent): void {
         this.calledQueries.push(event.query)
     }
 
-    getCalledQueries(): any[] {
+    getCalledQueries(): string[] {
         return this.calledQueries
     }
 

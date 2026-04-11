@@ -46,8 +46,7 @@ export class SchemaDropCommand implements yargs.CommandModule {
         } catch (err) {
             PlatformTools.logCmdErr("Error during schema drop:", err)
 
-            if (dataSource && dataSource.isInitialized)
-                await dataSource.destroy()
+            if (dataSource?.isInitialized) await dataSource.destroy()
 
             process.exit(1)
         }

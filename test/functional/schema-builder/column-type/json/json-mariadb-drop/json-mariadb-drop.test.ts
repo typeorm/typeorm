@@ -1,0 +1,43 @@
+import "../../../../../utils/test-setup"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../../utils/test-utils"
+import type { DataSource } from "../../../../../../src"
+import { Post } from "./entity/Post"
+import { expect } from "chai"
+
+describe("schema builder > column type > json > mariadb drop", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+            enabledDrivers: ["mariadb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should not drop json column", () =>
+        Promise.all(
+            dataSources.map(async function (connection) {
+                const post = new Post()
+                post.id = 1
+                post.data = { hello: "world" }
+                await connection.manager.save(post)
+
+                await connection.synchronize()
+
+                const loadedPost = await connection.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
+
+                expect(loadedPost.data.hello).to.be.eq("world")
+            }),
+        ))
+})

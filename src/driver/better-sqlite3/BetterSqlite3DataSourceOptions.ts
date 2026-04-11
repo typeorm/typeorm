@@ -75,6 +75,7 @@ export interface BetterSqlite3DataSourceOptions extends BaseDataSourceOptions {
 
     /**
      * Enables WAL mode. By default its disabled.
+     *
      * @see https://www.sqlite.org/wal.html
      */
     readonly enableWAL?: boolean

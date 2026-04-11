@@ -39,10 +39,10 @@ describe("entity schemas > target option", () => {
                 post.text = "About first post"
                 await postRepository.save(post)
 
-                const loadedPost = await postRepository.findOneBy({
+                const loadedPost = await postRepository.findOneByOrFail({
                     title: "First Post",
                 })
-                loadedPost!.should.be.instanceof(Post)
+                loadedPost.should.be.instanceof(Post)
             }),
         ))
 })

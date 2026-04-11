@@ -1,30 +1,11 @@
-import type { EntityManager } from "../../entity-manager/EntityManager"
-import type { DataSource } from "../../data-source/DataSource"
-import type { QueryRunner } from "../../query-runner/QueryRunner"
-import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { BaseEvent } from "./BaseEvent"
 
 /**
  * InsertEvent is an object that broadcaster sends to the entity subscriber when entity is inserted to the database.
  */
-export interface InsertEvent<Entity> {
-    /**
-     * Connection used in the event.
-     */
-    connection: DataSource
-
-    /**
-     * QueryRunner used in the event transaction.
-     * All database operations in the subscribed event listener should be performed using this query runner instance.
-     */
-    queryRunner: QueryRunner
-
-    /**
-     * EntityManager used in the event transaction.
-     * All database operations in the subscribed event listener should be performed using this entity manager instance.
-     */
-    manager: EntityManager
-
+export interface InsertEvent<Entity> extends BaseEvent {
     /**
      * Inserting event.
      */

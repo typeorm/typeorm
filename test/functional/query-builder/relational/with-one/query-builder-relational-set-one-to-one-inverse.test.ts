@@ -52,7 +52,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                     .of(image1)
                     .set(post1)
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -60,9 +60,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.eql({ id: 1, url: "image #1" })
+                expect(loadedPost1.image).to.be.eql({ id: 1, url: "image #1" })
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -70,9 +70,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -80,7 +80,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
 
                 await dataSource
                     .createQueryBuilder()
@@ -88,7 +88,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                     .of(image1)
                     .set(null)
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -96,9 +96,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -106,9 +106,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -116,7 +116,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
             }),
         ))
 
@@ -153,7 +153,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                     .of(2)
                     .set(2)
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -161,9 +161,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -171,9 +171,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.eql({ id: 2, url: "image #2" })
+                expect(loadedPost2.image).to.be.eql({ id: 2, url: "image #2" })
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -181,7 +181,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
 
                 await dataSource
                     .createQueryBuilder()
@@ -189,7 +189,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                     .of(2)
                     .set(null)
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -197,9 +197,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -207,9 +207,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -217,7 +217,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
             }),
         ))
 
@@ -254,7 +254,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                     .of({ id: 3 })
                     .set({ id: 3 })
 
-                let loadedPost1 = await dataSource.manager.findOne(Post, {
+                let loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -262,9 +262,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                let loadedPost2 = await dataSource.manager.findOne(Post, {
+                let loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -272,9 +272,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                let loadedPost3 = await dataSource.manager.findOne(Post, {
+                let loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -282,7 +282,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.eql({ id: 3, url: "image #3" })
+                expect(loadedPost3.image).to.be.eql({ id: 3, url: "image #3" })
 
                 await dataSource
                     .createQueryBuilder()
@@ -290,7 +290,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                     .of({ id: 3 })
                     .set(null)
 
-                loadedPost1 = await dataSource.manager.findOne(Post, {
+                loadedPost1 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 1,
                     },
@@ -298,9 +298,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.null
+                expect(loadedPost1.image).to.be.null
 
-                loadedPost2 = await dataSource.manager.findOne(Post, {
+                loadedPost2 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 2,
                     },
@@ -308,9 +308,9 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.null
+                expect(loadedPost2.image).to.be.null
 
-                loadedPost3 = await dataSource.manager.findOne(Post, {
+                loadedPost3 = await dataSource.manager.findOneOrFail(Post, {
                     where: {
                         id: 3,
                     },
@@ -318,7 +318,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.null
+                expect(loadedPost3.image).to.be.null
             }),
         ))
 
@@ -362,35 +362,44 @@ describe("query builder > relational query builder > set operation > one-to-one 
 
                 expect(error).to.be.an.instanceof(Error)
 
-                const loadedPost1 = await dataSource.manager.findOne(Post, {
-                    where: {
-                        id: 1,
+                const loadedPost1 = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 1,
+                        },
+                        relations: {
+                            image: true,
+                        },
                     },
-                    relations: {
-                        image: true,
-                    },
-                })
-                expect(loadedPost1!.image).to.be.null
+                )
+                expect(loadedPost1.image).to.be.null
 
-                const loadedPost2 = await dataSource.manager.findOne(Post, {
-                    where: {
-                        id: 2,
+                const loadedPost2 = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 2,
+                        },
+                        relations: {
+                            image: true,
+                        },
                     },
-                    relations: {
-                        image: true,
-                    },
-                })
-                expect(loadedPost2!.image).to.be.null
+                )
+                expect(loadedPost2.image).to.be.null
 
-                const loadedPost3 = await dataSource.manager.findOne(Post, {
-                    where: {
-                        id: 3,
+                const loadedPost3 = await dataSource.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 3,
+                        },
+                        relations: {
+                            image: true,
+                        },
                     },
-                    relations: {
-                        image: true,
-                    },
-                })
-                expect(loadedPost3!.image).to.be.null
+                )
+                expect(loadedPost3.image).to.be.null
             }),
         ))
 })

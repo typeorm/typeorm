@@ -27,11 +27,14 @@ describe("persistence > null and default behaviour", () => {
                 post.title = "Category saved!"
                 await dataSource.manager.save(post)
 
-                const loadedPost = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
                 expect(loadedPost).to.exist
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "Category saved!",
                 })
@@ -46,11 +49,14 @@ describe("persistence > null and default behaviour", () => {
                 post.id = 1
                 await dataSource.manager.save(post)
 
-                const loadedPost = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
                 expect(loadedPost).to.exist
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "hello default value",
                 })
@@ -66,11 +72,14 @@ describe("persistence > null and default behaviour", () => {
                 post.title = null
                 await dataSource.manager.save(post)
 
-                const loadedPost = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
                 expect(loadedPost).to.exist
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: null,
                 })
@@ -89,11 +98,14 @@ describe("persistence > null and default behaviour", () => {
                 post.title = undefined
                 await dataSource.manager.save(post)
 
-                const loadedPost = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
                 expect(loadedPost).to.exist
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "Category saved!",
                 })
@@ -111,11 +123,14 @@ describe("persistence > null and default behaviour", () => {
                 post.title = null
                 await dataSource.manager.save(post)
 
-                const loadedPost = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
                 expect(loadedPost).to.exist
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: null,
                 })
