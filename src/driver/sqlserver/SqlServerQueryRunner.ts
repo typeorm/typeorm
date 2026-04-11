@@ -1729,7 +1729,14 @@ export class SqlServerQueryRunner
                     )
                 }
 
-                await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
 
                 if (safeAlterColIndex) {
                     upQueries.push(
@@ -4568,7 +4575,7 @@ export class SqlServerQueryRunner
         oldColumn: TableColumn,
         newColumn: TableColumn,
         table: Table,
-        upQueries: Query[]
+        upQueries: Query[],
     ): void {
         const oldLen =
             typeof oldColumn.length === "string"
@@ -4648,7 +4655,7 @@ export class SqlServerQueryRunner
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         // Skip computed/identity columns (cannot freely ALTER type)
         if (oldColumn.asExpression || newColumn.asExpression) return false

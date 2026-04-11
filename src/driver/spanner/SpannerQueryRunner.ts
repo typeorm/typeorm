@@ -922,12 +922,26 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable = table.clone()
         } else {
             if (oldColumn.type !== newColumn.type) {
-                await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             } else if (
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
             ) {
-                await this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                await this.alterColumnLength(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             }
 
             if (
@@ -2459,7 +2473,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         const oldLen = oldColumn.length
             ? Number.parseInt(String(oldColumn.length), 10)
@@ -2526,7 +2540,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         // Skip generated/computed/identity columns (cannot freely change)
         if (oldColumn.asExpression || newColumn.asExpression) return false

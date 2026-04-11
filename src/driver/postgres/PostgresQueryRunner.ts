@@ -1624,7 +1624,14 @@ export class PostgresQueryRunner
             let typeChangeHandled = false
             if (oldColumn.type !== newColumn.type) {
                 typeChangeHandled = true
-                await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             } else if (
                 !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
@@ -1635,7 +1642,14 @@ export class PostgresQueryRunner
                     String(oldColumn?.type ?? ""),
                 )
             ) {
-                this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                this.alterColumnLength(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             }
 
             // Handle scale and precision changes without recreating the column, e.g.:
@@ -5237,7 +5251,7 @@ export class PostgresQueryRunner
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): boolean {
         const oldLen = normalizeColumnLength(
             oldColumn.length == null
@@ -5344,7 +5358,7 @@ export class PostgresQueryRunner
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         // Skip generated/computed/identity/serial-like columns (cannot freely change type without extra steps)
         if (oldColumn.asExpression || newColumn.asExpression) return false

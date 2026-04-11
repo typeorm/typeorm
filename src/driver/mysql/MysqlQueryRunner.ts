@@ -124,7 +124,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): boolean {
         // Parse lengths as integers if present
         const oldLen =
@@ -193,7 +193,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         // Skip generated/computed columns (MySQL can't freely MODIFY these)
         if (oldColumn.asExpression || newColumn.asExpression) return false
@@ -1457,14 +1457,27 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             let safeAlterHandled = false
 
             if (oldColumn.type !== newColumn.type) {
-                safeAlterHandled = await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                safeAlterHandled = await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             } else if (
                 !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length
             ) {
-                safeAlterHandled =
-                    this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                safeAlterHandled = this.alterColumnLength(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             }
 
             // Skip this block if safe alter already handled the change to avoid double ALTER

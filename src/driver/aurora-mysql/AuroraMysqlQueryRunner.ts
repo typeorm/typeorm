@@ -102,7 +102,7 @@ export class AuroraMysqlQueryRunner
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         // Only use this path when no other column attributes changed.
         const newColumnExceptLength: TableColumn = newColumn?.clone
@@ -209,7 +209,7 @@ export class AuroraMysqlQueryRunner
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         // Do not touch generated/computed columns
         if (oldColumn.asExpression || newColumn.asExpression) return false
@@ -1207,14 +1207,28 @@ export class AuroraMysqlQueryRunner
             }
 
             if (oldColumn.type !== newColumn.type) {
-                const handled = await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                const handled = await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
                 if (handled) return
             } else if (
                 !columnRenamed &&
                 oldColumn?.type === newColumn?.type &&
                 oldColumn?.length !== newColumn?.length
             ) {
-                const handled = await this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                const handled = await this.alterColumnLength(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
                 if (handled) return
             }
 

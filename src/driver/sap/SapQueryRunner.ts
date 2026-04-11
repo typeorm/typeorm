@@ -1257,7 +1257,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // Handle type changes with safe alter if possible
         if (oldColumn.type !== newColumn.type) {
-            await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+            await this.alterColumnType(
+                table,
+                clonedTable,
+                oldColumn,
+                newColumn,
+                upQueries,
+                downQueries,
+            )
         }
 
         // Handle length-only fast path changes
@@ -1289,7 +1296,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             newColumn?.comment === oldColumn?.comment &&
             newColumn?.isUnique === oldColumn?.isUnique
         ) {
-            this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+            this.alterColumnLength(
+                table,
+                clonedTable,
+                oldColumn,
+                newColumn,
+                upQueries,
+                downQueries,
+            )
         }
 
         if (
@@ -3733,7 +3747,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): boolean {
         // Check for dependent indexes, foreign keys, checks, or uniques
         const colName: string = String(oldColumn.name)
@@ -4018,7 +4032,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         // Skip generated/computed/identity
         if (oldColumn.asExpression || newColumn.asExpression) return false

@@ -339,7 +339,9 @@ describe("schema builder > change column", () => {
                         where: { name: "test" },
                     })
                     expect(beforeChange).to.not.be.undefined
-                    expect(String(beforeChange?.version)).to.equal(testValue.toString())
+                    expect(String(beforeChange?.version)).to.equal(
+                        testValue.toString(),
+                    )
 
                     // Step 2: change to DOUBLE (or higher-precision float)
                     versionCol.type = doubleBy[driver]
@@ -483,6 +485,19 @@ describe("schema builder > change column", () => {
                             temporalValue.toISOString(),
                         )
                     }
+                    const assertOracleStoredTemporalValue = async (
+                        stage: "before" | "after",
+                    ) => {
+                        const rows = await connection.query(
+                            `SELECT TO_CHAR("name", 'YYYY-MM-DD"T"HH24:MI:SS') AS "name" FROM "${postMeta.tableName}" WHERE "id" = 1`,
+                        )
+
+                        expect(
+                            rows,
+                            `Expected Oracle row to exist ${stage} schema change`,
+                        ).to.have.length(1)
+                        expect(rows[0]?.name).to.equal("2024-01-02T03:04:05")
+                    }
 
                     if (driver === "oracle") {
                         // DATE must not have a bogus length or a string default
@@ -506,21 +521,36 @@ describe("schema builder > change column", () => {
 
                     // Insert data BEFORE migration to test survival
                     const repo = connection.getRepository(Post)
-                    await repo.save({
-                        id: 1,
-                        name: temporalValue as unknown as string,
-                        version: "1.0",
-                        text: "content",
-                        tag: "test",
-                        likesCount: 1,
-                    })
+                    if (driver === "oracle") {
+                        // Oracle DATE stores time-of-day, but TypeORM's `date`
+                        // mapping normalizes through a date-only path. Insert
+                        // the fixture with raw SQL so this test exercises the
+                        // DATE -> TIMESTAMP schema change instead of driver
+                        // hydration semantics.
+                        await connection.query(
+                            `INSERT INTO "${postMeta.tableName}" ("id", "name", "version", "text", "tag", "likesCount") VALUES (1, TO_DATE('2024-01-02 03:04:05', 'YYYY-MM-DD HH24:MI:SS'), '1.0', 'content', 'test', 1)`,
+                        )
+                    } else {
+                        await repo.save({
+                            id: 1,
+                            name: temporalValue as unknown as string,
+                            version: "1.0",
+                            text: "content",
+                            tag: "test",
+                            likesCount: 1,
+                        })
+                    }
 
                     // Verify data exists before migration
-                    const beforeChange = await repo.findOne({
-                        where: { id: 1 },
-                    })
-                    expect(beforeChange).to.not.be.undefined
-                    assertTemporalValue(beforeChange?.name)
+                    if (driver === "oracle") {
+                        await assertOracleStoredTemporalValue("before")
+                    } else {
+                        const beforeChange = await repo.findOne({
+                            where: { id: 1 },
+                        })
+                        expect(beforeChange).to.not.be.undefined
+                        assertTemporalValue(beforeChange?.name)
+                    }
 
                     // STEP 2: datetime-like -> timestamp-like, record SQL
                     nameCol.type = timestampBy[driver]
@@ -586,9 +616,7 @@ describe("schema builder > change column", () => {
                         afterChange,
                         "Data should survive DATETIME->TIMESTAMP migration",
                     ).to.not.be.undefined
-                    assertTemporalValue(
-                        afterChange?.name,
-                    )
+                    assertTemporalValue(afterChange?.name)
 
                     // Cleanup inserted data
                     await repo.delete({ id: 1 })

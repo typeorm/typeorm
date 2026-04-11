@@ -1378,7 +1378,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 columnRenamed = true
             }
             if (oldColumn.type !== newColumn.type) {
-                const handled = await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                const handled = await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
                 if (handled) {
                     // Update clonedTable so replaceCachedTable reflects the new type,
                     // preventing a stale cache that would cause the next synchronize()
@@ -1402,7 +1409,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn?.isPrimary === newColumn?.isPrimary &&
                 oldColumn?.isUnique === newColumn?.isUnique
             ) {
-                this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                this.alterColumnLength(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
@@ -3454,7 +3468,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): boolean {
         const oldLen = normalizeColumnLength(oldColumn.length)
         const newLen = normalizeColumnLength(newColumn.length)
@@ -3509,7 +3523,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         // Skip generated/computed/identity columns (Oracle won't freely MODIFY these)
         if (oldColumn.asExpression || newColumn.asExpression) return false

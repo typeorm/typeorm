@@ -191,7 +191,7 @@ export class CockroachQueryRunner
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): boolean {
         const parseLen = (v?: string | number | null) =>
             v != null && String(v).trim() !== ""
@@ -291,7 +291,7 @@ export class CockroachQueryRunner
         oldColumn: TableColumn,
         newColumn: TableColumn,
         upQueries: Query[],
-        downQueries: Query[]
+        downQueries: Query[],
     ): Promise<boolean> {
         // Skip generated/computed/identity columns
         if (oldColumn.asExpression || newColumn.asExpression) return false
@@ -1892,7 +1892,14 @@ export class CockroachQueryRunner
             }
 
             if (oldColumn.type !== newColumn.type) {
-                await this.alterColumnType(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             }
 
             if (
@@ -1902,7 +1909,14 @@ export class CockroachQueryRunner
                 !newColumn?.isArray &&
                 !oldColumn?.isArray
             ) {
-                this.alterColumnLength(table, clonedTable, oldColumn, newColumn, upQueries, downQueries)
+                this.alterColumnLength(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             }
 
             if (
