@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource, DeepPartial } from "../../../../../src"
+import type { DataSource, DeepPartial } from "../../../../../src"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
@@ -98,9 +98,8 @@ describe("database-schema > vectors > sap", () => {
                     const embedding = embeddingRepository.create(plainEmbedding)
                     await embeddingRepository.save(embedding)
 
-                    const loadedEmbedding = await embeddingRepository.findOneBy(
-                        { id: 1 },
-                    )
+                    const loadedEmbedding =
+                        await embeddingRepository.findOneByOrFail({ id: 1 })
                     expect(loadedEmbedding).to.deep.equal(plainEmbedding)
                 }),
             ))
@@ -157,10 +156,9 @@ describe("database-schema > vectors > sap", () => {
                     const embedding = embeddingRepository.create(plainEmbedding)
                     await embeddingRepository.save(embedding)
 
-                    const loadedEmbedding = await embeddingRepository.findOneBy(
-                        { id: 1 },
-                    )
-                    expect(loadedEmbedding!.realVector).to.deep.equal(
+                    const loadedEmbedding =
+                        await embeddingRepository.findOneByOrFail({ id: 1 })
+                    expect(loadedEmbedding.realVector).to.deep.equal(
                         plainVector,
                     )
                 }),

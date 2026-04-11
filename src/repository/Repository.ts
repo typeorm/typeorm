@@ -1,22 +1,22 @@
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { FindOneOptions } from "../find-options/FindOneOptions"
-import { DeepPartial } from "../common/DeepPartial"
-import { SaveOptions } from "./SaveOptions"
-import { RemoveOptions } from "./RemoveOptions"
-import { EntityManager } from "../entity-manager/EntityManager"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { InsertResult } from "../query-builder/result/InsertResult"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
-import { ObjectId } from "../driver/mongodb/typings"
-import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { UpsertOptions } from "./UpsertOptions"
-import { UpdateOptions } from "./UpdateOptions"
-import { EntityTarget } from "../common/EntityTarget"
-import { PickKeysByType } from "../common/PickKeysByType"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
+import type { DeepPartial } from "../common/DeepPartial"
+import type { SaveOptions } from "./SaveOptions"
+import type { RemoveOptions } from "./RemoveOptions"
+import type { EntityManager } from "../entity-manager/EntityManager"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { InsertResult } from "../query-builder/result/InsertResult"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import type { ObjectId } from "../driver/mongodb/typings"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { UpsertOptions } from "./UpsertOptions"
+import type { UpdateOptions } from "./UpdateOptions"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
 
 /**
@@ -52,7 +52,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Entity metadata of the entity current repository manages.
      */
     get metadata() {
-        return this.manager.connection.getMetadata(this.target)
+        return this.manager.dataSource.getMetadata(this.target)
     }
 
     // -------------------------------------------------------------------------
@@ -75,6 +75,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
+     *
      * @param alias
      * @param queryRunner
      */
@@ -84,14 +85,15 @@ export class Repository<Entity extends ObjectLiteral> {
     ): SelectQueryBuilder<Entity> {
         return this.manager.createQueryBuilder<Entity>(
             this.metadata.target as any,
-            alias || this.metadata.targetName,
-            queryRunner || this.queryRunner,
+            alias ?? this.metadata.targetName,
+            queryRunner ?? this.queryRunner,
         )
     }
 
     /**
      * Checks if entity has an id.
      * If entity composite compose ids, it will check them all.
+     *
      * @param entity
      */
     hasId(entity: Entity): boolean {
@@ -100,6 +102,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Gets entity mixed id.
+     *
      * @param entity
      */
     getId(entity: Entity): any {
@@ -126,6 +129,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
+     *
      * @param plainEntityLikeOrPlainEntityLikes
      */
     create(
@@ -141,6 +145,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Merges multiple entities (or entity-like objects) into a given entity.
+     *
      * @param mergeIntoEntity
      * @param entityLikes
      */
@@ -163,6 +168,7 @@ export class Repository<Entity extends ObjectLiteral> {
      *
      * Note that given entity-like object must have an entity id / primary key to find entity by.
      * Returns undefined if entity with given id was not found.
+     *
      * @param entityLike
      */
     preload(entityLike: DeepPartial<Entity>): Promise<Entity | undefined> {
@@ -207,6 +213,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Saves one or many given entities.
+     *
      * @param entityOrEntities
      * @param options
      */
@@ -233,6 +240,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Removes one or many given entities.
+     *
      * @param entityOrEntities
      * @param options
      */
@@ -281,6 +289,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Records the delete date of one or many given entities.
+     *
      * @param entityOrEntities
      * @param options
      */
@@ -329,6 +338,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Recovers one or many given entities.
+     *
      * @param entityOrEntities
      * @param options
      */
@@ -348,6 +358,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
+     *
      * @param entity
      */
     insert(
@@ -363,6 +374,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
+     *
      * @param criteria
      * @param partialEntity
      * @param options
@@ -396,6 +408,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient UPDATE query without WHERE clause.
      *
      * WARNING! This method updates ALL rows in the target table.
+     *
      * @param partialEntity
      * @param options
      */
@@ -414,6 +427,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Inserts a given entity into the database, unless a unique constraint conflicts then updates the entity
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT ... ON CONFLICT DO UPDATE/ON DUPLICATE KEY UPDATE query.
+     *
      * @param entityOrEntities
      * @param conflictPathsOrOptions
      */
@@ -435,6 +449,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
+     *
      * @param criteria
      */
     delete(
@@ -469,6 +484,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
+     *
      * @param criteria
      */
     softDelete(
@@ -495,6 +511,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
+     *
      * @param criteria
      */
     restore(
@@ -518,17 +535,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Checks whether any entity exists that matches the given options.
-     * @param options
-     * @deprecated use `exists` method instead, for example:
      *
-     * .exists()
-     */
-    exist(options?: FindManyOptions<Entity>): Promise<boolean> {
-        return this.manager.exists(this.metadata.target, options)
-    }
-
-    /**
-     * Checks whether any entity exists that matches the given options.
      * @param options
      */
     exists(options?: FindManyOptions<Entity>): Promise<boolean> {
@@ -537,6 +544,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Checks whether any entity exists that matches the given conditions.
+     *
      * @param where
      */
     existsBy(
@@ -548,6 +556,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Counts entities that match given options.
      * Useful for pagination.
+     *
      * @param options
      */
     count(options?: FindManyOptions<Entity>): Promise<number> {
@@ -557,6 +566,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Counts entities that match given conditions.
      * Useful for pagination.
+     *
      * @param where
      */
     countBy(
@@ -567,6 +577,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Return the SUM of a column
+     *
      * @param columnName
      * @param where
      */
@@ -579,6 +590,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Return the AVG of a column
+     *
      * @param columnName
      * @param where
      */
@@ -591,6 +603,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Return the MIN of a column
+     *
      * @param columnName
      * @param where
      */
@@ -603,6 +616,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Return the MAX of a column
+     *
      * @param columnName
      * @param where
      */
@@ -615,6 +629,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Finds entities that match given find options.
+     *
      * @param options
      */
     async find(options?: FindManyOptions<Entity>): Promise<Entity[]> {
@@ -623,6 +638,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Finds entities that match given find options.
+     *
      * @param where
      */
     async findBy(
@@ -635,6 +651,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given find options.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
      * @param options
      */
     findAndCount(
@@ -647,6 +664,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given WHERE conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     *
      * @param where
      */
     findAndCountBy(
@@ -656,22 +674,9 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Finds entities with ids.
-     * Optionally find options or conditions can be applied.
-     * @param ids
-     * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findBy({
-     *     id: In([1, 2, 3])
-     * })
-     */
-    async findByIds(ids: any[]): Promise<Entity[]> {
-        return this.manager.findByIds(this.metadata.target, ids)
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
+     *
      * @param options
      */
     async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
@@ -681,6 +686,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - returns null.
+     *
      * @param where
      */
     async findOneBy(
@@ -690,24 +696,9 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Finds first entity that matches given id.
-     * If entity was not found in the database - returns null.
-     * @param id
-     * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
-     *
-     * .findOneBy({
-     *     id: 1 // where "id" is your primary column name
-     * })
-     */
-    async findOneById(
-        id: number | string | Date | ObjectId,
-    ): Promise<Entity | null> {
-        return this.manager.findOneById(this.metadata.target, id)
-    }
-
-    /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
+     *
      * @param options
      */
     async findOneOrFail(options: FindOneOptions<Entity>): Promise<Entity> {
@@ -717,6 +708,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - rejects with error.
+     *
      * @param where
      */
     async findOneByOrFail(
@@ -728,6 +720,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Executes a raw SQL query and returns a raw database results.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     *
      * @param query
      * @param parameters
      * @see [Official docs](https://typeorm.io/repository-api) for examples.
@@ -741,7 +734,10 @@ export class Repository<Entity extends ObjectLiteral> {
      * Template expressions are automatically transformed into database parameters.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
-     * Example: repository.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
+     * @example
+     * repository.sql`SELECT * FROM table_name WHERE id = ${id}`
+     *
      * @param strings
      * @param values
      */
@@ -750,7 +746,7 @@ export class Repository<Entity extends ObjectLiteral> {
         ...values: unknown[]
     ): Promise<T> {
         const { query, parameters } = buildSqlTag({
-            driver: this.manager.connection.driver,
+            driver: this.manager.dataSource.driver,
             strings: strings,
             expressions: values,
         })
@@ -762,6 +758,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Clears all the data from the given table/collection (truncates/drops it).
      *
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
+     *
      * @param options
      * @param options.cascade
      * @see https://stackoverflow.com/a/5972738/925151
@@ -772,6 +769,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Increments some column by provided value of the entities matched given conditions.
+     *
      * @param conditions
      * @param propertyPath
      * @param value
@@ -791,6 +789,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Decrements some column by provided value of the entities matched given conditions.
+     *
      * @param conditions
      * @param propertyPath
      * @param value
@@ -810,6 +809,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Extends repository with provided functions.
+     *
      * @param customs
      */
     extend<CustomRepository>(

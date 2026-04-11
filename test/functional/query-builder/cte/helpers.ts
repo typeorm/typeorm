@@ -1,5 +1,5 @@
-import { DataSource } from "../../../../src"
-import { CteCapabilities } from "../../../../src/driver/types/CteCapabilities"
+import type { DataSource } from "../../../../src"
+import type { CteCapabilities } from "../../../../src/driver/types/CteCapabilities"
 
 export function filterByCteCapabilities(
     capability: keyof CteCapabilities,

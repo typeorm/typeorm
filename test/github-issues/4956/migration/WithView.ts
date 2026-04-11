@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
 
 export class WithView1623518107000 implements MigrationInterface {
     name = "WithView1623518107000"

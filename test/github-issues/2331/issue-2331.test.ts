@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Repository } from "../../../src"
+import type { Repository } from "../../../src"
+import { DataSource } from "../../../src"
 import { Post } from "./entity/Post"
 import {
     reloadTestingDatabases,
@@ -49,11 +50,9 @@ describe("github issues > #2331 undefined value is nulling column on update", ()
                 author: undefined,
             },
         )
-        const postReloaded = await repository.findOne({
-            where: { id: post.id },
-        })
+        const postReloaded = await repository.findOneByOrFail({ id: post.id })
 
         expect(postReloaded).to.exist
-        expect(postReloaded!.author).to.be.equal("Some author")
+        expect(postReloaded.author).to.be.equal("Some author")
     })
 })
