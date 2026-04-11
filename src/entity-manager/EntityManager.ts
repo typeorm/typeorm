@@ -31,6 +31,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import type { QueryOptions } from "../query-runner/QueryOptions"
 import { OrmUtils } from "../util/OrmUtils"
 
 /**
@@ -178,10 +179,20 @@ export class EntityManager {
      *
      * @param query
      * @param parameters
+     * @param optionsOrUseStructuredResult
      * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
-    async query<T = any>(query: string, parameters?: any[]): Promise<T> {
-        return this.dataSource.query(query, parameters, this.queryRunner)
+    async query<T = any>(
+        query: string,
+        parameters?: any[],
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
+    ): Promise<T> {
+        return this.dataSource.query<T>(
+            query,
+            parameters,
+            this.queryRunner,
+            optionsOrUseStructuredResult,
+        )
     }
 
     /**
