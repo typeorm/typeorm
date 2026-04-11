@@ -49,24 +49,27 @@ describe("query builder > relational with many > load many", () => {
                 post3.images = [image1, image3]
                 await dataSource.manager.save(post3)
 
-                const loadedPost1 = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
-                loadedPost1!.images = await dataSource
+                const loadedPost1 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
+                loadedPost1.images = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "images")
                     .of(post1)
                     .loadMany()
 
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1.images).to.deep.include({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1.images).to.deep.include({
                     id: 2,
                     url: "image #2",
                 })
-                expect(loadedPost1!.images).to.not.contain({
+                expect(loadedPost1.images).to.not.contain({
                     id: 3,
                     url: "image #3",
                 })
@@ -103,24 +106,27 @@ describe("query builder > relational with many > load many", () => {
                 post3.images = [image1, image3]
                 await dataSource.manager.save(post3)
 
-                const loadedPost1 = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
-                loadedPost1!.images = await dataSource
+                const loadedPost1 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
+                loadedPost1.images = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "images")
                     .of({ id: 1 })
                     .loadMany()
 
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1.images).to.deep.include({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1.images).to.deep.include({
                     id: 2,
                     url: "image #2",
                 })
-                expect(loadedPost1!.images).to.not.contain({
+                expect(loadedPost1.images).to.not.contain({
                     id: 3,
                     url: "image #3",
                 })
@@ -157,24 +163,27 @@ describe("query builder > relational with many > load many", () => {
                 post3.images = [image1, image3]
                 await dataSource.manager.save(post3)
 
-                const loadedPost1 = await dataSource.manager.findOneBy(Post, {
-                    id: 1,
-                })
-                loadedPost1!.images = await dataSource
+                const loadedPost1 = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
+                loadedPost1.images = await dataSource
                     .createQueryBuilder()
                     .relation(Post, "images")
                     .of(1)
                     .loadMany()
 
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1.images).to.deep.include({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1.images).to.deep.include({
                     id: 2,
                     url: "image #2",
                 })
-                expect(loadedPost1!.images).to.not.contain({
+                expect(loadedPost1.images).to.not.contain({
                     id: 3,
                     url: "image #3",
                 })

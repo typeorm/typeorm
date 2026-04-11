@@ -33,10 +33,10 @@ describe("github issues > #620 Feature Request: Flexibility in Foreign Key names
                 const loadedCat = await connection.manager
                     .createQueryBuilder(Cat, "cat")
                     .leftJoinAndSelect("cat.dog", "dog")
-                    .getOne()
+                    .getOneOrFail()
 
-                loadedCat!.id.should.be.equal(1)
-                loadedCat!.dog.DogID.should.be.equal("Simba")
+                loadedCat.id.should.be.equal(1)
+                loadedCat.dog.DogID.should.be.equal("Simba")
             }),
         ))
 })

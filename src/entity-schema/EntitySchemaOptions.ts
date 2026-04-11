@@ -116,6 +116,7 @@ export class EntitySchemaOptions<T> {
     /**
      * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
      * an integer primary key column named 'rowid' on table creation.
+     *
      * @see https://www.sqlite.org/withoutrowid.html.
      */
     withoutRowid?: boolean

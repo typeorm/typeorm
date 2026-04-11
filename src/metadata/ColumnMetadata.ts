@@ -238,6 +238,7 @@ export class ColumnMetadata {
     /**
      * Indicates if column is a virtual property. Virtual properties are not mapped to the entity.
      * This property is used in tandem the virtual column decorator.
+     *
      * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     isVirtualProperty: boolean = false
@@ -245,6 +246,7 @@ export class ColumnMetadata {
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     *
      * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     query?: (alias: string) => string
@@ -446,9 +448,7 @@ export class ColumnMetadata {
         }
         if (options.args.options.asExpression) {
             this.asExpression = options.args.options.asExpression
-            this.generatedType = options.args.options.generatedType
-                ? options.args.options.generatedType
-                : "VIRTUAL"
+            this.generatedType = options.args.options.generatedType ?? "VIRTUAL"
         }
         if (options.args.options.hstoreType)
             this.hstoreType = options.args.options.hstoreType
@@ -479,8 +479,7 @@ export class ColumnMetadata {
         if (this.isTreeLevel) this.type = driver.mappedDataTypes.treeLevel
         if (this.isCreateDate) {
             if (!this.type) this.type = driver.mappedDataTypes.createDate
-            if (!this.default)
-                this.default = () => driver.mappedDataTypes.createDateDefault
+            this.default ??= () => driver.mappedDataTypes.createDateDefault
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
@@ -491,10 +490,8 @@ export class ColumnMetadata {
         }
         if (this.isUpdateDate) {
             if (!this.type) this.type = driver.mappedDataTypes.updateDate
-            if (!this.default)
-                this.default = () => driver.mappedDataTypes.updateDateDefault
-            if (!this.onUpdate)
-                this.onUpdate = driver.mappedDataTypes.updateDateDefault
+            this.default ??= () => driver.mappedDataTypes.updateDateDefault
+            this.onUpdate ??= driver.mappedDataTypes.updateDateDefault
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
@@ -530,6 +527,7 @@ export class ColumnMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
+     *
      * @param value
      * @param useDatabaseName
      */
@@ -598,6 +596,7 @@ export class ColumnMetadata {
      *
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
+     *
      * @param entity
      * @param options
      * @param options.skipNulls
@@ -606,7 +605,7 @@ export class ColumnMetadata {
         entity: ObjectLiteral,
         options?: { skipNulls?: boolean },
     ): ObjectLiteral | undefined {
-        const returnNulls = false // options && options.skipNulls === false ? false : true; // todo: remove if current will not bring problems, uncomment if it will.
+        const returnNulls = false
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -743,6 +742,7 @@ export class ColumnMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
+     *
      * @param entity
      * @param transform
      */
@@ -868,6 +868,7 @@ export class ColumnMetadata {
     /**
      * Sets given entity's column value.
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
+     *
      * @param entity
      * @param value
      */
@@ -883,9 +884,8 @@ export class ColumnMetadata {
 
                 const embeddedMetadata = embeddedMetadatas.shift()
                 if (embeddedMetadata) {
-                    if (!map[embeddedMetadata.propertyName])
-                        map[embeddedMetadata.propertyName] =
-                            embeddedMetadata.create()
+                    map[embeddedMetadata.propertyName] ??=
+                        embeddedMetadata.create()
 
                     extractEmbeddedColumnValue(
                         embeddedMetadatas,
@@ -924,6 +924,7 @@ export class ColumnMetadata {
 
     /**
      * Compares given entity's column value with a given value.
+     *
      * @param entity
      * @param valueToCompareWith
      */
@@ -957,10 +958,7 @@ export class ColumnMetadata {
 
     protected buildPropertyPath(): string {
         let path = ""
-        if (
-            this.embeddedMetadata &&
-            this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (this.embeddedMetadata?.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + "."
 
         path += this.propertyName
@@ -981,10 +979,7 @@ export class ColumnMetadata {
 
     protected buildDatabasePath(): string {
         let path = ""
-        if (
-            this.embeddedMetadata &&
-            this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (this.embeddedMetadata?.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + "."
 
         path += this.databaseName

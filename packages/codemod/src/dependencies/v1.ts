@@ -23,9 +23,9 @@ export const config: DependencyConfig = {
 
     incompatible: {
         "typeorm-routing-controllers-extensions":
-            "`typeorm-routing-controllers-extensions` is incompatible with TypeORM v1 — the IoC container system (`useContainer`) was removed. See migration guide.",
+            "`typeorm-routing-controllers-extensions` is incompatible with TypeORM v1 — the IoC container system (`useContainer`) was removed. See upgrading guide.",
         "typeorm-typedi-extensions":
-            "`typeorm-typedi-extensions` is incompatible with TypeORM v1 — the IoC container system (`useContainer`) was removed. See migration guide.",
+            "`typeorm-typedi-extensions` is incompatible with TypeORM v1 — the IoC container system (`useContainer`) was removed. See upgrading guide.",
     },
 
     warnings: {
