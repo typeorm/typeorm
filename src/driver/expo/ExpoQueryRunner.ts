@@ -4,7 +4,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { ExpoDriver } from "./ExpoDriver"
+import type { ExpoDriver } from "./ExpoDriver"
 
 export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     driver: ExpoDriver
@@ -12,7 +12,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     constructor(driver: ExpoDriver) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
     }
 
@@ -34,7 +34,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         const databaseConnection = await this.connect()
         const broadcasterResult = new BroadcasterResult()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const queryStartTime = Date.now()
@@ -63,7 +63,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             ) {
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
@@ -80,7 +80,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
             return useStructuredResult ? result : result.raw
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,

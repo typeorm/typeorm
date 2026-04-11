@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import "../../utils/test-setup"
 import {
     closeTestingConnections,
@@ -11,15 +11,14 @@ import { Record } from "./entity/Record"
 
 describe("github issues > #8747 QueryBuilder update handles Date objects wrong on a ManyToOne relationship.", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["mysql", "postgres", "mariadb"],
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["mysql", "postgres", "mariadb"],
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -39,13 +38,11 @@ describe("github issues > #8747 QueryBuilder update handles Date objects wrong o
                 { latestRecordTimestamp: record.timestamp },
             )
 
-            const carReloaded = await Car.findOne({
-                where: { uuid: car.uuid },
-            })
+            const carReloaded = await Car.findOneByOrFail({ uuid: car.uuid })
 
             expect(carReloaded).to.exist
             expect(record.timestamp?.getTime()).to.be.equal(
-                carReloaded!.latestRecordTimestamp?.getTime(),
+                carReloaded.latestRecordTimestamp?.getTime(),
             )
         }
     })

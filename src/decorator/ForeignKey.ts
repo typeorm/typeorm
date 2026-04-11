@@ -1,13 +1,14 @@
-import { ObjectType } from "../common/ObjectType"
+import type { ObjectType } from "../common/ObjectType"
 import { getMetadataArgsStorage } from "../globals"
-import { ForeignKeyMetadataArgs } from "../metadata-args/ForeignKeyMetadataArgs"
+import type { ForeignKeyMetadataArgs } from "../metadata-args/ForeignKeyMetadataArgs"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { ForeignKeyOptions } from "./options/ForeignKeyOptions"
+import type { ForeignKeyOptions } from "./options/ForeignKeyOptions"
 
 /**
  * Creates a database foreign key. Can be used on entity property or on entity.
  * Can create foreign key with composite columns when used on entity.
  * Warning! Don't use this with relations; relation decorators create foreign keys automatically.
+ *
  * @param typeFunctionOrTarget
  * @param options
  */
@@ -20,6 +21,7 @@ export function ForeignKey<T>(
  * Creates a database foreign key. Can be used on entity property or on entity.
  * Can create foreign key with composite columns when used on entity.
  * Warning! Don't use this with relations; relation decorators create foreign keys automatically.
+ *
  * @param typeFunctionOrTarget
  * @param inverseSide
  * @param options
@@ -34,6 +36,7 @@ export function ForeignKey<T>(
  * Creates a database foreign key. Can be used on entity property or on entity.
  * Can create foreign key with composite columns when used on entity.
  * Warning! Don't use this with relations; relation decorators create foreign keys automatically.
+ *
  * @param typeFunctionOrTarget
  * @param columnNames
  * @param referencedColumnNames
@@ -54,6 +57,7 @@ export function ForeignKey<
  * Creates a database foreign key. Can be used on entity property or on entity.
  * Can create foreign key with composite columns when used on entity.
  * Warning! Don't use this with relations; relation decorators create foreign keys automatically.
+ *
  * @param typeFunctionOrTarget
  * @param inverseSideOrColumnNamesOrOptions
  * @param referencedColumnNamesOrOptions

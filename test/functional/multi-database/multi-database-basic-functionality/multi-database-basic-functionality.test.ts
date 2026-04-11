@@ -4,7 +4,7 @@ import fs from "fs/promises"
 import path from "path"
 import { glob } from "tinyglobby"
 
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { filepathToName } from "../../../../src/util/PathUtils"
 import "../../../utils/test-setup"
 import {
@@ -65,7 +65,7 @@ describe("multi-database > basic-functionality", () => {
     })
 
     describe("multiple databases", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         const tempPath = path.resolve(appRoot.path, "temp")
         const attachAnswerPath = path.join(
             tempPath,
@@ -81,24 +81,24 @@ describe("multi-database > basic-functionality", () => {
         )
 
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Answer, Category, Post, User],
                 enabledDrivers: ["better-sqlite3"],
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
         after(async () => {
-            await closeTestingConnections(connections)
+            await closeTestingConnections(dataSources)
             const files = await glob(`${tempPath}/**/*.attach.db`)
             await Promise.all(files.map((file) => fs.rm(file, { force: true })))
         })
 
         it("should correctly attach and create database files", () =>
             Promise.all(
-                connections.map(async () => {
+                dataSources.map(async () => {
                     const expectedMainPath = path.join(
                         tempPath,
-                        (connections[0].options.database as string).match(
+                        (dataSources[0].options.database as string).match(
                             /^.*[\\|/](?<filename>[^\\|/]+)$/,
                         )!.groups!["filename"],
                     )
@@ -115,8 +115,8 @@ describe("multi-database > basic-functionality", () => {
 
         it("should prefix tableName when custom database used in Entity decorator", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
 
                     const tablePathAnswer = `${attachAnswerHandle}.answer`
                     const table = await queryRunner.getTable(tablePathAnswer)
@@ -125,9 +125,9 @@ describe("multi-database > basic-functionality", () => {
                     const answer = new Answer()
                     answer.text = "Answer #1"
 
-                    await connection.getRepository(Answer).save(answer)
+                    await dataSource.getRepository(Answer).save(answer)
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(Answer, "answer")
                         .where("answer.id = :id", { id: 1 })
                         .getSql()
@@ -141,8 +141,8 @@ describe("multi-database > basic-functionality", () => {
 
         it("should not affect tableName when using default main database", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
 
                     const tablePathUser = `user`
                     const table = await queryRunner.getTable(tablePathUser)
@@ -150,9 +150,9 @@ describe("multi-database > basic-functionality", () => {
 
                     const user = new User()
                     user.name = "User #1"
-                    await connection.getRepository(User).save(user)
+                    await dataSource.getRepository(User).save(user)
 
-                    const sql = connection
+                    const sql = dataSource
                         .createQueryBuilder(User, "user")
                         .where("user.id = :id", { id: 1 })
                         .getSql()
@@ -167,8 +167,8 @@ describe("multi-database > basic-functionality", () => {
 
         it("should create foreign keys for relations within the same database", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
                     const tablePathCategory = `${attachCategoryHandle}.category`
                     const tablePathPost = `${attachCategoryHandle}.post`
                     const tableCategory =

@@ -1,16 +1,17 @@
-import { ColumnType } from "../driver/types/ColumnTypes"
-import { EntityMetadata } from "./EntityMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
-import { RelationMetadata } from "./RelationMetadata"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { ColumnMetadataArgs } from "../metadata-args/ColumnMetadataArgs"
-import { DataSource } from "../data-source/DataSource"
+import type { ColumnType } from "../driver/types/ColumnTypes"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { RelationMetadata } from "./RelationMetadata"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ColumnMetadataArgs } from "../metadata-args/ColumnMetadataArgs"
+import type { DataSource } from "../data-source/DataSource"
 import { OrmUtils } from "../util/OrmUtils"
-import { ValueTransformer } from "../decorator/options/ValueTransformer"
+import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
+import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
+import type { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
 
 /**
  * This metadata contains all information about entity's column.
@@ -61,11 +62,6 @@ export class ColumnMetadata {
      * Type's length in the database.
      */
     length: string = ""
-
-    /**
-     * Type's display width in the database.
-     */
-    width?: number
 
     /**
      * Defines column character set.
@@ -159,12 +155,6 @@ export class ColumnMetadata {
     scale?: number
 
     /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-     */
-    zerofill: boolean = false
-
-    /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
      */
     unsigned: boolean = false
@@ -248,6 +238,7 @@ export class ColumnMetadata {
     /**
      * Indicates if column is a virtual property. Virtual properties are not mapped to the entity.
      * This property is used in tandem the virtual column decorator.
+     *
      * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     isVirtualProperty: boolean = false
@@ -255,6 +246,7 @@ export class ColumnMetadata {
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     *
      * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     query?: (alias: string) => string
@@ -355,7 +347,6 @@ export class ColumnMetadata {
     // ---------------------------------------------------------------------
 
     constructor(options: {
-        connection: DataSource
         entityMetadata: EntityMetadata
         embeddedMetadata?: EmbeddedMetadata
         referencedColumn?: ColumnMetadata
@@ -366,7 +357,9 @@ export class ColumnMetadata {
         materializedPath?: boolean
     }) {
         this.entityMetadata = options.entityMetadata
-        this.embeddedMetadata = options.embeddedMetadata!
+        const driver = this.entityMetadata.dataSource.driver
+
+        this.embeddedMetadata = options.embeddedMetadata
         this.referencedColumn = options.referencedColumn
         if (options.args.target) this.target = options.args.target
         if (options.args.propertyName)
@@ -378,7 +371,6 @@ export class ColumnMetadata {
             this.length = options.args.options.length
                 ? options.args.options.length.toString()
                 : ""
-        if (options.args.options.width) this.width = options.args.options.width
         if (options.args.options.charset)
             this.charset = options.args.options.charset
         if (options.args.options.collation)
@@ -398,8 +390,6 @@ export class ColumnMetadata {
             this.utc = options.args.options.utc
         if (options.args.options.update !== undefined)
             this.isUpdate = options.args.options.update
-        if (options.args.options.readonly !== undefined)
-            this.isUpdate = !options.args.options.readonly
         if (options.args.options.comment)
             this.comment = options.args.options.comment
         if (options.args.options.default !== undefined)
@@ -413,10 +403,6 @@ export class ColumnMetadata {
             options.args.options.scale !== undefined
         )
             this.scale = options.args.options.scale
-        if (options.args.options.zerofill) {
-            this.zerofill = options.args.options.zerofill
-            this.unsigned = true // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-        }
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned
         if (options.args.options.precision !== null)
@@ -462,9 +448,7 @@ export class ColumnMetadata {
         }
         if (options.args.options.asExpression) {
             this.asExpression = options.args.options.asExpression
-            this.generatedType = options.args.options.generatedType
-                ? options.args.options.generatedType
-                : "VIRTUAL"
+            this.generatedType = options.args.options.generatedType ?? "VIRTUAL"
         }
         if (options.args.options.hstoreType)
             this.hstoreType = options.args.options.hstoreType
@@ -492,58 +476,43 @@ export class ColumnMetadata {
             this.srid = options.args.options.srid
         if ((options.args.options as VirtualColumnOptions).query)
             this.query = (options.args.options as VirtualColumnOptions).query
-        if (this.isTreeLevel)
-            this.type = options.connection.driver.mappedDataTypes.treeLevel
+        if (this.isTreeLevel) this.type = driver.mappedDataTypes.treeLevel
         if (this.isCreateDate) {
-            if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.createDate
-            if (!this.default)
-                this.default = () =>
-                    options.connection.driver.mappedDataTypes.createDateDefault
+            if (!this.type) this.type = driver.mappedDataTypes.createDate
+            this.default ??= () => driver.mappedDataTypes.createDateDefault
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
                 options.args.options.precision === undefined &&
-                options.connection.driver.mappedDataTypes.createDatePrecision
+                driver.mappedDataTypes.createDatePrecision
             )
-                this.precision =
-                    options.connection.driver.mappedDataTypes.createDatePrecision
+                this.precision = driver.mappedDataTypes.createDatePrecision
         }
         if (this.isUpdateDate) {
-            if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.updateDate
-            if (!this.default)
-                this.default = () =>
-                    options.connection.driver.mappedDataTypes.updateDateDefault
-            if (!this.onUpdate)
-                this.onUpdate =
-                    options.connection.driver.mappedDataTypes.updateDateDefault
+            if (!this.type) this.type = driver.mappedDataTypes.updateDate
+            this.default ??= () => driver.mappedDataTypes.updateDateDefault
+            this.onUpdate ??= driver.mappedDataTypes.updateDateDefault
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
                 options.args.options.precision === undefined &&
-                options.connection.driver.mappedDataTypes.updateDatePrecision
+                driver.mappedDataTypes.updateDatePrecision
             )
-                this.precision =
-                    options.connection.driver.mappedDataTypes.updateDatePrecision
+                this.precision = driver.mappedDataTypes.updateDatePrecision
         }
         if (this.isDeleteDate) {
-            if (!this.type)
-                this.type = options.connection.driver.mappedDataTypes.deleteDate
+            if (!this.type) this.type = driver.mappedDataTypes.deleteDate
             if (!this.isNullable)
-                this.isNullable =
-                    options.connection.driver.mappedDataTypes.deleteDateNullable
+                this.isNullable = driver.mappedDataTypes.deleteDateNullable
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
                 options.args.options.precision === undefined &&
-                options.connection.driver.mappedDataTypes.deleteDatePrecision
+                driver.mappedDataTypes.deleteDatePrecision
             )
-                this.precision =
-                    options.connection.driver.mappedDataTypes.deleteDatePrecision
+                this.precision = driver.mappedDataTypes.deleteDatePrecision
         }
-        if (this.isVersion)
-            this.type = options.connection.driver.mappedDataTypes.version
+        if (this.isVersion) this.type = driver.mappedDataTypes.version
         if (options.closureType) this.closureType = options.closureType
         if (options.nestedSetLeft) this.isNestedSetLeft = options.nestedSetLeft
         if (options.nestedSetRight)
@@ -558,6 +527,7 @@ export class ColumnMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
+     *
      * @param value
      * @param useDatabaseName
      */
@@ -626,6 +596,7 @@ export class ColumnMetadata {
      *
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
+     *
      * @param entity
      * @param options
      * @param options.skipNulls
@@ -634,7 +605,7 @@ export class ColumnMetadata {
         entity: ObjectLiteral,
         options?: { skipNulls?: boolean },
     ): ObjectLiteral | undefined {
-        const returnNulls = false // options && options.skipNulls === false ? false : true; // todo: remove if current will not bring problems, uncomment if it will.
+        const returnNulls = false
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -771,6 +742,7 @@ export class ColumnMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
+     *
      * @param entity
      * @param transform
      */
@@ -818,7 +790,7 @@ export class ColumnMetadata {
                         relatedEntity &&
                         ObjectUtils.isObject(relatedEntity) &&
                         !InstanceChecker.isFindOperator(relatedEntity) &&
-                        !Buffer.isBuffer(relatedEntity)
+                        !isUint8Array(relatedEntity)
                     ) {
                         value =
                             this.referencedColumn.getEntityValue(relatedEntity)
@@ -830,7 +802,7 @@ export class ColumnMetadata {
                         !InstanceChecker.isFindOperator(
                             embeddedObject[this.propertyName],
                         ) &&
-                        !Buffer.isBuffer(embeddedObject[this.propertyName]) &&
+                        !isUint8Array(embeddedObject[this.propertyName]) &&
                         !(embeddedObject[this.propertyName] instanceof Date)
                     ) {
                         value = this.referencedColumn.getEntityValue(
@@ -859,7 +831,7 @@ export class ColumnMetadata {
                     ObjectUtils.isObject(relatedEntity) &&
                     !InstanceChecker.isFindOperator(relatedEntity) &&
                     !(typeof relatedEntity === "function") &&
-                    !Buffer.isBuffer(relatedEntity)
+                    !isUint8Array(relatedEntity)
                 ) {
                     value = this.referencedColumn.getEntityValue(relatedEntity)
                 } else if (
@@ -869,7 +841,7 @@ export class ColumnMetadata {
                         entity[this.propertyName],
                     ) &&
                     !(typeof entity[this.propertyName] === "function") &&
-                    !Buffer.isBuffer(entity[this.propertyName]) &&
+                    !isUint8Array(entity[this.propertyName]) &&
                     !(entity[this.propertyName] instanceof Date)
                 ) {
                     value = this.referencedColumn.getEntityValue(
@@ -896,6 +868,7 @@ export class ColumnMetadata {
     /**
      * Sets given entity's column value.
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
+     *
      * @param entity
      * @param value
      */
@@ -911,9 +884,8 @@ export class ColumnMetadata {
 
                 const embeddedMetadata = embeddedMetadatas.shift()
                 if (embeddedMetadata) {
-                    if (!map[embeddedMetadata.propertyName])
-                        map[embeddedMetadata.propertyName] =
-                            embeddedMetadata.create()
+                    map[embeddedMetadata.propertyName] ??=
+                        embeddedMetadata.create()
 
                     extractEmbeddedColumnValue(
                         embeddedMetadatas,
@@ -952,11 +924,15 @@ export class ColumnMetadata {
 
     /**
      * Compares given entity's column value with a given value.
+     *
      * @param entity
      * @param valueToCompareWith
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)
+        if (isUint8Array(columnValue) && isUint8Array(valueToCompareWith)) {
+            return areUint8ArraysEqual(columnValue, valueToCompareWith)
+        }
         if (typeof columnValue?.equals === "function") {
             return columnValue.equals(valueToCompareWith)
         }
@@ -982,10 +958,7 @@ export class ColumnMetadata {
 
     protected buildPropertyPath(): string {
         let path = ""
-        if (
-            this.embeddedMetadata &&
-            this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (this.embeddedMetadata?.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + "."
 
         path += this.propertyName
@@ -1006,10 +979,7 @@ export class ColumnMetadata {
 
     protected buildDatabasePath(): string {
         let path = ""
-        if (
-            this.embeddedMetadata &&
-            this.embeddedMetadata.parentPropertyNames.length
-        )
+        if (this.embeddedMetadata?.parentPropertyNames.length)
             path = this.embeddedMetadata.parentPropertyNames.join(".") + "."
 
         path += this.databaseName

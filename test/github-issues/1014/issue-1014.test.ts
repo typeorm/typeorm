@@ -4,24 +4,23 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { TestEntity } from "./entity/TestEntity"
 import { expect } from "chai"
 
 describe("github issues > #1014 Transaction doesn't rollback", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should rollback transaction if some operation failed in it", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const testEntity = new TestEntity()
                 testEntity.name = "Hello Test"
                 await connection.manager.save(testEntity, { reload: true })
@@ -38,14 +37,12 @@ describe("github issues > #1014 Transaction doesn't rollback", () => {
                 }
 
                 expect(error).to.be.instanceof(Error)
-                const loadedTestEntity = await connection.manager.findOneBy(
-                    TestEntity,
-                    {
+                const loadedTestEntity =
+                    await connection.manager.findOneByOrFail(TestEntity, {
                         id: 1,
-                    },
-                )
+                    })
                 expect(loadedTestEntity).not.to.be.null
-                loadedTestEntity!.should.be.eql({ id: 1, name: "Hello Test" })
+                loadedTestEntity.should.be.eql({ id: 1, name: "Hello Test" })
             }),
         ))
 })

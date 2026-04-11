@@ -1,15 +1,15 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DataSource } from "../../data-source/DataSource"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
 import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { SqljsDataSourceOptions } from "./SqljsDataSourceOptions"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { SqljsDataSourceOptions } from "./SqljsDataSourceOptions"
 import { SqljsQueryRunner } from "./SqljsQueryRunner"
 
 // This is needed to satisfy the typescript compiler.
@@ -27,8 +27,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
         // If autoSave is enabled by user, location or autoSaveCallback have to be set
         // because either autoSave saves to location or calls autoSaveCallback.
@@ -65,10 +65,11 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     *
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner) this.queryRunner = new SqljsQueryRunner(this)
+        this.queryRunner ??= new SqljsQueryRunner(this)
 
         return this.queryRunner
     }
@@ -76,6 +77,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Loads a database from a given file (Node.js), local storage key (browser) or array.
      * This will delete the current database!
+     *
      * @param fileNameOrLocalStorageOrData
      * @param checkIfFileOrLocalStorageExists
      */
@@ -106,7 +108,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
             } else {
                 // browser
                 // fileNameOrLocalStorageOrData should be a local storage / indexedDB key
-                let localStorageContent = null
+                let localStorageContent
                 if (this.options.useLocalForage) {
                     if (window.localforage) {
                         localStorageContent = await window.localforage.getItem(
@@ -151,6 +153,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Saved the current database to the given file (Node.js), local storage key (browser) or
      * indexedDB key (browser with enabled useLocalForage option).
      * If no location path is given, the location path in the options (if specified) will be used.
+     *
      * @param location
      */
     async save(location?: string) {
@@ -224,6 +227,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
      * @param metadata
      * @param insertResult
      */
@@ -238,7 +242,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                     const query = "SELECT last_insert_rowid()"
                     try {
                         const result = this.databaseConnection.exec(query)
-                        this.connection.logger.logQuery(query)
+                        this.dataSource.logger.logQuery(query)
                         return OrmUtils.mergeDeep(
                             map,
                             generatedColumn.createValueMap(
@@ -246,7 +250,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                             ),
                         )
                     } catch (e) {
-                        this.connection.logger.logQueryError(e, query, [])
+                        this.dataSource.logger.logQueryError(e, query, [])
                     }
                 }
 
@@ -277,6 +281,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with an optional database.
      * If database is specified it is loaded, otherwise a new empty database is created.
+     *
      * @param database
      */
     protected async createDatabaseConnectionWithImport(
@@ -303,12 +308,12 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         if (PlatformTools.type === "browser") {
-            const sqlite = this.options.driver || window.SQL
+            const sqlite = this.options.driver ?? window.SQL
             this.sqlite = sqlite
         } else {
             try {
                 const sqlite =
-                    this.options.driver || PlatformTools.load("sql.js")
+                    this.options.driver ?? PlatformTools.load("sql.js")
                 this.sqlite = sqlite
             } catch (e) {
                 throw new DriverPackageNotInstalledError("sql.js", "sql.js")

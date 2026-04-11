@@ -1,5 +1,5 @@
 import { Subject } from "../Subject"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ObjectUtils } from "../../util/ObjectUtils"
 
 /**
@@ -19,6 +19,7 @@ export class CascadesSubjectBuilder {
 
     /**
      * Builds a cascade subjects tree and pushes them in into the given array of subjects.
+     *
      * @param subject
      * @param operationType
      */
@@ -32,16 +33,31 @@ export class CascadesSubjectBuilder {
                 subject.metadata.relations,
             ) // todo: we can create EntityMetadata.cascadeRelations
             .forEach(([relation, relationEntity, relationEntityMetadata]) => {
-                // we need only defined values and insert, update, soft-remove or recover cascades of the relation should be set
-                if (
-                    relationEntity === undefined ||
-                    relationEntity === null ||
-                    (!relation.isCascadeInsert &&
-                        !relation.isCascadeUpdate &&
-                        !relation.isCascadeSoftRemove &&
-                        !relation.isCascadeRecover)
-                )
+                // skip undefined/null values and relations whose cascade flags
+                // don't match the current operation type
+                if (relationEntity === undefined || relationEntity === null)
                     return
+
+                let shouldCascade: boolean
+                switch (operationType) {
+                    case "save":
+                        shouldCascade =
+                            relation.isCascadeInsert || relation.isCascadeUpdate
+                        break
+                    case "remove":
+                        shouldCascade = relation.isCascadeRemove
+                        break
+                    case "soft-remove":
+                        shouldCascade = relation.isCascadeSoftRemove
+                        break
+                    case "recover":
+                        shouldCascade = relation.isCascadeRecover
+                        break
+                    default:
+                        shouldCascade = false
+                }
+
+                if (!shouldCascade) return
 
                 // if relation entity is just a relation id set (for example post.tag = 1)
                 // then we don't really need to check cascades since there is no object to insert or update
@@ -58,22 +74,24 @@ export class CascadesSubjectBuilder {
                         alreadyExistRelationEntitySubject.canBeInserted ===
                         false
                     )
-                        // if its not marked for insertion yet
                         alreadyExistRelationEntitySubject.canBeInserted =
                             relation.isCascadeInsert === true &&
                             operationType === "save"
                     if (
                         alreadyExistRelationEntitySubject.canBeUpdated === false
                     )
-                        // if its not marked for update yet
                         alreadyExistRelationEntitySubject.canBeUpdated =
                             relation.isCascadeUpdate === true &&
                             operationType === "save"
+                    if (!alreadyExistRelationEntitySubject.mustBeRemoved)
+                        alreadyExistRelationEntitySubject.mustBeRemoved =
+                            relation.isCascadeRemove === true &&
+                            operationType === "remove" &&
+                            !!alreadyExistRelationEntitySubject.identifier
                     if (
                         alreadyExistRelationEntitySubject.canBeSoftRemoved ===
                         false
                     )
-                        // if its not marked for removal yet
                         alreadyExistRelationEntitySubject.canBeSoftRemoved =
                             relation.isCascadeSoftRemove === true &&
                             operationType === "soft-remove"
@@ -81,7 +99,6 @@ export class CascadesSubjectBuilder {
                         alreadyExistRelationEntitySubject.canBeRecovered ===
                         false
                     )
-                        // if its not marked for recovery yet
                         alreadyExistRelationEntitySubject.canBeRecovered =
                             relation.isCascadeRecover === true &&
                             operationType === "recover"
@@ -107,6 +124,17 @@ export class CascadesSubjectBuilder {
                         relation.isCascadeRecover === true &&
                         operationType === "recover",
                 })
+
+                // only mark for removal if the subject has an identifier,
+                // otherwise SubjectExecutor will throw SubjectWithoutIdentifierError
+                if (
+                    relation.isCascadeRemove === true &&
+                    operationType === "remove" &&
+                    relationEntitySubject.identifier
+                ) {
+                    relationEntitySubject.mustBeRemoved = true
+                }
+
                 this.allSubjects.push(relationEntitySubject)
 
                 // go recursively and find other entities we need to insert/update
@@ -121,6 +149,7 @@ export class CascadesSubjectBuilder {
     /**
      * Finds subject where entity like given subject's entity.
      * Comparison made by entity id.
+     *
      * @param entityTarget
      * @param entity
      */
