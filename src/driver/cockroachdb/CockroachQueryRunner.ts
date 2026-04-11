@@ -124,7 +124,9 @@ export class CockroachQueryRunner
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
-                    return this.databaseConnection
+                    return this.enableExperimentalAlterColumnType(
+                        this.databaseConnection,
+                    )
                 })
         } else {
             // master
@@ -145,7 +147,9 @@ export class CockroachQueryRunner
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
-                    return this.databaseConnection
+                    return this.enableExperimentalAlterColumnType(
+                        this.databaseConnection,
+                    )
                 })
         }
 
@@ -523,6 +527,16 @@ export class CockroachQueryRunner
         await this.query(
             "SET enable_experimental_alter_column_type_general = false",
         )
+    }
+
+    protected async enableExperimentalAlterColumnType(
+        connection: any,
+    ): Promise<any> {
+        await connection.query(
+            "SET enable_experimental_alter_column_type_general = true",
+        )
+
+        return connection
     }
 
     /**
