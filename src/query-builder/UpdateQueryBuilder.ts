@@ -650,7 +650,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     "::STGeomFromText(" +
                                     paramName +
                                     ", " +
-                                    (column.srid || "0") +
+                                    (column.srid ?? "0") +
                                     ")"
                             } else if (
                                 DriverUtils.isSQLiteFamily(

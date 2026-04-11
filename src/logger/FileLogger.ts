@@ -102,7 +102,7 @@ export class FileLogger extends AbstractLogger {
         strings = Array.isArray(strings) ? strings : [strings]
         const basePath = appRootPath.path + "/"
         let logPath = "ormlogs.log"
-        if (this.fileLoggerOptions && this.fileLoggerOptions.logPath) {
+        if (this.fileLoggerOptions?.logPath) {
             logPath = PlatformTools.pathNormalize(
                 this.fileLoggerOptions.logPath,
             )
