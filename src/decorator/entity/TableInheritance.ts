@@ -16,13 +16,12 @@ export function TableInheritance(options?: {
     return function (target: Function) {
         getMetadataArgsStorage().inheritances.push({
             target: target,
-            pattern: options && options.pattern ? options.pattern : "STI",
-            column:
-                options && options.column
-                    ? typeof options.column === "string"
-                        ? { name: options.column }
-                        : options.column
-                    : undefined,
+            pattern: options?.pattern ?? "STI",
+            column: options?.column
+                ? typeof options.column === "string"
+                    ? { name: options.column }
+                    : options.column
+                : undefined,
         } as InheritanceMetadataArgs)
     }
 }

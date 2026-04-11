@@ -36,10 +36,10 @@ describe("schema builder > column type > enum > enum function values", () => {
 
                     // WHEN
                     const loadedOrderEntity =
-                        await orderEntityRepository.findOneBy({ id: 1 })
+                        await orderEntityRepository.findOneByOrFail({ id: 1 })
 
                     // THEN
-                    loadedOrderEntity!.order.should.be.eq(Order.SECOND)
+                    loadedOrderEntity.order.should.be.eq(Order.SECOND)
                 }),
             ))
 
@@ -57,10 +57,10 @@ describe("schema builder > column type > enum > enum function values", () => {
 
                     // WHEN
                     const loadedOrderEntity =
-                        await orderEntityRepository.findOneBy({ id: 1 })
+                        await orderEntityRepository.findOneByOrFail({ id: 1 })
 
                     // THEN
-                    loadedOrderEntity!.orders.should.be.eql([
+                    loadedOrderEntity.orders.should.be.eql([
                         Order.SECOND,
                         Order.THIRD,
                     ])

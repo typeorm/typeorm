@@ -30,12 +30,14 @@ describe("schema builder > column type > json > mariadb drop", () => {
 
                 await connection.synchronize()
 
-                const loadedPost = await connection.manager.findOneBy(Post, {
-                    id: 1,
-                })
+                const loadedPost = await connection.manager.findOneByOrFail(
+                    Post,
+                    {
+                        id: 1,
+                    },
+                )
 
-                expect(loadedPost).to.be.not.empty
-                expect(loadedPost!.data.hello).to.be.eq("world")
+                expect(loadedPost.data.hello).to.be.eq("world")
             }),
         ))
 })

@@ -29,13 +29,13 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(loadedPost).not.to.be.null
-                expect(loadedPost!.name).not.to.be.undefined
-                expect(loadedPost!.text).not.to.be.undefined
-                loadedPost!.name.should.be.equal("Super title")
-                loadedPost!.text.should.be.equal("About this post")
+                expect(loadedPost.name).not.to.be.undefined
+                expect(loadedPost.text).not.to.be.undefined
+                loadedPost.name.should.be.equal("Super title")
+                loadedPost.text.should.be.equal("About this post")
             }),
         ))
 })

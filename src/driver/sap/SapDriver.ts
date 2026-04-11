@@ -58,6 +58,11 @@ export class SapDriver implements Driver {
     dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = SapDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
      *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
@@ -343,9 +348,7 @@ export class SapDriver implements Driver {
         this.version = version
         this.database = database
 
-        if (!this.schema) {
-            this.schema = await queryRunner.getCurrentSchema()
-        }
+        this.schema ??= await queryRunner.getCurrentSchema()
 
         await queryRunner.release()
     }
@@ -508,8 +511,8 @@ export class SapDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -519,11 +522,11 @@ export class SapDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -532,8 +535,8 @@ export class SapDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -542,7 +545,7 @@ export class SapDriver implements Driver {
 
         return {
             database: driverDatabase,
-            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
+            schema: (parts.length > 1 ? parts[0] : undefined) ?? driverSchema,
             tableName: parts.length > 1 ? parts[1] : parts[0],
         }
     }

@@ -72,12 +72,8 @@ dataSource.initialize().then(
                 console.log("post removed.")
             })
             .catch((error) =>
-                console.log(
-                    "Cannot save. Error: ",
-                    error.stack ? error.stack : error,
-                ),
+                console.log("Cannot save. Error: ", error.stack ?? error),
             )
     },
-    (error) =>
-        console.log("Cannot connect: ", error.stack ? error.stack : error),
+    (error) => console.log("Cannot connect: ", error.stack ?? error),
 )

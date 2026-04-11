@@ -34,11 +34,11 @@ describe("github issues > #966 Inheritance in embeddables", () => {
 
                 await repository.save(user)
 
-                const loadedUser = await repository.findOneBy({
+                const loadedUser = await repository.findOneByOrFail({
                     id: user.id,
                 })
 
-                expect(info).to.deep.equal(loadedUser!.info)
+                expect(info).to.deep.equal(loadedUser.info)
             }),
         ))
 })
