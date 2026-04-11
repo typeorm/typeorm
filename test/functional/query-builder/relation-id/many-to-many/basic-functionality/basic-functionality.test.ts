@@ -74,12 +74,12 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                     .leftJoinAndSelect("post.categories", "categories")
                     .addOrderBy("post.id, tag.id, categories.id")
                     .where("post.id = :id", { id: post.id })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.tag).to.not.be.undefined
-                expect(loadedPost!.tagId).to.be.undefined
-                expect(loadedPost!.categories).to.not.be.eql([])
-                expect(loadedPost!.categoryIds).to.be.undefined
+                expect(loadedPost.tag).to.not.be.undefined
+                expect(loadedPost.tagId).to.be.undefined
+                expect(loadedPost.categories).to.not.be.eql([])
+                expect(loadedPost.categoryIds).to.be.undefined
             }),
         ))
 
@@ -120,11 +120,11 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap("post.categoryIds", "post.categories")
                     .where("post.id = :id", { id: post.id })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.undefined
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
-                expect(loadedPost!.categoryIds[1]).to.be.equal(2)
+                expect(loadedPost.categoryIds).to.not.be.undefined
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -152,11 +152,11 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                         "post.subcategories",
                     )
                     .where("post.id = :id", { id: post.id })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.undefined
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
-                expect(loadedPost!.categoryIds[1]).to.be.equal(2)
+                expect(loadedPost.categoryIds).to.not.be.undefined
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -182,11 +182,11 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                     .createQueryBuilder(Category, "category")
                     .loadRelationIdAndMap("category.postIds", "category.posts")
                     .where("category.id = :id", { id: category.id })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.postIds).to.not.be.undefined
-                expect(loadedCategory!.postIds[0]).to.be.equal(1)
-                expect(loadedCategory!.postIds[1]).to.be.equal(2)
+                expect(loadedCategory.postIds).to.not.be.undefined
+                expect(loadedCategory.postIds[0]).to.be.equal(1)
+                expect(loadedCategory.postIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -218,11 +218,11 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                                 categoryId: 1,
                             }),
                     )
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.undefined
-                expect(loadedPost!.categoryIds.length).to.be.equal(1)
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds).to.not.be.undefined
+                expect(loadedPost.categoryIds.length).to.be.equal(1)
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
             }),
         ))
 
@@ -254,11 +254,11 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                                 categoryId: 1,
                             }),
                     )
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.undefined
-                expect(loadedPost!.categoryIds.length).to.be.equal(1)
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds).to.not.be.undefined
+                expect(loadedPost.categoryIds.length).to.be.equal(1)
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
             }),
         ))
 
@@ -290,11 +290,11 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                             qb.andWhere("posts.id = :postId", { postId: 1 }),
                     )
                     .where("category.id = :id", { id: category.id })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedCategory!.postIds).to.not.be.undefined
-                expect(loadedCategory!.postIds.length).to.be.equal(1)
-                expect(loadedCategory!.postIds[0]).to.be.equal(1)
+                expect(loadedCategory.postIds).to.not.be.undefined
+                expect(loadedCategory.postIds.length).to.be.equal(1)
+                expect(loadedCategory.postIds[0]).to.be.equal(1)
             }),
         ))
 
@@ -334,17 +334,17 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                     )
                     .where("post.id = :id", { id: post.id })
                     .addOrderBy("post.id, categories.id")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categories).to.not.be.eql([])
-                expect(loadedPost!.categoryIds).to.not.be.undefined
-                expect(loadedPost!.categoryIds.length).to.be.equal(2)
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
-                expect(loadedPost!.categoryIds[1]).to.be.equal(2)
-                expect(loadedPost!.categories[0].imageIds).to.not.be.eql([])
-                expect(loadedPost!.categories[0].imageIds.length).to.be.equal(2)
-                expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1)
-                expect(loadedPost!.categories[0].imageIds[1]).to.be.equal(2)
+                expect(loadedPost.categories).to.not.be.eql([])
+                expect(loadedPost.categoryIds).to.not.be.undefined
+                expect(loadedPost.categoryIds.length).to.be.equal(2)
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds[1]).to.be.equal(2)
+                expect(loadedPost.categories[0].imageIds).to.not.be.eql([])
+                expect(loadedPost.categories[0].imageIds.length).to.be.equal(2)
+                expect(loadedPost.categories[0].imageIds[0]).to.be.equal(1)
+                expect(loadedPost.categories[0].imageIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -395,15 +395,15 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                     )
                     .where("post.id = :id", { id: post.id })
                     .addOrderBy("post.id, categories.id")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categories).to.not.be.eql([])
-                expect(loadedPost!.categoryIds).to.not.be.undefined
-                expect(loadedPost!.categoryIds.length).to.be.equal(1)
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
-                expect(loadedPost!.categories[0].imageIds).to.not.be.eql([])
-                expect(loadedPost!.categories[0].imageIds.length).to.be.equal(1)
-                expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1)
+                expect(loadedPost.categories).to.not.be.eql([])
+                expect(loadedPost.categoryIds).to.not.be.undefined
+                expect(loadedPost.categoryIds.length).to.be.equal(1)
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categories[0].imageIds).to.not.be.eql([])
+                expect(loadedPost.categories[0].imageIds.length).to.be.equal(1)
+                expect(loadedPost.categories[0].imageIds[0]).to.be.equal(1)
             }),
         ))
 
@@ -443,9 +443,9 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
                     .where("post.id = :id", { id: post.id })
                     .setParameter("categoryId", 2)
                     .addOrderBy("post.id, categories.id")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categories).to.be.eql([])
+                expect(loadedPost.categories).to.be.eql([])
             }),
         ))
 })

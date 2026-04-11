@@ -43,21 +43,24 @@ describe("github issues > #8393 When trying to update `update: false` column wit
                     UpdateValuesMissingError,
                 )
 
-                const updatedPost = await connection.manager.findOne(Post, {
-                    where: {
-                        id: post.id,
+                const updatedPost = await connection.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: post.id,
+                        },
                     },
-                })
+                )
 
                 expect(updatedPost).to.be.an("object")
 
                 expect(post.readOnlyColumn).to.be.equal(
-                    updatedPost!.readOnlyColumn,
+                    updatedPost.readOnlyColumn,
                 )
 
                 // Gonna be false
                 expect(post.lastUpdated.toString()).to.be.eql(
-                    updatedPost!.lastUpdated.toString(),
+                    updatedPost.lastUpdated.toString(),
                 )
             }),
         ))

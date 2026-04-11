@@ -54,11 +54,11 @@ describe("transaction > single query runner", () => {
                 await entityManager.save(new Post(undefined, "Hello World"))
 
                 await entityManager.queryRunner!.startTransaction()
-                const loadedPost1 = await entityManager.findOneBy(Post, {
+                const loadedPost1 = await entityManager.findOneByOrFail(Post, {
                     title: "Hello World",
                 })
                 expect(loadedPost1).to.be.eql({ id: 1, title: "Hello World" })
-                await entityManager.remove(loadedPost1!)
+                await entityManager.remove(loadedPost1)
                 const loadedPost2 = await entityManager.findOneBy(Post, {
                     title: "Hello World",
                 })

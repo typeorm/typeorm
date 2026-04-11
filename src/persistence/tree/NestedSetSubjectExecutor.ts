@@ -26,6 +26,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     *
      * @param subject
      */
     async insert(subject: Subject): Promise<void> {
@@ -42,11 +43,11 @@ export class NestedSetSubjectExecutor {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+        if (!parent && subject.parentSubject?.entity)
             // if entity was attached via children
-            parent = subject.parentSubject.insertedValueSet
-                ? subject.parentSubject.insertedValueSet
-                : subject.parentSubject.entity
+            parent =
+                subject.parentSubject.insertedValueSet ??
+                subject.parentSubject.entity
         const parentId = subject.metadata.getEntityIdMap(parent)
 
         let parentNsRight: number | undefined = undefined
@@ -102,13 +103,14 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     *
      * @param subject
      */
     async update(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
-        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+        if (!parent && subject.parentSubject?.entity)
             // if entity was attached via children
             parent = subject.parentSubject.entity
 
@@ -237,6 +239,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being removed.
+     *
      * @param subjects
      */
     async remove(subjects: Subject | Subject[]): Promise<void> {
@@ -284,6 +287,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Get the nested set ids for a given entity
+     *
      * @param metadata
      * @param ids
      */
@@ -372,6 +376,7 @@ export class NestedSetSubjectExecutor {
     /**
      * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
      * schema name, otherwise returns escaped table name.
+     *
      * @param tablePath
      */
     protected getTableName(tablePath: string): string {

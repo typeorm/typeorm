@@ -13,6 +13,7 @@ export interface BaseEvent {
 
     /**
      * DataSource used in the event.
+     *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
      */
     connection: DataSource

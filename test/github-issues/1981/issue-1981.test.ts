@@ -24,11 +24,11 @@ describe("github issues > #1981 Boolean values not casted properly when used in 
                 product.liked = true
                 await connection.manager.save(product)
 
-                const loadedProduct = await connection.manager.findOneBy(
+                const loadedProduct = await connection.manager.findOneByOrFail(
                     Product,
                     { liked: true },
                 )
-                loadedProduct!.liked.should.be.equal(true)
+                loadedProduct.liked.should.be.equal(true)
             }),
         ))
 })

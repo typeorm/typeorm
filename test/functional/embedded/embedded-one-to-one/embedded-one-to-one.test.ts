@@ -121,10 +121,10 @@ describe("embedded > embedded-one-to-one", () => {
                             "likedUser",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost.should.be.eql({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -141,10 +141,10 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    loadedPost!.counters.favorites += 1
-                    loadedPost!.counters.subcounters.watches += 1
-                    loadedPost!.counters.likedUser = user3
-                    await postRepository.save(loadedPost!)
+                    loadedPost.counters.favorites += 1
+                    loadedPost.counters.subcounters.watches += 1
+                    loadedPost.counters.likedUser = user3
+                    await postRepository.save(loadedPost)
 
                     const loadedPost2 = await dataSource.manager
                         .createQueryBuilder(Post, "post")
@@ -153,10 +153,10 @@ describe("embedded > embedded-one-to-one", () => {
                             "likedUser",
                         )
                         .where("post.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedPost2!.should.be.eql({
+                        loadedPost2.should.be.eql({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -173,7 +173,7 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    await postRepository.remove(loadedPost2!)
+                    await postRepository.remove(loadedPost2)
 
                     const loadedPosts2 = (await postRepository.find())!
                     expect(loadedPosts2.length).to.be.equal(1)
@@ -289,10 +289,10 @@ describe("embedded > embedded-one-to-one", () => {
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPost", "likedPost")
                         .where("user.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser.should.be.eql({
                             id: 1,
                             name: "Alice",
                             likedPost: {
@@ -312,18 +312,18 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    loadedUser!.name = "Anna"
-                    loadedUser!.likedPost = post3
-                    await dataSource.getRepository(User).save(loadedUser!)
+                    loadedUser.name = "Anna"
+                    loadedUser.likedPost = post3
+                    await dataSource.getRepository(User).save(loadedUser)
 
                     loadedUser = await dataSource.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPost", "likedPost")
                         .where("user.id = :id", { id: 1 })
-                        .getOne()
+                        .getOneOrFail()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser.should.be.eql({
                             id: 1,
                             name: "Anna",
                             likedPost: {
@@ -343,7 +343,7 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
 
-                    await dataSource.getRepository(User).remove(loadedUser!)
+                    await dataSource.getRepository(User).remove(loadedUser)
 
                     loadedUsers = (await dataSource
                         .getRepository(User)
