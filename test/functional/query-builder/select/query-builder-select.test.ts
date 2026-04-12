@@ -921,10 +921,7 @@ describe("query builder > select", () => {
                     const sql = dataSource
                         .createQueryBuilder(Post, "post")
                         .select((qb) =>
-                            qb
-                                .subQuery()
-                                .select("post.id")
-                                .from(Post, "post"),
+                            qb.subQuery().select("post.id").from(Post, "post"),
                         )
                         .disableEscaping()
                         .getSql()

@@ -183,10 +183,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else {
-            const parsed = this.parseSelectInput(
-                selection,
-                selectionAliasName,
-            )
+            const parsed = this.parseSelectInput(selection, selectionAliasName)
             if (parsed !== undefined) {
                 this.expressionMap.selects = parsed
             }
@@ -249,10 +246,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else {
-            const parsed = this.parseSelectInput(
-                selection,
-                selectionAliasName,
-            )
+            const parsed = this.parseSelectInput(selection, selectionAliasName)
             if (parsed !== undefined) {
                 this.expressionMap.selects =
                     this.expressionMap.selects.concat(parsed)
@@ -2249,11 +2243,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param selectionAliasName
      */
     private parseSelectInput(
-        selection:
-            | string
-            | string[]
-            | Record<string, string>
-            | undefined,
+        selection: string | string[] | Record<string, string> | undefined,
         selectionAliasName?: string,
     ): SelectQuery[] | undefined {
         if (Array.isArray(selection)) {
