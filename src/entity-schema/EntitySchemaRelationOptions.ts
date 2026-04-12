@@ -120,5 +120,5 @@ export interface EntitySchemaRelationOptions {
      * compatibility and logs a deprecation warning on first use. In the next
      * major version the default will change to no action. See #12343.
      */
-    orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
+    orphans?: "nullify" | "delete" | "soft-delete" | "disable"
 }

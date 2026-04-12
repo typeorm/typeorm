@@ -14,7 +14,7 @@ export class User {
 
     @OneToMany(() => Setting, (setting) => setting.user, {
         cascade: ["insert"],
-        orphanedRowAction: "disable",
+        orphans: "disable",
     })
     settings: Setting[]
 

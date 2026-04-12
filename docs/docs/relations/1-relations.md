@@ -19,7 +19,7 @@ There are several options you can specify for relations:
 - `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` (default: `RESTRICT`) - specifies how foreign key should behave when referenced object is deleted
 - `deferrable: "INITIALLY DEFERRED"|"INITIALLY IMMEDIATE"` - When set, foreign key constraints are deferrable (e.g. validated at commit time). For many-to-many relations this applies to both junction-table foreign keys. Supported on PostgreSQL, better-sqlite3, and SAP HANA.
 - `nullable: boolean` (default: `true`) - Indicates whether this relation's column is nullable or not. By default it is nullable. For `ManyToOne` and owning `OneToOne` relations, setting `nullable: false` also causes TypeORM to use `INNER JOIN` instead of `LEFT JOIN` when loading the relation, since the related entity is guaranteed to exist.
-- `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` (default: `nullify`) - Applies to `@OneToMany` relations. Controls what happens to children removed from the collection when the parent is saved. See [Orphaned row handling](#orphaned-row-handling).
+- `orphans: "nullify" | "delete" | "soft-delete" | "disable"` (default: `nullify`) - Applies to `@OneToMany` relations. Controls what happens to children removed from the collection when the parent is saved. See [Orphaned row handling](#orphaned-row-handling).
 
 ## Cascades
 
@@ -162,12 +162,12 @@ await manager.remove(post) // categories will also be removed
 
 ## Orphaned row handling
 
-When you save a parent entity with a `@OneToMany` relation and some children that were previously in the database are no longer in the collection, those missing children are called **orphans**. The `orphanedRowAction` option controls what happens to them.
+When you save a parent entity with a `@OneToMany` relation and some children that were previously in the database are no longer in the collection, those missing children are called **orphans**. The `orphans` option controls what happens to them.
 
 TypeORM only detects orphans among children that are **loaded** on the entity. If the relation is not loaded (the property is `undefined`), no orphan handling occurs. Always load the relation before saving.
 
 :::warning
-Be careful when combining `orphanedRowAction` with `eager: true`. Eagerly loaded relations are always populated when you load the parent, which means orphan handling can trigger unexpectedly — for example, if you modify the parent's fields and save it, any child you omitted from the collection before saving will be treated as an orphan.
+Be careful when combining `orphans` with `eager: true`. Eagerly loaded relations are always populated when you load the parent, which means orphan handling can trigger unexpectedly — for example, if you modify the parent's fields and save it, any child you omitted from the collection before saving will be treated as an orphan.
 :::
 
 ```typescript
@@ -180,7 +180,7 @@ export class Category {
     name: string
 
     @OneToMany(() => Post, (post) => post.category, {
-        orphanedRowAction: "delete",
+        orphans: "delete",
     })
     posts: Post[]
 }
@@ -205,7 +205,7 @@ await manager.save(category) // post #2 is now an orphan — action is applied
 | `"disable"`     | Skips orphan handling entirely — the relation is left intact.                                                                |
 
 :::warning Deprecation notice
-When `orphanedRowAction` is not set, TypeORM currently defaults to `"nullify"` for backward compatibility and logs a deprecation warning the first time an orphan is processed for that relation. In the next major version this default will change — unset will mean "no action". Always set `orphanedRowAction` explicitly to the value you want. The `"disable"` value will also be removed in the next major since it becomes redundant with unset. See [#12343](https://github.com/typeorm/typeorm/issues/12343).
+When `orphans` is not set, TypeORM currently defaults to `"nullify"` for backward compatibility and logs a deprecation warning the first time an orphan is processed for that relation. In the next major version this default will change — unset will mean "no action". Always set `orphans` explicitly to the value you want. The `"disable"` value will also be removed in the next major since it becomes redundant with unset. See [#12343](https://github.com/typeorm/typeorm/issues/12343).
 :::
 
 ## `@JoinColumn` options

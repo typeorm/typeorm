@@ -121,7 +121,7 @@ describe("persistence > orphanage > unset > one-to-many", () => {
                     )
                     expect(deprecation).to.not.be.undefined
                     expect(deprecation).to.include("Parent.children")
-                    expect(deprecation).to.include("orphanedRowAction")
+                    expect(deprecation).to.include("orphans")
                 }
 
                 // Legacy behavior: FK is nullified on the orphan

@@ -119,7 +119,7 @@ export class RelationMetadata {
      * When unset, TypeORM currently defaults to `"nullify"` at runtime (legacy behavior) and logs a deprecation warning.
      * In the next major version the default will change and the `"disable"` value will be removed — see #12343.
      */
-    orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
+    orphans?: "nullify" | "delete" | "soft-delete" | "disable"
 
     /**
      * If set to true then related objects are allowed to be inserted to the database.
@@ -330,9 +330,9 @@ export class RelationMetadata {
         this.isEager = args.options.eager ?? false
         this.persistenceEnabled =
             args.options.persistence === false ? false : true
-        this.orphanedRowAction =
-            "orphanedRowAction" in args.options
-                ? args.options.orphanedRowAction
+        this.orphans =
+            "orphans" in args.options
+                ? args.options.orphans
                 : undefined
         this.isTreeParent = args.isTreeParent ?? false
         this.isTreeChildren = args.isTreeChildren ?? false

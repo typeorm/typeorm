@@ -12,7 +12,7 @@ export class Parent {
     @Column()
     name: string
 
-    // no orphanedRowAction set — test legacy implicit nullify behavior
+    // no orphans set — test legacy implicit nullify behavior
     @OneToMany(() => Child, (child) => child.parent, {
         cascade: ["insert"],
     })
