@@ -2,22 +2,21 @@ import { Column } from "../../../../../../../src/decorator/columns/Column"
 import { PrimaryGeneratedColumn } from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 import { Entity } from "../../../../../../../src/decorator/entity/Entity"
 import { OneToMany } from "../../../../../../../src/decorator/relations/OneToMany"
-import { Setting } from "./Setting"
+import { Child } from "./Child"
 
 @Entity()
-export class User {
+export class Parent {
     @PrimaryGeneratedColumn()
     id: number
 
     @Column()
     name: string
 
-    @OneToMany(() => Setting, (setting) => setting.user, {
-        cascade: true,
-        eager: true,
-        orphanedRowAction: "disable",
+    // no orphanedRowAction set — test legacy implicit nullify behavior
+    @OneToMany(() => Child, (child) => child.parent, {
+        cascade: ["insert"],
     })
-    settings: Setting[]
+    children: Child[]
 
     constructor(name: string) {
         this.name = name

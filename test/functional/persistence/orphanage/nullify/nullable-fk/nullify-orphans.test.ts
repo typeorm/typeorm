@@ -10,7 +10,7 @@ import {
 import { Parent } from "./entity/Parent"
 import { Child } from "./entity/Child"
 
-describe("persistence > orphanage > nullify > non-nullable-fk", () => {
+describe("persistence > orphanage > nullify > nullable-fk", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -27,8 +27,8 @@ describe("persistence > orphanage > nullify > non-nullable-fk", () => {
         const parentRepo = dataSource.getRepository(Parent)
         const parent = new Parent("test")
         parent.children = [
-            Object.assign(new Child(), { name: "keep" }),
-            Object.assign(new Child(), { name: "orphan" }),
+            Object.assign(new Child(), { name: "child1" }),
+            Object.assign(new Child(), { name: "child2" }),
         ]
         await parentRepo.save(parent)
         return parent
@@ -49,7 +49,10 @@ describe("persistence > orphanage > nullify > non-nullable-fk", () => {
                 loaded.name = "updated"
                 await parentRepo.save(loaded)
 
-                expect(await childRepo.count()).to.equal(2)
+                const children = await childRepo.find()
+                expect(children).to.have.lengthOf(2)
+                expect(children.every((c) => c.parentId === parent.id)).to.be
+                    .true
             }),
         ))
 
@@ -69,11 +72,14 @@ describe("persistence > orphanage > nullify > non-nullable-fk", () => {
                 loaded.name = "updated"
                 await parentRepo.save(loaded)
 
-                expect(await childRepo.count()).to.equal(2)
+                const children = await childRepo.find()
+                expect(children).to.have.lengthOf(2)
+                expect(children.every((c) => c.parentId === parent.id)).to.be
+                    .true
             }),
         ))
 
-    it("should delete orphaned children when relation is loaded and modified (FK is not nullable)", () =>
+    it("should nullify FK on orphaned children when relation is loaded and modified", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const parentRepo = dataSource.getRepository(Parent)
@@ -86,14 +92,20 @@ describe("persistence > orphanage > nullify > non-nullable-fk", () => {
                     relations: { children: true },
                 })
                 loaded.children = loaded.children.filter(
-                    (c) => c.name === "keep",
+                    (c) => c.name === "child1",
                 )
                 await parentRepo.save(loaded)
 
-                // Orphaned child should be deleted (not nullified) since FK is NOT NULL
-                const remaining = await childRepo.find()
-                expect(remaining).to.have.lengthOf(1)
-                expect(remaining[0].name).to.equal("keep")
+                const children = await childRepo.find()
+                expect(children).to.have.lengthOf(2)
+
+                const orphan = children.find((c) => c.name === "child2")
+                expect(orphan).to.not.be.undefined
+                expect(orphan?.parentId).to.be.null
+
+                const retained = children.find((c) => c.name === "child1")
+                expect(retained).to.not.be.undefined
+                expect(retained?.parentId).to.equal(parent.id)
             }),
         ))
 })

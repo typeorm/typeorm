@@ -14,7 +14,6 @@ export class Parent {
 
     @OneToMany(() => Child, (child) => child.parent, {
         cascade: ["insert"],
-        eager: true,
         orphanedRowAction: "nullify",
     })
     children: Child[]

@@ -14,7 +14,6 @@ export class Author {
 
     @OneToMany(() => Article, (article) => article.author, {
         cascade: ["insert"],
-        eager: true,
         orphanedRowAction: "delete",
     })
     articles: Article[]

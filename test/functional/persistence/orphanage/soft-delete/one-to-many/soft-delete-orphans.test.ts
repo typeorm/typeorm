@@ -23,34 +23,75 @@ describe("persistence > orphanage > soft-delete > one-to-many", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should soft-delete the orphaned entity when orphanedRowAction is on @OneToMany", () =>
+    async function seedCategory(dataSource: DataSource) {
+        const categoryRepo = dataSource.getRepository(Category)
+        const category = new Category()
+        category.posts = [new Post(), new Post()]
+        await categoryRepo.save(category)
+        return category
+    }
+
+    it("should not touch children when relation is not loaded", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const categoryRepo = dataSource.getRepository(Category)
                 const postRepo = dataSource.getRepository(Post)
 
-                const category = new Category()
-                category.posts = [new Post(), new Post()]
-                await categoryRepo.save(category)
+                const category = await seedCategory(dataSource)
 
                 const loaded = await categoryRepo.findOneByOrFail({
                     id: category.id,
                 })
-                loaded.posts = category.posts.filter((p) => p.id === 1)
+                expect(loaded.posts).to.be.undefined
                 await categoryRepo.save(loaded)
 
-                // Only one post should be visible (the other is soft-deleted)
-                const postCount = await postRepo.count()
-                expect(postCount).to.equal(1)
+                expect(await postRepo.count()).to.equal(2)
+                expect(await postRepo.count({ withDeleted: true })).to.equal(2)
+            }),
+        ))
 
-                // Both should exist when including soft-deleted
-                const allCount = await postRepo.count({ withDeleted: true })
-                expect(allCount).to.equal(2)
+    it("should not touch children when relation is loaded but not modified", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const categoryRepo = dataSource.getRepository(Category)
+                const postRepo = dataSource.getRepository(Post)
 
-                // FK should be retained on remaining post
+                const category = await seedCategory(dataSource)
+
+                const loaded = await categoryRepo.findOneOrFail({
+                    where: { id: category.id },
+                    relations: { posts: true },
+                })
+                expect(loaded.posts).to.have.lengthOf(2)
+
+                await categoryRepo.save(loaded)
+
+                expect(await postRepo.count()).to.equal(2)
+                expect(await postRepo.count({ withDeleted: true })).to.equal(2)
+            }),
+        ))
+
+    it("should soft-delete orphaned children when relation is loaded and modified", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const categoryRepo = dataSource.getRepository(Category)
+                const postRepo = dataSource.getRepository(Post)
+
+                const category = await seedCategory(dataSource)
+
+                const loaded = await categoryRepo.findOneOrFail({
+                    where: { id: category.id },
+                    relations: { posts: true },
+                })
+                loaded.posts = loaded.posts.filter((p) => p.id === 1)
+                await categoryRepo.save(loaded)
+
+                expect(await postRepo.count()).to.equal(1)
+                expect(await postRepo.count({ withDeleted: true })).to.equal(2)
+
                 const posts = await postRepo.find()
-                const postsWithoutFK = posts.filter((p) => !p.categoryId)
-                expect(postsWithoutFK).to.have.lengthOf(0)
+                const withoutFK = posts.filter((p) => !p.categoryId)
+                expect(withoutFK).to.have.lengthOf(0)
             }),
         ))
 })

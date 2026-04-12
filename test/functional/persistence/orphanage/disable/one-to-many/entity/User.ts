@@ -13,8 +13,7 @@ export class User {
     name: string
 
     @OneToMany(() => Setting, (setting) => setting.user, {
-        cascade: true,
-        eager: true,
+        cascade: ["insert"],
         orphanedRowAction: "disable",
     })
     settings: Setting[]
