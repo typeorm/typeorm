@@ -4,6 +4,7 @@ import { PlatformTools } from "../../platform/PlatformTools"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DriverUtils } from "../DriverUtils"
 import { PostgresDriver } from "../postgres/PostgresDriver"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { AuroraPostgresDataSourceOptions } from "./AuroraPostgresDataSourceOptions"
 import { AuroraPostgresQueryRunner } from "./AuroraPostgresQueryRunner"
@@ -16,8 +17,20 @@ abstract class PostgresWrapper extends PostgresDriver {
 
 export class AuroraPostgresDriver extends PostgresWrapper {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Aurora Data API does not support setting transaction isolation levels.
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    /** Isolation levels supported by this driver. */
+    supportedIsolationLevels = AuroraPostgresDriver.supportedIsolationLevels
 
     /**
      * Aurora Data API underlying library.
