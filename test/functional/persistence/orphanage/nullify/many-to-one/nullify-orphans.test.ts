@@ -23,7 +23,7 @@ describe("persistence > orphanage > nullify > many-to-one", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should nullify FK on orphaned entity when orphanedRowAction is on @ManyToOne", () =>
+    it("should nullify FK on orphaned entity when orphanedRowAction is set", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const parentRepo = dataSource.getRepository(Parent)

@@ -12,6 +12,7 @@ export class Category {
     @OneToMany(() => Post, (post) => post.category, {
         cascade: true,
         eager: true,
+        orphanedRowAction: "soft-delete",
     })
     posts: Post[]
 

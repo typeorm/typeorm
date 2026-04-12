@@ -3,7 +3,7 @@ import type { OnDeleteType } from "../../metadata/types/OnDeleteType"
 import type { OnUpdateType } from "../../metadata/types/OnUpdateType"
 
 /**
- * Describes all relation's options.
+ * Describes relation options shared by all relation types.
  */
 export interface RelationOptions {
     /**
@@ -67,12 +67,21 @@ export interface RelationOptions {
      * This is useful for performance optimization since its disabling avoid multiple extra queries during entity save.
      */
     persistence?: boolean
+}
 
+/**
+ * Options for `@OneToMany` relations.
+ * Extends base options with orphaned row handling.
+ */
+export interface OneToManyRelationOptions extends RelationOptions {
     /**
-     * When a parent is saved (with cascading but) without a child row that still exists in database, this will control what shall happen to them.
-     * delete will remove these rows from database.
-     * nullify will remove the relation key.
-     * disable will keep the relation intact. Removal of related item is only possible through its own repo.
+     * When a parent is saved without a child that still exists in database,
+     * this controls what happens to the orphaned rows.
+     *
+     * - `"nullify"` — sets the foreign key to null (deletes if FK is non-nullable)
+     * - `"delete"` — removes the orphaned row from the database
+     * - `"soft-delete"` — marks the orphaned row as soft-deleted
+     * - `"disable"` — skips orphan handling entirely
      */
     orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
 }

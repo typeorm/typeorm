@@ -182,9 +182,7 @@ export class OneToManySubjectBuilder {
             relatedPersistedEntityRelationIds.push(relationIdMap)
         })
 
-        const orphanedRowAction = relation.isOrphanedRowActionSet
-            ? relation.orphanedRowAction
-            : (relation.inverseRelation?.orphanedRowAction ?? "nullify")
+        const orphanedRowAction = relation.orphanedRowAction
 
         // find what related entities were added and what were removed based on difference between what we save and what database has
         if (orphanedRowAction !== "disable") {

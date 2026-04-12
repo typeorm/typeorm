@@ -16,9 +16,7 @@ export class Child {
     @Column({ nullable: true })
     parentId: number
 
-    @ManyToOne(() => Parent, (parent) => parent.children, {
-        orphanedRowAction: "nullify",
-    })
+    @ManyToOne(() => Parent, (parent) => parent.children)
     @JoinColumn({ name: "parentId" })
     parent: Parent
 }

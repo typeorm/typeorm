@@ -1,5 +1,8 @@
 import type { RelationType } from "../metadata/types/RelationTypes"
-import type { RelationOptions } from "../decorator/options/RelationOptions"
+import type {
+    RelationOptions,
+    OneToManyRelationOptions,
+} from "../decorator/options/RelationOptions"
 import type { PropertyTypeFactory } from "../metadata/types/PropertyTypeInFunction"
 import type { RelationTypeInFunction } from "../metadata/types/RelationTypeInFunction"
 
@@ -54,7 +57,7 @@ export interface RelationMetadataArgs {
     /**
      * Additional relation options.
      */
-    readonly options: RelationOptions
+    readonly options: RelationOptions | OneToManyRelationOptions
 
     /**
      * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.

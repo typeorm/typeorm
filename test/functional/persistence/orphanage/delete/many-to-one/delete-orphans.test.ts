@@ -23,7 +23,7 @@ describe("persistence > orphanage > delete > many-to-one", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should delete the orphaned entity when orphanedRowAction is on @ManyToOne", () =>
+    it("should delete the orphaned entity when orphanedRowAction is set", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const categoryRepository = dataSource.getRepository(Category)

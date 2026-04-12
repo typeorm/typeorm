@@ -16,9 +16,7 @@ export class Setting {
     @Column()
     userId: string
 
-    @ManyToOne(() => User, (user) => user.settings, {
-        orphanedRowAction: "disable",
-    })
+    @ManyToOne(() => User, (user) => user.settings)
     @JoinColumn({ name: "userId" })
     user: User
 
