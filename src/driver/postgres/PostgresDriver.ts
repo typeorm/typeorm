@@ -1269,7 +1269,6 @@ export class PostgresDriver implements Driver {
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
-
             let tableColumnDefault = tableColumn.default
             if (typeof tableColumnDefault === "string") {
                 tableColumnDefault =
