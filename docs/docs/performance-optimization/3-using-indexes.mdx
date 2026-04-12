@@ -21,6 +21,10 @@ Good candidates for indexes are columns frequently used in `WHERE` clauses, join
 
 Most databases let you inspect how a query is being executed, which is called an execution plan. Understanding such a plan helps you identify missing indexes and optimize how a query is constructed by comparing various ways of fetching the same data.
 
+:::note Identifier quoting
+Quoting rules differ between databases: PostgreSQL, CockroachDB, Oracle, and SAP HANA use double quotes (`"user"`), SQL Server uses square brackets (`[user]`), while MySQL, MariaDB, SQLite, and Spanner accept unquoted identifiers for `user`. The examples below intentionally follow each database's native conventions.
+:::
+
 <DatabaseTabs>
 <DatabaseTab value="cockroachdb">
 
