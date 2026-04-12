@@ -331,9 +331,7 @@ export class RelationMetadata {
         this.persistenceEnabled =
             args.options.persistence === false ? false : true
         this.orphans =
-            "orphans" in args.options
-                ? args.options.orphans
-                : undefined
+            "orphans" in args.options ? args.options.orphans : undefined
         this.isTreeParent = args.isTreeParent ?? false
         this.isTreeChildren = args.isTreeChildren ?? false
 
