@@ -2,24 +2,10 @@ import React from "react"
 import type { PropsWithChildren } from "react"
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
-
-const databases = {
-    cockroachdb: {
-        label: "CockroachDB",
-        icon: "/img/databases/cockroachdb.svg",
-    },
-    spanner: { label: "Google Spanner", icon: "/img/databases/spanner.svg" },
-    mariadb: { label: "MariaDB", icon: "/img/databases/mariadb.svg" },
-    mongodb: { label: "MongoDB", icon: "/img/databases/mongodb.svg" },
-    mysql: { label: "MySQL", icon: "/img/databases/mysql.svg" },
-    oracle: { label: "Oracle", icon: "/img/databases/oracle.svg" },
-    postgres: { label: "PostgreSQL", icon: "/img/databases/postgresql.svg" },
-    sap: { label: "SAP HANA", icon: "/img/databases/sap.svg" },
-    mssql: { label: "SQL Server", icon: "/img/databases/mssql.svg" },
-    sqlite: { label: "SQLite", icon: "/img/databases/sqlite.svg" },
-} as const
-
-type DatabaseName = keyof typeof databases
+import {
+    databases,
+    type DatabaseName,
+} from "@site/src/constants/databases"
 
 export const DatabaseTabs = ({ children }: PropsWithChildren) => {
     const entries = React.Children.toArray(children)

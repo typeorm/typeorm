@@ -19,6 +19,8 @@ import {
     AppWindow,
 } from "lucide-react"
 
+import { databases as databaseMetadata } from "@site/src/constants/databases"
+
 import styles from "./index.module.css"
 
 // Feature section data
@@ -264,42 +266,9 @@ function CodeExampleSection() {
 }
 
 function SupportedDatabases() {
-    const databases = [
-        {
-            name: "CockroachDB",
-            icon: "/img/databases/cockroachdb.svg",
-            category: "core",
-        },
-        {
-            name: "Google Spanner",
-            icon: "/img/databases/spanner.svg",
-            category: "core",
-        },
-        {
-            name: "MariaDB",
-            icon: "/img/databases/mariadb.svg",
-            category: "core",
-        },
-        {
-            name: "MongoDB",
-            icon: "/img/databases/mongodb.svg",
-            category: "core",
-        },
-        {
-            name: "MS SQL Server",
-            icon: "/img/databases/mssql.svg",
-            category: "core",
-        },
-        { name: "MySQL", icon: "/img/databases/mysql.svg", category: "core" },
-        { name: "Oracle", icon: "/img/databases/oracle.svg", category: "core" },
-        {
-            name: "PostgreSQL",
-            icon: "/img/databases/postgresql.svg",
-            category: "core",
-        },
-        { name: "SAP HANA", icon: "/img/databases/sap.svg", category: "core" },
-        { name: "SQLite", icon: "/img/databases/sqlite.svg", category: "core" },
-    ]
+    const sortedDatabases = [...Object.values(databaseMetadata)].sort((a, b) =>
+        a.label.localeCompare(b.label),
+    )
 
     return (
         <section className={styles.databasesSection}>
@@ -308,13 +277,13 @@ function SupportedDatabases() {
                     Supported Databases
                 </Heading>
                 <div className={styles.databasesGrid}>
-                    {databases.map((db, index) => (
-                        <div key={index} className={styles.databaseItem}>
+                    {sortedDatabases.map((db) => (
+                        <div key={db.label} className={styles.databaseItem}>
                             <div className={styles.databaseLogo}>
-                                <img src={db.icon} alt={`${db.name} logo`} />
+                                <img src={db.icon} alt={`${db.label} logo`} />
                             </div>
                             <span className={styles.databaseName}>
-                                {db.name}
+                                {db.label}
                             </span>
                         </div>
                     ))}
