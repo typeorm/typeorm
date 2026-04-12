@@ -182,14 +182,25 @@ export class OneToManySubjectBuilder {
             relatedPersistedEntityRelationIds.push(relationIdMap)
         })
 
-        const orphanedRowAction = relation.orphanedRowAction
+        // Resolve effective action. When unset, default to "nullify" for
+        // backward compatibility. This default will change to "disable" in
+        // the next major version — warn so users can migrate.
+        // TODO(#12343): remove the implicit nullify fallback and the warning.
+        const isExplicit = relation.orphanedRowAction !== undefined
+        const orphanedRowAction = relation.orphanedRowAction ?? "nullify"
 
         // find what related entities were added and what were removed based on difference between what we save and what database has
         if (orphanedRowAction !== "disable") {
-            EntityMetadata.difference(
+            const orphans = EntityMetadata.difference(
                 relatedEntityDatabaseRelationIds,
                 relatedPersistedEntityRelationIds,
-            ).forEach((removedRelatedEntityRelationId) => {
+            )
+
+            if (!isExplicit && orphans.length > 0) {
+                OneToManySubjectBuilder.warnImplicitNullify(relation)
+            }
+
+            orphans.forEach((removedRelatedEntityRelationId) => {
                 // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
 
                 // todo: probably we can improve this in the future by finding entity with column those values,
@@ -232,5 +243,36 @@ export class OneToManySubjectBuilder {
                 this.subjects.push(removedRelatedEntitySubject)
             })
         }
+    }
+
+    /**
+     * Tracks which relations have already been warned about implicit
+     * `orphanedRowAction` behavior, so the warning is logged once per
+     * relation and not for every save call.
+     *
+     * @deprecated Remove together with the implicit nullify fallback. See #12343.
+     */
+    private static warnedRelations = new WeakSet<RelationMetadata>()
+
+    /**
+     * Logs a deprecation warning when a `@OneToMany` relation triggers
+     * orphan nullification without `orphanedRowAction` being explicitly set.
+     * The warning is logged at most once per relation per process.
+     *
+     * @deprecated Remove in the next major version. See #12343.
+     */
+    private static warnImplicitNullify(relation: RelationMetadata): void {
+        if (OneToManySubjectBuilder.warnedRelations.has(relation)) return
+        OneToManySubjectBuilder.warnedRelations.add(relation)
+
+        const name = `${relation.entityMetadata.targetName}.${relation.propertyPath}`
+        relation.entityMetadata.dataSource.logger.log(
+            "warn",
+            `[DEPRECATION] Relation "${name}" removed children from the collection while "orphanedRowAction" is not set. ` +
+                `TypeORM is nullifying the orphaned row(s) using the legacy default. ` +
+                `In the next major version the default will change to "disable" (no action). ` +
+                `Set "orphanedRowAction: 'nullify'" explicitly to preserve the current behavior, ` +
+                `or choose "delete" / "soft-delete" / "disable" for the intended behavior.`,
+        )
     }
 }

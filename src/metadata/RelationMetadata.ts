@@ -113,9 +113,11 @@ export class RelationMetadata {
     persistenceEnabled: boolean = true
 
     /**
-     * When a parent is saved (with cascading but) without a child row that still exists in database, this will control what shall happen to them.
-     * delete will remove these rows from database. nullify will remove the relation key.
-     * skip will keep the relation intact. Removal of related item is only possible through its own repo.
+     * When a parent is saved without a child that still exists in database, this controls what happens to the orphaned row.
+     * Applies to `@OneToMany` relations only.
+     *
+     * When unset, TypeORM currently defaults to `"nullify"` at runtime (legacy behavior) and logs a deprecation warning.
+     * In the next major version the default will change and the `"disable"` value will be removed — see #12343.
      */
     orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
 
@@ -329,9 +331,9 @@ export class RelationMetadata {
         this.persistenceEnabled =
             args.options.persistence === false ? false : true
         this.orphanedRowAction =
-            ("orphanedRowAction" in args.options
+            "orphanedRowAction" in args.options
                 ? args.options.orphanedRowAction
-                : undefined) ?? "nullify"
+                : undefined
         this.isTreeParent = args.isTreeParent ?? false
         this.isTreeChildren = args.isTreeChildren ?? false
 

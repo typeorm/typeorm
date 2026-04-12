@@ -81,7 +81,11 @@ export interface OneToManyRelationOptions extends RelationOptions {
      * - `"nullify"` — sets the foreign key to null (deletes if FK is non-nullable)
      * - `"delete"` — removes the orphaned row from the database
      * - `"soft-delete"` — marks the orphaned row as soft-deleted
-     * - `"disable"` — skips orphan handling entirely
+     * - `"disable"` — skips orphan handling entirely (will be removed in the next major — see #12343)
+     *
+     * When left unset, TypeORM currently defaults to `"nullify"` for backward
+     * compatibility and logs a deprecation warning on first use. In the next
+     * major version the default will change to no action. See #12343.
      */
     orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
 }
