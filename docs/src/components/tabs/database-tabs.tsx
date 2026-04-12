@@ -2,10 +2,7 @@ import React from "react"
 import type { PropsWithChildren, ReactNode } from "react"
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
-import {
-    databases,
-    type DatabaseName,
-} from "@site/src/constants/databases"
+import { databases, type DatabaseName } from "@site/src/constants/databases"
 
 type DatabaseTabProps = {
     value: DatabaseName
@@ -18,19 +15,32 @@ type DatabaseTabProps = {
 export const DatabaseTab = (_props: DatabaseTabProps): null => null
 
 export const DatabaseTabs = ({ children }: PropsWithChildren) => {
-    const entries = React.Children.toArray(children)
-        .filter(React.isValidElement)
-        .map((child: React.ReactElement<DatabaseTabProps>) => {
-            const { value } = child.props
-            const db = databases[value]
-            if (!db) {
-                throw new Error(
-                    `<DatabaseTabs>: unknown database "${value}". ` +
-                        `Valid values: ${Object.keys(databases).join(", ")}`,
-                )
-            }
-            return { value, db, content: child.props.children }
-        })
+    const seen = new Set<DatabaseName>()
+    const entries = React.Children.toArray(children).map((child, index) => {
+        if (!React.isValidElement(child) || child.type !== DatabaseTab) {
+            throw new Error(
+                `<DatabaseTabs>: child at position ${index} is not a <DatabaseTab>. ` +
+                    `Only <DatabaseTab value="…"> children are allowed.`,
+            )
+        }
+        const { value, children: content } = (
+            child as React.ReactElement<DatabaseTabProps>
+        ).props
+        const db = databases[value]
+        if (!db) {
+            throw new Error(
+                `<DatabaseTabs>: unknown database "${value}". ` +
+                    `Valid values: ${Object.keys(databases).join(", ")}`,
+            )
+        }
+        if (seen.has(value)) {
+            throw new Error(
+                `<DatabaseTabs>: duplicate <DatabaseTab value="${value}">.`,
+            )
+        }
+        seen.add(value)
+        return { value, db, content }
+    })
 
     const values = entries.map(({ value, db }) => ({
         value,
