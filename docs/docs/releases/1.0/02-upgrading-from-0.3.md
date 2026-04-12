@@ -449,33 +449,32 @@ The internal hashing implementation has been replaced with Node.js built-in `cry
 
 Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is a drop-in replacement for most projects.
 
-### `orphans` default is deprecated
+### `orphanedRowAction` renamed to `orphans`
 
-When `orphans` is not set on a `@OneToMany` relation, TypeORM has historically defaulted to `"nullify"` (setting the FK to null on orphaned children). This default is now **deprecated** — v1.0 logs a warning the first time an orphan is processed for a relation that does not explicitly set `orphans`.
-
-In the next major version the default will change so that unset means "no action" (no orphan handling). The `"disable"` value will also be removed since it becomes redundant with unset. See [#12343](https://github.com/typeorm/typeorm/issues/12343).
-
-To silence the warning and preserve the current behavior, set `orphans` explicitly:
+The `orphanedRowAction` option has been renamed to `orphans`. This is a simple find-and-replace migration — the values (`"nullify"`, `"delete"`, `"soft-delete"`, `"disable"`) are unchanged.
 
 ```typescript
+// Before (0.3.x)
 @OneToMany(() => Post, (post) => post.category, {
-    orphans: "nullify", // preserve legacy behavior
+    orphanedRowAction: "delete",
 })
-posts: Post[]
-```
 
-Or choose one of the other values (`"delete"`, `"soft-delete"`, `"disable"`) for the intended behavior.
+// After (1.0)
+@OneToMany(() => Post, (post) => post.category, {
+    orphans: "delete",
+})
+```
 
 ### `orphans` now only applies to `@OneToMany`
 
-Previously, `orphans` could be set on `@ManyToOne` and was read from the inverse side. This was a design mistake — the parent entity should control what happens to orphaned children, not the child. Setting `orphans` on `@ManyToOne` is no longer effective.
+Previously, `orphanedRowAction` could be set on `@ManyToOne` and was read from the inverse side. This was a design mistake — the parent entity should control what happens to orphaned children, not the child. In v1.0 the option (now `orphans`) is only valid on `@OneToMany` and TypeScript will reject it on other decorators.
 
-If you previously had `orphans` on `@ManyToOne`, move it to the corresponding `@OneToMany` decorator:
+If you previously had `orphanedRowAction` on `@ManyToOne`, move it to the corresponding `@OneToMany` decorator and rename it:
 
 ```typescript
 // Before (0.3.x)
 @ManyToOne(() => Category, (category) => category.posts, {
-    orphans: "delete",
+    orphanedRowAction: "delete",
 })
 category: Category
 
@@ -485,6 +484,32 @@ category: Category
 })
 posts: Post[]
 ```
+
+The provided codemod adds `TODO` comments at each usage site to guide the migration.
+
+### `orphans` default is deprecated
+
+When `orphans` is not set on a `@OneToMany` relation, TypeORM has historically defaulted to `"nullify"` (setting the FK to null on orphaned children). This default is now **deprecated** — v1.0 logs a warning the first time an orphan is processed for a relation that does not explicitly set `orphans`.
+
+In the next major version (v2.0) this default will change: unset will mean "no action" (no orphan handling). The `"disable"` value will also be removed since it becomes redundant with unset. A codemod will be provided to automate the migration. See [#12343](https://github.com/typeorm/typeorm/issues/12343).
+
+**Action required:** set `orphans` explicitly now to lock in your intended behavior and silence the deprecation warning. You have two common choices:
+
+```typescript
+// If you want to preserve the current legacy behavior (nullify on orphan):
+@OneToMany(() => Post, (post) => post.category, {
+    orphans: "nullify",
+})
+posts: Post[]
+
+// If you want no orphan handling at all (will become the new default in v2.0):
+@OneToMany(() => Post, (post) => post.category, {
+    orphans: "disable", // codemod in v2.0 will remove this since it becomes redundant with unset
+})
+posts: Post[]
+```
+
+Or choose `"delete"` / `"soft-delete"` for actual orphan removal.
 
 ### `orphans: "nullify"` with non-nullable foreign keys
 

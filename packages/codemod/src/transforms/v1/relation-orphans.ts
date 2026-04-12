@@ -3,7 +3,7 @@ import type { API, FileInfo } from "jscodeshift"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "rename `orphanedRowAction` to `orphans` on `@OneToMany`, and flag usage on `@ManyToOne`/`@ManyToMany` for manual migration"
+    "add TODO comments for `orphanedRowAction` usage (rename to `orphans`, move from `@ManyToOne` to `@OneToMany`, and note v2.0 deprecation)"
 
 export const relationOrphans = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -39,37 +39,37 @@ export const relationOrphans = (file: FileInfo, api: API) => {
             )
 
             if (!prop || prop.type !== "ObjectProperty") return
+            if (prop.leadingComments) return
+
+            const node = prop as unknown as { comments: unknown[] }
+            node.comments = node.comments ?? []
 
             if (decoratorName === "OneToMany") {
-                // Rename the property key from orphanedRowAction to orphans
-                if (
-                    prop.key.type === "Identifier" &&
-                    prop.key.name === "orphanedRowAction"
-                ) {
-                    prop.key.name = "orphans"
-                    hasChanges = true
-                } else if (
-                    prop.key.type === "StringLiteral" &&
-                    prop.key.value === "orphanedRowAction"
-                ) {
-                    prop.key.value = "orphans"
-                    hasChanges = true
-                }
+                node.comments.push(
+                    j.commentLine(
+                        ` TODO: rename "orphanedRowAction" to "orphans" — see https://typeorm.io/docs/releases/1.0/upgrading-from-0.3`,
+                        true,
+                        false,
+                    ),
+                )
+                node.comments.push(
+                    j.commentLine(
+                        ` TODO: the implicit "nullify" default is deprecated and will change in v2.0. Set "orphans" explicitly. See #12343`,
+                        true,
+                        false,
+                    ),
+                )
             } else {
-                // @ManyToOne, @ManyToMany, @OneToOne — no longer supported, flag for manual migration
-                if (!prop.leadingComments) {
-                    const node = prop as unknown as { comments: unknown[] }
-                    node.comments = node.comments ?? []
-                    node.comments.push(
-                        j.commentLine(
-                            ` TODO: orphanedRowAction is no longer supported on @${decoratorName} in v1.0 — move to the corresponding @OneToMany as "orphans"`,
-                            true,
-                            false,
-                        ),
-                    )
-                    hasChanges = true
-                }
+                node.comments.push(
+                    j.commentLine(
+                        ` TODO: "orphanedRowAction" is no longer supported on @${decoratorName} in v1.0 — move to the corresponding @OneToMany and rename to "orphans"`,
+                        true,
+                        false,
+                    ),
+                )
             }
+
+            hasChanges = true
         })
     })
 
