@@ -1155,10 +1155,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable = table.clone()
         } else {
             const isColumnNamesChanged = newColumn.name !== oldColumn.name
-            const isColumnPropertiesChanged = this.isColumnChanged(
-                oldColumn,
-                newColumn,
-            )
+            const isColumnPropertiesChanged =
+                this.isColumnChanged(oldColumn, newColumn) ||
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
 
             if (isColumnNamesChanged || isColumnPropertiesChanged) {
                 if (isColumnNamesChanged) {

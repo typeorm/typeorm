@@ -1155,10 +1155,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable = table.clone()
         } else {
             const isColumnNamesChanged = newColumn.name !== oldColumn.name
-            const isColumnPropertiesChanged = this.isColumnChanged(
-                oldColumn,
-                newColumn,
-            )
+            const isColumnPropertiesChanged =
+                this.isColumnChanged(oldColumn, newColumn) ||
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                oldColumn.generatedType !== newColumn.generatedType ||
+                oldColumn.asExpression !== newColumn.asExpression
 
             if (isColumnNamesChanged || isColumnPropertiesChanged) {
                 if (isColumnNamesChanged) {
@@ -1229,16 +1231,20 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (isColumnPropertiesChanged) {
                     upQueries.push(
                         new Query(
-                            `ALTER TABLE ${this.escapePath(table)} MODIFY "${
-                                newColumn.name
-                            }" ${this.buildCreateColumnSql(newColumn, false)}`,
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} MODIFY ${this.buildCreateColumnSql(
+                                newColumn,
+                            )}`,
                         ),
                     )
                     downQueries.push(
                         new Query(
-                            `ALTER TABLE ${this.escapePath(table)} MODIFY "${
-                                newColumn.name
-                            }" ${this.buildCreateColumnSql(oldColumn, false)}`,
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} MODIFY ${this.buildCreateColumnSql(
+                                oldColumn,
+                            )}`,
                         ),
                     )
                 }
