@@ -19,11 +19,7 @@ There are several options you can specify for relations:
 - `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` (default: `RESTRICT`) - specifies how foreign key should behave when referenced object is deleted
 - `deferrable: "INITIALLY DEFERRED"|"INITIALLY IMMEDIATE"` - When set, foreign key constraints are deferrable (e.g. validated at commit time). For many-to-many relations this applies to both junction-table foreign keys. Supported on PostgreSQL, better-sqlite3, and SAP HANA.
 - `nullable: boolean` (default: `true`) - Indicates whether this relation's column is nullable or not. By default it is nullable. For `ManyToOne` and owning `OneToOne` relations, setting `nullable: false` also causes TypeORM to use `INNER JOIN` instead of `LEFT JOIN` when loading the relation, since the related entity is guaranteed to exist.
-- `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` (default: `nullify`) - Applies to `@OneToMany` relations. When a parent is saved without a child/children that still exists in database, this controls what happens to the orphaned rows.
-    - _nullify_ will remove the relation key. If the foreign key column is non-nullable, the orphaned row will be deleted instead since it cannot be set to `null`.
-    - _delete_ will remove these children from database.
-    - _soft-delete_ will mark children as soft-deleted.
-    - _disable_ will keep the relation intact. To delete, one has to use their own repository.
+- `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` (default: `nullify`) - Applies to `@OneToMany` relations. Controls what happens to children removed from the collection when the parent is saved. See [Orphaned row handling](#orphaned-row-handling).
 
 ## Cascades
 
@@ -168,6 +164,12 @@ await manager.remove(post) // categories will also be removed
 
 When you save a parent entity with a `@OneToMany` relation and some children that were previously in the database are no longer in the collection, those missing children are called **orphans**. The `orphanedRowAction` option controls what happens to them.
 
+TypeORM only detects orphans among children that are **loaded** on the entity. If the relation is not loaded (the property is `undefined`), no orphan handling occurs. Always load the relation before saving.
+
+:::warning
+Be careful when combining `orphanedRowAction` with `eager: true`. Eagerly loaded relations are always populated when you load the parent, which means orphan handling can trigger unexpectedly — for example, if you modify the parent's fields and save it, any child you omitted from the collection before saving will be treated as an orphan.
+:::
+
 ```typescript
 @Entity()
 export class Category {
@@ -178,30 +180,11 @@ export class Category {
     name: string
 
     @OneToMany(() => Post, (post) => post.category, {
-        cascade: ["insert"],
-        eager: true,
         orphanedRowAction: "delete",
     })
     posts: Post[]
 }
 ```
-
-With this configuration, if you load a category with 3 posts, remove one post from the `posts` array, and call `save()`, the removed post will be deleted from the database.
-
-### Available actions
-
-| Action                | Behavior                                                                                                                     |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `"nullify"` (default) | Sets the foreign key to `null` on the orphaned child. If the FK column is non-nullable, the orphaned row is deleted instead. |
-| `"delete"`            | Removes the orphaned row from the database.                                                                                  |
-| `"soft-delete"`       | Marks the orphaned row as soft-deleted (requires `@DeleteDateColumn` on the child entity).                                   |
-| `"disable"`           | Skips orphan handling entirely — the relation is left intact.                                                                |
-
-### Important notes
-
-- `orphanedRowAction` only applies to `@OneToMany` relations. It has no effect on `@ManyToOne` or `@ManyToMany`.
-- The parent entity must have `cascade` enabled for the relation so that children can be persisted.
-- TypeORM only detects orphans among children that are **loaded** on the entity. If the relation is not loaded (the property is `undefined`), no orphan handling occurs. Always load the relation before saving:
 
 ```typescript
 const category = await manager.findOne(Category, {
@@ -211,6 +194,19 @@ const category = await manager.findOne(Category, {
 category.posts = category.posts.filter((post) => post.id !== 2) // remove post #2
 await manager.save(category) // post #2 is now an orphan — action is applied
 ```
+
+### Available actions
+
+| Action          | Behavior                                                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `"nullify"`     | Sets the foreign key to `null` on the orphaned child. If the FK column is non-nullable, the orphaned row is deleted instead. |
+| `"delete"`      | Removes the orphaned row from the database.                                                                                  |
+| `"soft-delete"` | Marks the orphaned row as soft-deleted (requires `@DeleteDateColumn` on the child entity).                                   |
+| `"disable"`     | Skips orphan handling entirely — the relation is left intact.                                                                |
+
+:::warning Deprecation notice
+When `orphanedRowAction` is not set, TypeORM currently defaults to `"nullify"` for backward compatibility and logs a deprecation warning the first time an orphan is processed for that relation. In the next major version this default will change — unset will mean "no action". Always set `orphanedRowAction` explicitly to the value you want. The `"disable"` value will also be removed in the next major since it becomes redundant with unset. See [#12343](https://github.com/typeorm/typeorm/issues/12343).
+:::
 
 ## `@JoinColumn` options
 

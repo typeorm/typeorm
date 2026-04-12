@@ -449,6 +449,23 @@ The internal hashing implementation has been replaced with Node.js built-in `cry
 
 Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is a drop-in replacement for most projects.
 
+### `orphanedRowAction` default is deprecated
+
+When `orphanedRowAction` is not set on a `@OneToMany` relation, TypeORM has historically defaulted to `"nullify"` (setting the FK to null on orphaned children). This default is now **deprecated** — v1.0 logs a warning the first time an orphan is processed for a relation that does not explicitly set `orphanedRowAction`.
+
+In the next major version the default will change so that unset means "no action" (no orphan handling). The `"disable"` value will also be removed since it becomes redundant with unset. See [#12343](https://github.com/typeorm/typeorm/issues/12343).
+
+To silence the warning and preserve the current behavior, set `orphanedRowAction` explicitly:
+
+```typescript
+@OneToMany(() => Post, (post) => post.category, {
+    orphanedRowAction: "nullify", // preserve legacy behavior
+})
+posts: Post[]
+```
+
+Or choose one of the other values (`"delete"`, `"soft-delete"`, `"disable"`) for the intended behavior.
+
 ### `orphanedRowAction` now only applies to `@OneToMany`
 
 Previously, `orphanedRowAction` could be set on `@ManyToOne` and was read from the inverse side. This was a design mistake — the parent entity should control what happens to orphaned children, not the child. Setting `orphanedRowAction` on `@ManyToOne` is no longer effective.
