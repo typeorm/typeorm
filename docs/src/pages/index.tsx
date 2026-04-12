@@ -19,7 +19,7 @@ import {
     AppWindow,
 } from "lucide-react"
 
-import { databases as databaseMetadata } from "@site/src/constants/databases"
+import { databases } from "@site/src/constants/databases"
 
 import styles from "./index.module.css"
 
@@ -266,10 +266,6 @@ function CodeExampleSection() {
 }
 
 function SupportedDatabases() {
-    const sortedDatabases = [...Object.values(databaseMetadata)].sort((a, b) =>
-        a.label.localeCompare(b.label),
-    )
-
     return (
         <section className={styles.databasesSection}>
             <div className="container">
@@ -277,7 +273,7 @@ function SupportedDatabases() {
                     Supported Databases
                 </Heading>
                 <div className={styles.databasesGrid}>
-                    {sortedDatabases.map((db) => (
+                    {Object.values(databases).map((db) => (
                         <div key={db.label} className={styles.databaseItem}>
                             <div className={styles.databaseLogo}>
                                 <img src={db.icon} alt={`${db.label} logo`} />

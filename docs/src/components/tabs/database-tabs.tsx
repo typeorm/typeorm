@@ -42,7 +42,8 @@ export const DatabaseTabs = ({ children }: PropsWithChildren) => {
         return { value, db, content }
     })
 
-    entries.sort((a, b) => a.value.localeCompare(b.value))
+    const order = Object.keys(databases)
+    entries.sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value))
 
     const values = entries.map(({ value, db }) => ({
         value,

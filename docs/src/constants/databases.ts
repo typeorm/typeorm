@@ -1,3 +1,5 @@
+// The order of entries in this object reflects the order in which
+// databases are displayed on the homepage and inside `<DatabaseTabs>`.
 export const databases = {
     cockroachdb: {
         label: "CockroachDB",
