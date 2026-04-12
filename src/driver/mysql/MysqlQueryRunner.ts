@@ -1154,30 +1154,60 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (newColumn.name !== oldColumn.name) {
-                // We don't change any column properties, just rename it.
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                            oldColumn.name
-                        }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
-                            oldColumn,
-                            true,
-                            true,
-                        )}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                            newColumn.name
-                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
-                            oldColumn,
-                            true,
-                            true,
-                        )}`,
-                    ),
-                )
+            const isColumnNamesChanged = newColumn.name !== oldColumn.name
+            const isColumnPropertiesChanged = this.isColumnChanged(
+                oldColumn,
+                newColumn,
+            )
+
+            if (isColumnNamesChanged || isColumnPropertiesChanged) {
+                if (isColumnNamesChanged) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                                oldColumn.name
+                            }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
+                                newColumn,
+                                true,
+                                true,
+                            )}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                                newColumn.name
+                            }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                                oldColumn,
+                                true,
+                                true,
+                            )}`,
+                        ),
+                    )
+                } else {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} MODIFY \`${
+                                newColumn.name
+                            }\` ${this.buildCreateColumnSql(
+                                newColumn,
+                                true,
+                                true,
+                            )}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} MODIFY \`${
+                                oldColumn.name
+                            }\` ${this.buildCreateColumnSql(
+                                oldColumn,
+                                true,
+                                true,
+                            )}`,
+                        ),
+                    )
+                }
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {

@@ -1154,66 +1154,95 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (newColumn.name !== oldColumn.name) {
-                // rename column
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${
-                            oldColumn.name
-                        }" TO "${newColumn.name}"`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${
-                            newColumn.name
-                        }" TO "${oldColumn.name}"`,
-                    ),
-                )
+            const isColumnNamesChanged = newColumn.name !== oldColumn.name
+            const isColumnPropertiesChanged = this.isColumnChanged(
+                oldColumn,
+                newColumn,
+            )
 
-                // rename column primary key constraint
-                if (
-                    oldColumn.isPrimary === true &&
-                    !oldColumn.primaryKeyConstraintName
-                ) {
-                    const primaryColumns = clonedTable.primaryColumns
-
-                    // build old primary constraint name
-                    const columnNames = primaryColumns.map(
-                        (column) => column.name,
-                    )
-                    const oldPkName =
-                        this.dataSource.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            columnNames,
-                        )
-
-                    // replace old column name with new column name
-                    columnNames.splice(columnNames.indexOf(oldColumn.name), 1)
-                    columnNames.push(newColumn.name)
-
-                    // build new primary constraint name
-                    const newPkName =
-                        this.dataSource.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            columnNames,
-                        )
-
+            if (isColumnNamesChanged || isColumnPropertiesChanged) {
+                if (isColumnNamesChanged) {
+                    // rename column
                     upQueries.push(
                         new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`,
+                            `ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${
+                                oldColumn.name
+                            }" TO "${newColumn.name}"`,
                         ),
                     )
                     downQueries.push(
                         new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`,
+                            `ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${
+                                newColumn.name
+                            }" TO "${oldColumn.name}"`,
+                        ),
+                    )
+
+                    // rename column primary key constraint
+                    if (
+                        oldColumn.isPrimary === true &&
+                        !oldColumn.primaryKeyConstraintName
+                    ) {
+                        const primaryColumns = clonedTable.primaryColumns
+
+                        // build old primary constraint name
+                        const columnNames = primaryColumns.map(
+                            (column) => column.name,
+                        )
+                        const oldPkName =
+                            this.dataSource.namingStrategy.primaryKeyName(
+                                clonedTable,
+                                columnNames,
+                            )
+
+                        // replace old column name with new column name
+                        columnNames.splice(
+                            columnNames.indexOf(oldColumn.name),
+                            1,
+                        )
+                        columnNames.push(newColumn.name)
+
+                        // build new primary constraint name
+                        const newPkName =
+                            this.dataSource.namingStrategy.primaryKeyName(
+                                clonedTable,
+                                columnNames,
+                            )
+
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`,
+                            ),
+                        )
+                    }
+                }
+
+                if (isColumnPropertiesChanged) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                                newColumn.name
+                            }" ${this.buildCreateColumnSql(newColumn, false)}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                                newColumn.name
+                            }" ${this.buildCreateColumnSql(oldColumn, false)}`,
                         ),
                     )
                 }
+            }
 
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach((unique) => {
