@@ -1,6 +1,5 @@
 import { Entity, OneToMany, ManyToOne } from "typeorm"
 import { Post } from "./Post"
-import { Category } from "./Category"
 
 @Entity()
 export class Author {

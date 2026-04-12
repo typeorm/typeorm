@@ -245,22 +245,20 @@ export class OneToManySubjectBuilder {
         }
     }
 
-    /**
-     * Tracks which relations have already been warned about implicit
-     * `orphans` behavior, so the warning is logged once per
-     * relation and not for every save call.
-     *
-     * @deprecated Remove together with the implicit nullify fallback. See #12343.
-     */
-    private static warnedRelations = new WeakSet<RelationMetadata>()
+    // Tracks which relations have already been warned about implicit
+    // `orphans` behavior, so the warning is logged once per relation and
+    // not for every save call.
+    // TODO(#12343): remove together with the implicit nullify fallback.
+    private static readonly warnedRelations = new WeakSet<RelationMetadata>()
 
     /**
      * Logs a deprecation warning when a `@OneToMany` relation triggers
      * orphan nullification without `orphans` being explicitly set.
      * The warning is logged at most once per relation per process.
      *
-     * @deprecated Remove in the next major version. See #12343.
+     * @param relation
      */
+    // TODO(#12343): remove in the next major version.
     private static warnImplicitNullify(relation: RelationMetadata): void {
         if (OneToManySubjectBuilder.warnedRelations.has(relation)) return
         OneToManySubjectBuilder.warnedRelations.add(relation)
