@@ -24,6 +24,7 @@ import * as queryBuilderReplacePropertyNames from "./query-builder-replace-prope
 import * as queryBuilderWhereExpression from "./query-builder-where-expression"
 import * as queryRunnerLoadedTablesViews from "./query-runner-loaded-tables-views"
 import * as relationCount from "./relation-count"
+import * as relationOrphanedRowAction from "./relation-orphaned-row-action"
 import * as repositoryAbstract from "./repository-abstract"
 import * as repositoryExist from "./repository-exist"
 import * as repositoryFindByIds from "./repository-find-by-ids"
@@ -71,6 +72,7 @@ export const transforms = [
     queryBuilderReplacePropertyNames,
     findOptionsStringSelect,
     findOptionsStringRelations,
+    relationOrphanedRowAction,
 ]
 
 export default transformer(transforms)
