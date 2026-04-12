@@ -50,7 +50,7 @@ export class RelationIdMetadataToAttributeTransformer {
             const alias = this.expressionMap.aliases.find(
                 (alias) => alias.name === aliasName,
             )
-            if (alias && alias.metadata) {
+            if (alias?.metadata) {
                 const allColumnsSelected = alias.metadata.columns
                     .filter((column) => column.isSelect)
                     .every((column) =>
