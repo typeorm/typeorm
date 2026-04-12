@@ -147,7 +147,7 @@ Look for `TABLE ACCESS FULL` (no index) vs `INDEX RANGE SCAN` or `INDEX UNIQUE S
 Use `EXPLAIN ANALYZE` to see how PostgreSQL executes a query and whether it uses indexes:
 
 ```sql
-EXPLAIN ANALYZE SELECT * FROM user WHERE "firstName" = 'Timber';
+EXPLAIN ANALYZE SELECT * FROM "user" WHERE "firstName" = 'Timber';
 ```
 
 Look for `Seq Scan` (full table scan — no index used) vs `Index Scan` or `Index Only Scan` (index used).
