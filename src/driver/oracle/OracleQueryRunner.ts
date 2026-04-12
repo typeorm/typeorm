@@ -1144,11 +1144,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
-                newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            oldColumn.generatedType !== newColumn.generatedType ||
-            oldColumn.asExpression !== newColumn.asExpression
+                newColumn.generationStrategy !== "uuid")
         ) {
             // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed

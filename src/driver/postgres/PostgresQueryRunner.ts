@@ -1324,9 +1324,6 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
@@ -1616,21 +1613,36 @@ export class PostgresQueryRunner
             }
 
             if (
+                newColumn.type !== oldColumn.type ||
+                newColumn.length !== oldColumn.length ||
+                newColumn.isArray !== oldColumn.isArray ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
+                let upType = this.driver.createFullType(newColumn)
+                let downType = this.driver.createFullType(oldColumn)
+
+                // if column type changed, we must use "USING" to cast data
+                if (
+                    newColumn.type !== oldColumn.type ||
+                    newColumn.isArray !== oldColumn.isArray
+                ) {
+                    upType += ` USING "${newColumn.name}"::${upType}`
+                    downType += ` USING "${newColumn.name}"::${downType}`
+                }
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${upType}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${downType}`,
                     ),
                 )
             }
