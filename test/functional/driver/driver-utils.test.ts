@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { DataSource, Raw } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Raw } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -46,12 +47,11 @@ describe("DriverUtils", () => {
     })
     describe("Generated hash aliases", () => {
         let connections: DataSource[]
-        before(
-            async () =>
-                (connections = await createTestingConnections({
-                    entities: [__dirname + "/entity/*{.js,.ts}"],
-                })),
-        )
+        before(async () => {
+            connections = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+            })
+        })
         beforeEach(() => reloadTestingDatabases(connections))
         after(() => closeTestingConnections(connections))
 
