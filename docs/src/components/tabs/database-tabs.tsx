@@ -1,5 +1,5 @@
 import React from "react"
-import type { PropsWithChildren } from "react"
+import type { PropsWithChildren, ReactNode } from "react"
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 import {
@@ -7,27 +7,30 @@ import {
     type DatabaseName,
 } from "@site/src/constants/databases"
 
+type DatabaseTabProps = {
+    value: DatabaseName
+    children: ReactNode
+}
+
+// Marker component: only used to declare DatabaseTabs children in MDX; its
+// `value` and `children` props are consumed by DatabaseTabs, so it is never
+// rendered on its own.
+export const DatabaseTab = (_props: DatabaseTabProps): null => null
+
 export const DatabaseTabs = ({ children }: PropsWithChildren) => {
     const entries = React.Children.toArray(children)
         .filter(React.isValidElement)
-        .map(
-            (
-                child: React.ReactElement<{
-                    value: string
-                    children: React.ReactNode
-                }>,
-            ) => {
-                const value = child.props.value as DatabaseName
-                const db = databases[value]
-                if (!db) {
-                    throw new Error(
-                        `<DatabaseTabs>: unknown database "${value}". ` +
-                            `Valid values: ${Object.keys(databases).join(", ")}`,
-                    )
-                }
-                return { value, db, content: child.props.children }
-            },
-        )
+        .map((child: React.ReactElement<DatabaseTabProps>) => {
+            const { value } = child.props
+            const db = databases[value]
+            if (!db) {
+                throw new Error(
+                    `<DatabaseTabs>: unknown database "${value}". ` +
+                        `Valid values: ${Object.keys(databases).join(", ")}`,
+                )
+            }
+            return { value, db, content: child.props.children }
+        })
 
     const values = entries.map(({ value, db }) => ({
         value,
@@ -55,5 +58,3 @@ export const DatabaseTabs = ({ children }: PropsWithChildren) => {
         </Tabs>
     )
 }
-
-export { TabItem as DatabaseTab }
