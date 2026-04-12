@@ -4,43 +4,45 @@ import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 import { databases, type DatabaseName } from "@site/src/constants/databases"
 
-type DatabaseTabProps = {
+type DatabaseTabProps = PropsWithChildren<{
     value: DatabaseName
-    children: ReactNode
-}
+}>
 
 // Marker component: only used to declare DatabaseTabs children in MDX; its
 // `value` and `children` props are consumed by DatabaseTabs, so it is never
 // rendered on its own.
-export const DatabaseTab = (_props: DatabaseTabProps): null => null
+export const DatabaseTab = (_: DatabaseTabProps): null => null
 
 export const DatabaseTabs = ({ children }: PropsWithChildren) => {
     const seen = new Set<DatabaseName>()
     const entries = React.Children.toArray(children).map((child, index) => {
         if (!React.isValidElement(child) || child.type !== DatabaseTab) {
             throw new Error(
-                `<DatabaseTabs>: child at position ${index} is not a <DatabaseTab>. ` +
-                    `Only <DatabaseTab value="…"> children are allowed.`,
+                `<DatabaseTabs>: child at position ${index} is not a <DatabaseTab>. Only <DatabaseTab value="…"> children are allowed.`,
             )
         }
-        const { value, children: content } = (
-            child as React.ReactElement<DatabaseTabProps>
-        ).props
+
+        const { value, children: content } = child.props
         const db = databases[value]
+
         if (!db) {
             throw new Error(
-                `<DatabaseTabs>: unknown database "${value}". ` +
-                    `Valid values: ${Object.keys(databases).join(", ")}`,
+                `<DatabaseTabs>: unknown database "${value}". Valid values: ${Object.keys(databases).join(", ")}`,
             )
         }
+
         if (seen.has(value)) {
             throw new Error(
                 `<DatabaseTabs>: duplicate <DatabaseTab value="${value}">.`,
             )
         }
+
         seen.add(value)
+
         return { value, db, content }
     })
+
+    entries.sort((a, b) => a.value.localeCompare(b.value))
 
     const values = entries.map(({ value, db }) => ({
         value,
