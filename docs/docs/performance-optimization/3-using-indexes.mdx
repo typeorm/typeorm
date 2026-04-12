@@ -43,13 +43,16 @@ Look for `full scan` (no index) vs `scan` with a specific index name.
 
 <DatabaseTab value="spanner">
 
-Use `EXPLAIN` or `ANALYZE` to inspect the query execution plan:
+Spanner has no `EXPLAIN` SQL keyword. Use the [Query Plan visualizer](https://cloud.google.com/spanner/docs/query-execution-plans#query_plan_visualizer) in the Google Cloud Console, or run a query in `PLAN`/`PROFILE` mode via the `gcloud` CLI:
 
-```sql
-EXPLAIN SELECT * FROM user WHERE firstName = 'Timber';
+```bash
+gcloud spanner databases execute-sql DATABASE_ID \
+    --instance=INSTANCE_ID \
+    --query-mode=PROFILE \
+    --sql="SELECT * FROM user WHERE firstName = 'Timber'"
 ```
 
-Look for `full scan` (no index) vs `index scan` in the output.
+Look for `Table Scan` (no index) vs `Index Scan` in the returned plan.
 
 :::info Learn more
 
