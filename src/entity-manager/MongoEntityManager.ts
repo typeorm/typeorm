@@ -1211,38 +1211,42 @@ export class MongoEntityManager extends EntityManager {
         selects: FindOptionsSelect<any>,
         metadata: EntityMetadata,
     ) {
-        // Validate top-level select keys against entity metadata
-        for (const key of Object.keys(selects)) {
-            const value = (selects as ObjectLiteral)[key]
-            if (value === undefined || value === false) continue
-            const column = metadata.findColumnWithPropertyPathStrict(key)
-            const embed = metadata.findEmbeddedWithPropertyPath(key)
-            const relation = metadata.findRelationWithPropertyPath(key)
-            if (!column && !embed && !relation) {
-                throw new EntityPropertyNotFoundError(key, metadata)
-            }
-        }
-
         const projection: ObjectLiteral = {}
-        const flatten = (obj: ObjectLiteral, prefix: string) => {
+        const build = (obj: ObjectLiteral, embedPrefix: string) => {
             for (const key of Object.keys(obj)) {
                 const value = obj[key]
-                const path = prefix ? `${prefix}.${key}` : key
-                if (!prefix && metadata.findRelationWithPropertyPath(key)) {
-                    continue
+                if (value === undefined || value === false) continue
+
+                const propertyPath = embedPrefix ? `${embedPrefix}.${key}` : key
+                const column =
+                    metadata.findColumnWithPropertyPathStrict(propertyPath)
+                const embed =
+                    metadata.findEmbeddedWithPropertyPath(propertyPath)
+                const relation =
+                    metadata.findRelationWithPropertyPath(propertyPath)
+
+                if (!column && !embed && !relation) {
+                    throw new EntityPropertyNotFoundError(
+                        propertyPath,
+                        metadata,
+                    )
                 }
-                if (value === true) {
-                    projection[path] = 1
+
+                if (relation) continue
+
+                if (column && value === true) {
+                    projection[propertyPath] = 1
                 } else if (
+                    embed &&
                     value &&
                     typeof value === "object" &&
                     !Array.isArray(value)
                 ) {
-                    flatten(value, path)
+                    build(value as ObjectLiteral, propertyPath)
                 }
             }
         }
-        flatten(selects, "")
+        build(selects as ObjectLiteral, "")
 
         // Translate ObjectIdColumn property name (e.g. "id") to "_id" for MongoDB
         if (metadata.objectIdColumn) {
