@@ -133,7 +133,7 @@ describe("mongodb > select projection", () => {
                 )
 
                 expect(products).to.have.length(2)
-                const byName = products.sort((x, y) =>
+                const byName = products.toSorted((x, y) =>
                     x.name.localeCompare(y.name),
                 )
                 expect(byName[0].name).to.equal("test1")
