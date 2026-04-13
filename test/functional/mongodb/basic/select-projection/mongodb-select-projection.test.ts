@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { Product, Specs } from "./entity/Product"
+import { Dimensions, Product, Specs } from "./entity/Product"
 import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
@@ -188,7 +188,12 @@ describe("mongodb > select projection", () => {
             dataSources.map(async (connection) => {
                 const productRepository = connection.getMongoRepository(Product)
                 await productRepository.save(
-                    new Product("test1", "label1", 10, new Specs(100, "L")),
+                    new Product(
+                        "test1",
+                        "label1",
+                        10,
+                        new Specs(100, "L", new Dimensions(30, 40)),
+                    ),
                 )
 
                 const products = await productRepository.find({
@@ -200,6 +205,9 @@ describe("mongodb > select projection", () => {
                 expect(products[0].specs).to.not.be.undefined
                 expect(products[0].specs.weight).to.equal(100)
                 expect(products[0].specs.size).to.equal("L")
+                expect(products[0].specs.dimensions).to.not.be.undefined
+                expect(products[0].specs.dimensions.width).to.equal(30)
+                expect(products[0].specs.dimensions.height).to.equal(40)
                 expect(products[0].price).to.be.undefined
             }),
         ))

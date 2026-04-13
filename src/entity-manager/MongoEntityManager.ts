@@ -1228,7 +1228,7 @@ export class MongoEntityManager extends EntityManager {
                     metadata.findEmbeddedWithPropertyPath(propertyPath)
                 if (embed) {
                     if (value === true) {
-                        for (const subColumn of embed.columns) {
+                        for (const subColumn of embed.columnsFromTree) {
                             projection[subColumn.propertyPath] = 1
                         }
                     } else if (typeof value === "object") {
