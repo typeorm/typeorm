@@ -166,11 +166,8 @@ describe("mongodb > select projection", () => {
         Promise.all(
             dataSources.map(async (connection) => {
                 const productRepository = connection.getMongoRepository(Product)
-                const specs = new Specs()
-                specs.weight = 100
-                specs.size = "L"
                 await productRepository.save(
-                    new Product("test1", "label1", 10, specs),
+                    new Product("test1", "label1", 10, new Specs(100, "L")),
                 )
 
                 const products = await productRepository.find({

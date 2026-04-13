@@ -2,6 +2,11 @@ import { ObjectId } from "mongodb"
 import { Column, Entity, ObjectIdColumn } from "../../../../../../src"
 
 export class Specs {
+    constructor(weight: number, size: string) {
+        this.weight = weight
+        this.size = size
+    }
+
     @Column()
     weight: number
 
