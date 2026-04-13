@@ -183,6 +183,27 @@ describe("mongodb > select projection", () => {
             }),
         ))
 
+    it("should project all embed fields when embed is selected with true", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const productRepository = connection.getMongoRepository(Product)
+                await productRepository.save(
+                    new Product("test1", "label1", 10, new Specs(100, "L")),
+                )
+
+                const products = await productRepository.find({
+                    select: { name: true, specs: true },
+                })
+
+                expect(products).to.have.length(1)
+                expect(products[0].name).to.equal("test1")
+                expect(products[0].specs).to.not.be.undefined
+                expect(products[0].specs.weight).to.equal(100)
+                expect(products[0].specs.size).to.equal("L")
+                expect(products[0].price).to.be.undefined
+            }),
+        ))
+
     it("should throw on typo in nested embed field name", () =>
         Promise.all(
             dataSources.map(async (connection) => {

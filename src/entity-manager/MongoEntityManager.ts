@@ -1234,7 +1234,7 @@ export class MongoEntityManager extends EntityManager {
 
                 if (relation) continue
 
-                if (column && value === true) {
+                if (column) {
                     projection[propertyPath] = 1
                 } else if (
                     embed &&
@@ -1243,6 +1243,10 @@ export class MongoEntityManager extends EntityManager {
                     !Array.isArray(value)
                 ) {
                     build(value as ObjectLiteral, propertyPath)
+                } else if (embed && value === true) {
+                    for (const subColumn of embed.columns) {
+                        projection[subColumn.propertyPath] = 1
+                    }
                 }
             }
         }
