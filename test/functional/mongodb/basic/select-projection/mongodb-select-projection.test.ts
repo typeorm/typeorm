@@ -116,6 +116,32 @@ describe("mongodb > select projection", () => {
             }),
         ))
 
+    it("should only return selected columns on findByIds", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const productRepository = connection.getMongoRepository(Product)
+                const a = await productRepository.save(
+                    new Product("test1", "label1", 10),
+                )
+                const b = await productRepository.save(
+                    new Product("test2", "label2", 20),
+                )
+
+                const products = await productRepository.findByIds(
+                    [a.id, b.id],
+                    { select: { name: true, label: true } },
+                )
+
+                expect(products).to.have.length(2)
+                const byName = products.sort((x, y) =>
+                    x.name.localeCompare(y.name),
+                )
+                expect(byName[0].name).to.equal("test1")
+                expect(byName[0].label).to.equal("label1")
+                expect(byName[0].price).to.be.undefined
+            }),
+        ))
+
     it("should throw on unknown field name in select", () =>
         Promise.all(
             dataSources.map(async (connection) => {
