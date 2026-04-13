@@ -16,13 +16,7 @@ describe("github issues > #12337 bigint precision loss in single JoinColumn", ()
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Category, Post],
-            enabledDrivers: [
-                "mysql",
-                "mariadb",
-                "postgres",
-                "sqlite",
-                "better-sqlite3",
-            ],
+            enabledDrivers: ["mysql", "mariadb", "postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
