@@ -98,12 +98,12 @@ describe("repository > returning", () => {
 
     it("allows specifying RETURNING via repository.delete options", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (!connection.driver.isReturningSqlSupported("delete")) {
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("delete")) {
                     return
                 }
 
-                const repo = connection.getRepository(User)
+                const repo = dataSource.getRepository(User)
                 const created = await repo.save({ name: "to-delete" })
 
                 const result = await repo.delete(created.id, {
@@ -120,12 +120,12 @@ describe("repository > returning", () => {
 
     it("allows specifying RETURNING via repository.delete with object criteria", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (!connection.driver.isReturningSqlSupported("delete")) {
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("delete")) {
                     return
                 }
 
-                const repo = connection.getRepository(User)
+                const repo = dataSource.getRepository(User)
                 const created = await repo.save({ name: "obj-delete" })
 
                 const result = await repo.delete(
@@ -143,12 +143,12 @@ describe("repository > returning", () => {
 
     it("allows specifying RETURNING via repository.deleteAll options", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (!connection.driver.isReturningSqlSupported("delete")) {
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("delete")) {
                     return
                 }
 
-                const repo = connection.getRepository(User)
+                const repo = dataSource.getRepository(User)
                 const user1 = await repo.save({ name: "user1" })
                 const user2 = await repo.save({ name: "user2" })
 

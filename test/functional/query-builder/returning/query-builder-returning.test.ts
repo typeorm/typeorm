@@ -143,4 +143,33 @@ describe("query builder > insert/update/delete returning", () => {
                 ])
             }),
         ))
+
+    it("should use DELETED prefix when delete returning uses column array on mssql", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "mssql") {
+                    return
+                }
+
+                const user = new User()
+                user.name = "Array Returning Delete"
+                await dataSource.manager.save(user)
+
+                const qb = dataSource
+                    .createQueryBuilder()
+                    .delete()
+                    .from(User)
+                    .where("name = :name", { name: user.name })
+                    .returning(["id", "name"])
+
+                expect(qb.getSql()).to.equal(
+                    'DELETE FROM "user" OUTPUT DELETED."id", DELETED."name" WHERE "name" = @0',
+                )
+
+                const returning = await qb.execute()
+                expect(returning.raw).to.deep.equal([
+                    { id: user.id, name: user.name },
+                ])
+            }),
+        ))
 })
