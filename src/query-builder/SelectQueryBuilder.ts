@@ -4266,26 +4266,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                           ? "NULLS LAST"
                           : undefined
 
-                const aliasPath = `${alias}.${propertyPath}`
-                // const selection = this.expressionMap.selects.find(
-                //     (s) => s.selection === aliasPath,
-                // )
-                // if (selection) {
-                //     // this is not building correctly now???
-                //     aliasPath = this.escape(
-                //         DriverUtils.buildAlias(
-                //             this.dataSource.driver,
-                //             undefined,
-                //             alias,
-                //             column.databaseName,
-                //         ),
-                //     )
-                //     // selection.aliasName = aliasPath
-                // } else {
-                //     if (column.isVirtualProperty && column.query) {
-                //         aliasPath = `(${column.query(alias)})`
-                //     }
-                // }
+                let aliasPath = `${alias}.${propertyPath}`
+                if (column.isVirtualProperty && column.query) {
+                    aliasPath = `(${column.query(this.escape(alias))})`
+                }
 
                 // console.log("add sort", selection, aliasPath, direction, nulls)
                 this.addOrderBy(aliasPath, direction, nulls)

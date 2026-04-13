@@ -16,6 +16,7 @@ import { Activity } from "./entity/Activity"
 import { Company } from "./entity/Company"
 import { Employee } from "./entity/Employee"
 import { TimeSheet } from "./entity/TimeSheet"
+import { User } from "./entity/User"
 
 describe("column > virtual columns", () => {
     let dataSources: DataSource[]
@@ -345,4 +346,95 @@ describe("column > virtual columns", () => {
                 })
             }),
         ))
+})
+
+describe("column > virtual columns > WHERE and ORDER BY expression expansion", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [User],
+        })
+
+        for (const dataSource of dataSources) {
+            // MySQL uses backticks instead of double-quotes for identifiers
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                const fullNameMetadata = dataSource
+                    .getMetadata(User)
+                    .columns.find((col) => col.propertyName === "fullName")!
+                fullNameMetadata.query = (alias) =>
+                    `CONCAT(${alias}.\`firstName\`, ' ', ${alias}.\`lastName\`)`
+            }
+        }
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    it("should expand VirtualColumn expression in WHERE clause (issue #11616)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userRepository = dataSource.getRepository(User)
+
+                await userRepository.save(
+                    userRepository.create({
+                        firstName: "John",
+                        lastName: "Doe",
+                    }),
+                )
+                await userRepository.save(
+                    userRepository.create({
+                        firstName: "Jane",
+                        lastName: "Smith",
+                    }),
+                )
+
+                // findOne with WHERE on a VirtualColumn must not throw and must return the correct row
+                const found = await userRepository.findOne({
+                    where: { fullName: "John Doe" } as any,
+                })
+
+                expect(found).to.not.be.null
+                expect(found!.firstName).to.equal("John")
+                expect(found!.lastName).to.equal("Doe")
+            }),
+        ))
+
+    it("should expand VirtualColumn expression in ORDER BY clause", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userRepository = dataSource.getRepository(User)
+
+                // ORDER BY on a VirtualColumn must use the expression, not the non-existent column alias
+                const users = await userRepository.find({
+                    select: { firstName: true, lastName: true, fullName: true },
+                    order: { fullName: "ASC" } as any,
+                })
+
+                expect(users.length).to.be.greaterThan(0)
+                // Verify the results are sorted by fullName (expression) ascending
+                const fullNames = users
+                    .map((u) => u.fullName)
+                    .filter((n): n is string => n !== undefined)
+                expect(fullNames).to.deep.equal([...fullNames].sort())
+            }),
+        ))
+
+    it("should generate correct SQL with VirtualColumn expression in WHERE", () =>
+        dataSources.map((dataSource) => {
+            const qb = dataSource
+                .createQueryBuilder(User, "User")
+                .setFindOptions({
+                    where: { fullName: "John Doe" } as any,
+                })
+
+            const sql = qb.getSql()
+
+            // The WHERE clause must contain the CONCAT expression, not a bare column reference
+            expect(sql).to.include("CONCAT(")
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expect(sql).to.not.include("`User`.`fullName`")
+            } else {
+                expect(sql).to.not.include('"User"."fullName"')
+            }
+        }))
 })
