@@ -125,7 +125,7 @@ describe("mongodb > select projection", () => {
                 let error: Error | undefined
                 try {
                     await productRepository.find({
-                        select: { nonExistentField: true } as any,
+                        select: { nonExistentField: true },
                     })
                 } catch (e) {
                     error = e as Error
@@ -169,7 +169,7 @@ describe("mongodb > select projection", () => {
                 let error: Error | undefined
                 try {
                     await productRepository.find({
-                        select: { specs: { wieght: true } } as any,
+                        select: { specs: { wieght: true } },
                     })
                 } catch (e) {
                     error = e as Error
@@ -189,7 +189,7 @@ describe("mongodb > select projection", () => {
                 let error: Error | undefined
                 try {
                     await productRepository.find({
-                        select: { nmae: true } as any,
+                        select: { nmae: true },
                     })
                 } catch (e) {
                     error = e as Error
