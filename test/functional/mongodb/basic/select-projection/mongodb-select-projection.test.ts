@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { Product } from "./entity/Product"
+import { Product, Specs } from "./entity/Product"
 import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
@@ -133,6 +133,50 @@ describe("mongodb > select projection", () => {
 
                 expect(error).to.not.be.undefined
                 expect(error?.message).to.contain("nonExistentField")
+            }),
+        ))
+
+    it("should only return selected nested embed fields", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const productRepository = connection.getMongoRepository(Product)
+                const specs = new Specs()
+                specs.weight = 100
+                specs.size = "L"
+                await productRepository.save(
+                    new Product("test1", "label1", 10, specs),
+                )
+
+                const products = await productRepository.find({
+                    select: { name: true, specs: { weight: true } },
+                })
+
+                expect(products).to.have.length(1)
+                expect(products[0].name).to.equal("test1")
+                expect(products[0].specs).to.not.be.undefined
+                expect(products[0].specs.weight).to.equal(100)
+                expect(products[0].specs.size).to.be.undefined
+                expect(products[0].price).to.be.undefined
+            }),
+        ))
+
+    it("should throw on typo in nested embed field name", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const productRepository = connection.getMongoRepository(Product)
+                await productRepository.save(new Product("test1", "label1", 10))
+
+                let error: Error | undefined
+                try {
+                    await productRepository.find({
+                        select: { specs: { wieght: true } } as any,
+                    })
+                } catch (e) {
+                    error = e as Error
+                }
+
+                expect(error).to.not.be.undefined
+                expect(error?.message).to.contain("specs.wieght")
             }),
         ))
 
