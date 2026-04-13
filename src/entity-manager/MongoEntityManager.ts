@@ -1218,36 +1218,29 @@ export class MongoEntityManager extends EntityManager {
                 if (value === undefined || value === false) continue
 
                 const propertyPath = embedPrefix ? `${embedPrefix}.${key}` : key
-                const column =
-                    metadata.findColumnWithPropertyPathStrict(propertyPath)
+
+                if (metadata.findColumnWithPropertyPathStrict(propertyPath)) {
+                    projection[propertyPath] = 1
+                    continue
+                }
+
                 const embed =
                     metadata.findEmbeddedWithPropertyPath(propertyPath)
-                const relation =
-                    metadata.findRelationWithPropertyPath(propertyPath)
-
-                if (!column && !embed && !relation) {
-                    throw new EntityPropertyNotFoundError(
-                        propertyPath,
-                        metadata,
-                    )
-                }
-
-                if (relation) continue
-
-                if (column) {
-                    projection[propertyPath] = 1
-                } else if (
-                    embed &&
-                    value &&
-                    typeof value === "object" &&
-                    !Array.isArray(value)
-                ) {
-                    build(value as ObjectLiteral, propertyPath)
-                } else if (embed && value === true) {
-                    for (const subColumn of embed.columns) {
-                        projection[subColumn.propertyPath] = 1
+                if (embed) {
+                    if (value === true) {
+                        for (const subColumn of embed.columns) {
+                            projection[subColumn.propertyPath] = 1
+                        }
+                    } else if (typeof value === "object") {
+                        build(value as ObjectLiteral, propertyPath)
                     }
+                    continue
                 }
+
+                if (metadata.findRelationWithPropertyPath(propertyPath))
+                    continue
+
+                throw new EntityPropertyNotFoundError(propertyPath, metadata)
             }
         }
         build(selects as ObjectLiteral, "")
