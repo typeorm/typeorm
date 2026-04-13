@@ -1213,6 +1213,8 @@ export class MongoEntityManager extends EntityManager {
     ) {
         // Validate top-level select keys against entity metadata
         for (const key of Object.keys(selects)) {
+            const value = (selects as ObjectLiteral)[key]
+            if (value === undefined || value === false) continue
             const column = metadata.findColumnWithPropertyPathStrict(key)
             const embed = metadata.findEmbeddedWithPropertyPath(key)
             if (!column && !embed) {
