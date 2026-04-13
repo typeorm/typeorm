@@ -1217,7 +1217,8 @@ export class MongoEntityManager extends EntityManager {
             if (value === undefined || value === false) continue
             const column = metadata.findColumnWithPropertyPathStrict(key)
             const embed = metadata.findEmbeddedWithPropertyPath(key)
-            if (!column && !embed) {
+            const relation = metadata.findRelationWithPropertyPath(key)
+            if (!column && !embed && !relation) {
                 throw new EntityPropertyNotFoundError(key, metadata)
             }
         }
@@ -1227,6 +1228,9 @@ export class MongoEntityManager extends EntityManager {
             for (const key of Object.keys(obj)) {
                 const value = obj[key]
                 const path = prefix ? `${prefix}.${key}` : key
+                if (!prefix && metadata.findRelationWithPropertyPath(key)) {
+                    continue
+                }
                 if (value === true) {
                     projection[path] = 1
                 } else if (
