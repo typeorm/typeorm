@@ -1209,146 +1209,140 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                 }
 
-                // rename index constraints
-                clonedTable.findColumnIndices(oldColumn).forEach((index) => {
-                    const oldUniqueName =
-                        this.dataSource.namingStrategy.indexName(
-                            clonedTable,
-                            index.columnNames,
-                        )
-
-                    // Skip renaming if Index has user defined constraint name
-                    if (index.name !== oldUniqueName) return
-
-                    // build new constraint name
-                    index.columnNames.splice(
-                        index.columnNames.indexOf(oldColumn.name),
-                        1,
-                    )
-                    index.columnNames.push(newColumn.name)
-                    const columnNames = index.columnNames
-                        .map((column) => `\`${column}\``)
-                        .join(", ")
-                    const newIndexName =
-                        this.dataSource.namingStrategy.indexName(
-                            clonedTable,
-                            index.columnNames,
-                            index.where,
-                        )
-
-                    // build queries
-                    let indexType = ""
-                    if (index.isUnique) indexType += "UNIQUE "
-                    if (index.isSpatial) indexType += "SPATIAL "
-                    if (index.isFulltext) indexType += "FULLTEXT "
-                    const indexParser =
-                        index.isFulltext && index.parser
-                            ? ` WITH PARSER ${index.parser}`
-                            : ""
-
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${
-                                index.name
-                            }\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${
-                                index.name
-                            }\` (${columnNames})${indexParser}`,
-                        ),
-                    )
-
-                    // replace constraint name
-                    index.name = newIndexName
-                })
-
-                // rename foreign key constraints
-                clonedTable
-                    .findColumnForeignKeys(oldColumn)
-                    .forEach((foreignKey) => {
-                        const foreignKeyName =
-                            this.dataSource.namingStrategy.foreignKeyName(
+                if (isColumnNamesChanged) {
+                    // rename index constraints
+                    clonedTable.findColumnIndices(oldColumn).forEach((index) => {
+                        const oldUniqueName =
+                            this.dataSource.namingStrategy.indexName(
                                 clonedTable,
-                                foreignKey.columnNames,
-                                this.getTablePath(foreignKey),
-                                foreignKey.referencedColumnNames,
+                                index.columnNames,
                             )
 
-                        // Skip renaming if foreign key has user defined constraint name
-                        if (foreignKey.name !== foreignKeyName) return
+                        // Skip renaming if Index has user defined constraint name
+                        if (index.name !== oldUniqueName) return
 
                         // build new constraint name
-                        foreignKey.columnNames.splice(
-                            foreignKey.columnNames.indexOf(oldColumn.name),
-                            1,
-                        )
-                        foreignKey.columnNames.push(newColumn.name)
-                        const columnNames = foreignKey.columnNames
+                        index.columnNames[index.columnNames.indexOf(oldColumn.name)] = newColumn.name
+                        const columnNames = index.columnNames
                             .map((column) => `\`${column}\``)
                             .join(", ")
-                        const referencedColumnNames =
-                            foreignKey.referencedColumnNames
-                                .map((column) => `\`${column}\``)
-                                .join(",")
-                        const newForeignKeyName =
-                            this.dataSource.namingStrategy.foreignKeyName(
+                        const newIndexName =
+                            this.dataSource.namingStrategy.indexName(
                                 clonedTable,
-                                foreignKey.columnNames,
-                                this.getTablePath(foreignKey),
-                                foreignKey.referencedColumnNames,
+                                index.columnNames,
+                                index.where,
                             )
 
                         // build queries
-                        let up =
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP FOREIGN KEY \`${
-                                foreignKey.name
-                            }\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
-                            `REFERENCES ${this.escapePath(
-                                this.getTablePath(foreignKey),
-                            )}(${referencedColumnNames})`
-                        if (foreignKey.onDelete)
-                            up += ` ON DELETE ${foreignKey.onDelete}`
-                        if (foreignKey.onUpdate)
-                            up += ` ON UPDATE ${foreignKey.onUpdate}`
+                        let indexType = ""
+                        if (index.isUnique) indexType += "UNIQUE "
+                        if (index.isSpatial) indexType += "SPATIAL "
+                        if (index.isFulltext) indexType += "FULLTEXT "
+                        const indexParser =
+                            index.isFulltext && index.parser
+                                ? ` WITH PARSER ${index.parser}`
+                                : ""
 
-                        let down =
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${
-                                foreignKey.name
-                            }\` FOREIGN KEY (${columnNames}) ` +
-                            `REFERENCES ${this.escapePath(
-                                this.getTablePath(foreignKey),
-                            )}(${referencedColumnNames})`
-                        if (foreignKey.onDelete)
-                            down += ` ON DELETE ${foreignKey.onDelete}`
-                        if (foreignKey.onUpdate)
-                            down += ` ON UPDATE ${foreignKey.onUpdate}`
-
-                        upQueries.push(new Query(up))
-                        downQueries.push(new Query(down))
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} DROP INDEX \`${
+                                    index.name
+                                }\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${
+                                    index.name
+                                }\` (${columnNames})${indexParser}`,
+                            ),
+                        )
 
                         // replace constraint name
-                        foreignKey.name = newForeignKeyName
+                        index.name = newIndexName
                     })
 
-                // rename old column in the Table object
-                const oldTableColumn = clonedTable.columns.find(
-                    (column) => column.name === oldColumn.name,
-                )
-                clonedTable.columns[
-                    clonedTable.columns.indexOf(oldTableColumn!)
-                ].name = newColumn.name
-                oldColumn.name = newColumn.name
+                    // rename foreign key constraints
+                    clonedTable
+                        .findColumnForeignKeys(oldColumn)
+                        .forEach((foreignKey) => {
+                            const foreignKeyName =
+                                this.dataSource.namingStrategy.foreignKeyName(
+                                    clonedTable,
+                                    foreignKey.columnNames,
+                                    this.getTablePath(foreignKey),
+                                    foreignKey.referencedColumnNames,
+                                )
+
+                            // Skip renaming if foreign key has user defined constraint name
+                            if (foreignKey.name !== foreignKeyName) return
+
+                            // build new constraint name
+                            foreignKey.columnNames[foreignKey.columnNames.indexOf(oldColumn.name)] = newColumn.name
+                            const columnNames = foreignKey.columnNames
+                                .map((column) => `\`${column}\``)
+                                .join(", ")
+                            const referencedColumnNames =
+                                foreignKey.referencedColumnNames
+                                    .map((column) => `\`${column}\``)
+                                    .join(",")
+                            const newForeignKeyName =
+                                this.dataSource.namingStrategy.foreignKeyName(
+                                    clonedTable,
+                                    foreignKey.columnNames,
+                                    this.getTablePath(foreignKey),
+                                    foreignKey.referencedColumnNames,
+                                )
+
+                            // build queries
+                            let up =
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} DROP FOREIGN KEY \`${
+                                    foreignKey.name
+                                }\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+                                `REFERENCES ${this.escapePath(
+                                    this.getTablePath(foreignKey),
+                                )}(${referencedColumnNames})`
+                            if (foreignKey.onDelete)
+                                up += ` ON DELETE ${foreignKey.onDelete}`
+                            if (foreignKey.onUpdate)
+                                up += ` ON UPDATE ${foreignKey.onUpdate}`
+
+                            let down =
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${
+                                    foreignKey.name
+                                }\` FOREIGN KEY (${columnNames}) ` +
+                                `REFERENCES ${this.escapePath(
+                                    this.getTablePath(foreignKey),
+                                )}(${referencedColumnNames})`
+                            if (foreignKey.onDelete)
+                                down += ` ON DELETE ${foreignKey.onDelete}`
+                            if (foreignKey.onUpdate)
+                                down += ` ON UPDATE ${foreignKey.onUpdate}`
+
+                            upQueries.push(new Query(up))
+                            downQueries.push(new Query(down))
+
+                            // replace constraint name
+                            foreignKey.name = newForeignKeyName
+                        })
+
+                    // rename old column in the Table object
+                    const oldTableColumn = clonedTable.columns.find(
+                        (column) => column.name === oldColumn.name,
+                    )
+                    clonedTable.columns[
+                        clonedTable.columns.indexOf(oldTableColumn!)
+                    ].name = newColumn.name
+                    oldColumn.name = newColumn.name
+                }
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
