@@ -254,6 +254,14 @@
     text-align: center;
 }
 
+.databasesDisclaimer {
+    font-size: 0.75rem;
+    color: var(--ifm-color-emphasis-500);
+    text-align: center;
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+}
+
 @media (max-width: 996px) {
     .databasesGrid {
         grid-template-columns: repeat(4, 140px);
