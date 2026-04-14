@@ -118,10 +118,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.connect()
         if (isolationLevel) {
             this.sessionTransaction.setReadWriteTransactionOptions({
-                isolationLevel:
-                    isolationLevel === "REPEATABLE READ"
-                        ? 2 // REPEATABLE_READ
-                        : 1, // SERIALIZABLE
+                isolationLevel: this.mapSpannerIsolationLevel(isolationLevel),
             })
         }
         await this.sessionTransaction.begin()
@@ -162,6 +159,24 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         this.isTransactionActive = false
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
+    }
+
+    /**
+     * Maps a TypeORM isolation level to the Spanner protobuf enum value.
+     *
+     * @param level
+     */
+    protected mapSpannerIsolationLevel(level: IsolationLevel): number {
+        switch (level) {
+            case "SERIALIZABLE":
+                return 1
+            case "REPEATABLE READ":
+                return 2
+            default:
+                throw new TypeORMError(
+                    `Spanner driver does not support isolation level "${level}"`,
+                )
+        }
     }
 
     /**
