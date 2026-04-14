@@ -72,7 +72,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async connect(): Promise<any> {
         if (this.session) {
-            return Promise.resolve(this.session)
+            this.sessionTransaction ??= await this.session.transaction()
+            return this.session
         }
 
         const [session] = await this.driver.instanceDatabase.createSession({})
@@ -126,13 +127,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             await this.sessionTransaction.begin()
         } catch (err) {
             this.isTransactionActive = false
-            if (this.session) {
-                try {
-                    this.sessionTransaction = await this.session.transaction()
-                } catch {
-                    // recreate is cleanup — don't mask the original error
-                }
-            }
+            await this.resetSessionTransaction()
             throw err
         }
         this.dataSource.logger.logQuery("START TRANSACTION")
@@ -155,7 +150,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         this.isTransactionActive = false
         // Spanner transaction options (e.g. isolation level) persist on the
         // object across commit, so replace it with a fresh one before reuse.
-        this.sessionTransaction = await this.session.transaction()
+        // If the recreate fails, clear it and let connect() recreate lazily —
+        // the commit itself already succeeded, so we must not fail the caller.
+        await this.resetSessionTransaction()
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -175,9 +172,26 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         this.isTransactionActive = false
         // Spanner transaction options (e.g. isolation level) persist on the
         // object across rollback, so replace it with a fresh one before reuse.
-        this.sessionTransaction = await this.session.transaction()
+        // If the recreate fails, clear it and let connect() recreate lazily —
+        // the rollback itself already succeeded, so we must not fail the caller.
+        await this.resetSessionTransaction()
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
+    }
+
+    /**
+     * Replaces the cached session transaction with a fresh one so that options
+     * (e.g. isolation level) do not bleed into the next transaction. Failures
+     * are tolerated: the stale reference is cleared and connect() will lazily
+     * create a fresh one on next use.
+     */
+    protected async resetSessionTransaction(): Promise<void> {
+        if (!this.session) return
+        try {
+            this.sessionTransaction = await this.session.transaction()
+        } catch {
+            this.sessionTransaction = undefined
+        }
     }
 
     /**
