@@ -10,7 +10,7 @@ import type { ColumnOptions } from "../options/ColumnOptions"
  * @param options.column
  */
 export function TableInheritance(options?: {
-    pattern?: "STI" /*|"CTI"*/
+    pattern?: "STI" | "CTI"
     column?: string | ColumnOptions
 }): ClassDecorator {
     return function (target: Function) {

@@ -682,7 +682,13 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             ) {
                 if (
                     metadata.versionColumn &&
-                    updatedColumns.indexOf(metadata.versionColumn) === -1
+                    updatedColumns.indexOf(metadata.versionColumn) === -1 &&
+                    !(
+                        metadata.isCtiChild &&
+                        metadata.inheritedColumnsSet.has(
+                            metadata.versionColumn,
+                        )
+                    )
                 )
                     updateColumnAndValues.push(
                         this.escape(metadata.versionColumn.databaseName) +
@@ -692,7 +698,13 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                     )
                 if (
                     metadata.updateDateColumn &&
-                    updatedColumns.indexOf(metadata.updateDateColumn) === -1
+                    updatedColumns.indexOf(metadata.updateDateColumn) === -1 &&
+                    !(
+                        metadata.isCtiChild &&
+                        metadata.inheritedColumnsSet.has(
+                            metadata.updateDateColumn,
+                        )
+                    )
                 )
                     updateColumnAndValues.push(
                         this.escape(metadata.updateDateColumn.databaseName) +

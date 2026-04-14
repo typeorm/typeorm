@@ -191,7 +191,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         return this.dataSource.entityMetadatas.filter(
             (metadata) =>
                 metadata.synchronize &&
-                metadata.tableType !== "entity-child" &&
+                // Exclude STI children (they share the parent's table).
+                // CTI children have their own tables and must be synced.
+                !(
+                    metadata.tableType === "entity-child" &&
+                    metadata.isStiChild
+                ) &&
                 metadata.tableType !== "view",
         )
     }
@@ -325,9 +330,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             if (!table) continue
 
-            if (metadata.columns.length !== table.columns.length) continue
+            if (metadata.tableColumns.length !== table.columns.length) continue
 
-            const renamedMetadataColumns = metadata.columns
+            const renamedMetadataColumns = metadata.tableColumns
                 .filter((c) => !c.isVirtualProperty)
                 .filter((column) => {
                     return !table.columns.find((tableColumn) => {
@@ -349,7 +354,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 continue
 
             const renamedTableColumns = table.columns.filter((tableColumn) => {
-                return !metadata.columns.find((column) => {
+                return !metadata.tableColumns.find((column) => {
                     return (
                         !column.isVirtualProperty &&
                         column.databaseName === tableColumn.name &&
@@ -775,7 +780,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // find columns that exist in the database but does not exist in the metadata
             const droppedTableColumns = table.columns.filter((tableColumn) => {
-                return !metadata.columns.find(
+                return !metadata.tableColumns.find(
                     (columnMetadata) =>
                         !columnMetadata.isVirtualProperty &&
                         columnMetadata.databaseName === tableColumn.name,
@@ -806,7 +811,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table) continue
 
             // find which columns are new
-            const newColumnMetadatas = metadata.columns.filter(
+            const newColumnMetadatas = metadata.tableColumns.filter(
                 (columnMetadata) => {
                     return (
                         !columnMetadata.isVirtualProperty &&
@@ -850,7 +855,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             if (!table) continue
 
-            const primaryMetadataColumns = metadata.columns.filter(
+            const primaryMetadataColumns = metadata.tableColumns.filter(
                 (column) => column.isPrimary,
             )
             const primaryTableColumns = table.columns.filter(
@@ -892,7 +897,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             const changedColumns = this.dataSource.driver.findChangedColumns(
                 table.columns,
-                metadata.columns,
+                metadata.tableColumns,
             )
             if (changedColumns.length === 0) continue
 

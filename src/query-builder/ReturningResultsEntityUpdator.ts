@@ -287,7 +287,7 @@ export class ReturningResultsEntityUpdator {
      * Columns we need to be returned from the database when we update entity.
      */
     getUpdationReturningColumns(): ColumnMetadata[] {
-        return this.expressionMap.mainAlias!.metadata.columns.filter(
+        return this.expressionMap.mainAlias!.metadata.tableColumns.filter(
             (column) => {
                 return (
                     column.asExpression !== undefined ||
@@ -302,7 +302,7 @@ export class ReturningResultsEntityUpdator {
      * Columns we need to be returned from the database when we soft delete and restore entity.
      */
     getSoftDeletionReturningColumns(): ColumnMetadata[] {
-        return this.expressionMap.mainAlias!.metadata.columns.filter(
+        return this.expressionMap.mainAlias!.metadata.tableColumns.filter(
             (column) => {
                 return (
                     column.asExpression !== undefined ||
