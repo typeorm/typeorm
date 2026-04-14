@@ -125,12 +125,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
             await this.sessionTransaction.begin()
         } catch (err) {
-            try {
-                if (this.session) {
+            this.isTransactionActive = false
+            if (this.session) {
+                try {
                     this.sessionTransaction = await this.session.transaction()
+                } catch {
+                    // recreate is cleanup — don't mask the original error
                 }
-            } finally {
-                this.isTransactionActive = false
             }
             throw err
         }
