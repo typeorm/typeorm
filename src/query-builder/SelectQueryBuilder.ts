@@ -2301,7 +2301,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let useIndex: string = ""
         if (this.expressionMap.useIndex) {
             if (DriverUtils.isMySQLFamily(this.dataSource.driver)) {
-                useIndex = ` USE INDEX (${this.escape(this.expressionMap.useIndex)})`
+                useIndex = ` USE INDEX (${this.expressionMap.useIndex.split(",").map((i) => this.escape(i.trim())).join(", ")})`
             }
         }
 

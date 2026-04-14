@@ -531,4 +531,111 @@ describe("query builder > sql injection", () => {
                 ))
         }
     })
+
+    describe("useIndex", () => {
+        it("should escape a malicious index name", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                        return
+                    }
+
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .useIndex("my_index; DROP TABLE post")
+                        .getSql()
+
+                    // The malicious payload should be wrapped in backticks,
+                    // not interpreted as a raw SQL statement
+                    expect(sql).to.contain("USE INDEX")
+                    expect(sql).to.contain("`my_index; DROP TABLE post`")
+                }),
+            ))
+
+        it("should escape each index name when comma-separated", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                        return
+                    }
+
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .useIndex("idx_one, idx_two")
+                        .getSql()
+
+                    expect(sql).to.contain("`idx_one`, `idx_two`")
+                }),
+            ))
+
+        it("should escape a malicious comma-separated index name", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                        return
+                    }
+
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .useIndex("good_index, bad`; DROP TABLE post")
+                        .getSql()
+
+                    expect(sql).to.not.match(
+                        /DROP TABLE(?! post`)/, // should only appear inside escaped identifier
+                    )
+                    expect(sql).to.contain("USE INDEX")
+                }),
+            ))
+    })
+
+    describe("setLock lockTables", () => {
+        it("should escape a malicious table name in lockTables", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (
+                        !DriverUtils.isPostgresFamily(dataSource.driver)
+                    ) {
+                        return
+                    }
+
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .setLock("pessimistic_write", undefined, [
+                            "post; DROP TABLE post",
+                        ])
+                        .getSql()
+
+                    expect(sql).to.not.match(
+                        /OF post; DROP TABLE/,
+                    )
+                    expect(sql).to.contain(
+                        '"post; DROP TABLE post"',
+                    )
+                }),
+            ))
+
+        it("should escape multiple malicious table names in lockTables", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (
+                        !DriverUtils.isPostgresFamily(dataSource.driver)
+                    ) {
+                        return
+                    }
+
+                    const sql = dataSource
+                        .createQueryBuilder(Post, "post")
+                        .setLock("pessimistic_write", undefined, [
+                            "post",
+                            "user; DROP TABLE user",
+                        ])
+                        .getSql()
+
+                    expect(sql).to.contain('"post"')
+                    expect(sql).to.contain(
+                        '"user; DROP TABLE user"',
+                    )
+                }),
+            ))
+    })
 })
