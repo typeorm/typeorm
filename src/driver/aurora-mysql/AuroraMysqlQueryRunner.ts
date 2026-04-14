@@ -109,12 +109,17 @@ export class AuroraMysqlQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            if (isolationLevel) {
-                await this.query(
-                    `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
-                )
+            try {
+                if (isolationLevel) {
+                    await this.query(
+                        `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
+                    )
+                }
+                await this.client.startTransaction()
+            } catch (err) {
+                this.isTransactionActive = false
+                throw err
             }
-            await this.client.startTransaction()
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
