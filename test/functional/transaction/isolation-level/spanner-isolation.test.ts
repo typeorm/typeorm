@@ -93,6 +93,40 @@ describe("transaction > isolation level > spanner", () => {
         })
     })
 
+    describe("state after start", () => {
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["spanner"],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should reset isTransactionActive if begin fails", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    try {
+                        await queryRunner.connect()
+                        ;(queryRunner as any).sessionTransaction = {
+                            setReadWriteTransactionOptions: () => {},
+                            begin: async () => {
+                                throw new Error("simulated begin failure")
+                            },
+                        }
+                        await queryRunner
+                            .startTransaction()
+                            .should.be.rejectedWith("simulated begin failure")
+                        expect(queryRunner.isTransactionActive).to.equal(false)
+                    } finally {
+                        await queryRunner.release()
+                    }
+                }),
+            ))
+    })
+
     describe("defined in data source", () => {
         for (const isolationLevel of supportedLevels) {
             describe(isolationLevel, () => {

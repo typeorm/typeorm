@@ -115,13 +115,25 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw err
         }
 
-        await this.connect()
-        if (isolationLevel) {
-            this.sessionTransaction.setReadWriteTransactionOptions({
-                isolationLevel: this.mapSpannerIsolationLevel(isolationLevel),
-            })
+        try {
+            await this.connect()
+            if (isolationLevel) {
+                this.sessionTransaction.setReadWriteTransactionOptions({
+                    isolationLevel:
+                        this.mapSpannerIsolationLevel(isolationLevel),
+                })
+            }
+            await this.sessionTransaction.begin()
+        } catch (err) {
+            try {
+                if (this.session) {
+                    this.sessionTransaction = await this.session.transaction()
+                }
+            } finally {
+                this.isTransactionActive = false
+            }
+            throw err
         }
-        await this.sessionTransaction.begin()
         this.dataSource.logger.logQuery("START TRANSACTION")
 
         await this.broadcaster.broadcast("AfterTransactionStart")
