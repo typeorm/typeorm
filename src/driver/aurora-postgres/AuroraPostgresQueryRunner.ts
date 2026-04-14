@@ -123,8 +123,8 @@ export class AuroraPostgresQueryRunner
                         `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
                     )
                 } catch (err) {
-                    await this.client.rollbackTransaction()
                     this.isTransactionActive = false
+                    await this.client.rollbackTransaction()
                     throw err
                 }
             }
