@@ -257,6 +257,20 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     : this.sessionTransaction
 
             if (!this.isTransactionActive && !isSelect) {
+                const defaultIsolationLevel =
+                    this.dataSource.options.isolationLevel
+                if (
+                    defaultIsolationLevel &&
+                    this.driver.supportedIsolationLevels.includes(
+                        defaultIsolationLevel,
+                    )
+                ) {
+                    this.sessionTransaction.setReadWriteTransactionOptions({
+                        isolationLevel: this.mapSpannerIsolationLevel(
+                            defaultIsolationLevel,
+                        ),
+                    })
+                }
                 await this.sessionTransaction.begin()
             }
 
@@ -273,12 +287,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 })
                 if (!this.isTransactionActive && !isSelect) {
                     await this.sessionTransaction.commit()
+                    await this.resetSessionTransaction()
                 }
             } catch (error) {
                 try {
                     // we throw original error even if rollback thrown an error
-                    if (!this.isTransactionActive && !isSelect)
+                    if (!this.isTransactionActive && !isSelect) {
                         await this.sessionTransaction.rollback()
+                        await this.resetSessionTransaction()
+                    }
                 } catch (rollbackError) {}
                 throw error
             }
