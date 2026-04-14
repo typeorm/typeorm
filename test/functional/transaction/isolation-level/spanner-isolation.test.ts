@@ -115,9 +115,12 @@ describe("transaction > isolation level > spanner", () => {
                         await queryRunner.startTransaction()
                         const sessionTransaction = (queryRunner as any)
                             .sessionTransaction
-                        expect(
-                            sessionTransaction?._options?.isolationLevel ?? 0,
-                        ).to.not.equal(2)
+                        // _options.isolationLevel may hold either the numeric
+                        // protobuf value or its string key — both represent
+                        // REPEATABLE_READ and would indicate a leaked option.
+                        expect([2, "REPEATABLE_READ"]).to.not.include(
+                            sessionTransaction?._options?.isolationLevel,
+                        )
                         await queryRunner.commitTransaction()
                     } finally {
                         await queryRunner.release()

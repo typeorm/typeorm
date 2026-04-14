@@ -195,16 +195,19 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Maps a TypeORM isolation level to the Spanner protobuf enum value.
+     * Maps a TypeORM isolation level to the Spanner protobuf enum key.
      *
      * @param level
+     * @see https://cloud.google.com/spanner/docs/reference/rpc/google.spanner.v1#google.spanner.v1.TransactionOptions.IsolationLevel
      */
-    protected mapSpannerIsolationLevel(level: IsolationLevel): number {
+    protected mapSpannerIsolationLevel(
+        level: IsolationLevel,
+    ): "SERIALIZABLE" | "REPEATABLE_READ" {
         switch (level) {
             case "SERIALIZABLE":
-                return 1
+                return "SERIALIZABLE"
             case "REPEATABLE READ":
-                return 2
+                return "REPEATABLE_READ"
             default:
                 throw new TypeORMError(
                     `Spanner driver does not support isolation level "${level}"`,
