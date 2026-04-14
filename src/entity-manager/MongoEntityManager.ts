@@ -13,6 +13,7 @@ import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
+import { EntityPropertyNotFoundError } from "../error"
 
 import type {
     AggregateOptions,
@@ -120,6 +121,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
@@ -228,6 +230,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
@@ -1202,12 +1205,59 @@ export class MongoEntityManager extends EntityManager {
      * Converts FindOptions into mongodb select by criteria.
      *
      * @param selects
+     * @param metadata
      */
     protected convertFindOptionsSelectToProjectCriteria(
         selects: FindOptionsSelect<any>,
+        metadata: EntityMetadata,
     ) {
-        // todo: implement
-        return {}
+        const projection: ObjectLiteral = {}
+        const build = (obj: ObjectLiteral, embedPrefix: string) => {
+            for (const key of Object.keys(obj)) {
+                const value = obj[key]
+                if (value === undefined || value === false) continue
+
+                const propertyPath = embedPrefix ? `${embedPrefix}.${key}` : key
+
+                if (metadata.findColumnWithPropertyPathStrict(propertyPath)) {
+                    projection[propertyPath] = 1
+                    continue
+                }
+
+                const embed =
+                    metadata.findEmbeddedWithPropertyPath(propertyPath)
+                if (embed) {
+                    if (value === true) {
+                        for (const subColumn of embed.columnsFromTree) {
+                            projection[subColumn.propertyPath] = 1
+                        }
+                    } else if (typeof value === "object") {
+                        build(value as ObjectLiteral, propertyPath)
+                    }
+                    continue
+                }
+
+                if (metadata.findRelationWithPropertyPath(propertyPath))
+                    continue
+
+                throw new EntityPropertyNotFoundError(propertyPath, metadata)
+            }
+        }
+        build(selects as ObjectLiteral, "")
+
+        // Translate ObjectIdColumn property name (e.g. "id") to "_id" for MongoDB
+        if (metadata.objectIdColumn) {
+            const propertyName = metadata.objectIdColumn.propertyName
+            if (
+                propertyName !== "_id" &&
+                projection[propertyName] !== undefined
+            ) {
+                projection["_id"] = projection[propertyName]
+                delete projection[propertyName]
+            }
+        }
+
+        return projection
     }
 
     /**
@@ -1350,6 +1400,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         findOneOptionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (findOneOptionsOrConditions.order)
@@ -1392,6 +1443,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
@@ -1436,6 +1488,7 @@ export class MongoEntityManager extends EntityManager {
                 cursor.project(
                     this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
+                        metadata,
                     ),
                 )
             if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
