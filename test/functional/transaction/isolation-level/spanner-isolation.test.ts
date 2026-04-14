@@ -94,6 +94,20 @@ describe("transaction > isolation level > spanner", () => {
     })
 
     describe("state after start", () => {
+        // The Spanner session transaction is a protected field and has no
+        // public accessor; these tests inspect and stub it through a narrow
+        // local type rather than a blanket `any` cast.
+        type SessionTransactionLike = {
+            setReadWriteTransactionOptions(options: {
+                isolationLevel: string
+            }): void
+            begin(): Promise<void>
+            _options?: { isolationLevel?: unknown }
+        }
+        type QueryRunnerInternals = {
+            sessionTransaction?: SessionTransactionLike
+        }
+
         let dataSources: DataSource[]
         before(async () => {
             dataSources = await createTestingConnections({
@@ -108,18 +122,19 @@ describe("transaction > isolation level > spanner", () => {
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const queryRunner = dataSource.createQueryRunner()
+                    const internals =
+                        queryRunner as unknown as QueryRunnerInternals
                     try {
                         await queryRunner.startTransaction("REPEATABLE READ")
                         await queryRunner.commitTransaction()
 
                         await queryRunner.startTransaction()
-                        const sessionTransaction = (queryRunner as any)
-                            .sessionTransaction
                         // _options.isolationLevel may hold either the numeric
                         // protobuf value or its string key — both represent
                         // REPEATABLE_READ and would indicate a leaked option.
                         expect([2, "REPEATABLE_READ"]).to.not.include(
-                            sessionTransaction?._options?.isolationLevel,
+                            internals.sessionTransaction?._options
+                                ?.isolationLevel,
                         )
                         await queryRunner.commitTransaction()
                     } finally {
@@ -132,9 +147,11 @@ describe("transaction > isolation level > spanner", () => {
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const queryRunner = dataSource.createQueryRunner()
+                    const internals =
+                        queryRunner as unknown as QueryRunnerInternals
                     try {
                         await queryRunner.connect()
-                        ;(queryRunner as any).sessionTransaction = {
+                        internals.sessionTransaction = {
                             setReadWriteTransactionOptions: () => {},
                             begin: async () => {
                                 throw new Error("simulated begin failure")
