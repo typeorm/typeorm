@@ -3739,6 +3739,37 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
+    /**
+     * Resolves a raw VirtualColumn ORDER BY expression (e.g. `(CONCAT(...))`) to the
+     * SELECT alias that the inner subquery exposes for it (e.g. `User_fullName`), so
+     * the pagination wrapper can reference it as `parentAlias.User_fullName`.
+     *
+     * Returns `undefined` when no matching VirtualColumn is found (the expression is
+     * unrelated to virtual columns and should be handled by the normal code path).
+     */
+    private resolveVirtualColumnSelectAlias(
+        expression: string,
+    ): string | undefined {
+        for (const alias of this.expressionMap.aliases) {
+            if (!alias.metadata) continue
+            for (const column of alias.metadata.columns) {
+                if (
+                    column.isVirtualProperty &&
+                    column.query &&
+                    `(${column.query(this.escape(alias.name))})` === expression
+                ) {
+                    return DriverUtils.buildAlias(
+                        this.dataSource.driver,
+                        undefined,
+                        alias.name,
+                        column.databaseName,
+                    )
+                }
+            }
+        }
+        return undefined
+    }
+
     protected createOrderByCombinedWithSelectExpression(
         parentAlias: string,
     ): [string, OrderByCondition] {
@@ -3746,6 +3777,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const orderBys = this.expressionMap.allOrderBys
         const selectString = Object.keys(orderBys)
             .map((orderCriteria) => {
+                // Raw SQL expression — VirtualColumn expressions are wrapped in parens.
+                // They must not be split on "." like "alias.property" criteria.
+                if (orderCriteria.startsWith("(")) {
+                    const vcAlias =
+                        this.resolveVirtualColumnSelectAlias(orderCriteria)
+                    if (vcAlias) {
+                        return (
+                            this.escape(parentAlias) +
+                            "." +
+                            this.escape(vcAlias)
+                        )
+                    }
+                    return ""
+                }
                 if (orderCriteria.indexOf(".") !== -1) {
                     const criteriaParts = orderCriteria.split(".")
                     const aliasName = criteriaParts[0]
@@ -3792,7 +3837,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const orderByObject: OrderByCondition = {}
         Object.keys(orderBys).forEach((orderCriteria) => {
-            if (orderCriteria.indexOf(".") !== -1) {
+            // Raw SQL expression — resolve to the VirtualColumn SELECT alias so the
+            // pagination wrapper can reference it as `parentAlias.columnAlias`.
+            if (orderCriteria.startsWith("(")) {
+                const vcAlias =
+                    this.resolveVirtualColumnSelectAlias(orderCriteria)
+                if (vcAlias) {
+                    orderByObject[
+                        this.escape(parentAlias) + "." + this.escape(vcAlias)
+                    ] = orderBys[orderCriteria]
+                } else {
+                    // Unknown raw expression — pass through unchanged.
+                    orderByObject[orderCriteria] = orderBys[orderCriteria]
+                }
+            } else if (orderCriteria.indexOf(".") !== -1) {
                 const criteriaParts = orderCriteria.split(".")
                 const aliasName = criteriaParts[0]
                 const propertyPath = criteriaParts.slice(1).join(".")

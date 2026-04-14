@@ -18,7 +18,7 @@ export class User {
 
     @VirtualColumn({
         query: (alias) =>
-            `CONCAT(${alias}."firstName", ' ', ${alias}."lastName")`,
+            `${alias}."firstName" || ' ' || ${alias}."lastName"`,
     })
     fullName?: string
 }

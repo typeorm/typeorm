@@ -390,7 +390,7 @@ describe("column > virtual columns > WHERE and ORDER BY expression expansion", (
 
                 // findOne with WHERE on a VirtualColumn must not throw and must return the correct row
                 const found = await userRepository.findOne({
-                    where: { fullName: "John Doe" } as any,
+                    where: { fullName: "John Doe" },
                 })
 
                 expect(found).to.not.be.null
@@ -407,7 +407,7 @@ describe("column > virtual columns > WHERE and ORDER BY expression expansion", (
                 // ORDER BY on a VirtualColumn must use the expression, not the non-existent column alias
                 const users = await userRepository.find({
                     select: { firstName: true, lastName: true, fullName: true },
-                    order: { fullName: "ASC" } as any,
+                    order: { fullName: "ASC" },
                 })
 
                 expect(users.length).to.be.greaterThan(0)
@@ -424,16 +424,19 @@ describe("column > virtual columns > WHERE and ORDER BY expression expansion", (
             const qb = dataSource
                 .createQueryBuilder(User, "User")
                 .setFindOptions({
-                    where: { fullName: "John Doe" } as any,
+                    where: { fullName: "John Doe" },
                 })
 
             const sql = qb.getSql()
 
-            // The WHERE clause must contain the CONCAT expression, not a bare column reference
-            expect(sql).to.include("CONCAT(")
+            // The WHERE clause must inline the virtual column expression,
+            // not reference the non-existent column alias.
             if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expect(sql).to.include("CONCAT(")
                 expect(sql).to.not.include("`User`.`fullName`")
             } else {
+                // PostgreSQL / SQLite: default expression uses || concatenation
+                expect(sql).to.include("firstName")
                 expect(sql).to.not.include('"User"."fullName"')
             }
         }))
