@@ -1,28 +1,33 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import type { DataSource } from "../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
-describe("github issues > #12337 bigint precision loss in single JoinColumn", () => {
+describe("relations > bigint join column", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Category, Post],
-            enabledDrivers: ["mysql", "mariadb", "postgres"],
+            enabledDrivers: [
+                "mysql",
+                "mariadb",
+                "postgres",
+                "cockroachdb",
+            ],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should preserve bigint string value when loading relation via single JoinColumn", () =>
+    it("should preserve bigint FK value without precision loss when saving via single JoinColumn", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const categoryRepo = dataSource.getRepository(Category)
@@ -45,9 +50,7 @@ describe("github issues > #12337 bigint precision loss in single JoinColumn", ()
                     relations: { category: true },
                 })
 
-                expect(loadedPost).to.not.be.null
-                expect(loadedPost!.category).to.not.be.null
-                expect(loadedPost!.category.id).to.equal(bigintId)
+                expect(loadedPost?.category?.id).to.equal(bigintId)
             }),
         ))
 })
