@@ -727,7 +727,9 @@ export class ColumnMetadata {
                     ) {
                         // bigint precision fix (#12337)
                         if (
-                            referencedColumn.type === "bigint" &&
+                            (referencedColumn.type === "bigint" ||
+                                referencedColumn.type === "int8" ||
+                                referencedColumn.type === "int64") &&
                             typeof value === "number"
                         ) {
                             value = String(value)
