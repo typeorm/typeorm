@@ -113,9 +113,19 @@ export class AuroraPostgresQueryRunner
         if (this.transactionDepth === 0) {
             await this.client.startTransaction()
             if (isolationLevel) {
-                await this.query(
-                    `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
-                )
+                try {
+                    await this.query(
+                        `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
+                    )
+                } catch (err) {
+                    try {
+                        await this.client.rollbackTransaction()
+                    } catch {
+                        // best-effort rollback; swallow secondary error
+                    }
+                    this.isTransactionActive = false
+                    throw err
+                }
             }
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
