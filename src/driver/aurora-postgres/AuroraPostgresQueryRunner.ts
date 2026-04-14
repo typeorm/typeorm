@@ -111,7 +111,12 @@ export class AuroraPostgresQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            await this.client.startTransaction()
+            try {
+                await this.client.startTransaction()
+            } catch (err) {
+                this.isTransactionActive = false
+                throw err
+            }
             if (isolationLevel) {
                 try {
                     await this.query(
