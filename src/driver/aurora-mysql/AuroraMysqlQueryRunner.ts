@@ -110,11 +110,6 @@ export class AuroraMysqlQueryRunner
 
         if (this.transactionDepth === 0) {
             try {
-                if (isolationLevel) {
-                    await this.query(
-                        `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
-                    )
-                }
                 await this.client.startTransaction()
             } catch (err) {
                 this.isTransactionActive = false

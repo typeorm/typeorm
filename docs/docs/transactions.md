@@ -48,7 +48,6 @@ Isolation level implementations are _not_ agnostic across all databases. Each dr
 
 | Driver            | Supported isolation levels                                                          |
 | ----------------- | ----------------------------------------------------------------------------------- |
-| Aurora MySQL      | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
 | Aurora PostgreSQL | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
 | CockroachDB       | `READ UNCOMMITTED`, `READ COMMITTED`\*\*, `REPEATABLE READ`\*\*, `SERIALIZABLE`     |
 | MySQL / MariaDB   | `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`             |
@@ -62,6 +61,19 @@ Isolation level implementations are _not_ agnostic across all databases. Each dr
 \* SQLite's `READ UNCOMMITTED` only takes effect when [shared-cache mode](https://www.sqlite.org/sharedcache.html) is enabled. In the default mode, SQLite always uses `SERIALIZABLE` isolation regardless of the setting.
 
 \*\* CockroachDB defaults to `SERIALIZABLE`. `READ COMMITTED` requires the cluster setting `sql.txn.read_committed_isolation.enabled` (enabled by default in recent versions). `READ UNCOMMITTED` is upgraded to `READ COMMITTED`, and `REPEATABLE READ` is upgraded to `SERIALIZABLE`. See [CockroachDB Read Committed](https://www.cockroachlabs.com/docs/stable/read-committed) for details.
+
+### Why Aurora MySQL is missing from the table
+
+Aurora MySQL the database engine [fully supports](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Reference.IsolationLevels.html) the standard set of isolation levels. The reason TypeORM cannot expose them on the `aurora-mysql` driver is the transport: this driver talks to the cluster through the [RDS Data API](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.html) (a stateless HTTP endpoint), not through a persistent MySQL protocol connection. The Data API does not provide any way to attach an isolation level to a transaction:
+
+- [`BeginTransaction`](https://docs.aws.amazon.com/rdsdataservice/latest/APIReference/API_BeginTransaction.html) accepts only `resourceArn`, `secretArn`, `database`, and `schema` — there is no isolation parameter.
+- The Data API is stateless and pools backend connections opaquely. A `SET TRANSACTION ISOLATION LEVEL ...` sent as a separate `ExecuteStatement` before `BeginTransaction` has no guaranteed affinity to the backend session that the transaction will run on, so the setting is silently dropped.
+- [Multi-statement SQL is not supported](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.troubleshooting.html), so `SET TRANSACTION ...; START TRANSACTION;` cannot be sent as a single call either.
+- MySQL rejects `SET TRANSACTION ISOLATION LEVEL` inside an already-started transaction with [error 1568](https://dev.mysql.com/doc/refman/8.0/en/set-transaction.html), so the approach used for Aurora PostgreSQL (issuing `SET` as the first statement _inside_ the started transaction, using the same `transactionId`) is not available on MySQL.
+
+Because of these constraints, requesting any isolation level on an `aurora-mysql` data source will throw a validation error rather than silently using the cluster default.
+
+If you need per-transaction isolation levels against an Aurora MySQL cluster, use the standard `mysql` driver type pointed at the cluster endpoint instead of `aurora-mysql`. That path uses a regular MySQL protocol connection (via `mysql2`) and supports the full set of isolation levels.
 
 ## Default isolation level
 
