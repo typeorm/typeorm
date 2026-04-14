@@ -39,7 +39,12 @@ export class AuroraMysqlDriver implements Driver {
      *
      * @see https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Reference.IsolationLevels.html
      */
-    static readonly supportedIsolationLevels: IsolationLevel[] = []
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
 
     // -------------------------------------------------------------------------
     // Public Properties
