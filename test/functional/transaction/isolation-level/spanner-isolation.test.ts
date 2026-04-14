@@ -104,6 +104,27 @@ describe("transaction > isolation level > spanner", () => {
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
+        it("should not leak isolation level between subsequent transactions", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    try {
+                        await queryRunner.startTransaction("REPEATABLE READ")
+                        await queryRunner.commitTransaction()
+
+                        await queryRunner.startTransaction()
+                        const sessionTransaction = (queryRunner as any)
+                            .sessionTransaction
+                        expect(
+                            sessionTransaction?._options?.isolationLevel ?? 0,
+                        ).to.not.equal(2)
+                        await queryRunner.commitTransaction()
+                    } finally {
+                        await queryRunner.release()
+                    }
+                }),
+            ))
+
         it("should reset isTransactionActive if begin fails", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {

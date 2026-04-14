@@ -152,6 +152,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.sessionTransaction.commit()
         this.dataSource.logger.logQuery("COMMIT")
         this.isTransactionActive = false
+        // Spanner transaction options (e.g. isolation level) persist on the
+        // object across commit, so replace it with a fresh one before reuse.
+        this.sessionTransaction = await this.session.transaction()
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -169,6 +172,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.sessionTransaction.rollback()
         this.dataSource.logger.logQuery("ROLLBACK")
         this.isTransactionActive = false
+        // Spanner transaction options (e.g. isolation level) persist on the
+        // object across rollback, so replace it with a fresh one before reuse.
+        this.sessionTransaction = await this.session.transaction()
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
