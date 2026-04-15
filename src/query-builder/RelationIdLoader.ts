@@ -149,7 +149,6 @@ export class RelationIdLoader {
             inverseColumns = relation.inverseRelation!.joinColumns.map(
                 (column) => column.referencedColumn!,
             )
-        } else {
         }
 
         return entities.map((entity) => {
@@ -764,12 +763,22 @@ export class RelationIdLoader {
     private getInverseEntityColumnsForQueryStrategyRelationIds(
         inverseEntityMetadata: EntityMetadata,
     ): ColumnMetadata[] {
-        if (inverseEntityMetadata.primaryColumns.length > 0) {
-            return inverseEntityMetadata.primaryColumns
+        const columns =
+            inverseEntityMetadata.primaryColumns.length > 0
+                ? inverseEntityMetadata.primaryColumns
+                : inverseEntityMetadata.columns.filter(
+                      (column) =>
+                          !column.isVirtual && !column.isVirtualProperty,
+                  )
+        if (columns.length === 0) {
+            throw new TypeORMError(
+                `Cannot determine correlation columns for entity "${inverseEntityMetadata.name}" ` +
+                    `when loading relations with strategy "query". ` +
+                    `The entity has no primary columns and no non-virtual columns, ` +
+                    `so relation rows cannot be correlated with parent entities.`,
+            )
         }
-        return inverseEntityMetadata.columns.filter(
-            (column) => !column.isVirtual && !column.isVirtualProperty,
-        )
+        return columns
     }
 
     /**
