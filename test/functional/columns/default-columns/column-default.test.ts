@@ -1,3 +1,4 @@
+import { expect } from "chai"
 import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
@@ -24,8 +25,8 @@ describe("columns > default columns", () => {
                 const table = await queryRunner.getTable("event")
                 await queryRunner.release()
 
-                const sysPeriodColumn = table!.findColumnByName("sysPeriod")
-                sysPeriodColumn!.default.should.be.equal(
+                const sysPeriodColumn = table?.findColumnByName("sysPeriod")
+                sysPeriodColumn?.default.should.be.equal(
                     "tstzrange(CURRENT_TIMESTAMP, NULL)",
                 )
 
@@ -35,10 +36,17 @@ describe("columns > default columns", () => {
                 const loadedEvent = await dataSource.manager.findOneBy(Event, {
                     id: event.id,
                 })
-                loadedEvent!.should.be.eql({
+                expect(loadedEvent).to.exist
+                expect(loadedEvent).to.deep.equal({
                     id: event.id,
                     sysPeriod: event.sysPeriod,
                 })
+
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
+                expect(sqlInMemory.upQueries).to.have.lengthOf(0)
+                expect(sqlInMemory.downQueries).to.have.lengthOf(0)
             }),
         ))
 })
