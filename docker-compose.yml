@@ -2,6 +2,7 @@ services:
   # mysql
   mysql-5:
     image: "mysql:5.7.44"
+    platform: linux/amd64
     container_name: "typeorm-mysql-5"
     ports:
       - "3306:3306"
@@ -74,6 +75,7 @@ services:
   # mssql
   mssql:
     image: "mcr.microsoft.com/mssql/server:2025-latest"
+    platform: linux/amd64
     container_name: "typeorm-mssql"
     ports:
       - "1433:1433"
@@ -100,6 +102,7 @@ services:
     # oracle
   oracle:
     image: "container-registry.oracle.com/database/free:23.7.0.0-lite"
+    platform: linux/amd64
     container_name: "typeorm-oracle"
     ports:
       - "1521:1521"
@@ -113,6 +116,7 @@ services:
   # google cloud spanner
   spanner:
     image: alexmesser/spanner-emulator
+    platform: linux/amd64
     container_name: "typeorm-spanner"
     ports:
       - "9010:9010"
@@ -122,6 +126,7 @@ services:
   # works only on linux, minimum 10GB RAM for docker required
   hanaexpress:
     image: "saplabs/hanaexpress:2.00.088.00.20251110.1"
+    platform: linux/amd64
     container_name: "typeorm-hanaexpress"
     hostname: hxe
     command:
