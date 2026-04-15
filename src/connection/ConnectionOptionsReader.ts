@@ -1,4 +1,3 @@
-import appRootPath from "app-root-path"
 import path from "node:path"
 
 import type { DataSourceOptions } from "../data-source/DataSourceOptions"
@@ -18,8 +17,8 @@ export class ConnectionOptionsReader {
     constructor(
         protected options?: {
             /**
-             * Directory where ormconfig should be read from.
-             * By default its your application root (where your app package.json is located).
+             * Directory from where the `ormconfig` file should be read.
+             * Default: `process.cwd()`.
              */
             root?: string
 
@@ -146,8 +145,9 @@ export class ConnectionOptionsReader {
             options.baseDirectory = this.baseDirectory
             if (options.entities) {
                 const entities = (options.entities as any[]).map((entity) => {
-                    if (typeof entity === "string" && !entity.startsWith("/"))
+                    if (typeof entity === "string" && !entity.startsWith("/")) {
                         return this.baseDirectory + "/" + entity
+                    }
 
                     return entity
                 })
@@ -159,8 +159,9 @@ export class ConnectionOptionsReader {
                         if (
                             typeof subscriber === "string" &&
                             !subscriber.startsWith("/")
-                        )
+                        ) {
                             return this.baseDirectory + "/" + subscriber
+                        }
 
                         return subscriber
                     },
@@ -173,8 +174,9 @@ export class ConnectionOptionsReader {
                         if (
                             typeof migration === "string" &&
                             !migration.startsWith("/")
-                        )
+                        ) {
                             return this.baseDirectory + "/" + migration
+                        }
 
                         return migration
                     },
@@ -212,7 +214,7 @@ export class ConnectionOptionsReader {
      * Gets directory where configuration file should be located.
      */
     protected get baseDirectory(): string {
-        return this.options?.root ?? appRootPath.path
+        return this.options?.root ?? process.cwd()
     }
 
     /**

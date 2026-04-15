@@ -125,7 +125,7 @@ const category2 = await categoryCursor.next()
 ```
 
 - `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
-  Learn more about [Transactions](../transactions.md).
+  Learn more about [Transactions](../transactions.mdx).
 
 ```typescript
 await dataSource.transaction(async (manager) => {
