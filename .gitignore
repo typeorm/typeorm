@@ -25,8 +25,6 @@ temp/
 ormconfig.json
 ormlogs.log
 
-/test/github-issues/799/tmp/*
-
 ### Stryker ###
 reports/
 .stryker-tmp
