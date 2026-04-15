@@ -1,15 +1,14 @@
-import appRootPath from "app-root-path"
 import sinon from "sinon"
 import type { DataSource } from "../../../src"
 import { FileLogger } from "../../../src"
+import { PlatformTools } from "../../../src/platform/PlatformTools"
 import type { TestingOptions } from "../../utils/test-utils"
 import {
+    closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    closeTestingConnections,
 } from "../../utils/test-utils"
 import { Username } from "./entity/Username"
-import { PlatformTools } from "../../../src/platform/PlatformTools"
 
 describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     let dataSources: DataSource[]
@@ -40,6 +39,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
                 createLogger: () => new FileLogger("all"),
             })
         })
+
         it("writes to the base path", async () =>
             Promise.all(
                 dataSources.map(async (connection) => {
@@ -50,7 +50,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
                     await connection.query(testQuery)
                     sinon.assert.calledWith(
                         stub,
-                        appRootPath.path + "/ormlogs.log",
+                        "ormlogs.log",
                         sinon.match(testQuery),
                     )
                 }),
@@ -67,6 +67,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
                     }),
             })
         })
+
         it("writes to the given filename", async () =>
             Promise.all(
                 dataSources.map(async (connection) => {
@@ -77,7 +78,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
                     await connection.query(testQuery)
                     sinon.assert.calledWith(
                         stub,
-                        appRootPath.path + "/test.log",
+                        "test.log",
                         sinon.match(testQuery),
                     )
                 }),
@@ -94,6 +95,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
                     }),
             })
         })
+
         it("writes to the given path", () =>
             Promise.all(
                 dataSources.map(async (connection) => {
@@ -104,7 +106,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
                     await connection.query(testQuery)
                     sinon.assert.calledWith(
                         stub,
-                        appRootPath.path + "/test/test.log",
+                        "test/test.log",
                         sinon.match(testQuery),
                     )
                 }),
