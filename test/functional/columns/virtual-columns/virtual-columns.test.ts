@@ -404,6 +404,13 @@ describe("column > virtual columns > WHERE and ORDER BY expression expansion", (
             dataSources.map(async (dataSource) => {
                 const userRepository = dataSource.getRepository(User)
 
+                // Seed rows independently so this test does not depend on execution order
+                await userRepository.save([
+                    userRepository.create({ firstName: "Zara", lastName: "Allen" }),
+                    userRepository.create({ firstName: "Alice", lastName: "Brown" }),
+                    userRepository.create({ firstName: "Mike", lastName: "Chen" }),
+                ])
+
                 // ORDER BY on a VirtualColumn must use the expression, not the non-existent column alias
                 const users = await userRepository.find({
                     select: { firstName: true, lastName: true, fullName: true },

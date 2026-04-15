@@ -369,6 +369,18 @@ export class Employee extends BaseEntity {
 }
 ```
 
+Virtual columns can also be used in `where` and `order` options of `find`/`findOne`. TypeORM will inline the column's SQL expression directly into the `WHERE` and `ORDER BY` clauses at query time instead of referencing a non-existent database column:
+
+```typescript
+// Filter by a virtual column
+await userRepository.findOne({ where: { fullName: "John Doe" } })
+
+// Sort by a virtual column
+await userRepository.find({ order: { fullName: "ASC" } })
+```
+
+> **Note:** `take`/`skip` pagination combined with `order` on a virtual column is supported — TypeORM resolves the expression alias correctly in the paginated sub-query.
+
 ## Relation decorators
 
 #### `@OneToOne`

@@ -3789,7 +3789,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             this.escape(vcAlias)
                         )
                     }
-                    return ""
+                    // Unknown parenthesised expression — skip; adding an empty string
+                    // would produce a double-comma in the SELECT list.
+                    return null
                 }
                 if (orderCriteria.indexOf(".") !== -1) {
                     const criteriaParts = orderCriteria.split(".")
@@ -3830,9 +3832,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             this.escape(orderCriteria)
                         )
 
-                    return ""
+                    return null
                 }
             })
+            .filter((s): s is string => s !== null && s !== "")
             .join(", ")
 
         const orderByObject: OrderByCondition = {}
