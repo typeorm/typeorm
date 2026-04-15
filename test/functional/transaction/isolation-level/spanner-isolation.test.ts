@@ -102,10 +102,23 @@ describe("transaction > isolation level > spanner", () => {
                 isolationLevel: string
             }): void
             begin(): Promise<void>
-            _options?: { isolationLevel?: unknown }
+            commit?(): Promise<void>
+            rollback?(): Promise<void>
+            run?(options: unknown): Promise<unknown>
         }
         type QueryRunnerInternals = {
             sessionTransaction?: SessionTransactionLike
+        }
+
+        const spyOnSetOptions = (transaction: SessionTransactionLike) => {
+            const calls: { isolationLevel: string }[] = []
+            const original =
+                transaction.setReadWriteTransactionOptions.bind(transaction)
+            transaction.setReadWriteTransactionOptions = (options) => {
+                calls.push(options)
+                original(options)
+            }
+            return calls
         }
 
         let dataSources: DataSource[]
@@ -125,18 +138,27 @@ describe("transaction > isolation level > spanner", () => {
                     const internals =
                         queryRunner as unknown as QueryRunnerInternals
                     try {
+                        await queryRunner.connect()
+
+                        const firstCalls = spyOnSetOptions(
+                            internals.sessionTransaction!,
+                        )
                         await queryRunner.startTransaction("REPEATABLE READ")
                         await queryRunner.commitTransaction()
 
-                        await queryRunner.startTransaction()
-                        // _options.isolationLevel may hold either the numeric
-                        // protobuf value or its string key — both represent
-                        // REPEATABLE_READ and would indicate a leaked option.
-                        expect([2, "REPEATABLE_READ"]).to.not.include(
-                            internals.sessionTransaction?._options
-                                ?.isolationLevel,
+                        // commitTransaction recreates sessionTransaction via
+                        // resetSessionTransaction — spy on the fresh one.
+                        const secondCalls = spyOnSetOptions(
+                            internals.sessionTransaction!,
                         )
+                        await queryRunner.startTransaction()
                         await queryRunner.commitTransaction()
+
+                        expect(firstCalls).to.have.length(1)
+                        expect(firstCalls[0].isolationLevel).to.equal(
+                            "REPEATABLE_READ",
+                        )
+                        expect(secondCalls).to.have.length(0)
                     } finally {
                         await queryRunner.release()
                     }
