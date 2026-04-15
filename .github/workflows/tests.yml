@@ -130,6 +130,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # SonarQube needs full history for blame and PR diffing against master
       - uses: ./.github/actions/setup-node
         with:
           working-directory: packages/codemod
@@ -148,6 +150,8 @@ jobs:
     needs: [detect-changes, tests-linux, tests-windows]
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # SonarQube needs full history for blame and PR diffing against master
       - uses: actions/download-artifact@v7
         with:
           pattern: coverage-*
