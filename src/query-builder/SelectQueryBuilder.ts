@@ -3488,7 +3488,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         ) {
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
-            const [selects, orderBys] =
+            const [selects, orderBys, vcInnerSelects] =
                 this.createOrderByCombinedWithSelectExpression("distinctAlias")
             const metadata = this.expressionMap.mainAlias.metadata
             const mainAliasName = this.expressionMap.mainAlias.name
@@ -3526,6 +3526,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // clear limit/offset from the inner query since pagination is handled by the outer distinct query
             originalQuery.expressionMap.limit = undefined
             originalQuery.expressionMap.offset = undefined
+
+            // Inject any VirtualColumn selects needed for ORDER BY that are not
+            // already in the inner query's SELECT list.  Without this the outer
+            // DISTINCT wrapper would ORDER BY an alias that doesn't exist.
+            for (const vcSelect of vcInnerSelects) {
+                const alreadySelected = originalQuery.expressionMap.selects.some(
+                    (s) =>
+                        s.selection === vcSelect.selection ||
+                        s.aliasName === vcSelect.aliasName,
+                )
+                if (!alreadySelected) {
+                    originalQuery.expressionMap.selects.push(vcSelect)
+                }
+            }
 
             // preserve original timeTravel value since we set it to "false" in subquery
             const originalQueryTimeTravel =
@@ -3749,7 +3763,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     private resolveVirtualColumnSelectAlias(
         expression: string,
-    ): string | undefined {
+    ): { vcAlias: string; selectExpression: string } | undefined {
         for (const alias of this.expressionMap.aliases) {
             if (!alias.metadata) continue
             for (const column of alias.metadata.columns) {
@@ -3758,12 +3772,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     column.query &&
                     `(${column.query(this.escape(alias.name))})` === expression
                 ) {
-                    return DriverUtils.buildAlias(
-                        this.dataSource.driver,
-                        undefined,
-                        alias.name,
-                        column.databaseName,
-                    )
+                    return {
+                        vcAlias: DriverUtils.buildAlias(
+                            this.dataSource.driver,
+                            undefined,
+                            alias.name,
+                            column.databaseName,
+                        ),
+                        // The raw parenthesised expression to SELECT in the inner query
+                        // so that the outer DISTINCT wrapper can reference the alias.
+                        selectExpression: expression,
+                    }
                 }
             }
         }
@@ -3772,21 +3791,30 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     protected createOrderByCombinedWithSelectExpression(
         parentAlias: string,
-    ): [string, OrderByCondition] {
+    ): [string, OrderByCondition, { selection: string; aliasName: string }[]] {
         // if table has a default order then apply it
         const orderBys = this.expressionMap.allOrderBys
+        // VirtualColumn select entries that must be injected into the inner query
+        // so that the outer DISTINCT wrapper can reference their aliases.
+        const vcInnerSelects: { selection: string; aliasName: string }[] = []
         const selectString = Object.keys(orderBys)
             .map((orderCriteria) => {
                 // Raw SQL expression — VirtualColumn expressions are wrapped in parens.
                 // They must not be split on "." like "alias.property" criteria.
                 if (orderCriteria.startsWith("(")) {
-                    const vcAlias =
+                    const resolved =
                         this.resolveVirtualColumnSelectAlias(orderCriteria)
-                    if (vcAlias) {
+                    if (resolved) {
+                        // Ensure the inner query exposes this alias even when the
+                        // VirtualColumn was not explicitly selected by the caller.
+                        vcInnerSelects.push({
+                            selection: resolved.selectExpression,
+                            aliasName: resolved.vcAlias,
+                        })
                         return (
                             this.escape(parentAlias) +
                             "." +
-                            this.escape(vcAlias)
+                            this.escape(resolved.vcAlias)
                         )
                     }
                     // Unknown parenthesised expression — skip; adding an empty string
@@ -3843,15 +3871,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // Raw SQL expression — resolve to the VirtualColumn SELECT alias so the
             // pagination wrapper can reference it as `parentAlias.columnAlias`.
             if (orderCriteria.startsWith("(")) {
-                const vcAlias =
+                const resolved =
                     this.resolveVirtualColumnSelectAlias(orderCriteria)
-                if (vcAlias) {
+                if (resolved) {
                     orderByObject[
-                        this.escape(parentAlias) + "." + this.escape(vcAlias)
+                        this.escape(parentAlias) +
+                            "." +
+                            this.escape(resolved.vcAlias)
                     ] = orderBys[orderCriteria]
                 } else {
-                    // Unknown raw expression — pass through unchanged.
-                    orderByObject[orderCriteria] = orderBys[orderCriteria]
+                    // Unknown parenthesised ORDER BY expression — the outer DISTINCT
+                    // wrapper only exposes `distinctAlias.*`; passing inner-query
+                    // aliases through would generate invalid SQL.
+                    throw new TypeORMError(
+                        `Cannot paginate (skip/take with joins) using a raw ORDER BY ` +
+                            `expression: "${orderCriteria}". ` +
+                            `Order by a mapped column or VirtualColumn property instead.`,
+                    )
                 }
             } else if (orderCriteria.indexOf(".") !== -1) {
                 const criteriaParts = orderCriteria.split(".")
@@ -3893,7 +3929,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         })
 
-        return [selectString, orderByObject]
+        return [selectString, orderByObject, vcInnerSelects]
     }
 
     /**

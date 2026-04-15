@@ -426,6 +426,31 @@ describe("column > virtual columns > WHERE and ORDER BY expression expansion", (
             }),
         ))
 
+    it("should sort correctly when ordering by VirtualColumn that is not in select", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userRepository = dataSource.getRepository(User)
+
+                await userRepository.save([
+                    userRepository.create({ firstName: "Bob", lastName: "Zeta" }),
+                    userRepository.create({ firstName: "Ann", lastName: "Zeta" }),
+                ])
+
+                // fullName is omitted from select — ORDER BY must still work via
+                // the inline expression, not by referencing a missing column alias
+                const users = await userRepository.find({
+                    select: { firstName: true, lastName: true },
+                    order: { fullName: "ASC" },
+                })
+
+                expect(users.length).to.be.greaterThan(0)
+                const firstNames = users.map((u) => u.firstName)
+                expect(firstNames.indexOf("Ann")).to.be.lessThan(
+                    firstNames.indexOf("Bob"),
+                )
+            }),
+        ))
+
     it("should generate correct SQL with VirtualColumn expression in WHERE", () =>
         dataSources.map((dataSource) => {
             const qb = dataSource
