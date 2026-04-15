@@ -172,9 +172,9 @@ export class DriverUtils {
         const preBase = url.slice(firstSlashes + 2)
         const secondSlash = preBase.indexOf("/")
         const base =
-            secondSlash !== -1 ? preBase.slice(0, secondSlash) : preBase
+            secondSlash === -1 ? preBase : preBase.slice(0, secondSlash)
         let afterBase =
-            secondSlash !== -1 ? preBase.slice(secondSlash + 1) : undefined
+            secondSlash === -1 ? undefined : preBase.slice(secondSlash + 1)
         // remove mongodb query params
         if (afterBase && afterBase.indexOf("?") !== -1) {
             afterBase = afterBase.slice(0, afterBase.indexOf("?"))
@@ -206,9 +206,9 @@ export class DriverUtils {
         const preBase = url.slice(firstSlashes + 2)
         const secondSlash = preBase.indexOf("/")
         const base =
-            secondSlash !== -1 ? preBase.slice(0, secondSlash) : preBase
+            secondSlash === -1 ? preBase : preBase.slice(0, secondSlash)
         let afterBase =
-            secondSlash !== -1 ? preBase.slice(secondSlash + 1) : undefined
+            secondSlash === -1 ? undefined : preBase.slice(secondSlash + 1)
         // normalize empty string to undefined so downstream ?? works correctly
         if (afterBase === "") afterBase = undefined
         let afterQuestionMark: string
@@ -280,12 +280,12 @@ export class DriverUtils {
         const credentials = base.slice(0, lastAtSign)
         const colonIndex = credentials.indexOf(":")
 
-        return colonIndex !== -1
-            ? {
+        return colonIndex === -1
+            ? { username: credentials, password: "", hostAndPort }
+            : {
                   username: credentials.slice(0, colonIndex),
                   password: credentials.slice(colonIndex + 1),
                   hostAndPort,
               }
-            : { username: credentials, password: "", hostAndPort }
     }
 }
