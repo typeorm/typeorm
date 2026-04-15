@@ -109,6 +109,31 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     private cachedTablePaths: Record<string, string> = {}
 
     // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Validates and returns the savepoint name to use in SQL.
+     * Falls back to `typeorm_<depth>` when no custom name is given.
+     */
+    protected resolveSavepointName(
+        savepointName: string | undefined,
+        depth: number,
+    ): string {
+        if (savepointName !== undefined) {
+            if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(savepointName)) {
+                throw new TypeORMError(
+                    `Invalid savepoint name: "${savepointName}". ` +
+                        `Savepoint names must be valid SQL identifiers ` +
+                        `(letters, digits, and underscores only).`,
+                )
+            }
+            return savepointName
+        }
+        return `typeorm_${depth}`
+    }
+
+    // -------------------------------------------------------------------------
     // Public Abstract Methods
     // -------------------------------------------------------------------------
 

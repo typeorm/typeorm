@@ -142,7 +142,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             await this.query("START TRANSACTION")
         } else {
             await this.query(
-                `SAVEPOINT ${savepointName ?? `typeorm_${this.transactionDepth}`}`,
+                `SAVEPOINT ${this.resolveSavepointName(savepointName, this.transactionDepth)}`,
             )
         }
         this.transactionDepth += 1
@@ -190,7 +190,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (this.transactionDepth > 1) {
             await this.query(
-                `ROLLBACK TO SAVEPOINT ${savepointName ?? `typeorm_${this.transactionDepth - 1}`}`,
+                `ROLLBACK TO SAVEPOINT ${this.resolveSavepointName(savepointName, this.transactionDepth - 1)}`,
             )
         } else {
             await this.query("ROLLBACK")

@@ -138,7 +138,7 @@ export class SqlServerQueryRunner
                 }
             } else {
                 await this.query(
-                    `SAVE TRANSACTION ${savepointName ?? `typeorm_${this.transactionDepth}`}`,
+                    `SAVE TRANSACTION ${this.resolveSavepointName(savepointName, this.transactionDepth)}`,
                 )
                 ok()
             }
@@ -194,7 +194,7 @@ export class SqlServerQueryRunner
 
         if (this.transactionDepth > 1) {
             await this.query(
-                `ROLLBACK TRANSACTION ${savepointName ?? `typeorm_${this.transactionDepth - 1}`}`,
+                `ROLLBACK TRANSACTION ${this.resolveSavepointName(savepointName, this.transactionDepth - 1)}`,
             )
             this.transactionDepth -= 1
         } else {

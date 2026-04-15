@@ -209,4 +209,59 @@ describe("transaction > nested transaction", () => {
                 }
             }),
         ))
+
+    // #12308
+    it("concurrent nested transactions should not conflict on SAVEPOINT names", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.transactionSupport !== "nested") return
+
+                await dataSource.manager.transaction(async (outerEm) => {
+                    await Promise.all(
+                        Array.from({ length: 5 }, (_, i) =>
+                            outerEm.transaction(async (innerEm) => {
+                                const post = new Post()
+                                post.title = `Post ${i}`
+                                await innerEm.save(post)
+                            }),
+                        ),
+                    )
+                })
+
+                const posts = await dataSource.manager.find(Post)
+                posts.length.should.be.equal(5)
+            }),
+        ))
+
+    // #12308
+    it("outer transaction should not crash when a concurrent nested transaction fails", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.transactionSupport !== "nested") return
+
+                await dataSource.manager.transaction(async (outerEm) => {
+                    await Promise.all(
+                        Array.from({ length: 5 }, (_, i) =>
+                            outerEm
+                                .transaction(async (innerEm) => {
+                                    const post = new Post()
+                                    post.title = `Post ${i}`
+                                    await innerEm.save(post)
+                                    if (i === 2) {
+                                        throw new Error("intentional failure")
+                                    }
+                                })
+                                .catch((err) => {
+                                    if (err.message !== "intentional failure") {
+                                        throw err
+                                    }
+                                }),
+                        ),
+                    )
+                })
+
+                const count = await dataSource.manager.count(Post)
+                count.should.be.a("number")
+            }),
+        ))
 })

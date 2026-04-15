@@ -199,7 +199,7 @@ export class PostgresQueryRunner
             }
         } else {
             await this.query(
-                `SAVEPOINT ${savepointName ?? `typeorm_${this.transactionDepth}`}`,
+                `SAVEPOINT ${this.resolveSavepointName(savepointName, this.transactionDepth)}`,
             )
         }
         this.transactionDepth += 1
@@ -248,7 +248,7 @@ export class PostgresQueryRunner
 
         if (this.transactionDepth > 1) {
             await this.query(
-                `ROLLBACK TO SAVEPOINT ${savepointName ?? `typeorm_${this.transactionDepth - 1}`}`,
+                `ROLLBACK TO SAVEPOINT ${this.resolveSavepointName(savepointName, this.transactionDepth - 1)}`,
             )
         } else {
             await this.query("ROLLBACK")

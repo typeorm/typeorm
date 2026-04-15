@@ -282,8 +282,8 @@ try {
 
 There are 3 methods to control transactions in `QueryRunner`:
 
-- `startTransaction` - starts a new transaction inside the query runner instance.
-- `commitTransaction` - commits all changes made using the query runner instance.
-- `rollbackTransaction` - rolls all changes made using the query runner instance back.
+- `startTransaction(isolationLevel?, savepointName?)` - starts a new transaction inside the query runner instance. When called inside an existing transaction, creates a `SAVEPOINT`. Pass a custom `savepointName` to avoid conflicts when running nested transactions concurrently.
+- `commitTransaction(savepointName?)` - commits all changes made using the query runner instance.
+- `rollbackTransaction(savepointName?)` - rolls all changes made using the query runner instance back.
 
 Learn more about [Query Runner](./query-runner.md).

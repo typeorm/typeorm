@@ -219,7 +219,7 @@ export class CockroachQueryRunner
             }
         } else {
             await this.query(
-                `SAVEPOINT ${savepointName ?? `typeorm_${this.transactionDepth}`}`,
+                `SAVEPOINT ${this.resolveSavepointName(savepointName, this.transactionDepth)}`,
             )
         }
 
@@ -274,7 +274,7 @@ export class CockroachQueryRunner
 
         if (this.transactionDepth > 1) {
             await this.query(
-                `ROLLBACK TO SAVEPOINT ${savepointName ?? `typeorm_${this.transactionDepth - 1}`}`,
+                `ROLLBACK TO SAVEPOINT ${this.resolveSavepointName(savepointName, this.transactionDepth - 1)}`,
             )
         } else {
             this.storeQueries = false

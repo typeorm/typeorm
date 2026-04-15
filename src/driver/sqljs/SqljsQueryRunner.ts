@@ -65,8 +65,8 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
      * Commits transaction.
      * Error will be thrown if transaction was not started.
      */
-    async commitTransaction(): Promise<void> {
-        await super.commitTransaction()
+    async commitTransaction(savepointName?: string): Promise<void> {
+        await super.commitTransaction(savepointName)
         if (!this.isTransactionActive) {
             await this.flush()
         }
