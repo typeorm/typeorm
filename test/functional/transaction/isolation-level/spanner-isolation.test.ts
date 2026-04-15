@@ -230,4 +230,81 @@ describe("transaction > isolation level > spanner", () => {
             })
         }
     })
+
+    describe("implicit DML", () => {
+        // Fully stub the session transaction so query() exercises the
+        // implicit begin/commit path without touching the emulator.
+        type SessionTransactionStub = {
+            setReadWriteTransactionOptions(options: {
+                isolationLevel: string
+            }): void
+            begin(): Promise<void>
+            commit(): Promise<void>
+            rollback(): Promise<void>
+            run(options: unknown): Promise<unknown>
+        }
+        type QueryRunnerInternals = {
+            sessionTransaction?: SessionTransactionStub
+        }
+
+        let dataSources: DataSource[]
+        before(async () => {
+            // Create schema without isolation level to avoid DDL
+            // failures under non-default isolation
+            const setup = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["spanner"],
+                schemaCreate: true,
+                dropSchema: true,
+            })
+            await closeTestingConnections(setup)
+
+            dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["spanner"],
+                driverSpecific: {
+                    isolationLevel: "REPEATABLE READ",
+                },
+            })
+        })
+        after(() => closeTestingConnections(dataSources))
+
+        it("should apply data source isolation level to implicit DML transactions", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    const internals =
+                        queryRunner as unknown as QueryRunnerInternals
+                    try {
+                        await queryRunner.connect()
+
+                        const calls: { isolationLevel: string }[] = []
+                        internals.sessionTransaction = {
+                            setReadWriteTransactionOptions: (options) => {
+                                calls.push(options)
+                            },
+                            begin: async () => {},
+                            commit: async () => {},
+                            rollback: async () => {},
+                            run: async () => [
+                                [],
+                                { rowCountExact: "0" },
+                                { rowType: { fields: [] }, transaction: null },
+                            ],
+                        }
+
+                        await queryRunner.query(
+                            "INSERT INTO post (title) VALUES ('x')",
+                        )
+
+                        expect(calls).to.have.length(1)
+                        expect(calls[0].isolationLevel).to.equal(
+                            "REPEATABLE_READ",
+                        )
+                    } finally {
+                        await queryRunner.release()
+                    }
+                }),
+            ))
+    })
 })
