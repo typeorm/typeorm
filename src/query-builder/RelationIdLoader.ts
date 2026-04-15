@@ -1,5 +1,6 @@
 import type { RelationMetadata } from "../metadata/RelationMetadata"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { DataSource } from "../data-source/DataSource"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { SelectQueryBuilder } from "./SelectQueryBuilder"
@@ -142,7 +143,9 @@ export class RelationIdLoader {
             )
             inverseColumns = relation.entityMetadata.primaryColumns
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-            columns = relation.inverseRelation!.entityMetadata.primaryColumns
+            columns = this.getInverseEntityColumnsForQueryStrategyRelationIds(
+                relation.inverseRelation!.entityMetadata,
+            )
             inverseColumns = relation.inverseRelation!.joinColumns.map(
                 (column) => column.referencedColumn!,
             )
@@ -650,7 +653,11 @@ export class RelationIdLoader {
 
         // select all columns we need
         const qb = this.dataSource.createQueryBuilder(this.queryRunner)
-        relation.entityMetadata.primaryColumns.forEach((primaryColumn) => {
+        const inverseRelationIdColumns =
+            this.getInverseEntityColumnsForQueryStrategyRelationIds(
+                relation.entityMetadata,
+            )
+        inverseRelationIdColumns.forEach((primaryColumn) => {
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
                 undefined,
@@ -743,6 +750,25 @@ export class RelationIdLoader {
             mainAlias,
             condition,
             fieldsToMetadata,
+        )
+    }
+
+    /**
+     * Columns used to correlate inverse-side rows when grouping query-strategy
+     * relation loads. View entities (and similar) often have no primary columns
+     * in metadata; without non-empty columns here, `Array.prototype.every`
+     * matches all related entities against every relation-id row.
+     *
+     * @param inverseEntityMetadata
+     */
+    private getInverseEntityColumnsForQueryStrategyRelationIds(
+        inverseEntityMetadata: EntityMetadata,
+    ): ColumnMetadata[] {
+        if (inverseEntityMetadata.primaryColumns.length > 0) {
+            return inverseEntityMetadata.primaryColumns
+        }
+        return inverseEntityMetadata.columns.filter(
+            (column) => !column.isVirtual && !column.isVirtualProperty,
         )
     }
 
