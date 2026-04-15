@@ -43,6 +43,10 @@ export default defineConfig([
             "@typescript-eslint/prefer-optional-chain": "error",
             "@typescript-eslint/prefer-string-starts-ends-with": "error",
 
+            "unicorn/prefer-string-replace-all": "error",
+            "unicorn/prefer-string-slice": "error",
+            "unicorn/prefer-string-starts-ends-with": "error",
+
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",
             "@typescript-eslint/no-empty-object-type": "warn",
@@ -97,9 +101,6 @@ export default defineConfig([
             "no-regex-spaces": "warn",
             "no-return-assign": ["error", "always"],
             "preserve-caught-error": "warn",
-
-            // unicorn
-            "unicorn/prefer-string-replace-all": "error",
         },
     },
 

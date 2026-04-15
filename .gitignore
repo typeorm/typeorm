@@ -21,10 +21,9 @@ node_modules/
 *.iml
 
 ### TypeORM ###
+temp/
 ormconfig.json
 ormlogs.log
-
-/test/github-issues/799/tmp/*
 
 ### Stryker ###
 reports/

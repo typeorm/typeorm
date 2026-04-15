@@ -54,7 +54,7 @@ export class LegacyOracleNamingStrategy
         }
         return (
             prefix +
-            RandomGenerator.sha1(input).substring(
+            RandomGenerator.sha1(input).slice(
                 0,
                 this.IDENTIFIER_MAX_SIZE - prefix.length,
             )
@@ -63,7 +63,7 @@ export class LegacyOracleNamingStrategy
 
     protected truncateIdentifier(input: string): string {
         if (input.length > this.IDENTIFIER_MAX_SIZE) {
-            return input.substring(0, this.IDENTIFIER_MAX_SIZE)
+            return input.slice(0, this.IDENTIFIER_MAX_SIZE)
         } else {
             return input
         }

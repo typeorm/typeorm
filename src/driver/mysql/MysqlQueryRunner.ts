@@ -2907,7 +2907,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 // New versions of MariaDB return expressions in lowercase.  We need to set it in
                                 // uppercase so the comparison in MysqlDriver#compareExtraValues does not fail.
                                 tableColumn.onUpdate = dbColumn["EXTRA"]
-                                    .substring(
+                                    .slice(
                                         dbColumn["EXTRA"].indexOf("on update") +
                                             10,
                                     )
@@ -3048,17 +3048,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             ) {
                                 const colType = dbColumn["COLUMN_TYPE"]
                                 const items = colType
-                                    .substring(
+                                    .slice(
                                         colType.indexOf("(") + 1,
                                         colType.lastIndexOf(")"),
                                     )
                                     .split(",")
                                 tableColumn.enum = (items as string[]).map(
                                     (item) => {
-                                        return item.substring(
-                                            1,
-                                            item.length - 1,
-                                        )
+                                        return item.slice(1, -1)
                                     },
                                 )
                                 tableColumn.length = ""

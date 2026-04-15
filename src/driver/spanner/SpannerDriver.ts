@@ -35,11 +35,9 @@ export class SpannerDriver implements Driver {
     /**
      * Transaction isolation levels supported by this driver.
      *
-     * @see https://cloud.google.com/spanner/docs/transactions
+     * @see https://cloud.google.com/spanner/docs/isolation-levels
      */
     static readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
         "REPEATABLE READ",
         "SERIALIZABLE",
     ]

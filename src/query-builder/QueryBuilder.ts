@@ -816,7 +816,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
                         if (replacements[matches[2]][p]) {
                             return `${pre}${this.escape(
-                                matches[2].substring(0, matches[2].length - 1),
+                                matches[2].slice(0, -1),
                             )}.${this.escape(replacements[matches[2]][p])}`
                         }
                     } else {
