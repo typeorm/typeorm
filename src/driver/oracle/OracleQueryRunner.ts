@@ -114,8 +114,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Starts transaction.
      *
      * @param isolationLevel
+     * @param savepointName
      */
-    async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+    async startTransaction(
+        isolationLevel?: IsolationLevel,
+        savepointName?: string,
+    ): Promise<void> {
         isolationLevel ??=
             this.dataSource.options.isolationLevel ?? "READ COMMITTED"
 
@@ -138,7 +142,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
             )
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            await this.query(
+                `SAVEPOINT ${savepointName ?? `typeorm_${this.transactionDepth}`}`,
+            )
         }
         this.transactionDepth += 1
 
@@ -148,8 +154,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Commits transaction.
      * Error will be thrown if transaction was not started.
+     *
+     * @param savepointName
      */
-    async commitTransaction(): Promise<void> {
+    async commitTransaction(savepointName?: string): Promise<void> {
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
@@ -166,15 +174,17 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Rollbacks transaction.
      * Error will be thrown if transaction was not started.
+     *
+     * @param savepointName
      */
-    async rollbackTransaction(): Promise<void> {
+    async rollbackTransaction(savepointName?: string): Promise<void> {
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT ${savepointName ?? `typeorm_${this.transactionDepth - 1}`}`,
             )
         } else {
             await this.query("ROLLBACK")

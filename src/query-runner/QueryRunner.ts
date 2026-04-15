@@ -93,19 +93,22 @@ export interface QueryRunner extends AsyncDisposable {
     /**
      * Starts transaction.
      */
-    startTransaction(isolationLevel?: IsolationLevel): Promise<void>
+    startTransaction(
+        isolationLevel?: IsolationLevel,
+        savepointName?: string,
+    ): Promise<void>
 
     /**
      * Commits transaction.
      * Error will be thrown if transaction was not started.
      */
-    commitTransaction(): Promise<void>
+    commitTransaction(savepointName?: string): Promise<void>
 
     /**
      * Rollbacks transaction.
      * Error will be thrown if transaction was not started.
      */
-    rollbackTransaction(): Promise<void>
+    rollbackTransaction(savepointName?: string): Promise<void>
 
     /**
      * Executes a given SQL query and returns raw database results.

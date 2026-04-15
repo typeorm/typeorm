@@ -133,7 +133,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      * Commits transaction.
      * Error will be thrown if transaction was not started.
      */
-    abstract commitTransaction(): Promise<void>
+    abstract commitTransaction(savepointName?: string): Promise<void>
 
     /**
      * Executes a given SQL query.

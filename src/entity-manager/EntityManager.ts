@@ -34,6 +34,11 @@ import { buildSqlTag } from "../util/SqlTagUtils"
 import { OrmUtils } from "../util/OrmUtils"
 
 /**
+ * Counter used to generate unique SAVEPOINT names for concurrent nested transactions.
+ */
+let savepointCounter = 0
+
+/**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
  * whatever entity type are you passing.
  */
@@ -155,15 +160,21 @@ export class EntityManager {
         const queryRunner =
             this.queryRunner ?? this.dataSource.createQueryRunner()
 
+        // if query runner already exists this is a nested transaction,
+        // generate a unique savepoint name to prevent race conditions with concurrent Promise.all calls
+        const savepointName = this.queryRunner
+            ? `typeorm_sp_${++savepointCounter}`
+            : undefined
+
         try {
-            await queryRunner.startTransaction(isolation)
+            await queryRunner.startTransaction(isolation, savepointName)
             const result = await runInTransaction(queryRunner.manager)
-            await queryRunner.commitTransaction()
+            await queryRunner.commitTransaction(savepointName)
             return result
         } catch (err) {
             try {
                 // we throw original error even if rollback thrown an error
-                await queryRunner.rollbackTransaction()
+                await queryRunner.rollbackTransaction(savepointName)
             } catch (rollbackError) {}
             throw err
         } finally {

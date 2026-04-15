@@ -89,8 +89,12 @@ export class SqlServerQueryRunner
      * Starts transaction.
      *
      * @param isolationLevel
+     * @param savepointName
      */
-    async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+    async startTransaction(
+        isolationLevel?: IsolationLevel,
+        savepointName?: string,
+    ): Promise<void> {
         isolationLevel ??= this.dataSource.options.isolationLevel
 
         validateIsolationLevel(
@@ -134,7 +138,7 @@ export class SqlServerQueryRunner
                 }
             } else {
                 await this.query(
-                    `SAVE TRANSACTION typeorm_${this.transactionDepth}`,
+                    `SAVE TRANSACTION ${savepointName ?? `typeorm_${this.transactionDepth}`}`,
                 )
                 ok()
             }
@@ -147,8 +151,10 @@ export class SqlServerQueryRunner
     /**
      * Commits transaction.
      * Error will be thrown if transaction was not started.
+     *
+     * @param savepointName
      */
-    async commitTransaction(): Promise<void> {
+    async commitTransaction(savepointName?: string): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
@@ -176,8 +182,10 @@ export class SqlServerQueryRunner
     /**
      * Rollbacks transaction.
      * Error will be thrown if transaction was not started.
+     *
+     * @param savepointName
      */
-    async rollbackTransaction(): Promise<void> {
+    async rollbackTransaction(savepointName?: string): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
@@ -186,7 +194,7 @@ export class SqlServerQueryRunner
 
         if (this.transactionDepth > 1) {
             await this.query(
-                `ROLLBACK TRANSACTION typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TRANSACTION ${savepointName ?? `typeorm_${this.transactionDepth - 1}`}`,
             )
             this.transactionDepth -= 1
         } else {
