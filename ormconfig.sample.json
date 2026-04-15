@@ -120,9 +120,9 @@
     "type": "spanner",
     "host": "localhost",
     "port": 9010,
-    "projectId": "test-project",
-    "instanceId": "test-instance",
-    "databaseId": "test-db",
+    "projectId": "typeorm",
+    "instanceId": "typeorm",
+    "databaseId": "typeorm",
     "logging": false
   }
 ]

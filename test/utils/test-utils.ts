@@ -331,9 +331,14 @@ getMetadataArgsStorage().entitySubscribers.push({
 
 export function createDataSource(options: DataSourceOptions): DataSource {
     if (options.type === "spanner") {
-        process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
-        // process.env.GOOGLE_APPLICATION_CREDENTIALS =
-        //     "/Users/messer/Documents/google/typeorm-spanner-3b57e071cbf0.json"
+        const spannerOptions = options as DataSourceOptions & {
+            host?: string
+            port?: number
+        }
+
+        process.env.SPANNER_EMULATOR_HOST = `${spannerOptions.host ?? "localhost"}:${spannerOptions.port ?? 9010}`
+        process.env.METADATA_SERVER_DETECTION = "none"
+
         if (Array.isArray(options.subscribers)) {
             options.subscribers.push(
                 GeneratedColumnReplacerSubscriber as Function,
