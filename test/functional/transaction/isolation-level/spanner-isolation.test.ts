@@ -188,6 +188,31 @@ describe("transaction > isolation level > spanner", () => {
                     }
                 }),
             ))
+
+        it("should propagate commit errors", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    const internals =
+                        queryRunner as unknown as QueryRunnerInternals
+                    try {
+                        await queryRunner.connect()
+                        internals.sessionTransaction = {
+                            setReadWriteTransactionOptions: () => {},
+                            begin: async () => {},
+                            commit: async () => {
+                                throw new Error("simulated commit failure")
+                            },
+                        }
+                        await queryRunner.startTransaction()
+                        await queryRunner
+                            .commitTransaction()
+                            .should.be.rejectedWith("simulated commit failure")
+                    } finally {
+                        await queryRunner.release()
+                    }
+                }),
+            ))
     })
 
     describe("defined in data source", () => {
