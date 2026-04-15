@@ -21,6 +21,7 @@ import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 
@@ -92,11 +93,12 @@ export class AuroraMysqlQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (isolationLevel) {
-            throw new TypeORMError(
-                `Setting transaction isolation level is not supported by the Aurora Data API`,
-            )
-        }
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
+        validateIsolationLevel(
+            this.driver.supportedIsolationLevels,
+            isolationLevel,
+        )
 
         this.isTransactionActive = true
         try {
@@ -107,7 +109,12 @@ export class AuroraMysqlQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            await this.client.startTransaction()
+            try {
+                await this.client.startTransaction()
+            } catch (err) {
+                this.isTransactionActive = false
+                throw err
+            }
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
