@@ -1052,10 +1052,10 @@ NestJS users are not affected — the `@nestjs/typeorm` package has its own inte
 
 The following internal APIs have been removed. These only affect you if you were building custom drivers, extending QueryBuilder, or using low-level metadata APIs:
 
-| Removed                                        | Replacement                                       |
-| ---------------------------------------------- | ------------------------------------------------- |
-| `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers |
-| `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                    |
-| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                |
-| `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`               |
-| `RdbmsSchemaBuilder.renameTables()`            | Removed                                           |
+| Removed                                        | Replacement                                         |
+| ---------------------------------------------- | --------------------------------------------------- |
+| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                  |
+| `EntityMetadata.getValueMap()` `options` param | Remove the third argument — it was never functional |
+| `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                      |
+| `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers   |
+| `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`                 |
