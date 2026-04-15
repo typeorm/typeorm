@@ -21,6 +21,7 @@ node_modules/
 *.iml
 
 ### TypeORM ###
+temp/
 ormconfig.json
 ormlogs.log
 

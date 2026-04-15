@@ -46,6 +46,14 @@ export interface TestingOptions {
     enabledDrivers?: DatabaseType[]
 
     /**
+     * List of drivers that should be excluded from this test suite. Applied
+     * after enabledDrivers — use this to opt a specific driver out of a test
+     * without enumerating every other driver. Typical use: marking a test as
+     * incompatible with a particular driver until the driver side is fixed.
+     */
+    disabledDrivers?: DatabaseType[]
+
+    /**
      * Entities needs to be included in the connection for the given test suite.
      */
     entities?: (string | Function | EntitySchema<any>)[]
@@ -225,6 +233,9 @@ export function setupTestingConnections(
     return ormConfigConnectionOptionsArray
         .filter((connectionOptions) => {
             if (connectionOptions.skip === true) return false
+
+            if (options?.disabledDrivers?.includes(connectionOptions.type!))
+                return false
 
             if (options?.enabledDrivers?.length)
                 return (
