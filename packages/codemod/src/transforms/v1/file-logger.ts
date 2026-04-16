@@ -94,9 +94,9 @@ export const fileLogger = (file: FileInfo, api: API) => {
                 )
                 if (!hasSameComment) {
                     addTodoComment(node, message, j)
+                    hasChanges = true
                     hasTodos = true
                 }
-                hasChanges = true
                 break
             }
             current = current.parent
