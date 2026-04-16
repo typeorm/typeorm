@@ -151,6 +151,21 @@ export class RelationIdLoader {
             )
         }
 
+        if (inverseColumns.length === 0) {
+            throw new TypeORMError(
+                `Cannot determine inverse correlation columns for relation "${relation.propertyPath}" ` +
+                    `when grouping query-strategy relation results. ` +
+                    `The owning side has no primary columns to match relation identifiers against; ` +
+                    `add @PrimaryColumn, map @ViewColumn to physical columns, or use a relation with explicit join columns.`,
+            )
+        }
+        if (columns.length === 0) {
+            throw new TypeORMError(
+                `Cannot determine relation correlation columns for relation "${relation.propertyPath}" ` +
+                    `when grouping query-strategy relation results.`,
+            )
+        }
+
         return entities.map((entity) => {
             const group: { entity: E1; related?: E2 | E2[] } = {
                 entity: entity,
@@ -158,44 +173,52 @@ export class RelationIdLoader {
             }
 
             const entityRelationIds = relationIds.filter((relationId) => {
-                return inverseColumns.every((column) => {
-                    return column.compareEntityValue(
-                        entity,
-                        relationId[
-                            DriverUtils.buildAlias(
-                                this.dataSource.driver,
-                                undefined,
-                                column.entityMetadata.name +
-                                    "_" +
-                                    column.propertyAliasName,
-                            )
-                        ],
-                    )
-                })
-            })
-            if (!entityRelationIds.length) return group
-
-            relatedEntities.forEach((relatedEntity) => {
-                entityRelationIds.forEach((relationId) => {
-                    const relatedEntityMatched = columns.every((column) => {
+                return (
+                    inverseColumns.length > 0 &&
+                    inverseColumns.every((column) => {
                         return column.compareEntityValue(
-                            relatedEntity,
+                            entity,
                             relationId[
                                 DriverUtils.buildAlias(
                                     this.dataSource.driver,
                                     undefined,
                                     column.entityMetadata.name +
                                         "_" +
-                                        relation.propertyPath.replace(
-                                            ".",
-                                            "_",
-                                        ) +
-                                        "_" +
-                                        column.propertyPath.replace(".", "_"),
+                                        column.propertyAliasName,
                                 )
                             ],
                         )
                     })
+                )
+            })
+            if (!entityRelationIds.length) return group
+
+            relatedEntities.forEach((relatedEntity) => {
+                entityRelationIds.forEach((relationId) => {
+                    const relatedEntityMatched =
+                        columns.length > 0 &&
+                        columns.every((column) => {
+                            return column.compareEntityValue(
+                                relatedEntity,
+                                relationId[
+                                    DriverUtils.buildAlias(
+                                        this.dataSource.driver,
+                                        undefined,
+                                        column.entityMetadata.name +
+                                            "_" +
+                                            relation.propertyPath.replace(
+                                                ".",
+                                                "_",
+                                            ) +
+                                            "_" +
+                                            column.propertyPath.replace(
+                                                ".",
+                                                "_",
+                                            ),
+                                    )
+                                ],
+                            )
+                        })
                     if (relatedEntityMatched) {
                         if (isMany) {
                             ;(group.related as E2[]).push(relatedEntity)
