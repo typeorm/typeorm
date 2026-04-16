@@ -27,3 +27,23 @@ import path from "node:path"
 const logger6 = new FileLogger("all", {
     logPath: path.resolve(process.cwd(), "orm.log"),
 })
+
+// Case 7: class property initializer — should get TODO on the class property
+class A {
+    // TODO(typeorm-v1): `FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder
+    logger = new FileLogger("all")
+}
+
+// Case 8: export default — should get TODO
+// TODO(typeorm-v1): `FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder
+export default new FileLogger("all")
+
+// Case 9: quoted-key absolute logPath — should NOT get TODO
+const logger9 = new FileLogger("all", { logPath: "/abs.log" })
+
+// Case 10: UNC path — should NOT get TODO
+const logger10 = new FileLogger("all", { logPath: "\\\\server\\share\\x.log" })
+
+// Case 11: two FileLoggers in the same statement — should get ONE TODO, not two
+// TODO(typeorm-v1): `FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder
+const loggers = [new FileLogger("all"), new FileLogger("query")]

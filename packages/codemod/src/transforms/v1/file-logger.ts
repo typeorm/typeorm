@@ -2,6 +2,7 @@ import path from "node:path"
 import type { API, FileInfo, Node, ObjectExpression } from "jscodeshift"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
+import { getStringValue } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -9,7 +10,7 @@ export const description =
 export const manual = true
 
 const isAbsolutePath = (literal: string): boolean =>
-    literal.startsWith("/") || /^[A-Za-z]:[\\/]/.test(literal)
+    path.posix.isAbsolute(literal) || path.win32.isAbsolute(literal)
 
 const inspectOptionsArg = (
     argNode: Node | undefined,
@@ -19,13 +20,13 @@ const inspectOptionsArg = (
     }
 
     for (const prop of (argNode as ObjectExpression).properties) {
-        if (
-            prop.type !== "ObjectProperty" ||
-            prop.key.type !== "Identifier" ||
-            prop.key.name !== "logPath"
-        ) {
-            continue
-        }
+        if (prop.type !== "ObjectProperty") continue
+
+        const keyName =
+            prop.key.type === "Identifier"
+                ? prop.key.name
+                : getStringValue(prop.key)
+        if (keyName !== "logPath") continue
 
         const value = prop.value
         if (value.type === "StringLiteral") {
@@ -77,11 +78,25 @@ export const fileLogger = (file: FileInfo, api: API) => {
             if (
                 node.type === "ExpressionStatement" ||
                 node.type === "VariableDeclaration" ||
-                node.type === "ReturnStatement"
+                node.type === "ReturnStatement" ||
+                node.type === "ExportDefaultDeclaration" ||
+                node.type === "ExportNamedDeclaration" ||
+                node.type === "ClassProperty" ||
+                node.type === "PropertyDefinition"
             ) {
-                addTodoComment(node, message, j)
+                // Avoid duplicate TODOs when multiple FileLoggers share a statement
+                const todoLine = ` TODO(typeorm-v1): ${message}`
+                const nodeWithComments = node as Node & {
+                    comments?: { value: string }[]
+                }
+                const hasSameComment = nodeWithComments.comments?.some(
+                    (c) => c.value === todoLine,
+                )
+                if (!hasSameComment) {
+                    addTodoComment(node, message, j)
+                    hasTodos = true
+                }
                 hasChanges = true
-                hasTodos = true
                 break
             }
             current = current.parent
