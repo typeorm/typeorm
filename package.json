@@ -128,6 +128,7 @@
     "eslint": "^10.1.0",
     "eslint-plugin-chai-friendly": "^1.1.0",
     "eslint-plugin-jsdoc": "^62.7.1",
+    "eslint-plugin-unicorn": "^64.0.0",
     "globals": "^17.4.0",
     "gulp": "^5.0.1",
     "gulp-rename": "^2.1.0",

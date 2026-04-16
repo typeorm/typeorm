@@ -3343,15 +3343,14 @@ export class CockroachQueryRunner
                             ) {
                                 tableColumn.collation = dbColumn[
                                     "crdb_sql_type"
-                                ].substring(
+                                ].slice(
                                     dbColumn["crdb_sql_type"].indexOf(
                                         "COLLATE",
                                     ) +
                                         "COLLATE".length +
                                         1,
-                                    dbColumn["crdb_sql_type"].length,
                                 )
-                                tableColumn.type = tableColumn.type.substring(
+                                tableColumn.type = tableColumn.type.slice(
                                     0,
                                     dbColumn["crdb_sql_type"].indexOf(
                                         "COLLATE",
@@ -3360,7 +3359,7 @@ export class CockroachQueryRunner
                             }
 
                             if (tableColumn.type.indexOf("(") !== -1)
-                                tableColumn.type = tableColumn.type.substring(
+                                tableColumn.type = tableColumn.type.slice(
                                     0,
                                     tableColumn.type.indexOf("("),
                                 )
@@ -3419,8 +3418,8 @@ export class CockroachQueryRunner
                             // ----
                             // so, we must remove this underscore character from enum type name
                             let udtName = dbColumn["udt_name"]
-                            if (udtName.indexOf("_") === 0) {
-                                udtName = udtName.substring(1, udtName.length)
+                            if (udtName.startsWith("_")) {
+                                udtName = udtName.slice(1)
                             }
 
                             const enumType = dbEnums.find((dbEnum) => {
@@ -3575,7 +3574,7 @@ export class CockroachQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/:::[\w\s[\]"]+/g, "")
+                                    ].replaceAll(/:::[\w\s[\]"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?[\d.]+)$/,
@@ -3731,7 +3730,7 @@ export class CockroachQueryRunner
                     (constraint) => {
                         return new TableExclusion({
                             name: constraint["constraint_name"],
-                            expression: constraint["expression"].substring(8), // trim EXCLUDE from start of expression
+                            expression: constraint["expression"].slice(8), // trim EXCLUDE from start of expression
                         })
                     },
                 )
@@ -4418,8 +4417,8 @@ export class CockroachQueryRunner
         // ----
         // so, we must remove this underscore character from enum type name
         let udtName = result[0]["udt_name"]
-        if (udtName.indexOf("_") === 0) {
-            udtName = udtName.substring(1, udtName.length)
+        if (udtName.startsWith("_")) {
+            udtName = udtName.slice(1)
         }
         return {
             schema: result[0]["udt_schema"],
@@ -4437,7 +4436,7 @@ export class CockroachQueryRunner
             return "NULL"
         }
 
-        comment = comment.replace(/'/g, "''").replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("'", "''").replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return `'${comment}'`
     }

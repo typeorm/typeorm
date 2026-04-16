@@ -190,7 +190,7 @@ export class ConnectionOptionsReader {
                     typeof options.database === "string" &&
                     !isAbsolute(options.database) &&
                     !options.database.startsWith("/") && // unix absolute
-                    options.database.substring(1, 3) !== ":\\" && // windows absolute
+                    options.database.slice(1, 3) !== ":\\" && // windows absolute
                     options.database !== ":memory:"
                 ) {
                     Object.assign(options, {

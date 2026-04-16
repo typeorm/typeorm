@@ -4238,7 +4238,7 @@ export class SqlServerQueryRunner
         if (!defaultValue.startsWith("(")) return defaultValue
         const end = defaultValue.lastIndexOf(")")
         if (!defaultValue.endsWith(")") || end <= 0) return defaultValue
-        const normalizedDefault = defaultValue.substring(1, end)
+        const normalizedDefault = defaultValue.slice(1, end)
         return this.removeParenthesisFromDefault(normalizedDefault)
     }
 

@@ -79,13 +79,14 @@ CockroachDB does not implement weaker isolation levels at all. When you request 
 
 <DatabaseTab value="spanner">
 
-- `READ UNCOMMITTED`
-- `READ COMMITTED`
-- `REPEATABLE READ`
+- `REPEATABLE READ` \*
 - `SERIALIZABLE`
+
+\* `REPEATABLE READ` on Spanner is currently in [Preview](https://cloud.google.com/products#product-launch-stages) and not yet generally available. It provides snapshot isolation and permits write-skew anomalies — use `SELECT ... FOR UPDATE` when that matters.
 
 :::info Learn more
 
+- [Spanner Isolation Levels](https://cloud.google.com/spanner/docs/isolation-levels)
 - [Spanner Transactions](https://cloud.google.com/spanner/docs/transactions)
 
 :::
