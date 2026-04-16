@@ -159,7 +159,7 @@ export class PlatformTools {
     static pathNormalize(pathStr: string): string {
         let normalizedPath = path.normalize(pathStr)
         if (process.platform === "win32")
-            normalizedPath = normalizedPath.replace(/\\/g, "/")
+            normalizedPath = normalizedPath.replaceAll("\\", "/")
         return normalizedPath
     }
 

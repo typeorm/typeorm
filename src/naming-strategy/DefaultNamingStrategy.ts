@@ -168,7 +168,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return snakeCase(
             firstTableName +
                 "_" +
-                firstPropertyName.replace(/\./gi, "_") +
+                firstPropertyName.replaceAll(/\./gi, "_") +
                 "_" +
                 secondTableName,
         )

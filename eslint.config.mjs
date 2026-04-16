@@ -43,6 +43,7 @@ export default defineConfig([
             "@typescript-eslint/prefer-optional-chain": "error",
             "@typescript-eslint/prefer-string-starts-ends-with": "error",
 
+            "unicorn/prefer-string-replace-all": "error",
             "unicorn/prefer-string-slice": "error",
             "unicorn/prefer-string-starts-ends-with": "error",
 
