@@ -34,7 +34,7 @@ export const config: DependencyConfig = {
         "pg-mem":
             "`pg-mem` is incompatible with TypeORM v1 — it uses the removed `getConnectionManager()` API to create TypeORM connections.",
         "typeorm-naming-strategies":
-            "`typeorm-naming-strategies` is incompatible with TypeORM v1 — it imports `snakeCase` from the internal path `typeorm/util/StringUtils` (not part of the public API) and overrides removed interface methods (`classTableInheritanceParentColumnName`, `eagerJoinRelationAlias`). The package is unmaintained (last published 2022). Inline the snake_case strategy or use TypeORM's built-in `SnakeNamingStrategy` instead.",
+            "`typeorm-naming-strategies` is incompatible with TypeORM v1 — it imports `snakeCase` from the internal path `typeorm/util/StringUtils` (not part of the public API) and overrides removed interface methods (`classTableInheritanceParentColumnName`, `eagerJoinRelationAlias`). The package is unmaintained (last published 2022). Extend `DefaultNamingStrategy` and override `columnName`/`tableName`/etc. with snake_case logic, or implement `NamingStrategyInterface` directly.",
         "typeorm-polymorphic":
             "`typeorm-polymorphic` is incompatible with TypeORM v1 — it uses the removed `getCustomRepository()` API.",
         "typeorm-routing-controllers-extensions":
