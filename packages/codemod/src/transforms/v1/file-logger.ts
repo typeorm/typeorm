@@ -95,8 +95,10 @@ export const fileLogger = (file: FileInfo, api: API) => {
     }
 
     // Collect every local name bound to the `FileLogger` export from typeorm.
-    // This includes aliased imports like `import { FileLogger as FL } from "typeorm"`.
+    // This includes aliased imports like `import { FileLogger as FL } from "typeorm"`
+    // and namespace imports like `import * as typeorm from "typeorm"`.
     const localNames = new Set<string>()
+    const namespaceNames = new Set<string>()
     root.find(j.ImportDeclaration, {
         source: { value: "typeorm" },
     }).forEach((p) => {
@@ -110,11 +112,16 @@ export const fileLogger = (file: FileInfo, api: API) => {
                 localNames.add(
                     typeof local === "string" ? local : s.imported.name,
                 )
+            } else if (
+                s.type === "ImportNamespaceSpecifier" &&
+                s.local?.type === "Identifier"
+            ) {
+                namespaceNames.add(s.local.name)
             }
         }
     })
 
-    if (localNames.size === 0) return undefined
+    if (localNames.size === 0 && namespaceNames.size === 0) return undefined
 
     const message =
         "`FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder"
@@ -122,10 +129,22 @@ export const fileLogger = (file: FileInfo, api: API) => {
     root.find(j.NewExpression)
         .filter((p) => {
             const callee = p.node.callee
-            return (
+            if (
                 callee.type === "Identifier" &&
                 localNames.has((callee as { name: string }).name)
-            )
+            ) {
+                return true
+            }
+            if (
+                callee.type === "MemberExpression" &&
+                callee.object.type === "Identifier" &&
+                namespaceNames.has((callee.object as { name: string }).name) &&
+                callee.property.type === "Identifier" &&
+                (callee.property as { name: string }).name === "FileLogger"
+            ) {
+                return true
+            }
+            return false
         })
         .forEach((astPath) => {
             const optionsArg = astPath.node.arguments[1]

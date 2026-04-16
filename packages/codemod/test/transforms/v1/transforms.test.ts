@@ -51,7 +51,7 @@ describe("v1 transforms", () => {
     const pairs = getFixturePairs()
 
     for (const { transform, name, input, output } of pairs) {
-        it(`${name}`, async () => {
+        it(`${transform}/${name}`, async () => {
             const transformPath = path.join(
                 __dirname,
                 "../../../src/transforms/v1",
