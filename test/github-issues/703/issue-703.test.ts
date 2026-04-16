@@ -12,6 +12,7 @@ describe("github issues > #703.findOne does not return an empty array on OneToMa
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

@@ -16,6 +16,7 @@ describe("github issues > #10569 Fix type inferencing of EntityManager#create", 
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

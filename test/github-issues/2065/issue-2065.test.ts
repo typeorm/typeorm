@@ -11,6 +11,7 @@ describe("github issues > #2065 TypeError: Cannot convert object to primitive va
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

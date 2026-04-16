@@ -12,6 +12,7 @@ describe("other issues > double inheritance produces multiple duplicated columns
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

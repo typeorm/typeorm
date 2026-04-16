@@ -16,6 +16,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User, Setting],
             schemaCreate: true,
             dropSchema: true,

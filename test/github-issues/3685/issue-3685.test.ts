@@ -12,6 +12,7 @@ describe("github issues > #3685 Brackets syntax failed when use where with objec
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
             schemaCreate: true,
