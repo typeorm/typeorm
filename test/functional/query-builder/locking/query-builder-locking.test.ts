@@ -618,7 +618,7 @@ describe("query builder > locking", () => {
                 .setLock("pessimistic_write", undefined, ["user"])
                 .getSql()
 
-            expect(sql).to.match(/FOR UPDATE OF user$/)
+            expect(sql).to.match(/FOR UPDATE OF "user"$/)
 
             const sql2 = dataSource
                 .createQueryBuilder(Post, "post")
@@ -626,7 +626,7 @@ describe("query builder > locking", () => {
                 .setLock("pessimistic_write", undefined, ["post", "user"])
                 .getSql()
 
-            expect(sql2).to.match(/FOR UPDATE OF post, user$/)
+            expect(sql2).to.match(/FOR UPDATE OF "post", "user"$/)
         }
     })
 

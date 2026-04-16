@@ -593,9 +593,7 @@ describe("query builder > sql injection", () => {
         it("should escape a malicious table name in lockTables", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    if (
-                        !DriverUtils.isPostgresFamily(dataSource.driver)
-                    ) {
+                    if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
                         return
                     }
 
@@ -606,21 +604,15 @@ describe("query builder > sql injection", () => {
                         ])
                         .getSql()
 
-                    expect(sql).to.not.match(
-                        /OF post; DROP TABLE/,
-                    )
-                    expect(sql).to.contain(
-                        '"post; DROP TABLE post"',
-                    )
+                    expect(sql).to.not.match(/OF post; DROP TABLE/)
+                    expect(sql).to.contain('"post; DROP TABLE post"')
                 }),
             ))
 
         it("should escape multiple malicious table names in lockTables", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    if (
-                        !DriverUtils.isPostgresFamily(dataSource.driver)
-                    ) {
+                    if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
                         return
                     }
 
@@ -633,9 +625,7 @@ describe("query builder > sql injection", () => {
                         .getSql()
 
                     expect(sql).to.contain('"post"')
-                    expect(sql).to.contain(
-                        '"user; DROP TABLE user"',
-                    )
+                    expect(sql).to.contain('"user; DROP TABLE user"')
                 }),
             ))
     })
