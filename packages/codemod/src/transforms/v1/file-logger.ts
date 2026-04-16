@@ -2,7 +2,7 @@ import path from "node:path"
 import type { API, FileInfo, Node, ObjectExpression } from "jscodeshift"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
-import { getStringValue } from "../ast-helpers"
+import { fileImportsFrom, getStringValue } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -15,8 +15,15 @@ const isAbsolutePath = (literal: string): boolean =>
 const inspectOptionsArg = (
     argNode: Node | undefined,
 ): { hasOption: boolean; isAbsolute: boolean } => {
-    if (!argNode || argNode.type !== "ObjectExpression") {
+    // No options argument — flag it (user is using the default logPath)
+    if (argNode === undefined) {
         return { hasOption: false, isAbsolute: false }
+    }
+
+    // Dynamic options (variable, function call, etc.) — assume the user knows
+    // what they're doing and don't flag it
+    if (argNode.type !== "ObjectExpression") {
+        return { hasOption: true, isAbsolute: true }
     }
 
     for (const prop of (argNode as ObjectExpression).properties) {
@@ -56,6 +63,28 @@ export const fileLogger = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
     let hasTodos = false
+
+    // Only operate on files that import FileLogger from typeorm
+    if (!fileImportsFrom(root, j, "typeorm")) {
+        return undefined
+    }
+
+    const importsFileLogger =
+        root
+            .find(j.ImportDeclaration, {
+                source: { value: "typeorm" },
+            })
+            .filter((p) =>
+                (p.node.specifiers ?? []).some(
+                    (s) =>
+                        s.type === "ImportSpecifier" &&
+                        s.imported.type === "Identifier" &&
+                        s.imported.name === "FileLogger",
+                ),
+            )
+            .size() > 0
+
+    if (!importsFileLogger) return undefined
 
     const message =
         "`FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder"

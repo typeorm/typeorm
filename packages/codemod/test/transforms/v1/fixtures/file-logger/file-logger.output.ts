@@ -47,3 +47,7 @@ const logger10 = new FileLogger("all", { logPath: "\\\\server\\share\\x.log" })
 // Case 11: two FileLoggers in the same statement — should get ONE TODO, not two
 // TODO(typeorm-v1): `FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder
 const loggers = [new FileLogger("all"), new FileLogger("query")]
+
+// Case 12: dynamic options variable — user knows what they're doing, should NOT get TODO
+const opts = { logPath: "logs/orm.log" }
+const logger12 = new FileLogger("all", opts)
