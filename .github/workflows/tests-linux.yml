@@ -295,3 +295,35 @@ jobs:
         with:
           flag-name: sap-node:${{ inputs.node-version }}
           parallel: true
+
+  spanner:
+    runs-on: ubuntu-latest
+    services:
+      spanner:
+        image: roryq/spanner-emulator:latest
+        ports:
+          - "9010:9010"
+          - "9020:9020"
+        env:
+          SPANNER_PROJECT_ID: typeorm
+          SPANNER_INSTANCE_ID: typeorm
+          SPANNER_DATABASE_ID: typeorm
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node
+        with:
+          node-version: ${{ inputs.node-version }}
+          download-build: true
+
+      - run: jq 'map(select(.type == "spanner"))' ormconfig.sample.json > ormconfig.json
+
+      - name: healthcheck
+        run: |
+          timeout 30 bash -c 'until curl -sf http://localhost:9020/v1/projects/typeorm/instances/typeorm/databases/typeorm > /dev/null; do sleep 1; done'
+
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - uses: coverallsapp/github-action@v2
+        with:
+          flag-name: spanner-node:${{ inputs.node-version }}
+          parallel: true

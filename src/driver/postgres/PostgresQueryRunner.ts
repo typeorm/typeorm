@@ -4086,7 +4086,7 @@ export class PostgresQueryRunner
 
                                 const defaultWithoutQuotes = dbColumn[
                                     "column_default"
-                                ].replace(/"/g, "")
+                                ].replaceAll('"', "")
 
                                 if (
                                     defaultWithoutQuotes ===
@@ -4120,7 +4120,7 @@ export class PostgresQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/::[\w\s.[\]\-"]+/g, "")
+                                    ].replaceAll(/::[\w\s.[\]\-"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?\d+)$/,
@@ -4245,7 +4245,7 @@ export class PostgresQueryRunner
                     (constraint) => {
                         return new TableExclusion({
                             name: constraint["constraint_name"],
-                            expression: constraint["expression"].substring(8), // trim EXCLUDE from start of expression
+                            expression: constraint["expression"].slice(8), // trim EXCLUDE from start of expression
                         })
                     },
                 )
@@ -5006,7 +5006,7 @@ export class PostgresQueryRunner
 
         if (seqName.length > this.dataSource.driver.maxAliasLength!) {
             // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
-            seqName = `${tableName.substring(0, 29)}_${columnName.substring(
+            seqName = `${tableName.slice(0, 29)}_${columnName.slice(
                 0,
                 Math.max(29, 63 - table.name.length - 5),
             )}_seq`
@@ -5070,8 +5070,8 @@ export class PostgresQueryRunner
         // ----
         // so, we must remove this underscore character from enum type name
         let udtName = result[0]["udt_name"]
-        if (udtName.indexOf("_") === 0) {
-            udtName = udtName.substring(1, udtName.length)
+        if (udtName.startsWith("_")) {
+            udtName = udtName.slice(1)
         }
         return {
             schema: result[0]["udt_schema"],
@@ -5089,7 +5089,7 @@ export class PostgresQueryRunner
             return "NULL"
         }
 
-        comment = comment.replace(/'/g, "''").replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("'", "''").replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return `'${comment}'`
     }

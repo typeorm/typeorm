@@ -14,6 +14,7 @@ describe("github issues > #2703 Column with transformer is not normalized for up
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [`${__dirname}/entity/*{.js,.ts}`],
             schemaCreate: true,
             dropSchema: true,

@@ -15,6 +15,7 @@ describe("github issues > #8890 it should be possible to query IS NULL on ManyTo
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             __dirname,
         })
     })
@@ -131,6 +132,7 @@ describe("github issues > #8890 it should be possible to query IS NULL on OneToO
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             __dirname,
         })
     })

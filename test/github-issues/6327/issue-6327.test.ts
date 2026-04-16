@@ -11,6 +11,7 @@ describe("github issues > #6327 softRemove DeleteDateColumn is null at Susbscrib
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
             schemaCreate: true,

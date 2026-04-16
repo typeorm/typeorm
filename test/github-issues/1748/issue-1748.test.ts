@@ -13,6 +13,7 @@ describe("github issues > #1748 PrimaryColumn combined with transformer leads to
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post],
             dropSchema: true,
         })

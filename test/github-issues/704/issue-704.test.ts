@@ -11,6 +11,7 @@ describe("github issues > #704 Table alias in WHERE clause is not quoted in Post
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

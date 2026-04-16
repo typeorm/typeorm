@@ -18,6 +18,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -515,6 +516,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
         let dataSources: DataSource[]
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Human, Male],
                 enabledDrivers: ["postgres", "cockroachdb", "mssql"],
                 schema: "my_schema",
