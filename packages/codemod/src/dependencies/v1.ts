@@ -30,6 +30,12 @@ export const config: DependencyConfig = {
 
     warnings: {
         dotenv: "`dotenv` detected — TypeORM no longer auto-loads `.env` files. Make sure your database configuration is defined explicitly using `DataSource`.",
+        "@nestjs/typeorm":
+            "`@nestjs/typeorm` detected — make sure to update to a version compatible with TypeORM 1.0. Check https://github.com/nestjs/typeorm/releases for compatibility information.",
+        "typeorm-naming-strategies":
+            "`typeorm-naming-strategies` detected — verify compatibility with TypeORM 1.0 before upgrading. The package uses `NamingStrategyInterface`, which is stable, but has not been tested against 1.0.",
+        "typeorm-seeding":
+            "`typeorm-seeding` detected — this package uses the removed `Connection` API and is not compatible with TypeORM 1.0. Migrate to a maintained alternative or inline seeding via `DataSource.runMigrations()` / custom scripts.",
     },
 
     minNodeVersion: "20.0.0",

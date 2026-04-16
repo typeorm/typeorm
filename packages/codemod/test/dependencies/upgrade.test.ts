@@ -140,6 +140,40 @@ describe("upgrade-dependencies", () => {
         expect(report.warnings[0]).to.include("dotenv")
     })
 
+    it("should warn about @nestjs/typeorm compatibility", () => {
+        const file = writePackageJson({
+            dependencies: { "@nestjs/typeorm": "^11.0.0" },
+        })
+
+        const report = upgradeDependencies(file, false, config)
+
+        expect(report.warnings).to.have.length(1)
+        expect(report.warnings[0]).to.include("@nestjs/typeorm")
+        expect(report.warnings[0]).to.include("TypeORM 1.0")
+    })
+
+    it("should warn about typeorm-seeding incompatibility", () => {
+        const file = writePackageJson({
+            dependencies: { "typeorm-seeding": "^1.6.0" },
+        })
+
+        const report = upgradeDependencies(file, false, config)
+
+        expect(report.warnings).to.have.length(1)
+        expect(report.warnings[0]).to.include("typeorm-seeding")
+    })
+
+    it("should warn about typeorm-naming-strategies compatibility", () => {
+        const file = writePackageJson({
+            dependencies: { "typeorm-naming-strategies": "^4.0.0" },
+        })
+
+        const report = upgradeDependencies(file, false, config)
+
+        expect(report.warnings).to.have.length(1)
+        expect(report.warnings[0]).to.include("typeorm-naming-strategies")
+    })
+
     it("should not modify file in dry mode", () => {
         const file = writePackageJson({
             dependencies: { sqlite3: "^5.1.0" },
