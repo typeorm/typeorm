@@ -41,7 +41,13 @@ const inspectOptionsArg = (
         return { hasOption: true, isAbsolute: true }
     }
 
+    let hasSpread = false
+
     for (const prop of (argNode as ObjectExpression).properties) {
+        if (prop.type === "SpreadElement") {
+            hasSpread = true
+            continue
+        }
         if (prop.type !== "ObjectProperty") continue
 
         const keyName =
@@ -70,6 +76,10 @@ const inspectOptionsArg = (
         return { hasOption: true, isAbsolute: true }
     }
 
+    // No explicit logPath property found — if the object spreads another
+    // value we cannot know what it contributes, so leave it alone
+    if (hasSpread) return { hasOption: true, isAbsolute: true }
+
     return { hasOption: false, isAbsolute: false }
 }
 
@@ -84,68 +94,79 @@ export const fileLogger = (file: FileInfo, api: API) => {
         return undefined
     }
 
-    const importsFileLogger =
-        root
-            .find(j.ImportDeclaration, {
-                source: { value: "typeorm" },
-            })
-            .filter((p) =>
-                (p.node.specifiers ?? []).some(
-                    (s) =>
-                        s.type === "ImportSpecifier" &&
-                        s.imported.type === "Identifier" &&
-                        s.imported.name === "FileLogger",
-                ),
-            )
-            .size() > 0
+    // Collect every local name bound to the `FileLogger` export from typeorm.
+    // This includes aliased imports like `import { FileLogger as FL } from "typeorm"`.
+    const localNames = new Set<string>()
+    root.find(j.ImportDeclaration, {
+        source: { value: "typeorm" },
+    }).forEach((p) => {
+        for (const s of p.node.specifiers ?? []) {
+            if (
+                s.type === "ImportSpecifier" &&
+                s.imported.type === "Identifier" &&
+                s.imported.name === "FileLogger"
+            ) {
+                const local = s.local?.name
+                localNames.add(
+                    typeof local === "string" ? local : s.imported.name,
+                )
+            }
+        }
+    })
 
-    if (!importsFileLogger) return undefined
+    if (localNames.size === 0) return undefined
 
     const message =
         "`FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder"
 
-    root.find(j.NewExpression, {
-        callee: { type: "Identifier", name: "FileLogger" },
-    }).forEach((path) => {
-        const optionsArg = path.node.arguments[1]
-        const { hasOption, isAbsolute } = inspectOptionsArg(
-            optionsArg as Node | undefined,
-        )
+    root.find(j.NewExpression)
+        .filter((p) => {
+            const callee = p.node.callee
+            return (
+                callee.type === "Identifier" &&
+                localNames.has((callee as { name: string }).name)
+            )
+        })
+        .forEach((astPath) => {
+            const optionsArg = astPath.node.arguments[1]
+            const { hasOption, isAbsolute } = inspectOptionsArg(
+                optionsArg as Node | undefined,
+            )
 
-        // Skip if user explicitly provided an absolute logPath
-        if (hasOption && isAbsolute) return
+            // Skip if user explicitly provided an absolute logPath
+            if (hasOption && isAbsolute) return
 
-        // Walk up to find the enclosing statement for the TODO comment
-        let current = path.parent
-        while (current) {
-            const node: Node = current.node
-            if (
-                node.type === "ExpressionStatement" ||
-                node.type === "VariableDeclaration" ||
-                node.type === "ReturnStatement" ||
-                node.type === "ExportDefaultDeclaration" ||
-                node.type === "ExportNamedDeclaration" ||
-                node.type === "ClassProperty" ||
-                node.type === "PropertyDefinition"
-            ) {
-                // Avoid duplicate TODOs when multiple FileLoggers share a statement
-                const todoLine = ` TODO(typeorm-v1): ${message}`
-                const nodeWithComments = node as Node & {
-                    comments?: { value: string }[]
+            // Walk up to find the enclosing statement for the TODO comment
+            let current = astPath.parent
+            while (current) {
+                const node: Node = current.node
+                if (
+                    node.type === "ExpressionStatement" ||
+                    node.type === "VariableDeclaration" ||
+                    node.type === "ReturnStatement" ||
+                    node.type === "ExportDefaultDeclaration" ||
+                    node.type === "ExportNamedDeclaration" ||
+                    node.type === "ClassProperty" ||
+                    node.type === "PropertyDefinition"
+                ) {
+                    // Avoid duplicate TODOs when multiple FileLoggers share a statement
+                    const todoLine = ` TODO(typeorm-v1): ${message}`
+                    const nodeWithComments = node as Node & {
+                        comments?: { value: string }[]
+                    }
+                    const hasSameComment = nodeWithComments.comments?.some(
+                        (c) => c.value === todoLine,
+                    )
+                    if (!hasSameComment) {
+                        addTodoComment(node, message, j)
+                        hasChanges = true
+                        hasTodos = true
+                    }
+                    break
                 }
-                const hasSameComment = nodeWithComments.comments?.some(
-                    (c) => c.value === todoLine,
-                )
-                if (!hasSameComment) {
-                    addTodoComment(node, message, j)
-                    hasChanges = true
-                    hasTodos = true
-                }
-                break
+                current = current.parent
             }
-            current = current.parent
-        }
-    })
+        })
 
     if (hasTodos) stats.count.todo(api, name, file)
 

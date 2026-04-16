@@ -59,3 +59,11 @@ const logger13 = new FileLogger("all", undefined)
 // Case 14: explicit `null` options — same as omitting, should get TODO
 // TODO(typeorm-v1): `FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder
 const logger14 = new FileLogger("all", null)
+
+// Case 15: spread with explicit logPath override — should get TODO (logPath is a relative literal)
+const extra = { level: "info" }
+// TODO(typeorm-v1): `FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder
+const logger15 = new FileLogger("all", { ...extra, logPath: "logs/orm.log" })
+
+// Case 16: spread only — opts may contain an absolute logPath, should NOT get TODO
+const logger16 = new FileLogger("all", { ...extra })

@@ -50,3 +50,10 @@ const logger13 = new FileLogger("all", undefined)
 
 // Case 14: explicit `null` options — same as omitting, should get TODO
 const logger14 = new FileLogger("all", null)
+
+// Case 15: spread with explicit logPath override — should get TODO (logPath is a relative literal)
+const extra = { level: "info" }
+const logger15 = new FileLogger("all", { ...extra, logPath: "logs/orm.log" })
+
+// Case 16: spread only — opts may contain an absolute logPath, should NOT get TODO
+const logger16 = new FileLogger("all", { ...extra })
