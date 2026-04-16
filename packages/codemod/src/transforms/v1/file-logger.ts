@@ -20,6 +20,21 @@ const inspectOptionsArg = (
         return { hasOption: false, isAbsolute: false }
     }
 
+    // Explicit `undefined` / `null` — same as omitting options, flag
+    const typedArg = argNode as unknown as {
+        type: string
+        name?: string
+        value?: unknown
+    }
+    const isExplicitUndefined =
+        typedArg.type === "Identifier" && typedArg.name === "undefined"
+    const isNullLiteral =
+        typedArg.type === "NullLiteral" ||
+        (typedArg.type === "Literal" && typedArg.value === null)
+    if (isExplicitUndefined || isNullLiteral) {
+        return { hasOption: false, isAbsolute: false }
+    }
+
     // Dynamic options (variable, function call, etc.) — assume the user knows
     // what they're doing and don't flag it
     if (argNode.type !== "ObjectExpression") {

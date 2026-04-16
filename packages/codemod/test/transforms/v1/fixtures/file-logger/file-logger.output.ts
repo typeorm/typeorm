@@ -51,3 +51,11 @@ const loggers = [new FileLogger("all"), new FileLogger("query")]
 // Case 12: dynamic options variable — user knows what they're doing, should NOT get TODO
 const opts = { logPath: "logs/orm.log" }
 const logger12 = new FileLogger("all", opts)
+
+// Case 13: explicit `undefined` options — same as omitting, should get TODO
+// TODO(typeorm-v1): `FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder
+const logger13 = new FileLogger("all", undefined)
+
+// Case 14: explicit `null` options — same as omitting, should get TODO
+// TODO(typeorm-v1): `FileLogger` now resolves `logPath` from `process.cwd()` instead of the app root — use an absolute path if the app is not started from its root folder
+const logger14 = new FileLogger("all", null)
