@@ -3,6 +3,7 @@ import * as columnUnsignedNumeric from "./column-unsigned-numeric"
 import * as columnWidthZerofill from "./column-width-zerofill"
 import * as connectionOptionsReader from "./connection-options-reader"
 import * as connectionToDataSource from "./connection-to-datasource"
+import * as datasourceExpo from "./datasource-expo"
 import * as datasourceMongodb from "./datasource-mongodb"
 import * as datasourceMssql from "./datasource-mssql"
 import * as datasourceMysqlConnector from "./datasource-mysql-connector"
@@ -75,6 +76,7 @@ export const transforms = [
     findOptionsStringRelations,
     fileLogger,
     connectionOptionsReader,
+    datasourceExpo,
 ]
 
 export default transformer(transforms)
