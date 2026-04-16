@@ -188,4 +188,4 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 - **PostgreSQL / CockroachDB: batched DROP in `clearDatabase()`** — consolidates individual DROP statements into single batched queries, significantly reducing round-trips during test setup ([#12164](https://github.com/typeorm/typeorm/pull/12164), [#12159](https://github.com/typeorm/typeorm/pull/12159) by [@pkuczynski](https://github.com/pkuczynski))
 
-<!-- Built against 44c3bab5b -->
+<!-- Built against e085e4c67 -->
