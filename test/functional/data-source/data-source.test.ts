@@ -203,7 +203,7 @@ describe("DataSource", () => {
         })
         after(() => closeTestingConnections(dataSources))
 
-        it("database should be empty after schema is synced with dropDatabase flag", () =>
+        it("database should be empty after schema is synced with dropBeforeSync flag", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const postRepository = dataSource.getRepository(Post)

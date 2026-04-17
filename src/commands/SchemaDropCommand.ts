@@ -37,7 +37,7 @@ export class SchemaDropCommand implements yargs.CommandModule {
                 logging: ["query", "schema"],
             })
             await dataSource.initialize()
-            await dataSource.dropDatabase()
+            await dataSource.dropAllEntityTables()
             await dataSource.destroy()
 
             console.log(

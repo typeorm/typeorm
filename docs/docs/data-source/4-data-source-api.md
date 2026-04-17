@@ -57,12 +57,13 @@ await dataSource.destroy()
 await dataSource.synchronize()
 ```
 
-- `dropDatabase` - Drops the database and all its data.
+- `dropAllEntityTables` - Drops every table managed by this DataSource along with its data.
+  Despite the previous name (`dropDatabase`), this does not drop the database itself on most drivers — it clears all entity tables.
   Be careful with this method on production since this method will erase all your database tables and their data.
   Can be used only after connection to the database is established.
 
 ```typescript
-await dataSource.dropDatabase()
+await dataSource.dropAllEntityTables()
 ```
 
 - `runMigrations` - Runs all pending migrations.

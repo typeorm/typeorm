@@ -260,7 +260,7 @@ export class DataSource {
             await this.driver.afterConnect()
 
             // if option is set - drop schema once connection is done
-            if (this.options.dropSchema) await this.dropDatabase()
+            if (this.options.dropSchema) await this.dropAllEntityTables()
 
             // if option is set - automatically synchronize a schema
             if (this.options.migrationsRun)
@@ -304,19 +304,21 @@ export class DataSource {
     async synchronize(dropBeforeSync: boolean = false): Promise<void> {
         if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
-        if (dropBeforeSync) await this.dropDatabase()
+        if (dropBeforeSync) await this.dropAllEntityTables()
 
         const schemaBuilder = this.driver.createSchemaBuilder()
         await schemaBuilder.build()
     }
 
     /**
-     * Drops the database and all its data.
-     * Be careful with this method on production since this method will erase all your database tables and their data.
+     * Drops every table managed by this DataSource along with its data.
+     * Despite the previous name (`dropDatabase`), this does not drop the database
+     * itself on most drivers — it clears all entity tables.
+     * Be careful with this method on production since this method will erase
+     * all your database tables and their data.
      * Can be used only after connection to the database is established.
      */
-    // TODO rename
-    async dropDatabase(): Promise<void> {
+    async dropAllEntityTables(): Promise<void> {
         const queryRunner = this.createQueryRunner()
         try {
             if (
