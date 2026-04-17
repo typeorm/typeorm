@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import jscodeshift, { type ASTNode } from "jscodeshift"
 import {
+    fileImportsFrom,
     getStringValue,
     setStringValue,
 } from "../../src/transforms/ast-helpers"
@@ -42,6 +43,57 @@ describe("ast-helpers", () => {
             const root = j("const x = 42")
             const literal: ASTNode = root.find(j.NumericLiteral).get().node
             expect(() => setStringValue(literal, "test")).to.not.throw()
+        })
+    })
+
+    describe("fileImportsFrom", () => {
+        it("matches ESM import from the exact module", () => {
+            const root = j('import { DataSource } from "typeorm"')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("matches ESM import from a sub-path", () => {
+            const root = j(
+                'import type { SapConnectionOptions } from "typeorm/driver/sap/SapConnectionOptions"',
+            )
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("matches ESM side-effect import", () => {
+            const root = j('import "typeorm"')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("matches CommonJS `require(...)`", () => {
+            const root = j('const { DataSource } = require("typeorm")')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("matches CommonJS `require(...)` from a sub-path", () => {
+            const root = j(
+                'const { SapConnectionOptions } = require("typeorm/driver/sap/SapConnectionOptions")',
+            )
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("matches TypeScript `import ... = require(...)`", () => {
+            const root = j('import typeorm = require("typeorm")')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("does not match a module whose name shares a prefix", () => {
+            const root = j('import { foo } from "typeorm-extension"')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.false
+        })
+
+        it("does not match files with no import", () => {
+            const root = j('const x = "typeorm"')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.false
+        })
+
+        it("does not match require calls for other modules", () => {
+            const root = j('const fs = require("node:fs")')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.false
         })
     })
 })
