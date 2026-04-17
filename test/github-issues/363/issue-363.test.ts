@@ -13,6 +13,7 @@ describe("github issues > #363 Can't save 2 unrelated entity types in a single p
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

@@ -14,6 +14,7 @@ describe("other issues > getId should not return undefined for composite primary
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

@@ -13,6 +13,7 @@ describe("github issues > #3349 Multiple where conditions with parameters", () =
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

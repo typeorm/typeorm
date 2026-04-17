@@ -414,7 +414,7 @@ export class SqlServerDriver implements Driver {
             return [sql, escapedParameters]
 
         const parameterIndexMap = new Map<string, number>()
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {

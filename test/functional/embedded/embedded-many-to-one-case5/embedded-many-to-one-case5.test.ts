@@ -15,6 +15,7 @@ describe("embedded > embedded-many-to-one-case5", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

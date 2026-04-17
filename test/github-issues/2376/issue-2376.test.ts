@@ -12,6 +12,7 @@ describe("github issues > #2376 Naming single column unique constraint with deco
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             schemaCreate: true,
             dropSchema: true,
             entities: [User],

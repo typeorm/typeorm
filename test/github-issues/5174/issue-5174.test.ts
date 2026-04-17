@@ -14,6 +14,7 @@ describe("github issues > #5174 `selectQueryBuilder.take` messes up the query wh
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User, Role],
             schemaCreate: true,
             dropSchema: true,

@@ -16,6 +16,7 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post],
         })
     })
