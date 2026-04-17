@@ -75,15 +75,15 @@ export const findOptionsLockModes = (file: FileInfo, api: API) => {
         if (astPath.parent.node.type !== "ObjectExpression") return
         const lockObj: ObjectExpression = astPath.parent.node
 
-        const grandparent = astPath.parent.parent.node
+        const grandparent: Property | ObjectProperty | ASTNode =
+            astPath.parent.parent.node
         if (
             grandparent.type !== "Property" &&
             grandparent.type !== "ObjectProperty"
         ) {
             return
         }
-        const gpKey = (grandparent as Property | ObjectProperty).key
-        if (keyNameOf(gpKey) !== "lock") return
+        if (keyNameOf(grandparent.key) !== "lock") return
 
         const replacement = lockModeMap[value]
 

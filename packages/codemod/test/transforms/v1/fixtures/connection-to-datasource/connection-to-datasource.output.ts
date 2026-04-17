@@ -18,6 +18,15 @@ function migrate(queryRunner: QueryRunner) {
 const runner: QueryRunner = getRunner()
 const ds2 = runner.dataSource
 
+// Accessor-chain tracking: untyped vars assigned from `dataSource.X`
+// should inherit TypeORM's typed-variable tracking.
+const manager = connection.manager
+const mgrDs = manager.dataSource
+const repo = connection.getRepository(User)
+const repoDs = repo.dataSource
+const qr = connection.createQueryRunner()
+const qrDs = qr.dataSource
+
 // Metadata types also had `.connection` renamed to `.dataSource` (#12249)
 function useEntityMetadata(meta: EntityMetadata) {
     return meta.dataSource.getRepository(meta.target)
@@ -25,6 +34,20 @@ function useEntityMetadata(meta: EntityMetadata) {
 
 function useColumnMetadata(col: ColumnMetadata) {
     return col.dataSource.driver
+}
+
+// DataSource-typed parameter should also be tracked as a DataSource instance
+function reinitialize(ds: DataSource) {
+    if (ds.isInitialized) return
+    return ds.initialize()
+}
+
+// TypeScript expression wrappers must unwrap to the underlying identifier
+async function bounce(ds: DataSource) {
+    await (ds as DataSource).initialize()
+    await ds!.destroy()
+    const runner = (ds as DataSource).createQueryRunner()
+    return runner.dataSource
 }
 
 // Should NOT be transformed — not TypeORM typed
