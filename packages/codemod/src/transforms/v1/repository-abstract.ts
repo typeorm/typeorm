@@ -1,7 +1,7 @@
 import path from "node:path"
 import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -9,11 +9,27 @@ export const description =
     "flag removed `@EntityRepository` and `AbstractRepository` for manual migration"
 export const manual = true
 
+const entityRepositoryMessage =
+    "`@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`"
+const abstractRepositoryMessage =
+    "`AbstractRepository` was removed — use a custom service class with `dataSource.getRepository()`"
+const getCustomRepositoryMessage =
+    "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"
+
 export const repositoryAbstract = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
     let hasChanges = false
     let hasTodos = false
+
+    const annotate = (
+        node: Parameters<typeof addTodoComment>[0],
+        message: string,
+    ) => {
+        if (hasTodoComment(node, message)) return
+        addTodoComment(node, message, j)
+        hasTodos = true
+    }
 
     // Find @EntityRepository decorators and add TODO
     root.find(j.Decorator, {
@@ -22,13 +38,8 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
             callee: { type: "Identifier", name: "EntityRepository" },
         },
     }).forEach((path) => {
-        addTodoComment(
-            path.node,
-            "`@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`",
-            j,
-        )
+        annotate(path.node, entityRepositoryMessage)
         hasChanges = true
-        hasTodos = true
     })
 
     // Find classes extending AbstractRepository and add TODO
@@ -48,27 +59,17 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
 
         if (name !== "AbstractRepository") return
 
-        addTodoComment(
-            path.node,
-            "`AbstractRepository` was removed — use a custom service class with `dataSource.getRepository()`",
-            j,
-        )
+        annotate(path.node, abstractRepositoryMessage)
         hasChanges = true
-        hasTodos = true
     })
 
     // Find getCustomRepository() calls and add TODO
     const addGetCustomRepoTodo = (path: ASTPath) => {
-        const message =
-            "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"
         const parentNode: Node = path.parent.node
-        if (parentNode.type === "ExpressionStatement") {
-            addTodoComment(parentNode, message, j)
-        } else {
-            addTodoComment(path.node, message, j)
-        }
+        const target =
+            parentNode.type === "ExpressionStatement" ? parentNode : path.node
+        annotate(target, getCustomRepositoryMessage)
         hasChanges = true
-        hasTodos = true
     }
 
     root.find(j.CallExpression, {

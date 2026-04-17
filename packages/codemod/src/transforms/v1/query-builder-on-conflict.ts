@@ -1,7 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
 import { fileImportsFrom, getStringValue } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -39,13 +39,15 @@ export const queryBuilderOnConflict = (file: FileInfo, api: API) => {
             const message =
                 "`onConflict()` was removed — use `orIgnore()` or `orUpdate()` instead"
             const parentNode: Node = path.parent.node
-            if (parentNode.type === "ExpressionStatement") {
-                addTodoComment(parentNode, message, j)
-            } else {
-                addTodoComment(path.node, message, j)
+            const target =
+                parentNode.type === "ExpressionStatement"
+                    ? parentNode
+                    : path.node
+            if (!hasTodoComment(target, message)) {
+                addTodoComment(target, message, j)
+                hasTodos = true
             }
             hasChanges = true
-            hasTodos = true
         }
     })
 

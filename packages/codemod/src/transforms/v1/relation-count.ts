@@ -1,7 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -15,6 +15,9 @@ export const relationCount = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
+    const message =
+        "`@RelationCount` was removed — use `QueryBuilder` with `loadRelationCountAndMap()` instead"
+
     // Find @RelationCount decorators and add TODO
     root.find(j.Decorator, {
         expression: {
@@ -22,13 +25,11 @@ export const relationCount = (file: FileInfo, api: API) => {
             callee: { type: "Identifier", name: "RelationCount" },
         },
     }).forEach((path) => {
-        addTodoComment(
-            path.node,
-            "`@RelationCount` was removed — use `QueryBuilder` with `loadRelationCountAndMap()` instead",
-            j,
-        )
+        if (!hasTodoComment(path.node, message)) {
+            addTodoComment(path.node, message, j)
+            hasTodos = true
+        }
         hasChanges = true
-        hasTodos = true
     })
 
     // Remove RelationCount import from typeorm

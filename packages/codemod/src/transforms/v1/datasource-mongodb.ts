@@ -1,7 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { fileImportsFrom } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -82,25 +82,24 @@ export const datasourceMongodb = (file: FileInfo, api: API) => {
                 path.node.key.value = "tlsAllowInvalidCertificates"
             }
             // Add TODO comment about inverted boolean
-            addTodoComment(
-                path.node,
-                "`sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value.",
-                j,
-            )
+            const message =
+                "`sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value."
+            if (!hasTodoComment(path.node, message)) {
+                addTodoComment(path.node, message, j)
+                hasTodos = true
+            }
             hasChanges = true
-            hasTodos = true
             return
         }
 
         // writeConcern-related props → add TODO
         if (writeConcernProps.has(name)) {
-            addTodoComment(
-                path.node,
-                `\`${name}\` was removed — migrate to \`writeConcern: { ... }\``,
-                j,
-            )
+            const message = `\`${name}\` was removed — migrate to \`writeConcern: { ... }\``
+            if (!hasTodoComment(path.node, message)) {
+                addTodoComment(path.node, message, j)
+                hasTodos = true
+            }
             hasChanges = true
-            hasTodos = true
         }
     })
 

@@ -1,8 +1,16 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
+
+const todoAttachmentTypes = new Set([
+    "ExpressionStatement",
+    "VariableDeclaration",
+    "ReturnStatement",
+    "ClassProperty",
+    "ExportDefaultDeclaration",
+])
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -92,21 +100,17 @@ export const globalFunctions = (file: FileInfo, api: API) => {
 
     // Add a TODO comment on the first dataSource usage
     if (hasChanges) {
+        const message =
+            "`dataSource` is not defined — inject or import your DataSource instance"
         const firstUsage = root.find(j.Identifier, { name: "dataSource" })
         if (firstUsage.length > 0) {
             let current = firstUsage.paths()[0]
             while (current.parent) {
                 const node: Node = current.parent.node
-                if (
-                    node.type === "ExpressionStatement" ||
-                    node.type === "VariableDeclaration" ||
-                    node.type === "ReturnStatement"
-                ) {
-                    addTodoComment(
-                        node,
-                        "`dataSource` is not defined — inject or import your DataSource instance",
-                        j,
-                    )
+                if (todoAttachmentTypes.has(node.type)) {
+                    if (!hasTodoComment(node, message)) {
+                        addTodoComment(node, message, j)
+                    }
                     break
                 }
                 current = current.parent

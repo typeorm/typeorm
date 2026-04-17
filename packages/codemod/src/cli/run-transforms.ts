@@ -4,13 +4,20 @@ import { createSpinner } from "../lib/spinner"
 import { formatTime } from "../lib/format-time"
 import { stats } from "../transforms/stats"
 
+export interface TransformError {
+    file: string
+    message: string
+    /** Full stack trace captured from jscodeshift output, if any. */
+    stack?: string
+}
+
 export interface TransformResult {
     ok: number
     error: number
     skip: number
     nochange: number
     timeElapsed: number
-    parseErrors: { file: string; message: string }[]
+    parseErrors: TransformError[]
     todos: Map<string, string[]>
     applied: Map<string, number>
 }
@@ -34,7 +41,7 @@ export const runTransforms = async (
     const { transforms, paths, dry, workers, ignore } = options
     const allTodos = new Map<string, string[]>()
     const allApplied = new Map<string, number>()
-    const allParseErrors: { file: string; message: string }[] = []
+    const allParseErrors: TransformError[] = []
     let totalOk = 0
     let totalError = 0
     let totalSkip = 0
@@ -58,8 +65,20 @@ export const runTransforms = async (
             return text
         }
 
-        // Intercept stdout to capture jscodeshift progress
-        const parseErrors: { file: string; message: string }[] = []
+        // Intercept stdout to capture jscodeshift progress and transform
+        // errors. Stack-trace lines follow each ERR line and don't match the
+        // status pattern; attach them to the most recent error so users see
+        // why a transform threw instead of just a one-line summary.
+        const parseErrors: TransformError[] = []
+        let activeError: TransformError | undefined
+        const stackBuffer: string[] = []
+        const flushStack = () => {
+            if (activeError && stackBuffer.length > 0) {
+                activeError.stack = stackBuffer.join("").trimEnd()
+            }
+            activeError = undefined
+            stackBuffer.length = 0
+        }
         const originalWrite = process.stdout.write.bind(process.stdout)
         process.stdout.write = ((chunk: string | Uint8Array) => {
             const str = typeof chunk === "string" ? chunk : chunk.toString()
@@ -75,23 +94,28 @@ export const runTransforms = async (
 
             // Track per-file completion and collect errors
             if (str.includes(" ERR ")) {
+                flushStack()
                 processed++
                 const errMatch =
                     / ERR (.+?) Transformation error \((.+)\)/.exec(str)
                 if (errMatch) {
-                    parseErrors.push({
+                    activeError = {
                         file: errMatch[1],
                         message: errMatch[2],
-                    })
+                    }
+                    parseErrors.push(activeError)
                 }
             } else if (
                 str.includes(" OKK ") ||
                 str.includes(" NOC ") ||
                 str.includes(" SKIP ")
             ) {
+                flushStack()
                 processed++
             } else {
-                // Suppress other jscodeshift output (including stack traces)
+                // Suppress other jscodeshift output, but keep stack-trace
+                // lines that follow an ERR so we can surface them later.
+                if (activeError) stackBuffer.push(str)
                 return false
             }
 
@@ -118,6 +142,7 @@ export const runTransforms = async (
             )
             throw err
         } finally {
+            flushStack()
             process.stdout.write = originalWrite
         }
 

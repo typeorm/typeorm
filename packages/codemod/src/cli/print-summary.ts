@@ -3,13 +3,19 @@ import { formatTime } from "../lib/format-time"
 import { highlight } from "../lib/highlight"
 import { printTodos } from "./print-todos"
 
+export interface SummaryError {
+    file: string
+    message: string
+    stack?: string
+}
+
 export interface SummaryData {
     ok: number
     error: number
     skip: number
     nochange: number
     timeElapsed: number
-    parseErrors: { file: string; message: string }[]
+    parseErrors: SummaryError[]
     todos: Map<string, string[]>
     applied: Map<string, number>
     depChanges: string[]
@@ -38,13 +44,16 @@ const printApplied = (applied: Map<string, number>): void => {
     }
 }
 
-const printParseErrors = (
-    parseErrors: { file: string; message: string }[],
-): void => {
+const printParseErrors = (parseErrors: SummaryError[]): void => {
     console.log(`\n  ${colors.red("Parse errors:")}`)
     const sorted = [...parseErrors].sort((a, b) => a.file.localeCompare(b.file))
-    for (const { file, message } of sorted) {
+    for (const { file, message, stack } of sorted) {
         console.log(`    ${colors.dim(file)} ${message}`)
+        if (stack) {
+            for (const line of stack.split("\n")) {
+                console.log(`      ${colors.dim(line)}`)
+            }
+        }
     }
 }
 

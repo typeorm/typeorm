@@ -1,7 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { fileImportsFrom } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -38,19 +38,19 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
         if (!isMssql) return
 
         // Flag removed `domain` option with TODO
+        const domainMessage =
+            '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`'
         for (const prop of props) {
             if (
                 prop.type === "ObjectProperty" &&
                 prop.key.type === "Identifier" &&
                 prop.key.name === "domain"
             ) {
-                addTodoComment(
-                    prop,
-                    '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`',
-                    j,
-                )
+                if (!hasTodoComment(prop, domainMessage)) {
+                    addTodoComment(prop, domainMessage, j)
+                    hasTodos = true
+                }
                 hasChanges = true
-                hasTodos = true
             }
         }
 

@@ -1,13 +1,21 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
 import { fileImportsFrom } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "flag removed `printSql()` for manual migration to `getSql()` / `getQueryAndParameters()`"
 export const manual = true
+
+const todoAttachmentTypes = new Set([
+    "ExpressionStatement",
+    "VariableDeclaration",
+    "ReturnStatement",
+    "ClassProperty",
+    "ExportDefaultDeclaration",
+])
 
 export const queryBuilderPrintSql = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -27,22 +35,22 @@ export const queryBuilderPrintSql = (file: FileInfo, api: API) => {
             property: { name: "printSql" },
         },
     }).forEach((path) => {
-        // Walk up to find the enclosing ExpressionStatement
+        // Walk up to find the enclosing statement-like ancestor.
+        let target: Node = path.node
         let current = path.parent
         while (current) {
             const node: Node = current.node
-            if (node.type === "ExpressionStatement") {
-                addTodoComment(node, message, j)
-                break
-            }
-            if (node.type === "VariableDeclaration") {
-                addTodoComment(node, message, j)
+            if (todoAttachmentTypes.has(node.type)) {
+                target = node
                 break
             }
             current = current.parent
         }
+        if (!hasTodoComment(target, message)) {
+            addTodoComment(target, message, j)
+            hasTodos = true
+        }
         hasChanges = true
-        hasTodos = true
     })
 
     if (hasTodos) stats.count.todo(api, name, file)

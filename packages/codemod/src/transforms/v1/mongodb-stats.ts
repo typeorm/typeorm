@@ -1,7 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
 import { fileImportsFrom } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -27,20 +27,20 @@ export const mongodbStats = (file: FileInfo, api: API) => {
         },
     }).forEach((path) => {
         const parentNode: Node = path.parent.node
+        let target: Node = path.node
         if (parentNode.type === "ExpressionStatement") {
-            addTodoComment(parentNode, message, j)
+            target = parentNode
         } else if (parentNode.type === "AwaitExpression") {
             const grandparentNode: Node = path.parent.parent.node
             if (grandparentNode.type === "ExpressionStatement") {
-                addTodoComment(grandparentNode, message, j)
-            } else {
-                addTodoComment(path.node, message, j)
+                target = grandparentNode
             }
-        } else {
-            addTodoComment(path.node, message, j)
+        }
+        if (!hasTodoComment(target, message)) {
+            addTodoComment(target, message, j)
+            hasTodos = true
         }
         hasChanges = true
-        hasTodos = true
     })
 
     if (hasTodos) stats.count.todo(api, name, file)
