@@ -54,6 +54,10 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         "DeleteQueryBuilder",
         "SoftDeleteQueryBuilder",
         "RelationQueryBuilder",
+        // Metadata classes (renamed in #12249)
+        "EntityMetadata",
+        "ColumnMetadata",
+        "IndexMetadata",
     ])
 
     // Collect local names imported from "typeorm" that need renaming
