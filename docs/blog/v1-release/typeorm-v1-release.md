@@ -194,7 +194,7 @@ npx @typeorm/codemod v1 src/
 
 It handles the rename-heavy work automatically: imports, method names, find-option syntax, dependency pins. For most codebases it does about 80% of the upgrade.
 
-The codemod also knows about common ecosystem packages (NestJS among them) and bumps those for you when it sees them.
+The codemod also scans your `package.json` and bumps ecosystem packages to v1-compatible versions - `@nestjs/typeorm` to v11.0.1+, the database drivers (`mongodb`, `mysql2`, `better-sqlite3`, `redis`, `mssql`, `@google-cloud/spanner`), and a few others. For packages still pinned to removed APIs, it prints a warning so you know where to look.
 
 What it cannot do for you:
 
