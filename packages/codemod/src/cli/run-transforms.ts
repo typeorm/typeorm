@@ -23,6 +23,20 @@ export interface RunTransformsOptions {
     ignore?: string[]
 }
 
+// Patterns that should never be processed by any codemod transform.
+// Ambient declarations (`.d.ts`) describe types consumers rely on — renaming
+// identifiers inside them would silently corrupt published types.
+export const DEFAULT_IGNORE_PATTERNS = ["**/*.d.ts"]
+
+/**
+ * Merges user-supplied `--ignore` patterns with the defaults. Defaults are
+ * listed first so they apply alongside any user additions.
+ */
+export const buildIgnorePatterns = (userPatterns?: string[]): string[] => [
+    ...DEFAULT_IGNORE_PATTERNS,
+    ...(userPatterns ?? []),
+]
+
 export const runTransforms = async (
     options: RunTransformsOptions,
 ): Promise<TransformResult> => {
@@ -94,6 +108,8 @@ export const runTransforms = async (
             return true
         }) as typeof process.stdout.write
 
+        const ignorePattern = buildIgnorePatterns(ignore)
+
         let result: Awaited<ReturnType<typeof jscodeshift>>
         try {
             result = await jscodeshift(transform, paths, {
@@ -102,8 +118,8 @@ export const runTransforms = async (
                 verbose: 2,
                 extensions: "ts,tsx,js,jsx",
                 parser: "tsx",
+                ignorePattern,
                 ...(workers !== undefined && { cpus: workers }),
-                ...(ignore !== undefined && { ignorePattern: ignore }),
             })
         } catch (err) {
             spinner.stop(

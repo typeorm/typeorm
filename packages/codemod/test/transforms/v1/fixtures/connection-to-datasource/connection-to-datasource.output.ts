@@ -27,6 +27,15 @@ const repoDs = repo.dataSource
 const qr = connection.createQueryRunner()
 const qrDs = qr.dataSource
 
+// Metadata types also had `.connection` renamed to `.dataSource` (#12249)
+function useEntityMetadata(meta: EntityMetadata) {
+    return meta.dataSource.getRepository(meta.target)
+}
+
+function useColumnMetadata(col: ColumnMetadata) {
+    return col.dataSource.driver
+}
+
 // Should NOT be transformed — not TypeORM typed
 const ds3 = event.connection
 const ds4 = this.connection
