@@ -1059,3 +1059,4 @@ The following internal APIs have been removed. These only affect you if you were
 | `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                      |
 | `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers   |
 | `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`                 |
+| `RdbmsSchemaBuilder.renameTables()`            | Removed                                             |
