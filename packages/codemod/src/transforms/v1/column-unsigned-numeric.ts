@@ -1,6 +1,10 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { getStringValue, removeObjectProperties } from "../ast-helpers"
+import {
+    fileImportsFrom,
+    getStringValue,
+    removeObjectProperties,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -12,6 +16,9 @@ const propertyNames = new Set(["unsigned"])
 export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     // Find @Column("decimal", { unsigned: true }) style calls

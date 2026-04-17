@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { forEachDecoratorObjectArg } from "../ast-helpers"
+import { fileImportsFrom, forEachDecoratorObjectArg } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace `readonly` column option with `update`"
@@ -8,6 +8,9 @@ export const description = "replace `readonly` column option with `update`"
 export const columnReadonly = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     forEachDecoratorObjectArg(root, j, (obj) => {

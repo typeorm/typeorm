@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo, ObjectExpression } from "jscodeshift"
-import { getStringValue } from "../ast-helpers"
+import { fileImportsFrom, getStringValue } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace string-array `relations` with object syntax"
@@ -40,6 +40,9 @@ function convertRelationsArrayToObject(values: string[]): NestedObject {
 export const findOptionsStringRelations = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     // Find object properties named "relations" whose value is an array of strings

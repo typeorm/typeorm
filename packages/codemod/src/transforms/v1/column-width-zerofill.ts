@@ -1,6 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import {
+    fileImportsFrom,
     forEachDecoratorObjectArg,
     removeObjectProperties,
 } from "../ast-helpers"
@@ -14,6 +15,9 @@ const propsToRemove = new Set(["width", "zerofill"])
 export const columnWidthZerofill = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     forEachDecoratorObjectArg(root, j, (obj) => {
