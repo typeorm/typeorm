@@ -56,11 +56,19 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         "RelationQueryBuilder",
     ])
 
-    // Collect local names imported from "typeorm" that need renaming
+    // Collect local names imported from "typeorm" (including deep sub-paths
+    // like `typeorm/driver/sap/SapConnectionOptions`) that need renaming.
     const localRenames = new Map<string, string>()
-    root.find(j.ImportDeclaration, {
-        source: { value: "typeorm" },
-    }).forEach((path) => {
+    const typeormPathPrefix = "typeorm/"
+    root.find(j.ImportDeclaration).forEach((path) => {
+        const source = path.node.source.value
+        if (
+            typeof source !== "string" ||
+            (source !== "typeorm" && !source.startsWith(typeormPathPrefix))
+        ) {
+            return
+        }
+
         path.node.specifiers?.forEach((spec) => {
             if (
                 spec.type === "ImportSpecifier" &&
@@ -86,6 +94,22 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                 }
             }
         })
+
+        // Also rewrite deep-path module specifiers that embed a renamed
+        // symbol: `typeorm/driver/sap/SapConnectionOptions` →
+        // `typeorm/driver/sap/SapDataSourceOptions`.
+        if (source.startsWith(typeormPathPrefix)) {
+            for (const [oldName, newName] of Object.entries(typeRenames)) {
+                if (source.includes(oldName)) {
+                    const rewritten = source.split(oldName).join(newName)
+                    if (rewritten !== source) {
+                        path.node.source.value = rewritten
+                        hasChanges = true
+                    }
+                    break
+                }
+            }
+        }
     })
 
     // Rename only identifiers that were imported from "typeorm"

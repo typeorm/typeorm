@@ -1,8 +1,14 @@
 import { DataSource, DataSourceOptions, QueryRunner } from "typeorm"
+import type { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
 
 const options: DataSourceOptions = {
     type: "postgres",
     database: "test",
+}
+
+const sapOptions: SapDataSourceOptions = {
+    type: "sap",
+    database: "hana",
 }
 
 const connection = new DataSource(options)

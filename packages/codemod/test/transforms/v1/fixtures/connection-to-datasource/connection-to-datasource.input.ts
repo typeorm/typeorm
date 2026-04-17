@@ -1,8 +1,14 @@
 import { Connection, ConnectionOptions, QueryRunner } from "typeorm"
+import type { SapConnectionOptions } from "typeorm/driver/sap/SapConnectionOptions"
 
 const options: ConnectionOptions = {
     type: "postgres",
     database: "test",
+}
+
+const sapOptions: SapConnectionOptions = {
+    type: "sap",
+    database: "hana",
 }
 
 const connection = new Connection(options)

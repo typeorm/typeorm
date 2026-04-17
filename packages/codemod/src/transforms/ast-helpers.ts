@@ -41,16 +41,24 @@ export const isIdentifier = (node: { type: string }): node is Identifier =>
     node.type === "Identifier"
 
 /**
- * Checks whether the file contains an import from the given module.
+ * Checks whether the file contains an import from the given module. Matches
+ * both the exact module name (`import ... from "typeorm"`) and any sub-path
+ * (`import ... from "typeorm/driver/sap/SapConnectionOptions"`) so that files
+ * which only reach into deep paths still pass the scope guard.
  */
 export const fileImportsFrom = (
     root: Collection,
     j: JSCodeshift,
     moduleName: string,
 ): boolean => {
+    const prefix = `${moduleName}/`
     return (
-        root.find(j.ImportDeclaration, {
-            source: { value: moduleName },
+        root.find(j.ImportDeclaration).filter((importPath) => {
+            const source = importPath.node.source.value
+            return (
+                typeof source === "string" &&
+                (source === moduleName || source.startsWith(prefix))
+            )
         }).length > 0
     )
 }
