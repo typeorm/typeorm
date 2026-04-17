@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import { fileImportsFrom, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -12,6 +12,13 @@ export const manual = true
 export const globalFunctions = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    // Names like `getRepository`, `getManager`, `createConnection` are
+    // generic enough that other libraries reuse them; gate the rewrite to
+    // files that actually import from typeorm to avoid touching unrelated
+    // code.
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     const removedGlobals = new Set([
