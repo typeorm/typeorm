@@ -115,16 +115,36 @@ export const forEachIdentifierParam = (
 }
 
 /**
+ * TypeORM column-family decorator names. Exposed so decorator-scoped
+ * transforms can narrow their match set and skip unrelated decorators like
+ * Angular's `@Input` or class-validator's `@IsDefined` without relying on a
+ * file-level `fileImportsFrom` guard.
+ */
+export const TYPEORM_COLUMN_DECORATORS: ReadonlySet<string> = new Set([
+    "Column",
+    "PrimaryColumn",
+    "PrimaryGeneratedColumn",
+    "VersionColumn",
+    "CreateDateColumn",
+    "UpdateDateColumn",
+    "DeleteDateColumn",
+    "ObjectIdColumn",
+    "ViewColumn",
+])
+
+/**
  * Traverses ClassProperty decorators and calls `callback` for each
  * ObjectExpression argument found in decorator call expressions.
  *
- * This avoids duplicating the decorator-traversal boilerplate across
- * multiple transforms.
+ * Pass `decoratorNames` to restrict the traversal to a known set of callees
+ * (e.g. TypeORM's column decorators). Without it, every decorator-with-object
+ * on every class property is visited.
  */
 export const forEachDecoratorObjectArg = (
     root: Collection,
     j: JSCodeshift,
     callback: (objectExpression: ObjectExpression, path: ASTPath) => void,
+    decoratorNames?: ReadonlySet<string>,
 ): void => {
     root.find(j.ClassProperty).forEach((path) => {
         // ast-types omits `decorators` from ClassProperty — extend it
@@ -135,6 +155,16 @@ export const forEachDecoratorObjectArg = (
 
         for (const decorator of node.decorators) {
             if (decorator.expression.type !== "CallExpression") continue
+
+            if (decoratorNames) {
+                const callee = decorator.expression.callee
+                if (
+                    callee.type !== "Identifier" ||
+                    !decoratorNames.has(callee.name)
+                ) {
+                    continue
+                }
+            }
 
             for (const arg of decorator.expression.arguments) {
                 if (arg.type !== "ObjectExpression") continue
