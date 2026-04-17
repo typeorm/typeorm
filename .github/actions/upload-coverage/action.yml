@@ -1,0 +1,17 @@
+name: Upload coverage
+description: Upload c8 coverage report as an artifact
+
+inputs:
+  name:
+    description: Artifact name for this coverage report
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/upload-artifact@v7
+      with:
+        name: coverage-${{ inputs.name }}
+        path: coverage/lcov.info
+        retention-days: 1
+        if-no-files-found: error

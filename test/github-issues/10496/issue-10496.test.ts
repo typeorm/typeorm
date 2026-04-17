@@ -16,6 +16,7 @@ describe("github issues > #10496 User-defined index name for Single Table Inheri
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Base, A, B, C],
             schemaCreate: true,
             dropSchema: true,

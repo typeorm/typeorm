@@ -66,10 +66,8 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
         this.driver.dataSource.logger.logQuery(query, parameters, this)
 
-        const command = query.substring(
-            0,
-            query.indexOf(" ") !== -1 ? query.indexOf(" ") : undefined,
-        )
+        const spaceIndex = query.indexOf(" ")
+        const command = spaceIndex === -1 ? query : query.slice(0, spaceIndex)
 
         try {
             let raw: any

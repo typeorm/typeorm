@@ -21,6 +21,7 @@ import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
+import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 
@@ -94,11 +95,10 @@ export class AuroraMysqlQueryRunner
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         isolationLevel ??= this.dataSource.options.isolationLevel
 
-        if (isolationLevel) {
-            throw new TypeORMError(
-                `Setting transaction isolation level is not supported by the Aurora Data API`,
-            )
-        }
+        validateIsolationLevel(
+            this.driver.supportedIsolationLevels,
+            isolationLevel,
+        )
 
         this.isTransactionActive = true
         try {
@@ -109,7 +109,12 @@ export class AuroraMysqlQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            await this.client.startTransaction()
+            try {
+                await this.client.startTransaction()
+            } catch (err) {
+                this.isTransactionActive = false
+                throw err
+            }
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
@@ -2370,7 +2375,7 @@ export class AuroraMysqlQueryRunner
                     }
 
                     if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
-                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(
+                        tableColumn.onUpdate = dbColumn["EXTRA"].slice(
                             dbColumn["EXTRA"].indexOf("on update") + 10,
                         )
                     }
@@ -2476,13 +2481,13 @@ export class AuroraMysqlQueryRunner
                     ) {
                         const colType = dbColumn["COLUMN_TYPE"]
                         const items = colType
-                            .substring(
+                            .slice(
                                 colType.indexOf("(") + 1,
                                 colType.lastIndexOf(")"),
                             )
                             .split(",")
                         tableColumn.enum = (items as string[]).map((item) => {
-                            return item.substring(1, item.length - 1)
+                            return item.slice(1, -1)
                         })
                         tableColumn.length = ""
                     }
@@ -2917,9 +2922,9 @@ export class AuroraMysqlQueryRunner
         }
 
         comment = comment
-            .replace(/\\/g, "\\\\") // MySQL allows escaping characters via backslashes
-            .replace(/'/g, "''")
-            .replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+            .replaceAll("\\", "\\\\") // MySQL allows escaping characters via backslashes
+            .replaceAll("'", "''")
+            .replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return `'${comment}'`
     }

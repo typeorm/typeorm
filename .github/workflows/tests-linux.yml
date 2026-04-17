@@ -8,6 +8,22 @@ on:
         type: number
 
 jobs:
+  better-sqlite3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node
+        with:
+          node-version: ${{ inputs.node-version }}
+          download-build: true
+
+      - run: jq 'map(select(.type == "better-sqlite3"))' ormconfig.sample.json > ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - uses: ./.github/actions/upload-coverage
+        with:
+          name: better-sqlite3-node-${{ inputs.node-version }}-linux
+
   cockroachdb:
     if: ${{ inputs.node-version >= 24 }}
     runs-on: ubuntu-latest
@@ -48,10 +64,9 @@ jobs:
 
       - run: pnpm exec c8 mocha --bail --config .mocharc.${{ matrix.shard }}.json
 
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: cockroachdb-shard:${{ matrix.shard }}-node:${{ inputs.node-version }}
-          parallel: true
+          name: cockroachdb-${{ matrix.shard }}-node-${{ inputs.node-version }}-linux
 
   mongodb:
     runs-on: ubuntu-latest
@@ -70,10 +85,9 @@ jobs:
       - run: jq 'map(select(.type == "mongodb"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: mongodb-node:${{ inputs.node-version }}
-          parallel: true
+          name: mongodb-node-${{ inputs.node-version }}-linux
 
   mssql:
     runs-on: ubuntu-latest
@@ -96,10 +110,9 @@ jobs:
       - run: jq 'map(select(.type == "mssql"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: mssql-node:${{ inputs.node-version }}
-          parallel: true
+          name: mssql-node-${{ inputs.node-version }}-linux
 
   mysql_mariadb:
     runs-on: ubuntu-latest
@@ -137,10 +150,9 @@ jobs:
               "mysql" \
             > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: mysql_mariadb-node:${{ inputs.node-version }}
-          parallel: true
+          name: mysql_mariadb-node-${{ inputs.node-version }}-linux
 
   mysql_mariadb_latest:
     runs-on: ubuntu-latest
@@ -178,44 +190,30 @@ jobs:
               "mysql" \
             > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: mysql_mariadb_latest-node:${{ inputs.node-version }}
-          parallel: true
+          name: mysql_mariadb_latest-node-${{ inputs.node-version }}-linux
 
-  better-sqlite3:
+  oracle:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      - run: docker compose up oracle --detach
+
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
           download-build: true
 
-      - run: jq 'map(select(.type == "better-sqlite3"))' ormconfig.sample.json > ormconfig.json
+      - run: jq 'map(select(.type == "oracle"))' ormconfig.sample.json > ormconfig.json
+      - run: docker compose up oracle --no-recreate --wait
+      - run: sleep 3 # wait for oracle to be fully ready
       - run: pnpm exec c8 pnpm run test:ci
 
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: better-sqlite3-node:${{ inputs.node-version }}
-          parallel: true
-
-  sqljs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-node
-        with:
-          node-version: ${{ inputs.node-version }}
-          download-build: true
-
-      - run: jq 'map(select(.type == "sqljs"))' ormconfig.sample.json > ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
-
-      - uses: coverallsapp/github-action@v2
-        with:
-          flag-name: sqljs-node:${{ inputs.node-version }}
-          parallel: true
+          name: oracle-node-${{ inputs.node-version }}-linux
 
   postgres:
     runs-on: ubuntu-latest
@@ -248,32 +246,9 @@ jobs:
       - run: jq 'map(select(.type == "postgres"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: postgres:${{ matrix.postgres-version }}-node:${{ inputs.node-version }}
-          parallel: true
-
-  oracle:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - run: docker compose up oracle --detach
-
-      - uses: ./.github/actions/setup-node
-        with:
-          node-version: ${{ inputs.node-version }}
-          download-build: true
-
-      - run: jq 'map(select(.type == "oracle"))' ormconfig.sample.json > ormconfig.json
-      - run: docker compose up oracle --no-recreate --wait
-      - run: sleep 3 # wait for oracle to be fully ready
-      - run: pnpm exec c8 pnpm run test:ci
-
-      - uses: coverallsapp/github-action@v2
-        with:
-          flag-name: oracle-node:${{ inputs.node-version }}
-          parallel: true
+          name: postgres-${{ matrix.postgres-version }}-node-${{ inputs.node-version }}-linux
 
   sap:
     runs-on: ubuntu-latest
@@ -291,7 +266,52 @@ jobs:
       - run: docker compose up hanaexpress --no-recreate --wait
       - run: pnpm exec c8 pnpm run test:ci
 
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: sap-node:${{ inputs.node-version }}
-          parallel: true
+          name: sap-node-${{ inputs.node-version }}-linux
+
+  spanner:
+    runs-on: ubuntu-latest
+    services:
+      spanner:
+        image: roryq/spanner-emulator:latest
+        ports:
+          - "9010:9010"
+          - "9020:9020"
+        env:
+          SPANNER_PROJECT_ID: typeorm
+          SPANNER_INSTANCE_ID: typeorm
+          SPANNER_DATABASE_ID: typeorm
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node
+        with:
+          node-version: ${{ inputs.node-version }}
+          download-build: true
+
+      - run: jq 'map(select(.type == "spanner"))' ormconfig.sample.json > ormconfig.json
+
+      - name: healthcheck
+        run: |
+          timeout 30 bash -c 'until curl -sf http://localhost:9020/v1/projects/typeorm/instances/typeorm/databases/typeorm > /dev/null; do sleep 1; done'
+
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - uses: ./.github/actions/upload-coverage
+        with:
+          name: spanner-node-${{ inputs.node-version }}-linux
+  sqljs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node
+        with:
+          node-version: ${{ inputs.node-version }}
+          download-build: true
+
+      - run: jq 'map(select(.type == "sqljs"))' ormconfig.sample.json > ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - uses: ./.github/actions/upload-coverage
+        with:
+          name: sqljs-node-${{ inputs.node-version }}-linux

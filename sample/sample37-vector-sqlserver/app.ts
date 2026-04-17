@@ -79,7 +79,7 @@ AppDataSource.initialize()
         console.log("Search results (top 3 most similar chunks):")
         results.forEach((result: any, index: number) => {
             console.log(`\n${index + 1}. Distance: ${result.distance}`)
-            console.log(`   Content: ${result.content.substring(0, 80)}...`)
+            console.log(`   Content: ${result.content.slice(0, 80)}...`)
             console.log(`   Document: ${result.documentName}`)
         })
 

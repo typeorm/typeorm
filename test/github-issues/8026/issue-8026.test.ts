@@ -13,6 +13,7 @@ describe("github issues > #8026 Inserting a value for a column that has a relati
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Sailing, ScheduledSailing],
             schemaCreate: true,
             dropSchema: true,

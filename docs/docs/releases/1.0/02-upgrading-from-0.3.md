@@ -345,10 +345,10 @@ The `connection` property in the `Driver`, `QueryRunner`, `EntityManager`, `Quer
 
 The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
 
-`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
+`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed. It will now search for the `ormconfig` file in `process.cwd()` instead of the application path. You can use the `root` option to change the search location.
 
 ```typescript
-const reader = new ConnectionOptionsReader()
+const reader = new ConnectionOptionsReader({ root: "/path/to/config/" })
 
 // when your ormconfig has a single data source
 const [options] = await reader.get()
@@ -484,6 +484,16 @@ await manager.save(user) // junction row for photo2 is now removed
 ```
 
 This only applies when the relation property is explicitly set. If it is `undefined`, no comparison is performed and junction rows are left intact.
+
+### Logger
+
+`FileLogger` lets the underlying platform (e.g. NodeJS) handle the paths instead of determining the path relative to the app root. You can provide an absolute path (or a path relative to `process.cwd()`) if the app is not started from its root folder:
+
+```typescript
+const dataSource = new DataSource({
+    logger: new FileLogger("all", { logPath: "/path/to/file.log" }),
+})
+```
 
 ## Columns
 
@@ -1042,10 +1052,11 @@ NestJS users are not affected — the `@nestjs/typeorm` package has its own inte
 
 The following internal APIs have been removed. These only affect you if you were building custom drivers, extending QueryBuilder, or using low-level metadata APIs:
 
-| Removed                                        | Replacement                                       |
-| ---------------------------------------------- | ------------------------------------------------- |
-| `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers |
-| `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                    |
-| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                |
-| `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`               |
-| `RdbmsSchemaBuilder.renameTables()`            | Removed                                           |
+| Removed                                        | Replacement                                         |
+| ---------------------------------------------- | --------------------------------------------------- |
+| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                  |
+| `EntityMetadata.getValueMap()` `options` param | Remove the third argument — it was never functional |
+| `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                      |
+| `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers   |
+| `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`                 |
+| `RdbmsSchemaBuilder.renameTables()`            | Removed                                             |

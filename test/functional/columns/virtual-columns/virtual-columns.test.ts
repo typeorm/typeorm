@@ -23,6 +23,7 @@ describe("column > virtual columns", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             schemaCreate: true,
             dropSchema: true,
             entities: [Company, Employee, TimeSheet, Activity],

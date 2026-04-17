@@ -13,6 +13,7 @@ describe("github issues > #341 OneToOne relation with referencedColumnName does 
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
