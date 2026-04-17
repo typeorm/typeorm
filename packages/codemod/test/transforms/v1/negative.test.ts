@@ -47,6 +47,21 @@ migrationRunner.getAllMigrations()
 class MyBuilder {
     replacePropertyNames(q: string) { return q }
 }
+
+// Real-world regression: nest-commander decorators use \`flags\` too, and
+// were getting stripped by datasource-sqlite-options before the scope guard.
+import { Command, CommandRunner, Option } from "nest-commander"
+
+@Command({ name: "basic", description: "A parameter parse" })
+export class BasicCommand extends CommandRunner {
+    @Option({
+        flags: "-n, --number [number]",
+        description: "A basic number parser",
+    })
+    parseNumber(val: string): number {
+        return Number(val)
+    }
+}
 `
 
 describe("v1 transforms — no typeorm import", () => {
