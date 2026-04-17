@@ -52,6 +52,19 @@ npx prettier --write src/        # or: npx eslint --fix src/
 
 Transforms that rename properties or methods (e.g. `.connection` to `.dataSource`) rely on type annotations to identify TypeORM instances. Code that uses TypeORM APIs without type annotations may not be transformed automatically — review `git diff` after running.
 
+### Known limitations
+
+The codemod uses jscodeshift's bundled TypeScript parser, which doesn't accept every valid modern TypeScript construct. In particular, a legacy decorator combined with a computed class-field name — e.g.:
+
+```ts
+class Dto {
+    @ApiExpose({ enum: { DateFormat } })
+    [UserPreference.DateFormat]?: DateFormat
+}
+```
+
+— fails to parse. The file is skipped (with its parse error surfaced in the final summary) and no transforms apply to it. Workaround: either inline the key (`dateFormat?: DateFormat`) temporarily, or add the file to `--ignore` and migrate it by hand. Parse errors list the exact line — review them after every run.
+
 ## Documentation
 
 See the full upgrading guide for details on all breaking changes:
