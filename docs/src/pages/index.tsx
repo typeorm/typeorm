@@ -336,6 +336,7 @@ const teamHighlights = [
     { name: "Simon Garner", github: "sgarner" },
     { name: "Pieter Wigboldus", github: "w3nl" },
     { name: "Mike Guida", github: "mguida22" },
+    { name: "Prakhar Chhalotre", github: "cprakhar" },
 ]
 
 function MaintainersSection() {
