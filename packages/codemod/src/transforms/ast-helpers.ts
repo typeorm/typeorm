@@ -41,17 +41,50 @@ export const isIdentifier = (node: { type: string }): node is Identifier =>
     node.type === "Identifier"
 
 /**
- * Checks whether the file contains an import from the given module.
+ * Checks whether the file contains an import from the given module. Matches
+ * both the exact module name (`"typeorm"`) and any sub-path (`"typeorm/..."`),
+ * and recognizes ESM `import`, TypeScript `import = require(...)`, and
+ * CommonJS `require(...)` forms so that `.js`/`.jsx` callers still pass the
+ * scope guard.
  */
 export const fileImportsFrom = (
     root: Collection,
     j: JSCodeshift,
     moduleName: string,
 ): boolean => {
-    return (
-        root.find(j.ImportDeclaration, {
-            source: { value: moduleName },
+    const prefix = `${moduleName}/`
+    const matchesModule = (source: unknown): boolean =>
+        typeof source === "string" &&
+        (source === moduleName || source.startsWith(prefix))
+
+    // ESM: import ... from "typeorm[/subpath]"
+    const hasEsmImport =
+        root
+            .find(j.ImportDeclaration)
+            .filter((path) => matchesModule(path.node.source.value)).length > 0
+    if (hasEsmImport) return true
+
+    // TS: import ... = require("typeorm[/subpath]")
+    const hasImportEquals =
+        root.find(j.TSImportEqualsDeclaration).filter((path) => {
+            const ref = path.node.moduleReference
+            return (
+                ref.type === "TSExternalModuleReference" &&
+                matchesModule(getStringValue(ref.expression))
+            )
         }).length > 0
+    if (hasImportEquals) return true
+
+    // CommonJS: require("typeorm[/subpath]")
+    return (
+        root
+            .find(j.CallExpression, {
+                callee: { type: "Identifier", name: "require" },
+            })
+            .filter((path) => {
+                const [arg] = path.node.arguments
+                return arg !== undefined && matchesModule(getStringValue(arg))
+            }).length > 0
     )
 }
 
@@ -82,16 +115,36 @@ export const forEachIdentifierParam = (
 }
 
 /**
+ * TypeORM column-family decorator names. Exposed so decorator-scoped
+ * transforms can narrow their match set and skip unrelated decorators like
+ * Angular's `@Input` or class-validator's `@IsDefined` without relying on a
+ * file-level `fileImportsFrom` guard.
+ */
+export const TYPEORM_COLUMN_DECORATORS: ReadonlySet<string> = new Set([
+    "Column",
+    "PrimaryColumn",
+    "PrimaryGeneratedColumn",
+    "VersionColumn",
+    "CreateDateColumn",
+    "UpdateDateColumn",
+    "DeleteDateColumn",
+    "ObjectIdColumn",
+    "ViewColumn",
+])
+
+/**
  * Traverses ClassProperty decorators and calls `callback` for each
  * ObjectExpression argument found in decorator call expressions.
  *
- * This avoids duplicating the decorator-traversal boilerplate across
- * multiple transforms.
+ * Pass `decoratorNames` to restrict the traversal to a known set of callees
+ * (e.g. TypeORM's column decorators). Without it, every decorator-with-object
+ * on every class property is visited.
  */
 export const forEachDecoratorObjectArg = (
     root: Collection,
     j: JSCodeshift,
     callback: (objectExpression: ObjectExpression, path: ASTPath) => void,
+    decoratorNames?: ReadonlySet<string>,
 ): void => {
     root.find(j.ClassProperty).forEach((path) => {
         // ast-types omits `decorators` from ClassProperty — extend it
@@ -102,6 +155,16 @@ export const forEachDecoratorObjectArg = (
 
         for (const decorator of node.decorators) {
             if (decorator.expression.type !== "CallExpression") continue
+
+            if (decoratorNames) {
+                const callee = decorator.expression.callee
+                if (
+                    callee.type !== "Identifier" ||
+                    !decoratorNames.has(callee.name)
+                ) {
+                    continue
+                }
+            }
 
             for (const arg of decorator.expression.arguments) {
                 if (arg.type !== "ObjectExpression") continue

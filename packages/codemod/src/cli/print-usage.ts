@@ -17,7 +17,7 @@ ${versionList}
 ${colors.bold("Options:")}
   ${colors.blue("--dry, -d")}               Dry run ${colors.dim("(show changes without writing)")}
   ${colors.blue("--help, -h")}              Show this help
-  ${colors.blue("--ignore, -i")} <pattern>  Glob pattern to exclude files ${colors.dim("(repeatable)")}
+  ${colors.blue("--ignore, -i")} <pattern>  Additional glob pattern to exclude ${colors.dim("(repeatable; *.d.ts is always excluded)")}
   ${colors.blue("--list, -l")}              List available transforms
   ${colors.blue("--transform, -t")} <name>  Run a specific transform only
   ${colors.blue("--workers, -w")} <num>     Number of worker processes ${colors.dim("(default: CPU cores - 1)")}
