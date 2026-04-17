@@ -183,7 +183,7 @@ What it cannot do for you:
 
 - **Verify data integrity.** The INNER JOIN change above needs human eyes and a quick audit query per relation.
 - **Audit `null`-in-where call sites.** The error at runtime is clear, but it is easier to find them ahead of time than in production.
-- **Update NestJS.** Bump `@nestjs/typeorm` to v10+ alongside TypeORM.
+- **Update NestJS.** Bump `@nestjs/typeorm` to v11.0.1+ alongside TypeORM.
 
 The full upgrade walkthrough, with every change and every before/after, is in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
