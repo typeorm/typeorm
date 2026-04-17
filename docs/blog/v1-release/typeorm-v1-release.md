@@ -3,14 +3,14 @@ slug: typeorm-1-0
 title: TypeORM 1.0 is here
 authors: [michaelbromley, dlhck, naorpeled]
 tags: [release, announcement]
-description: TypeORM 1.0 drops long-deprecated APIs, modernizes the platform baseline, and lands dozens of fixes and features from the 0.3.x cycle. Here's what shipped, what broke on purpose, and how to get there.
+description: TypeORM 1.0 is our commitment release - a stable API surface, dozens of new features, and the deprecations from the 0.3 cycle finally gone. Here's what's new and how to get there.
 ---
 
-TypeORM 1.0 is out.
+TypeORM 1.0 is here.
 
-It has been a long road to this one. TypeORM has been around since 2016; 0.3 shipped in 2021. We have spent the almost five years since that last major fixing bugs, adding drivers, and - as [we wrote last year](/blog/future-of-typeorm) - transitioning the project to a new maintainer team. v1.0 is where we pull it all together: no more "still on 0.3.x" caveats, no more long-deprecated APIs shadowing the supported ones, and a platform baseline that actually matches the Node.js runtime most of our users are on.
+It's been almost a decade since TypeORM's first commit, and the project has only grown busier in that time. v1 is the release we put out when we were confident we could stand behind the API surface going forward — after eighteen months of careful work from the new maintainer team, a pile of features queued up across the 0.3 cycle, and a cleanup that was a long time coming.
 
-This post walks through what changed, what broke on purpose, and how to get your codebase across.
+This isn't a rewrite. If you've been running 0.3.28 in production, you already know how TypeORM feels. v1 is that — cleaner, faster, and on a foundation we're happy to build on for the next decade.
 
 <!-- truncate -->
 
@@ -24,190 +24,74 @@ From 0.3.28 to 1.0:
 - **36,400+ GitHub stars**
 - **10 supported databases**, from Postgres to Spanner to MongoDB
 
-TypeORM sits in the npm top 0.1% by downloads. Every one of those numbers is why v1 had to be done carefully. We did not want to be the team that broke everyone's Monday morning.
+TypeORM sits in the npm top 0.1% by downloads. Every one of those numbers is a codebase that trusts this ORM to keep working. That trust is why v1 took the time it did.
 
-## The rename you have been waiting (or dreading) for
+## What's new
 
-`Connection` is now `DataSource`. This is the single biggest change in v1, and we held it back for a major version specifically so we could do it right.
-
-Before:
-
-```typescript
-import { Connection, createConnection } from "typeorm"
-
-const connection = await createConnection({
-  type: "postgres",
-  host: "localhost",
-})
-
-if (connection.isConnected) {
-  // ...
-}
-
-await connection.close()
-```
-
-After:
-
-```typescript
-import { DataSource } from "typeorm"
-
-const dataSource = new DataSource({
-  type: "postgres",
-  host: "localhost",
-})
-
-await dataSource.initialize()
-
-if (dataSource.isInitialized) {
-  // ...
-}
-
-await dataSource.destroy()
-```
-
-The old naming conflated the transport connection with the higher-level persistence context. `DataSource` is what the object actually is - a configured source of data along with its repositories, its metadata, and its migration runner. It is also how the rest of the Node ecosystem names this thing.
-
-The rename cascades:
-
-- `Connection` class → `DataSource`
-- `ConnectionOptions` → `DataSourceOptions`
-- `.connection` property → `.dataSource` everywhere
-- `createConnection()`, `getConnection()`, `getRepository()`, `getManager()`, `getTreeRepository()`, `getMongoRepository()`, `ConnectionManager` - all gone. Go through your `DataSource` instance instead.
-
-## Find options are object-shaped now
-
-No more string arrays for `relations` or `select`:
-
-```typescript
-// before
-{
-  relations: ["profile", "posts"],
-  select: ["id", "name"],
-}
-
-// after
-{
-  relations: { profile: true, posts: true },
-  select: { id: true, name: true },
-}
-```
-
-Better typing, better IDE completion, one canonical shape. The `join` option on find is gone too - the QueryBuilder is still there for complex joins.
-
-We also collapsed three near-duplicate methods down to one idiomatic way each:
-
-- `findOneById(1)` → `findOneBy({ id: 1 })`
-- `findByIds([1, 2, 3])` → `findBy({ id: In([1, 2, 3]) })`
-- `exist(...)` → `exists(...)`
-
-## What is new
-
-Beyond the cleanup, v1 ships a pile of features that were sitting in the 0.3 pipeline waiting for a major to land.
+The features that were queued up across the 0.3 cycle and waiting for a major:
 
 **QueryBuilder**
 
-- `valuesFromSelect()` - real `INSERT … SELECT` in the builder, for bulk data moves you used to have to drop into raw SQL for.
-- `.returning()` on `update()` and `upsert()` where the database supports it, so you do not need a follow-up SELECT.
-- `ifExists` on `dropTable`, `dropDatabase`, and `dropIndex` - idempotent teardown without try/catch scaffolding.
+- `valuesFromSelect()` for real `INSERT … SELECT` — no more dropping into raw SQL for bulk moves.
+- `.returning()` on `update()` and `upsert()` where the database supports it.
+- `ifExists` on `dropTable`, `dropDatabase`, and `dropIndex`.
 
 **Transactions**
 
-- A DataSource-level `isolationLevel` that every driver honors by default, including Aurora Postgres and Google Spanner.
+- DataSource-level `isolationLevel` honored across every driver, including Aurora Postgres and Google Spanner.
 
 **PostgreSQL**
 
 - Partial indexes via `@Index({ where: "..." })`.
-- Automatic extension installation at sync time - set `installExtensions: true` and the Postgres driver installs the extensions your entities need.
-- Simpler enum modifications - `ALTER TYPE … ADD VALUE` where previously we had to swap types through a migration dance.
+- Automatic extension installation with `installExtensions: true`.
+- Simpler enum modifications using `ALTER TYPE … ADD VALUE`.
 
 **SQLite**
 
 - `jsonb` column type.
 - Encryption key support on React Native.
 
-**Resource safety**
+**Testing and resource safety**
 
-- `await using` on `QueryRunner`. The runner releases itself when the block exits. One fewer class of leaked-connection bugs.
+- `clear({ cascade: true })` for `TRUNCATE … CASCADE` on Postgres, CockroachDB, and Oracle.
+- Batched DROP statements in `clearDatabase()` for faster test setup.
+- `await using` on `QueryRunner` — one fewer class of leaked-connection bugs.
 
 **Type safety**
 
-- `increment()` and `decrement()` are now aware of your entity's columns. Typos get caught at compile time.
-
-**Testing and teardown**
-
-- `clear({ cascade: true })` now issues `TRUNCATE … CASCADE` on Postgres, CockroachDB, and Oracle - one call to wipe a table plus everything that depends on it.
-- `clearDatabase()` batches its DROP statements on Postgres and CockroachDB. Noticeably faster test setup if you've been re-creating the schema between runs.
+- `increment()` and `decrement()` are entity-aware. Typos caught at compile time.
 
 And dozens of fixes across query generation, eager loading, soft delete, tree entities, and every driver. Full list in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
 ## Security hardening
 
-Three attack surfaces that had been accumulating over the 0.3.x series got closed off in v1:
+v1 closes three attack surfaces that had been accumulating over the 0.3.x series: parameterized schema introspection and DDL, runtime validation on `orderBy` direction values, and semicolons rejected in raw SQL fragments (`select`, `addSelect`, `groupBy`, `orderBy`). Details in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
-- **Parameterized schema introspection and DDL** - driver internals now pass database, schema, table, and column names as escaped identifiers instead of string-concatenating them into SQL. Closes an injection vector in migrations and schema sync if any of those names came from untrusted input.
-- **`orderBy` runtime validation** - direction values in `orderBy()` / `addOrderBy()` are now checked at runtime (`"ASC"` / `"DESC"`, with `"NULLS FIRST"` / `"NULLS LAST"` for nulls). Anything else throws.
-- **Semicolons rejected in raw SQL fragments** - `select()`, `addSelect()`, `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` reject statement-stacking attempts at the builder level.
+If you pipe user input through raw QueryBuilder fragments, rerun your tests after upgrading.
 
-If you pipe user input through raw QueryBuilder fragments, run your tests after upgrading - anything that worked on 0.3 and breaks on v1 was probably relying on behavior we now consider unsafe.
+## The 0.3 deprecations are gone
 
-## What we removed, and what is required
+Every API that was deprecated across the 0.3 cycle is removed in v1 — `Connection`, the global repository and manager functions, the `@EntityRepository` pattern, the IoC container integration, and the rest. Platform targets moved too: Node.js 20+, ES2023, `mysql2` over `mysql`, `better-sqlite3` over `sqlite3`, MongoDB driver v7+, Expo SDK v52+.
 
-v1 has a sharper minimum bar than 0.3. That is intentional.
-
-- **Node.js 20+**
-- **ES2023** target
-- **`mysql2`** only (the old `mysql` driver is gone)
-- **`better-sqlite3`** only (`sqlite3` is gone)
-- **MongoDB driver v7+**
-- **Expo SDK v52+**
-
-Other removals worth calling out:
-
-- `@EntityRepository`, `AbstractRepository`, and `getCustomRepository()` - removed. Extend `Repository<Entity>` directly or attach methods to the repository you get back from `dataSource.getRepository()`.
-- `@RelationCount` - use `@VirtualColumn` with a subquery.
-- The IoC container integration - get repositories from your `DataSource`.
-- `TYPEORM_*` environment variable auto-loading and auto-`dotenv`. Load your env the same way the rest of your app does.
-
-One behavioral change that will surprise people if they are not expecting it: passing `null` or `undefined` in a `where` clause now throws. The 0.3.x behavior was to silently ignore those values, which was correct about half the time and produced extremely surprising queries the other half.
-
-```typescript
-// throws in v1
-await repository.find({ where: { text: null } })
-
-// do this instead
-import { IsNull } from "typeorm"
-await repository.find({ where: { text: IsNull() } })
-```
-
-You can opt back into the old behavior with `invalidWhereValuesBehavior: { null: "ignore", undefined: "ignore" }` on your `DataSourceOptions` if you really need to. We do not recommend it.
-
-There is also one quiet but important SQL change: relations declared with `nullable: false` now compile to `INNER JOIN` instead of `LEFT JOIN`. If your database has rows that violate your own `NOT NULL` constraints, those rows will silently drop out of query results. Check your data before you ship.
+All of it is documented in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3), with before/after for every change. We'd rather you read that once than scroll through it here.
 
 ## Upgrading
 
-We shipped a codemod:
+One command:
 
 ```bash
 npx @typeorm/codemod v1 src/
 ```
 
-It handles the rename-heavy work automatically: imports, method names, find-option syntax, dependency pins. For most codebases it does about 80% of the upgrade.
+The codemod handles the rename-heavy work automatically — imports, method names, find-option syntax, dependency pins. It also scans your `package.json` and bumps ecosystem packages to v1-compatible versions, including `@nestjs/typeorm` to v11.0.1+ and the database drivers (`mongodb`, `mysql2`, `better-sqlite3`, `redis`, `mssql`, `@google-cloud/spanner`). For packages still pinned to removed APIs, it prints a warning.
 
-The codemod also scans your `package.json` and bumps ecosystem packages to v1-compatible versions - `@nestjs/typeorm` to v11.0.1+, the database drivers (`mongodb`, `mysql2`, `better-sqlite3`, `redis`, `mssql`, `@google-cloud/spanner`), and a few others. For packages still pinned to removed APIs, it prints a warning so you know where to look.
-
-What it cannot do for you:
-
-- **Verify data integrity.** The INNER JOIN change above needs human eyes and a quick audit query per relation.
-- **Audit `null`-in-where call sites.** The error at runtime is clear, but it is easier to find them ahead of time than in production.
-
-The full upgrade walkthrough, with every change and every before/after, is in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
+For most codebases the codemod does about 80% of the upgrade. The rest — data integrity checks against the new INNER JOIN behavior on non-nullable relations, and `null`-in-where audits — is spelled out in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
 ## Thank you
 
 v1 exists because 40 people shipped PRs in this cycle, because a steady stream of bug reports and reproductions kept us honest, and because sponsors on OpenCollective kept the lights on long enough to get here.
 
-Special thanks to **Umed Khudoiberdiev** ([@pleerock](https://github.com/pleerock)) and **Dmitry Zotov** - TypeORM is their project originally. v1 is built on top of everything they shipped across the entire 0.x series. Thank you for trusting us to carry this forward.
+Special thanks to **Umed Khudoiberdiev** ([@pleerock](https://github.com/pleerock)) and **Dmitry Zotov** — TypeORM is their project originally. v1 is built on top of everything they shipped across the entire 0.x series. Thank you for trusting us to carry this forward.
 
 Thanks to the current maintainer team carrying v1 over the line:
 
@@ -217,14 +101,14 @@ Thanks to the current maintainer team carrying v1 over the line:
 
 And everyone pitching in from the Working Group.
 
-And to the 40+ contributors whose code is in this release: thank you. If your handle is in the CHANGELOG, something you wrote is running in production at thousands of companies by tomorrow morning.
+To the 40+ contributors whose code is in this release: thank you. If your handle is in the CHANGELOG, something you wrote is running in production at thousands of companies by tomorrow morning.
 
 If your company uses TypeORM and has never sponsored, this is a good time: [opencollective.com/typeorm](https://opencollective.com/typeorm). The path to the non-profit foundation we described last year is staffed by your sponsorship.
 
 ## Links
 
-- [Upgrading from 0.3](/docs/releases/1.0/upgrading-from-0.3) - breaking changes, new features, and the full migration walkthrough
+- [Upgrading from 0.3](/docs/releases/1.0/upgrading-from-0.3) — breaking changes, new features, and the full migration walkthrough
 - [`@typeorm/codemod`](https://www.npmjs.com/package/@typeorm/codemod)
 - [GitHub](https://github.com/typeorm/typeorm)
 - [OpenCollective](https://opencollective.com/typeorm)
-- [The Future of TypeORM (Oct 2024)](/blog/future-of-typeorm) - if you missed the governance announcement
+- [The Future of TypeORM (Oct 2024)](/blog/future-of-typeorm) — if you missed the governance announcement
