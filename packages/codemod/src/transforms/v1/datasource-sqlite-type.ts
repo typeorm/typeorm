@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { setStringValue } from "../ast-helpers"
+import { fileImportsFrom, setStringValue } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace `sqlite` driver with `better-sqlite3`"
@@ -8,6 +8,11 @@ export const description = "replace `sqlite` driver with `better-sqlite3`"
 export const datasourceSqliteType = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    // Only operate on files that import from typeorm — avoid mutating
+    // unrelated `{ type: "sqlite" }` objects in other libraries' configs
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     // TSX parser uses ObjectProperty (not Property) and StringLiteral

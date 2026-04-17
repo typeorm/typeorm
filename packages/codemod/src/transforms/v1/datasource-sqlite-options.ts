@@ -1,5 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
+import { fileImportsFrom } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -8,6 +9,11 @@ export const description =
 export const datasourceSqliteOptions = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    // Only operate on files that import from typeorm — avoid mutating
+    // unrelated `busyTimeout` / `flags` properties in other libraries' configs
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     // Rename busyTimeout → timeout
