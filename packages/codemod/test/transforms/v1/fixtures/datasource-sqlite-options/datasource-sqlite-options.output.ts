@@ -5,3 +5,17 @@ const dataSource = new DataSource({
     database: "db.sqlite",
     timeout: 2000,
 })
+
+// Also runs on ormconfig-style plain exports that do not import from "typeorm"
+export default {
+    type: "sqlite",
+    database: "db.sqlite",
+    timeout: 500,
+}
+
+// Unrelated config with matching key names must be left untouched
+const commanderOptions = {
+    type: "command",
+    busyTimeout: 1000,
+    flags: ["--verbose"],
+}
