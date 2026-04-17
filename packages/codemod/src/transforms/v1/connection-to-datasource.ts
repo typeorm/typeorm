@@ -84,6 +84,15 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         "IndexMetadata",
     ])
 
+    // Full-path overrides for deep imports where the v1 module also moved
+    // to a different directory. The generic last-segment swap below cannot
+    // handle these because swapping only the filename leaves the old
+    // directory intact (e.g. `typeorm/driver/sqlite/` was removed in v1).
+    const deepPathRewrites: Record<string, string> = {
+        "typeorm/driver/sqlite/SqliteConnectionOptions":
+            "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions",
+    }
+
     // Collect local names imported from "typeorm" (including deep sub-paths
     // like `typeorm/driver/sap/SapConnectionOptions`) that need renaming.
     const localRenames = new Map<string, string>()
@@ -123,19 +132,25 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             }
         })
 
-        // Also rewrite deep-path module specifiers that point to a renamed
-        // module file: `typeorm/driver/sap/SapConnectionOptions` →
-        // `typeorm/driver/sap/SapDataSourceOptions`. Only rewrite when the
-        // final path segment is an exact rename key — otherwise a path that
-        // merely contains a rename token as a substring would get mangled.
+        // Rewrite deep-path module specifiers. First consult
+        // `deepPathRewrites` for full-path overrides (needed when the v1
+        // module moved to a different directory, e.g. `sqlite` →
+        // `better-sqlite3`); otherwise swap only the last path segment when
+        // it's an exact rename key.
         if (source.startsWith(typeormPathPrefix)) {
-            const lastSlash = source.lastIndexOf("/")
-            const lastSegment = source.slice(lastSlash + 1)
-            const renamedSegment = typeRenames[lastSegment]
-            if (renamedSegment) {
-                path.node.source.value =
-                    source.slice(0, lastSlash + 1) + renamedSegment
+            const fullPathRewrite = deepPathRewrites[source]
+            if (fullPathRewrite) {
+                path.node.source.value = fullPathRewrite
                 hasChanges = true
+            } else {
+                const lastSlash = source.lastIndexOf("/")
+                const lastSegment = source.slice(lastSlash + 1)
+                const renamedSegment = typeRenames[lastSegment]
+                if (renamedSegment) {
+                    path.node.source.value =
+                        source.slice(0, lastSlash + 1) + renamedSegment
+                    hasChanges = true
+                }
             }
         }
     })

@@ -1,5 +1,9 @@
 import { Connection, ConnectionOptions, QueryRunner } from "typeorm"
 import type { SapConnectionOptions } from "typeorm/driver/sap/SapConnectionOptions"
+import type { BetterSqlite3ConnectionOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3ConnectionOptions"
+
+// Cross-directory rename: the `sqlite/` directory was removed in v1
+import type { SqliteConnectionOptions } from "typeorm/driver/sqlite/SqliteConnectionOptions"
 
 // Deep path whose final segment is NOT an exact rename key must be left alone
 import { something } from "typeorm/driver/sap/ThingsConnectionHelper"
