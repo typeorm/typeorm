@@ -39,66 +39,72 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         getMongoRepository: "dataSource.getMongoRepository",
     }
 
-    // Replace function calls. For each imported canonical name, resolve its
-    // set of local names (including aliases like `import { getManager as gm }`)
-    // and match call expressions against those.
+    // Resolve the local names (including aliases such as
+    // `import { getManager as gm } from "typeorm"`) for every function we
+    // know how to rewrite, then replace all matching call-sites in a single
+    // pass over `CallExpression` nodes.
+    const callReplacements = new Map<string, string>()
     for (const [funcName, replacement] of Object.entries(simpleReplacements)) {
-        const localNames = getLocalNamesForImport(root, j, "typeorm", funcName)
-        if (localNames.size === 0) continue
-        root.find(j.CallExpression).forEach((path) => {
-            const callee = path.node.callee
-            if (callee.type !== "Identifier" || !localNames.has(callee.name)) {
-                return
-            }
-            const parts = replacement.split(".")
-            if (parts.length === 2 && !replacement.includes("(")) {
-                // Property access like dataSource.manager — check if it's called with no args
-                if (
-                    path.node.arguments.length === 0 &&
-                    !replacement.includes("get")
-                ) {
-                    // Replace with property access
-                    j(path).replaceWith(
-                        j.memberExpression(
-                            j.identifier(parts[0]),
-                            j.identifier(parts[1]),
-                        ),
-                    )
-                } else {
-                    // Replace with method call
-                    j(path).replaceWith(
-                        j.callExpression(
-                            j.memberExpression(
-                                j.identifier(parts[0]),
-                                j.identifier(parts[1]),
-                            ),
-                            path.node.arguments,
-                        ),
-                    )
-                }
-                hasChanges = true
-            }
-        })
+        for (const localName of getLocalNamesForImport(
+            root,
+            j,
+            "typeorm",
+            funcName,
+        )) {
+            callReplacements.set(localName, replacement)
+        }
     }
-
-    // getConnection() → dataSource (just a reference)
     const getConnectionLocals = getLocalNamesForImport(
         root,
         j,
         "typeorm",
         "getConnection",
     )
-    if (getConnectionLocals.size > 0) {
+
+    if (callReplacements.size > 0 || getConnectionLocals.size > 0) {
         root.find(j.CallExpression).forEach((path) => {
             const callee = path.node.callee
+            if (callee.type !== "Identifier") return
+
+            // getConnection() → dataSource (just a reference)
             if (
-                callee.type !== "Identifier" ||
-                !getConnectionLocals.has(callee.name) ||
-                path.node.arguments.length !== 0
+                getConnectionLocals.has(callee.name) &&
+                path.node.arguments.length === 0
             ) {
+                j(path).replaceWith(j.identifier("dataSource"))
+                hasChanges = true
                 return
             }
-            j(path).replaceWith(j.identifier("dataSource"))
+
+            const replacement = callReplacements.get(callee.name)
+            if (!replacement) return
+
+            const parts = replacement.split(".")
+            if (parts.length !== 2 || replacement.includes("(")) return
+
+            if (
+                path.node.arguments.length === 0 &&
+                !replacement.includes("get")
+            ) {
+                // Property access like `dataSource.manager`
+                j(path).replaceWith(
+                    j.memberExpression(
+                        j.identifier(parts[0]),
+                        j.identifier(parts[1]),
+                    ),
+                )
+            } else {
+                // Method call like `dataSource.getRepository(User)`
+                j(path).replaceWith(
+                    j.callExpression(
+                        j.memberExpression(
+                            j.identifier(parts[0]),
+                            j.identifier(parts[1]),
+                        ),
+                        path.node.arguments,
+                    ),
+                )
+            }
             hasChanges = true
         })
     }
