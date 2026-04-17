@@ -1,0 +1,40 @@
+import { DataSource } from "typeorm"
+
+// Case 1: leftJoinAndSelect → should get TODO (migrates to relations)
+// TODO(typeorm-v1): `join` find option was removed — migrate `leftJoinAndSelect` to the `relations` option, or switch to QueryBuilder for `innerJoin`/`innerJoinAndSelect`/`leftJoin` — see the v1 upgrading guide
+const a = await repository.find({
+    join: {
+        alias: "post",
+        leftJoinAndSelect: {
+            categories: "post.categories",
+            author: "post.author",
+        },
+    },
+})
+
+// Case 2: innerJoinAndSelect with lock → should get TODO (migrates to QueryBuilder)
+// TODO(typeorm-v1): `join` find option was removed — migrate `leftJoinAndSelect` to the `relations` option, or switch to QueryBuilder for `innerJoin`/`innerJoinAndSelect`/`leftJoin` — see the v1 upgrading guide
+const b = await repository.findOne({
+    join: {
+        alias: "post",
+        innerJoinAndSelect: {
+            categories: "post.categories",
+        },
+    },
+    lock: { mode: "pessimistic_write", tables: ["category"] },
+})
+
+// Case 3: unrelated object with a `join` key that is NOT a find-options join
+// (no `alias` sibling property) — should NOT get TODO
+const c = processOptions({
+    join: { separator: "," },
+})
+
+// Case 4: quoted key — should still be detected
+// TODO(typeorm-v1): `join` find option was removed — migrate `leftJoinAndSelect` to the `relations` option, or switch to QueryBuilder for `innerJoin`/`innerJoinAndSelect`/`leftJoin` — see the v1 upgrading guide
+const d = await repository.find({
+    join: {
+        alias: "post",
+        leftJoinAndSelect: { categories: "post.categories" },
+    },
+})
