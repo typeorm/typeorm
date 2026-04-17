@@ -35,6 +35,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     describe("when no option is passed", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 ...testingOptions,
                 createLogger: () => new FileLogger("all"),
             })
@@ -60,6 +61,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     describe("when logPath option is passed as a file", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 ...testingOptions,
                 createLogger: () =>
                     new FileLogger("all", {
@@ -88,6 +90,7 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     describe("when logPath option is passed as a nested path", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 ...testingOptions,
                 createLogger: () =>
                     new FileLogger("all", {

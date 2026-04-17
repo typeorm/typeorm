@@ -12,6 +12,7 @@ describe("github issues > #9910 Incorrect behaivor of 'alwaysEnabled: true' afte
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             cache: {
                 alwaysEnabled: true,

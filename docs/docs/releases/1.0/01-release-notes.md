@@ -60,6 +60,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **Internal `nativeParameters` plumbing removed** from drivers and query builders ([#12104](https://github.com/typeorm/typeorm/pull/12104) by [@pkuczynski](https://github.com/pkuczynski))
 - **Internal `broadcastLoadEventsForAll()` removed** from Broadcaster ([#12137](https://github.com/typeorm/typeorm/pull/12137) by [@pkuczynski](https://github.com/pkuczynski))
 - **Internal `DriverUtils.buildColumnAlias()` removed** — use `buildAlias()` instead ([#12138](https://github.com/typeorm/typeorm/pull/12138) by [@pkuczynski](https://github.com/pkuczynski))
+- **`RdbmsSchemaBuilder.renameTables()` removed** — empty no-op method that was never called ([#12284](https://github.com/typeorm/typeorm/pull/12284) by [@naorpeled](https://github.com/naorpeled))
 - **`EntityMetadata.getValueMap()` `options` parameter removed** — the `skipNulls` option was never functional; remove the third argument ([#12303](https://github.com/typeorm/typeorm/pull/12303) by [@naorpeled](https://github.com/naorpeled))
 
 ### Behavioral changes
@@ -67,6 +68,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **Non-nullable relations now use INNER JOIN** — `ManyToOne` and owning `OneToOne` relations marked `nullable: false` now use `INNER JOIN` instead of `LEFT JOIN`, which may exclude rows with orphaned foreign keys ([#12064](https://github.com/typeorm/typeorm/pull/12064) by [@pkuczynski](https://github.com/pkuczynski))
 - **`invalidWhereValuesBehavior` defaults to `throw`** — passing `null` or `undefined` in where conditions now throws an error instead of silently ignoring the property; use `IsNull()` for null matching ([#11710](https://github.com/typeorm/typeorm/pull/11710) by [@naorpeled](https://github.com/naorpeled))
 - **`invalidWhereValuesBehavior` scoped to high-level APIs only** — QueryBuilder's `.where()`, `.andWhere()`, `.orWhere()` are no longer affected by this setting ([#11878](https://github.com/typeorm/typeorm/pull/11878) by [@naorpeled](https://github.com/naorpeled))
+- **`ConnectionOptionsReader` and `FileLogger` paths resolved from `process.cwd()`** — `ConnectionOptionsReader` no longer uses `app-root-path` to locate `ormconfig` files; it searches `process.cwd()` instead. Pass `{ root: "/custom/path" }` to the constructor to override. `FileLogger.logPath` is likewise resolved from `process.cwd()` — use an absolute path when the app is not started from its root folder ([#12257](https://github.com/typeorm/typeorm/pull/12257) by [@alumni](https://github.com/alumni))
 
 ## New features
 
@@ -77,6 +79,12 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **`ifExists` parameter on all drop methods** — `dropColumn`, `dropIndex`, `dropPrimaryKey`, `dropForeignKey`, `dropUniqueConstraint`, `dropCheckConstraint`, `dropExclusionConstraint`, and their plural variants now accept an `ifExists` flag ([#12121](https://github.com/typeorm/typeorm/pull/12121) by [@pkuczynski](https://github.com/pkuczynski))
 - **Explicit resource management for `QueryRunner`** — supports `await using` syntax (TypeScript 5.2+) for automatic cleanup ([#11701](https://github.com/typeorm/typeorm/pull/11701) by [@alumni](https://github.com/alumni))
 
+### Transactions
+
+- **DataSource-level default isolation level for all drivers** — `DataSourceOptions.isolationLevel` is now honored by every driver that supports transactions, not just SQL Server. Transactions started through the DataSource (explicitly or implicitly for DML) use this level by default ([#12269](https://github.com/typeorm/typeorm/pull/12269) by [@pkuczynski](https://github.com/pkuczynski))
+- **Aurora Postgres: transaction isolation level support** — Aurora Postgres now honors the `isolationLevel` option on DataSource and on explicit `startTransaction()` calls ([#12334](https://github.com/typeorm/typeorm/pull/12334) by [@pkuczynski](https://github.com/pkuczynski))
+- **Spanner: transaction isolation level support** — Google Spanner now honors the `isolationLevel` option. Spanner's `supportedIsolationLevels` is limited to `REPEATABLE READ` (currently in preview) and `SERIALIZABLE` ([#12335](https://github.com/typeorm/typeorm/pull/12335) by [@pkuczynski](https://github.com/pkuczynski))
+
 ### Drivers
 
 - **PostgreSQL: `ADD VALUE` for enum changes** — when adding new enum values, TypeORM now uses the simpler `ALTER TYPE ... ADD VALUE` syntax instead of the 4-step rename-create-migrate-drop approach, when possible ([#10956](https://github.com/typeorm/typeorm/pull/10956) by [@janzipek](https://github.com/janzipek))
@@ -86,6 +94,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **SAP HANA: table comments** — `@Entity({ comment: "..." })` now works with SAP HANA ([#11939](https://github.com/typeorm/typeorm/pull/11939) by [@Cprakhar](https://github.com/Cprakhar))
 - **SAP HANA: pool timeout** — new `maxWaitTimeoutIfPoolExhausted` pool option ([#11868](https://github.com/typeorm/typeorm/pull/11868) by [@alumni](https://github.com/alumni))
 - **SQLite: `jsonb` column type** — SQLite now supports the `jsonb` column type ([#11933](https://github.com/typeorm/typeorm/pull/11933) by [@Cprakhar](https://github.com/Cprakhar))
+- **MongoDB: object-based `select` projection** — `find*()` methods now accept the same object-based `select` syntax used by other drivers (`select: { id: true, name: true }`) in addition to the existing string-array form ([#12237](https://github.com/typeorm/typeorm/pull/12237) by [@pkuczynski](https://github.com/pkuczynski))
 - **React Native: encryption key** — new option to pass an encryption key for React Native SQLite databases ([#11736](https://github.com/typeorm/typeorm/pull/11736) by [@HtSpChakradharCholleti](https://github.com/HtSpChakradharCholleti))
 
 ### Persistence & Upsert
@@ -117,6 +126,8 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **Disable global `ORDER BY` for aggregate functions** — `repo.max()`, `repo.min()`, etc. no longer produce invalid SQL with an `ORDER BY` clause ([#11925](https://github.com/typeorm/typeorm/pull/11925) by [@Cprakhar](https://github.com/Cprakhar))
 - **Pagination subquery includes joined entity PKs** — `leftJoin` with `skip`/`take` now correctly loads related entities ([#11669](https://github.com/typeorm/typeorm/pull/11669) by [@mag123c](https://github.com/mag123c))
 - **Alias shortening with camelCase** — the `shorten` method now correctly handles `camelCase_aliases` ([#11283](https://github.com/typeorm/typeorm/pull/11283) by [@OSA413](https://github.com/OSA413))
+- **Entity typing for `QueryBuilder.update()`** — the `update(partialEntity)` signature now uses a proper entity-aware type instead of a loose object ([#11296](https://github.com/typeorm/typeorm/pull/11296) by [@OSA413](https://github.com/OSA413))
+- **Log query whitespace** — trailing and leading whitespace is no longer included in logged query strings ([#12047](https://github.com/typeorm/typeorm/pull/12047) by [@Cprakhar](https://github.com/Cprakhar))
 
 ### Relations & Eager loading
 
@@ -130,6 +141,8 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **Relation IDs in nested embedded entities** — fixed `TypeError: Cannot set properties of undefined` when mapping relation IDs within embedded entities ([#11942](https://github.com/typeorm/typeorm/pull/11942) by [@Cprakhar](https://github.com/Cprakhar))
 - **`RelationIdLoader` alias handling** — uses `DriverUtils.getAlias` to prevent alias trimming by databases with short identifier limits ([#11228](https://github.com/typeorm/typeorm/pull/11228) by [@te1](https://github.com/te1))
 - **`*-to-many` in `createPropertyPath`** — removed incorrect error handling that prevented certain relation configurations ([#11119](https://github.com/typeorm/typeorm/pull/11119) by [@ThbltLmr](https://github.com/ThbltLmr))
+- **Cascade remove on `OneToMany` with composite primary keys** — `cascade: ["remove"]` now correctly propagates the delete to child entities when the target has a composite PK; previously `CascadesSubjectBuilder` never marked these children as `mustBeRemoved`, causing FK constraint violations ([#12286](https://github.com/typeorm/typeorm/pull/12286) by [@pkuczynski](https://github.com/pkuczynski))
+- **`withDeleted` propagated to relation-id loader for many-to-many recover** — recovering a soft-removed entity with many-to-many relations no longer tries to re-insert existing junction rows; `RelationIdLoader` now includes soft-deleted entities when the parent query has `withDeleted` set ([#12287](https://github.com/typeorm/typeorm/pull/12287) by [@pkuczynski](https://github.com/pkuczynski))
 
 ### Persistence
 
@@ -144,6 +157,8 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **Virtual property handling in schema builder** — schema builder no longer attempts to create columns for virtual properties ([#11000](https://github.com/typeorm/typeorm/pull/11000) by [@skyran1278](https://github.com/skyran1278))
 - **Nameless `TableForeignKey` drop** — dropping a foreign key without an explicit name no longer fails ([#10744](https://github.com/typeorm/typeorm/pull/10744) by [@taichunmin](https://github.com/taichunmin))
 - **`getPendingMigrations` no longer creates the migrations table** — checking for pending migrations no longer has side effects ([#11672](https://github.com/typeorm/typeorm/pull/11672) by [@pkuczynski](https://github.com/pkuczynski))
+- **Many-to-many `deferrable` foreign keys** — `@ManyToMany` now honors the `deferrable` option on the junction table's foreign keys ([#11924](https://github.com/typeorm/typeorm/pull/11924) by [@smith-xyz](https://github.com/smith-xyz))
+- **Composite foreign key column order** — schema builder sorts referenced columns in composite foreign keys to match the referenced primary key index order, preventing MySQL / MSSQL / SAP HANA from rejecting the constraint ([#12280](https://github.com/typeorm/typeorm/pull/12280) by [@pkuczynski](https://github.com/pkuczynski))
 
 ### Driver-specific fixes
 
@@ -168,9 +183,10 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 - **SQL injection prevention** — parameterized queries and escaped identifiers are now used across all drivers for schema introspection and DDL methods, preventing SQL injection via database/schema/table/column names ([#12207](https://github.com/typeorm/typeorm/pull/12207) by [@pkuczynski](https://github.com/pkuczynski), [#12197](https://github.com/typeorm/typeorm/pull/12197) by [@pkuczynski](https://github.com/pkuczynski), [#12185](https://github.com/typeorm/typeorm/pull/12185) by [@pkuczynski](https://github.com/pkuczynski))
 - **OrderBy condition validation** — QueryBuilder `orderBy` and `addOrderBy` now validate condition values at runtime, preventing injection via order expressions ([#12217](https://github.com/typeorm/typeorm/pull/12217) by [@pkuczynski](https://github.com/pkuczynski))
+- **QueryBuilder rejects semicolons in raw SQL fragments** — `select`, `addSelect`, `groupBy`, `addGroupBy`, `orderBy`, and `addOrderBy` now throw when the string argument contains `;`, preventing statement-stacking injection via these entry points ([#12209](https://github.com/typeorm/typeorm/pull/12209) by [@pkuczynski](https://github.com/pkuczynski))
 
 ## Performance improvements
 
 - **PostgreSQL / CockroachDB: batched DROP in `clearDatabase()`** — consolidates individual DROP statements into single batched queries, significantly reducing round-trips during test setup ([#12164](https://github.com/typeorm/typeorm/pull/12164), [#12159](https://github.com/typeorm/typeorm/pull/12159) by [@pkuczynski](https://github.com/pkuczynski))
 
-<!-- Built against 7d2ea607a -->
+<!-- Built against e085e4c67 -->

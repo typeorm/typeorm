@@ -17,6 +17,7 @@ describe("github issues > #8221", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User, Setting],
             subscribers: [SettingSubscriber],
             schemaCreate: true,

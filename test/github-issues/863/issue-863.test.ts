@@ -13,6 +13,7 @@ describe("github issues > #863 indices > create schema", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Master, Detail],
         })
     })

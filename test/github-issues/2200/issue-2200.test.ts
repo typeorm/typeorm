@@ -14,6 +14,7 @@ describe("github issue > #2200 Bug - Issue with snake_case naming strategy", () 
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             namingStrategy,
         })

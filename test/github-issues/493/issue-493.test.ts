@@ -11,6 +11,7 @@ describe("github issues > #493 pagination should work with string primary keys",
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

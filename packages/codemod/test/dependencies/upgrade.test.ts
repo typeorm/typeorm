@@ -37,7 +37,7 @@ describe("upgrade-dependencies", () => {
         const pkg = readPackageJson(file)
 
         expect(pkg.dependencies?.sqlite3).to.be.undefined
-        expect(pkg.dependencies?.["better-sqlite3"]).to.equal("^12.8.0")
+        expect(pkg.dependencies?.["better-sqlite3"]).to.equal("^12.9.0")
         expect(report.changes).to.have.length(1)
         expect(report.changes[0]).to.include("replaced")
     })
@@ -51,7 +51,7 @@ describe("upgrade-dependencies", () => {
         const pkg = readPackageJson(file)
 
         expect(pkg.dependencies?.mysql).to.be.undefined
-        expect(pkg.dependencies?.mysql2).to.equal("^3.20.0")
+        expect(pkg.dependencies?.mysql2).to.equal("^3.22.0")
         expect(report.changes).to.have.length(1)
     })
 
@@ -138,6 +138,53 @@ describe("upgrade-dependencies", () => {
 
         expect(report.warnings).to.have.length(1)
         expect(report.warnings[0]).to.include("dotenv")
+    })
+
+    it("should bump @nestjs/typeorm below 11.0.1", () => {
+        const file = writePackageJson({
+            dependencies: { "@nestjs/typeorm": "^10.0.0" },
+        })
+
+        const report = upgradeDependencies(file, false, config)
+        const pkg = readPackageJson(file)
+
+        expect(pkg.dependencies?.["@nestjs/typeorm"]).to.equal("^11.0.1")
+        expect(report.changes).to.have.length(1)
+        expect(report.changes[0]).to.include("bumped")
+    })
+
+    it("should not bump @nestjs/typeorm already at 11.0.1", () => {
+        const file = writePackageJson({
+            dependencies: { "@nestjs/typeorm": "^11.0.1" },
+        })
+
+        const report = upgradeDependencies(file, false, config)
+
+        expect(report.changes).to.have.length(0)
+    })
+
+    it("should report error for typeorm-seeding", () => {
+        const file = writePackageJson({
+            dependencies: { "typeorm-seeding": "^1.6.0" },
+        })
+
+        const report = upgradeDependencies(file, false, config)
+
+        expect(report.errors).to.have.length(1)
+        expect(report.errors[0]).to.include("typeorm-seeding")
+        expect(report.errors[0]).to.include("incompatible")
+    })
+
+    it("should report error for typeorm-naming-strategies", () => {
+        const file = writePackageJson({
+            dependencies: { "typeorm-naming-strategies": "^4.0.0" },
+        })
+
+        const report = upgradeDependencies(file, false, config)
+
+        expect(report.errors).to.have.length(1)
+        expect(report.errors[0]).to.include("typeorm-naming-strategies")
+        expect(report.errors[0]).to.include("incompatible")
     })
 
     it("should not modify file in dry mode", () => {

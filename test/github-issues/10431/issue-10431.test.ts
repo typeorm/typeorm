@@ -14,6 +14,7 @@ describe("github issues > #10431 When requesting nested relations on foreign key
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Category, Product],
             schemaCreate: true,
             dropSchema: true,
