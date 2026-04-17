@@ -96,9 +96,12 @@ export const findOptionsLockModes = (file: FileInfo, api: API) => {
         )
 
         if (!hasOnLocked) {
+            // Use `objectProperty` (Babel builder) rather than `property` so
+            // the injected node matches the sibling nodes produced by the
+            // `tsx` parser — avoids mixing `Property` and `ObjectProperty`
+            // inside the same `ObjectExpression.properties` array.
             lockObj.properties.push(
-                j.property(
-                    "init",
+                j.objectProperty(
                     j.identifier("onLocked"),
                     j.stringLiteral(replacement.onLocked),
                 ),
