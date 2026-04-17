@@ -200,6 +200,57 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     // Function/method/arrow parameters and constructor parameter properties
     forEachIdentifierParam(root, j, collectTypedIdentifier)
 
+    // Track variables assigned from DataSource accessors, so code like
+    //   const manager = dataSource.manager
+    //   manager.connection.getMetadata(...)
+    // gets rewritten without requiring an explicit `: EntityManager`
+    // annotation.
+    const dataSourceMemberAccessors: Record<string, string> = {
+        manager: "EntityManager",
+        mongoManager: "EntityManager",
+    }
+    const dataSourceCallAccessors: Record<string, string> = {
+        getRepository: "Repository",
+        getTreeRepository: "TreeRepository",
+        getMongoRepository: "MongoRepository",
+        createQueryRunner: "QueryRunner",
+        createQueryBuilder: "SelectQueryBuilder",
+    }
+
+    root.find(j.VariableDeclarator).forEach((path) => {
+        if (path.node.id.type !== "Identifier") return
+        const init = path.node.init
+        if (!init) return
+
+        // `const X = dataSourceVar.manager`
+        if (
+            init.type === "MemberExpression" &&
+            init.object.type === "Identifier" &&
+            connectionVarNames.has(init.object.name) &&
+            init.property.type === "Identifier"
+        ) {
+            const typeName = dataSourceMemberAccessors[init.property.name]
+            if (typeName && typesWithConnectionProp.has(typeName)) {
+                connectionPropVarNames.add(path.node.id.name)
+            }
+            return
+        }
+
+        // `const X = dataSourceVar.getRepository(Y)`
+        if (
+            init.type === "CallExpression" &&
+            init.callee.type === "MemberExpression" &&
+            init.callee.object.type === "Identifier" &&
+            connectionVarNames.has(init.callee.object.name) &&
+            init.callee.property.type === "Identifier"
+        ) {
+            const typeName = dataSourceCallAccessors[init.callee.property.name]
+            if (typeName && typesWithConnectionProp.has(typeName)) {
+                connectionPropVarNames.add(path.node.id.name)
+            }
+        }
+    })
+
     // Rename .isConnected → .isInitialized on Connection/DataSource instances
     root.find(j.MemberExpression, {
         property: { name: "isConnected" },

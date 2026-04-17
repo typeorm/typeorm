@@ -18,6 +18,15 @@ function migrate(queryRunner: QueryRunner) {
 const runner: QueryRunner = getRunner()
 const ds2 = runner.dataSource
 
+// Accessor-chain tracking: untyped vars assigned from `dataSource.X`
+// should inherit TypeORM's typed-variable tracking.
+const manager = connection.manager
+const mgrDs = manager.dataSource
+const repo = connection.getRepository(User)
+const repoDs = repo.dataSource
+const qr = connection.createQueryRunner()
+const qrDs = qr.dataSource
+
 // Should NOT be transformed — not TypeORM typed
 const ds3 = event.connection
 const ds4 = this.connection
