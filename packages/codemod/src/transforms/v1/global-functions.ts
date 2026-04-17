@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -39,11 +39,17 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         getMongoRepository: "dataSource.getMongoRepository",
     }
 
-    // Replace function calls
+    // Replace function calls. For each imported canonical name, resolve its
+    // set of local names (including aliases like `import { getManager as gm }`)
+    // and match call expressions against those.
     for (const [funcName, replacement] of Object.entries(simpleReplacements)) {
-        root.find(j.CallExpression, {
-            callee: { type: "Identifier", name: funcName },
-        }).forEach((path) => {
+        const localNames = getLocalNamesForImport(root, j, "typeorm", funcName)
+        if (localNames.size === 0) continue
+        root.find(j.CallExpression).forEach((path) => {
+            const callee = path.node.callee
+            if (callee.type !== "Identifier" || !localNames.has(callee.name)) {
+                return
+            }
             const parts = replacement.split(".")
             if (parts.length === 2 && !replacement.includes("(")) {
                 // Property access like dataSource.manager — check if it's called with no args
@@ -76,14 +82,26 @@ export const globalFunctions = (file: FileInfo, api: API) => {
     }
 
     // getConnection() → dataSource (just a reference)
-    root.find(j.CallExpression, {
-        callee: { type: "Identifier", name: "getConnection" },
-    }).forEach((path) => {
-        if (path.node.arguments.length === 0) {
+    const getConnectionLocals = getLocalNamesForImport(
+        root,
+        j,
+        "typeorm",
+        "getConnection",
+    )
+    if (getConnectionLocals.size > 0) {
+        root.find(j.CallExpression).forEach((path) => {
+            const callee = path.node.callee
+            if (
+                callee.type !== "Identifier" ||
+                !getConnectionLocals.has(callee.name) ||
+                path.node.arguments.length !== 0
+            ) {
+                return
+            }
             j(path).replaceWith(j.identifier("dataSource"))
             hasChanges = true
-        }
-    })
+        })
+    }
 
     // Remove imports of deprecated globals from "typeorm"
     if (removeImportSpecifiers(root, j, "typeorm", removedGlobals)) {

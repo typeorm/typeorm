@@ -1,6 +1,6 @@
 import path from "node:path"
-import type { API, FileInfo } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import type { API, FileInfo, Node } from "jscodeshift"
+import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -15,21 +15,40 @@ export const relationCount = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    // Find @RelationCount decorators and add TODO
-    root.find(j.Decorator, {
-        expression: {
-            type: "CallExpression",
-            callee: { type: "Identifier", name: "RelationCount" },
-        },
-    }).forEach((path) => {
-        addTodoComment(
-            path.node,
-            "`@RelationCount` was removed — use `QueryBuilder` with `loadRelationCountAndMap()` instead",
-            j,
-        )
-        hasChanges = true
-        hasTodos = true
-    })
+    // Collect local names bound to `RelationCount` from typeorm — including aliases:
+    //   import { RelationCount } from "typeorm"          → "RelationCount"
+    //   import { RelationCount as RC } from "typeorm"    → "RC"
+    const localNames = getLocalNamesForImport(
+        root,
+        j,
+        "typeorm",
+        "RelationCount",
+    )
+
+    if (localNames.size > 0) {
+        // Find @<localName>(...) decorators and add TODO to the enclosing
+        // class property (decorator-attached comments get dropped by recast).
+        const message =
+            "`@RelationCount` was removed — use `QueryBuilder` with `loadRelationCountAndMap()` instead"
+        root.find(j.Decorator).forEach((decoratorPath) => {
+            const expr = decoratorPath.node.expression
+            if (
+                expr.type !== "CallExpression" ||
+                expr.callee.type !== "Identifier" ||
+                !localNames.has(expr.callee.name)
+            ) {
+                return
+            }
+            const parentNode: Node = decoratorPath.parent.node
+            const target: Node =
+                parentNode.type === "ClassProperty"
+                    ? parentNode
+                    : decoratorPath.node
+            addTodoComment(target, message, j)
+            hasChanges = true
+            hasTodos = true
+        })
+    }
 
     // Remove RelationCount import from typeorm
     if (

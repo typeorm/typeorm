@@ -4,4 +4,7 @@ import { Entity } from "typeorm"
 class Post {
     @RelationCount((post: Post) => post.categories)
     categoryCount: number
+
+    @RC((post: Post) => post.tags)
+    tagCount: number
 }

@@ -3,6 +3,9 @@ import { Column } from "typeorm"
 class Post {
     @Column({ readonly: true })
     authorName: string
+
+    @Column({ readonly: false })
+    updatedAt: Date
 }
 
 // Should NOT be transformed — not a @Column decorator

@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { forEachDecoratorObjectArg } from "../ast-helpers"
+import { forEachDecoratorObjectArg, getStringValue } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace `readonly` column option with `update`"
@@ -12,23 +12,25 @@ export const columnReadonly = (file: FileInfo, api: API) => {
 
     forEachDecoratorObjectArg(root, j, (obj) => {
         for (const prop of obj.properties) {
+            if (prop.type !== "ObjectProperty") continue
+
+            const keyName =
+                prop.key.type === "Identifier"
+                    ? prop.key.name
+                    : getStringValue(prop.key)
+            if (keyName !== "readonly") continue
+
+            // readonly: true → update: false
+            // readonly: false → update: true
+            prop.key = j.identifier("update")
             if (
-                prop.type === "ObjectProperty" &&
-                prop.key.type === "Identifier" &&
-                prop.key.name === "readonly"
+                prop.value.type === "BooleanLiteral" ||
+                (prop.value.type === "Literal" &&
+                    typeof prop.value.value === "boolean")
             ) {
-                // readonly: true → update: false
-                // readonly: false → update: true
-                prop.key.name = "update"
-                if (
-                    prop.value.type === "BooleanLiteral" ||
-                    (prop.value.type === "Literal" &&
-                        typeof prop.value.value === "boolean")
-                ) {
-                    prop.value.value = !prop.value.value
-                }
-                hasChanges = true
+                prop.value.value = !prop.value.value
             }
+            hasChanges = true
         }
     })
 
