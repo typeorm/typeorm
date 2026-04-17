@@ -1,5 +1,5 @@
 import path from "node:path"
-import type { API, FileInfo, Node } from "jscodeshift"
+import type { API, ClassProperty, Decorator, FileInfo } from "jscodeshift"
 import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
@@ -26,25 +26,27 @@ export const relationCount = (file: FileInfo, api: API) => {
     )
 
     if (localNames.size > 0) {
-        // Find @<localName>(...) decorators and add TODO to the enclosing
-        // class property (decorator-attached comments get dropped by recast).
+        // Decorators live on `ClassProperty.decorators` but jscodeshift's
+        // default visitor does not descend into that array, so
+        // `root.find(j.Decorator)` is a no-op with the `tsx` parser. Walk the
+        // class properties explicitly instead and attach the TODO to the
+        // property itself (decorator-attached comments are dropped by recast).
         const message =
             "`@RelationCount` was removed — use `QueryBuilder` with `loadRelationCountAndMap()` instead"
-        root.find(j.Decorator).forEach((decoratorPath) => {
-            const expr = decoratorPath.node.expression
-            if (
-                expr.type !== "CallExpression" ||
-                expr.callee.type !== "Identifier" ||
-                !localNames.has(expr.callee.name)
-            ) {
-                return
+        root.find(j.ClassProperty).forEach((propertyPath) => {
+            const node = propertyPath.node as ClassProperty & {
+                decorators?: Decorator[]
             }
-            const parentNode: Node = decoratorPath.parent.node
-            const target: Node =
-                parentNode.type === "ClassProperty"
-                    ? parentNode
-                    : decoratorPath.node
-            addTodoComment(target, message, j)
+            const matches = node.decorators?.some((decorator) => {
+                const expr = decorator.expression
+                return (
+                    expr.type === "CallExpression" &&
+                    expr.callee.type === "Identifier" &&
+                    localNames.has(expr.callee.name)
+                )
+            })
+            if (!matches) return
+            addTodoComment(node, message, j)
             hasChanges = true
             hasTodos = true
         })
