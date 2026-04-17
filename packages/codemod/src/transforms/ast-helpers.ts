@@ -89,6 +89,40 @@ export const fileImportsFrom = (
 }
 
 /**
+ * Returns the set of local identifiers bound to a given named export.
+ * Handles direct imports and aliased imports:
+ *
+ *   import { RelationCount } from "typeorm"         → { "RelationCount" }
+ *   import { RelationCount as RC } from "typeorm"   → { "RC" }
+ */
+export const getLocalNamesForImport = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+    importedName: string,
+): Set<string> => {
+    const localNames = new Set<string>()
+    root.find(j.ImportDeclaration, {
+        source: { value: moduleName },
+    }).forEach((importPath) => {
+        for (const spec of importPath.node.specifiers ?? []) {
+            if (
+                spec.type !== "ImportSpecifier" ||
+                spec.imported.type !== "Identifier" ||
+                spec.imported.name !== importedName
+            ) {
+                continue
+            }
+            const local = spec.local ?? spec.imported
+            if (local.type === "Identifier") {
+                localNames.add(local.name)
+            }
+        }
+    })
+    return localNames
+}
+
+/**
  * Calls `callback` for each Identifier parameter found in function-like
  * nodes (functions, methods, arrows) and TSParameterProperty nodes.
  */
@@ -176,6 +210,7 @@ export const forEachDecoratorObjectArg = (
 
 /**
  * Removes properties matching the given key names from an ObjectExpression.
+ * Matches both identifier keys (`name`) and string-literal keys (`"name"`).
  * Returns true if any properties were removed.
  */
 export const removeObjectProperties = (
@@ -185,14 +220,14 @@ export const removeObjectProperties = (
     const original = obj.properties.length
 
     obj.properties = obj.properties.filter((prop) => {
-        if (
-            (prop.type === "Property" || prop.type === "ObjectProperty") &&
-            prop.key.type === "Identifier" &&
-            propertyNames.has(prop.key.name)
-        ) {
-            return false
+        if (prop.type !== "Property" && prop.type !== "ObjectProperty") {
+            return true
         }
-        return true
+        const keyName =
+            prop.key.type === "Identifier"
+                ? prop.key.name
+                : getStringValue(prop.key)
+        return keyName === null ? true : !propertyNames.has(keyName)
     })
 
     return obj.properties.length !== original

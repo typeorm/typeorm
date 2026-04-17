@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
-import { fileImportsFrom, removeImportSpecifiers } from "../ast-helpers"
+import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -12,13 +12,6 @@ export const manual = true
 export const globalFunctions = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
-
-    // Names like `getRepository`, `getManager`, `createConnection` are
-    // generic enough that other libraries reuse them; gate the rewrite to
-    // files that actually import from typeorm to avoid touching unrelated
-    // code.
-    if (!fileImportsFrom(root, j, "typeorm")) return undefined
-
     let hasChanges = false
 
     const removedGlobals = new Set([
@@ -46,51 +39,75 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         getMongoRepository: "dataSource.getMongoRepository",
     }
 
-    // Replace function calls
+    // Resolve the local names (including aliases such as
+    // `import { getManager as gm } from "typeorm"`) for every function we
+    // know how to rewrite, then replace all matching call-sites in a single
+    // pass over `CallExpression` nodes.
+    const callReplacements = new Map<string, string>()
     for (const [funcName, replacement] of Object.entries(simpleReplacements)) {
-        root.find(j.CallExpression, {
-            callee: { type: "Identifier", name: funcName },
-        }).forEach((path) => {
+        for (const localName of getLocalNamesForImport(
+            root,
+            j,
+            "typeorm",
+            funcName,
+        )) {
+            callReplacements.set(localName, replacement)
+        }
+    }
+    const getConnectionLocals = getLocalNamesForImport(
+        root,
+        j,
+        "typeorm",
+        "getConnection",
+    )
+
+    if (callReplacements.size > 0 || getConnectionLocals.size > 0) {
+        root.find(j.CallExpression).forEach((path) => {
+            const callee = path.node.callee
+            if (callee.type !== "Identifier") return
+
+            // getConnection() → dataSource (just a reference)
+            if (
+                getConnectionLocals.has(callee.name) &&
+                path.node.arguments.length === 0
+            ) {
+                j(path).replaceWith(j.identifier("dataSource"))
+                hasChanges = true
+                return
+            }
+
+            const replacement = callReplacements.get(callee.name)
+            if (!replacement) return
+
             const parts = replacement.split(".")
-            if (parts.length === 2 && !replacement.includes("(")) {
-                // Property access like dataSource.manager — check if it's called with no args
-                if (
-                    path.node.arguments.length === 0 &&
-                    !replacement.includes("get")
-                ) {
-                    // Replace with property access
-                    j(path).replaceWith(
+            if (parts.length !== 2 || replacement.includes("(")) return
+
+            if (
+                path.node.arguments.length === 0 &&
+                !replacement.includes("get")
+            ) {
+                // Property access like `dataSource.manager`
+                j(path).replaceWith(
+                    j.memberExpression(
+                        j.identifier(parts[0]),
+                        j.identifier(parts[1]),
+                    ),
+                )
+            } else {
+                // Method call like `dataSource.getRepository(User)`
+                j(path).replaceWith(
+                    j.callExpression(
                         j.memberExpression(
                             j.identifier(parts[0]),
                             j.identifier(parts[1]),
                         ),
-                    )
-                } else {
-                    // Replace with method call
-                    j(path).replaceWith(
-                        j.callExpression(
-                            j.memberExpression(
-                                j.identifier(parts[0]),
-                                j.identifier(parts[1]),
-                            ),
-                            path.node.arguments,
-                        ),
-                    )
-                }
-                hasChanges = true
+                        path.node.arguments,
+                    ),
+                )
             }
+            hasChanges = true
         })
     }
-
-    // getConnection() → dataSource (just a reference)
-    root.find(j.CallExpression, {
-        callee: { type: "Identifier", name: "getConnection" },
-    }).forEach((path) => {
-        if (path.node.arguments.length === 0) {
-            j(path).replaceWith(j.identifier("dataSource"))
-            hasChanges = true
-        }
-    })
 
     // Remove imports of deprecated globals from "typeorm"
     if (removeImportSpecifiers(root, j, "typeorm", removedGlobals)) {
