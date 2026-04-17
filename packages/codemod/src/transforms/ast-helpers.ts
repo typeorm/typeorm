@@ -174,6 +174,88 @@ export const removeImportSpecifiers = (
 }
 
 /**
+ * Finds re-exports from a module (`export { X } from "module"`) and removes
+ * the named specifiers listed in `specifierNames`. Removes the entire
+ * `ExportNamedDeclaration` if no specifiers remain. Returns true if any
+ * specifiers were removed.
+ */
+export const removeReExportSpecifiers = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+    specifierNames: Set<string>,
+): boolean => {
+    let removed = false
+
+    root.find(j.ExportNamedDeclaration, {
+        source: { value: moduleName },
+    }).forEach((exportPath) => {
+        const remaining = exportPath.node.specifiers?.filter((spec) => {
+            if (
+                spec.type === "ExportSpecifier" &&
+                spec.local?.type === "Identifier" &&
+                specifierNames.has(spec.local.name)
+            ) {
+                removed = true
+                return false
+            }
+            return true
+        })
+
+        if (remaining?.length === 0) {
+            j(exportPath).remove()
+        } else if (remaining) {
+            exportPath.node.specifiers = remaining
+        }
+    })
+
+    return removed
+}
+
+/**
+ * Finds re-exports from a module (`export { X } from "module"`) and renames
+ * specifiers according to the `renames` map. When the re-export has an
+ * alias (`export { X as Y }`), only the local name is renamed so downstream
+ * consumers continue to see the same exported name. Returns true if any
+ * specifiers were renamed.
+ */
+export const renameReExportSpecifiers = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+    renames: Record<string, string>,
+): boolean => {
+    let renamed = false
+
+    root.find(j.ExportNamedDeclaration, {
+        source: { value: moduleName },
+    }).forEach((exportPath) => {
+        exportPath.node.specifiers?.forEach((spec) => {
+            if (
+                spec.type !== "ExportSpecifier" ||
+                spec.local?.type !== "Identifier"
+            ) {
+                return
+            }
+            const newName = renames[spec.local.name]
+            if (!newName) return
+
+            const wasAlias =
+                spec.exported.type === "Identifier" &&
+                spec.exported.name !== spec.local.name
+
+            spec.local.name = newName
+            if (!wasAlias && spec.exported.type === "Identifier") {
+                spec.exported.name = newName
+            }
+            renamed = true
+        })
+    })
+
+    return renamed
+}
+
+/**
  * Finds CallExpression nodes with a MemberExpression callee where the
  * property matches `oldName`, and renames the property to `newName`.
  * Returns true if any were renamed.

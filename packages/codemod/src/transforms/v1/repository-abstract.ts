@@ -1,6 +1,9 @@
 import path from "node:path"
 import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import {
+    removeImportSpecifiers,
+    removeReExportSpecifiers,
+} from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -83,15 +86,16 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         callee: { type: "Identifier", name: "getCustomRepository" },
     }).forEach(addGetCustomRepoTodo)
 
-    // Remove imports
-    if (
-        removeImportSpecifiers(
-            root,
-            j,
-            "typeorm",
-            new Set(["EntityRepository", "AbstractRepository"]),
-        )
-    ) {
+    // Remove imports and re-exports of removed symbols
+    const removed = new Set([
+        "EntityRepository",
+        "AbstractRepository",
+        "getCustomRepository",
+    ])
+    if (removeImportSpecifiers(root, j, "typeorm", removed)) {
+        hasChanges = true
+    }
+    if (removeReExportSpecifiers(root, j, "typeorm", removed)) {
         hasChanges = true
     }
 

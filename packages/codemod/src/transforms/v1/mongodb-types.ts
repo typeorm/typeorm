@@ -108,6 +108,38 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
         }
     })
 
+    // Move re-exports from typeorm to mongodb (barrel-file pattern).
+    // `export { ObjectId } from "typeorm"` → `export { ObjectId } from "mongodb"`.
+    root.find(j.ExportNamedDeclaration, {
+        source: { value: "typeorm" },
+    }).forEach((exportPath) => {
+        const moved: typeof exportPath.node.specifiers = []
+        const remaining = exportPath.node.specifiers?.filter((spec) => {
+            if (
+                spec.type === "ExportSpecifier" &&
+                spec.local?.type === "Identifier" &&
+                movedTypes.has(spec.local.name)
+            ) {
+                moved.push(spec)
+                return false
+            }
+            return true
+        })
+
+        if (moved.length === 0) return
+        hasChanges = true
+
+        if (remaining?.length === 0) {
+            j(exportPath).remove()
+        } else if (remaining) {
+            exportPath.node.specifiers = remaining
+        }
+
+        exportPath.insertAfter(
+            j.exportNamedDeclaration(null, moved, j.stringLiteral("mongodb")),
+        )
+    })
+
     return hasChanges ? root.toSource() : undefined
 }
 

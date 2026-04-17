@@ -1,6 +1,10 @@
 import path from "node:path"
 import type { API, FileInfo, Identifier } from "jscodeshift"
-import { forEachIdentifierParam, isIdentifier } from "../ast-helpers"
+import {
+    forEachIdentifierParam,
+    isIdentifier,
+    renameReExportSpecifiers,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "migrate from `Connection` to `DataSource`"
@@ -87,6 +91,12 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             }
         })
     })
+
+    // Rename re-exports from "typeorm" (e.g. barrel files that do
+    // `export { Connection } from "typeorm"`)
+    if (renameReExportSpecifiers(root, j, "typeorm", typeRenames)) {
+        hasChanges = true
+    }
 
     // Rename only identifiers that were imported from "typeorm"
     for (const [oldName, newName] of localRenames) {

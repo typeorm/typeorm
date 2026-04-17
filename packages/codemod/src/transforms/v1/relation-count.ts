@@ -1,6 +1,9 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import {
+    removeImportSpecifiers,
+    removeReExportSpecifiers,
+} from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -31,9 +34,14 @@ export const relationCount = (file: FileInfo, api: API) => {
         hasTodos = true
     })
 
-    // Remove RelationCount import from typeorm
+    // Remove RelationCount import and re-export from typeorm
     if (
         removeImportSpecifiers(root, j, "typeorm", new Set(["RelationCount"]))
+    ) {
+        hasChanges = true
+    }
+    if (
+        removeReExportSpecifiers(root, j, "typeorm", new Set(["RelationCount"]))
     ) {
         hasChanges = true
     }

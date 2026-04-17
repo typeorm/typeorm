@@ -1,6 +1,9 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import {
+    removeImportSpecifiers,
+    removeReExportSpecifiers,
+} from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -48,6 +51,11 @@ export const useContainer = (file: FileInfo, api: API) => {
     ])
 
     if (removeImportSpecifiers(root, j, "typeorm", removedImports)) {
+        hasChanges = true
+    }
+
+    // Remove re-exports of the same symbols (barrel-file pattern)
+    if (removeReExportSpecifiers(root, j, "typeorm", removedImports)) {
         hasChanges = true
     }
 
