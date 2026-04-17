@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, ASTNode, FileInfo } from "jscodeshift"
-import { removeObjectProperties } from "../ast-helpers"
+import { fileImportsFrom, removeObjectProperties } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -11,6 +11,9 @@ const propertyNames = new Set(["name"])
 export const datasourceName = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     const removeNameFromObject = (arg: ASTNode | undefined) => {
