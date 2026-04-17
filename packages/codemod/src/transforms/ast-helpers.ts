@@ -41,17 +41,50 @@ export const isIdentifier = (node: { type: string }): node is Identifier =>
     node.type === "Identifier"
 
 /**
- * Checks whether the file contains an import from the given module.
+ * Checks whether the file contains an import from the given module. Matches
+ * both the exact module name (`"typeorm"`) and any sub-path (`"typeorm/..."`),
+ * and recognizes ESM `import`, TypeScript `import = require(...)`, and
+ * CommonJS `require(...)` forms so that `.js`/`.jsx` callers still pass the
+ * scope guard.
  */
 export const fileImportsFrom = (
     root: Collection,
     j: JSCodeshift,
     moduleName: string,
 ): boolean => {
-    return (
-        root.find(j.ImportDeclaration, {
-            source: { value: moduleName },
+    const prefix = `${moduleName}/`
+    const matchesModule = (source: unknown): boolean =>
+        typeof source === "string" &&
+        (source === moduleName || source.startsWith(prefix))
+
+    // ESM: import ... from "typeorm[/subpath]"
+    const hasEsmImport =
+        root
+            .find(j.ImportDeclaration)
+            .filter((path) => matchesModule(path.node.source.value)).length > 0
+    if (hasEsmImport) return true
+
+    // TS: import ... = require("typeorm[/subpath]")
+    const hasImportEquals =
+        root.find(j.TSImportEqualsDeclaration).filter((path) => {
+            const ref = path.node.moduleReference
+            return (
+                ref.type === "TSExternalModuleReference" &&
+                matchesModule(getStringValue(ref.expression))
+            )
         }).length > 0
+    if (hasImportEquals) return true
+
+    // CommonJS: require("typeorm[/subpath]")
+    return (
+        root
+            .find(j.CallExpression, {
+                callee: { type: "Identifier", name: "require" },
+            })
+            .filter((path) => {
+                const [arg] = path.node.arguments
+                return arg !== undefined && matchesModule(getStringValue(arg))
+            }).length > 0
     )
 }
 
