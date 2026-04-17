@@ -36,12 +36,12 @@ Before:
 import { Connection, createConnection } from "typeorm"
 
 const connection = await createConnection({
-    type: "postgres",
-    host: "localhost",
+  type: "postgres",
+  host: "localhost",
 })
 
 if (connection.isConnected) {
-    // ...
+  // ...
 }
 
 await connection.close()
@@ -53,14 +53,14 @@ After:
 import { DataSource } from "typeorm"
 
 const dataSource = new DataSource({
-    type: "postgres",
-    host: "localhost",
+  type: "postgres",
+  host: "localhost",
 })
 
 await dataSource.initialize()
 
 if (dataSource.isInitialized) {
-    // ...
+  // ...
 }
 
 await dataSource.destroy()
@@ -118,7 +118,7 @@ Beyond the cleanup, v1 ships a pile of features that were sitting in the 0.3 pip
 **PostgreSQL**
 
 - Partial indexes via `@Index({ where: "..." })`.
-- Automatic extension installation at sync time: `installExtensions: ["uuid-ossp", "postgis"]`.
+- Automatic extension installation at sync time - set `installExtensions: true` and the Postgres driver installs the extensions your entities need.
 - Simpler enum modifications - `ALTER TYPE … ADD VALUE` where previously we had to swap types through a migration dance.
 
 **SQLite**
@@ -134,7 +134,22 @@ Beyond the cleanup, v1 ships a pile of features that were sitting in the 0.3 pip
 
 - `increment()` and `decrement()` are now aware of your entity's columns. Typos get caught at compile time.
 
+**Testing and teardown**
+
+- `clear({ cascade: true })` now issues `TRUNCATE … CASCADE` on Postgres, CockroachDB, and Oracle - one call to wipe a table plus everything that depends on it.
+- `clearDatabase()` batches its DROP statements on Postgres and CockroachDB. Noticeably faster test setup if you've been re-creating the schema between runs.
+
 And dozens of fixes across query generation, eager loading, soft delete, tree entities, and every driver. Full list in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
+
+## Security hardening
+
+Three attack surfaces that had been accumulating over the 0.3.x series got closed off in v1:
+
+- **Parameterized schema introspection and DDL** - driver internals now pass database, schema, table, and column names as escaped identifiers instead of string-concatenating them into SQL. Closes an injection vector in migrations and schema sync if any of those names came from untrusted input.
+- **`orderBy` runtime validation** - direction values in `orderBy()` / `addOrderBy()` are now checked at runtime (`"ASC"` / `"DESC"`, with `"NULLS FIRST"` / `"NULLS LAST"` for nulls). Anything else throws.
+- **Semicolons rejected in raw SQL fragments** - `select()`, `addSelect()`, `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` reject statement-stacking attempts at the builder level.
+
+If you pipe user input through raw QueryBuilder fragments, run your tests after upgrading - anything that worked on 0.3 and breaks on v1 was probably relying on behavior we now consider unsafe.
 
 ## What we removed, and what is required
 
@@ -149,7 +164,7 @@ v1 has a sharper minimum bar than 0.3. That is intentional.
 
 Other removals worth calling out:
 
-- `@EntityRepository`, `AbstractRepository`, and `getCustomRepository()` - use `Repository.extend()`.
+- `@EntityRepository`, `AbstractRepository`, and `getCustomRepository()` - removed. Extend `Repository<Entity>` directly or attach methods to the repository you get back from `dataSource.getRepository()`.
 - `@RelationCount` - use `@VirtualColumn` with a subquery.
 - The IoC container integration - get repositories from your `DataSource`.
 - `TYPEORM_*` environment variable auto-loading and auto-`dotenv`. Load your env the same way the rest of your app does.
@@ -179,11 +194,12 @@ npx @typeorm/codemod v1 src/
 
 It handles the rename-heavy work automatically: imports, method names, find-option syntax, dependency pins. For most codebases it does about 80% of the upgrade.
 
+The codemod also knows about common ecosystem packages (NestJS among them) and bumps those for you when it sees them.
+
 What it cannot do for you:
 
 - **Verify data integrity.** The INNER JOIN change above needs human eyes and a quick audit query per relation.
 - **Audit `null`-in-where call sites.** The error at runtime is clear, but it is easier to find them ahead of time than in production.
-- **Update NestJS.** Bump `@nestjs/typeorm` to v11.0.1+ alongside TypeORM.
 
 The full upgrade walkthrough, with every change and every before/after, is in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
@@ -197,7 +213,7 @@ Thanks to the current maintainer team carrying v1 over the line:
 
 - **Michael Bromley** ([@michaelbromley](https://github.com/michaelbromley)) and **David Höck** ([@dlhck](https://github.com/dlhck)) on the steering committee, leading the transition we [announced last year](/blog/future-of-typeorm)
 - **Lucian Mocanu** ([@alumni](https://github.com/alumni)) as technical lead
-- Maintainers: **Naor Peled** ([@naorpeled](https://github.com/naorpeled)), **Giorgio Boa** ([@gioboa](https://github.com/gioboa)), **Piotr Kuczynski** ([@pkuczynski](https://github.com/pkuczynski)), **Mohammed Gomaa** ([@G0maa](https://github.com/G0maa)), **Julian Pufler** ([@pujux](https://github.com/pujux)), **Simon Garner** ([@sgarner](https://github.com/sgarner)), **Pieter Wigboldus** ([@w3nl](https://github.com/w3nl)), and **Mike Guida** ([@mguida22](https://github.com/mguida22))
+- Maintainers: **Naor Peled** ([@naorpeled](https://github.com/naorpeled)), **Giorgio Boa** ([@gioboa](https://github.com/gioboa)), **Piotr Kuczynski** ([@pkuczynski](https://github.com/pkuczynski)), **Mohammed Gomaa** ([@G0maa](https://github.com/G0maa)), **Julian Pufler** ([@pujux](https://github.com/pujux)), **Simon Garner** ([@sgarner](https://github.com/sgarner)), **Pieter Wigboldus** ([@w3nl](https://github.com/w3nl)), **Mike Guida** ([@mguida22](https://github.com/mguida22)), and **Prakhar Chauhan** ([@Cprakhar](https://github.com/Cprakhar))
 
 And everyone pitching in from the Working Group.
 
