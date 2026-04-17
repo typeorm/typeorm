@@ -1,5 +1,6 @@
 import path from "node:path"
-import type { API, FileInfo, Node } from "jscodeshift"
+import type { API, ASTPath, CallExpression, FileInfo, Node } from "jscodeshift"
+import type { Collection, JSCodeshift } from "jscodeshift"
 import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
@@ -9,35 +10,86 @@ export const description =
     "flag deprecated global functions for manual migration to `DataSource` methods"
 export const manual = true
 
+const removedGlobals = new Set([
+    "createConnection",
+    "createConnections",
+    "getConnection",
+    "getConnectionManager",
+    "getConnectionOptions",
+    "getManager",
+    "getSqljsManager",
+    "getRepository",
+    "getTreeRepository",
+    "createQueryBuilder",
+    "getMongoManager",
+    "getMongoRepository",
+])
+
+// Simple replacements: getX(args) → dataSource.x(args)
+const simpleReplacements: Record<string, string> = {
+    getManager: "dataSource.manager",
+    getRepository: "dataSource.getRepository",
+    getTreeRepository: "dataSource.getTreeRepository",
+    createQueryBuilder: "dataSource.createQueryBuilder",
+    getMongoManager: "dataSource.mongoManager",
+    getMongoRepository: "dataSource.getMongoRepository",
+}
+
+const todoHostTypes = new Set([
+    "ExpressionStatement",
+    "VariableDeclaration",
+    "ReturnStatement",
+])
+
+const rewriteSimpleCall = (
+    j: JSCodeshift,
+    astPath: ASTPath<CallExpression>,
+    replacement: string,
+): boolean => {
+    const parts = replacement.split(".")
+    if (parts.length !== 2 || replacement.includes("(")) return false
+
+    const [obj, member] = parts
+    const memberExpr = j.memberExpression(
+        j.identifier(obj),
+        j.identifier(member),
+    )
+    const shouldUsePropertyAccess =
+        astPath.node.arguments.length === 0 && !replacement.includes("get")
+    j(astPath).replaceWith(
+        shouldUsePropertyAccess
+            ? memberExpr
+            : j.callExpression(memberExpr, astPath.node.arguments),
+    )
+    return true
+}
+
+const annotateFirstDataSourceUsage = (
+    root: Collection,
+    j: JSCodeshift,
+): void => {
+    const [firstUsage] = root.find(j.Identifier, { name: "dataSource" }).paths()
+    if (!firstUsage) return
+
+    let current = firstUsage
+    while (current.parent) {
+        const node: Node = current.parent.node
+        if (todoHostTypes.has(node.type)) {
+            addTodoComment(
+                node,
+                "`dataSource` is not defined — inject or import your DataSource instance",
+                j,
+            )
+            return
+        }
+        current = current.parent
+    }
+}
+
 export const globalFunctions = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
     let hasChanges = false
-
-    const removedGlobals = new Set([
-        "createConnection",
-        "createConnections",
-        "getConnection",
-        "getConnectionManager",
-        "getConnectionOptions",
-        "getManager",
-        "getSqljsManager",
-        "getRepository",
-        "getTreeRepository",
-        "createQueryBuilder",
-        "getMongoManager",
-        "getMongoRepository",
-    ])
-
-    // Simple replacements: getX(args) → dataSource.x(args)
-    const simpleReplacements: Record<string, string> = {
-        getManager: "dataSource.manager",
-        getRepository: "dataSource.getRepository",
-        getTreeRepository: "dataSource.getTreeRepository",
-        createQueryBuilder: "dataSource.createQueryBuilder",
-        getMongoManager: "dataSource.mongoManager",
-        getMongoRepository: "dataSource.getMongoRepository",
-    }
 
     // Resolve the local names (including aliases such as
     // `import { getManager as gm } from "typeorm"`) for every function we
@@ -62,50 +114,24 @@ export const globalFunctions = (file: FileInfo, api: API) => {
     )
 
     if (callReplacements.size > 0 || getConnectionLocals.size > 0) {
-        root.find(j.CallExpression).forEach((path) => {
-            const callee = path.node.callee
+        root.find(j.CallExpression).forEach((astPath) => {
+            const callee = astPath.node.callee
             if (callee.type !== "Identifier") return
 
             // getConnection() → dataSource (just a reference)
             if (
                 getConnectionLocals.has(callee.name) &&
-                path.node.arguments.length === 0
+                astPath.node.arguments.length === 0
             ) {
-                j(path).replaceWith(j.identifier("dataSource"))
+                j(astPath).replaceWith(j.identifier("dataSource"))
                 hasChanges = true
                 return
             }
 
             const replacement = callReplacements.get(callee.name)
-            if (!replacement) return
-
-            const parts = replacement.split(".")
-            if (parts.length !== 2 || replacement.includes("(")) return
-
-            if (
-                path.node.arguments.length === 0 &&
-                !replacement.includes("get")
-            ) {
-                // Property access like `dataSource.manager`
-                j(path).replaceWith(
-                    j.memberExpression(
-                        j.identifier(parts[0]),
-                        j.identifier(parts[1]),
-                    ),
-                )
-            } else {
-                // Method call like `dataSource.getRepository(User)`
-                j(path).replaceWith(
-                    j.callExpression(
-                        j.memberExpression(
-                            j.identifier(parts[0]),
-                            j.identifier(parts[1]),
-                        ),
-                        path.node.arguments,
-                    ),
-                )
+            if (replacement && rewriteSimpleCall(j, astPath, replacement)) {
+                hasChanges = true
             }
-            hasChanges = true
         })
     }
 
@@ -114,28 +140,8 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         hasChanges = true
     }
 
-    // Add a TODO comment on the first dataSource usage
     if (hasChanges) {
-        const firstUsage = root.find(j.Identifier, { name: "dataSource" })
-        if (firstUsage.length > 0) {
-            let current = firstUsage.paths()[0]
-            while (current.parent) {
-                const node: Node = current.parent.node
-                if (
-                    node.type === "ExpressionStatement" ||
-                    node.type === "VariableDeclaration" ||
-                    node.type === "ReturnStatement"
-                ) {
-                    addTodoComment(
-                        node,
-                        "`dataSource` is not defined — inject or import your DataSource instance",
-                        j,
-                    )
-                    break
-                }
-                current = current.parent
-            }
-        }
+        annotateFirstDataSourceUsage(root, j)
         stats.count.todo(api, name, file)
     }
 
