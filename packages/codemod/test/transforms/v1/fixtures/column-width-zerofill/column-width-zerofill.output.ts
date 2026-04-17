@@ -5,6 +5,11 @@ class Post {
         type: "int",
     })
     postCode: number
+
+    @Column({
+        type: "int",
+    })
+    areaCode: number
 }
 
 // Should NOT be transformed — not a @Column decorator

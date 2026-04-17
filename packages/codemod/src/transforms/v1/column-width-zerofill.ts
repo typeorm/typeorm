@@ -1,6 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import {
+    TYPEORM_COLUMN_DECORATORS,
     forEachDecoratorObjectArg,
     removeObjectProperties,
 } from "../ast-helpers"
@@ -16,11 +17,16 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
-    forEachDecoratorObjectArg(root, j, (obj) => {
-        if (removeObjectProperties(obj, propsToRemove)) {
-            hasChanges = true
-        }
-    })
+    forEachDecoratorObjectArg(
+        root,
+        j,
+        (obj) => {
+            if (removeObjectProperties(obj, propsToRemove)) {
+                hasChanges = true
+            }
+        },
+        TYPEORM_COLUMN_DECORATORS,
+    )
 
     return hasChanges ? root.toSource() : undefined
 }
