@@ -1,5 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo, Node, ObjectExpression } from "jscodeshift"
+import { fileImportsFrom } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -29,6 +30,11 @@ const isExpoDataSource = (obj: ObjectExpression): boolean =>
 export const datasourceExpo = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    // Only operate on files that import from typeorm — avoid mutating
+    // unrelated `{ type: "expo" }` objects in other libraries' configs
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
     let hasTodos = false
 
