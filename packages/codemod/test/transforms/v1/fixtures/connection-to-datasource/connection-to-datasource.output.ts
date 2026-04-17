@@ -1,6 +1,9 @@
 import { DataSource, DataSourceOptions, QueryRunner } from "typeorm"
 import type { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
 
+// Deep path whose final segment is NOT an exact rename key must be left alone
+import { something } from "typeorm/driver/sap/ThingsConnectionHelper"
+
 const options: DataSourceOptions = {
     type: "postgres",
     database: "test",

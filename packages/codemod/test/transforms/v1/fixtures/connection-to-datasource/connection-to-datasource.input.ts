@@ -1,6 +1,9 @@
 import { Connection, ConnectionOptions, QueryRunner } from "typeorm"
 import type { SapConnectionOptions } from "typeorm/driver/sap/SapConnectionOptions"
 
+// Deep path whose final segment is NOT an exact rename key must be left alone
+import { something } from "typeorm/driver/sap/ThingsConnectionHelper"
+
 const options: ConnectionOptions = {
     type: "postgres",
     database: "test",

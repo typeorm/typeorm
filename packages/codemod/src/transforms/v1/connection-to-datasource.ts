@@ -95,19 +95,19 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             }
         })
 
-        // Also rewrite deep-path module specifiers that embed a renamed
-        // symbol: `typeorm/driver/sap/SapConnectionOptions` →
-        // `typeorm/driver/sap/SapDataSourceOptions`.
+        // Also rewrite deep-path module specifiers that point to a renamed
+        // module file: `typeorm/driver/sap/SapConnectionOptions` →
+        // `typeorm/driver/sap/SapDataSourceOptions`. Only rewrite when the
+        // final path segment is an exact rename key — otherwise a path that
+        // merely contains a rename token as a substring would get mangled.
         if (source.startsWith(typeormPathPrefix)) {
-            for (const [oldName, newName] of Object.entries(typeRenames)) {
-                if (source.includes(oldName)) {
-                    const rewritten = source.split(oldName).join(newName)
-                    if (rewritten !== source) {
-                        path.node.source.value = rewritten
-                        hasChanges = true
-                    }
-                    break
-                }
+            const lastSlash = source.lastIndexOf("/")
+            const lastSegment = source.slice(lastSlash + 1)
+            const renamedSegment = typeRenames[lastSegment]
+            if (renamedSegment) {
+                path.node.source.value =
+                    source.slice(0, lastSlash + 1) + renamedSegment
+                hasChanges = true
             }
         }
     })
