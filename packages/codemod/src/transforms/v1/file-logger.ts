@@ -2,7 +2,7 @@ import path from "node:path"
 import type { API, FileInfo, Node, ObjectExpression } from "jscodeshift"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
-import { fileImportsFrom, getStringValue } from "../ast-helpers"
+import { getStringValue } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -89,16 +89,13 @@ export const fileLogger = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    // Only operate on files that import FileLogger from typeorm
-    if (!fileImportsFrom(root, j, "typeorm")) {
-        return undefined
-    }
-
     // Collect every local name bound to the `FileLogger` export from typeorm.
-    // This includes aliased imports like `import { FileLogger as FL } from "typeorm"`
-    // and namespace imports like `import * as typeorm from "typeorm"`.
+    // Handles ES imports (named/aliased/namespace) and CommonJS requires
+    // (destructured property or whole-module binding).
     const localNames = new Set<string>()
     const namespaceNames = new Set<string>()
+
+    // ES imports
     root.find(j.ImportDeclaration, {
         source: { value: "typeorm" },
     }).forEach((p) => {
@@ -117,6 +114,54 @@ export const fileLogger = (file: FileInfo, api: API) => {
                 s.local?.type === "Identifier"
             ) {
                 namespaceNames.add(s.local.name)
+            }
+        }
+    })
+
+    // CommonJS requires: const { FileLogger } = require("typeorm")
+    // or: const typeorm = require("typeorm")
+    root.find(j.VariableDeclarator, {
+        init: {
+            type: "CallExpression",
+            callee: { type: "Identifier", name: "require" },
+        },
+    }).forEach((p) => {
+        const init = p.node.init as {
+            arguments: { type: string; value?: unknown }[]
+        } | null
+        const arg = init?.arguments[0]
+        if (!arg || arg.type !== "StringLiteral" || arg.value !== "typeorm") {
+            return
+        }
+
+        const id = p.node.id
+        if (id.type === "Identifier") {
+            namespaceNames.add(id.name)
+            return
+        }
+        if (id.type === "ObjectPattern") {
+            for (const prop of id.properties) {
+                if (
+                    prop.type !== "ObjectProperty" &&
+                    prop.type !== "Property"
+                ) {
+                    continue
+                }
+                const propKey = (
+                    prop as { key: { type: string; name?: string } }
+                ).key
+                if (
+                    propKey.type !== "Identifier" ||
+                    propKey.name !== "FileLogger"
+                ) {
+                    continue
+                }
+                const propValue = (
+                    prop as { value: { type: string; name?: string } }
+                ).value
+                if (propValue.type === "Identifier" && propValue.name) {
+                    localNames.add(propValue.name)
+                }
             }
         }
     })
