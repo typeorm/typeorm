@@ -1,6 +1,30 @@
 import path from "node:path"
-import type { API, FileInfo, Identifier } from "jscodeshift"
+import type { API, ASTNode, FileInfo, Identifier } from "jscodeshift"
 import { forEachIdentifierParam, isIdentifier } from "../ast-helpers"
+
+/**
+ * Unwraps common TypeScript expression wrappers (`as`, `!`, parens) around
+ * an identifier and returns the identifier's name. Used so accessor-chain
+ * tracking also recognizes `(ds as DataSource).manager`, `ds!.manager`, and
+ * `(ds).manager` — patterns jscodeshift would otherwise miss because the
+ * surface node is a `TSAsExpression` / `TSNonNullExpression` / paren.
+ */
+const unwrapIdentifierName = (node: ASTNode): string | null => {
+    let current: ASTNode = node
+    while (true) {
+        if (current.type === "Identifier") return current.name
+        if (
+            current.type === "TSAsExpression" ||
+            current.type === "TSNonNullExpression" ||
+            current.type === "TSSatisfiesExpression" ||
+            current.type === "TSTypeAssertion"
+        ) {
+            current = current.expression
+            continue
+        }
+        return null
+    }
+}
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "migrate from `Connection` to `DataSource`"
@@ -134,23 +158,22 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
-    // Variables with Connection/DataSource type annotations
-    root.find(j.VariableDeclarator).forEach((path) => {
-        const id = path.node.id
+    // Variables and parameters with Connection/DataSource type annotations
+    const collectDataSourceTyped = (id: Identifier) => {
+        if (!id.name || id.typeAnnotation?.type !== "TSTypeAnnotation") return
+        const ann = id.typeAnnotation.typeAnnotation
         if (
-            id.type === "Identifier" &&
-            id.typeAnnotation?.type === "TSTypeAnnotation"
+            ann.type === "TSTypeReference" &&
+            ann.typeName.type === "Identifier" &&
+            connectionTypeNames.has(ann.typeName.name)
         ) {
-            const ann = id.typeAnnotation.typeAnnotation
-            if (
-                ann.type === "TSTypeReference" &&
-                ann.typeName.type === "Identifier" &&
-                connectionTypeNames.has(ann.typeName.name)
-            ) {
-                connectionVarNames.add(id.name)
-            }
+            connectionVarNames.add(id.name)
         }
+    }
+    root.find(j.VariableDeclarator).forEach((path) => {
+        if (isIdentifier(path.node.id)) collectDataSourceTyped(path.node.id)
     })
+    forEachIdentifierParam(root, j, collectDataSourceTyped)
 
     // Rename method calls: .connect() → .initialize(), .close() → .destroy()
     // Only on variables known to be Connection/DataSource instances
@@ -165,11 +188,8 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                 path.node.callee.type === "MemberExpression" &&
                 path.node.callee.property.type === "Identifier"
             ) {
-                const obj = path.node.callee.object
-                if (
-                    obj.type === "Identifier" &&
-                    connectionVarNames.has(obj.name)
-                ) {
+                const objName = unwrapIdentifierName(path.node.callee.object)
+                if (objName && connectionVarNames.has(objName)) {
                     path.node.callee.property.name = newMethod
                     hasChanges = true
                 }
@@ -227,15 +247,17 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         if (!init) return
 
         // `const X = dataSourceVar.manager`
-        if (
-            init.type === "MemberExpression" &&
-            init.object.type === "Identifier" &&
-            connectionVarNames.has(init.object.name) &&
-            init.property.type === "Identifier"
-        ) {
-            const typeName = dataSourceMemberAccessors[init.property.name]
-            if (typeName && typesWithConnectionProp.has(typeName)) {
-                connectionPropVarNames.add(path.node.id.name)
+        if (init.type === "MemberExpression") {
+            const baseName = unwrapIdentifierName(init.object)
+            if (
+                baseName &&
+                connectionVarNames.has(baseName) &&
+                init.property.type === "Identifier"
+            ) {
+                const typeName = dataSourceMemberAccessors[init.property.name]
+                if (typeName && typesWithConnectionProp.has(typeName)) {
+                    connectionPropVarNames.add(path.node.id.name)
+                }
             }
             return
         }
@@ -244,13 +266,15 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         if (
             init.type === "CallExpression" &&
             init.callee.type === "MemberExpression" &&
-            init.callee.object.type === "Identifier" &&
-            connectionVarNames.has(init.callee.object.name) &&
             init.callee.property.type === "Identifier"
         ) {
-            const typeName = dataSourceCallAccessors[init.callee.property.name]
-            if (typeName && typesWithConnectionProp.has(typeName)) {
-                connectionPropVarNames.add(path.node.id.name)
+            const baseName = unwrapIdentifierName(init.callee.object)
+            if (baseName && connectionVarNames.has(baseName)) {
+                const typeName =
+                    dataSourceCallAccessors[init.callee.property.name]
+                if (typeName && typesWithConnectionProp.has(typeName)) {
+                    connectionPropVarNames.add(path.node.id.name)
+                }
             }
         }
     })
@@ -260,8 +284,8 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         property: { name: "isConnected" },
     }).forEach((path) => {
         if (path.node.property.type === "Identifier") {
-            const obj = path.node.object
-            if (obj.type === "Identifier" && connectionVarNames.has(obj.name)) {
+            const objName = unwrapIdentifierName(path.node.object)
+            if (objName && connectionVarNames.has(objName)) {
                 path.node.property.name = "isInitialized"
                 hasChanges = true
             }
@@ -273,11 +297,8 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         property: { name: "connection" },
     }).forEach((path) => {
         if (path.node.property.type === "Identifier") {
-            const obj = path.node.object
-            if (
-                obj.type === "Identifier" &&
-                connectionPropVarNames.has(obj.name)
-            ) {
+            const objName = unwrapIdentifierName(path.node.object)
+            if (objName && connectionPropVarNames.has(objName)) {
                 path.node.property.name = "dataSource"
                 hasChanges = true
             }

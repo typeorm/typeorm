@@ -36,6 +36,20 @@ function useColumnMetadata(col: ColumnMetadata) {
     return col.dataSource.driver
 }
 
+// DataSource-typed parameter should also be tracked as a DataSource instance
+function reinitialize(ds: DataSource) {
+    if (ds.isInitialized) return
+    return ds.initialize()
+}
+
+// TypeScript expression wrappers must unwrap to the underlying identifier
+async function bounce(ds: DataSource) {
+    await (ds as DataSource).initialize()
+    await ds!.destroy()
+    const runner = (ds as DataSource).createQueryRunner()
+    return runner.dataSource
+}
+
 // Should NOT be transformed — not TypeORM typed
 const ds3 = event.connection
 const ds4 = this.connection
