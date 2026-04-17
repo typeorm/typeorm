@@ -165,7 +165,7 @@ import { IsNull } from "typeorm"
 await repository.find({ where: { text: IsNull() } })
 ```
 
-You can opt back into the old behavior with `invalidWhereValuesBehavior: "ignore"` on your `DataSourceOptions` if you really need to. We do not recommend it.
+You can opt back into the old behavior with `invalidWhereValuesBehavior: { null: "ignore", undefined: "ignore" }` on your `DataSourceOptions` if you really need to. We do not recommend it.
 
 There is also one quiet but important SQL change: relations declared with `nullable: false` now compile to `INNER JOIN` instead of `LEFT JOIN`. If your database has rows that violate your own `NOT NULL` constraints, those rows will silently drop out of query results. Check your data before you ship.
 
