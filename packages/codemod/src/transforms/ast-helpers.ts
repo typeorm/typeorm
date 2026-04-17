@@ -58,34 +58,36 @@ export const fileImportsFrom = (
         (source === moduleName || source.startsWith(prefix))
 
     // ESM: import ... from "typeorm[/subpath]"
-    const hasEsmImport =
+    if (
         root
             .find(j.ImportDeclaration)
-            .filter((path) => matchesModule(path.node.source.value)).length > 0
-    if (hasEsmImport) return true
+            .some((path) => matchesModule(path.node.source.value))
+    ) {
+        return true
+    }
 
     // TS: import ... = require("typeorm[/subpath]")
-    const hasImportEquals =
-        root.find(j.TSImportEqualsDeclaration).filter((path) => {
+    if (
+        root.find(j.TSImportEqualsDeclaration).some((path) => {
             const ref = path.node.moduleReference
             return (
                 ref.type === "TSExternalModuleReference" &&
                 matchesModule(getStringValue(ref.expression))
             )
-        }).length > 0
-    if (hasImportEquals) return true
+        })
+    ) {
+        return true
+    }
 
     // CommonJS: require("typeorm[/subpath]")
-    return (
-        root
-            .find(j.CallExpression, {
-                callee: { type: "Identifier", name: "require" },
-            })
-            .filter((path) => {
-                const [arg] = path.node.arguments
-                return arg !== undefined && matchesModule(getStringValue(arg))
-            }).length > 0
-    )
+    return root
+        .find(j.CallExpression, {
+            callee: { type: "Identifier", name: "require" },
+        })
+        .some((path) => {
+            const [arg] = path.node.arguments
+            return arg !== undefined && matchesModule(getStringValue(arg))
+        })
 }
 
 /**
