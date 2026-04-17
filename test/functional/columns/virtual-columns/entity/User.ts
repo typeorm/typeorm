@@ -1,9 +1,11 @@
 import {
     Column,
     Entity,
+    OneToMany,
     PrimaryGeneratedColumn,
     VirtualColumn,
 } from "../../../../../src"
+import type { Post } from "./Post"
 
 @Entity({ name: "users" })
 export class User {
@@ -21,4 +23,7 @@ export class User {
             `${alias}."firstName" || ' ' || ${alias}."lastName"`,
     })
     fullName?: string
+
+    @OneToMany("Post", (post: Post) => post.author)
+    posts: Post[]
 }

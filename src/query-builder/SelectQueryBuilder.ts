@@ -3532,9 +3532,48 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // DISTINCT wrapper would ORDER BY an alias that doesn't exist.
             for (const vcSelect of vcInnerSelects) {
                 const alreadySelected = originalQuery.expressionMap.selects.some(
-                    (s) =>
-                        s.selection === vcSelect.selection ||
-                        s.aliasName === vcSelect.aliasName,
+                    (s) => {
+                        // Direct match on raw selection string or explicit alias name.
+                        if (
+                            s.selection === vcSelect.selection ||
+                            s.aliasName === vcSelect.aliasName
+                        ) {
+                            return true
+                        }
+                        // Find-options stores entity-property selections as
+                        // "entityAlias.propertyPath" with no aliasName.
+                        // buildEscapedEntityColumnSelects() compiles those to
+                        // "(virtualExpr) AS <DriverUtils.buildAlias(...)>" — the same
+                        // alias our injection would add.  Detect this to prevent a
+                        // duplicate "(expr) AS <alias>" from appearing in the SELECT list.
+                        if (!s.aliasName && s.selection.includes(".")) {
+                            const dotIdx = s.selection.indexOf(".")
+                            const selAlias = s.selection.substring(0, dotIdx)
+                            const selProperty = s.selection.substring(dotIdx + 1)
+                            const aliasObj =
+                                originalQuery.expressionMap.aliases.find(
+                                    (a) => a.name === selAlias,
+                                )
+                            if (aliasObj?.metadata) {
+                                const col =
+                                    aliasObj.metadata.findColumnWithPropertyPath(
+                                        selProperty,
+                                    )
+                                if (col?.isVirtualProperty) {
+                                    const computedAlias = DriverUtils.buildAlias(
+                                        this.dataSource.driver,
+                                        undefined,
+                                        selAlias,
+                                        col.databaseName,
+                                    )
+                                    if (computedAlias === vcSelect.aliasName) {
+                                        return true
+                                    }
+                                }
+                            }
+                        }
+                        return false
+                    },
                 )
                 if (!alreadySelected) {
                     originalQuery.expressionMap.selects.push(vcSelect)

@@ -15,6 +15,7 @@ import {
 import { Activity } from "./entity/Activity"
 import { Company } from "./entity/Company"
 import { Employee } from "./entity/Employee"
+import { Post } from "./entity/Post"
 import { TimeSheet } from "./entity/TimeSheet"
 import { User } from "./entity/User"
 
@@ -472,4 +473,116 @@ describe("column > virtual columns > WHERE and ORDER BY expression expansion", (
                 expect(sql).to.not.include('"User"."fullName"')
             }
         }))
+})
+
+describe("column > virtual columns > pagination with joins", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            schemaCreate: true,
+            dropSchema: true,
+            entities: [User, Post],
+        })
+
+        for (const dataSource of dataSources) {
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                const fullNameMetadata = dataSource
+                    .getMetadata(User)
+                    .columns.find((col) => col.propertyName === "fullName")!
+                fullNameMetadata.query = (alias) =>
+                    `CONCAT(${alias}.\`firstName\`, ' ', ${alias}.\`lastName\`)`
+            }
+        }
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    it("should not produce duplicate SELECT alias when VirtualColumn is selected and ordered in skip/take+join query (bug #1)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userRepo = dataSource.getRepository(User)
+                const postRepo = dataSource.getRepository(Post)
+
+                const alice = await userRepo.save(
+                    userRepo.create({ firstName: "Alice", lastName: "Brown" }),
+                )
+                const zara = await userRepo.save(
+                    userRepo.create({ firstName: "Zara", lastName: "Allen" }),
+                )
+                await postRepo.save(
+                    postRepo.create({ title: "Hello", author: alice }),
+                )
+                await postRepo.save(
+                    postRepo.create({ title: "World", author: zara }),
+                )
+
+                // skip/take + relations triggers the DISTINCT pagination wrapper.
+                // Selecting AND ordering by the same VirtualColumn used to inject a
+                // duplicate "(expr) AS User_fullName" into the inner SELECT list.
+                let error: unknown
+                let users: User[] = []
+                try {
+                    users = await userRepo.find({
+                        select: { firstName: true, lastName: true, fullName: true },
+                        relations: { posts: true },
+                        order: { fullName: "ASC" },
+                        skip: 0,
+                        take: 10,
+                    })
+                } catch (e) {
+                    error = e
+                }
+
+                expect(error).to.be.undefined
+                expect(users.length).to.equal(2)
+                const fullNames = users
+                    .map((u) => u.fullName)
+                    .filter((n): n is string => n !== undefined)
+                expect(fullNames).to.deep.equal([...fullNames].sort())
+            }),
+        ))
+
+    it("should expose VirtualColumn alias in inner query when VC is ordered but not selected in skip/take+join query (bug #2)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userRepo = dataSource.getRepository(User)
+                const postRepo = dataSource.getRepository(Post)
+
+                const mike = await userRepo.save(
+                    userRepo.create({ firstName: "Mike", lastName: "Chen" }),
+                )
+                const ann = await userRepo.save(
+                    userRepo.create({ firstName: "Ann", lastName: "Doe" }),
+                )
+                await postRepo.save(
+                    postRepo.create({ title: "Post A", author: mike }),
+                )
+                await postRepo.save(
+                    postRepo.create({ title: "Post B", author: ann }),
+                )
+
+                // fullName is omitted from select — the inner query must still
+                // expose the VirtualColumn alias so the outer ORDER BY resolves.
+                let error: unknown
+                let users: User[] = []
+                try {
+                    users = await userRepo.find({
+                        select: { firstName: true, lastName: true },
+                        relations: { posts: true },
+                        order: { fullName: "ASC" },
+                        skip: 0,
+                        take: 10,
+                    })
+                } catch (e) {
+                    error = e
+                }
+
+                expect(error).to.be.undefined
+                expect(users.length).to.equal(2)
+                // Results should be ordered by fullName even though it wasn't selected
+                const firstNames = users.map((u) => u.firstName)
+                expect(firstNames.indexOf("Ann")).to.be.lessThan(
+                    firstNames.indexOf("Mike"),
+                )
+            }),
+        ))
 })
