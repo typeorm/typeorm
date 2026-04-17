@@ -10,6 +10,11 @@ await connection.initialize()
 console.log(connection.isInitialized)
 await connection.destroy()
 
+// TSTypeQuery: `typeof Connection` in a type position should rename
+function makeDs(ctor: typeof DataSource, options: DataSourceOptions) {
+    return new ctor(options)
+}
+
 // Property access on typed variables: .connection → .dataSource
 function migrate(queryRunner: QueryRunner) {
     const ds = queryRunner.dataSource
