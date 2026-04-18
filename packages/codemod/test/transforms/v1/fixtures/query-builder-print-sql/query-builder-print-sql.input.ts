@@ -1,3 +1,5 @@
+import "typeorm"
+
 const users = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")

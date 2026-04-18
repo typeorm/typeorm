@@ -1,6 +1,10 @@
 import path from "node:path"
-import type { API, FileInfo, Node } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import type { API, ClassProperty, Decorator, FileInfo, Node } from "jscodeshift"
+import {
+    fileImportsFrom,
+    getLocalNamesForImport,
+    removeImportSpecifiers,
+} from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -15,29 +19,47 @@ const MIGRATION_HINT =
 export const relationCount = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
     let hasTodos = false
 
-    // Find @RelationCount decorators and add TODO. Note: jscodeshift
-    // currently loses leading comments attached to decorators or their
-    // enclosing class members in the printed output, so this TODO is
-    // largely a signal for future runs when the printer improves.
-    // The removed `RelationCount` import below will surface the break
-    // immediately as a TypeScript error.
-    root.find(j.Decorator, {
-        expression: {
-            type: "CallExpression",
-            callee: { type: "Identifier", name: "RelationCount" },
-        },
-    }).forEach((decoratorPath) => {
-        addTodoComment(
-            decoratorPath.node,
-            `\`@RelationCount\` was removed — ${MIGRATION_HINT}`,
-            j,
-        )
-        hasChanges = true
-        hasTodos = true
-    })
+    // Collect local names bound to `RelationCount` from typeorm — including aliases:
+    //   import { RelationCount } from "typeorm"          → "RelationCount"
+    //   import { RelationCount as RC } from "typeorm"    → "RC"
+    const localNames = getLocalNamesForImport(
+        root,
+        j,
+        "typeorm",
+        "RelationCount",
+    )
+
+    if (localNames.size > 0) {
+        // Decorators live on `ClassProperty.decorators` but jscodeshift's
+        // default visitor does not descend into that array, so
+        // `root.find(j.Decorator)` is a no-op with the `tsx` parser. Walk the
+        // class properties explicitly instead and attach the TODO to the
+        // property itself (decorator-attached comments are dropped by recast).
+        const message = `\`@RelationCount\` was removed — ${MIGRATION_HINT}`
+        root.find(j.ClassProperty).forEach((propertyPath) => {
+            const node = propertyPath.node as ClassProperty & {
+                decorators?: Decorator[]
+            }
+            const matches = node.decorators?.some((decorator) => {
+                const expr = decorator.expression
+                return (
+                    expr.type === "CallExpression" &&
+                    expr.callee.type === "Identifier" &&
+                    localNames.has(expr.callee.name)
+                )
+            })
+            if (!matches) return
+            addTodoComment(node, message, j)
+            hasChanges = true
+            hasTodos = true
+        })
+    }
 
     // Find .loadRelationCountAndMap() calls and add TODO above the enclosing statement
     root.find(j.CallExpression, {

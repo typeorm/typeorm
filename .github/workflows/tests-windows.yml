@@ -20,10 +20,9 @@ jobs:
       - run: jq 'map(select(.type == "better-sqlite3"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: better-sqlite3-node:${{ inputs.node-version }}-windows
-          parallel: true
+          name: better-sqlite3-node-${{ inputs.node-version }}-windows
 
   sqljs:
     runs-on: windows-latest
@@ -37,7 +36,6 @@ jobs:
       - run: jq 'map(select(.type == "sqljs"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
-      - uses: coverallsapp/github-action@v2
+      - uses: ./.github/actions/upload-coverage
         with:
-          flag-name: sqljs-node:${{ inputs.node-version }}-windows
-          parallel: true
+          name: sqljs-node-${{ inputs.node-version }}-windows
