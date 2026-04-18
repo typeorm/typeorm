@@ -1,6 +1,13 @@
 import path from "node:path"
-import type { API, ASTPath, CallExpression, FileInfo, Node } from "jscodeshift"
-import type { Collection, JSCodeshift } from "jscodeshift"
+import type {
+    API,
+    ASTPath,
+    CallExpression,
+    Collection,
+    FileInfo,
+    JSCodeshift,
+    Node,
+} from "jscodeshift"
 import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
