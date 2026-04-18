@@ -2,6 +2,7 @@ import { expect } from "chai"
 import jscodeshift, { type ASTNode } from "jscodeshift"
 import {
     fileImportsFrom,
+    getLocalNamesForImport,
     getStringValue,
     setStringValue,
 } from "../../src/transforms/ast-helpers"
@@ -94,6 +95,49 @@ describe("ast-helpers", () => {
         it("does not match require calls for other modules", () => {
             const root = j('const fs = require("node:fs")')
             expect(fileImportsFrom(root, j, "typeorm")).to.be.false
+        })
+    })
+
+    describe("getLocalNamesForImport", () => {
+        const localNames = (src: string) =>
+            [
+                ...getLocalNamesForImport(j(src), j, "typeorm", "getManager"),
+            ].sort()
+
+        it("finds ESM direct-import binding", () => {
+            expect(
+                localNames('import { getManager } from "typeorm"'),
+            ).to.deep.equal(["getManager"])
+        })
+
+        it("finds ESM aliased-import binding", () => {
+            expect(
+                localNames('import { getManager as gm } from "typeorm"'),
+            ).to.deep.equal(["gm"])
+        })
+
+        it("finds CommonJS destructured binding", () => {
+            expect(
+                localNames('const { getManager } = require("typeorm")'),
+            ).to.deep.equal(["getManager"])
+        })
+
+        it("finds CommonJS aliased-destructured binding", () => {
+            expect(
+                localNames('const { getManager: gm } = require("typeorm")'),
+            ).to.deep.equal(["gm"])
+        })
+
+        it("returns empty set for a name that is not imported", () => {
+            expect(localNames('import { other } from "typeorm"')).to.deep.equal(
+                [],
+            )
+        })
+
+        it("returns empty set for imports from a different module", () => {
+            expect(
+                localNames('import { getManager } from "other-lib"'),
+            ).to.deep.equal([])
         })
     })
 })
