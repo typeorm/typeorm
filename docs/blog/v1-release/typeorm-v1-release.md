@@ -6,6 +6,8 @@ date: 2026-04-17
 description: TypeORM 1.0 is out - the first major in almost five years. A stable API surface, dozens of new features, and a statement that TypeORM is here to stay.
 ---
 
+TypeORM v1.0 is out now!
+
 It has been a long road, but we finally made it. TypeORM has been around since 2016, and is one of the most widely-used ORM libraries in the Node.js ecosystem. But it has been stuck in pre-1.0 limbo for that entire time, a fact which does not accurately reflect what the project has grown into over the years.
 
 Pre-1.0 software signals instability and immaturity, when the reality is that TypeORM is one of the most mature, stable and performant Node.js ORM solutions. In fact, it has gone without breaking changes for almost 5 years since the release of v0.3 way back in 2021.
@@ -14,7 +16,7 @@ When new maintainers took over the project at the end of 2024, our first goal wa
 
 Over the past several months, the team has been focused on the next major target: to release v1.0 and signal that TypeORM is here to stay as a stable, mature and well-maintained open source project. This has been a huge effort and countless hours have gone into the work needed to get us here.
 
-The TypeORM team and community is proud to present v1.0. This post covers what's new, what changed, and how to upgrade.
+The TypeORM team and community is proud to present v1.0. This post covers what you need to know about upgrading.
 
 <!-- truncate -->
 
@@ -78,7 +80,7 @@ The codemod handles the rename-heavy work automatically — imports, method name
 
 For most codebases the codemod does about 80% of the upgrade. The rest — data integrity checks against the new INNER JOIN behavior on non-nullable relations, and `null`-in-where audits — is spelled out in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
-## NestJS integration
+## NestJS Integration
 
 Many of you will be using TypeORM as part of a NestJS application. As part of this release we worked closely with the NestJS team to ensure a seamless upgrade - just make sure you're on [@nestjs/typeorm v11.0.1](https://github.com/nestjs/typeorm/releases/tag/11.0.1) which brings support for TypeORM v1.0.
 
