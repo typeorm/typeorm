@@ -1,5 +1,5 @@
 import path from "node:path"
-import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
+import type { API, ASTPath, Decorator, FileInfo, Node } from "jscodeshift"
 import {
     fileImportsFrom,
     getLocalNamesForImport,
@@ -46,18 +46,27 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     )
 
     // Find @EntityRepository decorators (including aliased names)
-    root.find(j.Decorator)
-        .filter((decoratorPath) => {
-            const expr = decoratorPath.node.expression
-            return (
-                expr.type === "CallExpression" &&
-                expr.callee.type === "Identifier" &&
-                entityRepositoryNames.has(expr.callee.name)
-            )
+    root.find(j.ClassDeclaration)
+        .filter((classPath) => {
+            const decorators = (classPath.node as { decorators?: Decorator[] })
+                .decorators
+            if (!decorators) return false
+
+            for (const decorator of decorators) {
+                const expr = decorator.expression
+                if (
+                    expr.type === "CallExpression" &&
+                    expr.callee.type === "Identifier" &&
+                    entityRepositoryNames.has(expr.callee.name)
+                ) {
+                    return true
+                }
+            }
+            return false
         })
-        .forEach((decoratorPath) => {
+        .forEach((classPath) => {
             addTodoComment(
-                decoratorPath.node,
+                classPath.node,
                 "`@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`",
                 j,
             )

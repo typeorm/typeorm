@@ -153,13 +153,7 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
                             s.local?.type === "Identifier",
                     )
                     .map((s) => {
-                        if (
-                            s.type !== "ExportSpecifier" ||
-                            s.local?.type !== "Identifier"
-                        ) {
-                            return ""
-                        }
-                        return s.local.name
+                        return s.local?.name ?? ""
                     }) ?? [],
             )
             for (const spec of moved) {

@@ -1,3 +1,4 @@
+// TODO(typeorm-v1): `@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`
 // TODO(typeorm-v1): `AbstractRepository` was removed — use a custom service class with `dataSource.getRepository()`
 @EntityRepository(User)
 class UserRepository extends AbstractRepository<User> {
