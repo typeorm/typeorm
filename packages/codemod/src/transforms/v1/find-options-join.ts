@@ -1,5 +1,5 @@
 import path from "node:path"
-import type { API, FileInfo, Node, ObjectProperty } from "jscodeshift"
+import type { API, FileInfo, Node, ObjectExpression } from "jscodeshift"
 import { fileImportsFrom, getStringValue } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
@@ -15,7 +15,14 @@ const MIGRATION_HINT =
 // A find-options `join` property has a value like
 // `{ alias: "...", leftJoinAndSelect: { ... }, ... }`. We look for the
 // `alias` sub-property to distinguish it from unrelated `join` keys.
-const isFindOptionsJoinProperty = (prop: ObjectProperty): boolean => {
+// Accept both `ObjectProperty` (Babel) and `Property` (Esprima) node shapes
+// and both identifier (`join:`) and string-literal (`"join":`) keys.
+const isFindOptionsJoinProperty = (
+    prop: ObjectExpression["properties"][number],
+): boolean => {
+    if (prop.type !== "Property" && prop.type !== "ObjectProperty") {
+        return false
+    }
     const keyName =
         prop.key.type === "Identifier"
             ? prop.key.name
@@ -24,7 +31,9 @@ const isFindOptionsJoinProperty = (prop: ObjectProperty): boolean => {
     if (prop.value.type !== "ObjectExpression") return false
 
     return prop.value.properties.some((inner) => {
-        if (inner.type !== "ObjectProperty") return false
+        if (inner.type !== "Property" && inner.type !== "ObjectProperty") {
+            return false
+        }
         const innerKey =
             inner.key.type === "Identifier"
                 ? inner.key.name
@@ -45,11 +54,7 @@ export const findOptionsJoin = (file: FileInfo, api: API) => {
 
     root.find(j.ObjectExpression).forEach((objPath) => {
         const obj = objPath.node
-        const hasJoin = obj.properties.some(
-            (prop) =>
-                prop.type === "ObjectProperty" &&
-                isFindOptionsJoinProperty(prop),
-        )
+        const hasJoin = obj.properties.some(isFindOptionsJoinProperty)
         if (!hasJoin) return
 
         // Walk up to the enclosing statement for the TODO

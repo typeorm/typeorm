@@ -30,11 +30,12 @@ const c = processOptions({
     join: { separator: "," },
 })
 
-// Case 4: quoted key — should still be detected
+// Case 4: string-literal key — should still be detected via `getStringValue`
+// prettier-ignore
 // TODO(typeorm-v1): `join` find option was removed — migrate `leftJoinAndSelect` to the `relations` option, or switch to QueryBuilder for `innerJoin`/`innerJoinAndSelect`/`leftJoin` — see the v1 upgrading guide
 const d = await repository.find({
-    join: {
-        alias: "post",
-        leftJoinAndSelect: { categories: "post.categories" },
+    "join": {
+        "alias": "post",
+        "leftJoinAndSelect": { categories: "post.categories" },
     },
-})
+});

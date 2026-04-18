@@ -28,10 +28,11 @@ const c = processOptions({
     join: { separator: "," },
 })
 
-// Case 4: quoted key — should still be detected
+// Case 4: string-literal key — should still be detected via `getStringValue`
+// prettier-ignore
 const d = await repository.find({
-    join: {
-        alias: "post",
-        leftJoinAndSelect: { categories: "post.categories" },
+    "join": {
+        "alias": "post",
+        "leftJoinAndSelect": { categories: "post.categories" },
     },
 })
