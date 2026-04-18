@@ -46,6 +46,7 @@ jobs:
             src-or-tests: &src-or-tests
               - *src
               - .github/actions/setup-node/**
+              - .github/actions/upload-coverage/**
               - .github/workflows/test*.yml
               - docker-compose.yml
               - docker/**/*
@@ -129,20 +130,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # SonarQube needs full history for blame and PR diffing against master
       - uses: ./.github/actions/setup-node
         with:
           working-directory: packages/codemod
-      - run: pnpm test
+      - run: pnpm exec c8 pnpm test
         working-directory: packages/codemod
+      - uses: SonarSource/sonarqube-scan-action@v7
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          projectBaseDir: packages/codemod
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   coverage:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
     runs-on: ubuntu-latest
     needs: [detect-changes, tests-linux, tests-windows]
     steps:
-      - uses: coverallsapp/github-action@v2
+      - uses: actions/checkout@v6
         with:
-          parallel-finished: true
+          fetch-depth: 0 # SonarQube needs full history for blame and PR diffing against master
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: coverage-*
+          path: coverage/
+
+      - uses: SonarSource/sonarqube-scan-action@v7
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   all-passed:
     runs-on: ubuntu-latest
