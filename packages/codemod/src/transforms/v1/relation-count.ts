@@ -1,10 +1,6 @@
 import path from "node:path"
 import type { API, ClassProperty, Decorator, FileInfo, Node } from "jscodeshift"
-import {
-    fileImportsFrom,
-    getLocalNamesForImport,
-    removeImportSpecifiers,
-} from "../ast-helpers"
+import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -31,7 +27,11 @@ export const relationCount = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
 
-    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+    // No `fileImportsFrom` guard at the top: `.loadRelationCountAndMap()` call
+    // sites can appear in files that only receive a `QueryBuilder` via a helper
+    // and never import from "typeorm" directly. The decorator and import-
+    // removal blocks below self-gate via `getLocalNamesForImport` /
+    // `removeImportSpecifiers`, which are no-ops when typeorm is absent.
 
     let hasChanges = false
     let hasTodos = false
