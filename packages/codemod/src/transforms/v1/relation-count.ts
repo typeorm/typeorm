@@ -5,7 +5,7 @@ import {
     getLocalNamesForImport,
     removeImportSpecifiers,
 } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -15,6 +15,17 @@ export const manual = true
 
 const MIGRATION_HINT =
     "use `@VirtualColumn` with a sub-query instead — see the v1 upgrading guide"
+
+// A TODO attached to one of these nodes will survive jscodeshift/recast's
+// printing. Walking up until we reach one of these produces a visible
+// comment above the enclosing statement or declaration.
+const isTodoHost = (type: string): boolean =>
+    type.endsWith("Statement") ||
+    type === "VariableDeclaration" ||
+    type === "ExportDefaultDeclaration" ||
+    type === "ExportNamedDeclaration" ||
+    type === "ClassProperty" ||
+    type === "PropertyDefinition"
 
 export const relationCount = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -55,13 +66,17 @@ export const relationCount = (file: FileInfo, api: API) => {
                 )
             })
             if (!matches) return
+            if (hasTodoComment(node, message)) return
             addTodoComment(node, message, j)
             hasChanges = true
             hasTodos = true
         })
     }
 
-    // Find .loadRelationCountAndMap() calls and add TODO above the enclosing statement
+    // Find .loadRelationCountAndMap() calls and add TODO above the enclosing statement.
+    // Multiple chained calls on one statement resolve to the same host, so the
+    // `hasTodoComment` guard keeps the transform idempotent.
+    const callMessage = `\`loadRelationCountAndMap()\` was removed — ${MIGRATION_HINT}`
     root.find(j.CallExpression, {
         callee: {
             type: "MemberExpression",
@@ -71,18 +86,12 @@ export const relationCount = (file: FileInfo, api: API) => {
         let current = callPath.parent
         while (current) {
             const node: Node = current.node
-            if (
-                node.type === "ExpressionStatement" ||
-                node.type === "VariableDeclaration" ||
-                node.type === "ReturnStatement"
-            ) {
-                addTodoComment(
-                    node,
-                    `\`loadRelationCountAndMap()\` was removed — ${MIGRATION_HINT}`,
-                    j,
-                )
-                hasChanges = true
-                hasTodos = true
+            if (isTodoHost(node.type)) {
+                if (!hasTodoComment(node, callMessage)) {
+                    addTodoComment(node, callMessage, j)
+                    hasChanges = true
+                    hasTodos = true
+                }
                 break
             }
             current = current.parent
