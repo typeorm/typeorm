@@ -1,4 +1,6 @@
 import { ConnectionOptionsReader } from "typeorm"
+import { ConnectionOptionsReader as Reader } from "typeorm"
+import * as typeorm from "typeorm"
 
 // Case 1: simple constructor + all() → rename to get()
 const reader = new ConnectionOptionsReader()
@@ -8,6 +10,34 @@ const allOptions = await reader.all()
 const customReader = new ConnectionOptionsReader({ root: "/custom/path" })
 const custom = await customReader.all()
 
-// Case 3: inlined usage — constructor gets a TODO, .all() is not renamed
-// (our transform only tracks bound identifiers)
+// Case 3: inlined usage — constructor gets a TODO AND .all() is renamed to .get()
 const inline = await new ConnectionOptionsReader().all()
+
+// Case 4: aliased ESM import — constructor flagged, .all() renamed
+const aliased = new Reader()
+const aliasedOptions = await aliased.all()
+
+// Case 5: namespace import — `new typeorm.ConnectionOptionsReader()`
+const ns = new typeorm.ConnectionOptionsReader()
+const nsOptions = await ns.all()
+
+// Case 6: CommonJS destructured (aliased) binding
+const { ConnectionOptionsReader: CjsReader } = require("typeorm")
+const cjs = new CjsReader()
+const cjsOptions = await cjs.all()
+
+// Case 7: AssignmentExpression binding — `let r; r = new Reader()`
+let deferred: any
+deferred = new ConnectionOptionsReader()
+const deferredOptions = await deferred.all()
+
+// Case 8: two constructors on the same statement — only one TODO
+const [a, b] = [
+    new ConnectionOptionsReader(),
+    new ConnectionOptionsReader({ root: "/other" }),
+]
+
+// Case 9: constructor inside `throw` — should still be flagged
+function mustFail() {
+    throw new ConnectionOptionsReader()
+}
