@@ -115,6 +115,7 @@ export interface TestingOptions {
                */
               readonly type?:
                   | "database"
+                  | "in-memory"
                   | "redis"
                   | "ioredis"
                   | "ioredis/cluster" // todo: add mongodb and other cache providers as well in the future
