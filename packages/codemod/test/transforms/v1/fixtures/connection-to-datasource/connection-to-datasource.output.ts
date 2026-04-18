@@ -63,6 +63,14 @@ async function bounce(ds: DataSource) {
     return runner.dataSource
 }
 
+// CommonJS require(): destructured identifier + deep-path both rewrite
+const { DataSource: LegacyConn } = require("typeorm")
+const {
+    SapDataSourceOptions: LegacySapOpts,
+} = require("typeorm/driver/sap/SapDataSourceOptions")
+
+const cjs = new DataSource(options)
+
 // Should NOT be transformed — not TypeORM typed
 const ds3 = event.connection
 const ds4 = this.connection
