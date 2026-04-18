@@ -74,21 +74,32 @@ export const datasourceMongodb = (file: FileInfo, api: API) => {
             return
         }
 
-        // sslValidate → tlsAllowInvalidCertificates (inverted boolean — add TODO)
+        // sslValidate → tlsAllowInvalidCertificates. Semantics are inverted:
+        // when the original value is a boolean literal we can safely flip it;
+        // otherwise we leave the expression alone and emit a TODO so the user
+        // inverts it manually.
         if (name === "sslValidate") {
             if (path.node.key.type === "Identifier") {
                 path.node.key.name = "tlsAllowInvalidCertificates"
             } else if (path.node.key.type === "StringLiteral") {
                 path.node.key.value = "tlsAllowInvalidCertificates"
             }
-            // Add TODO comment about inverted boolean
-            addTodoComment(
-                path.node,
-                "`sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value.",
-                j,
-            )
+            const valueNode = path.node.value
+            if (
+                valueNode.type === "BooleanLiteral" ||
+                (valueNode.type === "Literal" &&
+                    typeof valueNode.value === "boolean")
+            ) {
+                valueNode.value = !valueNode.value
+            } else {
+                addTodoComment(
+                    path.node,
+                    "`sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value.",
+                    j,
+                )
+                hasTodos = true
+            }
             hasChanges = true
-            hasTodos = true
             return
         }
 
