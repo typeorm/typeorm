@@ -1,16 +1,17 @@
 import { DataSource } from "typeorm"
 
-// Case 1: Expo data source without driver — should have `driver: require("expo-sqlite")` added
-// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. `driver: require("expo-sqlite")` has been added automatically.
+// Case 1: Expo data source — should be flagged with a SDK v52 reminder TODO
+// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. TypeORM auto-loads `expo-sqlite` now; no `driver:` option is needed unless you want to override it.
 const dataSource = new DataSource({
     type: "expo",
     database: "app.db",
     entities: [],
     synchronize: true,
-    driver: require("expo-sqlite"),
 })
 
-// Case 2: Expo data source that already has a driver — should NOT be touched
+// Case 2: Expo data source with an explicit driver — still flagged (the SDK
+// version requirement applies regardless of whether the driver is injected)
+// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. TypeORM auto-loads `expo-sqlite` now; no `driver:` option is needed unless you want to override it.
 const dataSource2 = new DataSource({
     type: "expo",
     database: "app.db",
@@ -25,38 +26,35 @@ const dataSource3 = new DataSource({
     entities: [],
 })
 
-// Case 4: quoted keys — should also be detected and rewritten
+// Case 4: quoted keys — should also be detected
 // prettier-ignore
-// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. `driver: require("expo-sqlite")` has been added automatically.
+// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. TypeORM auto-loads `expo-sqlite` now; no `driver:` option is needed unless you want to override it.
 const dataSource4 = new DataSource({
     "type": "expo",
     "database": "quoted.db",
     "entities": [],
-    driver: require("expo-sqlite")
 });
 
 // Case 5: exported via `export default` — TODO should land on the export
-// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. `driver: require("expo-sqlite")` has been added automatically.
+// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. TypeORM auto-loads `expo-sqlite` now; no `driver:` option is needed unless you want to override it.
 export default new DataSource({
     type: "expo",
     database: "exported.db",
     entities: [],
-    driver: require("expo-sqlite"),
 })
 
 // Case 6: `{ type: "expo" }` WITHOUT a sibling `database` property — do NOT
-// mutate; unrelated configs elsewhere shouldn't get `driver` appended.
+// flag; unrelated configs elsewhere shouldn't get a TODO appended.
 const cliOpts = {
     type: "expo",
     label: "Expo CLI",
 }
 
-// Case 7: idempotency — a file that already has the TODO + driver injected
-// should round-trip unchanged.
-// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. `driver: require("expo-sqlite")` has been added automatically.
+// Case 7: idempotency — a file that already has the TODO should round-trip
+// unchanged.
+// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. TypeORM auto-loads `expo-sqlite` now; no `driver:` option is needed unless you want to override it.
 const dataSource7 = new DataSource({
     type: "expo",
     database: "already-migrated.db",
-    driver: require("expo-sqlite"),
     entities: [],
 })

@@ -6,11 +6,11 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    'add `driver: require("expo-sqlite")` to Expo data sources — legacy Expo driver was removed'
+    "flag Expo data sources that require a v52+ SDK bump after the legacy driver removal"
 export const manual = true
 
 const TODO_MESSAGE =
-    'Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. `driver: require("expo-sqlite")` has been added automatically.'
+    "Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. TypeORM auto-loads `expo-sqlite` now; no `driver:` option is needed unless you want to override it."
 
 // Returns the string key name for `Identifier` / `StringLiteral` /
 // `Literal` keys, matching the behaviour established in `datasource-sqlite-type`.
@@ -24,7 +24,7 @@ const propertyKeyName = (
 }
 
 // Scope predicate: `{ type: "expo", database: "...", ... }` — we require the
-// sibling `database` property to avoid mutating unrelated configs that merely
+// sibling `database` property to avoid flagging unrelated configs that merely
 // reuse `type: "expo"` (e.g. commander/yargs option shapes).
 const isExpoDataSource = (obj: ObjectExpression): boolean => {
     let hasExpoType = false
@@ -47,9 +47,6 @@ const isExpoDataSource = (obj: ObjectExpression): boolean => {
     return hasExpoType && hasDatabase
 }
 
-const hasDriverProperty = (obj: ObjectExpression): boolean =>
-    obj.properties.some((prop) => propertyKeyName(prop) === "driver")
-
 // Statement-like ancestors that can host a TODO comment survivably through
 // recast's printing. Walking to one of these lands the comment above the
 // enclosing statement or declaration.
@@ -67,30 +64,17 @@ export const datasourceExpo = (file: FileInfo, api: API) => {
 
     // Scope guard: only operate on files that import from typeorm. Ormconfig-
     // style `.js` files with no typeorm import are deliberately skipped to
-    // avoid mutating unrelated configs in apps that don't use typeorm.
+    // avoid flagging unrelated configs in apps that don't use typeorm.
     if (!fileImportsFrom(root, j, "typeorm")) return undefined
 
-    let hasChanges = false
     let hasTodos = false
 
     root.find(j.ObjectExpression).forEach((objPath) => {
-        const obj = objPath.node
-        if (!isExpoDataSource(obj)) return
-        if (hasDriverProperty(obj)) return
+        if (!isExpoDataSource(objPath.node)) return
 
-        obj.properties.push(
-            j.objectProperty(
-                j.identifier("driver"),
-                j.callExpression(j.identifier("require"), [
-                    j.stringLiteral("expo-sqlite"),
-                ]),
-            ),
-        )
-        hasChanges = true
-
-        // Walk up to the enclosing statement for the TODO comment, skipping
-        // a host that already carries the same message (idempotent on
-        // repeated runs).
+        // Walk up to the enclosing statement for the TODO comment, skipping a
+        // host that already carries the same message (idempotent on repeated
+        // runs).
         let current = objPath.parent
         while (current) {
             const node: Node = current.node
@@ -107,7 +91,7 @@ export const datasourceExpo = (file: FileInfo, api: API) => {
 
     if (hasTodos) stats.count.todo(api, name, file)
 
-    return hasChanges ? root.toSource() : undefined
+    return hasTodos ? root.toSource() : undefined
 }
 
 export const fn = datasourceExpo
