@@ -22,8 +22,6 @@ The TypeORM team and community is proud to present v1.0. This post covers what y
 
 ## What's new
 
-The 0.3.x cycle accumulated dozens of features, behavior fixes, and API improvements. v1 is where they all land.
-
 ### A cleaner API surface
 
 The headline change: `Connection` is now `DataSource`. The global `createConnection`, `getConnection`, `getRepository`, `getManager`, and friends are gone, replaced by direct `dataSource.getRepository(...)` access. The naming finally matches what the object actually is.
@@ -36,7 +34,7 @@ The codemod (below) handles every one of these renames automatically.
 
 ### Safer by default
 
-- **`null` and `undefined` in `where` clauses now throw.** The 0.3 silent-ignore behavior was correct about half the time and produced very surprising queries the other half. Use `IsNull()` for null matching, or set `invalidWhereValuesBehavior: { null: "ignore", undefined: "ignore" }` if you need the old behavior.
+- **`null` and `undefined` in `where` now throw** for high-level APIs (`find*`, repository/manager mutations, `queryBuilder.setFindOptions()`). QueryBuilder's `.where()`, `.andWhere()`, and `.orWhere()` are not affected, they pass through as-is. Use `IsNull()` for null matching, or set `invalidWhereValuesBehavior: { null: "ignore", undefined: "ignore" }` if you need to allow them.
 - **Non-nullable relations now use `INNER JOIN`.** If your schema says `nullable: false`, the query reflects that. Worth running an integrity check before you ship - orphaned rows will silently drop out of results where they used to leak through.
 
 ### Faster tests, cleaner schema work
@@ -112,13 +110,11 @@ If you've heard that TypeORM is dead or unmaintained, v1 is our answer. The proj
 - **Technical lead**: **Lucian Mocanu** ([@alumni](https://github.com/alumni)).
 - **Maintainers**: **Naor Peled** ([@naorpeled](https://github.com/naorpeled)), **Giorgio Boa** ([@gioboa](https://github.com/gioboa)), **Piotr Kuczynski** ([@pkuczynski](https://github.com/pkuczynski)), **Mohammed Gomaa** ([@G0maa](https://github.com/G0maa)), **Julian Pufler** ([@pujux](https://github.com/pujux)), **Simon Garner** ([@sgarner](https://github.com/sgarner)), **Pieter Wigboldus** ([@w3nl](https://github.com/w3nl)), **Mike Guida** ([@mguida22](https://github.com/mguida22)), **Shaun Smith** ([@smith-xyz](https://github.com/smith-xyz)), and **Prakhar Chhalotre** ([@Cprakhar](https://github.com/Cprakhar)).
 
-Backed by a working group of companies and contributors who ship alongside us.
-
 Special thanks to **Umed Khudoiberdiev** ([@pleerock](https://github.com/pleerock)) and **Dmitry Zotov** - TypeORM is their project originally, and v1 is built on everything they shipped across the entire 0.x series.
 
 v1 also wouldn't exist without the 40 contributors who shipped PRs in this cycle, everyone who filed issues with clear reproductions, and our sponsors on OpenCollective. Thank you.
 
-If your company depends on TypeORM and has never sponsored, this is a good time: [opencollective.com/typeorm](https://opencollective.com/typeorm). The path to the non-profit foundation we described last year is funded by contributions.
+If your company depends on TypeORM and has never sponsored, this is a good time: sponsor on [OpenCollective](https://opencollective.com/typeorm), or reach out at [maintainers@typeorm.io](mailto:maintainers@typeorm.io) to discuss other ways to support the project.
 
 ## Links
 
