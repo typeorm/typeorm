@@ -34,7 +34,7 @@ The codemod (below) handles every one of these renames automatically.
 
 ### Safer by default
 
-- **`null` and `undefined` in `where` now throw** for high-level APIs (`find*`, repository/manager mutations, `queryBuilder.setFindOptions()`). QueryBuilder's `.where()`, `.andWhere()`, and `.orWhere()` are not affected, they pass through as-is. Use `IsNull()` for null matching, or set `invalidWhereValuesBehavior: { null: "ignore", undefined: "ignore" }` if you need to allow them.
+- **`null` and `undefined` in `where` now throw** for high-level APIs (`find*`, repository/manager mutations, `queryBuilder.setFindOptions()`). QueryBuilder's `.where()`, `.andWhere()`, and `.orWhere()` are not affected, they pass through as-is. Use `IsNull()` for null matching, or set `invalidWhereValuesBehavior: { null: "ignore", undefined: "ignore" }` if you need to ignore them.
 - **Non-nullable relations now use `INNER JOIN`.** If your schema says `nullable: false`, the query reflects that. Worth running an integrity check before you ship - orphaned rows will silently drop out of results where they used to leak through.
 
 ### Faster tests, cleaner schema work
@@ -84,7 +84,7 @@ v1 raises the floor:
 - **MongoDB driver v7+**
 - **Expo SDK v52+**
 
-Other 0.3-era APIs that are gone: `@RelationCount`, the IoC container integration, `TYPEORM_*` env auto-loading, the deprecated lock modes, and a handful of internal helpers. The [upgrading guide](/docs/releases/1.0/upgrading-from-0.3) has before/after for every change.
+Other APIs that existed in v0.3 are also gone: `@RelationCount`, the IoC container integration, `TYPEORM_*` env auto-loading, the deprecated lock modes, and a handful of internal helpers. The [upgrading guide](/docs/releases/1.0/upgrading-from-0.3) has before/after for every change.
 
 ## Upgrading
 
