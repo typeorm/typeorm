@@ -21,7 +21,6 @@ export class C {
 
     @OneToMany(() => D, (d) => d.c, {
         cascade: true,
-        orphanedRowAction: "delete",
         eager: true,
     })
     ds!: D[]

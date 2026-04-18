@@ -182,12 +182,25 @@ export class OneToManySubjectBuilder {
             relatedPersistedEntityRelationIds.push(relationIdMap)
         })
 
+        // Resolve effective action. When unset, default to "nullify" for
+        // backward compatibility. This default will change to "disable" in
+        // the next major version — warn so users can migrate.
+        // TODO(#12343): remove the implicit nullify fallback and the warning.
+        const isExplicit = relation.orphans !== undefined
+        const orphansAction = relation.orphans ?? "nullify"
+
         // find what related entities were added and what were removed based on difference between what we save and what database has
-        if (relation.inverseRelation?.orphanedRowAction !== "disable") {
-            EntityMetadata.difference(
+        if (orphansAction !== "disable") {
+            const removedOrphans = EntityMetadata.difference(
                 relatedEntityDatabaseRelationIds,
                 relatedPersistedEntityRelationIds,
-            ).forEach((removedRelatedEntityRelationId) => {
+            )
+
+            if (!isExplicit && removedOrphans.length > 0) {
+                OneToManySubjectBuilder.warnImplicitNullify(relation)
+            }
+
+            removedOrphans.forEach((removedRelatedEntityRelationId) => {
                 // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
 
                 // todo: probably we can improve this in the future by finding entity with column those values,
@@ -199,36 +212,65 @@ export class OneToManySubjectBuilder {
                     identifier: removedRelatedEntityRelationId,
                 })
 
-                const orphanedRowAction =
-                    relation.inverseRelation?.orphanedRowAction ?? "nullify"
-
-                if (orphanedRowAction === "nullify") {
+                if (orphansAction === "delete") {
+                    removedRelatedEntitySubject.mustBeRemoved = true
+                } else if (orphansAction === "soft-delete") {
+                    removedRelatedEntitySubject.canBeSoftRemoved = true
+                } else if (relation.inverseRelation) {
+                    // nullify: set FK to null on the inverse side
                     const allColumnsNullable =
-                        relation.inverseRelation?.joinColumns.every(
+                        relation.inverseRelation.joinColumns.every(
                             (column) => column.isNullable,
-                        ) ?? true
+                        )
 
                     if (allColumnsNullable) {
                         removedRelatedEntitySubject.canBeUpdated = true
                         removedRelatedEntitySubject.changeMaps = [
                             {
-                                relation: relation.inverseRelation!,
+                                relation: relation.inverseRelation,
                                 value: null,
                             },
                         ]
                     } else {
-                        // FK is not nullable — cannot set to null, so delete
-                        // the orphaned entity to keep DB consistent
+                        // FK is not nullable — delete the orphaned row instead
                         removedRelatedEntitySubject.mustBeRemoved = true
                     }
-                } else if (orphanedRowAction === "delete") {
-                    removedRelatedEntitySubject.mustBeRemoved = true
-                } else if (orphanedRowAction === "soft-delete") {
-                    removedRelatedEntitySubject.canBeSoftRemoved = true
+                } else {
+                    // No inverse relation available for nullify — skip
+                    return
                 }
 
                 this.subjects.push(removedRelatedEntitySubject)
             })
         }
+    }
+
+    // Tracks which relations have already been warned about implicit
+    // `orphans` behavior, so the warning is logged once per relation and
+    // not for every save call.
+    // TODO(#12343): remove together with the implicit nullify fallback.
+    private static readonly warnedRelations = new WeakSet<RelationMetadata>()
+
+    /**
+     * Logs a deprecation warning when a `@OneToMany` relation triggers
+     * orphan nullification without `orphans` being explicitly set.
+     * The warning is logged at most once per relation per process.
+     *
+     * @param relation
+     */
+    // TODO(#12343): remove in the next major version.
+    private static warnImplicitNullify(relation: RelationMetadata): void {
+        if (OneToManySubjectBuilder.warnedRelations.has(relation)) return
+        OneToManySubjectBuilder.warnedRelations.add(relation)
+
+        const name = `${relation.entityMetadata.targetName}.${relation.propertyPath}`
+        relation.entityMetadata.dataSource.logger.log(
+            "warn",
+            `[DEPRECATION] Relation "${name}" removed children from the collection while "orphans" is not set. ` +
+                `TypeORM is nullifying the orphaned row(s) using the legacy default. ` +
+                `In the next major version the default will change to "disable" (no action). ` +
+                `Set "orphans: 'nullify'" explicitly to preserve the current behavior, ` +
+                `or choose "delete" / "soft-delete" / "disable" for the intended behavior.`,
+        )
     }
 }

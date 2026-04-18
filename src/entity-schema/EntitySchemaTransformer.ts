@@ -199,7 +199,7 @@ export class EntitySchemaTransformer {
                         createForeignKeyConstraints:
                             relationSchema.createForeignKeyConstraints,
                         persistence: relationSchema.persistence,
-                        orphanedRowAction: relationSchema.orphanedRowAction,
+                        orphans: relationSchema.orphans,
                     },
                 }
 

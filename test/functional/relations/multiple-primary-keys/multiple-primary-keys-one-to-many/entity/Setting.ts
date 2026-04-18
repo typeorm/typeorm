@@ -14,7 +14,6 @@ export class Setting extends BaseEntity {
 
     @ManyToOne("User", "settings", {
         cascade: false,
-        orphanedRowAction: "delete",
         nullable: false,
     })
     asset?: User

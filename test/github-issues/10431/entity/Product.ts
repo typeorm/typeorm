@@ -18,7 +18,6 @@ export class Product {
     @ManyToMany(() => Category, (category: Category) => category.products, {
         eager: true,
         cascade: ["insert", "update", "remove"],
-        orphanedRowAction: "delete",
     })
     @JoinTable()
     categories: Category[]

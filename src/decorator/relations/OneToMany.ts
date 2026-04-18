@@ -1,7 +1,7 @@
 import { getMetadataArgsStorage } from "../../globals"
 import type { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
 import type { ObjectType } from "../../common/ObjectType"
-import type { RelationOptions } from "../options/RelationOptions"
+import type { OneToManyRelationOptions } from "../options/RelationOptions"
 
 /**
  * A one-to-many relation allows creating the type of relation where Entity1 can have multiple instances of Entity2,
@@ -15,10 +15,10 @@ import type { RelationOptions } from "../options/RelationOptions"
 export function OneToMany<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
     inverseSide: string | ((object: T) => any),
-    options?: RelationOptions,
+    options?: OneToManyRelationOptions,
 ): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-        options ??= {} as RelationOptions
+        options ??= {} as OneToManyRelationOptions
 
         // Now try to determine if it is a lazy relation.
         let isLazy = options?.lazy === true

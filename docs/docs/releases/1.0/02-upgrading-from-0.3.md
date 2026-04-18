@@ -449,9 +449,71 @@ The internal hashing implementation has been replaced with Node.js built-in `cry
 
 Glob patterns (used in entity/migration file discovery) are now handled by `tinyglobby` instead of `glob`. This is a drop-in replacement for most projects.
 
-### `orphanedRowAction: "nullify"` with non-nullable foreign keys
+### `orphanedRowAction` renamed to `orphans`
 
-When `orphanedRowAction` is `"nullify"` (the default) and the foreign key column is non-nullable, orphaned children are now **deleted** instead of throwing a database constraint violation. Previously, TypeORM would attempt to set the FK to `null`, which failed on non-nullable columns.
+The `orphanedRowAction` option has been renamed to `orphans`. This is a simple find-and-replace migration — the values (`"nullify"`, `"delete"`, `"soft-delete"`, `"disable"`) are unchanged.
+
+```typescript
+// Before (0.3.x)
+@OneToMany(() => Post, (post) => post.category, {
+    orphanedRowAction: "delete",
+})
+
+// After (1.0)
+@OneToMany(() => Post, (post) => post.category, {
+    orphans: "delete",
+})
+```
+
+### `orphans` now only applies to `@OneToMany`
+
+Previously, `orphanedRowAction` could be set on `@ManyToOne` and was read from the inverse side. This was a design mistake — the parent entity should control what happens to orphaned children, not the child. In v1.0 the option (now `orphans`) is only valid on `@OneToMany` and TypeScript will reject it on other decorators.
+
+If you previously had `orphanedRowAction` on `@ManyToOne`, move it to the corresponding `@OneToMany` decorator and rename it:
+
+```typescript
+// Before (0.3.x)
+@ManyToOne(() => Category, (category) => category.posts, {
+    orphanedRowAction: "delete",
+})
+category: Category
+
+// After (1.0)
+@OneToMany(() => Post, (post) => post.category, {
+    orphans: "delete",
+})
+posts: Post[]
+```
+
+The provided codemod adds `TODO` comments at each usage site to guide the migration.
+
+### `orphans` default is deprecated
+
+When `orphans` is not set on a `@OneToMany` relation, TypeORM has historically defaulted to `"nullify"` (setting the FK to null on orphaned children). This default is now **deprecated** — v1.0 logs a warning the first time an orphan is processed for a relation that does not explicitly set `orphans`.
+
+In the next major version (v2.0) this default will change: unset will mean "no action" (no orphan handling). The `"disable"` value will also be removed since it becomes redundant with unset. A codemod will be provided to automate the migration. See [#12343](https://github.com/typeorm/typeorm/issues/12343).
+
+**Action required:** set `orphans` explicitly now to lock in your intended behavior and silence the deprecation warning. You have two common choices:
+
+```typescript
+// If you want to preserve the current legacy behavior (nullify on orphan):
+@OneToMany(() => Post, (post) => post.category, {
+    orphans: "nullify",
+})
+posts: Post[]
+
+// If you want no orphan handling at all (will become the new default in v2.0):
+@OneToMany(() => Post, (post) => post.category, {
+    orphans: "disable", // codemod in v2.0 will remove this since it becomes redundant with unset
+})
+posts: Post[]
+```
+
+Or choose `"delete"` / `"soft-delete"` for actual orphan removal.
+
+### `orphans: "nullify"` with non-nullable foreign keys
+
+When `orphans` is `"nullify"` (the default) and the foreign key column is non-nullable, orphaned children are now **deleted** instead of throwing a database constraint violation. Previously, TypeORM would attempt to set the FK to `null`, which failed on non-nullable columns.
 
 This only applies when the relation is loaded on the entity instance. TypeORM does not automatically load relations — it only traverses relation values that are already populated on the object. To ensure orphaned children are handled, load the relation before calling `remove` or `save`:
 
@@ -465,7 +527,7 @@ await manager.remove(parent)
 
 If the relation is not loaded (i.e. the property is `undefined`), TypeORM will not detect or delete orphaned children, which may result in foreign key constraint violations.
 
-If you were relying on the error to prevent accidental child deletion, set `orphanedRowAction: "disable"` on the relation to preserve the old behavior.
+If you were relying on the error to prevent accidental child deletion, set `orphans: "disable"` on the `@OneToMany` relation to preserve the old behavior.
 
 ### Cascade remove now works for one-to-many relations
 

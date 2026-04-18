@@ -108,9 +108,17 @@ export interface EntitySchemaRelationOptions {
     deferrable?: DeferrableType
 
     /**
-     * When a parent is saved (with cascading but) without a child row that still exists in database, this will control what shall happen to them.
-     * delete will remove these rows from database. nullify will remove the relation key.
-     * skip will keep the relation intact. Removal of related item is only possible through its own repo.
+     * When a parent is saved without a child that still exists in database, this controls what happens to the orphaned row.
+     * Applies to one-to-many relations only.
+     *
+     * - `"nullify"` — sets the foreign key to null (deletes if FK is non-nullable)
+     * - `"delete"` — removes the orphaned row from the database
+     * - `"soft-delete"` — marks the orphaned row as soft-deleted
+     * - `"disable"` — skips orphan handling entirely (will be removed in the next major — see #12343)
+     *
+     * When left unset, TypeORM currently defaults to `"nullify"` for backward
+     * compatibility and logs a deprecation warning on first use. In the next
+     * major version the default will change to no action. See #12343.
      */
-    orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
+    orphans?: "nullify" | "delete" | "soft-delete" | "disable"
 }
