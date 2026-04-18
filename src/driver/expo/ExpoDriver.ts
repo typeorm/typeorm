@@ -41,7 +41,10 @@ export class ExpoDriver extends AbstractSqliteDriver {
         try {
             this.sqlite = this.options.driver ?? require("expo-sqlite")
         } catch (e) {
-            throw new DriverPackageNotInstalledError("Expo", "expo-sqlite")
+            throw new DriverPackageNotInstalledError(
+                "Expo SQLite",
+                "expo-sqlite",
+            )
         }
 
         // Expo SDK v52 removed the legacy synchronous API. The modern async API
