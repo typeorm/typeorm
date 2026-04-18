@@ -47,12 +47,12 @@ export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
         if (arg.type !== "ObjectExpression") return
 
         // Check if type is a numeric type
-        const typeProp = arg.properties.find(
-            (p) =>
-                p.type === "ObjectProperty" &&
-                p.key.type === "Identifier" &&
-                p.key.name === "type",
-        )
+        const typeProp = arg.properties.find((p) => {
+            if (p.type !== "ObjectProperty") return false
+            const keyName =
+                p.key.type === "Identifier" ? p.key.name : getStringValue(p.key)
+            return keyName === "type"
+        })
 
         if (typeProp?.type !== "ObjectProperty") return
 

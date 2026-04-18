@@ -1,6 +1,7 @@
 import path from "node:path"
 import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
 import {
+    fileImportsFrom,
     removeImportSpecifiers,
     removeReExportSpecifiers,
 } from "../ast-helpers"
@@ -15,6 +16,9 @@ export const manual = true
 export const repositoryAbstract = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
     let hasTodos = false
 

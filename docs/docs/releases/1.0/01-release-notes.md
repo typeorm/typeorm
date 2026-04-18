@@ -60,6 +60,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **Internal `nativeParameters` plumbing removed** from drivers and query builders ([#12104](https://github.com/typeorm/typeorm/pull/12104) by [@pkuczynski](https://github.com/pkuczynski))
 - **Internal `broadcastLoadEventsForAll()` removed** from Broadcaster ([#12137](https://github.com/typeorm/typeorm/pull/12137) by [@pkuczynski](https://github.com/pkuczynski))
 - **Internal `DriverUtils.buildColumnAlias()` removed** — use `buildAlias()` instead ([#12138](https://github.com/typeorm/typeorm/pull/12138) by [@pkuczynski](https://github.com/pkuczynski))
+- **`RdbmsSchemaBuilder.renameTables()` removed** — empty no-op method that was never called ([#12284](https://github.com/typeorm/typeorm/pull/12284) by [@naorpeled](https://github.com/naorpeled))
 - **`EntityMetadata.getValueMap()` `options` parameter removed** — the `skipNulls` option was never functional; remove the third argument ([#12303](https://github.com/typeorm/typeorm/pull/12303) by [@naorpeled](https://github.com/naorpeled))
 
 ### Behavioral changes
