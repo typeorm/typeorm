@@ -75,8 +75,8 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         close: "destroy",
     }
 
-    // TypeORM types whose instances have a `.connection` property
-    // that was renamed to `.dataSource` in v1
+    // TypeORM types whose instances had their `.connection` property renamed
+    // to `.dataSource` directly.
     const typesWithConnectionProp = new Set([
         "QueryRunner",
         "EntityManager",
@@ -89,8 +89,14 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         "DeleteQueryBuilder",
         "SoftDeleteQueryBuilder",
         "RelationQueryBuilder",
-        // Metadata classes (renamed in #12249)
         "EntityMetadata",
+    ])
+
+    // Metadata types whose v0.3 `.connection` getter was removed entirely in
+    // v1 (renamed in #12249). Access now goes through `.entityMetadata.dataSource`
+    // — a naive `.dataSource` rewrite would produce invalid code because these
+    // classes never exposed a top-level `.dataSource` field.
+    const typesWithIndirectDataSource = new Set([
         "ColumnMetadata",
         "IndexMetadata",
     ])
@@ -318,6 +324,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
 
     // Collect variable/param names typed as TypeORM types with .connection
     const connectionPropVarNames = new Set<string>()
+    const indirectDataSourceVarNames = new Set<string>()
 
     const collectTypedIdentifier = (id: Identifier) => {
         if (!id.name || !id.typeAnnotation) return
@@ -327,11 +334,12 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         if (ann.typeAnnotation.type !== "TSTypeReference") return
 
         const ref = ann.typeAnnotation
-        if (
-            ref.typeName.type === "Identifier" &&
-            typesWithConnectionProp.has(ref.typeName.name)
-        ) {
+        if (ref.typeName.type !== "Identifier") return
+
+        if (typesWithConnectionProp.has(ref.typeName.name)) {
             connectionPropVarNames.add(id.name)
+        } else if (typesWithIndirectDataSource.has(ref.typeName.name)) {
+            indirectDataSourceVarNames.add(id.name)
         }
     }
 
@@ -410,16 +418,30 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
-    // Rename .connection → .dataSource on known TypeORM instances
+    // Rename .connection → .dataSource on known TypeORM instances.
+    // For types without a direct `.dataSource` field (ColumnMetadata /
+    // IndexMetadata) the rename goes through `.entityMetadata.dataSource`.
     root.find(j.MemberExpression, {
         property: { name: "connection" },
     }).forEach((path) => {
-        if (path.node.property.type === "Identifier") {
-            const objName = unwrapIdentifierName(path.node.object)
-            if (objName && connectionPropVarNames.has(objName)) {
-                path.node.property.name = "dataSource"
-                hasChanges = true
-            }
+        if (path.node.property.type !== "Identifier") return
+        const objName = unwrapIdentifierName(path.node.object)
+        if (!objName) return
+
+        if (connectionPropVarNames.has(objName)) {
+            path.node.property.name = "dataSource"
+            hasChanges = true
+            return
+        }
+
+        if (indirectDataSourceVarNames.has(objName)) {
+            // `col.connection` → `col.entityMetadata.dataSource`
+            path.node.object = j.memberExpression(
+                path.node.object,
+                j.identifier("entityMetadata"),
+            )
+            path.node.property.name = "dataSource"
+            hasChanges = true
         }
     })
 
