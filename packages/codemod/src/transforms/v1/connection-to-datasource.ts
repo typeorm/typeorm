@@ -175,12 +175,18 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
-    // Rename re-exports in barrel files: `export { Connection } from "typeorm"`
-    // → `export { DataSource } from "typeorm"`. Aliased re-exports keep the
-    // exported name so downstream consumers don't break.
-    if (renameReExportSpecifiers(root, j, "typeorm", typeRenames)) {
-        hasChanges = true
-    }
+    // Re-export source paths (`export { X } from "typeorm/driver/..."`)
+    // follow the same deep-path rewrite rules as import sources so barrel
+    // files that re-export renamed modules end up pointing at the v1 path.
+    root.find(j.ExportNamedDeclaration).forEach((exportPath) => {
+        const source = exportPath.node.source?.value
+        if (typeof source !== "string") return
+        const rewritten = rewriteTypeormPath(source)
+        if (rewritten !== source) {
+            exportPath.node.source!.value = rewritten
+            hasChanges = true
+        }
+    })
 
     // Rewrite a single `{ X [: Y] }` property in a destructured require of
     // typeorm. Records the local binding in `localRenames` so the shared

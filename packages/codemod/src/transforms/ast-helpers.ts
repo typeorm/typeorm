@@ -308,9 +308,17 @@ export const removeImportSpecifiers = (
     return removed
 }
 
+// Returns true for `"moduleName"` and any sub-path like `"moduleName/..."`.
+// Used so re-export helpers can match `export { X } from "typeorm"` as well
+// as `export { SapConnectionOptions } from "typeorm/driver/sap/SapConnectionOptions"`.
+const matchesModuleOrSubPath = (source: unknown, moduleName: string): boolean =>
+    typeof source === "string" &&
+    (source === moduleName || source.startsWith(`${moduleName}/`))
+
 /**
  * Finds re-exports from a module (`export { X } from "module"`) and removes
- * the named specifiers listed in `specifierNames`. Removes the entire
+ * the named specifiers listed in `specifierNames`. Also matches sub-path
+ * re-exports (`export { X } from "module/sub/path"`). Removes the entire
  * `ExportNamedDeclaration` if no specifiers remain. Returns true if any
  * specifiers were removed.
  */
@@ -322,9 +330,10 @@ export const removeReExportSpecifiers = (
 ): boolean => {
     let removed = false
 
-    root.find(j.ExportNamedDeclaration, {
-        source: { value: moduleName },
-    }).forEach((exportPath) => {
+    root.find(j.ExportNamedDeclaration).forEach((exportPath) => {
+        const source = exportPath.node.source?.value
+        if (!matchesModuleOrSubPath(source, moduleName)) return
+
         const remaining = exportPath.node.specifiers?.filter((spec) => {
             if (
                 spec.type === "ExportSpecifier" &&
@@ -349,10 +358,11 @@ export const removeReExportSpecifiers = (
 
 /**
  * Finds re-exports from a module (`export { X } from "module"`) and renames
- * specifiers according to the `renames` map. When the re-export has an
- * alias (`export { X as Y }`), only the local name is renamed so downstream
- * consumers continue to see the same exported name. Returns true if any
- * specifiers were renamed.
+ * specifiers according to the `renames` map. Also matches sub-path
+ * re-exports (`export { X } from "module/sub/path"`). When the re-export has
+ * an alias (`export { X as Y }`), only the local name is renamed so
+ * downstream consumers continue to see the same exported name. Returns true
+ * if any specifiers were renamed.
  */
 export const renameReExportSpecifiers = (
     root: Collection,
@@ -362,9 +372,10 @@ export const renameReExportSpecifiers = (
 ): boolean => {
     let renamed = false
 
-    root.find(j.ExportNamedDeclaration, {
-        source: { value: moduleName },
-    }).forEach((exportPath) => {
+    root.find(j.ExportNamedDeclaration).forEach((exportPath) => {
+        const source = exportPath.node.source?.value
+        if (!matchesModuleOrSubPath(source, moduleName)) return
+
         exportPath.node.specifiers?.forEach((spec) => {
             if (
                 spec.type !== "ExportSpecifier" ||

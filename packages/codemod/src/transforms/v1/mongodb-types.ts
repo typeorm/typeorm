@@ -135,9 +135,51 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
             exportPath.node.specifiers = remaining
         }
 
-        exportPath.insertAfter(
-            j.exportNamedDeclaration(null, moved, j.stringLiteral("mongodb")),
-        )
+        // Merge into an existing `export { ... } from "mongodb"` if present —
+        // appending a fresh declaration unconditionally would produce a
+        // duplicate named export and fail at parse time.
+        const existingMongoExport = root.find(j.ExportNamedDeclaration, {
+            source: { value: "mongodb" },
+        })
+        if (existingMongoExport.length > 0) {
+            const existingPath = existingMongoExport.at(0).get() as ASTPath<
+                typeof exportPath.node
+            >
+            const existingNames = new Set(
+                existingPath.node.specifiers
+                    ?.filter(
+                        (s) =>
+                            s.type === "ExportSpecifier" &&
+                            s.local?.type === "Identifier",
+                    )
+                    .map((s) => {
+                        if (
+                            s.type !== "ExportSpecifier" ||
+                            s.local?.type !== "Identifier"
+                        ) {
+                            return ""
+                        }
+                        return s.local.name
+                    }) ?? [],
+            )
+            for (const spec of moved) {
+                if (
+                    spec.type === "ExportSpecifier" &&
+                    spec.local?.type === "Identifier" &&
+                    !existingNames.has(spec.local.name)
+                ) {
+                    existingPath.node.specifiers?.push(spec)
+                }
+            }
+        } else {
+            exportPath.insertAfter(
+                j.exportNamedDeclaration(
+                    null,
+                    moved,
+                    j.stringLiteral("mongodb"),
+                ),
+            )
+        }
     })
 
     return hasChanges ? root.toSource() : undefined

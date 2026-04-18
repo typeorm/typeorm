@@ -2,6 +2,7 @@ import path from "node:path"
 import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
 import {
     fileImportsFrom,
+    getLocalNamesForImport,
     removeImportSpecifiers,
     removeReExportSpecifiers,
 } from "../ast-helpers"
@@ -22,25 +23,51 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    // Find @EntityRepository decorators and add TODO
-    root.find(j.Decorator, {
-        expression: {
-            type: "CallExpression",
-            callee: { type: "Identifier", name: "EntityRepository" },
-        },
-    }).forEach((path) => {
-        addTodoComment(
-            path.node,
-            "`@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`",
-            j,
-        )
-        hasChanges = true
-        hasTodos = true
-    })
+    // Resolve alias-aware local names so aliased imports like
+    // `import { getCustomRepository as gcr } from "typeorm"` still get
+    // their call-sites flagged before the import is removed.
+    const entityRepositoryNames = getLocalNamesForImport(
+        root,
+        j,
+        "typeorm",
+        "EntityRepository",
+    )
+    const abstractRepositoryNames = getLocalNamesForImport(
+        root,
+        j,
+        "typeorm",
+        "AbstractRepository",
+    )
+    const getCustomRepositoryNames = getLocalNamesForImport(
+        root,
+        j,
+        "typeorm",
+        "getCustomRepository",
+    )
 
-    // Find classes extending AbstractRepository and add TODO
-    root.find(j.ClassDeclaration).forEach((path) => {
-        const superClass = path.node.superClass
+    // Find @EntityRepository decorators (including aliased names)
+    root.find(j.Decorator)
+        .filter((decoratorPath) => {
+            const expr = decoratorPath.node.expression
+            return (
+                expr.type === "CallExpression" &&
+                expr.callee.type === "Identifier" &&
+                entityRepositoryNames.has(expr.callee.name)
+            )
+        })
+        .forEach((decoratorPath) => {
+            addTodoComment(
+                decoratorPath.node,
+                "`@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`",
+                j,
+            )
+            hasChanges = true
+            hasTodos = true
+        })
+
+    // Find classes extending AbstractRepository (including aliased names)
+    root.find(j.ClassDeclaration).forEach((classPath) => {
+        const superClass = classPath.node.superClass
         if (!superClass) return
 
         let name: string | null = null
@@ -53,10 +80,10 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
             name = superClass.property.name
         }
 
-        if (name !== "AbstractRepository") return
+        if (!name || !abstractRepositoryNames.has(name)) return
 
         addTodoComment(
-            path.node,
+            classPath.node,
             "`AbstractRepository` was removed — use a custom service class with `dataSource.getRepository()`",
             j,
         )
@@ -65,19 +92,21 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     })
 
     // Find getCustomRepository() calls and add TODO
-    const addGetCustomRepoTodo = (path: ASTPath) => {
+    const addGetCustomRepoTodo = (callPath: ASTPath) => {
         const message =
             "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"
-        const parentNode: Node = path.parent.node
+        const parentNode: Node = callPath.parent.node
         if (parentNode.type === "ExpressionStatement") {
             addTodoComment(parentNode, message, j)
         } else {
-            addTodoComment(path.node, message, j)
+            addTodoComment(callPath.node, message, j)
         }
         hasChanges = true
         hasTodos = true
     }
 
+    // Member-expression form: `something.getCustomRepository(...)` — not
+    // alias-dependent, matches property name directly.
     root.find(j.CallExpression, {
         callee: {
             type: "MemberExpression",
@@ -85,10 +114,17 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         },
     }).forEach(addGetCustomRepoTodo)
 
-    // Also find standalone getCustomRepository() calls
-    root.find(j.CallExpression, {
-        callee: { type: "Identifier", name: "getCustomRepository" },
-    }).forEach(addGetCustomRepoTodo)
+    // Standalone form: `getCustomRepository(...)` — also handles aliased
+    // imports by looking up local names against the import scan.
+    root.find(j.CallExpression)
+        .filter((callPath) => {
+            const callee = callPath.node.callee
+            return (
+                callee.type === "Identifier" &&
+                getCustomRepositoryNames.has(callee.name)
+            )
+        })
+        .forEach(addGetCustomRepoTodo)
 
     // Remove imports and re-exports of removed symbols
     const removed = new Set([

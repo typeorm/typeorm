@@ -106,3 +106,6 @@ export { DataSource, DataSourceOptions } from "typeorm"
 // Aliased re-exports keep the exported name for downstream consumers but
 // rename the local specifier so the (now renamed) symbol is pulled from typeorm
 export { DataSource as DbConnection } from "typeorm"
+
+// Sub-path re-exports should also be renamed (matches the deep-path import rule)
+export { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
