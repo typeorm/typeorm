@@ -57,3 +57,9 @@ const logger15 = new FileLogger("all", { ...extra, logPath: "logs/orm.log" })
 
 // Case 16: spread only — opts may contain an absolute logPath, should NOT get TODO
 const logger16 = new FileLogger("all", { ...extra })
+
+// Case 17: `logPath: undefined` inside options — same as omitting, should get TODO
+const logger17 = new FileLogger("all", { logPath: undefined })
+
+// Case 18: `logPath: null` inside options — same as omitting, should get TODO
+const logger18 = new FileLogger("all", { logPath: null })

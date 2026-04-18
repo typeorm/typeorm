@@ -2,7 +2,7 @@ import path from "node:path"
 import type { API, FileInfo, Node, ObjectExpression } from "jscodeshift"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
-import { getStringValue } from "../ast-helpers"
+import { getLocalNamesForImport, getStringValue } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -71,6 +71,22 @@ const inspectOptionsArg = (
             }
         }
 
+        // `logPath: undefined` / `logPath: null` behave the same as omitting
+        // the option — flag just like the missing-argument case.
+        if (
+            value.type === "Identifier" &&
+            (value as { name: string }).name === "undefined"
+        ) {
+            return { hasOption: false, isAbsolute: false }
+        }
+        if (
+            value.type === "NullLiteral" ||
+            (value.type === "Literal" &&
+                (value as { value: unknown }).value === null)
+        ) {
+            return { hasOption: false, isAbsolute: false }
+        }
+
         // Non-literal value (template literal, function call like path.resolve, etc.) —
         // assume the user knows what they're doing and don't flag it
         return { hasOption: true, isAbsolute: true }
@@ -89,27 +105,21 @@ export const fileLogger = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    // Collect every local name bound to the `FileLogger` export from typeorm.
-    // Handles ES imports (named/aliased/namespace) and CommonJS requires
-    // (destructured property or whole-module binding).
-    const localNames = new Set<string>()
+    // Delegate the ESM + CJS-destructure scanning for `FileLogger` to the
+    // shared helper — it handles both `StringLiteral` and `Literal` string
+    // forms consistently (older Babel parses string arguments as `Literal`).
+    const localNames = getLocalNamesForImport(root, j, "typeorm", "FileLogger")
+
+    // Namespace bindings (`import * as typeorm from "typeorm"` or
+    // `const typeorm = require("typeorm")`) aren't covered by the shared
+    // helper, so collect them here.
     const namespaceNames = new Set<string>()
 
-    // ES imports
     root.find(j.ImportDeclaration, {
         source: { value: "typeorm" },
     }).forEach((p) => {
         for (const s of p.node.specifiers ?? []) {
             if (
-                s.type === "ImportSpecifier" &&
-                s.imported.type === "Identifier" &&
-                s.imported.name === "FileLogger"
-            ) {
-                const local = s.local?.name
-                localNames.add(
-                    typeof local === "string" ? local : s.imported.name,
-                )
-            } else if (
                 s.type === "ImportNamespaceSpecifier" &&
                 s.local?.type === "Identifier"
             ) {
@@ -118,51 +128,20 @@ export const fileLogger = (file: FileInfo, api: API) => {
         }
     })
 
-    // CommonJS requires: const { FileLogger } = require("typeorm")
-    // or: const typeorm = require("typeorm")
     root.find(j.VariableDeclarator, {
         init: {
             type: "CallExpression",
             callee: { type: "Identifier", name: "require" },
         },
     }).forEach((p) => {
-        const init = p.node.init as {
-            arguments: { type: string; value?: unknown }[]
-        } | null
-        const arg = init?.arguments[0]
-        if (!arg || arg.type !== "StringLiteral" || arg.value !== "typeorm") {
-            return
-        }
+        const init = p.node.init
+        if (!init || init.type !== "CallExpression") return
+        const [arg] = init.arguments
+        if (!arg || getStringValue(arg) !== "typeorm") return
 
-        const id = p.node.id
-        if (id.type === "Identifier") {
-            namespaceNames.add(id.name)
-            return
-        }
-        if (id.type === "ObjectPattern") {
-            for (const prop of id.properties) {
-                if (
-                    prop.type !== "ObjectProperty" &&
-                    prop.type !== "Property"
-                ) {
-                    continue
-                }
-                const propKey = (
-                    prop as { key: { type: string; name?: string } }
-                ).key
-                if (
-                    propKey.type !== "Identifier" ||
-                    propKey.name !== "FileLogger"
-                ) {
-                    continue
-                }
-                const propValue = (
-                    prop as { value: { type: string; name?: string } }
-                ).value
-                if (propValue.type === "Identifier" && propValue.name) {
-                    localNames.add(propValue.name)
-                }
-            }
+        // Whole-module CJS bind: `const typeorm = require("typeorm")`
+        if (p.node.id.type === "Identifier") {
+            namespaceNames.add(p.node.id.name)
         }
     })
 
