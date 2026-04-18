@@ -1,7 +1,7 @@
 import path from "node:path"
-import type { API, FileInfo, Node } from "jscodeshift"
+import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
 import { removeImportSpecifiers } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -9,8 +9,18 @@ export const description =
     "flag removed `ConnectionManager` class for manual migration to direct `DataSource` instantiation"
 export const manual = true
 
-const MIGRATION_HINT =
-    "create and manage `DataSource` instances directly instead — there is no replacement class"
+const MESSAGE = `\`ConnectionManager\` was removed — create and manage \`DataSource\` instances directly instead — there is no replacement class`
+
+// A TODO attached to one of these nodes will survive jscodeshift/recast's
+// printing. Walking up until we reach one of these produces a visible
+// comment above the enclosing statement or declaration.
+const isTodoHost = (type: string): boolean =>
+    type.endsWith("Statement") ||
+    type === "VariableDeclaration" ||
+    type === "ExportDefaultDeclaration" ||
+    type === "ExportNamedDeclaration" ||
+    type === "ClassProperty" ||
+    type === "PropertyDefinition"
 
 export const connectionManager = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -44,7 +54,23 @@ export const connectionManager = (file: FileInfo, api: API) => {
         return undefined
     }
 
-    // Flag `new ConnectionManager(...)` (or aliased) constructions
+    const flagEnclosingStatement = (startPath: ASTPath): void => {
+        let current = startPath.parent
+        while (current) {
+            const node: Node = current.node
+            if (isTodoHost(node.type)) {
+                if (!hasTodoComment(node, MESSAGE)) {
+                    addTodoComment(node, MESSAGE, j)
+                    hasChanges = true
+                    hasTodos = true
+                }
+                return
+            }
+            current = current.parent
+        }
+    }
+
+    // Flag `new ConnectionManager(...)` constructions wherever they appear
     root.find(j.NewExpression)
         .filter((p) => {
             const callee = p.node.callee
@@ -53,56 +79,37 @@ export const connectionManager = (file: FileInfo, api: API) => {
                 localNames.has((callee as { name: string }).name)
             )
         })
-        .forEach((newPath) => {
-            let current = newPath.parent
-            while (current) {
-                const node: Node = current.node
-                if (
-                    node.type === "ExpressionStatement" ||
-                    node.type === "VariableDeclaration" ||
-                    node.type === "ReturnStatement" ||
-                    node.type === "ExportDefaultDeclaration" ||
-                    node.type === "ExportNamedDeclaration" ||
-                    node.type === "ClassProperty" ||
-                    node.type === "PropertyDefinition"
-                ) {
-                    const todoLine = ` TODO(typeorm-v1): \`ConnectionManager\` was removed — ${MIGRATION_HINT}`
-                    const nodeWithComments = node as Node & {
-                        comments?: { value: string }[]
-                    }
-                    const alreadyFlagged = nodeWithComments.comments?.some(
-                        (c) => c.value === todoLine,
-                    )
-                    if (!alreadyFlagged) {
-                        addTodoComment(
-                            node,
-                            `\`ConnectionManager\` was removed — ${MIGRATION_HINT}`,
-                            j,
-                        )
-                        hasChanges = true
-                        hasTodos = true
-                    }
-                    break
-                }
-                current = current.parent
-            }
+        .forEach(flagEnclosingStatement)
+
+    // Flag `: ConnectionManager` type annotations too; otherwise a file
+    // that only uses the class as a type would have its import silently
+    // removed and be left with a broken reference.
+    root.find(j.TSTypeReference)
+        .filter((p) => {
+            const typeName = p.node.typeName
+            return (
+                typeName.type === "Identifier" &&
+                localNames.has((typeName as { name: string }).name)
+            )
         })
+        .forEach(flagEnclosingStatement)
 
-    // Remove `ConnectionManager` from imports. The class is gone, so
-    // leaving the specifier would produce a TypeScript error that adds
-    // noise on top of the TODO.
-    if (
-        removeImportSpecifiers(
-            root,
-            j,
-            "typeorm",
-            new Set(["ConnectionManager"]),
-        )
-    ) {
-        hasChanges = true
+    // Only drop the import when at least one usage was successfully
+    // flagged — leaving a dangling `ConnectionManager` reference without a
+    // TODO would be worse than leaving the deprecated import in place.
+    if (hasTodos) {
+        if (
+            removeImportSpecifiers(
+                root,
+                j,
+                "typeorm",
+                new Set(["ConnectionManager"]),
+            )
+        ) {
+            hasChanges = true
+        }
+        stats.count.todo(api, name, file)
     }
-
-    if (hasTodos) stats.count.todo(api, name, file)
 
     return hasChanges ? root.toSource() : undefined
 }
