@@ -1,6 +1,7 @@
 import * as columnReadonly from "./column-readonly"
 import * as columnUnsignedNumeric from "./column-unsigned-numeric"
 import * as columnWidthZerofill from "./column-width-zerofill"
+import * as connectionManager from "./connection-manager"
 import * as connectionToDataSource from "./connection-to-datasource"
 import * as datasourceExpo from "./datasource-expo"
 import * as datasourceMongodb from "./datasource-mongodb"
@@ -72,6 +73,7 @@ export const transforms = [
     queryBuilderReplacePropertyNames,
     findOptionsStringSelect,
     findOptionsStringRelations,
+    connectionManager,
     datasourceExpo,
 ]
 

@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { getStringValue } from "../ast-helpers"
+import { fileImportsFrom, getStringValue } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace string-array `select` with object syntax"
@@ -8,6 +8,9 @@ export const description = "replace string-array `select` with object syntax"
 export const findOptionsStringSelect = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     // Find object properties named "select" whose value is an array of strings
