@@ -16,3 +16,10 @@ const loggerConfig = {
     type: "sqlite",
     level: "info",
 }
+
+// String-literal keys (e.g. JSON-style quoted `"type"`) must also be rewritten
+// prettier-ignore
+const quoted = {
+    "type": "sqlite",
+    "database": "db.sqlite",
+}

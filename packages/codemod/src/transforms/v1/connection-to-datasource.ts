@@ -227,6 +227,16 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             }
         })
 
+        // TSTypeQuery (e.g. const x: typeof Connection = ...)
+        root.find(j.TSTypeQuery, {
+            exprName: { name: oldName },
+        }).forEach((path) => {
+            if (path.node.exprName.type === "Identifier") {
+                path.node.exprName.name = newName
+                hasChanges = true
+            }
+        })
+
         // NewExpression (e.g. new Connection(...))
         root.find(j.NewExpression, {
             callee: { type: "Identifier", name: oldName },

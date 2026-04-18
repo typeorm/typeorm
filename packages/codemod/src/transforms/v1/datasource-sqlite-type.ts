@@ -16,24 +16,25 @@ export const datasourceSqliteType = (file: FileInfo, api: API) => {
     // sibling `database` property. This keeps the transform from mutating
     // unrelated `{ type: "sqlite" }` objects in non-TypeORM configs and still
     // works on ormconfig-style plain exports that do not import from typeorm.
+    // Accept both `Property` (Esprima) and `ObjectProperty` (Babel), as well
+    // as both identifier (`type:`) and string-literal (`"type":`) keys.
     root.find(j.ObjectExpression).forEach((objPath) => {
         let typeProp: ObjectProperty | Property | null = null
         let hasDatabase = false
 
         for (const prop of objPath.node.properties) {
-            if (
-                (prop.type !== "Property" && prop.type !== "ObjectProperty") ||
-                prop.key.type !== "Identifier"
-            ) {
+            if (prop.type !== "Property" && prop.type !== "ObjectProperty") {
                 continue
             }
 
-            if (
-                prop.key.name === "type" &&
-                getStringValue(prop.value) === "sqlite"
-            ) {
+            const keyName =
+                prop.key.type === "Identifier"
+                    ? prop.key.name
+                    : getStringValue(prop.key)
+
+            if (keyName === "type" && getStringValue(prop.value) === "sqlite") {
                 typeProp = prop
-            } else if (prop.key.name === "database") {
+            } else if (keyName === "database") {
                 hasDatabase = true
             }
         }
