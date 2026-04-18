@@ -19,3 +19,11 @@ const commanderOptions = {
     busyTimeout: 1000,
     flags: ["--verbose"],
 }
+
+// String-literal keys (e.g. JSON-style quoted `"busyTimeout"`) must also be rewritten
+// prettier-ignore
+const quoted = {
+    "type": "sqlite",
+    "database": "db.sqlite",
+    timeout: 3000
+}

@@ -23,14 +23,16 @@ const sqliteFamilyTypes = new Set([
 
 const isSqliteOptions = (obj: ObjectExpression): boolean => {
     for (const prop of obj.properties) {
-        if (
-            (prop.type === "Property" || prop.type === "ObjectProperty") &&
-            prop.key.type === "Identifier" &&
-            prop.key.name === "type"
-        ) {
-            const value = getStringValue(prop.value)
-            return value !== null && sqliteFamilyTypes.has(value)
+        if (prop.type !== "Property" && prop.type !== "ObjectProperty") {
+            continue
         }
+        const keyName =
+            prop.key.type === "Identifier"
+                ? prop.key.name
+                : getStringValue(prop.key)
+        if (keyName !== "type") continue
+        const value = getStringValue(prop.value)
+        return value !== null && sqliteFamilyTypes.has(value)
     }
     return false
 }
@@ -45,14 +47,18 @@ export const datasourceSqliteOptions = (file: FileInfo, api: API) => {
         if (!isSqliteOptions(objPath.node)) return
 
         for (const prop of objPath.node.properties) {
-            if (
-                (prop.type === "Property" || prop.type === "ObjectProperty") &&
-                prop.key.type === "Identifier" &&
-                prop.key.name === "busyTimeout"
-            ) {
-                prop.key.name = "timeout"
-                hasChanges = true
+            if (prop.type !== "Property" && prop.type !== "ObjectProperty") {
+                continue
             }
+            const keyName =
+                prop.key.type === "Identifier"
+                    ? prop.key.name
+                    : getStringValue(prop.key)
+            if (keyName !== "busyTimeout") continue
+            // Replace the key with an identifier — `"timeout"` doesn't need
+            // quoting and prettier would strip the quotes anyway.
+            prop.key = j.identifier("timeout")
+            hasChanges = true
         }
 
         if (removeObjectProperties(objPath.node, new Set(["flags"]))) {
