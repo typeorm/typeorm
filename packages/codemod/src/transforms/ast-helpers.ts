@@ -92,10 +92,12 @@ export const fileImportsFrom = (
 
 /**
  * Returns the set of local identifiers bound to a given named export.
- * Handles direct imports and aliased imports:
+ * Handles ESM direct/aliased imports and CommonJS destructured requires:
  *
  *   import { RelationCount } from "typeorm"         → { "RelationCount" }
  *   import { RelationCount as RC } from "typeorm"   → { "RC" }
+ *   const { RelationCount } = require("typeorm")    → { "RelationCount" }
+ *   const { RelationCount: RC } = require("typeorm")→ { "RC" }
  */
 export const getLocalNamesForImport = (
     root: Collection,
@@ -104,6 +106,8 @@ export const getLocalNamesForImport = (
     importedName: string,
 ): Set<string> => {
     const localNames = new Set<string>()
+
+    // ESM: `import { X [as Y] } from "moduleName"`
     root.find(j.ImportDeclaration, {
         source: { value: moduleName },
     }).forEach((importPath) => {
@@ -121,6 +125,37 @@ export const getLocalNamesForImport = (
             }
         }
     })
+
+    // CommonJS: `const { X [: Y] } = require("moduleName")`
+    root.find(j.CallExpression, {
+        callee: { type: "Identifier", name: "require" },
+    }).forEach((callPath) => {
+        const [arg] = callPath.node.arguments
+        if (!arg || getStringValue(arg) !== moduleName) return
+
+        const parent = callPath.parent.node
+        if (parent.type !== "VariableDeclarator") return
+        const id = parent.id
+        if (id.type !== "ObjectPattern") return
+
+        for (const prop of id.properties) {
+            if (prop.type !== "Property" && prop.type !== "ObjectProperty") {
+                continue
+            }
+            if (
+                prop.key.type !== "Identifier" ||
+                prop.key.name !== importedName
+            ) {
+                continue
+            }
+            const localName: string =
+                prop.value.type === "Identifier"
+                    ? prop.value.name
+                    : prop.key.name
+            localNames.add(localName)
+        }
+    })
+
     return localNames
 }
 

@@ -1,6 +1,13 @@
 import path from "node:path"
-import type { API, ASTPath, CallExpression, FileInfo, Node } from "jscodeshift"
-import type { Collection, JSCodeshift } from "jscodeshift"
+import type {
+    API,
+    ASTPath,
+    CallExpression,
+    Collection,
+    FileInfo,
+    JSCodeshift,
+    Node,
+} from "jscodeshift"
 import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
@@ -67,6 +74,7 @@ const rewriteSimpleCall = (
 const annotateFirstDataSourceUsage = (
     root: Collection,
     j: JSCodeshift,
+    hadNamedConnection: boolean,
 ): void => {
     const [firstUsage] = root.find(j.Identifier, { name: "dataSource" }).paths()
     if (!firstUsage) return
@@ -75,11 +83,15 @@ const annotateFirstDataSourceUsage = (
     while (current.parent) {
         const node: Node = current.parent.node
         if (todoHostTypes.has(node.type)) {
-            addTodoComment(
-                node,
+            const messages = [
                 "`dataSource` is not defined — inject or import your DataSource instance",
-                j,
-            )
+            ]
+            if (hadNamedConnection) {
+                messages.push(
+                    'named connections were removed in v1 — if you relied on `getConnection("name")`, wire up a second DataSource and reference it here',
+                )
+            }
+            for (const message of messages) addTodoComment(node, message, j)
             return
         }
         current = current.parent
@@ -113,18 +125,22 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         "getConnection",
     )
 
+    let hasNamedConnection = false
+
     if (callReplacements.size > 0 || getConnectionLocals.size > 0) {
         root.find(j.CallExpression).forEach((astPath) => {
             const callee = astPath.node.callee
             if (callee.type !== "Identifier") return
 
-            // getConnection() → dataSource (just a reference)
-            if (
-                getConnectionLocals.has(callee.name) &&
-                astPath.node.arguments.length === 0
-            ) {
+            // `getConnection()` → `dataSource`. Named connections are gone
+            // in v1 — rewrite `getConnection("name")` to `dataSource` too
+            // (the argument is dropped) and flag so the user knows to
+            // reconfigure for multi-DataSource setups.
+            if (getConnectionLocals.has(callee.name)) {
+                const hadArg = astPath.node.arguments.length > 0
                 j(astPath).replaceWith(j.identifier("dataSource"))
                 hasChanges = true
+                if (hadArg) hasNamedConnection = true
                 return
             }
 
@@ -141,7 +157,7 @@ export const globalFunctions = (file: FileInfo, api: API) => {
     }
 
     if (hasChanges) {
-        annotateFirstDataSourceUsage(root, j)
+        annotateFirstDataSourceUsage(root, j, hasNamedConnection)
         stats.count.todo(api, name, file)
     }
 

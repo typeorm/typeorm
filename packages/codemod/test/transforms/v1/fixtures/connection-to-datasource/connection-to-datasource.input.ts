@@ -45,13 +45,19 @@ const repoDs = repo.connection
 const qr = connection.createQueryRunner()
 const qrDs = qr.connection
 
-// Metadata types also had `.connection` renamed to `.dataSource` (#12249)
+// `EntityMetadata` exposes `.dataSource` directly in v1 — simple rename
 function useEntityMetadata(meta: EntityMetadata) {
     return meta.connection.getRepository(meta.target)
 }
 
+// `ColumnMetadata` / `IndexMetadata` never had `.dataSource` — access now
+// goes through `.entityMetadata.dataSource`
 function useColumnMetadata(col: ColumnMetadata) {
     return col.connection.driver
+}
+
+function useIndexMetadata(idx: IndexMetadata) {
+    return idx.connection.driver.options.type
 }
 
 // DataSource-typed parameter should also be tracked as a DataSource instance
