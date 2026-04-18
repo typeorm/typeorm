@@ -40,7 +40,7 @@ export class ExpoDriver extends AbstractSqliteDriver {
     protected loadDependencies(): void {
         try {
             this.sqlite = this.options.driver ?? require("expo-sqlite")
-        } catch (e) {
+        } catch {
             throw new DriverPackageNotInstalledError(
                 "Expo SQLite",
                 "expo-sqlite",
