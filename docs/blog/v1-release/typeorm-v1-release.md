@@ -22,51 +22,71 @@ The TypeORM team and community is proud to present v1.0. This post covers what y
 
 ## What's new
 
-v1 ships dozens of features that had been queued up during the 0.3 cycle. A tour of the highlights:
+The 0.3.x cycle accumulated dozens of features, behavior fixes, and API improvements. v1 is where they all land.
 
-### Developer experience
+### A cleaner API surface
 
-- **`@typeorm/codemod`** — a new package that automates most of the v1 upgrade in one command. More on this below.
-- **Explicit resource management on `QueryRunner`** — `await using` (TypeScript 5.2+) releases the runner automatically when the scope exits. One fewer class of leaked-connection bug.
-- **`ifExists` across every drop method** — `dropTable`, `dropColumn`, `dropIndex`, `dropPrimaryKey`, `dropForeignKey`, `dropUniqueConstraint`, `dropCheckConstraint`, `dropExclusionConstraint`, and their plural variants all accept an `ifExists` flag for idempotent migrations.
-- **Cascade truncate in `clear()`** — `repository.clear({ cascade: true })` issues `TRUNCATE … CASCADE` on PostgreSQL, CockroachDB, and Oracle. Fast test setup without handling foreign keys by hand.
-- **Entity-aware typing for `increment()` and `decrement()`** — `any` is gone from the conditions parameter; your entity's columns drive autocomplete and type checking.
+The headline change: `Connection` is now `DataSource`. The global `createConnection`, `getConnection`, `getRepository`, `getManager`, and friends are gone, replaced by direct `dataSource.getRepository(...)` access. The naming finally matches what the object actually is.
 
-### QueryBuilder
+- **Find options are object-shaped** - `relations: { profile: true, posts: true }` instead of `["profile", "posts"]`. Same for `select`. Better typing, better autocomplete, one canonical shape.
+- **Repository methods consolidated** - `findOneBy({ id })` instead of `findOneById(id)`, `findBy({ id: In([…]) })` instead of `findByIds([…])`, `exists()` instead of `exist()`. One way to do each operation.
+- **Custom repositories** - `@EntityRepository` and `getCustomRepository()` are gone; extend `Repository<Entity>` directly or attach methods to the repository you get from `dataSource.getRepository()`.
 
-- **`INSERT INTO … SELECT`** — a new `valuesFromSelect()` method on `InsertQueryBuilder` for data migration and transformation queries. No more dropping into raw SQL for bulk moves.
-- **`returning` option on `update()` and `upsert()`** — on databases that support `RETURNING`, you don't need a follow-up `SELECT`.
+The codemod (below) handles every one of these renames automatically.
 
-### Transactions
+### Safer by default
 
-- **DataSource-level default isolation level** — `DataSourceOptions.isolationLevel` is now honored by every driver that supports transactions, not just MS SQL Server.
-- **Aurora Postgres and Google Spanner** now honor the setting. Spanner supports `REPEATABLE READ` (preview) and `SERIALIZABLE`.
+- **`null` and `undefined` in `where` clauses now throw.** The 0.3 silent-ignore behavior was correct about half the time and produced very surprising queries the other half. Use `IsNull()` for null matching, or set `invalidWhereValuesBehavior: { null: "ignore", undefined: "ignore" }` if you need the old behavior.
+- **Non-nullable relations now use `INNER JOIN`.** If your schema says `nullable: false`, the query reflects that. Worth running an integrity check before you ship - orphaned rows will silently drop out of results where they used to leak through.
 
-### Driver improvements
+### Faster tests, cleaner schema work
 
-- **PostgreSQL** — partial indexes via `@Index({ where: "..." })`, a new `installExtensions` option for additional Postgres extensions on connection, and `ALTER TYPE … ADD VALUE` for enum changes instead of the old four-step rename dance.
-- **MongoDB** — object-based `select` projection now matches the other drivers (`select: { id: true, name: true }`). The driver requirement moves to v7+.
-- **SAP HANA** — `FOR UPDATE` and other lock modes in `SELECT`, `@Entity({ comment: "..." })` table comments, and a new `maxWaitTimeoutIfPoolExhausted` pool option.
-- **SQLite** — `jsonb` column type.
-- **React Native** — SQLite encryption key option.
+- **Cascade truncate** - `repository.clear({ cascade: true })` issues `TRUNCATE … CASCADE` on PostgreSQL, CockroachDB, and Oracle. One call to wipe a table plus its dependents.
+- **Batched DROP in `clearDatabase()`** - Postgres and CockroachDB consolidate individual drops into batched queries. Noticeably faster test setup.
+- **`ifExists` on every drop method** - idempotent schema teardown without try/catch scaffolding.
 
-### Decorators
+### Predictable transactions everywhere
 
-- **`@Exclusion` now supports `deferrable`**, matching `@Unique` and `@Index`.
+A DataSource-level `isolationLevel` is now honored by every driver that supports transactions, not just MS SQL Server. Aurora Postgres and Google Spanner are in the boat too - Spanner with `REPEATABLE READ` and `SERIALIZABLE`.
 
-And dozens of bug fixes across query generation, relations and eager loading, persistence, and every driver. If you've been hitting a long-standing issue, it's almost certainly fixed.
+### Smoother data movement
+
+- **`valuesFromSelect()`** on `InsertQueryBuilder` - real `INSERT … SELECT` without dropping into raw SQL for bulk moves.
+- **`returning` on `update()` and `upsert()`** - no follow-up `SELECT` needed on databases that support `RETURNING`.
+
+### Driver progress
+
+- **MongoDB** - modernized to driver v7+, with object-based `select` projections that match the relational drivers.
+- **PostgreSQL** - partial indexes via `@Index({ where: "..." })`, automatic extension installation, and cleaner `ALTER TYPE … ADD VALUE` for enum changes.
+- **SAP HANA** - first-class `FOR UPDATE` locking, table comments via `@Entity({ comment: "..." })`, and a new pool timeout option.
+- **SQLite** - `jsonb` column type.
+- **React Native** - SQLite encryption key support.
+
+### Type safety and resource management
+
+- **Entity-aware typing** on `update()`, `increment()`, and `decrement()` - `any` is gone from these signatures.
+- **`await using` on `QueryRunner`** - automatic cleanup when the scope exits, one fewer class of leaked-connection bug.
+
+And dozens more bug fixes across query generation, eager loading, persistence, and every driver. Full list in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
 ## Security hardening
 
-v1 closes three attack surfaces that had been accumulating over the 0.3.x series: parameterized schema introspection and DDL, runtime validation on `orderBy` direction values, and semicolons rejected in raw SQL fragments (`select`, `addSelect`, `groupBy`, `orderBy`). Details in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
+v1 closes three attack surfaces that had been accumulating over the 0.3.x series: parameterized schema introspection and DDL, runtime validation on `orderBy` direction values, and semicolons rejected in raw SQL fragments. Details in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
 If you pipe user input through raw QueryBuilder fragments, rerun your tests after upgrading.
 
-## The 0.3 deprecations are gone
+## Platform requirements
 
-Every API that was deprecated across the 0.3 cycle is removed in v1 — `Connection`, the global repository and manager functions, the `@EntityRepository` pattern, the IoC container integration, and the rest. Platform targets moved too: Node.js 20+, ES2023, `mysql2` over `mysql`, `better-sqlite3` over `sqlite3`, MongoDB driver v7+, Expo SDK v52+.
+v1 raises the floor:
 
-All of it is documented in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3), with before/after for every change.
+- **Node.js 20+** (was 14+)
+- **ES2023** target
+- **`mysql2`** only (the old `mysql` driver is gone)
+- **`better-sqlite3`** only (`sqlite3` is gone)
+- **MongoDB driver v7+**
+- **Expo SDK v52+**
+
+Other 0.3-era APIs that are gone: `@RelationCount`, the IoC container integration, `TYPEORM_*` env auto-loading, the deprecated lock modes, and a handful of internal helpers. The [upgrading guide](/docs/releases/1.0/upgrading-from-0.3) has before/after for every change.
 
 ## Upgrading
 
@@ -76,9 +96,9 @@ One command:
 npx @typeorm/codemod v1 src/
 ```
 
-The codemod handles the rename-heavy work automatically — imports, method names, find-option syntax, dependency pins. It also scans your `package.json` and bumps ecosystem packages to v1-compatible versions, including `@nestjs/typeorm` to v11.0.1+ and the database drivers (`mongodb`, `mysql2`, `better-sqlite3`, `redis`, `mssql`, `@google-cloud/spanner`). For packages still pinned to removed APIs, it prints a warning.
+The codemod handles the rename-heavy work automatically - imports, method names, find-option syntax, dependency pins. It also scans your `package.json` and bumps ecosystem packages to v1-compatible versions, including `@nestjs/typeorm` to v11.0.1+ and the database drivers (`mongodb`, `mysql2`, `better-sqlite3`, `redis`, `mssql`, `@google-cloud/spanner`). For packages still pinned to removed APIs, it prints a warning.
 
-For most codebases the codemod does about 80% of the upgrade. The rest — data integrity checks against the new INNER JOIN behavior on non-nullable relations, and `null`-in-where audits — is spelled out in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
+For most codebases the codemod does about 80% of the upgrade. The rest - data integrity checks against the new INNER JOIN behavior on non-nullable relations, and `null`-in-where audits - is spelled out in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
 ## NestJS Integration
 
@@ -94,7 +114,7 @@ If you've heard that TypeORM is dead or unmaintained, v1 is our answer. The proj
 
 Backed by a working group of companies and contributors who ship alongside us.
 
-Special thanks to **Umed Khudoiberdiev** ([@pleerock](https://github.com/pleerock)) and **Dmitry Zotov** — TypeORM is their project originally, and v1 is built on everything they shipped across the entire 0.x series.
+Special thanks to **Umed Khudoiberdiev** ([@pleerock](https://github.com/pleerock)) and **Dmitry Zotov** - TypeORM is their project originally, and v1 is built on everything they shipped across the entire 0.x series.
 
 v1 also wouldn't exist without the 40 contributors who shipped PRs in this cycle, everyone who filed issues with clear reproductions, and our sponsors on OpenCollective. Thank you.
 
@@ -102,8 +122,8 @@ If your company depends on TypeORM and has never sponsored, this is a good time:
 
 ## Links
 
-- [Upgrading from 0.3](/docs/releases/1.0/upgrading-from-0.3) — the full migration walkthrough with before/after for every change
+- [Upgrading from 0.3](/docs/releases/1.0/upgrading-from-0.3) - the full migration walkthrough with before/after for every change
 - [`@typeorm/codemod`](https://www.npmjs.com/package/@typeorm/codemod)
 - [GitHub](https://github.com/typeorm/typeorm)
 - [OpenCollective](https://opencollective.com/typeorm)
-- [The Future of TypeORM (Oct 2024)](/blog/future-of-typeorm) — if you missed the governance announcement
+- [The Future of TypeORM (Oct 2024)](/blog/future-of-typeorm) - if you missed the governance announcement
