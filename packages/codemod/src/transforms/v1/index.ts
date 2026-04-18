@@ -3,6 +3,7 @@ import * as columnUnsignedNumeric from "./column-unsigned-numeric"
 import * as columnWidthZerofill from "./column-width-zerofill"
 import * as connectionManager from "./connection-manager"
 import * as connectionToDataSource from "./connection-to-datasource"
+import * as datasourceExpo from "./datasource-expo"
 import * as datasourceMongodb from "./datasource-mongodb"
 import * as datasourceMssql from "./datasource-mssql"
 import * as datasourceMysqlConnector from "./datasource-mysql-connector"
@@ -74,6 +75,7 @@ export const transforms = [
     findOptionsStringSelect,
     findOptionsStringRelations,
     connectionManager,
+    datasourceExpo,
     fileLogger,
 ]
 
