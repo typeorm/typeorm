@@ -1,3 +1,5 @@
+import "typeorm"
+
 // TODO(typeorm-v1): `printSql()` was removed — use `getSql()` or `getQueryAndParameters()` to inspect SQL
 const users = await dataSource
     .getRepository(User)

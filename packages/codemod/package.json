@@ -34,6 +34,7 @@
     "@types/node": "^20.19.33",
     "@types/semver": "^7.7.0",
     "@types/sinon": "^21.0.0",
+    "c8": "^11.0.0",
     "chai": "^4.5.0",
     "eslint": "^10.0.0",
     "eslint-plugin-chai-friendly": "^1.1.0",
