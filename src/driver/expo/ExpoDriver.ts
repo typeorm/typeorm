@@ -45,8 +45,10 @@ export class ExpoDriver extends AbstractSqliteDriver {
         }
 
         // Expo SDK v52 removed the legacy synchronous API. The modern async API
-        // exposes `openDatabaseAsync` — if it's missing, the user is on a pre-v52 SDK.
-        if (!("openDatabaseAsync" in this.sqlite)) {
+        // exposes `openDatabaseAsync` as a function — anything else (missing,
+        // non-callable, non-object `driver`) means the user is on a pre-v52 SDK
+        // or has passed something that isn't the expo-sqlite module.
+        if (typeof this.sqlite?.openDatabaseAsync !== "function") {
             throw new TypeORMError(
                 "Legacy Expo SQLite driver is not supported. Upgrade to Expo SDK v52 or later, which ships the modern async SQLite API.",
             )
