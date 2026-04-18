@@ -265,22 +265,29 @@ Also note the default behavior changes in pool configuration:
 
 ### Expo
 
-Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52. Upgrade to **Expo SDK v52 or later** and use the modern async SQLite API:
+Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52. Upgrade to **Expo SDK v52 or later** and use the modern async SQLite API.
+
+No code changes are required beyond bumping Expo — TypeORM now loads `expo-sqlite` automatically, matching the behaviour of every other driver:
 
 ```typescript
-// Before
+// Works in both v0.3 and v1.0 (with Expo SDK v52+)
 new DataSource({
     type: "expo",
     database: "db.sqlite",
 })
+```
 
-// After — use Expo SDK v52+ with the modern async API
+If you were previously passing `driver` explicitly it continues to work as an override — useful for `patch-package` setups or custom wrappers:
+
+```typescript
 new DataSource({
     type: "expo",
     database: "db.sqlite",
     driver: require("expo-sqlite"),
 })
 ```
+
+Running TypeORM against a pre-v52 Expo SDK now throws a clear error at connect time rather than failing later with a cryptic `openDatabase is not a function`.
 
 ### Redis (cache)
 
