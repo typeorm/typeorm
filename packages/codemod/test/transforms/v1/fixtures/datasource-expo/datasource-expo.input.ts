@@ -22,3 +22,35 @@ const dataSource3 = new DataSource({
     database: "app.db",
     entities: [],
 })
+
+// Case 4: quoted keys — should also be detected and rewritten
+// prettier-ignore
+const dataSource4 = new DataSource({
+    "type": "expo",
+    "database": "quoted.db",
+    "entities": [],
+})
+
+// Case 5: exported via `export default` — TODO should land on the export
+export default new DataSource({
+    type: "expo",
+    database: "exported.db",
+    entities: [],
+})
+
+// Case 6: `{ type: "expo" }` WITHOUT a sibling `database` property — do NOT
+// mutate; unrelated configs elsewhere shouldn't get `driver` appended.
+const cliOpts = {
+    type: "expo",
+    label: "Expo CLI",
+}
+
+// Case 7: idempotency — a file that already has the TODO + driver injected
+// should round-trip unchanged.
+// TODO(typeorm-v1): Expo legacy SQLite driver was removed — requires Expo SDK v52+ with the modern async API. `driver: require("expo-sqlite")` has been added automatically.
+const dataSource7 = new DataSource({
+    type: "expo",
+    database: "already-migrated.db",
+    driver: require("expo-sqlite"),
+    entities: [],
+})
