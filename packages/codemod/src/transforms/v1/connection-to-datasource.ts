@@ -7,6 +7,7 @@ import type {
     ObjectPattern,
 } from "jscodeshift"
 import {
+    expandLocalNamesForImports,
     forEachIdentifierParam,
     getStringValue,
     isIdentifier,
@@ -316,6 +317,23 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         })
     }
 
+    // Gate metadata type matches on the actual local bindings imported from
+    // typeorm — users sometimes have their own classes named `EntityMetadata`
+    // or `ColumnMetadata` and their `.connection` property access must not
+    // be rewritten.
+    const connectionPropLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        typesWithConnectionProp,
+    )
+    const indirectDataSourceLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        typesWithIndirectDataSource,
+    )
+
     const connectionPropVarNames = new Set<string>()
     const indirectDataSourceVarNames = new Set<string>()
 
@@ -329,9 +347,9 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const ref = ann.typeAnnotation
         if (ref.typeName.type !== "Identifier") return
 
-        if (typesWithConnectionProp.has(ref.typeName.name)) {
+        if (connectionPropLocalNames.has(ref.typeName.name)) {
             connectionPropVarNames.add(id.name)
-        } else if (typesWithIndirectDataSource.has(ref.typeName.name)) {
+        } else if (indirectDataSourceLocalNames.has(ref.typeName.name)) {
             indirectDataSourceVarNames.add(id.name)
         }
     }

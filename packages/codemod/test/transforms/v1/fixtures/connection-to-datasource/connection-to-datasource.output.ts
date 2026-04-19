@@ -1,4 +1,11 @@
-import { DataSource, DataSourceOptions, QueryRunner } from "typeorm"
+import {
+    DataSource,
+    DataSourceOptions,
+    QueryRunner,
+    EntityMetadata,
+    ColumnMetadata,
+    IndexMetadata,
+} from "typeorm"
 import type { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
 import type { BetterSqlite3DataSourceOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
 

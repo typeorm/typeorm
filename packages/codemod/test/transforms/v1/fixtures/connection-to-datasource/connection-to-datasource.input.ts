@@ -1,4 +1,11 @@
-import { Connection, ConnectionOptions, QueryRunner } from "typeorm"
+import {
+    Connection,
+    ConnectionOptions,
+    QueryRunner,
+    EntityMetadata,
+    ColumnMetadata,
+    IndexMetadata,
+} from "typeorm"
 import type { SapConnectionOptions } from "typeorm/driver/sap/SapConnectionOptions"
 import type { BetterSqlite3ConnectionOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3ConnectionOptions"
 
