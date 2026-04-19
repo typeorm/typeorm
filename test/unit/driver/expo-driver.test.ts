@@ -1,68 +1,124 @@
 import { expect } from "chai"
 import { ExpoDriver } from "../../../src/driver/expo/ExpoDriver"
+import type { ExpoDataSourceOptions } from "../../../src/driver/expo/ExpoDataSourceOptions"
 import {
     DriverPackageNotInstalledError,
     TypeORMError,
 } from "../../../src/error"
 
-// Minimal mock matching the Expo SDK v52+ async surface. We only need
-// `openDatabaseAsync` to be a function for `loadDependencies()` to accept it.
+// Minimal driver module shape matching the Expo SDK v52+ async surface.
+// `loadDependencies()` only inspects `openDatabaseAsync`.
 const modernDriver = {
     openDatabaseAsync: () => undefined,
 }
 
-type LoadableDriver = ExpoDriver & {
-    options: { driver?: unknown }
-    sqlite: unknown
-    loadDependencies: () => void
+const moduleNotFoundError = (): Error & { code?: string } => {
+    const err = new Error("Cannot find module 'expo-sqlite'") as Error & {
+        code?: string
+    }
+    err.code = "MODULE_NOT_FOUND"
+    return err
 }
 
-const makeDriver = (driverOption: unknown): LoadableDriver => {
-    const instance = Object.create(ExpoDriver.prototype) as LoadableDriver
-    ;(instance as unknown as { options: unknown }).options = {
-        driver: driverOption,
+// Subclass that lets each test control what `require("expo-sqlite")` returns
+// without touching Node's module resolver. Exposes `loadDependencies` and
+// `sqlite` publicly so assertions don't need type casts.
+class TestableExpoDriver extends ExpoDriver {
+    declare public sqlite: unknown
+    private onRequire: () => unknown = () => {
+        throw moduleNotFoundError()
     }
-    return instance
+
+    constructor(
+        driverOption: ExpoDataSourceOptions["driver"],
+        onRequire?: () => unknown,
+    ) {
+        // Bypass the real base-class wiring; we only need `loadDependencies`.
+        super(Object.create(null))
+        Object.assign(this, {
+            options: {
+                type: "expo",
+                database: ":memory:",
+                driver: driverOption,
+            },
+        })
+        if (onRequire) this.onRequire = onRequire
+    }
+
+    protected requireExpoSqlite(): unknown {
+        return this.onRequire()
+    }
+
+    public loadDependenciesForTest(): void {
+        this.loadDependencies()
+    }
+}
+
+// The real constructor calls `loadDependencies` before the subclass override
+// is ready, so construct via `Object.create` and populate state manually.
+const build = (
+    driverOption: ExpoDataSourceOptions["driver"],
+    onRequire?: () => unknown,
+): TestableExpoDriver => {
+    const driver = Object.create(
+        TestableExpoDriver.prototype,
+    ) as TestableExpoDriver
+    Object.assign(driver, {
+        options: { type: "expo", database: ":memory:", driver: driverOption },
+        onRequire:
+            onRequire ??
+            (() => {
+                throw moduleNotFoundError()
+            }),
+    })
+    return driver
 }
 
 describe("driver > expo > loadDependencies", () => {
     it("accepts an explicit driver that exposes the modern async API", () => {
-        const instance = makeDriver(modernDriver)
-        instance.loadDependencies()
-        expect(instance.sqlite).to.equal(modernDriver)
+        const driver = build(modernDriver)
+        driver.loadDependenciesForTest()
+        expect(driver.sqlite).to.equal(modernDriver)
     })
 
-    it("throws a TypeORMError when the driver is missing `openDatabaseAsync` (pre-v52 SDK)", () => {
-        const instance = makeDriver({ openDatabase: () => undefined })
-        expect(() => instance.loadDependencies())
+    it("throws TypeORMError when the user-supplied driver lacks `openDatabaseAsync`", () => {
+        const driver = build({ openDatabase: () => undefined })
+        expect(() => driver.loadDependenciesForTest())
             .to.throw(TypeORMError)
             .with.property("message")
-            .that.matches(/Expo SDK v52/)
+            .that.matches(/custom overrides must match/)
     })
 
-    it("throws a TypeORMError when `openDatabaseAsync` is not a function", () => {
-        const instance = makeDriver({ openDatabaseAsync: "nope" })
-        expect(() => instance.loadDependencies()).to.throw(TypeORMError)
+    it("throws TypeORMError with a SDK upgrade hint when `expo-sqlite` is installed but stale", () => {
+        const staleModule = { openDatabase: () => undefined }
+        const driver = build(undefined, () => staleModule)
+        expect(() => driver.loadDependenciesForTest())
+            .to.throw(TypeORMError)
+            .with.property("message")
+            .that.matches(/Expo SDK v52 or later/)
     })
 
-    it("throws a TypeORMError when the driver is not an object (e.g. null)", () => {
-        const instance = makeDriver(null)
-        // `null ?? require(...)` falls through to require, which fails in Node
-        // because `expo-sqlite` is not installed — we expect the package-not-
-        // installed path, not the legacy-driver path.
-        expect(() => instance.loadDependencies()).to.throw(
-            DriverPackageNotInstalledError,
-        )
+    it("loads the module when `requireExpoSqlite()` resolves", () => {
+        const driver = build(undefined, () => modernDriver)
+        driver.loadDependenciesForTest()
+        expect(driver.sqlite).to.equal(modernDriver)
     })
 
-    it("throws DriverPackageNotInstalledError when no driver is passed and `expo-sqlite` is absent", () => {
-        // Node test environment has no `expo-sqlite` installed — `require`
-        // throws MODULE_NOT_FOUND which the try/catch surfaces as
-        // DriverPackageNotInstalledError.
-        const instance = makeDriver(undefined)
-        expect(() => instance.loadDependencies())
+    it("throws DriverPackageNotInstalledError when the module is not found", () => {
+        const driver = build(undefined)
+        expect(() => driver.loadDependenciesForTest())
             .to.throw(DriverPackageNotInstalledError)
             .with.property("message")
             .that.includes("expo-sqlite")
+    })
+
+    it("re-throws non-MODULE_NOT_FOUND errors unchanged", () => {
+        const boom = new Error("expo-sqlite crashed during initialization")
+        const driver = build(undefined, () => {
+            throw boom
+        })
+        expect(() => driver.loadDependenciesForTest()).to.throw(
+            "expo-sqlite crashed during initialization",
+        )
     })
 })
