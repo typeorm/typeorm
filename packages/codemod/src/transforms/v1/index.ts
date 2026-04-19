@@ -10,6 +10,7 @@ import * as datasourceName from "./datasource-name"
 import * as datasourceSap from "./datasource-sap"
 import * as datasourceSqliteOptions from "./datasource-sqlite-options"
 import * as datasourceSqliteType from "./datasource-sqlite-type"
+import * as fileLogger from "./file-logger"
 import * as findOptionsLockModes from "./find-options-lock-modes"
 import * as findOptionsStringRelations from "./find-options-string-relations"
 import * as findOptionsStringSelect from "./find-options-string-select"
@@ -73,6 +74,7 @@ export const transforms = [
     findOptionsStringSelect,
     findOptionsStringRelations,
     connectionManager,
+    fileLogger,
 ]
 
 export default transformer(transforms)
