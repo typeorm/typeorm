@@ -11,9 +11,9 @@ export const manual = true
 
 const MESSAGE = `\`ConnectionManager\` was removed — create and manage \`DataSource\` instances directly instead — there is no replacement class`
 
-// A comment attached to one of these nodes survives jscodeshift/recast's
-// jscodeshift/recast printing. Walking up to one of these produces a
-// visible comment above the enclosing statement or declaration.
+// Node types on which a leading line-comment survives jscodeshift/recast
+// printing — walking up to one of these keeps the comment visible above
+// the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
@@ -50,7 +50,6 @@ export const connectionManager = (file: FileInfo, api: API) => {
     })
 
     if (localNames.size === 0) {
-        // Not imported from typeorm; nothing to flag.
         return undefined
     }
 
@@ -70,7 +69,6 @@ export const connectionManager = (file: FileInfo, api: API) => {
         }
     }
 
-    // Flag `new ConnectionManager(...)` constructions wherever they appear
     root.find(j.NewExpression)
         .filter((p) => {
             const callee = p.node.callee

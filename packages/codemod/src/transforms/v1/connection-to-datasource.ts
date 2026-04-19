@@ -45,7 +45,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
-    // Type/class renames
     const typeRenames: Record<string, string> = {
         Connection: "DataSource",
         ConnectionOptions: "DataSourceOptions",
@@ -69,7 +68,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         SpannerConnectionOptions: "SpannerDataSourceOptions",
     }
 
-    // Method renames on DataSource/Connection instances
     const methodRenames: Record<string, string> = {
         connect: "initialize",
         close: "destroy",
@@ -110,8 +108,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions",
     }
 
-    // Collect local names imported from "typeorm" (including deep sub-paths
-    // like `typeorm/driver/sap/SapConnectionOptions`) that need renaming.
     const localRenames = new Map<string, string>()
     const typeormPathPrefix = "typeorm/"
 
@@ -154,7 +150,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                             : oldImported
                     localRenames.set(localName, typeRenames[oldImported])
 
-                    // Rename the import specifier itself
                     spec.imported.name = typeRenames[oldImported]
                     if (
                         spec.local?.type === "Identifier" &&
@@ -199,8 +194,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         return true
     }
 
-    // CommonJS `require("typeorm[/...]")` — rewrite both the module path and
-    // any destructured identifiers (`const { Connection } = require(...)`).
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "require" },
     }).forEach((callPath) => {
@@ -231,7 +224,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
-    // Rename only identifiers that were imported from "typeorm"
     for (const [oldName, newName] of localRenames) {
         // TSTypeReference (e.g. const x: Connection = ...)
         root.find(j.TSTypeReference, {
@@ -264,12 +256,10 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         })
     }
 
-    // Collect variable names known to be Connection/DataSource instances
     const connectionTypeNames = new Set(Object.keys(typeRenames))
     connectionTypeNames.add("DataSource")
     const connectionVarNames = new Set<string>()
 
-    // Variables assigned from new Connection(...) / new DataSource(...)
     root.find(j.VariableDeclarator).forEach((path) => {
         const init = path.node.init
         if (
@@ -283,7 +273,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
-    // Variables and parameters with Connection/DataSource type annotations
     const collectDataSourceTyped = (id: Identifier) => {
         if (!id.name || id.typeAnnotation?.type !== "TSTypeAnnotation") return
         const ann = id.typeAnnotation.typeAnnotation
@@ -322,7 +311,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         })
     }
 
-    // Collect variable/param names typed as TypeORM types with .connection
     const connectionPropVarNames = new Set<string>()
     const indirectDataSourceVarNames = new Set<string>()
 
@@ -343,12 +331,10 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     }
 
-    // Variable declarations with type annotations
     root.find(j.VariableDeclarator).forEach((path) => {
         if (isIdentifier(path.node.id)) collectTypedIdentifier(path.node.id)
     })
 
-    // Function/method/arrow parameters and constructor parameter properties
     forEachIdentifierParam(root, j, collectTypedIdentifier)
 
     // Track variables assigned from DataSource accessors, so code like

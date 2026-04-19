@@ -80,7 +80,6 @@ export const datasourceMongodb = (file: FileInfo, api: API) => {
         "wtimeoutMS",
     ])
 
-    // Remove deprecated options
     root.find(j.ObjectProperty).forEach((astPath) => {
         const name = getPropertyKeyName(astPath.node)
         if (name === null) return

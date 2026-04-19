@@ -125,7 +125,6 @@ export const fileLogger = (file: FileInfo, api: API) => {
         const [arg] = init.arguments
         if (!arg || getStringValue(arg) !== "typeorm") return
 
-        // Whole-module CJS bind: `const typeorm = require("typeorm")`
         if (p.node.id.type === "Identifier") {
             namespaceNames.add(p.node.id.name)
         }
@@ -162,7 +161,6 @@ export const fileLogger = (file: FileInfo, api: API) => {
                 optionsArg as Node | undefined,
             )
 
-            // Skip if user explicitly provided an absolute logPath
             if (hasOption && isAbsolute) return
 
             let current = astPath.parent

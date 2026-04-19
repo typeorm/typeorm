@@ -78,12 +78,10 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         },
     }).forEach(addGetCustomRepoTodo)
 
-    // Also find standalone getCustomRepository() calls
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "getCustomRepository" },
     }).forEach(addGetCustomRepoTodo)
 
-    // Remove imports
     if (
         removeImportSpecifiers(
             root,

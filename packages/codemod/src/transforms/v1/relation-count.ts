@@ -12,9 +12,9 @@ export const manual = true
 const MIGRATION_HINT =
     "use `@VirtualColumn` with a sub-query instead — see the v1 upgrading guide"
 
-// A comment attached to one of these nodes survives jscodeshift/recast's
-// jscodeshift/recast printing. Walking up to one of these produces a
-// visible comment above the enclosing statement or declaration.
+// Node types on which a leading line-comment survives jscodeshift/recast
+// printing — walking up to one of these keeps the comment visible above
+// the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
@@ -98,7 +98,6 @@ export const relationCount = (file: FileInfo, api: API) => {
         }
     })
 
-    // Remove RelationCount import from typeorm
     if (
         removeImportSpecifiers(root, j, "typeorm", new Set(["RelationCount"]))
     ) {

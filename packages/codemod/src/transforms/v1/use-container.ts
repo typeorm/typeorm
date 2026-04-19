@@ -30,7 +30,6 @@ export const useContainer = (file: FileInfo, api: API) => {
                 callee: { type: "Identifier", name: funcName },
             },
         }).forEach((path) => {
-            // Replace with a comment
             const replacement = j.emptyStatement()
             addTodoComment(
                 replacement,
@@ -43,7 +42,6 @@ export const useContainer = (file: FileInfo, api: API) => {
         })
     }
 
-    // Remove imports from typeorm
     const removedImports = new Set([
         "useContainer",
         "getFromContainer",
