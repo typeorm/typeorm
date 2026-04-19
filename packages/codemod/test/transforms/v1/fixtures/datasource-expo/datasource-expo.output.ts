@@ -46,8 +46,8 @@ const dataSource6 = new DataSource({
 })
 
 // Case 7: quoted keys — should also be detected
-// prettier-ignore
 // TODO(typeorm-v1): `driver: require("expo-sqlite")` is no longer needed — TypeORM v1 auto-loads `expo-sqlite`. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
+// prettier-ignore
 const dataSource7 = new DataSource({
     "type": "expo",
     "database": "quoted.db",
