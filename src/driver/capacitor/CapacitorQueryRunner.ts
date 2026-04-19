@@ -68,6 +68,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
         const spaceIndex = query.indexOf(" ")
         const command = spaceIndex === -1 ? query : query.slice(0, spaceIndex)
+        const isWriteQuery = ["INSERT", "UPDATE", "DELETE"].includes(command)
 
         try {
             let raw: any
@@ -102,6 +103,9 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
             }
 
             if (!useStructuredResult) {
+                if (isWriteQuery) {
+                    return result
+                }
                 return result.raw
             }
 
