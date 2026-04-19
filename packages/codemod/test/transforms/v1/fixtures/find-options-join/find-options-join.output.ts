@@ -30,9 +30,11 @@ const c = processOptions({
     join: { separator: "," },
 })
 
-// Case 4: string-literal key — should still be detected via `getStringValue`
-// prettier-ignore
+// Case 4: string-literal key — should still be detected via `getStringValue`.
+// The trailing `;` below exists because jscodeshift/recast emits it when the
+// block is reprinted, and `prettier-ignore` stops Prettier from stripping it.
 // TODO(typeorm-v1): `join` find option was removed — migrate `leftJoinAndSelect` to the `relations` option, or switch to QueryBuilder for `innerJoin`/`innerJoinAndSelect`/`leftJoin` — see the v1 upgrading guide
+// prettier-ignore
 const d = await repository.find({
     "join": {
         "alias": "post",

@@ -28,11 +28,13 @@ const c = processOptions({
     join: { separator: "," },
 })
 
-// Case 4: string-literal key — should still be detected via `getStringValue`
+// Case 4: string-literal key — should still be detected via `getStringValue`.
+// The trailing `;` below exists because jscodeshift/recast emits it when the
+// block is reprinted, and `prettier-ignore` stops Prettier from stripping it.
 // prettier-ignore
 const d = await repository.find({
     "join": {
         "alias": "post",
         "leftJoinAndSelect": { categories: "post.categories" },
     },
-})
+});
