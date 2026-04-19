@@ -160,6 +160,57 @@ export const getLocalNamesForImport = (
 }
 
 /**
+ * Collects local namespace bindings for a module. Covers both:
+ *
+ *   import * as typeorm from "typeorm"           → "typeorm"
+ *   const typeorm = require("typeorm")           → "typeorm"
+ *
+ * Useful when a transform needs to recognise `typeorm.Foo` member-expression
+ * references alongside named `Foo` imports handled by `getLocalNamesForImport`.
+ */
+export const getNamespaceLocalNames = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+): Set<string> => {
+    const localNames = new Set<string>()
+
+    // ESM: `import * as ns from "moduleName"`
+    root.find(j.ImportDeclaration, {
+        source: { value: moduleName },
+    }).forEach((importPath) => {
+        for (const spec of importPath.node.specifiers ?? []) {
+            if (
+                spec.type === "ImportNamespaceSpecifier" &&
+                spec.local?.type === "Identifier"
+            ) {
+                localNames.add(spec.local.name)
+            }
+        }
+    })
+
+    // CommonJS: `const ns = require("moduleName")`
+    root.find(j.CallExpression, {
+        callee: { type: "Identifier", name: "require" },
+    }).forEach((callPath) => {
+        const [arg] = callPath.node.arguments
+        if (!arg || getStringValue(arg) !== moduleName) return
+
+        const parent = callPath.parent.node
+        if (
+            parent.type !== "VariableDeclarator" ||
+            parent.id.type !== "Identifier"
+        ) {
+            return
+        }
+        const name: string = parent.id.name
+        localNames.add(name)
+    })
+
+    return localNames
+}
+
+/**
  * Calls `callback` for each Identifier parameter found in function-like
  * nodes (functions, methods, arrows) and TSParameterProperty nodes.
  */

@@ -1,8 +1,16 @@
 import path from "node:path"
-import type { API, ASTPath, Decorator, FileInfo, Node } from "jscodeshift"
+import type {
+    API,
+    ASTPath,
+    Decorator,
+    FileInfo,
+    MemberExpression,
+    Node,
+} from "jscodeshift"
 import {
     fileImportsFrom,
     getLocalNamesForImport,
+    getNamespaceLocalNames,
     removeImportSpecifiers,
     removeReExportSpecifiers,
 } from "../ast-helpers"
@@ -45,7 +53,27 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         "getCustomRepository",
     )
 
-    // Find @EntityRepository decorators (including aliased names)
+    // Namespace bindings for `import * as typeorm from "typeorm"` and the
+    // matching CommonJS form — used below to match `typeorm.AbstractRepository`
+    // / `typeorm.EntityRepository` / `typeorm.getCustomRepository` references.
+    const typeormNamespaces = getNamespaceLocalNames(root, j, "typeorm")
+
+    const isTypeormNamespaceMember = (
+        expr: Node,
+        memberName: string,
+    ): boolean => {
+        if (expr.type !== "MemberExpression") return false
+        const member = expr as MemberExpression
+        return (
+            member.object.type === "Identifier" &&
+            typeormNamespaces.has(member.object.name) &&
+            member.property.type === "Identifier" &&
+            member.property.name === memberName
+        )
+    }
+
+    // Find @EntityRepository decorators (including aliased names and
+    // `@typeorm.EntityRepository()` namespace-access form)
     root.find(j.ClassDeclaration)
         .filter((classPath) => {
             const decorators = (classPath.node as { decorators?: Decorator[] })
@@ -54,11 +82,14 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
 
             for (const decorator of decorators) {
                 const expr = decorator.expression
+                if (expr.type !== "CallExpression") continue
                 if (
-                    expr.type === "CallExpression" &&
                     expr.callee.type === "Identifier" &&
                     entityRepositoryNames.has(expr.callee.name)
                 ) {
+                    return true
+                }
+                if (isTypeormNamespaceMember(expr.callee, "EntityRepository")) {
                     return true
                 }
             }
@@ -74,22 +105,19 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
             hasTodos = true
         })
 
-    // Find classes extending AbstractRepository (including aliased names)
+    // Find classes extending AbstractRepository — covers:
+    //   class X extends AbstractRepository {}           (named/aliased import)
+    //   class X extends typeorm.AbstractRepository {}   (namespace import)
     root.find(j.ClassDeclaration).forEach((classPath) => {
         const superClass = classPath.node.superClass
         if (!superClass) return
 
-        let name: string | null = null
-        if (superClass.type === "Identifier") {
-            name = superClass.name
-        } else if (
-            superClass.type === "MemberExpression" &&
-            superClass.property.type === "Identifier"
-        ) {
-            name = superClass.property.name
-        }
+        const matches =
+            (superClass.type === "Identifier" &&
+                abstractRepositoryNames.has(superClass.name)) ||
+            isTypeormNamespaceMember(superClass, "AbstractRepository")
 
-        if (!name || !abstractRepositoryNames.has(name)) return
+        if (!matches) return
 
         addTodoComment(
             classPath.node,
@@ -115,7 +143,9 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     }
 
     // Member-expression form: `something.getCustomRepository(...)` — not
-    // alias-dependent, matches property name directly.
+    // alias-dependent, matches property name directly. This also covers the
+    // namespace-access form `typeorm.getCustomRepository(...)` since the
+    // property name is the same.
     root.find(j.CallExpression, {
         callee: {
             type: "MemberExpression",
