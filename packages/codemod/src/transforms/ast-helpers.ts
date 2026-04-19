@@ -160,10 +160,11 @@ export const getLocalNamesForImport = (
 }
 
 /**
- * Collects local namespace bindings for a module. Covers both:
+ * Collects local namespace bindings for a module. Covers:
  *
  *   import * as typeorm from "typeorm"           → "typeorm"
  *   const typeorm = require("typeorm")           → "typeorm"
+ *   import typeorm = require("typeorm")          → "typeorm"
  *
  * Useful when a transform needs to recognise `typeorm.Foo` member-expression
  * references alongside named `Foo` imports handled by `getLocalNamesForImport`.
@@ -186,6 +187,16 @@ export const getNamespaceLocalNames = (
             ) {
                 localNames.add(spec.local.name)
             }
+        }
+    })
+
+    // TypeScript: `import ns = require("moduleName")`
+    root.find(j.TSImportEqualsDeclaration).forEach((importPath) => {
+        const ref = importPath.node.moduleReference
+        if (ref.type !== "TSExternalModuleReference") return
+        if (getStringValue(ref.expression) !== moduleName) return
+        if (importPath.node.id?.type === "Identifier") {
+            localNames.add(importPath.node.id.name)
         }
     })
 

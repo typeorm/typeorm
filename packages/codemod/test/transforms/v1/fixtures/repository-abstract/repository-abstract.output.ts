@@ -18,3 +18,13 @@ const repo = dataSource.getCustomRepository(UserRepository) // TODO(typeorm-v1):
 class PostRepository extends typeorm.AbstractRepository<Post> {}
 
 const nsRepo = typeorm.getCustomRepository(PostRepository) // TODO(typeorm-v1): `getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`
+
+// TypeScript `import = require` namespace binding must also be flagged
+import tsns = require("typeorm")
+
+// TODO(typeorm-v1): `@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`
+// TODO(typeorm-v1): `AbstractRepository` was removed — use a custom service class with `dataSource.getRepository()`
+@tsns.EntityRepository(Comment)
+class CommentRepository extends tsns.AbstractRepository<Comment> {}
+
+const tsRepo = tsns.getCustomRepository(CommentRepository) // TODO(typeorm-v1): `getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`

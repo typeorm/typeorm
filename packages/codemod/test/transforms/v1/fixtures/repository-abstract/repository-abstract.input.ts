@@ -15,3 +15,11 @@ const repo = dataSource.getCustomRepository(UserRepository)
 class PostRepository extends typeorm.AbstractRepository<Post> {}
 
 const nsRepo = typeorm.getCustomRepository(PostRepository)
+
+// TypeScript `import = require` namespace binding must also be flagged
+import tsns = require("typeorm")
+
+@tsns.EntityRepository(Comment)
+class CommentRepository extends tsns.AbstractRepository<Comment> {}
+
+const tsRepo = tsns.getCustomRepository(CommentRepository)
