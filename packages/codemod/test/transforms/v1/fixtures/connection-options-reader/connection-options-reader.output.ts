@@ -33,7 +33,7 @@ const cjs = new CjsReader()
 const cjsOptions = await cjs.get()
 
 // Case 7: AssignmentExpression binding — `let r; r = new Reader()`
-let deferred: any
+let deferred: ConnectionOptionsReader | undefined
 // TODO(typeorm-v1): `ConnectionOptionsReader` now searches `process.cwd()` instead of the app root — pass `{ root: "/custom/path" }` to override. `get(name)` and `has(name)` were also removed; use `get()` (previously `all()`) and filter the returned array.
 deferred = new ConnectionOptionsReader()
 const deferredOptions = await deferred.get()
@@ -56,3 +56,9 @@ const MemberReader = require("typeorm").ConnectionOptionsReader
 // TODO(typeorm-v1): `ConnectionOptionsReader` now searches `process.cwd()` instead of the app root — pass `{ root: "/custom/path" }` to override. `get(name)` and `has(name)` were also removed; use `get()` (previously `all()`) and filter the returned array.
 const fromMember = new MemberReader()
 const fromMemberOptions = await fromMember.get()
+
+// Case 11: default-parameter binding — constructor in a function default
+// TODO(typeorm-v1): `ConnectionOptionsReader` now searches `process.cwd()` instead of the app root — pass `{ root: "/custom/path" }` to override. `get(name)` and `has(name)` were also removed; use `get()` (previously `all()`) and filter the returned array.
+async function loadDefaults(r = new ConnectionOptionsReader()) {
+    return r.get()
+}

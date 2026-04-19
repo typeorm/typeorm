@@ -27,7 +27,7 @@ const cjs = new CjsReader()
 const cjsOptions = await cjs.all()
 
 // Case 7: AssignmentExpression binding — `let r; r = new Reader()`
-let deferred: any
+let deferred: ConnectionOptionsReader | undefined
 deferred = new ConnectionOptionsReader()
 const deferredOptions = await deferred.all()
 
@@ -46,3 +46,8 @@ function mustFail() {
 const MemberReader = require("typeorm").ConnectionOptionsReader
 const fromMember = new MemberReader()
 const fromMemberOptions = await fromMember.all()
+
+// Case 11: default-parameter binding — constructor in a function default
+async function loadDefaults(r = new ConnectionOptionsReader()) {
+    return r.all()
+}

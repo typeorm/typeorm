@@ -1,5 +1,12 @@
 import path from "node:path"
-import type { API, ASTPath, FileInfo, NewExpression, Node } from "jscodeshift"
+import type {
+    API,
+    ASTPath,
+    CallExpression,
+    FileInfo,
+    NewExpression,
+    Node,
+} from "jscodeshift"
 import {
     fileImportsFrom,
     getLocalNamesForImport,
@@ -22,6 +29,7 @@ const CONSTRUCTOR_MESSAGE =
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
+    type === "FunctionDeclaration" ||
     type === "ExportDefaultDeclaration" ||
     type === "ExportNamedDeclaration" ||
     type === "ClassProperty" ||
@@ -38,6 +46,20 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
         return undefined
     }
 
+    // Returns true when `node` is `require("typeorm")`.
+    const isTypeormRequire = (node: Node | null | undefined): boolean => {
+        if (!node || node.type !== "CallExpression") return false
+        const call = node as CallExpression
+        if (
+            call.callee.type !== "Identifier" ||
+            call.callee.name !== "require"
+        ) {
+            return false
+        }
+        const [arg] = call.arguments
+        return !!arg && getStringValue(arg) === "typeorm"
+    }
+
     // Local identifiers bound to `ConnectionOptionsReader` via an ESM
     // import or a CommonJS destructured require (handles aliases).
     const readerLocalNames = getLocalNamesForImport(
@@ -47,37 +69,10 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
         "ConnectionOptionsReader",
     )
 
-    // CommonJS member-require pattern:
-    //   const Reader = require("typeorm").ConnectionOptionsReader
-    // Not covered by `getLocalNamesForImport` (which only destructures), so
-    // recognize it here and add the local name to the same set.
-    root.find(j.VariableDeclarator, {
-        init: {
-            type: "MemberExpression",
-            object: {
-                type: "CallExpression",
-                callee: { type: "Identifier", name: "require" },
-            },
-            property: {
-                type: "Identifier",
-                name: "ConnectionOptionsReader",
-            },
-        },
-    }).forEach((p) => {
-        const init = p.node.init
-        if (!init || init.type !== "MemberExpression") return
-        const callExpr = init.object
-        if (callExpr.type !== "CallExpression") return
-        const [arg] = callExpr.arguments
-        if (!arg || getStringValue(arg) !== "typeorm") return
-        if (p.node.id.type === "Identifier") {
-            readerLocalNames.add(p.node.id.name)
-        }
-    })
-
-    // Namespace bindings: `import * as typeorm from "typeorm"` or
-    // `const typeorm = require("typeorm")`. Used to recognize
-    // `new typeorm.ConnectionOptionsReader()` constructions.
+    // Namespace and member-require bindings — both anchor on a
+    // `const <id> = require("typeorm")[ .X ]` VariableDeclarator shape so we
+    // iterate once and classify by whether the init is the require call
+    // itself (namespace) or a member access (`.ConnectionOptionsReader`).
     const namespaceNames = new Set<string>()
     root.find(j.ImportDeclaration, {
         source: { value: "typeorm" },
@@ -91,18 +86,19 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
             }
         }
     })
-    root.find(j.VariableDeclarator, {
-        init: {
-            type: "CallExpression",
-            callee: { type: "Identifier", name: "require" },
-        },
-    }).forEach((p) => {
+    root.find(j.VariableDeclarator).forEach((p) => {
         const init = p.node.init
-        if (!init || init.type !== "CallExpression") return
-        const [arg] = init.arguments
-        if (!arg || getStringValue(arg) !== "typeorm") return
-        if (p.node.id.type === "Identifier") {
-            namespaceNames.add(p.node.id.name)
+        if (!init || p.node.id.type !== "Identifier") return
+        const localName = p.node.id.name
+        if (isTypeormRequire(init)) {
+            namespaceNames.add(localName)
+        } else if (
+            init.type === "MemberExpression" &&
+            isTypeormRequire(init.object) &&
+            init.property.type === "Identifier" &&
+            init.property.name === "ConnectionOptionsReader"
+        ) {
+            readerLocalNames.add(localName)
         }
     })
 
@@ -130,8 +126,9 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
     }
 
     // Identifiers that are assigned a reader instance via
-    //   const r = new ConnectionOptionsReader()
-    //   let r; r = new ConnectionOptionsReader()
+    //   const r = new ConnectionOptionsReader()            // VariableDeclarator
+    //   let r; r = new ConnectionOptionsReader()           // AssignmentExpression
+    //   function f(r = new ConnectionOptionsReader()) {}   // AssignmentPattern (default-param)
     // We rename `.all()` only on these bindings so unrelated `.all()` calls
     // on other types stay untouched.
     const readerInstanceBindings = new Set<string>()
@@ -140,7 +137,6 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
     root.find(j.NewExpression).forEach((astPath) => {
         if (!isReaderConstruction(astPath)) return
 
-        // Track instance bindings from both declaration and assignment forms
         const parent = astPath.parent.node
         if (
             parent.type === "VariableDeclarator" &&
@@ -149,6 +145,11 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
             readerInstanceBindings.add(parent.id.name as string)
         } else if (
             parent.type === "AssignmentExpression" &&
+            parent.left.type === "Identifier"
+        ) {
+            readerInstanceBindings.add(parent.left.name as string)
+        } else if (
+            parent.type === "AssignmentPattern" &&
             parent.left.type === "Identifier"
         ) {
             readerInstanceBindings.add(parent.left.name as string)
