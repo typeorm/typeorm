@@ -214,6 +214,27 @@ export const TYPEORM_COLUMN_DECORATORS: ReadonlySet<string> = new Set([
 ])
 
 /**
+ * Expands a set of exported names into the local bindings each one has in
+ * the file — covers ESM aliases (`import { Column as C }`) and CJS aliases
+ * (`const { Column: C } = require(...)`). Returns a union set suitable for
+ * alias-aware identifier matching.
+ */
+export const expandLocalNamesForImports = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+    importedNames: ReadonlySet<string>,
+): Set<string> => {
+    const expanded = new Set<string>()
+    for (const name of importedNames) {
+        for (const local of getLocalNamesForImport(root, j, moduleName, name)) {
+            expanded.add(local)
+        }
+    }
+    return expanded
+}
+
+/**
  * Traverses ClassProperty decorators and calls `callback` for each
  * ObjectExpression argument found in decorator call expressions.
  *
