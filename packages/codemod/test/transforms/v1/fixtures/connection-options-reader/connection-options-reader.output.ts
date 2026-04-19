@@ -50,3 +50,9 @@ function mustFail() {
     // TODO(typeorm-v1): `ConnectionOptionsReader` now searches `process.cwd()` instead of the app root — pass `{ root: "/custom/path" }` to override. `get(name)` and `has(name)` were also removed; use `get()` (previously `all()`) and filter the returned array.
     throw new ConnectionOptionsReader()
 }
+
+// Case 10: CommonJS member require — `const R = require("typeorm").ConnectionOptionsReader`
+const MemberReader = require("typeorm").ConnectionOptionsReader
+// TODO(typeorm-v1): `ConnectionOptionsReader` now searches `process.cwd()` instead of the app root — pass `{ root: "/custom/path" }` to override. `get(name)` and `has(name)` were also removed; use `get()` (previously `all()`) and filter the returned array.
+const fromMember = new MemberReader()
+const fromMemberOptions = await fromMember.get()

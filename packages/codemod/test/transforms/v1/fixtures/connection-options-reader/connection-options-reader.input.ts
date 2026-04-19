@@ -41,3 +41,8 @@ const [a, b] = [
 function mustFail() {
     throw new ConnectionOptionsReader()
 }
+
+// Case 10: CommonJS member require — `const R = require("typeorm").ConnectionOptionsReader`
+const MemberReader = require("typeorm").ConnectionOptionsReader
+const fromMember = new MemberReader()
+const fromMemberOptions = await fromMember.all()

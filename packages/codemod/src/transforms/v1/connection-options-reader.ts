@@ -47,6 +47,34 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
         "ConnectionOptionsReader",
     )
 
+    // CommonJS member-require pattern:
+    //   const Reader = require("typeorm").ConnectionOptionsReader
+    // Not covered by `getLocalNamesForImport` (which only destructures), so
+    // recognize it here and add the local name to the same set.
+    root.find(j.VariableDeclarator, {
+        init: {
+            type: "MemberExpression",
+            object: {
+                type: "CallExpression",
+                callee: { type: "Identifier", name: "require" },
+            },
+            property: {
+                type: "Identifier",
+                name: "ConnectionOptionsReader",
+            },
+        },
+    }).forEach((p) => {
+        const init = p.node.init
+        if (!init || init.type !== "MemberExpression") return
+        const callExpr = init.object
+        if (callExpr.type !== "CallExpression") return
+        const [arg] = callExpr.arguments
+        if (!arg || getStringValue(arg) !== "typeorm") return
+        if (p.node.id.type === "Identifier") {
+            readerLocalNames.add(p.node.id.name)
+        }
+    })
+
     // Namespace bindings: `import * as typeorm from "typeorm"` or
     // `const typeorm = require("typeorm")`. Used to recognize
     // `new typeorm.ConnectionOptionsReader()` constructions.
