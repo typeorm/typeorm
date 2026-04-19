@@ -20,11 +20,21 @@ The TypeORM team and community is proud to present v1.0. This post covers what y
 
 <!-- truncate -->
 
+## By the numbers
+
+From 0.3.28 to 1.0:
+
+- **302 commits** in the v1 development cycle
+- **40 contributors**
+- **4M+ weekly downloads** on npm (top 0.1%)
+- **36,400+ GitHub stars**
+- **10 supported databases**, from Postgres to Spanner to MongoDB
+
 ## What's new
 
 ### A cleaner API surface
 
-The headline change: `Connection` is now `DataSource`. The global `createConnection`, `getConnection`, `getRepository`, `getManager`, and friends are gone, replaced by direct `dataSource.getRepository(...)` access. The naming finally matches what the object actually is.
+`Connection` is now `DataSource`. The global `createConnection`, `getConnection`, `getRepository`, `getManager`, and friends, deprecated since v0.3, are gone, replaced by direct `dataSource.getRepository(...)` access.
 
 - **Find options are object-shaped** - `relations: { profile: true, posts: true }` instead of `["profile", "posts"]`. Same for `select`. Better typing, better autocomplete, one canonical shape.
 - **Repository methods consolidated** - `findOneBy({ id })` instead of `findOneById(id)`, `findBy({ id: In([…]) })` instead of `findByIds([…])`, `exists()` instead of `exist()`. One way to do each operation.
