@@ -54,6 +54,7 @@ export const transforms = [
     columnReadonly,
     columnWidthZerofill,
     datasourceSqliteType,
+    findOptionsJoin,
     findOptionsLockModes,
     useContainer,
     datasourceMysqlConnector,
@@ -74,7 +75,6 @@ export const transforms = [
     findOptionsStringSelect,
     findOptionsStringRelations,
     connectionManager,
-    findOptionsJoin,
 ]
 
 export default transformer(transforms)
