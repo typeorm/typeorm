@@ -6,3 +6,5 @@ await queryBuilder
     .values(post)
     .onConflict('("id") DO NOTHING')
     .execute()
+
+qb.insert().onConflict('("id") DO UPDATE SET title = EXCLUDED.title')
