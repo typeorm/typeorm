@@ -10,7 +10,7 @@ export const description =
 export const manual = true
 
 const MIGRATION_HINT =
-    "migrate `leftJoinAndSelect` to the `relations` option, or switch to QueryBuilder for `innerJoin`/`innerJoinAndSelect`/`leftJoin` — see the v1 upgrading guide"
+    "migrate `leftJoinAndSelect` to the `relations` option, or switch to QueryBuilder for `innerJoin`/`innerJoinAndSelect`/`leftJoin`"
 
 const MESSAGE = `\`join\` find option was removed — ${MIGRATION_HINT}`
 

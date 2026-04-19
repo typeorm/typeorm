@@ -1,6 +1,10 @@
 import path from "node:path"
 import type { API, ClassProperty, Decorator, FileInfo, Node } from "jscodeshift"
-import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
+import {
+    getLocalNamesForImport,
+    getStringValue,
+    removeImportSpecifiers,
+} from "../ast-helpers"
 import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -9,8 +13,7 @@ export const description =
     "flag removed `@RelationCount` decorator and `loadRelationCountAndMap()` for manual migration"
 export const manual = true
 
-const MIGRATION_HINT =
-    "use `@VirtualColumn` with a sub-query instead — see the v1 upgrading guide"
+const MIGRATION_HINT = "use `@VirtualColumn` with a sub-query instead"
 
 // Node types on which a leading line-comment survives jscodeshift/recast
 // printing — walking up to one of these keeps the comment visible above
@@ -77,12 +80,20 @@ export const relationCount = (file: FileInfo, api: API) => {
     // Multiple chained calls on one statement resolve to the same host, so the
     // `hasTodoComment` guard keeps the transform idempotent.
     const callMessage = `\`loadRelationCountAndMap()\` was removed — ${MIGRATION_HINT}`
-    root.find(j.CallExpression, {
-        callee: {
-            type: "MemberExpression",
-            property: { type: "Identifier", name: "loadRelationCountAndMap" },
-        },
-    }).forEach((callPath) => {
+    // Match both dot access (`qb.loadRelationCountAndMap()`) and computed
+    // access (`qb["loadRelationCountAndMap"]()`). Use a post-filter rather
+    // than a find-pattern so the computed-key branch is visited too.
+    root.find(j.CallExpression).forEach((callPath) => {
+        const callee = callPath.node.callee
+        if (callee.type !== "MemberExpression") return
+        const prop = callee.property
+        const matches =
+            (prop.type === "Identifier" &&
+                prop.name === "loadRelationCountAndMap") ||
+            (callee.computed &&
+                getStringValue(prop) === "loadRelationCountAndMap")
+        if (!matches) return
+
         let current = callPath.parent
         while (current) {
             const node: Node = current.node
