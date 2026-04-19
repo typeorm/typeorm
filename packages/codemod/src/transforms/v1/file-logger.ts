@@ -55,8 +55,12 @@ const findLogPathProperty = (
 
 // Peels TypeScript expression wrappers so `{ logPath: "x" } as Opts` still
 // inspects the underlying ObjectExpression.
+interface NodeWithExpression extends Node {
+    expression?: Node
+}
+
 const unwrapTsExpression = (node: Node): Node => {
-    let current = node as Node & { expression?: Node }
+    let current: NodeWithExpression = node
     while (
         current.type === "TSAsExpression" ||
         current.type === "TSNonNullExpression" ||
@@ -64,7 +68,7 @@ const unwrapTsExpression = (node: Node): Node => {
         current.type === "TSTypeAssertion"
     ) {
         if (!current.expression) break
-        current = current.expression as Node & { expression?: Node }
+        current = current.expression
     }
     return current
 }
