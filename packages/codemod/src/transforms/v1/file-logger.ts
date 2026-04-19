@@ -53,6 +53,22 @@ const findLogPathProperty = (
     return { value: undefined, hasSpread }
 }
 
+// Peels TypeScript expression wrappers so `{ logPath: "x" } as Opts` still
+// inspects the underlying ObjectExpression.
+const unwrapTsExpression = (node: Node): Node => {
+    let current = node as Node & { expression?: Node }
+    while (
+        current.type === "TSAsExpression" ||
+        current.type === "TSNonNullExpression" ||
+        current.type === "TSSatisfiesExpression" ||
+        current.type === "TSTypeAssertion"
+    ) {
+        if (!current.expression) break
+        current = current.expression as Node & { expression?: Node }
+    }
+    return current
+}
+
 const inspectOptionsArg = (
     argNode: Node | undefined,
 ): { hasOption: boolean; isAbsolute: boolean } => {
@@ -60,12 +76,13 @@ const inspectOptionsArg = (
     if (isNullishLiteral(argNode)) {
         return { hasOption: false, isAbsolute: false }
     }
+    const unwrapped = unwrapTsExpression(argNode!)
     // Dynamic options (variable, function call, etc.) — trust the user.
-    if (argNode!.type !== "ObjectExpression") {
+    if (unwrapped.type !== "ObjectExpression") {
         return { hasOption: true, isAbsolute: true }
     }
     const { value, hasSpread } = findLogPathProperty(
-        argNode as ObjectExpression,
+        unwrapped as ObjectExpression,
     )
     // No explicit logPath — a spread could contribute one, so leave alone.
     if (value === undefined) {
