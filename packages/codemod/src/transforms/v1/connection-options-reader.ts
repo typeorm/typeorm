@@ -27,7 +27,7 @@ const CONSTRUCTOR_MESSAGE =
 
 // Statement-like ancestors that survive jscodeshift/recast's printing when
 // used as a comment host. Walking up to one of these produces a visible
-// reminder comment above the enclosing statement or declaration.
+// comment above the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||

@@ -19,8 +19,8 @@ const renamePropertyKey = (prop: ObjectProperty, newName: string): void => {
 }
 
 // Handles the sslValidate → tlsAllowInvalidCertificates rename, inverting the
-// value when it's a boolean literal and emitting a reminder otherwise.
-// Returns true if a reminder was emitted.
+// value when it's a boolean literal and emitting a comment otherwise.
+// Returns true if a comment was emitted.
 const migrateSslValidate = (prop: ObjectProperty, j: JSCodeshift): boolean => {
     renamePropertyKey(prop, "tlsAllowInvalidCertificates")
     const valueNode = prop.value

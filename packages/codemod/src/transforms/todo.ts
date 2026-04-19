@@ -3,7 +3,7 @@ import type { JSCodeshift, Node } from "jscodeshift"
 const formatTodo = (message: string): string => ` TODO(typeorm-v1): ${message}`
 
 // Prettier treats a leading `// prettier-ignore` line-comment as a directive
-// for the statement immediately following it. Appending our reminder *after*
+// for the statement immediately following it. Appending our comment *after*
 // that directive places it between `prettier-ignore` and its target and
 // silently disables the directive, so detect the pattern and insert above.
 const isPrettierIgnore = (comment: { type: string; value: string }): boolean =>
@@ -25,9 +25,9 @@ export const addTodoComment = (
 }
 
 /**
- * Returns true when `node` already carries a line-comment whose value
- * matches the formatted reminder for `message`. Used to keep transforms
- * idempotent — running the codemod twice must not stack duplicate markers.
+ * Returns true when `node` already carries the `message` as a line-comment.
+ * Used to keep transforms idempotent — running the codemod twice must not
+ * stack duplicates.
  */
 export const hasTodoComment = (node: Node, message: string): boolean => {
     const expected = formatTodo(message)

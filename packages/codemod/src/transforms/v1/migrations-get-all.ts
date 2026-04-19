@@ -11,7 +11,7 @@ export const manual = true
 const MESSAGE =
     "`getAllMigrations()` was removed — use `getPendingMigrations()`, `getExecutedMigrations()`, or `dataSource.migrations` instead"
 
-// A reminder comment attached to one of these nodes survives jscodeshift/recast's
+// A comment attached to one of these nodes survives jscodeshift/recast's
 // jscodeshift/recast printing. Walking up to one of these produces a
 // visible comment above the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
