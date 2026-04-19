@@ -4,8 +4,10 @@ import type {
     ASTPath,
     CallExpression,
     FileInfo,
+    Identifier,
     NewExpression,
     Node,
+    OptionalCallExpression,
 } from "jscodeshift"
 import {
     fileImportsFrom,
@@ -25,7 +27,7 @@ const CONSTRUCTOR_MESSAGE =
 
 // Statement-like ancestors that survive jscodeshift/recast's printing when
 // used as a comment host. Walking up to one of these produces a visible
-// TODO above the enclosing statement or declaration.
+// reminder comment above the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
@@ -48,7 +50,7 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
 
     // Returns true when `node` is `require("typeorm")`.
     const isTypeormRequire = (node: Node | null | undefined): boolean => {
-        if (!node || node.type !== "CallExpression") return false
+        if (node?.type !== "CallExpression") return false
         const call = node as CallExpression
         if (
             call.callee.type !== "Identifier" ||
@@ -155,9 +157,6 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
             readerInstanceBindings.add(parent.left.name as string)
         }
 
-        // Walk up to the enclosing statement for the TODO comment, skipping
-        // hosts we have already flagged in this run (dedup) and any host
-        // that already carries the same TODO (idempotent on re-runs).
         let current = astPath.parent
         while (current) {
             const node: Node = current.node
@@ -181,32 +180,46 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
     //   * on tracked reader-instance bindings (`r.all()` where `r = new ...`)
     //   * on inline constructor receivers (`new X().all()` — safe because
     //     the receiver type is statically known)
-    root.find(j.CallExpression, {
-        callee: {
-            type: "MemberExpression",
-            property: { type: "Identifier", name: "all" },
-        },
-    }).forEach((p) => {
-        const callee = p.node.callee
-        if (callee.type !== "MemberExpression") return
-        if (callee.property.type !== "Identifier") return
+    //   * on the optional-chain variants `r?.all()`, `r.all?.()`, `r?.all?.()`
+    //
+    // Only rename zero-argument calls: the v0 `all()` never took arguments, so
+    // anything passing an arg is unrelated code that happens to share the name.
+    const isReaderReceiver = (obj: Node): boolean => {
+        if (obj.type === "Identifier") {
+            return readerInstanceBindings.has((obj as Identifier).name)
+        }
+        if (obj.type === "NewExpression") {
+            // jscodeshift hands us a NewExpression node here directly; synthesize
+            // a minimal ASTPath wrapper so we can reuse `isReaderConstruction`.
+            return isReaderConstruction({
+                node: obj as NewExpression,
+            } as ASTPath<NewExpression>)
+        }
+        return false
+    }
 
-        const obj = callee.object
-        const isReaderReceiver =
-            (obj.type === "Identifier" &&
-                readerInstanceBindings.has(obj.name)) ||
-            (obj.type === "NewExpression" &&
-                // Need the typed path for `isReaderConstruction`; jscodeshift
-                // hands us a NewExpression node here directly, so synthesize
-                // a minimal ASTPath wrapper.
-                isReaderConstruction({
-                    node: obj,
-                } as ASTPath<NewExpression>))
-        if (!isReaderReceiver) return
-
-        callee.property.name = "get"
+    const tryRename = (node: CallExpression | OptionalCallExpression): void => {
+        if (node.arguments.length !== 0) return
+        const callee = node.callee
+        if (
+            callee.type !== "MemberExpression" &&
+            callee.type !== "OptionalMemberExpression"
+        ) {
+            return
+        }
+        const member = callee
+        if (
+            member.property.type !== "Identifier" ||
+            member.property.name !== "all"
+        ) {
+            return
+        }
+        if (!isReaderReceiver(member.object)) return
+        member.property.name = "get"
         hasChanges = true
-    })
+    }
+    root.find(j.CallExpression).forEach((p) => tryRename(p.node))
+    root.find(j.OptionalCallExpression).forEach((p) => tryRename(p.node))
 
     if (hasTodos) stats.count.todo(api, name, file)
 

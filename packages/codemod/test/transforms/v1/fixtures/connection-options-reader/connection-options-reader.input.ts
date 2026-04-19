@@ -51,3 +51,13 @@ const fromMemberOptions = await fromMember.all()
 async function loadDefaults(r = new ConnectionOptionsReader()) {
     return r.all()
 }
+
+// Case 12: optional-chain call variants on a tracked reader binding — still
+// rename `.all()` → `.get()`
+const opt1 = await reader?.all()
+const opt2 = await reader.all?.()
+const opt3 = await reader?.all?.()
+
+// Case 13: `.all(arg)` — must NOT be renamed (v0 `all()` was zero-arg; an
+// argument means unrelated user code that happens to share the method name)
+const extraneous = reader.all("extra")
