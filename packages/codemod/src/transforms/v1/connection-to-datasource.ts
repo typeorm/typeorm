@@ -155,12 +155,10 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                 spec.local.name !== oldImported
 
             spec.imported.name = newImported
-            if (hasAlias) {
-                // Alias stays; user chose it deliberately. The alias already
-                // refers to the renamed import so usages don't need rewriting.
-            } else {
-                // No alias — propagate the rename to the local binding and
-                // record it for the NewExpression / TSTypeReference loop.
+            // With an alias (`Connection as Foo`), the local binding already
+            // points to the renamed import — usages need no rewriting. Without
+            // one, propagate the rename to the local binding.
+            if (!hasAlias) {
                 const localName =
                     spec.local?.type === "Identifier"
                         ? spec.local.name
