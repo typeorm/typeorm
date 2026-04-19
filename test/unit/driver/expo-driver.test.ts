@@ -21,29 +21,12 @@ const moduleNotFoundError = (): Error & { code?: string } => {
 }
 
 // Subclass that lets each test control what `require("expo-sqlite")` returns
-// without touching Node's module resolver. Exposes `loadDependencies` and
-// `sqlite` publicly so assertions don't need type casts.
+// without touching Node's module resolver. The real base-class constructor
+// calls `loadDependencies` eagerly, so tests build instances via `Object.create`
+// rather than `new` — see `build()` below.
 class TestableExpoDriver extends ExpoDriver {
     declare public sqlite: unknown
-    private onRequire: () => unknown = () => {
-        throw moduleNotFoundError()
-    }
-
-    constructor(
-        driverOption: ExpoDataSourceOptions["driver"],
-        onRequire?: () => unknown,
-    ) {
-        // Bypass the real base-class wiring; we only need `loadDependencies`.
-        super(Object.create(null))
-        Object.assign(this, {
-            options: {
-                type: "expo",
-                database: ":memory:",
-                driver: driverOption,
-            },
-        })
-        if (onRequire) this.onRequire = onRequire
-    }
+    declare public onRequire: () => unknown
 
     protected requireExpoSqlite(): unknown {
         return this.onRequire()
@@ -54,8 +37,6 @@ class TestableExpoDriver extends ExpoDriver {
     }
 }
 
-// The real constructor calls `loadDependencies` before the subclass override
-// is ready, so construct via `Object.create` and populate state manually.
 const build = (
     driverOption: ExpoDataSourceOptions["driver"],
     onRequire?: () => unknown,
