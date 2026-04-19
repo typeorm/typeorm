@@ -89,6 +89,16 @@ const {
 
 const cjs = new LegacyConn(options)
 
+// Aliased CJS bindings should still get method renames applied
+await cjs.connect()
+await cjs.close()
+
+// Duplicate-rename: user imports both Connection AND DataSource from typeorm.
+// The rename of Connection → DataSource must not produce `{ DataSource, DataSource }`.
+import { Connection as Conn2, DataSource as DS2 } from "typeorm"
+const both = new Conn2(options)
+const another = new DS2(options)
+
 // Should NOT be transformed — not TypeORM typed
 const ds3 = event.connection
 const ds4 = this.connection
