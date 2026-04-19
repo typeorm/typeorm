@@ -12,9 +12,9 @@ export const manual = true
 const MIGRATION_HINT =
     "use `@VirtualColumn` with a sub-query instead — see the v1 upgrading guide"
 
-// A TODO attached to one of these nodes will survive jscodeshift/recast's
-// printing. Walking up until we reach one of these produces a visible
-// comment above the enclosing statement or declaration.
+// A reminder comment attached to one of these nodes survives jscodeshift/recast's
+// jscodeshift/recast printing. Walking up to one of these produces a
+// visible comment above the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
@@ -50,7 +50,7 @@ export const relationCount = (file: FileInfo, api: API) => {
         // Decorators live on `ClassProperty.decorators` but jscodeshift's
         // default visitor does not descend into that array, so
         // `root.find(j.Decorator)` is a no-op with the `tsx` parser. Walk the
-        // class properties explicitly instead and attach the TODO to the
+        // class properties explicitly instead and attach the reminder to the
         // property itself (decorator-attached comments are dropped by recast).
         const message = `\`@RelationCount\` was removed — ${MIGRATION_HINT}`
         root.find(j.ClassProperty).forEach((propertyPath) => {
@@ -73,7 +73,7 @@ export const relationCount = (file: FileInfo, api: API) => {
         })
     }
 
-    // Find .loadRelationCountAndMap() calls and add TODO above the enclosing statement.
+    // Find .loadRelationCountAndMap() call sites — attach the reminder above the enclosing statement.
     // Multiple chained calls on one statement resolve to the same host, so the
     // `hasTodoComment` guard keeps the transform idempotent.
     const callMessage = `\`loadRelationCountAndMap()\` was removed — ${MIGRATION_HINT}`

@@ -18,7 +18,6 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    // Find @EntityRepository decorators and add TODO
     root.find(j.Decorator, {
         expression: {
             type: "CallExpression",
@@ -34,7 +33,6 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         hasTodos = true
     })
 
-    // Find classes extending AbstractRepository and add TODO
     root.find(j.ClassDeclaration).forEach((path) => {
         const superClass = path.node.superClass
         if (!superClass) return
@@ -60,7 +58,6 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         hasTodos = true
     })
 
-    // Find getCustomRepository() calls and add TODO
     const addGetCustomRepoTodo = (path: ASTPath) => {
         const message =
             "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"

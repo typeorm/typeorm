@@ -14,9 +14,9 @@ const MIGRATION_HINT =
 
 const MESSAGE = `\`join\` find option was removed — ${MIGRATION_HINT}`
 
-// A TODO attached to one of these nodes will survive jscodeshift/recast's
-// printing. Walking up until we reach one of these produces a visible
-// comment above the enclosing statement or declaration.
+// A reminder comment attached to one of these nodes survives jscodeshift/recast's
+// jscodeshift/recast printing. Walking up to one of these produces a
+// visible comment above the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
@@ -70,7 +70,7 @@ export const findOptionsJoin = (file: FileInfo, api: API) => {
         const hasJoin = obj.properties.some(isFindOptionsJoinProperty)
         if (!hasJoin) return
 
-        // Walk up to the enclosing statement for the TODO. Idempotent: skip
+        // Walk up to the enclosing statement. Idempotent: skip
         // hosts that already carry the same message.
         let current = objPath.parent
         while (current) {

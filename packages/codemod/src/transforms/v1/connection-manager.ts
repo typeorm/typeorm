@@ -11,9 +11,9 @@ export const manual = true
 
 const MESSAGE = `\`ConnectionManager\` was removed — create and manage \`DataSource\` instances directly instead — there is no replacement class`
 
-// A TODO attached to one of these nodes will survive jscodeshift/recast's
-// printing. Walking up until we reach one of these produces a visible
-// comment above the enclosing statement or declaration.
+// A reminder comment attached to one of these nodes survives jscodeshift/recast's
+// jscodeshift/recast printing. Walking up to one of these produces a
+// visible comment above the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
@@ -96,7 +96,7 @@ export const connectionManager = (file: FileInfo, api: API) => {
 
     // Only drop the import when at least one usage was successfully
     // flagged — leaving a dangling `ConnectionManager` reference without a
-    // TODO would be worse than leaving the deprecated import in place.
+    // reminder would be worse than leaving the deprecated import in place.
     if (hasTodos) {
         if (
             removeImportSpecifiers(

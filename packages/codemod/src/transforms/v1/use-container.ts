@@ -23,7 +23,6 @@ export const useContainer = (file: FileInfo, api: API) => {
 
     const removedFunctions = new Set(["useContainer", "getFromContainer"])
 
-    // Replace calls with a TODO comment
     for (const funcName of removedFunctions) {
         root.find(j.ExpressionStatement, {
             expression: {

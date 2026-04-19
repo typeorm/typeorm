@@ -217,11 +217,13 @@ export const forEachDecoratorObjectArg = (
     callback: (objectExpression: ObjectExpression, path: ASTPath) => void,
     decoratorNames?: ReadonlySet<string>,
 ): void => {
+    // ast-types omits `decorators` from ClassProperty — widen the type so
+    // downstream traversal can inspect the decorators array safely.
+    interface ClassPropertyWithDecorators extends ClassProperty {
+        decorators?: Decorator[]
+    }
     root.find(j.ClassProperty).forEach((path) => {
-        // ast-types omits `decorators` from ClassProperty — extend it
-        const node = path.node as ClassProperty & {
-            decorators?: Decorator[]
-        }
+        const node: ClassPropertyWithDecorators = path.node
         if (!node.decorators) return
 
         for (const decorator of node.decorators) {
