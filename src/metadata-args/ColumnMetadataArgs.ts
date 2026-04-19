@@ -17,8 +17,6 @@ export interface ColumnMetadataArgs {
 
     /**
      * Column mode in which column will work.
-     *
-     * todo: find name better then "mode".
      */
     readonly mode: ColumnMode
 
