@@ -256,8 +256,13 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         })
     }
 
-    const connectionTypeNames = new Set(Object.keys(typeRenames))
-    connectionTypeNames.add("DataSource")
+    // DataSource-instance class names — used to recognize `new Connection()`
+    // / `const x: DataSource = ...` bindings. Must NOT include *Options types
+    // (e.g. `MysqlConnectionOptions`) because those are plain value-object
+    // shapes whose instances never carry `.connect()` / `.close()` methods,
+    // and treating them as DataSource-typed would incorrectly rename methods
+    // on parameters typed with those options.
+    const connectionTypeNames = new Set(["Connection", "DataSource"])
     const connectionVarNames = new Set<string>()
 
     root.find(j.VariableDeclarator).forEach((path) => {

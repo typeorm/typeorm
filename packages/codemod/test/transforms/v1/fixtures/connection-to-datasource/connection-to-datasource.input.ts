@@ -99,3 +99,13 @@ class ProductService {
 // Should NOT be transformed — not TypeORM
 await app.close()
 await server.close()
+
+// Options-typed parameters must NOT be classified as DataSource instances.
+// `opts` is a plain value-object whose `.connect` / `.close` methods are
+// unrelated to DataSource's; they must NOT be renamed to initialize/destroy.
+import type { MysqlConnectionOptions } from "typeorm"
+function inspectOpts(opts: MysqlConnectionOptions) {
+    opts.connect()
+    opts.close()
+    return opts
+}
