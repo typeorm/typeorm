@@ -22,3 +22,7 @@ if (new ConnectionManager()) {
 function create(): ConnectionManager {
     return null as any
 }
+
+// Case 6: CommonJS destructured require — previously unmigrated
+const { ConnectionManager: CjsManager } = require("typeorm")
+const cjsInstance = new CjsManager()

@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -29,25 +29,14 @@ export const connectionManager = (file: FileInfo, api: API) => {
     let hasTodos = false
 
     // Collect local aliases bound to the typeorm `ConnectionManager` class
-    // so aliased imports like `import { ConnectionManager as CM }` are
-    // correctly matched.
-    const localNames = new Set<string>()
-    root.find(j.ImportDeclaration, {
-        source: { value: "typeorm" },
-    }).forEach((p) => {
-        for (const s of p.node.specifiers ?? []) {
-            if (
-                s.type === "ImportSpecifier" &&
-                s.imported.type === "Identifier" &&
-                s.imported.name === "ConnectionManager"
-            ) {
-                const local = s.local?.name
-                localNames.add(
-                    typeof local === "string" ? local : s.imported.name,
-                )
-            }
-        }
-    })
+    // via ESM `import { ConnectionManager [as CM] }` and CJS
+    // `const { ConnectionManager [: CM] } = require("typeorm")`.
+    const localNames = getLocalNamesForImport(
+        root,
+        j,
+        "typeorm",
+        "ConnectionManager",
+    )
 
     if (localNames.size === 0) {
         return undefined

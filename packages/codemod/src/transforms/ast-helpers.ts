@@ -148,10 +148,20 @@ export const getLocalNamesForImport = (
             ) {
                 continue
             }
-            const localName: string =
-                prop.value.type === "Identifier"
-                    ? prop.value.name
-                    : prop.key.name
+            // Extract the binding name from each destructuring variant:
+            //   { X }              → "X"            (Identifier)
+            //   { X: Y }           → "Y"            (Identifier alias)
+            //   { X = fallback }   → "X"            (AssignmentPattern, shorthand)
+            //   { X: Y = fallback }→ "Y"            (AssignmentPattern, aliased)
+            let localName: string = prop.key.name
+            if (prop.value.type === "Identifier") {
+                localName = prop.value.name
+            } else if (
+                prop.value.type === "AssignmentPattern" &&
+                prop.value.left.type === "Identifier"
+            ) {
+                localName = prop.value.left.name
+            }
             localNames.add(localName)
         }
     })
