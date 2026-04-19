@@ -47,10 +47,8 @@ export const findOptionsLockModes = (file: FileInfo, api: API) => {
 
         const replacement = lockModeMap[value]
 
-        // Change the lock mode argument
         setStringValue(arg, replacement.mode)
 
-        // Wrap in .setOnLocked() call
         const setOnLocked = j.callExpression(
             j.memberExpression(path.node, j.identifier("setOnLocked")),
             [j.stringLiteral(replacement.onLocked)],

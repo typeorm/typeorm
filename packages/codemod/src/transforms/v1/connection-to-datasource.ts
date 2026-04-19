@@ -7,6 +7,7 @@ import type {
     ObjectPattern,
 } from "jscodeshift"
 import {
+    expandLocalNamesForImports,
     forEachIdentifierParam,
     getStringValue,
     isIdentifier,
@@ -45,7 +46,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
-    // Type/class renames
     const typeRenames: Record<string, string> = {
         Connection: "DataSource",
         ConnectionOptions: "DataSourceOptions",
@@ -69,7 +69,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         SpannerConnectionOptions: "SpannerDataSourceOptions",
     }
 
-    // Method renames on DataSource/Connection instances
     const methodRenames: Record<string, string> = {
         connect: "initialize",
         close: "destroy",
@@ -110,8 +109,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions",
     }
 
-    // Collect local names imported from "typeorm" (including deep sub-paths
-    // like `typeorm/driver/sap/SapConnectionOptions`) that need renaming.
     const localRenames = new Map<string, string>()
     const typeormPathPrefix = "typeorm/"
 
@@ -143,29 +140,60 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
 
         path.node.specifiers?.forEach((spec) => {
             if (
-                spec.type === "ImportSpecifier" &&
-                spec.imported.type === "Identifier"
+                spec.type !== "ImportSpecifier" ||
+                spec.imported.type !== "Identifier"
             ) {
-                const oldImported = spec.imported.name
-                if (typeRenames[oldImported]) {
-                    const localName =
-                        spec.local?.type === "Identifier"
-                            ? spec.local.name
-                            : oldImported
-                    localRenames.set(localName, typeRenames[oldImported])
+                return
+            }
+            const oldImported = spec.imported.name
+            const newImported = typeRenames[oldImported]
+            if (!newImported) return
 
-                    // Rename the import specifier itself
-                    spec.imported.name = typeRenames[oldImported]
-                    if (
-                        spec.local?.type === "Identifier" &&
-                        spec.local.name === localName
-                    ) {
-                        spec.local.name = typeRenames[oldImported]
-                    }
-                    hasChanges = true
+            const hasAlias =
+                spec.local?.type === "Identifier" &&
+                spec.local.name !== oldImported
+
+            spec.imported.name = newImported
+            if (hasAlias) {
+                // Alias stays; user chose it deliberately. The alias already
+                // refers to the renamed import so usages don't need rewriting.
+            } else {
+                // No alias — propagate the rename to the local binding and
+                // record it for the NewExpression / TSTypeReference loop.
+                const localName =
+                    spec.local?.type === "Identifier"
+                        ? spec.local.name
+                        : oldImported
+                localRenames.set(localName, newImported)
+                if (spec.local?.type === "Identifier") {
+                    spec.local.name = newImported
                 }
             }
+            hasChanges = true
         })
+
+        // Dedupe specifiers that now share the same imported name after the
+        // rename — e.g. `import { Connection, DataSource }` would otherwise
+        // emit `import { DataSource, DataSource }`. Keep the first occurrence
+        // of each imported name and drop subsequent duplicates.
+        if (path.node.specifiers) {
+            const seen = new Set<string>()
+            path.node.specifiers = path.node.specifiers.filter((spec) => {
+                if (
+                    spec.type !== "ImportSpecifier" ||
+                    spec.imported.type !== "Identifier"
+                ) {
+                    return true
+                }
+                const key = `${spec.imported.name}::${spec.local?.type === "Identifier" ? spec.local.name : ""}`
+                if (seen.has(key)) {
+                    hasChanges = true
+                    return false
+                }
+                seen.add(key)
+                return true
+            })
+        }
 
         const rewritten = rewriteTypeormPath(source)
         if (rewritten !== source) {
@@ -199,8 +227,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         return true
     }
 
-    // CommonJS `require("typeorm[/...]")` — rewrite both the module path and
-    // any destructured identifiers (`const { Connection } = require(...)`).
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "require" },
     }).forEach((callPath) => {
@@ -231,7 +257,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
-    // Rename only identifiers that were imported from "typeorm"
     for (const [oldName, newName] of localRenames) {
         // TSTypeReference (e.g. const x: Connection = ...)
         root.find(j.TSTypeReference, {
@@ -264,12 +289,27 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         })
     }
 
-    // Collect variable names known to be Connection/DataSource instances
-    const connectionTypeNames = new Set(Object.keys(typeRenames))
+    // DataSource-instance class names — used to recognize `new Connection()`
+    // / `const x: DataSource = ...` bindings. Must NOT include *Options types
+    // (e.g. `MysqlConnectionOptions`) because those are plain value-object
+    // shapes whose instances never carry `.connect()` / `.close()` methods,
+    // and treating them as DataSource-typed would incorrectly rename methods
+    // on parameters typed with those options.
+    //
+    // Expand to the set of LOCAL bindings — covers aliased ESM imports
+    // (`import { Connection as LegacyConn }`) and aliased CJS destructures
+    // (`const { Connection: LegacyConn } = require("typeorm")`) so code
+    // using the alias still gets `.connect()` → `.initialize()`.
+    const connectionTypeNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        new Set(["Connection", "DataSource"]),
+    )
+    connectionTypeNames.add("Connection")
     connectionTypeNames.add("DataSource")
     const connectionVarNames = new Set<string>()
 
-    // Variables assigned from new Connection(...) / new DataSource(...)
     root.find(j.VariableDeclarator).forEach((path) => {
         const init = path.node.init
         if (
@@ -283,7 +323,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
-    // Variables and parameters with Connection/DataSource type annotations
     const collectDataSourceTyped = (id: Identifier) => {
         if (!id.name || id.typeAnnotation?.type !== "TSTypeAnnotation") return
         const ann = id.typeAnnotation.typeAnnotation
@@ -322,7 +361,23 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         })
     }
 
-    // Collect variable/param names typed as TypeORM types with .connection
+    // Gate metadata type matches on the actual local bindings imported from
+    // typeorm — users sometimes have their own classes named `EntityMetadata`
+    // or `ColumnMetadata` and their `.connection` property access must not
+    // be rewritten.
+    const connectionPropLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        typesWithConnectionProp,
+    )
+    const indirectDataSourceLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        typesWithIndirectDataSource,
+    )
+
     const connectionPropVarNames = new Set<string>()
     const indirectDataSourceVarNames = new Set<string>()
 
@@ -336,19 +391,17 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const ref = ann.typeAnnotation
         if (ref.typeName.type !== "Identifier") return
 
-        if (typesWithConnectionProp.has(ref.typeName.name)) {
+        if (connectionPropLocalNames.has(ref.typeName.name)) {
             connectionPropVarNames.add(id.name)
-        } else if (typesWithIndirectDataSource.has(ref.typeName.name)) {
+        } else if (indirectDataSourceLocalNames.has(ref.typeName.name)) {
             indirectDataSourceVarNames.add(id.name)
         }
     }
 
-    // Variable declarations with type annotations
     root.find(j.VariableDeclarator).forEach((path) => {
         if (isIdentifier(path.node.id)) collectTypedIdentifier(path.node.id)
     })
 
-    // Function/method/arrow parameters and constructor parameter properties
     forEachIdentifierParam(root, j, collectTypedIdentifier)
 
     // Track variables assigned from DataSource accessors, so code like

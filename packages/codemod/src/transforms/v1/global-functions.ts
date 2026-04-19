@@ -151,7 +151,6 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         })
     }
 
-    // Remove imports of deprecated globals from "typeorm"
     if (removeImportSpecifiers(root, j, "typeorm", removedGlobals)) {
         hasChanges = true
     }

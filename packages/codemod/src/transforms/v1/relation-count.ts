@@ -1,6 +1,10 @@
 import path from "node:path"
 import type { API, ClassProperty, Decorator, FileInfo, Node } from "jscodeshift"
-import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
+import {
+    getLocalNamesForImport,
+    getStringValue,
+    removeImportSpecifiers,
+} from "../ast-helpers"
 import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -9,12 +13,11 @@ export const description =
     "flag removed `@RelationCount` decorator and `loadRelationCountAndMap()` for manual migration"
 export const manual = true
 
-const MIGRATION_HINT =
-    "use `@VirtualColumn` with a sub-query instead — see the v1 upgrading guide"
+const MIGRATION_HINT = "use `@VirtualColumn` with a sub-query instead"
 
-// A TODO attached to one of these nodes will survive jscodeshift/recast's
-// printing. Walking up until we reach one of these produces a visible
-// comment above the enclosing statement or declaration.
+// Node types on which a leading line-comment survives jscodeshift/recast
+// printing — walking up to one of these keeps the comment visible above
+// the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
@@ -50,7 +53,7 @@ export const relationCount = (file: FileInfo, api: API) => {
         // Decorators live on `ClassProperty.decorators` but jscodeshift's
         // default visitor does not descend into that array, so
         // `root.find(j.Decorator)` is a no-op with the `tsx` parser. Walk the
-        // class properties explicitly instead and attach the TODO to the
+        // class properties explicitly instead and attach the comment to the
         // property itself (decorator-attached comments are dropped by recast).
         const message = `\`@RelationCount\` was removed — ${MIGRATION_HINT}`
         root.find(j.ClassProperty).forEach((propertyPath) => {
@@ -73,16 +76,24 @@ export const relationCount = (file: FileInfo, api: API) => {
         })
     }
 
-    // Find .loadRelationCountAndMap() calls and add TODO above the enclosing statement.
+    // Find .loadRelationCountAndMap() call sites — attach the comment above the enclosing statement.
     // Multiple chained calls on one statement resolve to the same host, so the
     // `hasTodoComment` guard keeps the transform idempotent.
     const callMessage = `\`loadRelationCountAndMap()\` was removed — ${MIGRATION_HINT}`
-    root.find(j.CallExpression, {
-        callee: {
-            type: "MemberExpression",
-            property: { type: "Identifier", name: "loadRelationCountAndMap" },
-        },
-    }).forEach((callPath) => {
+    // Match both dot access (`qb.loadRelationCountAndMap()`) and computed
+    // access (`qb["loadRelationCountAndMap"]()`). Use a post-filter rather
+    // than a find-pattern so the computed-key branch is visited too.
+    root.find(j.CallExpression).forEach((callPath) => {
+        const callee = callPath.node.callee
+        if (callee.type !== "MemberExpression") return
+        const prop = callee.property
+        const matches =
+            (prop.type === "Identifier" &&
+                prop.name === "loadRelationCountAndMap") ||
+            (callee.computed &&
+                getStringValue(prop) === "loadRelationCountAndMap")
+        if (!matches) return
+
         let current = callPath.parent
         while (current) {
             const node: Node = current.node
@@ -98,7 +109,6 @@ export const relationCount = (file: FileInfo, api: API) => {
         }
     })
 
-    // Remove RelationCount import from typeorm
     if (
         removeImportSpecifiers(root, j, "typeorm", new Set(["RelationCount"]))
     ) {

@@ -1,4 +1,11 @@
-import { DataSource, DataSourceOptions, QueryRunner } from "typeorm"
+import {
+    DataSource,
+    DataSourceOptions,
+    QueryRunner,
+    EntityMetadata,
+    ColumnMetadata,
+    IndexMetadata,
+} from "typeorm"
 import type { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
 import type { BetterSqlite3DataSourceOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
 
@@ -82,6 +89,16 @@ const {
 
 const cjs = new DataSource(options)
 
+// Aliased CJS bindings should still get method renames applied
+await cjs.initialize()
+await cjs.destroy()
+
+// Duplicate-rename: user imports both Connection AND DataSource from typeorm.
+// The rename of Connection → DataSource must not produce `{ DataSource, DataSource }`.
+import { DataSource as Conn2, DataSource as DS2 } from "typeorm"
+const both = new Conn2(options)
+const another = new DS2(options)
+
 // Should NOT be transformed — not TypeORM typed
 const ds3 = event.connection
 const ds4 = this.connection
@@ -99,3 +116,13 @@ class ProductService {
 // Should NOT be transformed — not TypeORM
 await app.close()
 await server.close()
+
+// Options-typed parameters must NOT be classified as DataSource instances.
+// `opts` is a plain value-object whose `.connect` / `.close` methods are
+// unrelated to DataSource's; they must NOT be renamed to initialize/destroy.
+import type { MysqlDataSourceOptions } from "typeorm"
+function inspectOpts(opts: MysqlDataSourceOptions) {
+    opts.connect()
+    opts.close()
+    return opts
+}

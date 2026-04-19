@@ -148,10 +148,20 @@ export const getLocalNamesForImport = (
             ) {
                 continue
             }
-            const localName: string =
-                prop.value.type === "Identifier"
-                    ? prop.value.name
-                    : prop.key.name
+            // Extract the binding name from each destructuring variant:
+            //   { X }              → "X"            (Identifier)
+            //   { X: Y }           → "Y"            (Identifier alias)
+            //   { X = fallback }   → "X"            (AssignmentPattern, shorthand)
+            //   { X: Y = fallback }→ "Y"            (AssignmentPattern, aliased)
+            let localName: string = prop.key.name
+            if (prop.value.type === "Identifier") {
+                localName = prop.value.name
+            } else if (
+                prop.value.type === "AssignmentPattern" &&
+                prop.value.left.type === "Identifier"
+            ) {
+                localName = prop.value.left.name
+            }
             localNames.add(localName)
         }
     })
@@ -204,6 +214,27 @@ export const TYPEORM_COLUMN_DECORATORS: ReadonlySet<string> = new Set([
 ])
 
 /**
+ * Expands a set of exported names into the local bindings each one has in
+ * the file — covers ESM aliases (`import { Column as C }`) and CJS aliases
+ * (`const { Column: C } = require(...)`). Returns a union set suitable for
+ * alias-aware identifier matching.
+ */
+export const expandLocalNamesForImports = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+    importedNames: ReadonlySet<string>,
+): Set<string> => {
+    const expanded = new Set<string>()
+    for (const name of importedNames) {
+        for (const local of getLocalNamesForImport(root, j, moduleName, name)) {
+            expanded.add(local)
+        }
+    }
+    return expanded
+}
+
+/**
  * Traverses ClassProperty decorators and calls `callback` for each
  * ObjectExpression argument found in decorator call expressions.
  *
@@ -217,11 +248,13 @@ export const forEachDecoratorObjectArg = (
     callback: (objectExpression: ObjectExpression, path: ASTPath) => void,
     decoratorNames?: ReadonlySet<string>,
 ): void => {
+    // ast-types omits `decorators` from ClassProperty — widen the type so
+    // downstream traversal can inspect the decorators array safely.
+    interface ClassPropertyWithDecorators extends ClassProperty {
+        decorators?: Decorator[]
+    }
     root.find(j.ClassProperty).forEach((path) => {
-        // ast-types omits `decorators` from ClassProperty — extend it
-        const node = path.node as ClassProperty & {
-            decorators?: Decorator[]
-        }
+        const node: ClassPropertyWithDecorators = path.node
         if (!node.decorators) return
 
         for (const decorator of node.decorators) {
