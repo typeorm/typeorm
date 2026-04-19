@@ -1,5 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo, ObjectProperty } from "jscodeshift"
+import { fileImportsFrom, getStringValue } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -8,6 +9,9 @@ export const description =
 export const queryBuilderOrUpdate = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     // Find .orUpdate({ conflict_target: [...], overwrite: [...] })
@@ -28,11 +32,15 @@ export const queryBuilderOrUpdate = (file: FileInfo, api: API) => {
 
         for (const prop of arg.properties) {
             if (prop.type !== "ObjectProperty") continue
-            if (prop.key.type !== "Identifier") continue
 
-            if (prop.key.name === "conflict_target") {
+            const keyName =
+                prop.key.type === "Identifier"
+                    ? prop.key.name
+                    : getStringValue(prop.key)
+
+            if (keyName === "conflict_target") {
                 conflictTarget = prop.value
-            } else if (prop.key.name === "overwrite") {
+            } else if (keyName === "overwrite") {
                 overwrite = prop.value
             }
         }
