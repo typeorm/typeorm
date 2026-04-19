@@ -1294,6 +1294,88 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Checks whether a column type/length change can be applied in place with
+     * ALTER COLUMN TYPE instead of drop + add, preserving existing data.
+     * Only conversions Postgres accepts without a USING clause are treated as
+     * safe; incompatible changes fall back to the drop + add path.
+     *
+     * @param oldColumn
+     * @param newColumn
+     */
+    protected canAlterColumnType(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): boolean {
+        if (
+            oldColumn.type === "enum" ||
+            oldColumn.type === "simple-enum" ||
+            newColumn.type === "enum" ||
+            newColumn.type === "simple-enum"
+        )
+            return false
+
+        const normalize = (type: string): string => {
+            switch (type.toLowerCase().trim()) {
+                case "character varying":
+                case "varchar":
+                    return "varchar"
+                case "character":
+                case "char":
+                    return "char"
+                case "integer":
+                case "int":
+                case "int4":
+                    return "int4"
+                case "bigint":
+                case "int8":
+                    return "int8"
+                case "smallint":
+                case "int2":
+                    return "int2"
+                case "real":
+                case "float4":
+                    return "float4"
+                case "double precision":
+                case "float8":
+                    return "float8"
+                case "timestamp":
+                case "timestamp without time zone":
+                    return "timestamp"
+                case "timestamptz":
+                case "timestamp with time zone":
+                    return "timestamptz"
+                case "time":
+                case "time without time zone":
+                    return "time"
+                case "timetz":
+                case "time with time zone":
+                    return "timetz"
+                case "decimal":
+                case "numeric":
+                    return "numeric"
+                default:
+                    return type.toLowerCase().trim()
+            }
+        }
+
+        const oldType = normalize(oldColumn.type)
+        const newType = normalize(newColumn.type)
+
+        if (oldType === newType) return true
+
+        const stringTypes = new Set(["varchar", "char", "text"])
+        if (stringTypes.has(oldType) && stringTypes.has(newType)) return true
+
+        const integerTypes = new Set(["int2", "int4", "int8"])
+        if (integerTypes.has(oldType) && integerTypes.has(newType)) return true
+
+        const numericTypes = new Set(["numeric", "float4", "float8"])
+        if (numericTypes.has(oldType) && numericTypes.has(newType)) return true
+
+        return false
+    }
+
+    /**
      * Changes a column in the table.
      *
      * @param tableOrName
@@ -1323,16 +1405,22 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
+        const typeOrLengthChanged =
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            oldColumn.length !== newColumn.length
+
+        const mustRecreate =
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
-        ) {
-            // To avoid data conversion, we just recreate column
+                newColumn.generatedType === "STORED") ||
+            (typeOrLengthChanged &&
+                !this.canAlterColumnType(oldColumn, newColumn))
+
+        if (mustRecreate) {
+            // Array changes, generated STORED transitions, and type changes
+            // between incompatible type families can't be altered in place.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1616,6 +1704,7 @@ export class PostgresQueryRunner
             }
 
             if (
+                typeOrLengthChanged ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
@@ -1633,6 +1722,17 @@ export class PostgresQueryRunner
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+
+                // reflect new type in clonedTable so later branches operate on the updated shape
+                const column = clonedTable.columns.find(
+                    (c) => c.name === newColumn.name,
+                )
+                if (column) {
+                    column.type = newColumn.type
+                    column.length = newColumn.length
+                    column.precision = newColumn.precision
+                    column.scale = newColumn.scale
+                }
             }
 
             if (
