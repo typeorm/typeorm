@@ -1,7 +1,7 @@
 import { DataSource } from "typeorm"
 
 // Case 1: default `require("expo-sqlite")` driver — should be flagged as redundant
-// TODO(typeorm-v1): `driver: require("expo-sqlite")` is no longer needed — TypeORM v1 auto-loads `expo-sqlite`. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
+// TODO(typeorm-v1): The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
 const dataSource = new DataSource({
     type: "expo",
     database: "app.db",
@@ -46,7 +46,7 @@ const dataSource6 = new DataSource({
 })
 
 // Case 7: quoted keys — should also be detected
-// TODO(typeorm-v1): `driver: require("expo-sqlite")` is no longer needed — TypeORM v1 auto-loads `expo-sqlite`. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
+// TODO(typeorm-v1): The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
 // prettier-ignore
 const dataSource7 = new DataSource({
     "type": "expo",
@@ -55,7 +55,7 @@ const dataSource7 = new DataSource({
 });
 
 // Case 8: default export — TODO lands on the export statement
-// TODO(typeorm-v1): `driver: require("expo-sqlite")` is no longer needed — TypeORM v1 auto-loads `expo-sqlite`. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
+// TODO(typeorm-v1): The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
 export default new DataSource({
     type: "expo",
     database: "exported.db",
@@ -63,7 +63,7 @@ export default new DataSource({
 })
 
 // Case 9: idempotency — file that already has the TODO round-trips unchanged
-// TODO(typeorm-v1): `driver: require("expo-sqlite")` is no longer needed — TypeORM v1 auto-loads `expo-sqlite`. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
+// TODO(typeorm-v1): The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
 const dataSource9 = new DataSource({
     type: "expo",
     database: "already-flagged.db",

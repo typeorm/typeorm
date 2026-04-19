@@ -12,11 +12,11 @@ import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    'flag redundant `driver: require("expo-sqlite")` on Expo data sources — v1 auto-loads it'
+    "flag redundant `expo-sqlite` driver injection on Expo data sources — v1 auto-loads it"
 export const manual = true
 
 const TODO_MESSAGE =
-    '`driver: require("expo-sqlite")` is no longer needed — TypeORM v1 auto-loads `expo-sqlite`. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).'
+    "The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper)."
 
 // Returns the string key name for `Identifier` / `StringLiteral` /
 // `Literal` keys, matching the pattern used elsewhere in the codemod.
@@ -67,8 +67,8 @@ const isDefaultExpoSqliteRequire = (value: Node): boolean => {
     return getStringValue(arg) === "expo-sqlite"
 }
 
-// Statement-like ancestors that can host a TODO comment survivably through
-// recast's printing.
+// Statement-like ancestors that can host a reminder comment survivably
+// through recast's printing.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
@@ -101,8 +101,8 @@ export const datasourceExpo = (file: FileInfo, api: API) => {
         }
         if (!isDefaultExpoSqliteRequire(driverProp.value as Node)) return
 
-        // Walk up to the enclosing statement for the TODO. Idempotent: skip if
-        // the same message is already attached.
+        // Walk up to the enclosing statement to attach the reminder comment.
+        // Idempotent: skip if the same message is already attached.
         let current = objPath.parent
         while (current) {
             const node: Node = current.node
