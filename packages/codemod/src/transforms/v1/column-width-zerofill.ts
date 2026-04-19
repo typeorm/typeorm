@@ -2,6 +2,7 @@ import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import {
     TYPEORM_COLUMN_DECORATORS,
+    expandLocalNamesForImports,
     forEachDecoratorObjectArg,
     removeObjectProperties,
 } from "../ast-helpers"
@@ -17,6 +18,12 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
+    const decoratorLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        TYPEORM_COLUMN_DECORATORS,
+    )
     forEachDecoratorObjectArg(
         root,
         j,
@@ -25,7 +32,7 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
                 hasChanges = true
             }
         },
-        TYPEORM_COLUMN_DECORATORS,
+        decoratorLocalNames,
     )
 
     return hasChanges ? root.toSource() : undefined

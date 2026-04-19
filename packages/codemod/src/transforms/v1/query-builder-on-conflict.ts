@@ -35,7 +35,6 @@ export const queryBuilderOnConflict = (file: FileInfo, api: API) => {
                 hasChanges = true
             }
         } else {
-            // Add a TODO comment
             const message =
                 "`onConflict()` was removed — use `orIgnore()` or `orUpdate()` instead"
             const parentNode: Node = path.parent.node

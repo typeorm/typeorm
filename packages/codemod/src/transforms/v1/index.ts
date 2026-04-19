@@ -2,6 +2,7 @@ import * as columnReadonly from "./column-readonly"
 import * as columnUnsignedNumeric from "./column-unsigned-numeric"
 import * as columnWidthZerofill from "./column-width-zerofill"
 import * as connectionManager from "./connection-manager"
+import * as connectionOptionsReader from "./connection-options-reader"
 import * as connectionToDataSource from "./connection-to-datasource"
 import * as datasourceMongodb from "./datasource-mongodb"
 import * as datasourceMssql from "./datasource-mssql"
@@ -76,6 +77,7 @@ export const transforms = [
     findOptionsStringSelect,
     findOptionsStringRelations,
     connectionManager,
+    connectionOptionsReader,
     fileLogger,
 ]
 

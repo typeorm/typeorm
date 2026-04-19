@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -11,9 +11,9 @@ export const manual = true
 
 const MESSAGE = `\`ConnectionManager\` was removed — create and manage \`DataSource\` instances directly instead — there is no replacement class`
 
-// A TODO attached to one of these nodes will survive jscodeshift/recast's
-// printing. Walking up until we reach one of these produces a visible
-// comment above the enclosing statement or declaration.
+// Node types on which a leading line-comment survives jscodeshift/recast
+// printing — walking up to one of these keeps the comment visible above
+// the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||
@@ -29,28 +29,16 @@ export const connectionManager = (file: FileInfo, api: API) => {
     let hasTodos = false
 
     // Collect local aliases bound to the typeorm `ConnectionManager` class
-    // so aliased imports like `import { ConnectionManager as CM }` are
-    // correctly matched.
-    const localNames = new Set<string>()
-    root.find(j.ImportDeclaration, {
-        source: { value: "typeorm" },
-    }).forEach((p) => {
-        for (const s of p.node.specifiers ?? []) {
-            if (
-                s.type === "ImportSpecifier" &&
-                s.imported.type === "Identifier" &&
-                s.imported.name === "ConnectionManager"
-            ) {
-                const local = s.local?.name
-                localNames.add(
-                    typeof local === "string" ? local : s.imported.name,
-                )
-            }
-        }
-    })
+    // via ESM `import { ConnectionManager [as CM] }` and CJS
+    // `const { ConnectionManager [: CM] } = require("typeorm")`.
+    const localNames = getLocalNamesForImport(
+        root,
+        j,
+        "typeorm",
+        "ConnectionManager",
+    )
 
     if (localNames.size === 0) {
-        // Not imported from typeorm; nothing to flag.
         return undefined
     }
 
@@ -70,7 +58,6 @@ export const connectionManager = (file: FileInfo, api: API) => {
         }
     }
 
-    // Flag `new ConnectionManager(...)` constructions wherever they appear
     root.find(j.NewExpression)
         .filter((p) => {
             const callee = p.node.callee
@@ -96,7 +83,7 @@ export const connectionManager = (file: FileInfo, api: API) => {
 
     // Only drop the import when at least one usage was successfully
     // flagged — leaving a dangling `ConnectionManager` reference without a
-    // TODO would be worse than leaving the deprecated import in place.
+    // comment would be worse than leaving the deprecated import in place.
     if (hasTodos) {
         if (
             removeImportSpecifiers(

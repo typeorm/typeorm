@@ -128,7 +128,6 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         hasTodos = true
     })
 
-    // Find getCustomRepository() calls and add TODO
     const addGetCustomRepoTodo = (callPath: ASTPath) => {
         const message =
             "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"
