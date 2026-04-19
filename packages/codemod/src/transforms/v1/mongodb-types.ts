@@ -3,6 +3,7 @@ import type {
     API,
     ASTPath,
     Collection,
+    ExportNamedDeclaration,
     FileInfo,
     ImportDeclaration,
     ImportSpecifier,
@@ -11,6 +12,14 @@ import type {
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "move `ObjectId` import from `typeorm` to `mongodb`"
+
+// jscodeshift's typings omit the Babel `exportKind` flag on
+// ExportNamedDeclaration even though the runtime node carries it
+// ("value" / "type"). Narrow a local alias rather than spreading
+// intersection casts through the transform.
+type ExportDeclarationWithKind = ExportNamedDeclaration & {
+    exportKind?: "value" | "type"
+}
 
 const addToExistingImport = (
     existing: ASTPath<ImportDeclaration>,
@@ -140,20 +149,15 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
         // duplicate named export and fail at parse time. Skip type-only
         // declarations (`export type { ... }`) because `ObjectId` is a runtime
         // value; merging into a type-only export would strip its runtime form.
-        const mongoExportWithKind =
-            exportPath.node as typeof exportPath.node & {
-                exportKind?: string
-            }
+        const sourceNode: ExportDeclarationWithKind = exportPath.node
         const existingMongoExport = root
             .find(j.ExportNamedDeclaration, {
                 source: { value: "mongodb" },
             })
-            .filter((p) => {
-                const node = p.node as typeof exportPath.node & {
-                    exportKind?: string
-                }
-                return node.exportKind !== "type"
-            })
+            .filter(
+                (p) =>
+                    (p.node as ExportDeclarationWithKind).exportKind !== "type",
+            )
         if (existingMongoExport.length > 0) {
             const existingPath = existingMongoExport.at(0).get() as ASTPath<
                 typeof exportPath.node
@@ -177,17 +181,16 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
                 }
             }
         } else {
-            const newExport = j.exportNamedDeclaration(
-                null,
-                moved,
-                j.stringLiteral("mongodb"),
-            ) as ReturnType<typeof j.exportNamedDeclaration> & {
-                exportKind?: string
-            }
+            const newExport: ExportDeclarationWithKind =
+                j.exportNamedDeclaration(
+                    null,
+                    moved,
+                    j.stringLiteral("mongodb"),
+                )
             // Preserve the source declaration's exportKind so moved `export type`
             // specifiers don't get silently promoted to value exports.
-            if (mongoExportWithKind.exportKind) {
-                newExport.exportKind = mongoExportWithKind.exportKind
+            if (sourceNode.exportKind) {
+                newExport.exportKind = sourceNode.exportKind
             }
             exportPath.insertAfter(newExport)
         }
