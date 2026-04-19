@@ -11,6 +11,7 @@ import * as datasourceSap from "./datasource-sap"
 import * as datasourceSqliteOptions from "./datasource-sqlite-options"
 import * as datasourceSqliteType from "./datasource-sqlite-type"
 import * as fileLogger from "./file-logger"
+import * as findOptionsJoin from "./find-options-join"
 import * as findOptionsLockModes from "./find-options-lock-modes"
 import * as findOptionsStringRelations from "./find-options-string-relations"
 import * as findOptionsStringSelect from "./find-options-string-select"
@@ -54,6 +55,7 @@ export const transforms = [
     columnReadonly,
     columnWidthZerofill,
     datasourceSqliteType,
+    findOptionsJoin,
     findOptionsLockModes,
     useContainer,
     datasourceMysqlConnector,
