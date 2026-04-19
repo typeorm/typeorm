@@ -4,7 +4,6 @@ import type {
     ASTPath,
     CallExpression,
     FileInfo,
-    Identifier,
     NewExpression,
     Node,
     OptionalCallExpression,
@@ -131,30 +130,46 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
     //   const r = new ConnectionOptionsReader()            // VariableDeclarator
     //   let r; r = new ConnectionOptionsReader()           // AssignmentExpression
     //   function f(r = new ConnectionOptionsReader()) {}   // AssignmentPattern (default-param)
-    // We rename `.all()` only on these bindings so unrelated `.all()` calls
-    // on other types stay untouched.
-    const readerInstanceBindings = new Set<string>()
+    // Tracked as (scope, name) pairs so a shadowed `r` in a nested scope can
+    // hold an unrelated value without its `.all()` calls being renamed.
+    interface ScopeLike {
+        lookup(name: string): ScopeLike | null
+    }
+    interface ScopedPath {
+        scope: ScopeLike
+    }
+    const readerBindings = new Map<ScopeLike, Set<string>>()
     const flaggedHosts = new WeakSet<Node>()
+
+    const recordBinding = (scope: ScopeLike, name: string): void => {
+        let bucket = readerBindings.get(scope)
+        if (!bucket) {
+            bucket = new Set()
+            readerBindings.set(scope, bucket)
+        }
+        bucket.add(name)
+    }
 
     root.find(j.NewExpression).forEach((astPath) => {
         if (!isReaderConstruction(astPath)) return
 
         const parent = astPath.parent.node
+        const parentScope = (astPath.parent as unknown as ScopedPath).scope
         if (
             parent.type === "VariableDeclarator" &&
             parent.id.type === "Identifier"
         ) {
-            readerInstanceBindings.add(parent.id.name as string)
+            recordBinding(parentScope, parent.id.name as string)
         } else if (
             parent.type === "AssignmentExpression" &&
             parent.left.type === "Identifier"
         ) {
-            readerInstanceBindings.add(parent.left.name as string)
+            recordBinding(parentScope, parent.left.name as string)
         } else if (
             parent.type === "AssignmentPattern" &&
             parent.left.type === "Identifier"
         ) {
-            readerInstanceBindings.add(parent.left.name as string)
+            recordBinding(parentScope, parent.left.name as string)
         }
 
         let current = astPath.parent
@@ -176,6 +191,19 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
         }
     })
 
+    // Resolves an identifier receiver's scope-declared binding and returns
+    // true if it was recorded as a reader instance. Returning false for
+    // shadowed/reassigned names keeps unrelated `.all()` calls untouched.
+    const isTrackedIdentifier = (
+        name: string,
+        useScope: ScopeLike | undefined,
+    ): boolean => {
+        if (!useScope) return false
+        const declaringScope = useScope.lookup(name)
+        if (!declaringScope) return false
+        return readerBindings.get(declaringScope)?.has(name) ?? false
+    }
+
     // Rename `.all()` → `.get()`:
     //   * on tracked reader-instance bindings (`r.all()` where `r = new ...`)
     //   * on inline constructor receivers (`new X().all()` — safe because
@@ -184,21 +212,10 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
     //
     // Only rename zero-argument calls: the v0 `all()` never took arguments, so
     // anything passing an arg is unrelated code that happens to share the name.
-    const isReaderReceiver = (obj: Node): boolean => {
-        if (obj.type === "Identifier") {
-            return readerInstanceBindings.has((obj as Identifier).name)
-        }
-        if (obj.type === "NewExpression") {
-            // jscodeshift hands us a NewExpression node here directly; synthesize
-            // a minimal ASTPath wrapper so we can reuse `isReaderConstruction`.
-            return isReaderConstruction({
-                node: obj as NewExpression,
-            } as ASTPath<NewExpression>)
-        }
-        return false
-    }
-
-    const tryRename = (node: CallExpression | OptionalCallExpression): void => {
+    const tryRename = (
+        callPath: ASTPath<CallExpression | OptionalCallExpression>,
+    ): void => {
+        const node = callPath.node
         if (node.arguments.length !== 0) return
         const callee = node.callee
         if (
@@ -214,12 +231,24 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
         ) {
             return
         }
-        if (!isReaderReceiver(member.object)) return
+        const receiver = member.object
+        let matches = false
+        if (receiver.type === "Identifier") {
+            matches = isTrackedIdentifier(
+                receiver.name,
+                (callPath as unknown as ScopedPath).scope,
+            )
+        } else if (receiver.type === "NewExpression") {
+            matches = isReaderConstruction({
+                node: receiver,
+            } as ASTPath<NewExpression>)
+        }
+        if (!matches) return
         member.property.name = "get"
         hasChanges = true
     }
-    root.find(j.CallExpression).forEach((p) => tryRename(p.node))
-    root.find(j.OptionalCallExpression).forEach((p) => tryRename(p.node))
+    root.find(j.CallExpression).forEach(tryRename)
+    root.find(j.OptionalCallExpression).forEach(tryRename)
 
     if (hasTodos) stats.count.todo(api, name, file)
 

@@ -61,3 +61,13 @@ const opt3 = await reader?.all?.()
 // Case 13: `.all(arg)` — must NOT be renamed (v0 `all()` was zero-arg; an
 // argument means unrelated user code that happens to share the method name)
 const extraneous = reader.all("extra")
+
+// Case 14: shadowing — a nested `reader` bound to an unrelated type must NOT
+// have its `.all()` renamed even though the outer `reader` is a tracked
+// ConnectionOptionsReader instance
+function shadowed() {
+    const reader = {
+        all: (): string[] => ["not", "a", "typeorm", "reader"],
+    }
+    return reader.all()
+}
