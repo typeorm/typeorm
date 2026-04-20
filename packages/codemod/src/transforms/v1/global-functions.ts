@@ -192,7 +192,7 @@ export const globalFunctions = (file: FileInfo, api: API) => {
                 }
                 return true
             }
-            current = current.parent as ASTPath<Node> | null
+            current = current.parent
         }
         return false
     }

@@ -39,7 +39,7 @@ const wrapDynamicStringArray = (
                         j.arrayExpression([j.identifier("f"), j.literal(true)]),
                     ),
                 ],
-            ) as E,
+            ),
         ],
     )
 }

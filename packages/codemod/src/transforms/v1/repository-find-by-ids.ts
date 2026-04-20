@@ -61,15 +61,14 @@ const ensureInValueImport = (root: Collection, j: JSCodeshift): void => {
     })
     if (hasInValueImport) return
 
-    const augmentable = typeormImports
-        .filter((p) => canAcceptNamedValueSpecifier(p.node))
-        .at(0)
-    if (augmentable.length > 0) {
-        augmentable.forEach((p) => {
-            p.node.specifiers?.push(j.importSpecifier(j.identifier("In")))
-        })
-        return
-    }
+    let augmented = false
+    typeormImports.forEach((p) => {
+        if (augmented) return
+        if (!canAcceptNamedValueSpecifier(p.node)) return
+        p.node.specifiers?.push(j.importSpecifier(j.identifier("In")))
+        augmented = true
+    })
+    if (augmented) return
 
     const newImport: ImportDeclaration = j.importDeclaration(
         [j.importSpecifier(j.identifier("In"))],

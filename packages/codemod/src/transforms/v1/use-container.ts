@@ -91,7 +91,7 @@ export const useContainer = (file: FileInfo, api: API) => {
                         hasTodos = true
                         break
                     }
-                    current = current.parent as ASTPath<Node> | null
+                    current = current.parent
                 }
             },
         )
