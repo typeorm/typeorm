@@ -7,7 +7,6 @@ import type {
     ObjectExpression,
 } from "jscodeshift"
 import { fileImportsFrom, getStringValue } from "../ast-helpers"
-import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -69,7 +68,6 @@ export const datasourceExpo = (file: FileInfo, api: API) => {
     if (!fileImportsFrom(root, j, "typeorm")) return undefined
 
     let hasChanges = false
-    let appliedCount = 0
 
     root.find(j.ObjectExpression).forEach((objPath) => {
         const obj = objPath.node
@@ -93,12 +91,7 @@ export const datasourceExpo = (file: FileInfo, api: API) => {
         // `isDefaultExpoSqliteRequire` above and keep their explicit line.
         obj.properties.splice(driverIdx, 1)
         hasChanges = true
-        appliedCount++
     })
-
-    if (appliedCount > 0) {
-        for (let i = 0; i < appliedCount; i++) stats.count.applied(api, name)
-    }
 
     return hasChanges ? root.toSource() : undefined
 }
