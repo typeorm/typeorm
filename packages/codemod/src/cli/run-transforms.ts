@@ -63,13 +63,30 @@ const createStdoutInterceptor = (
     let fileCount = 0
     let processed = 0
 
-    const write = ((chunk: string | Uint8Array) => {
+    // `process.stdout.write` has two overloads:
+    //   write(chunk, cb?)
+    //   write(chunk, encoding, cb?)
+    // We classify / buffer and never actually write, so we honor the
+    // contract by invoking the callback synchronously with no error and
+    // returning `true` (non-buffered). Losing the callback would leave any
+    // caller honoring backpressure waiting forever.
+    type WriteCallback = (err?: Error | null) => void
+    const write = ((
+        chunk: string | Uint8Array,
+        encodingOrCb?: BufferEncoding | WriteCallback,
+        cb?: WriteCallback,
+    ) => {
         const str = typeof chunk === "string" ? chunk : chunk.toString()
+        const callback = typeof encodingOrCb === "function" ? encodingOrCb : cb
+        const done = () => {
+            callback?.()
+        }
 
         const countMatch = /Processing (\d+) files/.exec(str)
         if (countMatch) {
             fileCount = Number.parseInt(countMatch[1], 10)
             onFileCountDetected(fileCount)
+            done()
             return true
         }
 
@@ -83,6 +100,7 @@ const createStdoutInterceptor = (
                     : { file: "<unknown>", message: str.trim() },
             )
             onProgressTick()
+            done()
             return true
         }
 
@@ -94,12 +112,14 @@ const createStdoutInterceptor = (
             processed++
             onProcessedIncrement()
             onProgressTick()
+            done()
             return true
         }
 
         const trimmed = str.trim()
         if (trimmed.length > 0) unclassifiedOutput.push(trimmed)
-        return false
+        done()
+        return true
     }) as typeof process.stdout.write
 
     return {
