@@ -944,6 +944,39 @@ export const collectRepositoryBindings = (
  * file-level guard. Callers should add negative fixtures to pin the
  * common false-positive vectors.
  */
+// `<ds>.manager` — DataSource local/class-prop's `.manager` accessor
+// returns an EntityManager, whose find-family methods match Repository's.
+const isDataSourceManagerChain = (
+    member: { object: ASTNode; property: ASTNode },
+    dsLocals: ReadonlySet<string> | undefined,
+    dsClassProps: ReadonlySet<string> | undefined,
+): boolean => {
+    if (
+        member.property.type !== "Identifier" ||
+        member.property.name !== "manager"
+    ) {
+        return false
+    }
+    if (
+        member.object.type === "Identifier" &&
+        dsLocals?.has(member.object.name)
+    ) {
+        return true
+    }
+    if (
+        member.object.type !== "MemberExpression" &&
+        member.object.type !== "OptionalMemberExpression"
+    ) {
+        return false
+    }
+    const inner = member.object as { object: ASTNode; property: ASTNode }
+    return (
+        inner.object.type === "ThisExpression" &&
+        inner.property.type === "Identifier" &&
+        (dsClassProps?.has(inner.property.name) ?? false)
+    )
+}
+
 export const isRepositoryReceiver = (
     receiver: ASTNode,
     bindings: {
@@ -970,43 +1003,15 @@ export const isRepositoryReceiver = (
         receiver.type === "OptionalMemberExpression"
     ) {
         const member = receiver as { object: ASTNode; property: ASTNode }
-
-        // `ds.manager` — DataSource local's `.manager` accessor returns an
-        // EntityManager, which carries the same find-family methods as
-        // Repository. Treat the full chain as a Repository receiver.
-        if (
-            member.property.type === "Identifier" &&
-            member.property.name === "manager"
-        ) {
-            if (
-                member.object.type === "Identifier" &&
-                dsLocals?.has(member.object.name)
-            ) {
-                return true
-            }
-            if (
-                (member.object.type === "MemberExpression" ||
-                    member.object.type === "OptionalMemberExpression") &&
-                (member.object as { object: ASTNode }).object.type ===
-                    "ThisExpression" &&
-                (member.object as { property: ASTNode }).property.type ===
-                    "Identifier" &&
-                dsClassProps?.has(
-                    (
-                        (member.object as { property: ASTNode })
-                            .property as Identifier
-                    ).name,
-                )
-            ) {
-                return true
-            }
+        if (isDataSourceManagerChain(member, dsLocals, dsClassProps)) {
+            return true
         }
-
-        if (member.object.type === "ThisExpression") {
-            if (member.property.type === "Identifier") {
-                if (bindings.classProps.has(member.property.name)) return true
-                return noBindingsFound
-            }
+        if (
+            member.object.type === "ThisExpression" &&
+            member.property.type === "Identifier"
+        ) {
+            if (bindings.classProps.has(member.property.name)) return true
+            return noBindingsFound
         }
         // Chained access like `service.userRepo.findByIds(...)` — accept
         // only when we have no binding info to disambiguate.

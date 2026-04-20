@@ -93,6 +93,39 @@ const rewriteInnerIsolationProp = (prop: ObjectProperty): boolean => {
     return true
 }
 
+// Flags every top-level `domain` property on an MSSQL options object.
+// Returns aggregate changed/addedTodo flags.
+const flagDomainOnMssqlOptions = (
+    obj: ObjectExpression,
+    api: API,
+    j: API["jscodeshift"],
+): { changed: boolean; addedTodo: boolean } => {
+    let changed = false
+    let addedTodo = false
+    for (const prop of obj.properties) {
+        if (!isPropertyLike(prop)) continue
+        if (getObjectPropertyKeyName(prop) !== "domain") continue
+        const r = flagDomainOption(prop, api, j)
+        if (r.changed) changed = true
+        if (r.addedTodo) addedTodo = true
+    }
+    return { changed, addedTodo }
+}
+
+// Rewrites `isolation` → `isolationLevel` and normalizes the value on every
+// ObjectProperty inside the nested `options: { ... }` object. Returns
+// whether any property was rewritten.
+const rewriteIsolationOnNestedOptions = (obj: ObjectExpression): boolean => {
+    const optionsObj = findNestedOptionsObject(obj)
+    if (!optionsObj) return false
+    let changed = false
+    for (const inner of optionsObj.properties) {
+        if (inner.type !== "ObjectProperty") continue
+        if (rewriteInnerIsolationProp(inner)) changed = true
+    }
+    return changed
+}
+
 export const datasourceMssql = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
@@ -106,23 +139,11 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
         const obj = objPath.node
         if (!isMssqlOptions(obj)) return
 
-        for (const prop of obj.properties) {
-            if (!isPropertyLike(prop)) continue
-            if (getObjectPropertyKeyName(prop) !== "domain") continue
-            const { changed, addedTodo } = flagDomainOption(prop, api, j)
-            if (changed) hasChanges = true
-            if (addedTodo) hasTodos = true
-        }
+        const domain = flagDomainOnMssqlOptions(obj, api, j)
+        if (domain.changed) hasChanges = true
+        if (domain.addedTodo) hasTodos = true
 
-        const optionsObj = findNestedOptionsObject(obj)
-        if (!optionsObj) return
-
-        for (const inner of optionsObj.properties) {
-            if (inner.type !== "ObjectProperty") continue
-            if (rewriteInnerIsolationProp(inner)) {
-                hasChanges = true
-            }
-        }
+        if (rewriteIsolationOnNestedOptions(obj)) hasChanges = true
     })
 
     if (hasTodos) stats.count.todo(api, name, file)

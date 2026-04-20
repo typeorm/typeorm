@@ -42,6 +42,70 @@ const unwrapIdentifierName = (node: ASTNode): string | null => {
     }
 }
 
+// Rename `connection` to `dataSource` on every ObjectProperty in `arg`.
+// Returns true when at least one property was renamed. The shorthand
+// `{ connection }` becomes `{ dataSource: connection }` — the variable
+// reference stays intact and the object drops the shorthand flag.
+const renameConnectionKeyToDataSource = (arg: {
+    properties: ASTNode[]
+}): boolean => {
+    let changed = false
+    for (const prop of arg.properties) {
+        if (prop.type !== "Property" && prop.type !== "ObjectProperty") continue
+        const p = prop as { key: ASTNode; shorthand?: boolean }
+        if (p.key.type !== "Identifier" || p.key.name !== "connection") continue
+        p.key.name = "dataSource"
+        if (p.shorthand) p.shorthand = false
+        changed = true
+    }
+    return changed
+}
+
+// Remove every `connection` ObjectProperty from `arg`. Returns true when
+// at least one property was dropped.
+const dropConnectionKey = (arg: { properties: ASTNode[] }): boolean => {
+    const before = arg.properties.length
+    arg.properties = arg.properties.filter((prop) => {
+        if (prop.type !== "Property" && prop.type !== "ObjectProperty") {
+            return true
+        }
+        const p = prop as { key: ASTNode }
+        return !(p.key.type === "Identifier" && p.key.name === "connection")
+    })
+    return arg.properties.length !== before
+}
+
+// Walks every `new X(...)` whose callee is one of the tracked metadata
+// constructors and rewrites the `connection` option key according to the
+// constructor's v1 semantics (rename vs drop).
+const rewriteMetadataConstructors = (
+    root: ReturnType<API["jscodeshift"]>,
+    j: API["jscodeshift"],
+    entityMetadataLocalNames: ReadonlySet<string>,
+    indirectDataSourceLocalNames: ReadonlySet<string>,
+    hasChanges: boolean,
+): boolean => {
+    root.find(j.NewExpression).forEach((path) => {
+        const callee = path.node.callee
+        if (callee.type !== "Identifier") return
+        const name = callee.name
+        const isEntityMetadata = entityMetadataLocalNames.has(name)
+        const isIndirect = indirectDataSourceLocalNames.has(name)
+        if (!isEntityMetadata && !isIndirect) return
+
+        const [arg] = path.node.arguments
+        if (!arg || arg.type !== "ObjectExpression") return
+
+        const changed = isEntityMetadata
+            ? renameConnectionKeyToDataSource(
+                  arg as unknown as { properties: ASTNode[] },
+              )
+            : dropConnectionKey(arg as unknown as { properties: ASTNode[] })
+        if (changed) hasChanges = true
+    })
+    return hasChanges
+}
+
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "migrate from `Connection` to `DataSource`"
 
@@ -912,46 +976,13 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     //     accept `connection` in v1; the DataSource is reached through
     //     `entityMetadata.dataSource` and is set by the entity-metadata
     //     builder rather than the caller.
-    root.find(j.NewExpression).forEach((path) => {
-        const callee = path.node.callee
-        if (callee.type !== "Identifier") return
-        const name = callee.name
-
-        const isEntityMetadata = entityMetadataLocalNames.has(name)
-        const isIndirect = indirectDataSourceLocalNames.has(name)
-        if (!isEntityMetadata && !isIndirect) return
-
-        const [arg] = path.node.arguments
-        if (!arg || arg.type !== "ObjectExpression") return
-
-        if (isEntityMetadata) {
-            for (const prop of arg.properties) {
-                if (prop.type !== "Property" && prop.type !== "ObjectProperty")
-                    continue
-                if (prop.key.type !== "Identifier") continue
-                if (prop.key.name !== "connection") continue
-                prop.key.name = "dataSource"
-                // Shorthand `{ connection }` expands to `{ dataSource: connection }`
-                // so the variable reference stays intact; clear the shorthand
-                // flag to emit the full key:value pair.
-                if ((prop as { shorthand?: boolean }).shorthand) {
-                    ;(prop as { shorthand?: boolean }).shorthand = false
-                }
-                hasChanges = true
-            }
-            return
-        }
-
-        // ColumnMetadata / IndexMetadata — `connection` was removed.
-        const before = arg.properties.length
-        arg.properties = arg.properties.filter((prop) => {
-            if (prop.type !== "Property" && prop.type !== "ObjectProperty")
-                return true
-            if (prop.key.type !== "Identifier") return true
-            return prop.key.name !== "connection"
-        })
-        if (arg.properties.length !== before) hasChanges = true
-    })
+    hasChanges = rewriteMetadataConstructors(
+        root,
+        j,
+        entityMetadataLocalNames,
+        indirectDataSourceLocalNames,
+        hasChanges,
+    )
 
     return hasChanges ? root.toSource() : undefined
 }

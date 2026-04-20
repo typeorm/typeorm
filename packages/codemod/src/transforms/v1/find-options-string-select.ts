@@ -44,6 +44,32 @@ const wrapDynamicStringArray = (
     )
 }
 
+// Walks up to the enclosing Statement / VariableDeclaration and attaches
+// the bound-variable comment there (recast drops comments placed on
+// inner expressions). Returns true when a new comment was added.
+const attachBoundTodo = (
+    propPath: { parent: unknown },
+    j: API["jscodeshift"],
+): boolean => {
+    let current = propPath.parent as {
+        node: Node
+        parent: unknown
+    } | null
+    while (current) {
+        const t = current.node.type
+        if (t.endsWith("Statement") || t === "VariableDeclaration") {
+            if (hasTodoComment(current.node, BOUND_SELECT_MESSAGE)) return false
+            addTodoComment(current.node, BOUND_SELECT_MESSAGE, j)
+            return true
+        }
+        current = current.parent as {
+            node: Node
+            parent: unknown
+        } | null
+    }
+    return false
+}
+
 export const findOptionsStringSelect = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
@@ -87,25 +113,8 @@ export const findOptionsStringSelect = (file: FileInfo, api: API) => {
             value.type === "MemberExpression" ||
             value.type === "OptionalMemberExpression"
         ) {
-            let current = propPath.parent as {
-                node: Node
-                parent: unknown
-            } | null
-            while (current) {
-                const t = current.node.type
-                if (t.endsWith("Statement") || t === "VariableDeclaration") {
-                    if (!hasTodoComment(current.node, BOUND_SELECT_MESSAGE)) {
-                        addTodoComment(current.node, BOUND_SELECT_MESSAGE, j)
-                        hasTodos = true
-                    }
-                    hasChanges = true
-                    return
-                }
-                current = current.parent as {
-                    node: Node
-                    parent: unknown
-                } | null
-            }
+            if (attachBoundTodo(propPath, j)) hasTodos = true
+            hasChanges = true
             return
         }
 
