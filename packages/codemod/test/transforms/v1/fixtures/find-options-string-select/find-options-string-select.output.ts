@@ -50,3 +50,11 @@ const selectOpts = { id: true }
 const viaVariable = await repository.find({ select: selectOpts })
 // TODO(typeorm-v1): `select` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>.map(f => [f, true]))`. If it already holds the v1 object shape `{ field: true }`, no change needed.
 const viaMember = await repository.find({ select: config.select })
+
+// WHERE-only find variants (`findBy`/`findOneBy`/`findAndCountBy`/`countBy`)
+// take a plain WHERE object, not FindOptions — a top-level `select` key
+// there would match an entity field named `select`, so the transform must
+// NOT rewrite these.
+const whereBy = await repository.findBy({ select: ["a", "b"] })
+const whereByOne = await repository.findOneBy({ select: ["a"] })
+const whereByCount = await repository.countBy({ select: ["a"] })

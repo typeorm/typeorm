@@ -355,24 +355,25 @@ export const getObjectPropertyKeyName = (
 }
 
 /**
- * TypeORM `Repository` / `EntityManager` find-family method names. Used to
- * scope find-option transforms (`select: [...]` / `relations: [...]` →
- * object form) to arguments passed into these methods. The method-name
- * check lets the transforms fire on files that import TypeORM only
- * indirectly (through a wrapper service), matching real NestJS-style
- * codebases where service files don't `import` from `typeorm` directly.
+ * TypeORM `Repository` / `EntityManager` methods that accept a FindOptions
+ * object (with `select`/`relations`/`where`/…). Used to scope the
+ * `select: [...]` / `relations: [...]` → object-form transforms to
+ * arguments passed into these methods. Deliberately excludes the
+ * `*By` variants (`findBy`, `findOneBy`, `findOneByOrFail`,
+ * `findAndCountBy`, `countBy`) — those accept a plain WHERE object, so
+ * rewriting a top-level `select` or `relations` key there would mangle
+ * matches against entity fields of those names.
+ *
+ * The method-name check (rather than a file-level typeorm import gate)
+ * lets the transforms fire in NestJS-style service files that only pull
+ * TypeORM types via a wrapper module.
  */
-export const TYPEORM_FIND_METHODS: ReadonlySet<string> = new Set([
+export const TYPEORM_FIND_OPTIONS_METHODS: ReadonlySet<string> = new Set([
     "find",
     "findAndCount",
-    "findAndCountBy",
-    "findBy",
     "findOne",
-    "findOneBy",
-    "findOneByOrFail",
     "findOneOrFail",
     "count",
-    "countBy",
 ])
 
 /**
@@ -395,7 +396,7 @@ export const isObjectFromEntriesCall = (node: ASTNode): boolean => {
 
 /**
  * Returns true when the given `ObjectProperty` lives inside an object that
- * is an argument to one of the TYPEORM_FIND_METHODS. Matches both
+ * is an argument to one of the TYPEORM_FIND_OPTIONS_METHODS. Matches both
  *   `repo.find({ select: [...] })` (object is the single argument) and
  *   `manager.find(Entity, { select: [...] })` (object is the second arg).
  */
@@ -447,7 +448,7 @@ export const isFindMethodCallArgument = (
     }
     const prop = (callee as { property: ASTNode }).property
     if (prop.type !== "Identifier") return false
-    return TYPEORM_FIND_METHODS.has(prop.name)
+    return TYPEORM_FIND_OPTIONS_METHODS.has(prop.name)
 }
 
 /**

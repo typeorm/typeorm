@@ -34,3 +34,11 @@ const satisfied = await repository.find({
 const selectOpts = { id: true }
 const viaVariable = await repository.find({ select: selectOpts })
 const viaMember = await repository.find({ select: config.select })
+
+// WHERE-only find variants (`findBy`/`findOneBy`/`findAndCountBy`/`countBy`)
+// take a plain WHERE object, not FindOptions — a top-level `select` key
+// there would match an entity field named `select`, so the transform must
+// NOT rewrite these.
+const whereBy = await repository.findBy({ select: ["a", "b"] })
+const whereByOne = await repository.findOneBy({ select: ["a"] })
+const whereByCount = await repository.countBy({ select: ["a"] })

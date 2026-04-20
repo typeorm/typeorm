@@ -22,3 +22,9 @@ const dynamic = await repository.find({
 const explicit = await repository.find({
     relations: { profile: true },
 })
+
+// WHERE-only find variants (`findBy`/`findOneBy`/`findAndCountBy`/`countBy`)
+// take a plain WHERE object — a top-level `relations` key there would match
+// an entity field named `relations`, so the transform must NOT rewrite.
+const whereBy = await repository.findBy({ relations: ["profile"] })
+const whereByOne = await repository.findOneBy({ relations: ["profile"] })
