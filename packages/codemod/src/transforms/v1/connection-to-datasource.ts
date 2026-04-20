@@ -13,6 +13,7 @@ import {
     isIdentifier,
     renameReExportSpecifiers,
     setStringValue,
+    unwrapTsExpression,
 } from "../ast-helpers"
 
 /**
@@ -414,25 +415,30 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     forEachIdentifierParam(root, j, collectDataSourceTyped)
 
     // Rename method calls: .connect() → .initialize(), .close() → .destroy()
-    // Only on variables known to be Connection/DataSource instances
-    for (const [oldMethod, newMethod] of Object.entries(methodRenames)) {
-        root.find(j.CallExpression, {
-            callee: {
-                type: "MemberExpression",
-                property: { name: oldMethod },
-            },
-        }).forEach((path) => {
-            if (
-                path.node.callee.type === "MemberExpression" &&
-                path.node.callee.property.type === "Identifier"
-            ) {
-                const objName = unwrapIdentifierName(path.node.callee.object)
-                if (objName && connectionVarNames.has(objName)) {
+    // Only on receivers known to be Connection/DataSource instances —
+    // covered after typed-var AND `this.<member>` collection below.
+    const renameDataSourceMethods = () => {
+        for (const [oldMethod, newMethod] of Object.entries(methodRenames)) {
+            root.find(j.CallExpression, {
+                callee: {
+                    type: "MemberExpression",
+                    property: { name: oldMethod },
+                },
+            }).forEach((path) => {
+                if (
+                    path.node.callee.type === "MemberExpression" &&
+                    path.node.callee.property.type === "Identifier" &&
+                    receiverIsIn(
+                        path.node.callee.object,
+                        connectionVarNames,
+                        thisConnectionMembers,
+                    )
+                ) {
                     path.node.callee.property.name = newMethod
                     hasChanges = true
                 }
-            }
-        })
+            })
+        }
     }
 
     // Gate metadata type matches on the actual local bindings imported from
@@ -455,6 +461,31 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     const connectionPropVarNames = new Set<string>()
     const indirectDataSourceVarNames = new Set<string>()
 
+    // Parallel sets for `this.X` member accesses — class properties and
+    // getters whose annotation is a tracked TypeORM type. Keyed by the
+    // member name (not prefixed) since the access shape (`this.X`) already
+    // signals the lookup side.
+    const thisConnectionMembers = new Set<string>()
+    const thisConnectionPropMembers = new Set<string>()
+    const thisIndirectMembers = new Set<string>()
+
+    const classifyType = (typeName: string): Set<string> | null => {
+        if (connectionTypeNames.has(typeName)) return connectionVarNames
+        if (connectionPropLocalNames.has(typeName))
+            return connectionPropVarNames
+        if (indirectDataSourceLocalNames.has(typeName))
+            return indirectDataSourceVarNames
+        return null
+    }
+    const classifyThisMemberType = (typeName: string): Set<string> | null => {
+        if (connectionTypeNames.has(typeName)) return thisConnectionMembers
+        if (connectionPropLocalNames.has(typeName))
+            return thisConnectionPropMembers
+        if (indirectDataSourceLocalNames.has(typeName))
+            return thisIndirectMembers
+        return null
+    }
+
     const collectTypedIdentifier = (id: Identifier) => {
         if (!id.name || !id.typeAnnotation) return
         if (id.typeAnnotation.type !== "TSTypeAnnotation") return
@@ -465,11 +496,8 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const ref = ann.typeAnnotation
         if (ref.typeName.type !== "Identifier") return
 
-        if (connectionPropLocalNames.has(ref.typeName.name)) {
-            connectionPropVarNames.add(id.name)
-        } else if (indirectDataSourceLocalNames.has(ref.typeName.name)) {
-            indirectDataSourceVarNames.add(id.name)
-        }
+        const bucket = classifyType(ref.typeName.name)
+        if (bucket) bucket.add(id.name)
     }
 
     root.find(j.VariableDeclarator).forEach((path) => {
@@ -477,6 +505,96 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     })
 
     forEachIdentifierParam(root, j, collectTypedIdentifier)
+
+    // Class properties with a TypeORM type annotation — e.g.
+    //   private readonly tenantConnection: DataSource
+    // — register `this.tenantConnection` for rename-side lookup.
+    root.find(j.ClassProperty).forEach((path) => {
+        const keyNode = path.node.key
+        if (keyNode.type !== "Identifier") return
+        const ann = (path.node as { typeAnnotation?: ASTNode }).typeAnnotation
+        if (!ann || ann.type !== "TSTypeAnnotation") return
+        const inner = (ann as { typeAnnotation: ASTNode }).typeAnnotation
+        if (inner.type !== "TSTypeReference") return
+        const typeName = (inner as { typeName: ASTNode }).typeName
+        if (typeName.type !== "Identifier") return
+        const bucket = classifyThisMemberType(typeName.name)
+        if (bucket) bucket.add(keyNode.name)
+    })
+
+    // Constructor parameter properties — `constructor(private readonly x: DataSource)`
+    // is a TSParameterProperty whose inner `parameter` is the typed Identifier.
+    // These become class fields accessed via `this.x`.
+    root.find(j.TSParameterProperty).forEach((path) => {
+        const inner = (path.node as { parameter?: ASTNode }).parameter
+        if (!inner) return
+        const id =
+            inner.type === "Identifier"
+                ? inner
+                : inner.type === "AssignmentPattern" &&
+                    (inner as { left: ASTNode }).left.type === "Identifier"
+                  ? (inner as { left: Identifier }).left
+                  : null
+        if (!id) return
+        const ann = id.typeAnnotation
+        if (!ann || ann.type !== "TSTypeAnnotation") return
+        if (ann.typeAnnotation.type !== "TSTypeReference") return
+        const ref = ann.typeAnnotation
+        if (ref.typeName.type !== "Identifier") return
+        const bucket = classifyThisMemberType(ref.typeName.name)
+        if (bucket) bucket.add(id.name)
+    })
+
+    // Class getters with a return type annotation — e.g.
+    //   private get entityManager(): EntityManager { ... }
+    // — same `this.X` lookup path.
+    root.find(j.ClassMethod).forEach((path) => {
+        if (path.node.kind !== "get") return
+        const keyNode = path.node.key
+        if (keyNode.type !== "Identifier") return
+        const rt = (path.node as { returnType?: ASTNode }).returnType
+        if (!rt || rt.type !== "TSTypeAnnotation") return
+        const inner = (rt as { typeAnnotation: ASTNode }).typeAnnotation
+        if (inner.type !== "TSTypeReference") return
+        const typeName = (inner as { typeName: ASTNode }).typeName
+        if (typeName.type !== "Identifier") return
+        const bucket = classifyThisMemberType(typeName.name)
+        if (bucket) bucket.add(keyNode.name)
+    })
+
+    // Resolves an object-access receiver to the set of known-type names it
+    // resolves against. Returns null for receivers we can't classify.
+    //   x             → { key: "x", isThisMember: false }
+    //   this.x        → { key: "x", isThisMember: true }
+    //   (x as T)      → same as x
+    //   (this.x as T) → same as this.x
+    const resolveReceiver = (
+        node: ASTNode,
+    ): { key: string; isThisMember: boolean } | null => {
+        const direct = unwrapIdentifierName(node)
+        if (direct) return { key: direct, isThisMember: false }
+        const unwrapped = unwrapTsExpression(node)
+        if (
+            (unwrapped.type === "MemberExpression" ||
+                unwrapped.type === "OptionalMemberExpression") &&
+            (unwrapped as { object: ASTNode }).object.type ===
+                "ThisExpression" &&
+            (unwrapped as { property: ASTNode }).property.type === "Identifier"
+        ) {
+            const prop = (unwrapped as { property: Identifier }).property
+            return { key: prop.name, isThisMember: true }
+        }
+        return null
+    }
+    const receiverIsIn = (
+        node: ASTNode,
+        bare: ReadonlySet<string>,
+        thisMember: ReadonlySet<string>,
+    ): boolean => {
+        const r = resolveReceiver(node)
+        if (!r) return false
+        return r.isThisMember ? thisMember.has(r.key) : bare.has(r.key)
+    }
 
     // Track variables assigned from DataSource accessors, so code like
     //   const manager = dataSource.manager
@@ -532,16 +650,22 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
+    renameDataSourceMethods()
+
     // Rename .isConnected → .isInitialized on Connection/DataSource instances
     root.find(j.MemberExpression, {
         property: { name: "isConnected" },
     }).forEach((path) => {
-        if (path.node.property.type === "Identifier") {
-            const objName = unwrapIdentifierName(path.node.object)
-            if (objName && connectionVarNames.has(objName)) {
-                path.node.property.name = "isInitialized"
-                hasChanges = true
-            }
+        if (path.node.property.type !== "Identifier") return
+        if (
+            receiverIsIn(
+                path.node.object,
+                connectionVarNames,
+                thisConnectionMembers,
+            )
+        ) {
+            path.node.property.name = "isInitialized"
+            hasChanges = true
         }
     })
 
@@ -552,16 +676,26 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         property: { name: "connection" },
     }).forEach((path) => {
         if (path.node.property.type !== "Identifier") return
-        const objName = unwrapIdentifierName(path.node.object)
-        if (!objName) return
 
-        if (connectionPropVarNames.has(objName)) {
+        if (
+            receiverIsIn(
+                path.node.object,
+                connectionPropVarNames,
+                thisConnectionPropMembers,
+            )
+        ) {
             path.node.property.name = "dataSource"
             hasChanges = true
             return
         }
 
-        if (indirectDataSourceVarNames.has(objName)) {
+        if (
+            receiverIsIn(
+                path.node.object,
+                indirectDataSourceVarNames,
+                thisIndirectMembers,
+            )
+        ) {
             // `col.connection` → `col.entityMetadata.dataSource`
             path.node.object = j.memberExpression(
                 path.node.object,
