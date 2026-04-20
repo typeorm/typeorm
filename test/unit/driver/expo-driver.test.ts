@@ -102,4 +102,21 @@ describe("driver > expo > loadDependencies", () => {
             "expo-sqlite crashed during initialization",
         )
     })
+
+    it("re-throws MODULE_NOT_FOUND errors unchanged when a different module is missing", () => {
+        // A transitive dependency of `expo-sqlite` (or an unrelated require
+        // inside the module body) can also raise MODULE_NOT_FOUND. Without a
+        // message check, the driver would misreport that as "install
+        // expo-sqlite" and hide the real root cause.
+        const err = new Error(
+            "Cannot find module 'react-native-get-random-values'",
+        ) as Error & { code?: string }
+        err.code = "MODULE_NOT_FOUND"
+        const driver = build(undefined, () => {
+            throw err
+        })
+        expect(() => driver.loadDependenciesForTest()).to.throw(
+            "react-native-get-random-values",
+        )
+    })
 })

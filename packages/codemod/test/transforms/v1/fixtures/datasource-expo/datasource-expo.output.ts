@@ -1,15 +1,13 @@
 import { DataSource } from "typeorm"
 
-// Case 1: default `require("expo-sqlite")` driver — should be flagged as redundant
-// TODO(typeorm-v1): The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
+// Case 1: default `require("expo-sqlite")` driver — redundant in v1, removed.
 const dataSource = new DataSource({
     type: "expo",
     database: "app.db",
-    driver: require("expo-sqlite"),
     entities: [],
 })
 
-// Case 2: Expo data source WITHOUT a driver — should NOT be touched
+// Case 2: Expo data source WITHOUT a driver — nothing to remove.
 const dataSource2 = new DataSource({
     type: "expo",
     database: "app.db",
@@ -45,27 +43,21 @@ const dataSource6 = new DataSource({
     driver: require("expo-sqlite"),
 })
 
-// Case 7: quoted keys — should also be detected
-// TODO(typeorm-v1): The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
-// prettier-ignore
+// Case 7: quoted keys — driver should still be removed.
 const dataSource7 = new DataSource({
-    "type": "expo",
-    "database": "quoted.db",
-    "driver": require("expo-sqlite"),
-});
+    type: "expo",
+    database: "quoted.db",
+})
 
-// Case 8: default export — TODO lands on the export statement
-// TODO(typeorm-v1): The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
+// Case 8: default export — driver removed from the exported config.
 export default new DataSource({
     type: "expo",
     database: "exported.db",
-    driver: require("expo-sqlite"),
 })
 
-// Case 9: idempotency — file that already has the TODO round-trips unchanged
-// TODO(typeorm-v1): The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper).
+// Case 9: `driver` is the ONLY extra property — removing it leaves a valid
+// config object (no trailing-comma artifact on the next-to-last line).
 const dataSource9 = new DataSource({
     type: "expo",
-    database: "already-flagged.db",
-    driver: require("expo-sqlite"),
+    database: "minimal.db",
 })

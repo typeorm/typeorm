@@ -5,14 +5,17 @@ import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
 import type { ExpoDataSourceOptions } from "./ExpoDataSourceOptions"
 import { ExpoQueryRunner } from "./ExpoQueryRunner"
 
-// Node module-not-found errors carry the `MODULE_NOT_FOUND` code. Anything
-// else — syntax errors, initialization throws — should bubble up unchanged
-// so diagnostics aren't hidden behind a generic "package not installed"
-// message.
-const isModuleNotFoundError = (err: unknown): boolean =>
-    typeof err === "object" &&
-    err !== null &&
-    (err as { code?: string }).code === "MODULE_NOT_FOUND"
+// Node raises `MODULE_NOT_FOUND` when the requested module can't be resolved,
+// but the same code also fires for transitive failures (a dependency of
+// `expo-sqlite` that's missing, a `require` inside the module body). Check
+// the message for the `expo-sqlite` path so we only convert the
+// package-absent case — everything else should bubble up unchanged.
+const isExpoSqliteNotFoundError = (err: unknown): boolean => {
+    if (typeof err !== "object" || err === null) return false
+    const e = err as { code?: string; message?: string }
+    if (e.code !== "MODULE_NOT_FOUND") return false
+    return typeof e.message === "string" && e.message.includes("expo-sqlite")
+}
 
 export class ExpoDriver extends AbstractSqliteDriver {
     declare options: ExpoDataSourceOptions
@@ -66,7 +69,7 @@ export class ExpoDriver extends AbstractSqliteDriver {
             try {
                 this.sqlite = this.requireExpoSqlite()
             } catch (err) {
-                if (isModuleNotFoundError(err)) {
+                if (isExpoSqliteNotFoundError(err)) {
                     throw new DriverPackageNotInstalledError(
                         "Expo SQLite",
                         "expo-sqlite",

@@ -277,17 +277,17 @@ new DataSource({
 })
 ```
 
-If you were previously passing `driver` explicitly it continues to work as an override — useful for `patch-package` setups or custom wrappers:
+If you were previously passing `driver: require("expo-sqlite")` the codemod removes it for you — v1 auto-loads the same module. Passing a custom `driver` (patch-package, custom wrappers, forked modules) continues to work as an override and is left untouched by the codemod:
 
 ```typescript
 new DataSource({
     type: "expo",
     database: "db.sqlite",
-    driver: require("expo-sqlite"),
+    driver: require("patched-expo-sqlite"),
 })
 ```
 
-Running TypeORM against a pre-v52 Expo SDK now throws a clear error at connect time rather than failing later with a cryptic `openDatabase is not a function`.
+Running TypeORM against a pre-v52 Expo SDK now throws a clear error when constructing or initializing the `DataSource` rather than failing later with a cryptic `openDatabase is not a function`.
 
 ### Redis (cache)
 

@@ -7,16 +7,11 @@ import type {
     ObjectExpression,
 } from "jscodeshift"
 import { fileImportsFrom, getStringValue } from "../ast-helpers"
-import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "flag redundant `expo-sqlite` driver injection on Expo data sources — v1 auto-loads it"
-export const manual = true
-
-const TODO_MESSAGE =
-    "The explicit `driver` option for `expo-sqlite` is no longer needed — TypeORM v1 auto-loads it. You can remove this line. Keep it only if you are intentionally overriding (e.g. patch-package, custom wrapper)."
+    "remove redundant `expo-sqlite` driver injection on Expo data sources — v1 auto-loads it"
 
 // Returns the string key name for `Identifier` / `StringLiteral` /
 // `Literal` keys, matching the pattern used elsewhere in the codemod.
@@ -30,7 +25,7 @@ const propertyKeyName = (
 }
 
 // Scope predicate: `{ type: "expo", database: "...", ... }`. The sibling
-// `database` requirement avoids flagging unrelated configs that merely reuse
+// `database` requirement avoids mutating unrelated configs that merely reuse
 // `type: "expo"` (e.g. commander/yargs option shapes).
 const isExpoDataSource = (obj: ObjectExpression): boolean => {
     let hasExpoType = false
@@ -67,32 +62,24 @@ const isDefaultExpoSqliteRequire = (value: Node): boolean => {
     return getStringValue(arg) === "expo-sqlite"
 }
 
-// Statement-like ancestors that can host a reminder comment survivably
-// through recast's printing.
-const isTodoHost = (type: string): boolean =>
-    type.endsWith("Statement") ||
-    type === "VariableDeclaration" ||
-    type === "ExportDefaultDeclaration" ||
-    type === "ExportNamedDeclaration" ||
-    type === "ClassProperty" ||
-    type === "PropertyDefinition"
-
 export const datasourceExpo = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
 
     if (!fileImportsFrom(root, j, "typeorm")) return undefined
 
-    let hasTodos = false
+    let hasChanges = false
+    let appliedCount = 0
 
     root.find(j.ObjectExpression).forEach((objPath) => {
         const obj = objPath.node
         if (!isExpoDataSource(obj)) return
 
-        const driverProp = obj.properties.find(
+        const driverIdx = obj.properties.findIndex(
             (prop) => propertyKeyName(prop) === "driver",
         )
-        if (!driverProp) return
+        if (driverIdx === -1) return
+        const driverProp = obj.properties[driverIdx]
         if (
             driverProp.type !== "Property" &&
             driverProp.type !== "ObjectProperty"
@@ -101,25 +88,19 @@ export const datasourceExpo = (file: FileInfo, api: API) => {
         }
         if (!isDefaultExpoSqliteRequire(driverProp.value as Node)) return
 
-        // Walk up to the enclosing statement to attach the reminder comment.
-        // Idempotent: skip if the same message is already attached.
-        let current = objPath.parent
-        while (current) {
-            const node: Node = current.node
-            if (isTodoHost(node.type)) {
-                if (!hasTodoComment(node, TODO_MESSAGE)) {
-                    addTodoComment(node, TODO_MESSAGE, j)
-                    hasTodos = true
-                }
-                break
-            }
-            current = current.parent
-        }
+        // Delete the redundant `driver: require("expo-sqlite")` — v1 auto-loads
+        // it. Users with custom wrappers / patch-package overrides fall through
+        // `isDefaultExpoSqliteRequire` above and keep their explicit line.
+        obj.properties.splice(driverIdx, 1)
+        hasChanges = true
+        appliedCount++
     })
 
-    if (hasTodos) stats.count.todo(api, name, file)
+    if (appliedCount > 0) {
+        for (let i = 0; i < appliedCount; i++) stats.count.applied(api, name)
+    }
 
-    return hasTodos ? root.toSource() : undefined
+    return hasChanges ? root.toSource() : undefined
 }
 
 export const fn = datasourceExpo
