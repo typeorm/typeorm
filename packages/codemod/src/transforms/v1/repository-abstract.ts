@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, ASTPath, FileInfo, Node } from "jscodeshift"
-import { removeImportSpecifiers } from "../ast-helpers"
+import { fileImportsFrom, removeImportSpecifiers } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -12,10 +12,12 @@ export const manual = true
 export const repositoryAbstract = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
     let hasTodos = false
 
-    // Find @EntityRepository decorators and add TODO
     root.find(j.Decorator, {
         expression: {
             type: "CallExpression",
@@ -31,7 +33,6 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         hasTodos = true
     })
 
-    // Find classes extending AbstractRepository and add TODO
     root.find(j.ClassDeclaration).forEach((path) => {
         const superClass = path.node.superClass
         if (!superClass) return
@@ -57,7 +58,6 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         hasTodos = true
     })
 
-    // Find getCustomRepository() calls and add TODO
     const addGetCustomRepoTodo = (path: ASTPath) => {
         const message =
             "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"
@@ -78,12 +78,10 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         },
     }).forEach(addGetCustomRepoTodo)
 
-    // Also find standalone getCustomRepository() calls
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "getCustomRepository" },
     }).forEach(addGetCustomRepoTodo)
 
-    // Remove imports
     if (
         removeImportSpecifiers(
             root,

@@ -11,7 +11,7 @@
     <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/v/typeorm" alt="NPM Version"/></a>
     <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/dm/typeorm" alt="NPM Downloads"/></a>
     <a href="https://github.com/typeorm/typeorm/actions/workflows/tests.yml?query=branch%3Amaster"><img src="https://github.com/typeorm/typeorm/actions/workflows/tests.yml/badge.svg?branch=master" alt="Commit Validation"/></a>
-    <a href="https://coveralls.io/github/typeorm/typeorm?branch=master"><img src="https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master" alt="Coverage Status"/></a>
+    <a href="https://sonarcloud.io/summary/overall?id=typeorm_typeorm"><img src="https://sonarcloud.io/api/project_badges/measure?project=typeorm_typeorm&metric=coverage" alt="Coverage"/></a>
     <a href='https://dashboard.stryker-mutator.io/reports/github.com/typeorm/typeorm/master'><img src='https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Ftypeorm%2Ftypeorm%2Fmaster' alt='Mutation testing badge' /></a>
     <a href=""><img src="https://img.shields.io/badge/License-MIT-teal.svg" alt="MIT License"/></a>
   <br>
