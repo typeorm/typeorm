@@ -265,13 +265,13 @@ Also note the default behavior changes in pool configuration:
 
 ### Expo
 
-The minimum supported Expo SDK version is 52, which comes with modern async SQLite API. TypeORM now loads `expo-sqlite` automatically, so `driver` option is no longer required:
+The minimum supported Expo SDK version is 52, which comes with a modern async SQLite API. TypeORM now loads `expo-sqlite` automatically, so the `driver` option is no longer required:
 
 ```typescript
 // Before
 new DataSource({
     type: "expo",
-    driver: "expo-sqlite"
+    driver: require("expo-sqlite"),
     database: "db.sqlite",
 })
 
