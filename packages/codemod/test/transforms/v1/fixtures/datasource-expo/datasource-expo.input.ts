@@ -66,3 +66,25 @@ const dataSource9 = new DataSource({
     database: "minimal.db",
     driver: require("expo-sqlite"),
 })
+
+// Case 10: factory/spread pattern — config defined once and then spread into
+// `new DataSource(...)`. The codemod still walks every ObjectExpression, so
+// the `driver` line is removed from the base config even though the
+// DataSource constructor is a separate expression.
+const baseExpoConfig = {
+    type: "expo" as const,
+    database: "factory.db",
+    driver: require("expo-sqlite"),
+}
+const dataSource10 = new DataSource({ ...baseExpoConfig, entities: [] })
+
+// Case 11: `{ type: "expo" }` with NO `database` — the scope guard requires
+// both `type: "expo"` AND a sibling `database`, so this config is left alone
+// even though it would be a nonsense DataSource config. The transform won't
+// touch objects where it can't confidently identify them as DataSource
+// options (e.g. commander/yargs option shapes that merely reuse `type:
+// "expo"`).
+const notADataSource = {
+    type: "expo",
+    driver: require("expo-sqlite"),
+}

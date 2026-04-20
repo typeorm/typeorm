@@ -1,6 +1,7 @@
 import path from "node:path"
 import type {
     API,
+    ASTNode,
     CallExpression,
     FileInfo,
     Node,
@@ -17,6 +18,23 @@ export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "remove redundant `expo-sqlite` driver injection on Expo data sources — v1 auto-loads it"
 
+// Unwraps `as const` / `as X` / `!` / `satisfies X` / angle-bracket casts
+// around a value so `type: "expo" as const` is recognized alongside plain
+// `type: "expo"`. Without this, `isExpoDataSource` would miss factory
+// configs that narrow the literal type before spreading.
+const unwrapTsExpression = (node: ASTNode): ASTNode => {
+    let current: ASTNode = node
+    while (
+        current.type === "TSAsExpression" ||
+        current.type === "TSNonNullExpression" ||
+        current.type === "TSSatisfiesExpression" ||
+        current.type === "TSTypeAssertion"
+    ) {
+        current = (current as unknown as { expression: ASTNode }).expression
+    }
+    return current
+}
+
 // Scope predicate: `{ type: "expo", database: "...", ... }`. The sibling
 // `database` requirement avoids mutating unrelated configs that merely reuse
 // `type: "expo"` (e.g. commander/yargs option shapes).
@@ -27,7 +45,10 @@ const isExpoDataSource = (obj: ObjectExpression): boolean => {
         const keyName = getObjectPropertyKeyName(prop)
         if (!keyName) continue
         if (prop.type !== "Property" && prop.type !== "ObjectProperty") continue
-        if (keyName === "type" && getStringValue(prop.value) === "expo") {
+        if (
+            keyName === "type" &&
+            getStringValue(unwrapTsExpression(prop.value)) === "expo"
+        ) {
             hasExpoType = true
         } else if (keyName === "database") {
             hasDatabase = true
