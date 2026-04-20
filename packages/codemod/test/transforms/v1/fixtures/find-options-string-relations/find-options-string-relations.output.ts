@@ -15,7 +15,9 @@ const users = await repository.find({
 // produces a flat object keyed by the raw dot-path string.
 // TODO(typeorm-v1): `relations` now takes an object. If the dynamic list contains dot-paths like `"posts.comments"`, the wrap below produces `{ "posts.comments": true }` — convert those to nested objects manually: `{ posts: { comments: true } }`.
 const dynamic = await repository.find({
-    relations: Object.fromEntries(computeRelations().map((r) => [r, true])),
+    relations: Object.fromEntries(
+        computeRelations()?.map((r) => [r, true]) ?? [],
+    ),
 })
 
 // Should NOT be transformed — pre-existing object-style already uses v1 shape.

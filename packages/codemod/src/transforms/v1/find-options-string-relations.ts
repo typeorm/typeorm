@@ -35,7 +35,7 @@ const DYNAMIC_RELATIONS_DOT_PATH_NOTE =
 // instead of `string[]`, so wrapping would crash at runtime. Leave a
 // comment with the conversion snippets so the user picks the right option.
 const BOUND_RELATIONS_MESSAGE =
-    "`relations` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>.map(r => [r, true]))` (dot-paths need extra nesting handling). If it already holds the v1 object shape, no change needed."
+    "`relations` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>?.map(r => [r, true]) ?? [])` (dot-paths need extra nesting handling). If it already holds the v1 object shape, no change needed."
 
 /**
  * Convert an array of dot-path strings into a nested object structure.
@@ -65,23 +65,32 @@ function convertRelationsArrayToObject(values: string[]): NestedObject {
     return result
 }
 
-// Builds `Object.fromEntries(<expr>.map(r => [r, true]))`.
+// Builds `Object.fromEntries(<expr>?.map(r => [r, true]) ?? [])` — the
+// optional-chain + nullish fallback keeps the migrated code runnable when
+// the dynamic expression evaluates to `undefined`/`null` (e.g.
+// `relations: flag ? ["posts"] : undefined`). v0 would have skipped the
+// property in that case; the wrap here emits an empty object, matching.
 const wrapDynamicStringArray = (
     j: API["jscodeshift"],
     expr: ASTNode,
 ): ASTNode => {
     type E = Parameters<typeof j.callExpression>[0]
+    const optionalMapCall = j.callExpression(
+        j.optionalMemberExpression(expr as E, j.identifier("map")),
+        [
+            j.arrowFunctionExpression(
+                [j.identifier("r")],
+                j.arrayExpression([j.identifier("r"), j.literal(true)]),
+            ),
+        ],
+    )
     return j.callExpression(
         j.memberExpression(j.identifier("Object"), j.identifier("fromEntries")),
         [
-            j.callExpression(
-                j.memberExpression(expr as E, j.identifier("map")),
-                [
-                    j.arrowFunctionExpression(
-                        [j.identifier("r")],
-                        j.arrayExpression([j.identifier("r"), j.literal(true)]),
-                    ),
-                ],
+            j.logicalExpression(
+                "??",
+                optionalMapCall as E,
+                j.arrayExpression([]),
             ),
         ],
     )

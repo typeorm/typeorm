@@ -17,28 +17,35 @@ export const manual = true
 // `Object.fromEntries(...)` would crash at runtime. Leave a comment so the
 // user can convert manually based on the actual runtime type.
 const BOUND_SELECT_MESSAGE =
-    "`select` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>.map(f => [f, true]))`. If it already holds the v1 object shape `{ field: true }`, no change needed."
+    "`select` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>?.map(f => [f, true]) ?? [])`. If it already holds the v1 object shape `{ field: true }`, no change needed."
 
-// Builds `Object.fromEntries(<expr>.map(f => [f, true]))` — an in-place wrap
-// that converts a `string[]` value to the v1 `{ [field]: true }` object at
-// runtime. Safe for `select` because v0 only accepted `string[]`; any other
-// shape would already have been broken pre-migration.
+// Builds `Object.fromEntries(<expr>?.map(f => [f, true]) ?? [])` — wraps
+// a `string[]`-returning expression into the v1 `{ [field]: true }` object
+// at runtime. The optional-chain + nullish fallback preserves v0 semantics
+// for patterns like `select: flag ? ["id"] : undefined`, where the original
+// code would simply skip `select` and the post-migration code must do the
+// same (empty object = no explicit selection = all columns).
 const wrapDynamicStringArray = (
     j: API["jscodeshift"],
     expr: ASTNode,
 ): ASTNode => {
     type E = Parameters<typeof j.callExpression>[0]
+    const optionalMapCall = j.callExpression(
+        j.optionalMemberExpression(expr as E, j.identifier("map")),
+        [
+            j.arrowFunctionExpression(
+                [j.identifier("f")],
+                j.arrayExpression([j.identifier("f"), j.literal(true)]),
+            ),
+        ],
+    )
     return j.callExpression(
         j.memberExpression(j.identifier("Object"), j.identifier("fromEntries")),
         [
-            j.callExpression(
-                j.memberExpression(expr as E, j.identifier("map")),
-                [
-                    j.arrowFunctionExpression(
-                        [j.identifier("f")],
-                        j.arrayExpression([j.identifier("f"), j.literal(true)]),
-                    ),
-                ],
+            j.logicalExpression(
+                "??",
+                optionalMapCall as E,
+                j.arrayExpression([]),
             ),
         ],
     )
