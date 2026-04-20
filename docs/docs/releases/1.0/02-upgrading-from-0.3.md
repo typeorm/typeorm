@@ -331,6 +331,18 @@ The following renames apply throughout:
 | `connection.close()`             | `dataSource.destroy()`     |
 | `connection.isConnected`         | `dataSource.isInitialized` |
 
+Every driver-specific `*DataSourceOptions` type is now re-exported from the `typeorm` package index, so deep-path imports are no longer necessary:
+
+```typescript
+// Before — deep path
+import type { SapConnectionOptions } from "typeorm/driver/sap/SapConnectionOptions"
+
+// After — shallow index import
+import type { SapDataSourceOptions } from "typeorm"
+```
+
+The deep paths still work but are discouraged.
+
 ### `name` property removed
 
 The deprecated `name` property on `DataSource` and `BaseDataSourceOptions` has been removed. Named connections were deprecated in v0.3 when `ConnectionManager` was removed. If you were using `name` to identify connections, manage your `DataSource` instances directly instead.
