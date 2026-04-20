@@ -680,6 +680,15 @@ const getTypeReferenceRootName = (node: ASTNode | null): string | null => {
             return n.typeName.name
         }
     }
+    // `const X: typeof Repository` — TSTypeQuery wraps the referenced
+    // identifier in `exprName`. Without this branch, type-of annotations on
+    // typeorm-family types wouldn't register as repository bindings.
+    if (node.type === "TSTypeQuery") {
+        const n = node as { exprName: ASTNode }
+        if (n.exprName.type === "Identifier") {
+            return n.exprName.name
+        }
+    }
     if (node.type === "TSTypeAnnotation") {
         const n = node as { typeAnnotation: ASTNode }
         return getTypeReferenceRootName(n.typeAnnotation)
