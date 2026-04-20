@@ -341,6 +341,20 @@ export const forEachDecoratorObjectArg = (
 }
 
 /**
+ * Returns the key name for an `ObjectProperty` / `Property` node. Handles
+ * both identifier keys (`name`) and string-literal keys (`"name"`); returns
+ * null for computed, numeric, or otherwise non-string keys, and for node
+ * types that don't carry a key at all (spread elements, etc.).
+ */
+export const getObjectPropertyKeyName = (
+    prop: ObjectExpression["properties"][number],
+): string | null => {
+    if (prop.type !== "Property" && prop.type !== "ObjectProperty") return null
+    if (prop.key.type === "Identifier") return prop.key.name
+    return getStringValue(prop.key)
+}
+
+/**
  * Removes properties matching the given key names from an ObjectExpression.
  * Matches both identifier keys (`name`) and string-literal keys (`"name"`).
  * Returns true if any properties were removed.
@@ -348,20 +362,26 @@ export const forEachDecoratorObjectArg = (
 export const removeObjectProperties = (
     obj: ObjectExpression,
     propertyNames: Set<string>,
+): boolean =>
+    removeObjectPropertiesWhere(
+        obj,
+        (prop) =>
+            getObjectPropertyKeyName(prop) !== null &&
+            propertyNames.has(getObjectPropertyKeyName(prop) as string),
+    )
+
+/**
+ * Removes every property from `obj` that satisfies `predicate`. Returns true
+ * if any property was removed. Use this over `removeObjectProperties` when
+ * removal needs to inspect the property value (not just the key name) —
+ * e.g. "remove `driver` only when its value is `require("expo-sqlite")`".
+ */
+export const removeObjectPropertiesWhere = (
+    obj: ObjectExpression,
+    predicate: (prop: ObjectExpression["properties"][number]) => boolean,
 ): boolean => {
     const original = obj.properties.length
-
-    obj.properties = obj.properties.filter((prop) => {
-        if (prop.type !== "Property" && prop.type !== "ObjectProperty") {
-            return true
-        }
-        const keyName =
-            prop.key.type === "Identifier"
-                ? prop.key.name
-                : getStringValue(prop.key)
-        return keyName === null ? true : !propertyNames.has(keyName)
-    })
-
+    obj.properties = obj.properties.filter((prop) => !predicate(prop))
     return obj.properties.length !== original
 }
 
