@@ -191,11 +191,22 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     const addGetCustomRepoTodo = (callPath: ASTPath) => {
         const message =
             "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"
-        const parentNode: Node = callPath.parent.node
-        const host: Node =
-            parentNode.type === "ExpressionStatement"
-                ? parentNode
-                : callPath.node
+        // Walk up to the enclosing statement — comments attached to a bare
+        // `CallExpression` are commonly dropped by recast during printing.
+        let current: { node: Node; parent: unknown } | null = callPath as {
+            node: Node
+            parent: unknown
+        }
+        let host: Node | null = null
+        while (current) {
+            const t = current.node.type
+            if (t.endsWith("Statement") || t === "VariableDeclaration") {
+                host = current.node
+                break
+            }
+            current = current.parent as { node: Node; parent: unknown } | null
+        }
+        if (!host) return
         if (!hasTodoComment(host, message)) {
             addTodoComment(host, message, j)
         }
