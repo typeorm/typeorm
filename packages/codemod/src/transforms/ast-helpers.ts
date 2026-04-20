@@ -452,10 +452,12 @@ export const isFindMethodCallArgument = (
 }
 
 /**
- * Peels TypeScript expression wrappers around a value so callers see the
- * underlying node. Handles `as X` / `x!` / `x satisfies X` / `<X>x`. Used
- * by transforms that inspect values which users may annotate with type
- * assertions — e.g. `type: "expo" as const`, `{ logPath: "x" } as Options`.
+ * Peels TypeScript expression wrappers and parenthesized expressions around
+ * a value so callers see the underlying node. Handles `as X` / `x!` /
+ * `x satisfies X` / `<X>x` / `(x)`. Used by transforms that inspect values
+ * which users may annotate with type assertions — e.g.
+ * `type: "expo" as const`, `type: ("mongodb")`,
+ * `{ logPath: "x" } as Options`.
  *
  * Generic over the node type so callers can keep their original narrowing
  * — in practice the returned node is the same type as the input (with TS
@@ -467,7 +469,8 @@ export const unwrapTsExpression = <T extends { type: string }>(node: T): T => {
         current.type === "TSAsExpression" ||
         current.type === "TSNonNullExpression" ||
         current.type === "TSSatisfiesExpression" ||
-        current.type === "TSTypeAssertion"
+        current.type === "TSTypeAssertion" ||
+        current.type === "ParenthesizedExpression"
     ) {
         const inner = (current as unknown as { expression?: T }).expression
         if (!inner) break
