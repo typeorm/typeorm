@@ -1,13 +1,23 @@
 import path from "node:path"
-import type { API, ASTNode, FileInfo } from "jscodeshift"
+import type { API, ASTNode, FileInfo, Node } from "jscodeshift"
 import {
     getStringValue,
     isFindMethodCallArgument,
     isObjectFromEntriesCall,
 } from "../ast-helpers"
+import { addTodoComment, hasTodoComment } from "../todo"
+import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description = "replace string-array `select` with object syntax"
+export const manual = true
+
+// Bound variables / member-access values may already hold v1 object form
+// (`{ id: true }`) instead of `string[]` — wrapping them with
+// `Object.fromEntries(...)` would crash at runtime. Leave a TODO so the
+// user can convert manually based on the actual runtime type.
+const BOUND_SELECT_MESSAGE =
+    "`select` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>.map(f => [f, true]))`. If it already holds the v1 object shape `{ field: true }`, no change needed."
 
 // Builds `Object.fromEntries(<expr>.map(f => [f, true]))` — an in-place wrap
 // that converts a `string[]` value to the v1 `{ [field]: true }` object at
@@ -39,6 +49,7 @@ export const findOptionsStringSelect = (file: FileInfo, api: API) => {
     const root = j(file.source)
 
     let hasChanges = false
+    let hasTodos = false
 
     root.find(j.ObjectProperty, {
         key: { name: "select" },
@@ -68,18 +79,47 @@ export const findOptionsStringSelect = (file: FileInfo, api: API) => {
         // Already wrapped by a previous pass — don't double-wrap.
         if (isObjectFromEntriesCall(value)) return
 
-        // Dynamic value (CallExpression, Identifier, ConditionalExpression,
-        // etc.) — we can't statically enumerate the fields, but v0's `select`
-        // only accepted `string[]`, so wrapping the expression with
-        // `Object.fromEntries(...map(f => [f, true]))` is a correct and safe
-        // transform: runtime-equivalent to the manual conversion the user
-        // would otherwise write.
+        // Bound variable / member access — the value might already be in v1
+        // object shape (a partially-migrated codebase), so wrapping would
+        // crash at runtime. Leave a TODO instead.
+        if (
+            value.type === "Identifier" ||
+            value.type === "MemberExpression" ||
+            value.type === "OptionalMemberExpression"
+        ) {
+            let current = propPath.parent as {
+                node: Node
+                parent: unknown
+            } | null
+            while (current) {
+                const t = current.node.type
+                if (t.endsWith("Statement") || t === "VariableDeclaration") {
+                    if (!hasTodoComment(current.node, BOUND_SELECT_MESSAGE)) {
+                        addTodoComment(current.node, BOUND_SELECT_MESSAGE, j)
+                        hasTodos = true
+                    }
+                    hasChanges = true
+                    return
+                }
+                current = current.parent as {
+                    node: Node
+                    parent: unknown
+                } | null
+            }
+            return
+        }
+
+        // Inline dynamic value (CallExpression, ConditionalExpression, etc.)
+        // — wrap unconditionally; v0 only accepted `string[]` so the runtime
+        // shape is known to be the array form.
         propPath.node.value = wrapDynamicStringArray(
             j,
             value as ASTNode,
         ) as typeof value
         hasChanges = true
     })
+
+    if (hasTodos) stats.count.todo(api, name, file)
 
     return hasChanges ? root.toSource() : undefined
 }

@@ -31,6 +31,12 @@ interface NestedObject {
 const DYNAMIC_RELATIONS_DOT_PATH_NOTE =
     '`relations` now takes an object. If the dynamic list contains dot-paths like `"posts.comments"`, the wrap below produces `{ "posts.comments": true }` — convert those to nested objects manually: `{ posts: { comments: true } }`.'
 
+// Bound variables / member-access values may already hold v1 object form
+// instead of `string[]`, so wrapping would crash at runtime. Leave a TODO
+// with the conversion snippets so the user picks the right option.
+const BOUND_RELATIONS_MESSAGE =
+    "`relations` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>.map(r => [r, true]))` (dot-paths need extra nesting handling). If it already holds the v1 object shape, no change needed."
+
 /**
  * Convert an array of dot-path strings into a nested object structure.
  *
@@ -111,36 +117,48 @@ export const findOptionsStringRelations = (file: FileInfo, api: API) => {
         // re-add the dot-path TODO (`hasTodoComment` would dedupe it anyway).
         if (isObjectFromEntriesCall(value)) return
 
-        // Dynamic value — wrap with `Object.fromEntries(...)` to get a
-        // runtime-equivalent object. Attach a TODO because dot-paths cannot
-        // be detected statically and need manual nesting.
+        const walkToStatement = (message: string): void => {
+            let current = propPath.parent as {
+                node: Node
+                parent: unknown
+            } | null
+            while (current) {
+                const t = current.node.type
+                if (t.endsWith("Statement") || t === "VariableDeclaration") {
+                    if (!hasTodoComment(current.node, message)) {
+                        addTodoComment(current.node, message, j)
+                        hasTodos = true
+                    }
+                    return
+                }
+                current = current.parent as {
+                    node: Node
+                    parent: unknown
+                } | null
+            }
+        }
+
+        // Bound variable / member access — value might already be in v1
+        // object shape. Leave a TODO instead of wrapping.
+        if (
+            value.type === "Identifier" ||
+            value.type === "MemberExpression" ||
+            value.type === "OptionalMemberExpression"
+        ) {
+            walkToStatement(BOUND_RELATIONS_MESSAGE)
+            hasChanges = true
+            return
+        }
+
+        // Inline dynamic value (CallExpression, ConditionalExpression, etc.)
+        // — wrap with `Object.fromEntries(...)`. Attach the dot-path TODO
+        // because nesting can't be detected statically.
         propPath.node.value = wrapDynamicStringArray(
             j,
             value as ASTNode,
         ) as typeof value
         hasChanges = true
-
-        let current = propPath.parent as { node: Node; parent: unknown } | null
-        while (current) {
-            const t = current.node.type
-            if (t.endsWith("Statement") || t === "VariableDeclaration") {
-                if (
-                    !hasTodoComment(
-                        current.node,
-                        DYNAMIC_RELATIONS_DOT_PATH_NOTE,
-                    )
-                ) {
-                    addTodoComment(
-                        current.node,
-                        DYNAMIC_RELATIONS_DOT_PATH_NOTE,
-                        j,
-                    )
-                    hasTodos = true
-                }
-                return
-            }
-            current = current.parent as { node: Node; parent: unknown } | null
-        }
+        walkToStatement(DYNAMIC_RELATIONS_DOT_PATH_NOTE)
     })
 
     if (hasTodos) stats.count.todo(api, name, file)

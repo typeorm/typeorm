@@ -28,3 +28,9 @@ const casted = await repository.find({ select: ["id", "name"] } as FindOptions)
 const satisfied = await repository.find({
     select: ["id"],
 } satisfies FindOptions)
+
+// Bound variable — could already be in v1 object form, so the transform
+// leaves a TODO rather than wrapping.
+const selectOpts = { id: true }
+const viaVariable = await repository.find({ select: selectOpts })
+const viaMember = await repository.find({ select: config.select })

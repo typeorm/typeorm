@@ -42,3 +42,11 @@ const satisfied = await repository.find({
         id: true,
     },
 } satisfies FindOptions)
+
+// Bound variable — could already be in v1 object form, so the transform
+// leaves a TODO rather than wrapping.
+const selectOpts = { id: true }
+// TODO(typeorm-v1): `select` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>.map(f => [f, true]))`. If it already holds the v1 object shape `{ field: true }`, no change needed.
+const viaVariable = await repository.find({ select: selectOpts })
+// TODO(typeorm-v1): `select` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>.map(f => [f, true]))`. If it already holds the v1 object shape `{ field: true }`, no change needed.
+const viaMember = await repository.find({ select: config.select })
