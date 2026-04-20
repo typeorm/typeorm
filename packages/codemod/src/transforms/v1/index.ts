@@ -4,6 +4,7 @@ import * as columnWidthZerofill from "./column-width-zerofill"
 import * as connectionManager from "./connection-manager"
 import * as connectionOptionsReader from "./connection-options-reader"
 import * as connectionToDataSource from "./connection-to-datasource"
+import * as datasourceExpo from "./datasource-expo"
 import * as datasourceMongodb from "./datasource-mongodb"
 import * as datasourceMssql from "./datasource-mssql"
 import * as datasourceMysqlConnector from "./datasource-mysql-connector"
@@ -78,6 +79,7 @@ export const transforms = [
     findOptionsStringRelations,
     connectionManager,
     connectionOptionsReader,
+    datasourceExpo,
     fileLogger,
 ]
 

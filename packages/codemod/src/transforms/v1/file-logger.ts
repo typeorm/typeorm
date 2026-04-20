@@ -2,7 +2,11 @@ import path from "node:path"
 import type { API, FileInfo, Node, ObjectExpression } from "jscodeshift"
 import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
-import { getLocalNamesForImport, getStringValue } from "../ast-helpers"
+import {
+    getLocalNamesForImport,
+    getStringValue,
+    unwrapTsExpression,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -51,26 +55,6 @@ const findLogPathProperty = (
         if (keyName === "logPath") return { value: prop.value, hasSpread }
     }
     return { value: undefined, hasSpread }
-}
-
-// Peels TypeScript expression wrappers so `{ logPath: "x" } as Opts` still
-// inspects the underlying ObjectExpression.
-interface NodeWithExpression extends Node {
-    expression?: Node
-}
-
-const unwrapTsExpression = (node: Node): Node => {
-    let current: NodeWithExpression = node
-    while (
-        current.type === "TSAsExpression" ||
-        current.type === "TSNonNullExpression" ||
-        current.type === "TSSatisfiesExpression" ||
-        current.type === "TSTypeAssertion"
-    ) {
-        if (!current.expression) break
-        current = current.expression
-    }
-    return current
 }
 
 const inspectOptionsArg = (
