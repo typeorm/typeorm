@@ -12,10 +12,31 @@ import {
     isRepositoryReceiver,
 } from "../ast-helpers"
 
+// A typeorm import declaration that we can safely augment with a new named
+// value specifier. Rejects:
+//   - `import type { ... } from "typeorm"` (declaration-level type-only)
+//   - `import "typeorm"` (side-effect only, no specifiers)
+//   - `import * as typeorm from "typeorm"` (namespace only — pushing a named
+//     specifier would produce `import * as typeorm, { In }` which is invalid)
+//   - `import typeorm from "typeorm"` (default only — same issue)
+// Only a decl that already carries at least one value-level ImportSpecifier
+// (named import) is considered augmentable.
+const canAcceptNamedValueSpecifier = (node: {
+    importKind?: string
+    specifiers?: readonly { type: string; importKind?: string }[]
+}): boolean => {
+    if (node.importKind === "type") return false
+    const specifiers = node.specifiers ?? []
+    if (specifiers.length === 0) return false
+    return specifiers.some(
+        (s) => s.type === "ImportSpecifier" && s.importKind !== "type",
+    )
+}
+
 // `In` is used as a VALUE (`In([...])`) — it must not be added to a
 // `import type { ... } from "typeorm"` declaration, and the per-specifier
 // form `import { type In }` is equally unusable. Find the first existing
-// value-level `In` binding or a value-level typeorm import to augment;
+// value-level `In` binding or an augmentable value-level typeorm import;
 // fall back to emitting a fresh `import { In } from "typeorm"` line.
 const ensureInValueImport = (root: Collection, j: JSCodeshift): void => {
     const typeormImports = root.find(j.ImportDeclaration, {
@@ -40,13 +61,11 @@ const ensureInValueImport = (root: Collection, j: JSCodeshift): void => {
     })
     if (hasInValueImport) return
 
-    const valueImport = typeormImports
-        .filter(
-            (p) => (p.node as { importKind?: string }).importKind !== "type",
-        )
+    const augmentable = typeormImports
+        .filter((p) => canAcceptNamedValueSpecifier(p.node))
         .at(0)
-    if (valueImport.length > 0) {
-        valueImport.forEach((p) => {
+    if (augmentable.length > 0) {
+        augmentable.forEach((p) => {
             p.node.specifiers?.push(j.importSpecifier(j.identifier("In")))
         })
         return
