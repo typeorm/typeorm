@@ -972,6 +972,20 @@ export const collectRepositoryBindings = (
  * file-level guard. Callers should add negative fixtures to pin the
  * common false-positive vectors.
  */
+// Matches `this.<prop>` where `<prop>` is a tracked DataSource class prop.
+const isThisDataSourceProp = (
+    node: ASTNode,
+    dsClassProps: ReadonlySet<string> | undefined,
+): boolean =>
+    (node.type === "MemberExpression" ||
+        node.type === "OptionalMemberExpression") &&
+    (node as { object: ASTNode }).object.type === "ThisExpression" &&
+    (node as { property: ASTNode }).property.type === "Identifier" &&
+    (dsClassProps?.has(
+        ((node as { property: ASTNode }).property as Identifier).name,
+    ) ??
+        false)
+
 // `<ds>.manager` — DataSource local/class-prop's `.manager` accessor
 // returns an EntityManager, whose find-family methods match Repository's.
 const isDataSourceManagerChain = (
@@ -987,22 +1001,43 @@ const isDataSourceManagerChain = (
     }
     if (
         member.object.type === "Identifier" &&
-        dsLocals?.has(member.object.name)
+        (dsLocals?.has(member.object.name) ?? false)
+    ) {
+        return true
+    }
+    return isThisDataSourceProp(member.object, dsClassProps)
+}
+
+// Classifies MemberExpression / OptionalMemberExpression receivers.
+const classifyMemberReceiver = (
+    receiver: ASTNode,
+    bindings: {
+        classProps: ReadonlySet<string>
+        dataSourceLocals?: ReadonlySet<string>
+        dataSourceClassProps?: ReadonlySet<string>
+    },
+    noBindingsFound: boolean,
+): boolean => {
+    const member = receiver as { object: ASTNode; property: ASTNode }
+    if (
+        isDataSourceManagerChain(
+            member,
+            bindings.dataSourceLocals,
+            bindings.dataSourceClassProps,
+        )
     ) {
         return true
     }
     if (
-        member.object.type !== "MemberExpression" &&
-        member.object.type !== "OptionalMemberExpression"
+        member.object.type === "ThisExpression" &&
+        member.property.type === "Identifier"
     ) {
-        return false
+        if (bindings.classProps.has(member.property.name)) return true
+        return noBindingsFound
     }
-    const inner = member.object as { object: ASTNode; property: ASTNode }
-    return (
-        inner.object.type === "ThisExpression" &&
-        inner.property.type === "Identifier" &&
-        (dsClassProps?.has(inner.property.name) ?? false)
-    )
+    // Chained access like `service.userRepo.findByIds(...)` — accept only
+    // when we have no binding info to disambiguate.
+    return noBindingsFound
 }
 
 export const isRepositoryReceiver = (
@@ -1014,13 +1049,11 @@ export const isRepositoryReceiver = (
         dataSourceClassProps?: ReadonlySet<string>
     },
 ): boolean => {
-    const dsLocals = bindings.dataSourceLocals
-    const dsClassProps = bindings.dataSourceClassProps
     const noBindingsFound =
         bindings.locals.size === 0 &&
         bindings.classProps.size === 0 &&
-        (dsLocals?.size ?? 0) === 0 &&
-        (dsClassProps?.size ?? 0) === 0
+        (bindings.dataSourceLocals?.size ?? 0) === 0 &&
+        (bindings.dataSourceClassProps?.size ?? 0) === 0
 
     if (receiver.type === "Identifier") {
         if (bindings.locals.has(receiver.name)) return true
@@ -1030,20 +1063,7 @@ export const isRepositoryReceiver = (
         receiver.type === "MemberExpression" ||
         receiver.type === "OptionalMemberExpression"
     ) {
-        const member = receiver as { object: ASTNode; property: ASTNode }
-        if (isDataSourceManagerChain(member, dsLocals, dsClassProps)) {
-            return true
-        }
-        if (
-            member.object.type === "ThisExpression" &&
-            member.property.type === "Identifier"
-        ) {
-            if (bindings.classProps.has(member.property.name)) return true
-            return noBindingsFound
-        }
-        // Chained access like `service.userRepo.findByIds(...)` — accept
-        // only when we have no binding info to disambiguate.
-        return noBindingsFound
+        return classifyMemberReceiver(receiver, bindings, noBindingsFound)
     }
     if (
         receiver.type === "CallExpression" ||
