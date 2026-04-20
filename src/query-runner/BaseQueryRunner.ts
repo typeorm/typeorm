@@ -5,7 +5,7 @@ import type { SqlServerDataSourceOptions } from "../driver/sqlserver/SqlServerDa
 import type { TableIndex } from "../schema-builder/table/TableIndex"
 import type { View } from "../schema-builder/view/View"
 import type { DataSource } from "../data-source/DataSource"
-import type { Table } from "../schema-builder/table/Table"
+import { Table } from "../schema-builder/table/Table"
 import type { EntityManager } from "../entity-manager/EntityManager"
 import type { TableColumn } from "../schema-builder/table/TableColumn"
 import type { Broadcaster } from "../subscriber/Broadcaster"
@@ -14,9 +14,10 @@ import { TypeORMError } from "../error/TypeORMError"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { OrmUtils } from "../util/OrmUtils"
-import type { MetadataTableType } from "../driver/types/MetadataTableType"
+import { MetadataTableType } from "../driver/types/MetadataTableType"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import type { TableCheck } from "../schema-builder/table/TableCheck"
 
 export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
@@ -108,6 +109,10 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     private cachedTablePaths: Record<string, string> = {}
 
+    private typeormMetadataTableInitializationPromise?: Promise<void>
+
+    private typeormMetadataTableExists?: boolean
+
     // -------------------------------------------------------------------------
     // Public Abstract Methods
     // -------------------------------------------------------------------------
@@ -145,6 +150,13 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     ): Promise<any>
 
     /**
+     * Checks if table with the given name exist in the database.
+     *
+     * @param tableOrName
+     */
+    abstract hasTable(tableOrName: Table | string): Promise<boolean>
+
+    /**
      * Tagged template function that executes raw SQL query and returns raw database results.
      * Template expressions are automatically transformed into database parameters.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
@@ -172,6 +184,13 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
     // Protected Abstract Methods
     // -------------------------------------------------------------------------
+
+    abstract createTable(
+        table: Table,
+        ifNotExists?: boolean,
+        createForeignKeys?: boolean,
+        createIndices?: boolean,
+    ): Promise<void>
 
     protected abstract loadTables(tablePaths?: string[]): Promise<Table[]>
 
@@ -418,6 +437,26 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             options.schema,
             options.database,
         )
+    }
+
+    /**
+     * Checks if the typeorm metadata table exists in the database.
+     */
+    protected async hasTypeormMetadataTable(): Promise<boolean> {
+        if (this.typeormMetadataTableExists !== undefined) {
+            return this.typeormMetadataTableExists
+        }
+
+        if (this.typeormMetadataTableInitializationPromise !== undefined) {
+            await this.typeormMetadataTableInitializationPromise
+            this.typeormMetadataTableExists = true
+            return true
+        }
+
+        this.typeormMetadataTableExists = await this.hasTable(
+            this.getTypeormMetadataTableName(),
+        )
+        return this.typeormMetadataTableExists
     }
 
     /**
@@ -754,5 +793,173 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             index.columnNames,
             index.where,
         )
+    }
+
+    /**
+     * Inserts a record about the given check constraint into the typeorm metadata table.
+     *
+     * @param table
+     * @param checkConstraint
+     */
+    protected async insertCheckConstraintMetadata(
+        table: Table,
+        checkConstraint: TableCheck,
+    ) {
+        await this.createTypeormMetadataTable()
+
+        checkConstraint.name ??=
+            this.dataSource.namingStrategy.checkConstraintName(
+                table,
+                checkConstraint.expression!,
+            )
+
+        const { schema, tableName, database } =
+            this.dataSource.driver.parseTableName(table)
+        return this.insertTypeormMetadataSql({
+            database,
+            type: MetadataTableType.CHECK_CONSTRAINT,
+            table: tableName,
+            schema: schema,
+            name: checkConstraint.name,
+            value: checkConstraint.expression,
+        })
+    }
+
+    /**
+     * Deletes a record about the given check constraint from the typeorm metadata table.
+     *
+     * @param table
+     * @param checkConstraint
+     */
+    protected async dropCheckConstraintMetadata(
+        table: Table,
+        checkConstraint: TableCheck,
+    ) {
+        const hasTable = await this.hasTypeormMetadataTable()
+        if (!hasTable) return
+
+        checkConstraint.name ??=
+            this.dataSource.namingStrategy.checkConstraintName(
+                table,
+                checkConstraint.expression!,
+            )
+
+        const { schema, tableName, database } =
+            this.dataSource.driver.parseTableName(table)
+        return this.deleteTypeormMetadataSql({
+            database,
+            type: MetadataTableType.CHECK_CONSTRAINT,
+            table: tableName,
+            schema: schema,
+            name: checkConstraint.name,
+        })
+    }
+
+    /**
+     * Creates the typeorm metadata table if it does not exist.
+     */
+    async createTypeormMetadataTable() {
+        if (this.sqlMemoryMode === true) return
+
+        if (this.typeormMetadataTableExists === true) return
+
+        const schema = this.dataSource.driver.schema
+        const database = this.dataSource.driver.database
+        const typeormMetadataTable = this.dataSource.driver.buildTableName(
+            this.dataSource.metadataTableName,
+            schema,
+            database,
+        )
+
+        if (this.typeormMetadataTableInitializationPromise !== undefined) {
+            await this.typeormMetadataTableInitializationPromise
+            this.typeormMetadataTableExists = true
+            return
+        }
+
+        // Spanner requires at least one primary key in a table.
+        // Since we don't have unique column in "typeorm_metadata" table
+        // and we should avoid breaking changes, we mark all columns as primary for Spanner driver.
+        const isPrimary = this.dataSource.driver.options.type === "spanner"
+        this.typeormMetadataTableInitializationPromise = this.createTable(
+            new Table({
+                database: database,
+                schema: schema,
+                name: typeormMetadataTable,
+                columns: [
+                    {
+                        name: "type",
+                        type: this.dataSource.driver.normalizeType({
+                            type: this.dataSource.driver.mappedDataTypes
+                                .metadataType,
+                        }),
+                        isNullable: false,
+                        isPrimary,
+                    },
+                    {
+                        name: "database",
+                        type: this.dataSource.driver.normalizeType({
+                            type: this.dataSource.driver.mappedDataTypes
+                                .metadataDatabase,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                    {
+                        name: "schema",
+                        type: this.dataSource.driver.normalizeType({
+                            type: this.dataSource.driver.mappedDataTypes
+                                .metadataSchema,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                    {
+                        name: "table",
+                        type: this.dataSource.driver.normalizeType({
+                            type: this.dataSource.driver.mappedDataTypes
+                                .metadataTable,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                    {
+                        name: "name",
+                        type: this.dataSource.driver.normalizeType({
+                            type: this.dataSource.driver.mappedDataTypes
+                                .metadataName,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                    {
+                        name: "value",
+                        type: this.dataSource.driver.normalizeType({
+                            type: this.dataSource.driver.mappedDataTypes
+                                .metadataValue,
+                        }),
+                        isNullable: true,
+                        isPrimary,
+                    },
+                ],
+            }),
+            true,
+        )
+
+        try {
+            await this.typeormMetadataTableInitializationPromise
+            this.typeormMetadataTableExists = true
+        } catch (error) {
+            this.typeormMetadataTableInitializationPromise = undefined
+            throw error
+        }
+    }
+
+    /**
+     * Resets typeorm metadata table initialization promise and existence flag.
+     */
+    protected resetTypeormMetadataTableInitializationPromise(): void {
+        this.typeormMetadataTableInitializationPromise = undefined
+        this.typeormMetadataTableExists = undefined
     }
 }

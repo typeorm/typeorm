@@ -676,8 +676,11 @@ export class SqlServerQueryRunner
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
+
         const upQueries: Query[] = []
         const downQueries: Query[] = []
+        const parsedTableName = this.driver.parseTableName(table)
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
         upQueries.push(this.createTableSql(table, createForeignKeys))
         downQueries.push(this.dropTableSql(table))
@@ -708,10 +711,6 @@ export class SqlServerQueryRunner
         )
 
         for (const column of generatedColumns) {
-            const parsedTableName = this.driver.parseTableName(table)
-
-            parsedTableName.schema ??= await this.getCurrentSchema()
-
             const insertQuery = this.insertTypeormMetadataSql({
                 database: parsedTableName.database,
                 schema: parsedTableName.schema,
@@ -731,6 +730,13 @@ export class SqlServerQueryRunner
 
             upQueries.push(insertQuery)
             downQueries.push(deleteQuery)
+        }
+        for (const check of table.checks) {
+            upQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
+            const query = await this.dropCheckConstraintMetadata(table, check)
+            if (query) downQueries.push(query)
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -762,6 +768,8 @@ export class SqlServerQueryRunner
             : await this.getCachedTable(tableOrName)
         const upQueries: Query[] = []
         const downQueries: Query[] = []
+        const parsedTableName = this.driver.parseTableName(table)
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
         // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
         // to perform drop queries for foreign keys and indices.
@@ -789,10 +797,6 @@ export class SqlServerQueryRunner
         )
 
         for (const column of generatedColumns) {
-            const parsedTableName = this.driver.parseTableName(table)
-
-            parsedTableName.schema ??= await this.getCurrentSchema()
-
             const deleteQuery = this.deleteTypeormMetadataSql({
                 database: parsedTableName.database,
                 schema: parsedTableName.schema,
@@ -812,6 +816,14 @@ export class SqlServerQueryRunner
 
             upQueries.push(deleteQuery)
             downQueries.push(insertQuery)
+        }
+
+        for (const check of table.checks) {
+            const query = await this.dropCheckConstraintMetadata(table, check)
+            if (query) upQueries.push(query)
+            downQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1113,6 +1125,8 @@ export class SqlServerQueryRunner
         const clonedTable = table.clone()
         const upQueries: Query[] = []
         const downQueries: Query[] = []
+        const parsedTableName = this.driver.parseTableName(table)
+        parsedTableName.schema ??= await this.getCurrentSchema()
 
         upQueries.push(
             new Query(
@@ -1247,10 +1261,6 @@ export class SqlServerQueryRunner
         }
 
         if (column.generatedType && column.asExpression) {
-            const parsedTableName = this.driver.parseTableName(table)
-
-            parsedTableName.schema ??= await this.getCurrentSchema()
-
             const insertQuery = this.insertTypeormMetadataSql({
                 database: parsedTableName.database,
                 schema: parsedTableName.schema,
@@ -2487,8 +2497,19 @@ export class SqlServerQueryRunner
                 checkConstraint.expression!,
             )
 
-        const up = this.createCheckConstraintSql(table, checkConstraint)
-        const down = this.dropCheckConstraintSql(table, checkConstraint)
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
+        down.push(this.dropCheckConstraintSql(table, checkConstraint))
+        const query = await this.dropCheckConstraintMetadata(
+            table,
+            checkConstraint,
+        )
+        if (query) down.push(query)
+
         await this.executeQueries(up, down)
         table.addCheckConstraint(checkConstraint)
     }
@@ -2534,8 +2555,19 @@ export class SqlServerQueryRunner
             )
         }
 
-        const up = this.dropCheckConstraintSql(table, checkConstraint)
-        const down = this.createCheckConstraintSql(table, checkConstraint)
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(this.dropCheckConstraintSql(table, checkConstraint))
+        const query = await this.dropCheckConstraintMetadata(
+            table,
+            checkConstraint,
+        )
+        if (query) up.push(query)
+
+        down.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
         await this.executeQueries(up, down)
         table.removeCheckConstraint(checkConstraint)
     }
@@ -2973,7 +3005,7 @@ export class SqlServerQueryRunner
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewPaths?: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getTypeormMetadataTableName())
+        const hasTable = await this.hasTypeormMetadataTable()
         if (!hasTable) {
             return []
         }
@@ -3264,6 +3296,22 @@ export class SqlServerQueryRunner
             this.query(dbCollationsSql),
             this.query(indicesSql),
         ])
+
+        let dbCheckMetadata: ObjectLiteral[] = []
+        const metadataTableName = this.getTypeormMetadataTableName()
+        if (await this.hasTypeormMetadataTable()) {
+            const metadataCondition = dbTables
+                .map(
+                    ({ TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME }) =>
+                        `("database" = '${TABLE_CATALOG}' AND "schema" = '${TABLE_SCHEMA}' AND "table" = '${TABLE_NAME}')`,
+                )
+                .join(" OR ")
+            if (metadataCondition) {
+                dbCheckMetadata = await this.query(
+                    `SELECT * FROM ${this.escapePath(metadataTableName)} WHERE "type" = '${MetadataTableType.CHECK_CONSTRAINT}' AND (${metadataCondition})`,
+                )
+            }
+        }
 
         // create table schemas for loaded tables
         return await Promise.all(
@@ -3650,10 +3698,19 @@ export class SqlServerQueryRunner
                                 dbC["CONSTRAINT_NAME"] ===
                                 constraint["CONSTRAINT_NAME"],
                         )
+                        const metadataRow = dbCheckMetadata.find(
+                            (m) =>
+                                m["name"] === constraint["CONSTRAINT_NAME"] &&
+                                m["table"] === dbTable["TABLE_NAME"] &&
+                                m["schema"] === dbTable["TABLE_SCHEMA"] &&
+                                m["database"] === dbTable["TABLE_CATALOG"],
+                        )
                         return new TableCheck({
                             name: constraint["CONSTRAINT_NAME"],
                             columnNames: checks.map((c) => c["COLUMN_NAME"]),
-                            expression: constraint["definition"],
+                            expression: metadataRow
+                                ? metadataRow["value"]
+                                : constraint["definition"],
                         })
                     })
 

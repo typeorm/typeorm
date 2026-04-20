@@ -502,6 +502,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
+
+        const currentDatabase = await this.getCurrentDatabase()
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
@@ -530,8 +532,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         for (const column of generatedColumns) {
-            const currentDatabase = await this.getCurrentDatabase()
-
             const insertQuery = this.insertTypeormMetadataSql({
                 schema: currentDatabase,
                 table: table.name,
@@ -577,6 +577,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const createForeignKeys: boolean = dropForeignKeys
         const tablePath = this.getTablePath(target)
         const table = await this.getCachedTable(tablePath)
+        const currentDatabase = await this.getCurrentDatabase()
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
@@ -598,8 +599,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         for (const column of generatedColumns) {
-            const currentDatabase = await this.getCurrentDatabase()
-
             const deleteQuery = this.deleteTypeormMetadataSql({
                 schema: currentDatabase,
                 table: table.name,
@@ -1127,6 +1126,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             ? tableOrName
             : await this.getCachedTable(tableOrName)
         let clonedTable = table.clone()
+        const currentDatabase = await this.getCurrentDatabase()
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
@@ -1341,8 +1341,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 if (oldColumn.generatedType && !newColumn.generatedType) {
                     // if column changed from generated to non-generated, delete record from typeorm metadata
-
-                    const currentDatabase = await this.getCurrentDatabase()
                     const deleteQuery = this.deleteTypeormMetadataSql({
                         schema: currentDatabase,
                         table: table.name,
@@ -1364,8 +1362,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     newColumn.generatedType
                 ) {
                     // if column changed from non-generated to generated, insert record into typeorm metadata
-
-                    const currentDatabase = await this.getCurrentDatabase()
                     const insertQuery = this.insertTypeormMetadataSql({
                         schema: currentDatabase,
                         table: table.name,
@@ -1384,7 +1380,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     downQueries.push(deleteQuery)
                 } else if (oldColumn.asExpression !== newColumn.asExpression) {
                     // if only expression changed, just update it in typeorm_metadata table
-                    const currentDatabase = await this.getCurrentDatabase()
                     const updateQuery = this.dataSource
                         .createQueryBuilder()
                         .update(this.getTypeormMetadataTableName())
@@ -2543,7 +2538,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames?: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getTypeormMetadataTableName())
+        const hasTable = await this.hasTypeormMetadataTable()
         if (!hasTable) {
             return []
         }

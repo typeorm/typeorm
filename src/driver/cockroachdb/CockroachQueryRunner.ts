@@ -649,6 +649,9 @@ export class CockroachQueryRunner
             const isTableExist = await this.hasTable(table)
             if (isTableExist) return Promise.resolve()
         }
+
+        const currentSchema = await this.getCurrentSchema()
+        const schema = this.driver.parseTableName(table).schema ?? currentSchema
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
@@ -724,10 +727,6 @@ export class CockroachQueryRunner
         )
 
         for (const column of generatedColumns) {
-            const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
-
             const insertQuery = this.insertTypeormMetadataSql({
                 schema: schema,
                 table: table.name,
@@ -745,6 +744,15 @@ export class CockroachQueryRunner
 
             upQueries.push(insertQuery)
             downQueries.push(deleteQuery)
+        }
+
+        for (const check of table.checks) {
+            upQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
+
+            const query = await this.dropCheckConstraintMetadata(table, check)
+            if (query) downQueries.push(query)
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -775,6 +783,9 @@ export class CockroachQueryRunner
         const createForeignKeys: boolean = dropForeignKeys
         const tablePath = this.getTablePath(target)
         const table = await this.getCachedTable(tablePath)
+        const currentSchema = await this.getCurrentSchema()
+        const schema = this.driver.parseTableName(table).schema ?? currentSchema
+
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
@@ -823,10 +834,6 @@ export class CockroachQueryRunner
         )
 
         for (const column of generatedColumns) {
-            const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
-
             const deleteQuery = this.deleteTypeormMetadataSql({
                 schema: schema,
                 table: table.name,
@@ -844,6 +851,15 @@ export class CockroachQueryRunner
 
             upQueries.push(deleteQuery)
             downQueries.push(insertQuery)
+        }
+
+        for (const check of table.checks) {
+            const query = await this.dropCheckConstraintMetadata(table, check)
+            if (query) upQueries.push(query)
+
+            downQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1231,8 +1247,9 @@ export class CockroachQueryRunner
 
         if (column.generatedType && column.asExpression) {
             const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
+            const schema =
+                this.driver.parseTableName(table).schema ?? currentSchema
+
             const insertQuery = this.insertTypeormMetadataSql({
                 schema: schema,
                 table: table.name,
@@ -2355,8 +2372,9 @@ export class CockroachQueryRunner
 
         if (column.generatedType && column.asExpression) {
             const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
+            const schema =
+                this.driver.parseTableName(table).schema ?? currentSchema
+
             const deleteQuery = this.deleteTypeormMetadataSql({
                 schema: schema,
                 table: table.name,
@@ -2676,8 +2694,19 @@ export class CockroachQueryRunner
                 checkConstraint.expression!,
             )
 
-        const up = this.createCheckConstraintSql(table, checkConstraint)
-        const down = this.dropCheckConstraintSql(table, checkConstraint)
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
+        down.push(this.dropCheckConstraintSql(table, checkConstraint))
+        const query = await this.dropCheckConstraintMetadata(
+            table,
+            checkConstraint,
+        )
+        if (query) down.push(query)
+
         await this.executeQueries(up, down)
         table.addCheckConstraint(checkConstraint)
     }
@@ -2722,9 +2751,19 @@ export class CockroachQueryRunner
                 `Supplied check constraint was not found in table ${table.name}`,
             )
         }
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(this.dropCheckConstraintSql(table, checkConstraint, ifExists))
+        const query = await this.dropCheckConstraintMetadata(
+            table,
+            checkConstraint,
+        )
+        if (query) up.push(query)
 
-        const up = this.dropCheckConstraintSql(table, checkConstraint, ifExists)
-        const down = this.createCheckConstraintSql(table, checkConstraint)
+        down.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
         await this.executeQueries(up, down)
         table.removeCheckConstraint(checkConstraint)
     }
@@ -3120,7 +3159,7 @@ export class CockroachQueryRunner
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames?: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getTypeormMetadataTableName())
+        const hasTable = await this.hasTypeormMetadataTable()
         if (!hasTable) {
             return []
         }
@@ -3285,6 +3324,23 @@ export class CockroachQueryRunner
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
         const dbEnums: ObjectLiteral[] = await this.query(enumsSql)
+        let dbCheckMetadata: ObjectLiteral[] = []
+
+        const metadataTableName = this.getTypeormMetadataTableName()
+        if (await this.hasTypeormMetadataTable()) {
+            const metadataCondition = dbTables
+                .map(({ table_name, table_schema }) => {
+                    return `("schema" = '${table_schema}' AND "table" = '${table_name}')`
+                })
+                .join(" OR ")
+            if (metadataCondition) {
+                dbCheckMetadata = await this.query(
+                    `SELECT * FROM ${this.escapePath(metadataTableName)} WHERE "type" = '${
+                        MetadataTableType.CHECK_CONSTRAINT
+                    }' AND (${metadataCondition})`,
+                )
+            }
+        }
 
         // create tables for loaded tables
         return Promise.all(
@@ -3702,13 +3758,22 @@ export class CockroachQueryRunner
                             dbC["constraint_name"] ===
                             constraint["constraint_name"],
                     )
+                    const dbCheckExpression = constraint["expression"].replace(
+                        /^\s*CHECK\s*\((.*)\)\s*$/i,
+                        "$1",
+                    )
+                    const metadataRow = dbCheckMetadata.find(
+                        (m) =>
+                            m["name"] === constraint["constraint_name"] &&
+                            m["table"] === dbTable["table_name"] &&
+                            m["schema"] === dbTable["table_schema"],
+                    )
                     return new TableCheck({
                         name: constraint["constraint_name"],
                         columnNames: checks.map((c) => c["column_name"]),
-                        expression: constraint["expression"].replace(
-                            /^\s*CHECK\s*\((.*)\)\s*$/i,
-                            "$1",
-                        ),
+                        expression: metadataRow
+                            ? metadataRow["value"]
+                            : dbCheckExpression,
                     })
                 })
 

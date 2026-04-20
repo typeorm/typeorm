@@ -633,6 +633,15 @@ export class PostgresQueryRunner
         upQueries.push(this.createTableSql(table, createForeignKeys))
         downQueries.push(this.dropTableSql(table))
 
+        for (const check of table.checks) {
+            upQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
+
+            const query = await this.dropCheckConstraintMetadata(table, check)
+            if (query) downQueries.push(query)
+        }
+
         // if createForeignKeys is true, we must drop created foreign keys in down query.
         // createTable does not need separate method to create foreign keys, because it create fk's in the same query with table creation.
         if (createForeignKeys)
@@ -712,6 +721,21 @@ export class PostgresQueryRunner
 
         upQueries.push(this.dropTableSql(table))
         downQueries.push(this.createTableSql(table, createForeignKeys))
+
+        // if table had check constraints, we must remove their metadata from the metadata table
+        if (table.checks.length > 0) {
+            for (const check of table.checks) {
+                const query = await this.dropCheckConstraintMetadata(
+                    table,
+                    check,
+                )
+                if (query) upQueries.push(query)
+
+                downQueries.push(
+                    await this.insertCheckConstraintMetadata(table, check),
+                )
+            }
+        }
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
@@ -2962,8 +2986,19 @@ export class PostgresQueryRunner
                 checkConstraint.expression!,
             )
 
-        const up = this.createCheckConstraintSql(table, checkConstraint)
-        const down = this.dropCheckConstraintSql(table, checkConstraint)
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
+        down.push(this.dropCheckConstraintSql(table, checkConstraint))
+        const query = await this.dropCheckConstraintMetadata(
+            table,
+            checkConstraint,
+        )
+        if (query) down.push(query)
+
         await this.executeQueries(up, down)
         table.addCheckConstraint(checkConstraint)
     }
@@ -3009,8 +3044,19 @@ export class PostgresQueryRunner
             )
         }
 
-        const up = this.dropCheckConstraintSql(table, checkConstraint, ifExists)
-        const down = this.createCheckConstraintSql(table, checkConstraint)
+        const up: Query[] = []
+        const down: Query[] = []
+        up.push(this.dropCheckConstraintSql(table, checkConstraint, ifExists))
+        const query = await this.dropCheckConstraintMetadata(
+            table,
+            checkConstraint,
+        )
+        if (query) up.push(query)
+
+        down.push(
+            this.createCheckConstraintSql(table, checkConstraint),
+            await this.insertCheckConstraintMetadata(table, checkConstraint),
+        )
         await this.executeQueries(up, down)
         table.removeCheckConstraint(checkConstraint)
     }
@@ -3500,7 +3546,7 @@ export class PostgresQueryRunner
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames?: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getTypeormMetadataTableName())
+        const hasTable = await this.hasTypeormMetadataTable()
 
         if (!hasTable) return []
 
@@ -3741,6 +3787,21 @@ export class PostgresQueryRunner
         const dbConstraints: ObjectLiteral[] = await this.query(constraintsSql)
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
+        let dbCheckMetadata: ObjectLiteral[] = []
+
+        const metadataTableName = this.getTypeormMetadataTableName()
+        if (await this.hasTypeormMetadataTable()) {
+            const metadataCondition = dbTables
+                .map(({ table_schema, table_name }) => {
+                    return `("schema" = '${table_schema}' AND "table" = '${table_name}')`
+                })
+                .join(" OR ")
+            if (metadataCondition) {
+                dbCheckMetadata = await this.query(
+                    `SELECT * FROM ${this.escapePath(metadataTableName)} WHERE "type" = '${MetadataTableType.CHECK_CONSTRAINT}' AND (${metadataCondition})`,
+                )
+            }
+        }
 
         // create tables for loaded tables
         return Promise.all(
@@ -4217,13 +4278,22 @@ export class PostgresQueryRunner
                             dbC["constraint_name"] ===
                             constraint["constraint_name"],
                     )
+                    const dbExpression = constraint["expression"].replace(
+                        /^\s*CHECK\s*\((.*)\)\s*$/i,
+                        "$1",
+                    )
+                    const metadataRow = dbCheckMetadata.find(
+                        (m) =>
+                            m["name"] === constraint["constraint_name"] &&
+                            m["table"] === dbTable["table_name"] &&
+                            m["schema"] === dbTable["table_schema"],
+                    )
                     return new TableCheck({
                         name: constraint["constraint_name"],
                         columnNames: checks.map((c) => c["column_name"]),
-                        expression: constraint["expression"].replace(
-                            /^\s*CHECK\s*\((.*)\)\s*$/i,
-                            "$1",
-                        ),
+                        expression: metadataRow
+                            ? metadataRow["value"]
+                            : dbExpression,
                     })
                 })
 

@@ -65,6 +65,7 @@ export abstract class AbstractSqliteQueryRunner
      */
     release(): Promise<void> {
         this.loadedTables = []
+        this.resetTypeormMetadataTableInitializationPromise()
         this.clearSqlMemory()
         return Promise.resolve()
     }
@@ -367,6 +368,15 @@ export abstract class AbstractSqliteQueryRunner
             downQueries.push(deleteQuery)
         }
 
+        for (const check of table.checks) {
+            upQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
+
+            const query = await this.dropCheckConstraintMetadata(table, check)
+            if (query) downQueries.push(query)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -428,6 +438,15 @@ export abstract class AbstractSqliteQueryRunner
 
             upQueries.push(deleteQuery)
             downQueries.push(insertQuery)
+        }
+
+        for (const check of table.checks) {
+            const query = await this.dropCheckConstraintMetadata(table, check)
+            if (query) upQueries.push(query)
+
+            downQueries.push(
+                await this.insertCheckConstraintMetadata(table, check),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1047,6 +1066,16 @@ export abstract class AbstractSqliteQueryRunner
             changedTable.addCheckConstraint(checkConstraint),
         )
         await this.recreateTable(changedTable, table)
+
+        for (const check of checkConstraints) {
+            const query = await this.dropCheckConstraintMetadata(table, check)
+            if (query) {
+                await this.executeQueries(
+                    await this.insertCheckConstraintMetadata(table, check),
+                    query,
+                )
+            }
+        }
     }
 
     /**
@@ -1100,6 +1129,16 @@ export abstract class AbstractSqliteQueryRunner
         )
 
         await this.recreateTable(changedTable, table)
+
+        for (const check of checkConstraints) {
+            const query = await this.dropCheckConstraintMetadata(table, check)
+            if (query) {
+                await this.executeQueries(
+                    query,
+                    await this.insertCheckConstraintMetadata(table, check),
+                )
+            }
+        }
     }
 
     /**
@@ -1414,7 +1453,7 @@ export abstract class AbstractSqliteQueryRunner
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames?: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getTypeormMetadataTableName())
+        const hasTable = await this.hasTypeormMetadataTable()
         if (!hasTable) {
             return []
         }
@@ -1535,6 +1574,19 @@ export abstract class AbstractSqliteQueryRunner
         // if tables were not found in the db, no need to proceed
         if (dbTables.length === 0) {
             return []
+        }
+
+        let dbCheckMetadata: ObjectLiteral[] = []
+        const metadataTableName = this.getTypeormMetadataTableName()
+        if (await this.hasTypeormMetadataTable()) {
+            const metadataCondition = dbTables
+                .map(({ name }) => `("table" = '${name}')`)
+                .join(" OR ")
+            if (metadataCondition) {
+                dbCheckMetadata = await this.query(
+                    `SELECT * FROM ${this.escapePath(metadataTableName)} WHERE "type" = '${MetadataTableType.CHECK_CONSTRAINT}' AND (${metadataCondition})`,
+                )
+            }
         }
 
         // create table schemas for loaded tables
@@ -1825,10 +1877,18 @@ export abstract class AbstractSqliteQueryRunner
                 const regexp =
                     /CONSTRAINT "([^"]*)" CHECK ?(\(.*?\))([,]|[)]$)/g
                 while ((result = regexp.exec(sql)) !== null) {
+                    const constraintName = result[1]
+                    const metadataRow = dbCheckMetadata.find(
+                        (m) =>
+                            m["name"] === constraintName &&
+                            m["table"] === dbTable["name"],
+                    )
                     table.checks.push(
                         new TableCheck({
-                            name: result[1],
-                            expression: result[2],
+                            name: constraintName,
+                            expression: metadataRow
+                                ? metadataRow["value"]
+                                : result[2],
                         }),
                     )
                 }
