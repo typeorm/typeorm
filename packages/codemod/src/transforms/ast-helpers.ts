@@ -672,7 +672,9 @@ export const renameMemberMethod = (
  * → `"Repository"`, `typeof Repository` → `"Repository"`. Returns null when
  * the annotation doesn't root on a TSTypeReference with an Identifier name.
  */
-const getTypeReferenceRootName = (node: ASTNode | null): string | null => {
+export const getTypeReferenceRootName = (
+    node: ASTNode | null,
+): string | null => {
     if (!node) return null
     if (node.type === "TSTypeReference") {
         const n = node as { typeName: ASTNode }

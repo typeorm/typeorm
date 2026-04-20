@@ -44,3 +44,12 @@ class UserProfileSubscriber implements EntitySubscriberInterface<UserProfileEnti
 // `connection` key must NOT be renamed.
 declare const plain: { connection: string; entity: string }
 const { connection: untouched } = plain
+
+// `for...of` / `for...in` destructure — rename still fires when the
+// iterated element is a tracked receiver type.
+declare const events: RemoveEvent<UserProfileEntity>[]
+async function drain() {
+    for (const { dataSource: connection, entity } of events) {
+        console.log(connection, entity)
+    }
+}

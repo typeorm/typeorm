@@ -10,6 +10,7 @@ import {
     expandLocalNamesForImports,
     forEachIdentifierParam,
     getStringValue,
+    getTypeReferenceRootName,
     isIdentifier,
     renameReExportSpecifiers,
     setStringValue,
@@ -780,13 +781,32 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
-    // Destructuring pattern: `const { connection } = event` where `event`
-    // is a tracked connectionProp receiver (subscriber event, EntityManager,
-    // QueryRunner, Repository, etc.). Rename the `connection` key to
-    // `dataSource` and preserve the local binding name.
-    root.find(j.VariableDeclarator).forEach((declPath) => {
-        const id = declPath.node.id
+    // Destructuring pattern: `const { connection } = event` / `for (const
+    // { connection } of events)` where `event`/`events[i]` is a tracked
+    // connectionProp receiver (subscriber event, EntityManager, QueryRunner,
+    // Repository, etc.). Rename the `connection` key to `dataSource` and
+    // preserve the local binding name.
+    const renameConnectionInObjectPattern = (id: ASTNode): void => {
         if (id.type !== "ObjectPattern") return
+        for (const prop of (id as { properties: ASTNode[] }).properties) {
+            if (prop.type !== "Property" && prop.type !== "ObjectProperty")
+                continue
+            const typed = prop as {
+                key: { type: string; name?: string }
+                shorthand?: boolean
+            }
+            if (typed.key.type !== "Identifier") continue
+            if (typed.key.name !== "connection") continue
+            typed.key.name = "dataSource"
+            // Shorthand `{ connection }` expands to `{ dataSource: connection }`
+            // to keep the local variable name unchanged — the consumer code
+            // still references `connection`.
+            if (typed.shorthand) typed.shorthand = false
+            hasChanges = true
+        }
+    }
+
+    root.find(j.VariableDeclarator).forEach((declPath) => {
         const init = declPath.node.init
         if (!init) return
         if (
@@ -798,21 +818,84 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         ) {
             return
         }
-        for (const prop of id.properties) {
-            if (prop.type !== "Property" && prop.type !== "ObjectProperty")
-                continue
-            if (prop.key.type !== "Identifier") continue
-            if (prop.key.name !== "connection") continue
-            prop.key.name = "dataSource"
-            // Shorthand `{ connection }` expands to `{ dataSource: connection }`
-            // to keep the local variable name unchanged — the consumer code
-            // still references `connection`.
-            if ((prop as { shorthand?: boolean }).shorthand) {
-                ;(prop as { shorthand?: boolean }).shorthand = false
-            }
-            hasChanges = true
-        }
+        renameConnectionInObjectPattern(declPath.node.id)
     })
+
+    // `for (const { connection } of events)` — `ForOfStatement.left` is a
+    // `VariableDeclaration` whose declarators have no `init`, so the
+    // plain VariableDeclarator loop above skips them. Classify the loop
+    // variable's inferred type: either the iterable variable itself is a
+    // tracked receiver, or its declared annotation is `Tracked[]` /
+    // `Array<Tracked>`.
+    const elementTypeOf = (rhsNode: ASTNode): string | null => {
+        if (rhsNode.type !== "Identifier") return null
+        const name = rhsNode.name
+        let resolved: string | null = null
+        root.find(j.VariableDeclarator).forEach((p) => {
+            if (resolved) return
+            if (p.node.id.type !== "Identifier") return
+            if (p.node.id.name !== name) return
+            const ann = p.node.id.typeAnnotation as ASTNode | null
+            if (!ann || ann.type !== "TSTypeAnnotation") return
+            const inner = (ann as { typeAnnotation: ASTNode }).typeAnnotation
+            if (inner.type === "TSArrayType") {
+                resolved =
+                    getTypeReferenceRootName(
+                        (inner as { elementType: ASTNode }).elementType,
+                    ) ?? null
+                return
+            }
+            if (
+                inner.type === "TSTypeReference" &&
+                (inner as { typeName: { name?: string } }).typeName?.name ===
+                    "Array"
+            ) {
+                const params = (
+                    inner as {
+                        typeParameters?: { params?: ASTNode[] }
+                    }
+                ).typeParameters?.params
+                if (params && params.length > 0) {
+                    resolved = getTypeReferenceRootName(params[0]) ?? null
+                }
+            }
+        })
+        return resolved
+    }
+
+    const visitForOf = (
+        leftNode: ASTNode | null | undefined,
+        rightNode: ASTNode | null | undefined,
+    ): void => {
+        if (!leftNode || !rightNode) return
+        if (leftNode.type !== "VariableDeclaration") return
+
+        // Either: the iterable itself is a tracked receiver (rare but valid
+        // — e.g. a generator that yields the receiver), OR its type is an
+        // array/`Array<T>` of a tracked type.
+        const directlyTracked = receiverIsIn(
+            rightNode,
+            connectionPropVarNames,
+            thisConnectionPropMembers,
+        )
+        const elementType = elementTypeOf(rightNode)
+        const elementTracked =
+            elementType !== null && connectionPropLocalNames.has(elementType)
+
+        if (!directlyTracked && !elementTracked) return
+
+        for (const d of (leftNode as { declarations: ASTNode[] })
+            .declarations) {
+            if (d.type !== "VariableDeclarator") continue
+            renameConnectionInObjectPattern((d as { id: ASTNode }).id)
+        }
+    }
+    root.find(j.ForOfStatement).forEach((p) =>
+        visitForOf(p.node.left, p.node.right),
+    )
+    root.find(j.ForInStatement).forEach((p) =>
+        visitForOf(p.node.left, p.node.right),
+    )
 
     // Rewrite the `connection` option passed to metadata-type constructors:
     //   - `new EntityMetadata({ connection: X, ... })` → rename key to
