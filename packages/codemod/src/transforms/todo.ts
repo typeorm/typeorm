@@ -1,6 +1,12 @@
 import type { JSCodeshift, Node } from "jscodeshift"
 
-const formatTodo = (message: string): string => ` TODO(typeorm-v1): ${message}`
+// The prefix emitted into user code to guide the v1 migration. This module
+// is the single source of truth for the exact wording; every codemod
+// transform that flags a manual step routes through `addTodoComment`
+// below. NOSONAR — the literal `TODO` here is product output, not a
+// tech-debt marker for this codebase.
+const TODO_PREFIX = "TODO(typeorm-v1):" // NOSONAR: S1135
+const formatTodo = (message: string): string => ` ${TODO_PREFIX} ${message}`
 
 // Prettier treats a leading `// prettier-ignore` line-comment as a directive
 // for the statement immediately following it. Appending our comment *after*

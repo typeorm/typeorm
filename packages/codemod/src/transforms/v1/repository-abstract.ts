@@ -54,7 +54,7 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
     )
 
     // Track which symbols were successfully flagged; we only strip imports
-    // for symbols whose usages got a TODO — dropping an import while a
+    // for symbols whose usages got a comment — dropping an import while a
     // type reference or conditional use survives would leave the user with
     // a dangling reference and no signal.
     const flaggedSymbols = new Set<string>()

@@ -26,14 +26,14 @@ interface NestedObject {
 // dot-paths (`"posts.comments"`) that must become nested objects in v1
 // (`{ posts: { comments: true } }`). For a dynamic expression we can't
 // tell at transform time whether the values contain dots, so we wrap with
-// `Object.fromEntries(...map(r => [r, true]))` AND attach a TODO noting
-// that dot-paths need manual nesting.
+// `Object.fromEntries(...map(r => [r, true]))` AND attach a comment
+// noting that dot-paths need manual nesting.
 const DYNAMIC_RELATIONS_DOT_PATH_NOTE =
     '`relations` now takes an object. If the dynamic list contains dot-paths like `"posts.comments"`, the wrap below produces `{ "posts.comments": true }` — convert those to nested objects manually: `{ posts: { comments: true } }`.'
 
 // Bound variables / member-access values may already hold v1 object form
-// instead of `string[]`, so wrapping would crash at runtime. Leave a TODO
-// with the conversion snippets so the user picks the right option.
+// instead of `string[]`, so wrapping would crash at runtime. Leave a
+// comment with the conversion snippets so the user picks the right option.
 const BOUND_RELATIONS_MESSAGE =
     "`relations` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>.map(r => [r, true]))` (dot-paths need extra nesting handling). If it already holds the v1 object shape, no change needed."
 
@@ -114,7 +114,7 @@ export const findOptionsStringRelations = (file: FileInfo, api: API) => {
         if (value.type === "ObjectExpression") return
 
         // Already wrapped by a previous pass — don't double-wrap, and don't
-        // re-add the dot-path TODO (`hasTodoComment` would dedupe it anyway).
+        // re-add the dot-path comment (`hasTodoComment` would dedupe it anyway).
         if (isObjectFromEntriesCall(value)) return
 
         const walkToStatement = (message: string): void => {
@@ -139,7 +139,7 @@ export const findOptionsStringRelations = (file: FileInfo, api: API) => {
         }
 
         // Bound variable / member access — value might already be in v1
-        // object shape. Leave a TODO instead of wrapping.
+        // object shape. Leave a comment instead of wrapping.
         if (
             value.type === "Identifier" ||
             value.type === "MemberExpression" ||
@@ -151,7 +151,7 @@ export const findOptionsStringRelations = (file: FileInfo, api: API) => {
         }
 
         // Inline dynamic value (CallExpression, ConditionalExpression, etc.)
-        // — wrap with `Object.fromEntries(...)`. Attach the dot-path TODO
+        // — wrap with `Object.fromEntries(...)`. Attach the dot-path comment
         // because nesting can't be detected statically.
         propPath.node.value = wrapDynamicStringArray(
             j,

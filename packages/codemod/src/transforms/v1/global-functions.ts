@@ -37,9 +37,9 @@ const removedGlobals = new Set([
 ])
 
 // Removed globals that have NO automatic rewrite — each call site gets a
-// TODO comment explaining the manual migration path. Without this, the
-// import is stripped but the call remains, producing a ReferenceError at
-// runtime with no trace in the codemod output.
+// comment explaining the manual migration path. Without this, the import
+// is stripped but the call remains, producing a ReferenceError at runtime
+// with no trace in the codemod output.
 const manualRemovedGlobals: Record<string, string> = {
     createConnection:
         "`createConnection()` was removed — instantiate a `DataSource` and call `.initialize()` instead: `const dataSource = new DataSource(options); await dataSource.initialize()`",
@@ -151,7 +151,7 @@ export const globalFunctions = (file: FileInfo, api: API) => {
 
     let hasNamedConnection = false
 
-    // Build lookup: local-name → manual-removal TODO message, so aliased
+    // Build lookup: local-name → manual-removal comment message, so aliased
     // imports like `import { createConnection as cc } from "typeorm"` still
     // get their call sites flagged.
     const manualTodos = new Map<string, string>()
@@ -177,7 +177,7 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         return true
     }
 
-    // Attaches a manual-migration TODO to the enclosing statement of
+    // Attaches a manual-migration comment to the enclosing statement of
     // `astPath`. Returns whether anything changed.
     const attachManualTodo = (
         astPath: ASTPath<CallExpression>,

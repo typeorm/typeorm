@@ -55,8 +55,8 @@ const findNestedOptionsObject = (
     return prop.value.type === "ObjectExpression" ? prop.value : null
 }
 
-// Flags the top-level `domain` property with a TODO pointing at the v1
-// replacement. Returns whether a new TODO was added.
+// Flags the top-level `domain` property with a comment pointing at the v1
+// replacement. Returns whether a new comment was added.
 const flagDomainOption = (
     prop: ObjectProperty,
     api: API,

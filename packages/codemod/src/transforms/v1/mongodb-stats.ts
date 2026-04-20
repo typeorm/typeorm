@@ -35,8 +35,8 @@ export const mongodbStats = (file: FileInfo, api: API) => {
         if (callee.type !== "MemberExpression") return
         if (!isRepositoryReceiver(callee.object, bindings)) return
 
-        // Prefer attaching the TODO to the enclosing statement. Comments on
-        // bare CallExpressions are often dropped by recast during printing.
+        // Prefer attaching the comment to the enclosing statement. Comments
+        // on bare CallExpressions are often dropped by recast during printing.
         let host: Node = callPath.node
         const parentNode: Node = callPath.parent.node
         if (parentNode.type === "ExpressionStatement") {

@@ -31,7 +31,7 @@ export const queryBuilderPrintSql = (file: FileInfo, api: API) => {
         // VariableDeclaration). If we reach the root without finding one,
         // leave the file untouched — attaching a comment to a non-statement
         // node is usually dropped by recast, and `hasChanges = true` with no
-        // actual edit would misreport the transform as having emitted a TODO.
+        // actual edit would misreport the transform as having emitted a comment.
         let current = callPath.parent
         while (current) {
             const node: Node = current.node

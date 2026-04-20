@@ -59,7 +59,7 @@ export const useContainer = (file: FileInfo, api: API) => {
                 const message = `${funcName}() was removed — the container system is no longer supported`
 
                 // Bare `useContainer(...)` at statement level → replace with
-                // an empty statement carrying the TODO comment.
+                // an empty statement carrying the migration comment.
                 const parent = callPath.parent.node
                 if (parent.type === "ExpressionStatement") {
                     const replacement = j.emptyStatement()
@@ -77,7 +77,7 @@ export const useContainer = (file: FileInfo, api: API) => {
                 }
 
                 // Non-statement usage (assignment, return, argument, etc.):
-                // leave the call in place but attach a TODO to the enclosing
+                // leave the call in place but attach a comment to the enclosing
                 // statement so the user can't miss the manual migration.
                 let current: ASTPath<Node> | null =
                     callPath as unknown as ASTPath<Node>

@@ -27,8 +27,8 @@ const renamePropertyKey = (prop: ObjectProperty, newName: string): void => {
 }
 
 // Renames `sslValidate` → `tlsAllowInvalidCertificates`, inverting a boolean
-// literal value in place. Returns true when a TODO was emitted because the
-// value was a non-literal we can't safely invert.
+// literal value in place. Returns true when a comment was emitted because
+// the value was a non-literal we can't safely invert.
 const migrateSslValidate = (prop: ObjectProperty, j: JSCodeshift): boolean => {
     renamePropertyKey(prop, "tlsAllowInvalidCertificates")
     const valueNode = prop.value

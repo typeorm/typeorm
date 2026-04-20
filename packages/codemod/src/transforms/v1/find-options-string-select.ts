@@ -14,7 +14,7 @@ export const manual = true
 
 // Bound variables / member-access values may already hold v1 object form
 // (`{ id: true }`) instead of `string[]` — wrapping them with
-// `Object.fromEntries(...)` would crash at runtime. Leave a TODO so the
+// `Object.fromEntries(...)` would crash at runtime. Leave a comment so the
 // user can convert manually based on the actual runtime type.
 const BOUND_SELECT_MESSAGE =
     "`select` no longer accepts a string array. This value references a variable whose shape can't be determined statically — if it holds `string[]`, wrap it: `Object.fromEntries(<expr>.map(f => [f, true]))`. If it already holds the v1 object shape `{ field: true }`, no change needed."
@@ -81,7 +81,7 @@ export const findOptionsStringSelect = (file: FileInfo, api: API) => {
 
         // Bound variable / member access — the value might already be in v1
         // object shape (a partially-migrated codebase), so wrapping would
-        // crash at runtime. Leave a TODO instead.
+        // crash at runtime. Leave a comment instead.
         if (
             value.type === "Identifier" ||
             value.type === "MemberExpression" ||

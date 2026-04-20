@@ -11,7 +11,7 @@ export const manual = true
 
 // Walks up from `startPath` and returns the first statement-like ancestor
 // a leading line-comment survives recast printing on. Returns null when no
-// such ancestor is reachable (caller should skip the TODO rather than
+// such ancestor is reachable (caller should skip the comment rather than
 // attach it to a CallExpression, where it would be silently dropped).
 const findTodoHost = (startPath: { parent: unknown }): Node | null => {
     let current = startPath.parent as { node: Node; parent: unknown } | null
