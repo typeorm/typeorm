@@ -18,6 +18,11 @@ const todoHostTypes = new Set([
     "ExpressionStatement",
     "VariableDeclaration",
     "ReturnStatement",
+    // Class field initializer — `conn = createConnection()` inside a class
+    // body has no enclosing Statement/VariableDeclaration, so the walk
+    // must recognise the property itself as a host.
+    "ClassProperty",
+    "PropertyDefinition",
 ])
 
 export const useContainer = (file: FileInfo, api: API) => {
