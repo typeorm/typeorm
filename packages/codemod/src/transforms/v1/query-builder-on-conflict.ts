@@ -1,6 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
-import { getStringValue } from "../ast-helpers"
+import { fileImportsFrom, getStringValue } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -12,6 +12,9 @@ export const manual = true
 export const queryBuilderOnConflict = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
     let hasTodos = false
 
@@ -32,7 +35,6 @@ export const queryBuilderOnConflict = (file: FileInfo, api: API) => {
                 hasChanges = true
             }
         } else {
-            // Add a TODO comment
             const message =
                 "`onConflict()` was removed — use `orIgnore()` or `orUpdate()` instead"
             const parentNode: Node = path.parent.node

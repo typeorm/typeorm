@@ -14,20 +14,17 @@ export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
-    // Find @Column("decimal", { unsigned: true }) style calls
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "Column" },
     }).forEach((path) => {
         const args = path.node.arguments
         if (args.length < 2) return
 
-        // First arg must be a string literal with a numeric type
         const firstArg = args[0]
         const typeName = getStringValue(firstArg)
 
         if (!typeName || !numericTypes.has(typeName)) return
 
-        // Second arg should be an object with unsigned property
         const secondArg = args[1]
         if (secondArg.type !== "ObjectExpression") return
 
@@ -36,7 +33,6 @@ export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
         }
     })
 
-    // Also find decorator calls via @Column({ type: "decimal", unsigned: true })
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "Column" },
     }).forEach((path) => {
@@ -46,13 +42,12 @@ export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
         const arg = args[0]
         if (arg.type !== "ObjectExpression") return
 
-        // Check if type is a numeric type
-        const typeProp = arg.properties.find(
-            (p) =>
-                p.type === "ObjectProperty" &&
-                p.key.type === "Identifier" &&
-                p.key.name === "type",
-        )
+        const typeProp = arg.properties.find((p) => {
+            if (p.type !== "ObjectProperty") return false
+            const keyName =
+                p.key.type === "Identifier" ? p.key.name : getStringValue(p.key)
+            return keyName === "type"
+        })
 
         if (typeProp?.type !== "ObjectProperty") return
 

@@ -1,8 +1,45 @@
 import path from "node:path"
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, JSCodeshift, ObjectProperty } from "jscodeshift"
 import { fileImportsFrom } from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
+
+// Returns the key name for a property keyed by Identifier or StringLiteral;
+// null for computed / numeric / other key shapes.
+const getPropertyKeyName = (prop: ObjectProperty): string | null => {
+    if (prop.key.type === "Identifier") return prop.key.name
+    if (prop.key.type === "StringLiteral") return prop.key.value
+    return null
+}
+
+// Renames a property's key in-place (handles both Identifier and StringLiteral).
+const renamePropertyKey = (prop: ObjectProperty, newName: string): void => {
+    if (prop.key.type === "Identifier") prop.key.name = newName
+    else if (prop.key.type === "StringLiteral") prop.key.value = newName
+}
+
+// Handles the sslValidate → tlsAllowInvalidCertificates rename, inverting the
+// value when it's a boolean literal and emitting a comment otherwise.
+// Returns true if a comment was emitted.
+const migrateSslValidate = (prop: ObjectProperty, j: JSCodeshift): boolean => {
+    renamePropertyKey(prop, "tlsAllowInvalidCertificates")
+    const valueNode = prop.value
+    const isBooleanLiteral =
+        valueNode.type === "BooleanLiteral" ||
+        (valueNode.type === "Literal" && typeof valueNode.value === "boolean")
+    if (isBooleanLiteral) {
+        ;(valueNode as { value: boolean }).value = !(
+            valueNode as { value: boolean }
+        ).value
+        return false
+    }
+    addTodoComment(
+        prop,
+        "`sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value.",
+        j,
+    )
+    return true
+}
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -43,59 +80,28 @@ export const datasourceMongodb = (file: FileInfo, api: API) => {
         "wtimeoutMS",
     ])
 
-    // Remove deprecated options
-    root.find(j.ObjectProperty).forEach((path) => {
-        if (
-            path.node.key.type !== "Identifier" &&
-            path.node.key.type !== "StringLiteral"
-        ) {
-            return
-        }
-
-        const name =
-            path.node.key.type === "Identifier"
-                ? path.node.key.name
-                : path.node.key.value
+    root.find(j.ObjectProperty).forEach((astPath) => {
+        const name = getPropertyKeyName(astPath.node)
+        if (name === null) return
 
         if (removeProps.has(name)) {
-            j(path).remove()
+            j(astPath).remove()
             hasChanges = true
             return
         }
-
-        // Simple renames
         if (simpleRenames[name]) {
-            if (path.node.key.type === "Identifier") {
-                path.node.key.name = simpleRenames[name]
-            } else if (path.node.key.type === "StringLiteral") {
-                path.node.key.value = simpleRenames[name]
-            }
+            renamePropertyKey(astPath.node, simpleRenames[name])
             hasChanges = true
             return
         }
-
-        // sslValidate → tlsAllowInvalidCertificates (inverted boolean — add TODO)
         if (name === "sslValidate") {
-            if (path.node.key.type === "Identifier") {
-                path.node.key.name = "tlsAllowInvalidCertificates"
-            } else if (path.node.key.type === "StringLiteral") {
-                path.node.key.value = "tlsAllowInvalidCertificates"
-            }
-            // Add TODO comment about inverted boolean
-            addTodoComment(
-                path.node,
-                "`sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value.",
-                j,
-            )
+            if (migrateSslValidate(astPath.node, j)) hasTodos = true
             hasChanges = true
-            hasTodos = true
             return
         }
-
-        // writeConcern-related props → add TODO
         if (writeConcernProps.has(name)) {
             addTodoComment(
-                path.node,
+                astPath.node,
                 `\`${name}\` was removed — migrate to \`writeConcern: { ... }\``,
                 j,
             )
