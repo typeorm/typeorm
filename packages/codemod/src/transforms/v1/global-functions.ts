@@ -8,7 +8,11 @@ import type {
     JSCodeshift,
     Node,
 } from "jscodeshift"
-import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
+import {
+    getLocalNamesForImport,
+    removeImportSpecifiers,
+    removeReExportSpecifiers,
+} from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -152,6 +156,11 @@ export const globalFunctions = (file: FileInfo, api: API) => {
     }
 
     if (removeImportSpecifiers(root, j, "typeorm", removedGlobals)) {
+        hasChanges = true
+    }
+
+    // Remove re-exports of deprecated globals (barrel-file pattern)
+    if (removeReExportSpecifiers(root, j, "typeorm", removedGlobals)) {
         hasChanges = true
     }
 

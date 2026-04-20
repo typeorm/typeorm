@@ -82,3 +82,17 @@ function shadowed() {
     }
     return reader.all()
 }
+
+// Case 15: outer-declared binding reassigned inside a nested scope — the
+// declaration scope differs from the assignment-site scope, but `.all()` on
+// that binding should still be renamed.
+let nested: ConnectionOptionsReader | undefined
+function init() {
+    // TODO(typeorm-v1): `ConnectionOptionsReader` now searches `process.cwd()` instead of the app root — pass `{ root: "/custom/path" }` to override. `get(name)` and `has(name)` were also removed; use `get()` (previously `all()`) and filter the returned array.
+    nested = new ConnectionOptionsReader()
+    return nested.get()
+}
+
+// Case 16: computed member access — `reader["all"]()` should also be renamed
+const computed1 = await reader.get()
+const computed2 = await reader?.get()

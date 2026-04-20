@@ -71,3 +71,16 @@ function shadowed() {
     }
     return reader.all()
 }
+
+// Case 15: outer-declared binding reassigned inside a nested scope — the
+// declaration scope differs from the assignment-site scope, but `.all()` on
+// that binding should still be renamed.
+let nested: ConnectionOptionsReader | undefined
+function init() {
+    nested = new ConnectionOptionsReader()
+    return nested.all()
+}
+
+// Case 16: computed member access — `reader["all"]()` should also be renamed
+const computed1 = await reader["all"]()
+const computed2 = await reader?.["all"]()

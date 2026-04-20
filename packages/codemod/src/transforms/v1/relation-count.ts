@@ -4,6 +4,7 @@ import {
     getLocalNamesForImport,
     getStringValue,
     removeImportSpecifiers,
+    removeReExportSpecifiers,
 } from "../ast-helpers"
 import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
@@ -111,6 +112,11 @@ export const relationCount = (file: FileInfo, api: API) => {
 
     if (
         removeImportSpecifiers(root, j, "typeorm", new Set(["RelationCount"]))
+    ) {
+        hasChanges = true
+    }
+    if (
+        removeReExportSpecifiers(root, j, "typeorm", new Set(["RelationCount"]))
     ) {
         hasChanges = true
     }
