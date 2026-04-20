@@ -41,9 +41,16 @@ interface StdoutInterceptor {
     write: typeof process.stdout.write
     parseErrors: { file: string; message: string }[]
     unclassifiedOutput: string[]
+    getSuppressedOutputCount: () => number
     getFileCount: () => number
     getProcessed: () => number
 }
+
+// Cap on buffered unclassified lines. `printUnclassifiedOutput` already
+// slices to the first 20 for display; keeping a slightly larger window
+// lets us show both head and tail if we ever want it, while bounding
+// memory for noisy transforms that emit thousands of warnings.
+const MAX_UNCLASSIFIED_BUFFER = 200
 
 // Matches ` ERR <file> Transformation error (<message>)` lines that
 // jscodeshift prints for parse/transform failures. Anything else with
@@ -60,6 +67,7 @@ const createStdoutInterceptor = (
 ): StdoutInterceptor => {
     const parseErrors: { file: string; message: string }[] = []
     const unclassifiedOutput: string[] = []
+    let suppressedOutputCount = 0
     let fileCount = 0
     let processed = 0
 
@@ -117,7 +125,13 @@ const createStdoutInterceptor = (
         }
 
         const trimmed = str.trim()
-        if (trimmed.length > 0) unclassifiedOutput.push(trimmed)
+        if (trimmed.length > 0) {
+            if (unclassifiedOutput.length < MAX_UNCLASSIFIED_BUFFER) {
+                unclassifiedOutput.push(trimmed)
+            } else {
+                suppressedOutputCount++
+            }
+        }
         done()
         return true
     }) as typeof process.stdout.write
@@ -126,6 +140,7 @@ const createStdoutInterceptor = (
         write,
         parseErrors,
         unclassifiedOutput,
+        getSuppressedOutputCount: () => suppressedOutputCount,
         getFileCount: () => fileCount,
         getProcessed: () => processed,
     }
@@ -148,19 +163,24 @@ const buildProgressText = (
 
 // Prints buffered worker output post-run so warnings and stack traces
 // aren't silently dropped. Called unconditionally when output is present.
+// `suppressedBeyondCap` counts lines that hit MAX_UNCLASSIFIED_BUFFER and
+// were dropped before they reached `lines`.
 const printUnclassifiedOutput = (
     lines: string[],
+    suppressedBeyondCap: number,
     write: (chunk: string) => boolean,
 ): void => {
-    if (lines.length === 0) return
+    if (lines.length === 0 && suppressedBeyondCap === 0) return
     write(
         `${colors.yellow("!")} Unclassified worker output (possible warnings or stack traces):\n`,
     )
     for (const line of lines.slice(0, 20)) {
         write(`  ${line}\n`)
     }
-    if (lines.length > 20) {
-        write(`  ... (${lines.length - 20} more lines suppressed)\n`)
+    const bufferedSuppressed = Math.max(0, lines.length - 20)
+    const totalSuppressed = bufferedSuppressed + suppressedBeyondCap
+    if (totalSuppressed > 0) {
+        write(`  ... (${totalSuppressed} more lines suppressed)\n`)
     }
 }
 
@@ -225,7 +245,11 @@ const runOneTransform = async (
         `${colors.green("✔")} Changed ${result.ok} out of ${total} files (${formatTime(elapsed)})${errorSuffix}`,
     )
 
-    printUnclassifiedOutput(interceptor.unclassifiedOutput, originalWrite)
+    printUnclassifiedOutput(
+        interceptor.unclassifiedOutput,
+        interceptor.getSuppressedOutputCount(),
+        originalWrite,
+    )
 
     return { result, parseErrors: interceptor.parseErrors }
 }
