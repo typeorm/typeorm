@@ -91,6 +91,20 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         "SoftDeleteQueryBuilder",
         "RelationQueryBuilder",
         "EntityMetadata",
+        // Subscriber event types — all extend BaseEvent which deprecated
+        // `connection` in favor of `dataSource`. Covers the usual destructure
+        // pattern in subscriber handlers: `const { connection } = event`.
+        "BaseEvent",
+        "InsertEvent",
+        "UpdateEvent",
+        "RemoveEvent",
+        "SoftRemoveEvent",
+        "RecoverEvent",
+        "LoadEvent",
+        "QueryEvent",
+        "TransactionStartEvent",
+        "TransactionCommitEvent",
+        "TransactionRollbackEvent",
     ])
 
     // Metadata types whose v0.3 `.connection` getter was removed entirely in
@@ -704,6 +718,91 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             path.node.property.name = "dataSource"
             hasChanges = true
         }
+    })
+
+    // Destructuring pattern: `const { connection } = event` where `event`
+    // is a tracked connectionProp receiver (subscriber event, EntityManager,
+    // QueryRunner, Repository, etc.). Rename the `connection` key to
+    // `dataSource` and preserve the local binding name.
+    root.find(j.VariableDeclarator).forEach((declPath) => {
+        const id = declPath.node.id
+        if (id.type !== "ObjectPattern") return
+        const init = declPath.node.init
+        if (!init) return
+        if (
+            !receiverIsIn(
+                init,
+                connectionPropVarNames,
+                thisConnectionPropMembers,
+            )
+        ) {
+            return
+        }
+        for (const prop of id.properties) {
+            if (prop.type !== "Property" && prop.type !== "ObjectProperty")
+                continue
+            if (prop.key.type !== "Identifier") continue
+            if (prop.key.name !== "connection") continue
+            prop.key.name = "dataSource"
+            // Shorthand `{ connection }` expands to `{ dataSource: connection }`
+            // to keep the local variable name unchanged — the consumer code
+            // still references `connection`.
+            if ((prop as { shorthand?: boolean }).shorthand) {
+                ;(prop as { shorthand?: boolean }).shorthand = false
+            }
+            hasChanges = true
+        }
+    })
+
+    // Rewrite the `connection` option passed to metadata-type constructors:
+    //   - `new EntityMetadata({ connection: X, ... })` → rename key to
+    //     `dataSource` (the option was just renamed in v1).
+    //   - `new ColumnMetadata({ connection, ... })` / `IndexMetadata` →
+    //     drop the `connection` key entirely. These constructors no longer
+    //     accept `connection` in v1; the DataSource is reached through
+    //     `entityMetadata.dataSource` and is set by the entity-metadata
+    //     builder rather than the caller.
+    root.find(j.NewExpression).forEach((path) => {
+        const callee = path.node.callee
+        if (callee.type !== "Identifier") return
+        const name = callee.name
+
+        const isEntityMetadata =
+            connectionPropLocalNames.has(name) &&
+            name.includes("EntityMetadata")
+        const isIndirect = indirectDataSourceLocalNames.has(name)
+        if (!isEntityMetadata && !isIndirect) return
+
+        const [arg] = path.node.arguments
+        if (!arg || arg.type !== "ObjectExpression") return
+
+        if (isEntityMetadata) {
+            for (const prop of arg.properties) {
+                if (prop.type !== "Property" && prop.type !== "ObjectProperty")
+                    continue
+                if (prop.key.type !== "Identifier") continue
+                if (prop.key.name !== "connection") continue
+                prop.key.name = "dataSource"
+                // Shorthand `{ connection }` expands to `{ dataSource: connection }`
+                // so the variable reference stays intact; clear the shorthand
+                // flag to emit the full key:value pair.
+                if ((prop as { shorthand?: boolean }).shorthand) {
+                    ;(prop as { shorthand?: boolean }).shorthand = false
+                }
+                hasChanges = true
+            }
+            return
+        }
+
+        // ColumnMetadata / IndexMetadata — `connection` was removed.
+        const before = arg.properties.length
+        arg.properties = arg.properties.filter((prop) => {
+            if (prop.type !== "Property" && prop.type !== "ObjectProperty")
+                return true
+            if (prop.key.type !== "Identifier") return true
+            return prop.key.name !== "connection"
+        })
+        if (arg.properties.length !== before) hasChanges = true
     })
 
     return hasChanges ? root.toSource() : undefined

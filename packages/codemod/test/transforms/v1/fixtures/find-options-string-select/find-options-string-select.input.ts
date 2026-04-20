@@ -4,7 +4,9 @@ const users = await repository.find({
     select: ["id", "name", "email"],
 })
 
-// Should NOT be transformed — value is a function call, not an array literal.
+// Dynamic value — wrapped with `Object.fromEntries(...)` to produce the
+// v1 object shape at runtime from whatever `string[]` the expression
+// returns.
 const dynamic = await repository.find({
     select: computeSelect(),
 })

@@ -355,6 +355,79 @@ export const getObjectPropertyKeyName = (
 }
 
 /**
+ * TypeORM `Repository` / `EntityManager` find-family method names. Used to
+ * scope find-option transforms (`select: [...]` / `relations: [...]` →
+ * object form) to arguments passed into these methods. The method-name
+ * check lets the transforms fire on files that import TypeORM only
+ * indirectly (through a wrapper service), matching real NestJS-style
+ * codebases where service files don't `import` from `typeorm` directly.
+ */
+export const TYPEORM_FIND_METHODS: ReadonlySet<string> = new Set([
+    "find",
+    "findAndCount",
+    "findAndCountBy",
+    "findBy",
+    "findOne",
+    "findOneBy",
+    "findOneByOrFail",
+    "findOneOrFail",
+    "count",
+    "countBy",
+])
+
+/**
+ * Returns true when `node` is a call of shape `Object.fromEntries(...)`.
+ * Used by the find-option transforms to stay idempotent — a second pass
+ * must not wrap an already-wrapped dynamic value in another `fromEntries`.
+ */
+export const isObjectFromEntriesCall = (node: ASTNode): boolean => {
+    if (node.type !== "CallExpression") return false
+    const callee = (node as { callee: ASTNode }).callee
+    if (callee.type !== "MemberExpression") return false
+    const m = callee as { object: ASTNode; property: ASTNode }
+    return (
+        m.object.type === "Identifier" &&
+        m.object.name === "Object" &&
+        m.property.type === "Identifier" &&
+        m.property.name === "fromEntries"
+    )
+}
+
+/**
+ * Returns true when the given `ObjectProperty` lives inside an object that
+ * is an argument to one of the TYPEORM_FIND_METHODS. Matches both
+ *   `repo.find({ select: [...] })` (object is the single argument) and
+ *   `manager.find(Entity, { select: [...] })` (object is the second arg).
+ */
+export const isFindMethodCallArgument = (
+    propPath: ASTPath<ASTNode>,
+): boolean => {
+    const objExprPath = propPath.parent
+    if (!objExprPath || objExprPath.node.type !== "ObjectExpression") {
+        return false
+    }
+    const callPath = objExprPath.parent
+    if (!callPath) return false
+    const callNode = callPath.node
+    if (
+        callNode.type !== "CallExpression" &&
+        callNode.type !== "OptionalCallExpression"
+    ) {
+        return false
+    }
+    const callee = (callNode as { callee: ASTNode }).callee
+    if (
+        callee.type !== "MemberExpression" &&
+        callee.type !== "OptionalMemberExpression"
+    ) {
+        return false
+    }
+    const prop = (callee as { property: ASTNode }).property
+    if (prop.type !== "Identifier") return false
+    return TYPEORM_FIND_METHODS.has(prop.name)
+}
+
+/**
  * Peels TypeScript expression wrappers around a value so callers see the
  * underlying node. Handles `as X` / `x!` / `x satisfies X` / `<X>x`. Used
  * by transforms that inspect values which users may annotate with type

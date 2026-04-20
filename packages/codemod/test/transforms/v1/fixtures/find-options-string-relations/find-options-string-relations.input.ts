@@ -4,7 +4,9 @@ const users = await repository.find({
     relations: ["profile", "posts", "posts.comments"],
 })
 
-// Should NOT be transformed — value is a function call, not an array literal.
+// Dynamic value — wrapped with `Object.fromEntries(...)`. A TODO notes
+// that dot-paths (`"posts.comments"`) need manual nesting since the wrap
+// produces a flat object keyed by the raw dot-path string.
 const dynamic = await repository.find({
     relations: computeRelations(),
 })
