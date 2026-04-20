@@ -106,6 +106,12 @@ body:
       required: true
   - type: markdown
     attributes:
+      value: >-
+        🛡️ **Security vulnerabilities:** Do not report security issues here.
+        Use [GitHub Security Advisories](https://github.com/typeorm/typeorm/security/advisories/new)
+        for private disclosure.
+  - type: markdown
+    attributes:
       value: |-
         Remember that first-time contributors are welcome! 🙌
 
