@@ -1,5 +1,10 @@
 import path from "node:path"
-import type { API, FileInfo } from "jscodeshift"
+import type {
+    API,
+    FileInfo,
+    ObjectExpression,
+    ObjectProperty,
+} from "jscodeshift"
 import {
     fileImportsFrom,
     getObjectPropertyKeyName,
@@ -20,6 +25,74 @@ const isolationValueRenames: Record<string, string> = {
     REPEATABLE_READ: "REPEATABLE READ",
 }
 
+const DOMAIN_MESSAGE =
+    '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`'
+
+const isPropertyLike = (
+    p: ObjectExpression["properties"][number],
+): p is ObjectProperty =>
+    p.type === "ObjectProperty" || (p as { type: string }).type === "Property"
+
+const isMssqlOptions = (obj: ObjectExpression): boolean =>
+    obj.properties.some(
+        (p) =>
+            isPropertyLike(p) &&
+            getObjectPropertyKeyName(p) === "type" &&
+            getStringValue(unwrapTsExpression(p.value)) === "mssql",
+    )
+
+// Finds the nested `options: { ... }` ObjectExpression on an MSSQL config.
+const findNestedOptionsObject = (
+    obj: ObjectExpression,
+): ObjectExpression | null => {
+    const prop = obj.properties.find(
+        (p) =>
+            isPropertyLike(p) &&
+            getObjectPropertyKeyName(p) === "options" &&
+            p.value.type === "ObjectExpression",
+    )
+    if (!prop || !isPropertyLike(prop)) return null
+    return prop.value.type === "ObjectExpression" ? prop.value : null
+}
+
+// Flags the top-level `domain` property with a TODO pointing at the v1
+// replacement. Returns whether a new TODO was added.
+const flagDomainOption = (
+    prop: ObjectProperty,
+    api: API,
+    j: API["jscodeshift"],
+): { changed: boolean; addedTodo: boolean } => {
+    if (hasTodoComment(prop, DOMAIN_MESSAGE)) {
+        return { changed: true, addedTodo: false }
+    }
+    addTodoComment(prop, DOMAIN_MESSAGE, j)
+    return { changed: true, addedTodo: true }
+}
+
+// Rewrites `isolation` → `isolationLevel` and fixes string-literal values
+// for (connection)IsolationLevel. Returns whether anything changed.
+const rewriteInnerIsolationProp = (prop: ObjectProperty): boolean => {
+    if (prop.key.type !== "Identifier") return false
+
+    let changed = false
+    if (prop.key.name === "isolation") {
+        prop.key.name = "isolationLevel"
+        changed = true
+    }
+
+    const isIsolationLevel =
+        prop.key.name === "isolationLevel" ||
+        prop.key.name === "connectionIsolationLevel"
+    if (!isIsolationLevel) return changed
+
+    if (prop.value.type !== "StringLiteral") return changed
+    const replacement = isolationValueRenames[prop.value.value]
+    if (!replacement) return changed
+
+    prop.value.value = replacement
+    return true
+}
+
 export const datasourceMssql = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
@@ -30,65 +103,23 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
     let hasTodos = false
 
     root.find(j.ObjectExpression).forEach((objPath) => {
-        const props = objPath.node.properties
-        const isMssql = props.some(
-            (p) =>
-                (p.type === "ObjectProperty" || p.type === "Property") &&
-                getObjectPropertyKeyName(p) === "type" &&
-                getStringValue(unwrapTsExpression(p.value)) === "mssql",
-        )
-        if (!isMssql) return
+        const obj = objPath.node
+        if (!isMssqlOptions(obj)) return
 
-        for (const prop of props) {
-            if (
-                (prop.type === "ObjectProperty" || prop.type === "Property") &&
-                getObjectPropertyKeyName(prop) === "domain"
-            ) {
-                const message =
-                    '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`'
-                if (!hasTodoComment(prop, message)) {
-                    addTodoComment(prop, message, j)
-                    hasTodos = true
-                }
-                hasChanges = true
-            }
+        for (const prop of obj.properties) {
+            if (!isPropertyLike(prop)) continue
+            if (getObjectPropertyKeyName(prop) !== "domain") continue
+            const { changed, addedTodo } = flagDomainOption(prop, api, j)
+            if (changed) hasChanges = true
+            if (addedTodo) hasTodos = true
         }
 
-        const optionsProp = props.find(
-            (p) =>
-                (p.type === "ObjectProperty" || p.type === "Property") &&
-                getObjectPropertyKeyName(p) === "options" &&
-                p.value.type === "ObjectExpression",
-        )
-        if (
-            (optionsProp?.type !== "ObjectProperty" &&
-                optionsProp?.type !== "Property") ||
-            optionsProp.value.type !== "ObjectExpression"
-        )
-            return
+        const optionsObj = findNestedOptionsObject(obj)
+        if (!optionsObj) return
 
-        for (const innerProp of optionsProp.value.properties) {
-            if (
-                innerProp.type !== "ObjectProperty" ||
-                innerProp.key.type !== "Identifier"
-            )
-                continue
-
-            // Rename `isolation` → `isolationLevel`
-            if (innerProp.key.name === "isolation") {
-                innerProp.key.name = "isolationLevel"
-                hasChanges = true
-            }
-
-            // Fix isolation value format on isolationLevel / connectionIsolationLevel
-            if (
-                (innerProp.key.name === "isolationLevel" ||
-                    innerProp.key.name === "connectionIsolationLevel") &&
-                innerProp.value.type === "StringLiteral" &&
-                isolationValueRenames[innerProp.value.value]
-            ) {
-                innerProp.value.value =
-                    isolationValueRenames[innerProp.value.value]
+        for (const inner of optionsObj.properties) {
+            if (inner.type !== "ObjectProperty") continue
+            if (rewriteInnerIsolationProp(inner)) {
                 hasChanges = true
             }
         }

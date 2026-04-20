@@ -50,9 +50,7 @@ const migrateSslValidate = (prop: ObjectProperty, j: JSCodeshift): boolean => {
 
 // Returns true when `obj` has an `ObjectProperty` with key `type` whose value
 // resolves to the string literal `"mongodb"` — the gate for all mutations in
-// this file. Accepts identifier and string-literal keys (both `type:` and
-// `"type":`) and peels TS expression wrappers so `type: "mongodb" as const`
-// also matches.
+// this file.
 const isMongoDbOptions = (obj: ObjectExpression): boolean =>
     obj.properties.some(
         (p) =>
@@ -60,6 +58,63 @@ const isMongoDbOptions = (obj: ObjectExpression): boolean =>
             getObjectPropertyKeyName(p) === "type" &&
             getStringValue(unwrapTsExpression(p.value)) === "mongodb",
     )
+
+const REMOVED_PROPS = new Set([
+    "useNewUrlParser",
+    "useUnifiedTopology",
+    "keepAlive",
+    "keepAliveInitialDelay",
+    "sslCRL",
+])
+
+const SIMPLE_RENAMES: Record<string, string> = {
+    appname: "appName",
+    ssl: "tls",
+    sslCA: "tlsCAFile",
+    sslCert: "tlsCertificateKeyFile",
+    sslKey: "tlsCertificateKeyFile",
+    sslPass: "tlsCertificateKeyFilePassword",
+}
+
+const WRITE_CONCERN_PROPS = new Set([
+    "fsync",
+    "j",
+    "w",
+    "wtimeout",
+    "wtimeoutMS",
+])
+
+type MutationResult = { changed: boolean; addedTodo: boolean; remove: boolean }
+
+// Classifies a single property inside a MongoDB options object. Returns the
+// outcome so the caller can update the bookkeeping flags; `remove: true`
+// means the caller must drop the property from the object.
+const classifyMongoProperty = (
+    prop: ObjectProperty,
+    propName: string,
+    j: JSCodeshift,
+): MutationResult => {
+    if (REMOVED_PROPS.has(propName)) {
+        return { changed: true, addedTodo: false, remove: true }
+    }
+    if (SIMPLE_RENAMES[propName]) {
+        renamePropertyKey(prop, SIMPLE_RENAMES[propName])
+        return { changed: true, addedTodo: false, remove: false }
+    }
+    if (propName === "sslValidate") {
+        const addedTodo = migrateSslValidate(prop, j)
+        return { changed: true, addedTodo, remove: false }
+    }
+    if (WRITE_CONCERN_PROPS.has(propName)) {
+        const message = `\`${propName}\` was removed — migrate to \`writeConcern: { ... }\``
+        if (hasTodoComment(prop, message)) {
+            return { changed: true, addedTodo: false, remove: false }
+        }
+        addTodoComment(prop, message, j)
+        return { changed: true, addedTodo: true, remove: false }
+    }
+    return { changed: false, addedTodo: false, remove: false }
+}
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -75,65 +130,25 @@ export const datasourceMongodb = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    const removeProps = new Set([
-        "useNewUrlParser",
-        "useUnifiedTopology",
-        "keepAlive",
-        "keepAliveInitialDelay",
-        "sslCRL",
-    ])
-
-    const simpleRenames: Record<string, string> = {
-        appname: "appName",
-        ssl: "tls",
-        sslCA: "tlsCAFile",
-        sslCert: "tlsCertificateKeyFile",
-        sslKey: "tlsCertificateKeyFile",
-        sslPass: "tlsCertificateKeyFilePassword",
-    }
-
-    const writeConcernProps = new Set([
-        "fsync",
-        "j",
-        "w",
-        "wtimeout",
-        "wtimeoutMS",
-    ])
-
     root.find(j.ObjectExpression).forEach((objPath) => {
         if (!isMongoDbOptions(objPath.node)) return
 
-        // Iterate over a snapshot; `remove()` mutates the live array.
-        for (const prop of [...objPath.node.properties]) {
+        const toRemove = new Set<ObjectProperty>()
+        for (const prop of objPath.node.properties) {
             if (prop.type !== "ObjectProperty") continue
             const propName = getPropertyKeyName(prop)
             if (propName === null) continue
 
-            if (removeProps.has(propName)) {
-                objPath.node.properties = objPath.node.properties.filter(
-                    (p) => p !== prop,
-                )
-                hasChanges = true
-                continue
-            }
-            if (simpleRenames[propName]) {
-                renamePropertyKey(prop, simpleRenames[propName])
-                hasChanges = true
-                continue
-            }
-            if (propName === "sslValidate") {
-                if (migrateSslValidate(prop, j)) hasTodos = true
-                hasChanges = true
-                continue
-            }
-            if (writeConcernProps.has(propName)) {
-                const message = `\`${propName}\` was removed — migrate to \`writeConcern: { ... }\``
-                if (!hasTodoComment(prop, message)) {
-                    addTodoComment(prop, message, j)
-                    hasTodos = true
-                }
-                hasChanges = true
-            }
+            const result = classifyMongoProperty(prop, propName, j)
+            if (result.changed) hasChanges = true
+            if (result.addedTodo) hasTodos = true
+            if (result.remove) toRemove.add(prop)
+        }
+
+        if (toRemove.size > 0) {
+            objPath.node.properties = objPath.node.properties.filter(
+                (p) => !toRemove.has(p as ObjectProperty),
+            )
         }
     })
 
