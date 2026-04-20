@@ -125,6 +125,31 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions",
     }
 
+    // Driver-specific DataSourceOptions types re-exported from the `typeorm`
+    // package index in v1. Users who had deep-path imports
+    // (`typeorm/driver/<driver>/<Name>`) can migrate to the shallow index
+    // import — shallow is preferred since deep paths are brittle across
+    // refactors. The codemod performs the simplification automatically.
+    const reExportedDriverOptions = new Set([
+        "AuroraMysqlDataSourceOptions",
+        "AuroraPostgresDataSourceOptions",
+        "BetterSqlite3DataSourceOptions",
+        "CapacitorDataSourceOptions",
+        "CockroachDataSourceOptions",
+        "CordovaDataSourceOptions",
+        "ExpoDataSourceOptions",
+        "MongoDataSourceOptions",
+        "MysqlDataSourceOptions",
+        "NativescriptDataSourceOptions",
+        "OracleDataSourceOptions",
+        "PostgresDataSourceOptions",
+        "ReactNativeDataSourceOptions",
+        "SapDataSourceOptions",
+        "SpannerDataSourceOptions",
+        "SqljsDataSourceOptions",
+        "SqlServerDataSourceOptions",
+    ])
+
     const localRenames = new Map<string, string>()
     const typeormPathPrefix = "typeorm/"
 
@@ -212,6 +237,26 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const rewritten = rewriteTypeormPath(source)
         if (rewritten !== source) {
             path.node.source.value = rewritten
+            hasChanges = true
+        }
+
+        // Collapse deep driver-options imports to the shallow index import
+        // when every specifier is now re-exported from the `typeorm`
+        // package index. Only fires when ALL specifiers qualify so we don't
+        // accidentally lose an unrelated specifier from the deep path.
+        const finalSource = path.node.source.value
+        if (
+            typeof finalSource === "string" &&
+            finalSource.startsWith("typeorm/driver/") &&
+            (path.node.specifiers?.length ?? 0) > 0 &&
+            path.node.specifiers!.every(
+                (spec) =>
+                    spec.type === "ImportSpecifier" &&
+                    spec.imported.type === "Identifier" &&
+                    reExportedDriverOptions.has(spec.imported.name),
+            )
+        ) {
+            path.node.source.value = "typeorm"
             hasChanges = true
         }
     })
