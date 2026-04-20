@@ -44,11 +44,12 @@ const dataSource6 = new DataSource({
     driver: require("expo-sqlite"),
 })
 
-// Case 7: quoted keys — driver should still be removed.
+// Case 7: quoted (string-literal) keys — driver should still be removed.
+// prettier-ignore
 const dataSource7 = new DataSource({
-    type: "expo",
-    database: "quoted.db",
-    driver: require("expo-sqlite"),
+    "type": "expo",
+    "database": "quoted.db",
+    "driver": require("expo-sqlite"),
 })
 
 // Case 8: default export — driver removed from the exported config.
