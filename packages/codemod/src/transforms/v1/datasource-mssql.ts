@@ -1,6 +1,11 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { fileImportsFrom } from "../ast-helpers"
+import {
+    fileImportsFrom,
+    getObjectPropertyKeyName,
+    getStringValue,
+    unwrapTsExpression,
+} from "../ast-helpers"
 import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -28,19 +33,16 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
         const props = objPath.node.properties
         const isMssql = props.some(
             (p) =>
-                p.type === "ObjectProperty" &&
-                p.key.type === "Identifier" &&
-                p.key.name === "type" &&
-                p.value.type === "StringLiteral" &&
-                p.value.value === "mssql",
+                (p.type === "ObjectProperty" || p.type === "Property") &&
+                getObjectPropertyKeyName(p) === "type" &&
+                getStringValue(unwrapTsExpression(p.value)) === "mssql",
         )
         if (!isMssql) return
 
         for (const prop of props) {
             if (
-                prop.type === "ObjectProperty" &&
-                prop.key.type === "Identifier" &&
-                prop.key.name === "domain"
+                (prop.type === "ObjectProperty" || prop.type === "Property") &&
+                getObjectPropertyKeyName(prop) === "domain"
             ) {
                 const message =
                     '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`'
@@ -54,13 +56,13 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
 
         const optionsProp = props.find(
             (p) =>
-                p.type === "ObjectProperty" &&
-                p.key.type === "Identifier" &&
-                p.key.name === "options" &&
+                (p.type === "ObjectProperty" || p.type === "Property") &&
+                getObjectPropertyKeyName(p) === "options" &&
                 p.value.type === "ObjectExpression",
         )
         if (
-            optionsProp?.type !== "ObjectProperty" ||
+            (optionsProp?.type !== "ObjectProperty" &&
+                optionsProp?.type !== "Property") ||
             optionsProp.value.type !== "ObjectExpression"
         )
             return

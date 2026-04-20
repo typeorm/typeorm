@@ -41,3 +41,16 @@ const postgresConfig = {
 }
 const fetchOptions = { keepAlive: true, ssl: false }
 const writeConcernCollision = { j: [1, 2, 3], w: "other" }
+
+// `type: "mongodb" as const` — scope guard peels TS expression wrappers.
+const ds4 = new DataSource({
+    type: "mongodb" as const,
+})
+
+// String-literal key (`"type"`) must also match the scope guard —
+// Prettier normalizes the surviving quoted key back to identifier form in
+// the output, but the transform recognized it during the scope check.
+// prettier-ignore
+const ds5 = new DataSource({
+    "type": "mongodb"
+})

@@ -1,6 +1,11 @@
 import path from "node:path"
 import type { API, ASTNode, FileInfo, ObjectExpression } from "jscodeshift"
-import { fileImportsFrom, getStringValue, setStringValue } from "../ast-helpers"
+import {
+    fileImportsFrom,
+    getStringValue,
+    setStringValue,
+    unwrapTsExpression,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -21,13 +26,13 @@ const renameKey = (key: ASTNode, newName: string): void => {
 
 // Matches `{ type: "sap", ... }` objects — only then are SAP-specific
 // option renames safe to apply (avoids clobbering unrelated user code).
+// Peels TS wrappers so `type: "sap" as const` also matches.
 const isSapOptions = (obj: ObjectExpression): boolean =>
     obj.properties.some(
         (p) =>
-            p.type === "ObjectProperty" &&
+            (p.type === "ObjectProperty" || p.type === "Property") &&
             getKeyName(p.key) === "type" &&
-            p.value.type === "StringLiteral" &&
-            p.value.value === "sap",
+            getStringValue(unwrapTsExpression(p.value)) === "sap",
     )
 
 export const datasourceSap = (file: FileInfo, api: API) => {

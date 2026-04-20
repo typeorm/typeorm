@@ -6,7 +6,12 @@ import type {
     ObjectExpression,
     ObjectProperty,
 } from "jscodeshift"
-import { fileImportsFrom } from "../ast-helpers"
+import {
+    fileImportsFrom,
+    getObjectPropertyKeyName,
+    getStringValue,
+    unwrapTsExpression,
+} from "../ast-helpers"
 import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -44,15 +49,16 @@ const migrateSslValidate = (prop: ObjectProperty, j: JSCodeshift): boolean => {
 }
 
 // Returns true when `obj` has an `ObjectProperty` with key `type` whose value
-// is the StringLiteral `"mongodb"` — the gate for all mutations in this file.
+// resolves to the string literal `"mongodb"` — the gate for all mutations in
+// this file. Accepts identifier and string-literal keys (both `type:` and
+// `"type":`) and peels TS expression wrappers so `type: "mongodb" as const`
+// also matches.
 const isMongoDbOptions = (obj: ObjectExpression): boolean =>
     obj.properties.some(
         (p) =>
-            p.type === "ObjectProperty" &&
-            p.key.type === "Identifier" &&
-            p.key.name === "type" &&
-            p.value.type === "StringLiteral" &&
-            p.value.value === "mongodb",
+            (p.type === "ObjectProperty" || p.type === "Property") &&
+            getObjectPropertyKeyName(p) === "type" &&
+            getStringValue(unwrapTsExpression(p.value)) === "mongodb",
     )
 
 export const name = path.basename(__filename, path.extname(__filename))

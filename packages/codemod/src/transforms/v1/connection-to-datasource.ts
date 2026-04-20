@@ -516,6 +516,15 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         "typeorm",
         typesWithIndirectDataSource,
     )
+    // Specifically the local names bound to typeorm's `EntityMetadata` —
+    // used to gate the constructor-option rewrite below. Alias-aware so
+    // `import { EntityMetadata as EM }` is still recognized.
+    const entityMetadataLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        new Set(["EntityMetadata"]),
+    )
 
     const connectionPropVarNames = new Set<string>()
     const indirectDataSourceVarNames = new Set<string>()
@@ -812,9 +821,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         if (callee.type !== "Identifier") return
         const name = callee.name
 
-        const isEntityMetadata =
-            connectionPropLocalNames.has(name) &&
-            name.includes("EntityMetadata")
+        const isEntityMetadata = entityMetadataLocalNames.has(name)
         const isIndirect = indirectDataSourceLocalNames.has(name)
         if (!isEntityMetadata && !isIndirect) return
 
