@@ -355,6 +355,31 @@ export const getObjectPropertyKeyName = (
 }
 
 /**
+ * Peels TypeScript expression wrappers around a value so callers see the
+ * underlying node. Handles `as X` / `x!` / `x satisfies X` / `<X>x`. Used
+ * by transforms that inspect values which users may annotate with type
+ * assertions — e.g. `type: "expo" as const`, `{ logPath: "x" } as Options`.
+ *
+ * Generic over the node type so callers can keep their original narrowing
+ * — in practice the returned node is the same type as the input (with TS
+ * wrapper variants peeled off).
+ */
+export const unwrapTsExpression = <T extends { type: string }>(node: T): T => {
+    let current = node
+    while (
+        current.type === "TSAsExpression" ||
+        current.type === "TSNonNullExpression" ||
+        current.type === "TSSatisfiesExpression" ||
+        current.type === "TSTypeAssertion"
+    ) {
+        const inner = (current as unknown as { expression?: T }).expression
+        if (!inner) break
+        current = inner
+    }
+    return current
+}
+
+/**
  * Removes properties matching the given key names from an ObjectExpression.
  * Matches both identifier keys (`name`) and string-literal keys (`"name"`).
  * Returns true if any properties were removed.
@@ -363,12 +388,10 @@ export const removeObjectProperties = (
     obj: ObjectExpression,
     propertyNames: Set<string>,
 ): boolean =>
-    removeObjectPropertiesWhere(
-        obj,
-        (prop) =>
-            getObjectPropertyKeyName(prop) !== null &&
-            propertyNames.has(getObjectPropertyKeyName(prop) as string),
-    )
+    removeObjectPropertiesWhere(obj, (prop) => {
+        const key = getObjectPropertyKeyName(prop)
+        return key !== null && propertyNames.has(key)
+    })
 
 /**
  * Removes every property from `obj` that satisfies `predicate`. Returns true

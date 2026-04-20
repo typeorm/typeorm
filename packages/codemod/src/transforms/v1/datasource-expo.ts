@@ -1,7 +1,6 @@
 import path from "node:path"
 import type {
     API,
-    ASTNode,
     CallExpression,
     FileInfo,
     Node,
@@ -12,39 +11,24 @@ import {
     getObjectPropertyKeyName,
     getStringValue,
     removeObjectPropertiesWhere,
+    unwrapTsExpression,
 } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "remove redundant `expo-sqlite` driver injection on Expo data sources — v1 auto-loads it"
 
-// Unwraps `as const` / `as X` / `!` / `satisfies X` / angle-bracket casts
-// around a value so `type: "expo" as const` is recognized alongside plain
-// `type: "expo"`. Without this, `isExpoDataSource` would miss factory
-// configs that narrow the literal type before spreading.
-const unwrapTsExpression = (node: ASTNode): ASTNode => {
-    let current: ASTNode = node
-    while (
-        current.type === "TSAsExpression" ||
-        current.type === "TSNonNullExpression" ||
-        current.type === "TSSatisfiesExpression" ||
-        current.type === "TSTypeAssertion"
-    ) {
-        current = (current as unknown as { expression: ASTNode }).expression
-    }
-    return current
-}
-
 // Scope predicate: `{ type: "expo", database: "...", ... }`. The sibling
 // `database` requirement avoids mutating unrelated configs that merely reuse
-// `type: "expo"` (e.g. commander/yargs option shapes).
+// `type: "expo"` (e.g. commander/yargs option shapes). `unwrapTsExpression`
+// makes `type: "expo" as const` work alongside plain `type: "expo"`.
 const isExpoDataSource = (obj: ObjectExpression): boolean => {
     let hasExpoType = false
     let hasDatabase = false
     for (const prop of obj.properties) {
+        if (prop.type !== "Property" && prop.type !== "ObjectProperty") continue
         const keyName = getObjectPropertyKeyName(prop)
         if (!keyName) continue
-        if (prop.type !== "Property" && prop.type !== "ObjectProperty") continue
         if (
             keyName === "type" &&
             getStringValue(unwrapTsExpression(prop.value)) === "expo"
@@ -87,9 +71,9 @@ export const datasourceExpo = (file: FileInfo, api: API) => {
         // it. Users with custom wrappers / patch-package overrides fall through
         // `isDefaultExpoSqliteRequire` and keep their explicit line.
         const removed = removeObjectPropertiesWhere(obj, (prop) => {
-            if (getObjectPropertyKeyName(prop) !== "driver") return false
             if (prop.type !== "Property" && prop.type !== "ObjectProperty")
                 return false
+            if (getObjectPropertyKeyName(prop) !== "driver") return false
             return isDefaultExpoSqliteRequire(prop.value as Node)
         })
         if (removed) hasChanges = true
