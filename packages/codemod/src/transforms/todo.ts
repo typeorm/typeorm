@@ -3,8 +3,9 @@ import type { JSCodeshift, Node } from "jscodeshift"
 // The prefix emitted into user code to guide the v1 migration. This module
 // is the single source of truth for the exact wording; every codemod
 // transform that flags a manual step routes through `addTodoComment`
-// below. NOSONAR — the literal `TODO` here is product output, not a
-// tech-debt marker for this codebase.
+// below. The literal on the next line is product output emitted into the
+// migrated codebase — not a tech-debt marker for this repo — hence the
+// inline NOSONAR suppression.
 const TODO_PREFIX = "TODO(typeorm-v1):" // NOSONAR: S1135
 const formatTodo = (message: string): string => ` ${TODO_PREFIX} ${message}`
 
