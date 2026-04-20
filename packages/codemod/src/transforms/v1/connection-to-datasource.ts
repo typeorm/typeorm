@@ -11,6 +11,7 @@ import {
     forEachIdentifierParam,
     getStringValue,
     isIdentifier,
+    renameReExportSpecifiers,
     setStringValue,
 } from "../ast-helpers"
 
@@ -154,12 +155,10 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                 spec.local.name !== oldImported
 
             spec.imported.name = newImported
-            if (hasAlias) {
-                // Alias stays; user chose it deliberately. The alias already
-                // refers to the renamed import so usages don't need rewriting.
-            } else {
-                // No alias — propagate the rename to the local binding and
-                // record it for the NewExpression / TSTypeReference loop.
+            // With an alias (`Connection as Foo`), the local binding already
+            // points to the renamed import — usages need no rewriting. Without
+            // one, propagate the rename to the local binding.
+            if (!hasAlias) {
                 const localName =
                     spec.local?.type === "Identifier"
                         ? spec.local.name
@@ -198,6 +197,19 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const rewritten = rewriteTypeormPath(source)
         if (rewritten !== source) {
             path.node.source.value = rewritten
+            hasChanges = true
+        }
+    })
+
+    // Re-export source paths (`export { X } from "typeorm/driver/..."`)
+    // follow the same deep-path rewrite rules as import sources so barrel
+    // files that re-export renamed modules end up pointing at the v1 path.
+    root.find(j.ExportNamedDeclaration).forEach((exportPath) => {
+        const source = exportPath.node.source?.value
+        if (typeof source !== "string") return
+        const rewritten = rewriteTypeormPath(source)
+        if (rewritten !== source) {
+            exportPath.node.source!.value = rewritten
             hasChanges = true
         }
     })
@@ -256,6 +268,12 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             if (rewriteRequireDestructuredProperty(prop)) hasChanges = true
         }
     })
+
+    // Rename re-exports from "typeorm" (e.g. barrel files that do
+    // `export { Connection } from "typeorm"`)
+    if (renameReExportSpecifiers(root, j, "typeorm", typeRenames)) {
+        hasChanges = true
+    }
 
     for (const [oldName, newName] of localRenames) {
         // TSTypeReference (e.g. const x: Connection = ...)

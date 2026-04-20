@@ -141,11 +141,16 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
     const readerBindings = new Map<ScopeLike, Set<string>>()
     const flaggedHosts = new WeakSet<Node>()
 
-    const recordBinding = (scope: ScopeLike, name: string): void => {
-        let bucket = readerBindings.get(scope)
+    // Key bindings under the declaring scope (the one `scope.lookup` returns
+    // for usages). For `let r; r = new X()` the assignment lives in a nested
+    // scope but `r` is declared outside — recording under the assignment-site
+    // scope would miss later `r.all()` lookups.
+    const recordBinding = (siteScope: ScopeLike, name: string): void => {
+        const declaringScope = siteScope.lookup(name) ?? siteScope
+        let bucket = readerBindings.get(declaringScope)
         if (!bucket) {
             bucket = new Set()
-            readerBindings.set(scope, bucket)
+            readerBindings.set(declaringScope, bucket)
         }
         bucket.add(name)
     }
@@ -225,12 +230,13 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
             return
         }
         const member = callee
-        if (
-            member.property.type !== "Identifier" ||
-            member.property.name !== "all"
-        ) {
-            return
-        }
+        const propertyName =
+            member.property.type === "Identifier"
+                ? member.property.name
+                : member.computed
+                  ? getStringValue(member.property)
+                  : undefined
+        if (propertyName !== "all") return
         const receiver = member.object
         let matches = false
         if (receiver.type === "Identifier") {
@@ -244,7 +250,14 @@ export const connectionOptionsReader = (file: FileInfo, api: API) => {
             } as ASTPath<NewExpression>)
         }
         if (!matches) return
-        member.property.name = "get"
+        if (member.property.type === "Identifier") {
+            member.property.name = "get"
+        } else {
+            // Computed string key — replace the property with a fresh identifier
+            // so the output reads `r.get()` instead of `r["get"]()`.
+            member.property = j.identifier("get")
+            member.computed = false
+        }
         hasChanges = true
     }
     root.find(j.CallExpression).forEach(tryRename)

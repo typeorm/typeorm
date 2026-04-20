@@ -10,3 +10,6 @@ const ds = dataSource
 
 // Named connections removed in v1 — argument is dropped, TODO flags manual reconfiguration
 const secondary = dataSource
+
+// Barrel re-exports: removed globals are stripped, other names are preserved
+export { DataSource, EntityManager } from "typeorm"

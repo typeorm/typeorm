@@ -170,6 +170,68 @@ export const getLocalNamesForImport = (
 }
 
 /**
+ * Collects local namespace bindings for a module. Covers:
+ *
+ *   import * as typeorm from "typeorm"           → "typeorm"
+ *   const typeorm = require("typeorm")           → "typeorm"
+ *   import typeorm = require("typeorm")          → "typeorm"
+ *
+ * Useful when a transform needs to recognise `typeorm.Foo` member-expression
+ * references alongside named `Foo` imports handled by `getLocalNamesForImport`.
+ */
+export const getNamespaceLocalNames = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+): Set<string> => {
+    const localNames = new Set<string>()
+
+    // ESM: `import * as ns from "moduleName"`
+    root.find(j.ImportDeclaration, {
+        source: { value: moduleName },
+    }).forEach((importPath) => {
+        for (const spec of importPath.node.specifiers ?? []) {
+            if (
+                spec.type === "ImportNamespaceSpecifier" &&
+                spec.local?.type === "Identifier"
+            ) {
+                localNames.add(spec.local.name)
+            }
+        }
+    })
+
+    // TypeScript: `import ns = require("moduleName")`
+    root.find(j.TSImportEqualsDeclaration).forEach((importPath) => {
+        const ref = importPath.node.moduleReference
+        if (ref.type !== "TSExternalModuleReference") return
+        if (getStringValue(ref.expression) !== moduleName) return
+        if (importPath.node.id?.type === "Identifier") {
+            localNames.add(importPath.node.id.name)
+        }
+    })
+
+    // CommonJS: `const ns = require("moduleName")`
+    root.find(j.CallExpression, {
+        callee: { type: "Identifier", name: "require" },
+    }).forEach((callPath) => {
+        const [arg] = callPath.node.arguments
+        if (!arg || getStringValue(arg) !== moduleName) return
+
+        const parent = callPath.parent.node
+        if (
+            parent.type !== "VariableDeclarator" ||
+            parent.id.type !== "Identifier"
+        ) {
+            return
+        }
+        const name: string = parent.id.name
+        localNames.add(name)
+    })
+
+    return localNames
+}
+
+/**
  * Calls `callback` for each Identifier parameter found in function-like
  * nodes (functions, methods, arrows) and TSParameterProperty nodes.
  */
@@ -339,6 +401,99 @@ export const removeImportSpecifiers = (
     })
 
     return removed
+}
+
+// Returns true for `"moduleName"` and any sub-path like `"moduleName/..."`.
+// Used so re-export helpers can match `export { X } from "typeorm"` as well
+// as `export { SapConnectionOptions } from "typeorm/driver/sap/SapConnectionOptions"`.
+const matchesModuleOrSubPath = (source: unknown, moduleName: string): boolean =>
+    typeof source === "string" &&
+    (source === moduleName || source.startsWith(`${moduleName}/`))
+
+/**
+ * Finds re-exports from a module (`export { X } from "module"`) and removes
+ * the named specifiers listed in `specifierNames`. Also matches sub-path
+ * re-exports (`export { X } from "module/sub/path"`). Removes the entire
+ * `ExportNamedDeclaration` if no specifiers remain. Returns true if any
+ * specifiers were removed.
+ */
+export const removeReExportSpecifiers = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+    specifierNames: Set<string>,
+): boolean => {
+    let removed = false
+
+    root.find(j.ExportNamedDeclaration).forEach((exportPath) => {
+        const source = exportPath.node.source?.value
+        if (!matchesModuleOrSubPath(source, moduleName)) return
+
+        const remaining = exportPath.node.specifiers?.filter((spec) => {
+            if (
+                spec.type === "ExportSpecifier" &&
+                spec.local?.type === "Identifier" &&
+                specifierNames.has(spec.local.name)
+            ) {
+                removed = true
+                return false
+            }
+            return true
+        })
+
+        if (remaining?.length === 0) {
+            j(exportPath).remove()
+        } else if (remaining) {
+            exportPath.node.specifiers = remaining
+        }
+    })
+
+    return removed
+}
+
+/**
+ * Finds re-exports from a module (`export { X } from "module"`) and renames
+ * specifiers according to the `renames` map. Also matches sub-path
+ * re-exports (`export { X } from "module/sub/path"`). When the re-export has
+ * an alias (`export { X as Y }`), only the local name is renamed so
+ * downstream consumers continue to see the same exported name. Returns true
+ * if any specifiers were renamed.
+ */
+export const renameReExportSpecifiers = (
+    root: Collection,
+    j: JSCodeshift,
+    moduleName: string,
+    renames: Record<string, string>,
+): boolean => {
+    let renamed = false
+
+    root.find(j.ExportNamedDeclaration).forEach((exportPath) => {
+        const source = exportPath.node.source?.value
+        if (!matchesModuleOrSubPath(source, moduleName)) return
+
+        exportPath.node.specifiers?.forEach((spec) => {
+            if (
+                spec.type !== "ExportSpecifier" ||
+                spec.local?.type !== "Identifier"
+            ) {
+                return
+            }
+            const newName = renames[spec.local.name]
+            if (!newName) return
+
+            const wasAlias =
+                spec.exported.type === "Identifier" &&
+                spec.exported.name !== spec.local.name
+
+            spec.local.name = newName
+            if (!wasAlias && spec.exported.type === "Identifier") {
+                spec.exported.name = newName
+            }
+            renamed = true
+        })
+    })
+
+    return renamed
 }
 
 /**
