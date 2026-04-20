@@ -785,103 +785,148 @@ export const TYPEORM_DATASOURCE_TYPES: ReadonlySet<string> = new Set([
  * Also returns the set of class-property names so callers can recognize
  * `this.repo.method()` access.
  */
-export const collectRepositoryBindings = (
-    root: Collection,
-    j: JSCodeshift,
-): {
+interface RepositoryBindings {
     locals: Set<string>
     classProps: Set<string>
     dataSourceLocals: Set<string>
     dataSourceClassProps: Set<string>
-} => {
-    const locals = new Set<string>()
-    const classProps = new Set<string>()
-    const dataSourceLocals = new Set<string>()
-    const dataSourceClassProps = new Set<string>()
+}
 
-    // Variable declarators / parameters with matching TS annotation.
-    const recordTypedId = (id: ASTNode, annotation: ASTNode | null): void => {
-        if (id.type !== "Identifier") return
-        const typeName = getTypeReferenceRootName(annotation)
-        if (!typeName) return
-        if (TYPEORM_REPOSITORY_TYPES.has(typeName)) {
-            locals.add(id.name)
-        } else if (TYPEORM_DATASOURCE_TYPES.has(typeName)) {
-            dataSourceLocals.add(id.name)
-        }
+// Classifies a type name into one of the tracked receiver buckets, or
+// returns null when the type isn't a TypeORM receiver we care about.
+const classifyRepositoryTypeName = (
+    typeName: string,
+    bindings: RepositoryBindings,
+    forThisMember: boolean,
+): Set<string> | null => {
+    if (TYPEORM_REPOSITORY_TYPES.has(typeName)) {
+        return forThisMember ? bindings.classProps : bindings.locals
     }
+    if (TYPEORM_DATASOURCE_TYPES.has(typeName)) {
+        return forThisMember
+            ? bindings.dataSourceClassProps
+            : bindings.dataSourceLocals
+    }
+    return null
+}
 
+// Records a typed identifier (variable / parameter) into the appropriate
+// binding bucket based on its TypeScript annotation.
+const recordTypedIdentifier = (
+    id: ASTNode,
+    annotation: ASTNode | null,
+    bindings: RepositoryBindings,
+): void => {
+    if (id.type !== "Identifier") return
+    const typeName = getTypeReferenceRootName(annotation)
+    if (!typeName) return
+    const bucket = classifyRepositoryTypeName(typeName, bindings, false)
+    bucket?.add(id.name)
+}
+
+// Resolves the underlying `Identifier` inside a function parameter — peeling
+// `AssignmentPattern` (default params) and `TSParameterProperty` (constructor
+// parameter properties).
+const unwrapParameterIdentifier = (
+    param: ASTNode,
+): { id: ASTNode; annotation: ASTNode | null } | null => {
+    if (param.type === "Identifier") {
+        return { id: param, annotation: param.typeAnnotation ?? null }
+    }
+    if (
+        param.type !== "AssignmentPattern" &&
+        param.type !== "TSParameterProperty"
+    ) {
+        return null
+    }
+    const inner =
+        (param as { left?: ASTNode; parameter?: ASTNode }).left ??
+        (param as { parameter?: ASTNode }).parameter
+    if (!inner || inner.type !== "Identifier") return null
+    return {
+        id: inner,
+        annotation:
+            (inner as { typeAnnotation?: ASTNode }).typeAnnotation ?? null,
+    }
+}
+
+// Scans VariableDeclarators for typed identifiers and initializers that
+// return a Repository via `.getRepository()`-family calls.
+const collectDeclaratorBindings = (
+    root: Collection,
+    j: JSCodeshift,
+    bindings: RepositoryBindings,
+): void => {
     root.find(j.VariableDeclarator).forEach((p) => {
         const id = p.node.id
         if (id.type !== "Identifier") return
-        const name = id.name
-        const annotation = id.typeAnnotation as ASTNode | null
-        recordTypedId(id, annotation)
+        recordTypedIdentifier(id, id.typeAnnotation ?? null, bindings)
         const init = p.node.init
         if (init && isRepositoryReturningCall(init)) {
-            locals.add(name)
+            bindings.locals.add(id.name)
         }
     })
-
     root.find(j.AssignmentExpression).forEach((p) => {
         const left = p.node.left
-        const right = p.node.right
         if (left.type !== "Identifier") return
-        if (!isRepositoryReturningCall(right)) return
-        locals.add(left.name)
+        if (!isRepositoryReturningCall(p.node.right)) return
+        bindings.locals.add(left.name)
     })
+}
 
-    const recordFunctionParams = (params: ASTNode[]): void => {
-        for (const param of params) {
-            if (param.type === "Identifier") {
-                const annotation = param.typeAnnotation as ASTNode | null
-                recordTypedId(param, annotation)
-            } else if (
-                param.type === "AssignmentPattern" ||
-                param.type === "TSParameterProperty"
-            ) {
-                const inner =
-                    (
-                        param as unknown as {
-                            left?: ASTNode
-                            parameter?: ASTNode
-                        }
-                    ).left ??
-                    (param as unknown as { parameter?: ASTNode }).parameter
-                if (inner && inner.type === "Identifier") {
-                    const annotation = inner.typeAnnotation as ASTNode | null
-                    recordTypedId(inner, annotation)
-                }
-            }
+// Scans function parameters on every function-like node.
+const collectFunctionParamBindings = (
+    root: Collection,
+    j: JSCodeshift,
+    bindings: RepositoryBindings,
+): void => {
+    const visit = (node: { params: ASTNode[] }) => {
+        for (const param of node.params) {
+            const unwrapped = unwrapParameterIdentifier(param)
+            if (!unwrapped) continue
+            recordTypedIdentifier(unwrapped.id, unwrapped.annotation, bindings)
         }
     }
+    root.find(j.FunctionDeclaration).forEach((p) => visit(p.node))
+    root.find(j.FunctionExpression).forEach((p) => visit(p.node))
+    root.find(j.ArrowFunctionExpression).forEach((p) => visit(p.node))
+    root.find(j.ClassMethod).forEach((p) => visit(p.node))
+    root.find(j.TSDeclareMethod).forEach((p) => visit(p.node))
+}
 
-    const visitFunctionLike = (node: { params: ASTNode[] }): void => {
-        recordFunctionParams(node.params)
-    }
-    root.find(j.FunctionDeclaration).forEach((p) => visitFunctionLike(p.node))
-    root.find(j.FunctionExpression).forEach((p) => visitFunctionLike(p.node))
-    root.find(j.ArrowFunctionExpression).forEach((p) =>
-        visitFunctionLike(p.node),
-    )
-    root.find(j.ClassMethod).forEach((p) => visitFunctionLike(p.node))
-    root.find(j.TSDeclareMethod).forEach((p) => visitFunctionLike(p.node))
-
+// Scans class properties — `this.<name>` receivers are tracked separately
+// from local identifiers because the access shape is different.
+const collectClassPropertyBindings = (
+    root: Collection,
+    j: JSCodeshift,
+    bindings: RepositoryBindings,
+): void => {
     root.find(j.ClassProperty).forEach((p) => {
         const key = p.node.key
         if (key.type !== "Identifier") return
-        const annotation = (p.node as { typeAnnotation?: ASTNode })
-            .typeAnnotation
-        const typeName = getTypeReferenceRootName(annotation ?? null)
+        const annotation =
+            (p.node as { typeAnnotation?: ASTNode }).typeAnnotation ?? null
+        const typeName = getTypeReferenceRootName(annotation)
         if (!typeName) return
-        if (TYPEORM_REPOSITORY_TYPES.has(typeName)) {
-            classProps.add(key.name)
-        } else if (TYPEORM_DATASOURCE_TYPES.has(typeName)) {
-            dataSourceClassProps.add(key.name)
-        }
+        const bucket = classifyRepositoryTypeName(typeName, bindings, true)
+        bucket?.add(key.name)
     })
+}
 
-    return { locals, classProps, dataSourceLocals, dataSourceClassProps }
+export const collectRepositoryBindings = (
+    root: Collection,
+    j: JSCodeshift,
+): RepositoryBindings => {
+    const bindings: RepositoryBindings = {
+        locals: new Set(),
+        classProps: new Set(),
+        dataSourceLocals: new Set(),
+        dataSourceClassProps: new Set(),
+    }
+    collectDeclaratorBindings(root, j, bindings)
+    collectFunctionParamBindings(root, j, bindings)
+    collectClassPropertyBindings(root, j, bindings)
+    return bindings
 }
 
 /**

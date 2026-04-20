@@ -166,53 +166,64 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         }
     }
 
+    // Rewrites `getConnection()` → `dataSource`, stripping the argument.
+    // Sets `hasNamedConnection` when the call had a named-connection arg.
+    const rewriteGetConnection = (
+        astPath: ASTPath<CallExpression>,
+    ): boolean => {
+        const hadArg = astPath.node.arguments.length > 0
+        j(astPath).replaceWith(j.identifier("dataSource"))
+        if (hadArg) hasNamedConnection = true
+        return true
+    }
+
+    // Attaches a manual-migration TODO to the enclosing statement of
+    // `astPath`. Returns whether anything changed.
+    const attachManualTodo = (
+        astPath: ASTPath<CallExpression>,
+        manualMessage: string,
+    ): boolean => {
+        let current: ASTPath<Node> | null = astPath as unknown as ASTPath<Node>
+        while (current) {
+            const node: Node = current.node
+            if (todoHostTypes.has(node.type)) {
+                if (!hasTodoComment(node, manualMessage)) {
+                    addTodoComment(node, manualMessage, j)
+                }
+                return true
+            }
+            current = current.parent as ASTPath<Node> | null
+        }
+        return false
+    }
+
+    const handleCallSite = (astPath: ASTPath<CallExpression>): void => {
+        const callee = astPath.node.callee
+        if (callee.type !== "Identifier") return
+
+        if (getConnectionLocals.has(callee.name)) {
+            if (rewriteGetConnection(astPath)) hasChanges = true
+            return
+        }
+
+        const replacement = callReplacements.get(callee.name)
+        if (replacement && rewriteSimpleCall(j, astPath, replacement)) {
+            hasChanges = true
+            return
+        }
+
+        const manualMessage = manualTodos.get(callee.name)
+        if (manualMessage && attachManualTodo(astPath, manualMessage)) {
+            hasChanges = true
+        }
+    }
+
     if (
         callReplacements.size > 0 ||
         getConnectionLocals.size > 0 ||
         manualTodos.size > 0
     ) {
-        root.find(j.CallExpression).forEach((astPath) => {
-            const callee = astPath.node.callee
-            if (callee.type !== "Identifier") return
-
-            // `getConnection()` → `dataSource`. Named connections are gone
-            // in v1 — rewrite `getConnection("name")` to `dataSource` too
-            // (the argument is dropped) and flag so the user knows to
-            // reconfigure for multi-DataSource setups.
-            if (getConnectionLocals.has(callee.name)) {
-                const hadArg = astPath.node.arguments.length > 0
-                j(astPath).replaceWith(j.identifier("dataSource"))
-                hasChanges = true
-                if (hadArg) hasNamedConnection = true
-                return
-            }
-
-            const replacement = callReplacements.get(callee.name)
-            if (replacement && rewriteSimpleCall(j, astPath, replacement)) {
-                hasChanges = true
-                return
-            }
-
-            // Non-rewritable removals — walk up to the enclosing statement
-            // and attach a TODO so the user sees the removed call at the
-            // site (otherwise only the now-missing import signals breakage).
-            const manualMessage = manualTodos.get(callee.name)
-            if (manualMessage) {
-                let current: ASTPath<Node> | null =
-                    astPath as unknown as ASTPath<Node>
-                while (current) {
-                    const node: Node = current.node
-                    if (todoHostTypes.has(node.type)) {
-                        if (!hasTodoComment(node, manualMessage)) {
-                            addTodoComment(node, manualMessage, j)
-                        }
-                        hasChanges = true
-                        break
-                    }
-                    current = current.parent as ASTPath<Node> | null
-                }
-            }
-        })
+        root.find(j.CallExpression).forEach(handleCallSite)
     }
 
     if (removeImportSpecifiers(root, j, "typeorm", removedGlobals)) {
