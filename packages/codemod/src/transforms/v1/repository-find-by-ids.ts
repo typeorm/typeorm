@@ -1,6 +1,10 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { fileImportsFrom } from "../ast-helpers"
+import {
+    collectRepositoryBindings,
+    fileImportsFrom,
+    isRepositoryReceiver,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -16,6 +20,8 @@ export const repositoryFindByIds = (file: FileInfo, api: API) => {
         return undefined
     }
 
+    const bindings = collectRepositoryBindings(root, j)
+
     root.find(j.CallExpression, {
         callee: {
             type: "MemberExpression",
@@ -28,6 +34,8 @@ export const repositoryFindByIds = (file: FileInfo, api: API) => {
         ) {
             return
         }
+
+        if (!isRepositoryReceiver(path.node.callee.object, bindings)) return
 
         const idsArg = path.node.arguments[0]
 

@@ -47,39 +47,49 @@ function getFixturePairs(): {
     })
 }
 
+const runTransform = (transform: string, source: string): string => {
+    const transformPath = path.join(
+        __dirname,
+        "../../../src/transforms/v1",
+        `${transform}.ts`,
+    )
+    const transformModule = require(transformPath) as { default?: Transform }
+    const result = applyTransform(
+        (transformModule.default
+            ? transformModule
+            : { default: transformModule }) as {
+            default: Transform
+            parser: undefined
+        },
+        {},
+        { source, path: "test.ts" },
+        { parser: "tsx" },
+    )
+    // applyTransform returns "" when the transform returns undefined
+    // (no-change); treat that as "input unchanged".
+    return result === "" ? source : result
+}
+
 describe("v1 transforms", () => {
     const pairs = getFixturePairs()
 
     for (const { transform, name, input, output } of pairs) {
         it(`${transform}/${name}`, async () => {
-            const transformPath = path.join(
-                __dirname,
-                "../../../src/transforms/v1",
-                `${transform}.ts`,
-            )
-
-            const transformModule = require(transformPath) as {
-                default?: Transform
-            }
-
-            const result = applyTransform(
-                (transformModule.default
-                    ? transformModule
-                    : { default: transformModule }) as {
-                    default: Transform
-                    parser: undefined
-                },
-                {},
-                { source: input, path: "test.ts" },
-                { parser: "tsx" },
-            )
-
-            // When the transform returns `undefined` (no changes),
-            // `applyTransform` returns an empty string — treat that as "input
-            // unchanged" so fixtures can assert the source is left alone.
-            const source = result === "" ? input : result
-            const formatted = await format(source)
+            const first = runTransform(transform, input)
+            const formatted = await format(first)
             expect(formatted.trim()).to.equal(output.trim())
+        })
+
+        // Idempotency: applying the transform twice must yield the same
+        // output as applying it once — otherwise a re-run (e.g. after
+        // partial edits, or multi-pass pipelines) would stack duplicate
+        // TODO comments or re-rewrite already-migrated code.
+        it(`${transform}/${name} (idempotent)`, async () => {
+            const first = runTransform(transform, input)
+            const second = runTransform(transform, first)
+            const firstFormatted = await format(first)
+            const secondFormatted = await format(second)
+            expect(secondFormatted.trim()).to.equal(firstFormatted.trim())
         })
     }
 })

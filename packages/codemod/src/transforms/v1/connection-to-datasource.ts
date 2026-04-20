@@ -16,11 +16,11 @@ import {
 } from "../ast-helpers"
 
 /**
- * Unwraps common TypeScript expression wrappers (`as`, `!`, parens) around
- * an identifier and returns the identifier's name. Used so accessor-chain
- * tracking also recognizes `(ds as DataSource).manager`, `ds!.manager`, and
- * `(ds).manager` — patterns jscodeshift would otherwise miss because the
- * surface node is a `TSAsExpression` / `TSNonNullExpression` / paren.
+ * Unwraps common TypeScript expression wrappers around an identifier and
+ * returns the identifier's name. Handles `ds as DataSource`, `ds!`,
+ * `ds satisfies DataSource`, and the angle-bracket cast `<DataSource>ds`;
+ * identifiers reached through these wrappers are tracked alongside bare
+ * identifiers so accessor-chain transforms don't miss them.
  */
 const unwrapIdentifierName = (node: ASTNode): string | null => {
     let current: ASTNode = node
@@ -212,6 +212,62 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             exportPath.node.source!.value = rewritten
             hasChanges = true
         }
+    })
+
+    // Cross-import dedup: the rewrites above can produce two ImportDeclarations
+    // that now target the same module with the same specifier (e.g. an
+    // existing `import type { BetterSqlite3DataSourceOptions }` plus a
+    // newly-renamed `import type { SqliteConnectionOptions }` from the old
+    // `sqlite/` path). Drop any later declaration whose (source, specifier
+    // set) tuple is already covered by an earlier one.
+    const seenImportKeys = new Map<string, unknown>()
+    root.find(j.ImportDeclaration).forEach((importPath) => {
+        const source = importPath.node.source.value
+        if (typeof source !== "string") return
+        const isTypeOnly =
+            (importPath.node as { importKind?: string }).importKind === "type"
+        const specifiers = importPath.node.specifiers ?? []
+        const specifierKey = specifiers
+            .map((spec) => {
+                const specType = (spec as { type: string }).type
+                if (specType === "ImportSpecifier") {
+                    const s = spec as {
+                        imported: { type: string; name?: string }
+                        local?: { type: string; name?: string }
+                    }
+                    const imported =
+                        s.imported.type === "Identifier"
+                            ? (s.imported.name ?? "")
+                            : ""
+                    const local =
+                        s.local?.type === "Identifier"
+                            ? (s.local.name ?? "")
+                            : imported
+                    return `named:${imported}->${local}`
+                }
+                if (specType === "ImportDefaultSpecifier") {
+                    const s = spec as {
+                        local?: { type: string; name?: string }
+                    }
+                    return `default:${s.local?.type === "Identifier" ? (s.local.name ?? "") : ""}`
+                }
+                if (specType === "ImportNamespaceSpecifier") {
+                    const s = spec as {
+                        local?: { type: string; name?: string }
+                    }
+                    return `namespace:${s.local?.type === "Identifier" ? (s.local.name ?? "") : ""}`
+                }
+                return specType
+            })
+            .sort()
+            .join("|")
+        const key = `${isTypeOnly ? "type:" : ""}${source}::${specifierKey}`
+        if (seenImportKeys.has(key)) {
+            j(importPath).remove()
+            hasChanges = true
+            return
+        }
+        seenImportKeys.set(key, importPath.node)
     })
 
     // Rewrite a single `{ X [: Y] }` property in a destructured require of

@@ -31,7 +31,6 @@ export const queryRunnerLoadedTablesViews = (file: FileInfo, api: API) => {
 
         const propName = path.node.property.name
 
-        // Find the containing statement to add a comment
         let current: TraversalNode = path
         while (current.parent && current.parent.node.type !== "Program") {
             if (

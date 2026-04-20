@@ -526,3 +526,235 @@ export const renameMemberMethod = (
 
     return renamed
 }
+
+/**
+ * Walks a TypeScript type-annotation node and returns the root identifier
+ * name — e.g. `Repository<User>` → `"Repository"`, `Repository<User> | null`
+ * → `"Repository"`, `typeof Repository` → `"Repository"`. Returns null when
+ * the annotation doesn't root on a TSTypeReference with an Identifier name.
+ */
+const getTypeReferenceRootName = (node: ASTNode | null): string | null => {
+    if (!node) return null
+    if (node.type === "TSTypeReference") {
+        const n = node as { typeName: ASTNode }
+        if (n.typeName.type === "Identifier") {
+            return n.typeName.name
+        }
+    }
+    if (node.type === "TSTypeAnnotation") {
+        const n = node as { typeAnnotation: ASTNode }
+        return getTypeReferenceRootName(n.typeAnnotation)
+    }
+    if (node.type === "TSUnionType" || node.type === "TSIntersectionType") {
+        const n = node as { types: ASTNode[] }
+        for (const member of n.types) {
+            const name = getTypeReferenceRootName(member)
+            if (name) return name
+        }
+    }
+    return null
+}
+
+/**
+ * TypeORM Repository-family type names used to detect bindings that hold a
+ * Repository/EntityManager instance, so transforms can scope method renames
+ * (`.findByIds`, `.findOneById`, `.exist`, `.stats`) to those receivers.
+ */
+export const TYPEORM_REPOSITORY_TYPES: ReadonlySet<string> = new Set([
+    "Repository",
+    "TreeRepository",
+    "MongoRepository",
+    "EntityRepository",
+    "AbstractRepository",
+    "EntityManager",
+    "MongoEntityManager",
+    "SqljsEntityManager",
+])
+
+/**
+ * Call shapes whose return value is a Repository/EntityManager:
+ *   `.getRepository(...)`, `.getMongoRepository(...)`, `.getTreeRepository(...)`,
+ *   `.getCustomRepository(...)`, `.manager` (property access, see caller).
+ */
+const REPOSITORY_RETURNING_METHODS: ReadonlySet<string> = new Set([
+    "getRepository",
+    "getMongoRepository",
+    "getTreeRepository",
+    "getCustomRepository",
+])
+
+// Returns true when `node` is a call expression whose callee ends in one of
+// the Repository-returning method names (e.g. `ds.getRepository(User)`).
+const isRepositoryReturningCall = (node: ASTNode): boolean => {
+    if (
+        node.type !== "CallExpression" &&
+        node.type !== "OptionalCallExpression"
+    )
+        return false
+    const call = node as { callee: ASTNode }
+    const callee = call.callee
+    if (
+        callee.type !== "MemberExpression" &&
+        callee.type !== "OptionalMemberExpression"
+    )
+        return false
+    const member = callee as { property: ASTNode; computed?: boolean }
+    if (member.property.type === "Identifier") {
+        return REPOSITORY_RETURNING_METHODS.has(member.property.name)
+    }
+    if (member.computed) {
+        const name = getStringValue(member.property)
+        return name !== null && REPOSITORY_RETURNING_METHODS.has(name)
+    }
+    return false
+}
+
+/**
+ * Scans a file for local bindings that hold a TypeORM Repository/EntityManager
+ * instance. Used by method-rename transforms to avoid rewriting unrelated
+ * `.method()` calls (e.g. `fs.exist(path)`, `performance.stats()`).
+ *
+ * Detects:
+ *   - `const r = anything.getRepository(User)` (and `Mongo`/`Tree`/`Custom`)
+ *   - `const r: Repository<User> = ...` (or other Repository-family types)
+ *   - Function parameters with the above type annotations
+ *   - Class constructor params with those type annotations
+ *   - Class properties with those type annotations (for `this.X` access)
+ *
+ * Also returns the set of class-property names so callers can recognize
+ * `this.repo.method()` access.
+ */
+export const collectRepositoryBindings = (
+    root: Collection,
+    j: JSCodeshift,
+): { locals: Set<string>; classProps: Set<string> } => {
+    const locals = new Set<string>()
+    const classProps = new Set<string>()
+
+    // Variable declarators / parameters with matching TS annotation.
+    const recordTypedId = (id: ASTNode, annotation: ASTNode | null): void => {
+        if (id.type !== "Identifier") return
+        const typeName = getTypeReferenceRootName(annotation)
+        if (typeName && TYPEORM_REPOSITORY_TYPES.has(typeName)) {
+            locals.add(id.name)
+        }
+    }
+
+    root.find(j.VariableDeclarator).forEach((p) => {
+        const id = p.node.id
+        if (id.type !== "Identifier") return
+        const name = id.name
+        const annotation = id.typeAnnotation as ASTNode | null
+        recordTypedId(id, annotation)
+        const init = p.node.init
+        if (init && isRepositoryReturningCall(init)) {
+            locals.add(name)
+        }
+    })
+
+    root.find(j.AssignmentExpression).forEach((p) => {
+        const left = p.node.left
+        const right = p.node.right
+        if (left.type !== "Identifier") return
+        if (!isRepositoryReturningCall(right)) return
+        locals.add(left.name)
+    })
+
+    const recordFunctionParams = (params: ASTNode[]): void => {
+        for (const param of params) {
+            if (param.type === "Identifier") {
+                const annotation = param.typeAnnotation as ASTNode | null
+                recordTypedId(param, annotation)
+            } else if (
+                param.type === "AssignmentPattern" ||
+                param.type === "TSParameterProperty"
+            ) {
+                const inner =
+                    (
+                        param as unknown as {
+                            left?: ASTNode
+                            parameter?: ASTNode
+                        }
+                    ).left ??
+                    (param as unknown as { parameter?: ASTNode }).parameter
+                if (inner && inner.type === "Identifier") {
+                    const annotation = inner.typeAnnotation as ASTNode | null
+                    recordTypedId(inner, annotation)
+                }
+            }
+        }
+    }
+
+    const visitFunctionLike = (node: { params: ASTNode[] }): void => {
+        recordFunctionParams(node.params)
+    }
+    root.find(j.FunctionDeclaration).forEach((p) => visitFunctionLike(p.node))
+    root.find(j.FunctionExpression).forEach((p) => visitFunctionLike(p.node))
+    root.find(j.ArrowFunctionExpression).forEach((p) =>
+        visitFunctionLike(p.node),
+    )
+    root.find(j.ClassMethod).forEach((p) => visitFunctionLike(p.node))
+    root.find(j.TSDeclareMethod).forEach((p) => visitFunctionLike(p.node))
+
+    root.find(j.ClassProperty).forEach((p) => {
+        const key = p.node.key
+        if (key.type !== "Identifier") return
+        const annotation = (p.node as { typeAnnotation?: ASTNode })
+            .typeAnnotation
+        const typeName = getTypeReferenceRootName(annotation ?? null)
+        if (typeName && TYPEORM_REPOSITORY_TYPES.has(typeName)) {
+            classProps.add(key.name)
+        }
+    })
+
+    return { locals, classProps }
+}
+
+/**
+ * Returns true when `receiver` is a MemberExpression-eligible node whose
+ * root identifier is a Repository-bound local or `this.X` where `X` is a
+ * Repository-typed class property. Also accepts fresh inline
+ * `.getRepository(...)` call-expression receivers.
+ *
+ * When the file contains no Repository-typed bindings at all (no typed
+ * variables, no `.getRepository()` assignments, no Repository class
+ * properties), falls back to permissive matching — the codemod has no
+ * type signal and must trust the historical `fileImportsFrom("typeorm")`
+ * file-level guard. Callers should add negative fixtures to pin the
+ * common false-positive vectors.
+ */
+export const isRepositoryReceiver = (
+    receiver: ASTNode,
+    bindings: { locals: ReadonlySet<string>; classProps: ReadonlySet<string> },
+): boolean => {
+    const noBindingsFound =
+        bindings.locals.size === 0 && bindings.classProps.size === 0
+
+    if (receiver.type === "Identifier") {
+        if (bindings.locals.has(receiver.name)) return true
+        return noBindingsFound
+    }
+    if (
+        receiver.type === "MemberExpression" ||
+        receiver.type === "OptionalMemberExpression"
+    ) {
+        const member = receiver as { object: ASTNode; property: ASTNode }
+        if (member.object.type === "ThisExpression") {
+            if (member.property.type === "Identifier") {
+                if (bindings.classProps.has(member.property.name)) return true
+                return noBindingsFound
+            }
+        }
+        // Chained access like `service.userRepo.findByIds(...)` — accept
+        // only when we have no binding info to disambiguate.
+        return noBindingsFound
+    }
+    if (
+        receiver.type === "CallExpression" ||
+        receiver.type === "OptionalCallExpression"
+    ) {
+        if (isRepositoryReturningCall(receiver)) return true
+        return noBindingsFound
+    }
+    return noBindingsFound
+}

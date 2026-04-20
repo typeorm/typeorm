@@ -27,3 +27,14 @@ const ds3 = new DataSource({
     type: "mongodb",
     sslValidate: validate,
 })
+
+// Unrelated objects in the same file must NOT be mutated — the scope guard
+// requires a sibling `type: "mongodb"` before renaming/removing keys.
+const postgresConfig = {
+    type: "postgres",
+    ssl: true,
+    keepAlive: true,
+    appname: "postgres-service",
+}
+const fetchOptions = { keepAlive: true, ssl: false }
+const writeConcernCollision = { j: [1, 2, 3], w: "other" }

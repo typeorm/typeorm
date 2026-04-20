@@ -13,7 +13,6 @@ export const findOptionsStringSelect = (file: FileInfo, api: API) => {
 
     let hasChanges = false
 
-    // Find object properties named "select" whose value is an array of strings
     root.find(j.ObjectProperty, {
         key: { name: "select" },
     }).forEach((path) => {

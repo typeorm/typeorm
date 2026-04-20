@@ -1,10 +1,22 @@
 import path from "node:path"
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, ObjectExpression } from "jscodeshift"
 import { fileImportsFrom } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
-    "remove deprecated `connectorPackage` option from MySQL config"
+    "remove deprecated `connectorPackage` option from MySQL/MariaDB config"
+
+// Matches `{ type: "mysql" | "mariadb", ... }` objects — the only places
+// where `connectorPackage` was a valid TypeORM option.
+const isMysqlOrMariadbOptions = (obj: ObjectExpression): boolean =>
+    obj.properties.some(
+        (p) =>
+            p.type === "ObjectProperty" &&
+            p.key.type === "Identifier" &&
+            p.key.name === "type" &&
+            p.value.type === "StringLiteral" &&
+            (p.value.value === "mysql" || p.value.value === "mariadb"),
+    )
 
 export const datasourceMysqlConnector = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -14,11 +26,21 @@ export const datasourceMysqlConnector = (file: FileInfo, api: API) => {
 
     let hasChanges = false
 
-    root.find(j.ObjectProperty, {
-        key: { type: "Identifier", name: "connectorPackage" },
-    }).forEach((path) => {
-        j(path).remove()
-        hasChanges = true
+    root.find(j.ObjectExpression).forEach((objPath) => {
+        if (!isMysqlOrMariadbOptions(objPath.node)) return
+
+        const filtered = objPath.node.properties.filter(
+            (p) =>
+                !(
+                    p.type === "ObjectProperty" &&
+                    p.key.type === "Identifier" &&
+                    p.key.name === "connectorPackage"
+                ),
+        )
+        if (filtered.length !== objPath.node.properties.length) {
+            objPath.node.properties = filtered
+            hasChanges = true
+        }
     })
 
     return hasChanges ? root.toSource() : undefined

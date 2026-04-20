@@ -45,7 +45,6 @@ export const findOptionsStringRelations = (file: FileInfo, api: API) => {
 
     let hasChanges = false
 
-    // Find object properties named "relations" whose value is an array of strings
     root.find(j.ObjectProperty, {
         key: { name: "relations" },
     }).forEach((path) => {

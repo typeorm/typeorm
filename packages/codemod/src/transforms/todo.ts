@@ -25,11 +25,27 @@ export const addTodoComment = (
 }
 
 /**
- * Returns true when `node` already carries the `message` as a line-comment.
- * Used to keep transforms idempotent — running the codemod twice must not
- * stack duplicates.
+ * Returns true when `node` already carries the `message` as a line-comment
+ * in any of the recast/babel comment arrays. Used to keep transforms
+ * idempotent — running the codemod twice must not stack duplicates.
+ *
+ * Checks all three comment positions (unified `comments`, Babel's
+ * `leadingComments`, and `trailingComments`) because recast sometimes
+ * migrates a comment between positions across a re-parse cycle.
  */
 export const hasTodoComment = (node: Node, message: string): boolean => {
     const expected = formatTodo(message)
-    return (node.comments ?? []).some((c) => c.value === expected)
+    const buckets: (readonly { value?: string }[] | undefined)[] = [
+        node.comments as unknown as readonly { value?: string }[] | undefined,
+        (node as unknown as { leadingComments?: readonly { value?: string }[] })
+            .leadingComments,
+        (
+            node as unknown as {
+                trailingComments?: readonly { value?: string }[]
+            }
+        ).trailingComments,
+    ]
+    return buckets.some((bucket) =>
+        (bucket ?? []).some((c) => c.value === expected),
+    )
 }

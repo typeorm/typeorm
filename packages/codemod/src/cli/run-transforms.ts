@@ -67,8 +67,11 @@ export const runTransforms = async (
             return text
         }
 
-        // Intercept stdout to capture jscodeshift progress
+        // Intercept stdout to capture jscodeshift progress. Unrecognized
+        // output (stack traces, warnings, debug) is buffered so it can be
+        // surfaced post-run rather than silently dropped.
         const parseErrors: { file: string; message: string }[] = []
+        const unclassifiedOutput: string[] = []
         const originalWrite = process.stdout.write.bind(process.stdout)
         process.stdout.write = ((chunk: string | Uint8Array) => {
             const str = typeof chunk === "string" ? chunk : chunk.toString()
@@ -82,7 +85,6 @@ export const runTransforms = async (
                 return true
             }
 
-            // Track per-file completion and collect errors
             if (str.includes(" ERR ")) {
                 processed++
                 const errMatch =
@@ -92,6 +94,13 @@ export const runTransforms = async (
                         file: errMatch[1],
                         message: errMatch[2],
                     })
+                } else {
+                    // ERR line whose shape we don't recognize — keep the
+                    // raw output so the counted error isn't silent.
+                    parseErrors.push({
+                        file: "<unknown>",
+                        message: str.trim(),
+                    })
                 }
             } else if (
                 str.includes(" OKK ") ||
@@ -100,7 +109,8 @@ export const runTransforms = async (
             ) {
                 processed++
             } else {
-                // Suppress other jscodeshift output (including stack traces)
+                const trimmed = str.trim()
+                if (trimmed.length > 0) unclassifiedOutput.push(trimmed)
                 return false
             }
 
@@ -136,6 +146,26 @@ export const runTransforms = async (
         spinner.stop(
             `${colors.green("✔")} Changed ${result.ok} out of ${total} files (${formatTime(elapsed)})${errorSuffix}`,
         )
+
+        // Surface any unclassified output when the counts don't line up —
+        // the transform produced something jscodeshift printed (worker crash,
+        // stack trace, warning) that would otherwise vanish.
+        if (
+            unclassifiedOutput.length > 0 &&
+            (result.error > 0 || processed < fileCount)
+        ) {
+            originalWrite(
+                `${colors.yellow("!")} Unclassified worker output (possible stack trace):\n`,
+            )
+            for (const line of unclassifiedOutput.slice(0, 20)) {
+                originalWrite(`  ${line}\n`)
+            }
+            if (unclassifiedOutput.length > 20) {
+                originalWrite(
+                    `  ... (${unclassifiedOutput.length - 20} more lines suppressed)\n`,
+                )
+            }
+        }
 
         totalOk += result.ok
         totalError += result.error

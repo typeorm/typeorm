@@ -9,9 +9,6 @@ import {
 import type { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
 import type { BetterSqlite3DataSourceOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
 
-// Cross-directory rename: the `sqlite/` directory was removed in v1
-import type { BetterSqlite3DataSourceOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
-
 // Deep path whose final segment is NOT an exact rename key must be left alone
 import { something } from "typeorm/driver/sap/ThingsConnectionHelper"
 

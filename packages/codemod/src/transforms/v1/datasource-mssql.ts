@@ -1,7 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
 import { fileImportsFrom } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -24,7 +24,6 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    // Find object literals with `type: "mssql"`
     root.find(j.ObjectExpression).forEach((objPath) => {
         const props = objPath.node.properties
         const isMssql = props.some(
@@ -43,17 +42,16 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
                 prop.key.type === "Identifier" &&
                 prop.key.name === "domain"
             ) {
-                addTodoComment(
-                    prop,
-                    '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`',
-                    j,
-                )
+                const message =
+                    '`domain` was removed — restructure to `authentication: { type: "ntlm", options: { domain: "..." } }`'
+                if (!hasTodoComment(prop, message)) {
+                    addTodoComment(prop, message, j)
+                    hasTodos = true
+                }
                 hasChanges = true
-                hasTodos = true
             }
         }
 
-        // Find the `options` nested object
         const optionsProp = props.find(
             (p) =>
                 p.type === "ObjectProperty" &&
