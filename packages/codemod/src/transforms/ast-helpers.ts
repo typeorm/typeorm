@@ -827,12 +827,22 @@ const recordTypedIdentifier = (
 
 // Resolves the underlying `Identifier` inside a function parameter — peeling
 // `AssignmentPattern` (default params) and `TSParameterProperty` (constructor
-// parameter properties).
+// parameter properties). `isParameterProperty` is true only for
+// TSParameterProperty, so callers can additionally record it as a
+// `this.<name>` class member.
 const unwrapParameterIdentifier = (
     param: ASTNode,
-): { id: ASTNode; annotation: ASTNode | null } | null => {
+): {
+    id: ASTNode
+    annotation: ASTNode | null
+    isParameterProperty: boolean
+} | null => {
     if (param.type === "Identifier") {
-        return { id: param, annotation: param.typeAnnotation ?? null }
+        return {
+            id: param,
+            annotation: param.typeAnnotation ?? null,
+            isParameterProperty: false,
+        }
     }
     if (
         param.type !== "AssignmentPattern" &&
@@ -848,6 +858,7 @@ const unwrapParameterIdentifier = (
         id: inner,
         annotation:
             (inner as { typeAnnotation?: ASTNode }).typeAnnotation ?? null,
+        isParameterProperty: param.type === "TSParameterProperty",
     }
 }
 
@@ -875,7 +886,10 @@ const collectDeclaratorBindings = (
     })
 }
 
-// Scans function parameters on every function-like node.
+// Scans function parameters on every function-like node. TSParameterProperty
+// bindings (`constructor(private repo: Repository<T>)`) are tracked in both
+// `locals` (for accesses inside the constructor body) AND `classProps` (for
+// `this.repo` accesses elsewhere in the class).
 const collectFunctionParamBindings = (
     root: Collection,
     j: JSCodeshift,
@@ -886,6 +900,20 @@ const collectFunctionParamBindings = (
             const unwrapped = unwrapParameterIdentifier(param)
             if (!unwrapped) continue
             recordTypedIdentifier(unwrapped.id, unwrapped.annotation, bindings)
+            if (
+                unwrapped.isParameterProperty &&
+                unwrapped.id.type === "Identifier"
+            ) {
+                const typeName = getTypeReferenceRootName(unwrapped.annotation)
+                if (typeName) {
+                    const classBucket = classifyRepositoryTypeName(
+                        typeName,
+                        bindings,
+                        true,
+                    )
+                    classBucket?.add(unwrapped.id.name)
+                }
+            }
         }
     }
     root.find(j.FunctionDeclaration).forEach((p) => visit(p.node))
