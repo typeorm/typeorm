@@ -147,15 +147,12 @@ export const runTransforms = async (
             `${colors.green("✔")} Changed ${result.ok} out of ${total} files (${formatTime(elapsed)})${errorSuffix}`,
         )
 
-        // Surface any unclassified output when the counts don't line up —
-        // the transform produced something jscodeshift printed (worker crash,
-        // stack trace, warning) that would otherwise vanish.
-        if (
-            unclassifiedOutput.length > 0 &&
-            (result.error > 0 || processed < fileCount)
-        ) {
+        // Surface any unclassified output even on successful runs — worker
+        // warnings and deprecation notices would otherwise vanish silently,
+        // and users have no way to know they were emitted.
+        if (unclassifiedOutput.length > 0) {
             originalWrite(
-                `${colors.yellow("!")} Unclassified worker output (possible stack trace):\n`,
+                `${colors.yellow("!")} Unclassified worker output (possible warnings or stack traces):\n`,
             )
             for (const line of unclassifiedOutput.slice(0, 20)) {
                 originalWrite(`  ${line}\n`)
