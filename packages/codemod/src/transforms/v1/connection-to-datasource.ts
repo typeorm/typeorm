@@ -42,6 +42,22 @@ const unwrapIdentifierName = (node: ASTNode): string | null => {
     }
 }
 
+// Resolves the inner Identifier of a TSParameterProperty's `.parameter`,
+// handling both the plain `Identifier` and default-valued `AssignmentPattern`
+// forms. Returns null when neither shape applies.
+const resolveTSParameterPropertyIdentifier = (
+    inner: ASTNode,
+): Identifier | null => {
+    if (inner.type === "Identifier") return inner
+    if (
+        inner.type === "AssignmentPattern" &&
+        (inner as { left: ASTNode }).left.type === "Identifier"
+    ) {
+        return (inner as { left: Identifier }).left
+    }
+    return null
+}
+
 // Rename `connection` to `dataSource` on every ObjectProperty in `arg`.
 // Returns true when at least one property was renamed. The shorthand
 // `{ connection }` becomes `{ dataSource: connection }` — the variable
@@ -94,7 +110,7 @@ const rewriteMetadataConstructors = (
         if (!isEntityMetadata && !isIndirect) return
 
         const [arg] = path.node.arguments
-        if (!arg || arg.type !== "ObjectExpression") return
+        if (arg?.type !== "ObjectExpression") return
 
         const changed = isEntityMetadata
             ? renameConnectionKeyToDataSource(
@@ -659,7 +675,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const keyNode = path.node.key
         if (keyNode.type !== "Identifier") return
         const ann = (path.node as { typeAnnotation?: ASTNode }).typeAnnotation
-        if (!ann || ann.type !== "TSTypeAnnotation") return
+        if (ann?.type !== "TSTypeAnnotation") return
         const inner = (ann as { typeAnnotation: ASTNode }).typeAnnotation
         if (inner.type !== "TSTypeReference") return
         const typeName = (inner as { typeName: ASTNode }).typeName
@@ -674,16 +690,10 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     root.find(j.TSParameterProperty).forEach((path) => {
         const inner = (path.node as { parameter?: ASTNode }).parameter
         if (!inner) return
-        const id =
-            inner.type === "Identifier"
-                ? inner
-                : inner.type === "AssignmentPattern" &&
-                    (inner as { left: ASTNode }).left.type === "Identifier"
-                  ? (inner as { left: Identifier }).left
-                  : null
+        const id = resolveTSParameterPropertyIdentifier(inner)
         if (!id) return
         const ann = id.typeAnnotation
-        if (!ann || ann.type !== "TSTypeAnnotation") return
+        if (ann?.type !== "TSTypeAnnotation") return
         if (ann.typeAnnotation.type !== "TSTypeReference") return
         const ref = ann.typeAnnotation
         if (ref.typeName.type !== "Identifier") return
@@ -699,7 +709,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const keyNode = path.node.key
         if (keyNode.type !== "Identifier") return
         const rt = (path.node as { returnType?: ASTNode }).returnType
-        if (!rt || rt.type !== "TSTypeAnnotation") return
+        if (rt?.type !== "TSTypeAnnotation") return
         const inner = (rt as { typeAnnotation: ASTNode }).typeAnnotation
         if (inner.type !== "TSTypeReference") return
         const typeName = (inner as { typeName: ASTNode }).typeName
@@ -907,7 +917,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             if (p.node.id.type !== "Identifier") return
             if (p.node.id.name !== name) return
             const ann = p.node.id.typeAnnotation as ASTNode | null
-            if (!ann || ann.type !== "TSTypeAnnotation") return
+            if (ann?.type !== "TSTypeAnnotation") return
             const inner = (ann as { typeAnnotation: ASTNode }).typeAnnotation
             if (inner.type === "TSArrayType") {
                 resolved =

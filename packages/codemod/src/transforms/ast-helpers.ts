@@ -404,7 +404,7 @@ export const isFindMethodCallArgument = (
     propPath: ASTPath<ASTNode>,
 ): boolean => {
     const objExprPath = propPath.parent
-    if (!objExprPath || objExprPath.node.type !== "ObjectExpression") {
+    if (objExprPath?.node.type !== "ObjectExpression") {
         return false
     }
     // Walk up through TS expression wrappers (`{ select: [...] } as T`,
@@ -853,7 +853,7 @@ const unwrapParameterIdentifier = (
     const inner =
         (param as { left?: ASTNode; parameter?: ASTNode }).left ??
         (param as { parameter?: ASTNode }).parameter
-    if (!inner || inner.type !== "Identifier") return null
+    if (inner?.type !== "Identifier") return null
     return {
         id: inner,
         annotation:
