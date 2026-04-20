@@ -726,6 +726,16 @@ const isRepositoryReturningCall = (node: ASTNode): boolean => {
 }
 
 /**
+ * TypeORM DataSource-family type names, recognized on local bindings so
+ * `dataSource.manager.X()` can be classified as a Repository receiver via
+ * the `.manager` accessor chain.
+ */
+export const TYPEORM_DATASOURCE_TYPES: ReadonlySet<string> = new Set([
+    "DataSource",
+    "Connection",
+])
+
+/**
  * Scans a file for local bindings that hold a TypeORM Repository/EntityManager
  * instance. Used by method-rename transforms to avoid rewriting unrelated
  * `.method()` calls (e.g. `fs.exist(path)`, `performance.stats()`).
@@ -736,6 +746,7 @@ const isRepositoryReturningCall = (node: ASTNode): boolean => {
  *   - Function parameters with the above type annotations
  *   - Class constructor params with those type annotations
  *   - Class properties with those type annotations (for `this.X` access)
+ *   - DataSource-typed bindings (for `ds.manager.X()` receiver classification)
  *
  * Also returns the set of class-property names so callers can recognize
  * `this.repo.method()` access.
@@ -743,16 +754,26 @@ const isRepositoryReturningCall = (node: ASTNode): boolean => {
 export const collectRepositoryBindings = (
     root: Collection,
     j: JSCodeshift,
-): { locals: Set<string>; classProps: Set<string> } => {
+): {
+    locals: Set<string>
+    classProps: Set<string>
+    dataSourceLocals: Set<string>
+    dataSourceClassProps: Set<string>
+} => {
     const locals = new Set<string>()
     const classProps = new Set<string>()
+    const dataSourceLocals = new Set<string>()
+    const dataSourceClassProps = new Set<string>()
 
     // Variable declarators / parameters with matching TS annotation.
     const recordTypedId = (id: ASTNode, annotation: ASTNode | null): void => {
         if (id.type !== "Identifier") return
         const typeName = getTypeReferenceRootName(annotation)
-        if (typeName && TYPEORM_REPOSITORY_TYPES.has(typeName)) {
+        if (!typeName) return
+        if (TYPEORM_REPOSITORY_TYPES.has(typeName)) {
             locals.add(id.name)
+        } else if (TYPEORM_DATASOURCE_TYPES.has(typeName)) {
+            dataSourceLocals.add(id.name)
         }
     }
 
@@ -818,19 +839,23 @@ export const collectRepositoryBindings = (
         const annotation = (p.node as { typeAnnotation?: ASTNode })
             .typeAnnotation
         const typeName = getTypeReferenceRootName(annotation ?? null)
-        if (typeName && TYPEORM_REPOSITORY_TYPES.has(typeName)) {
+        if (!typeName) return
+        if (TYPEORM_REPOSITORY_TYPES.has(typeName)) {
             classProps.add(key.name)
+        } else if (TYPEORM_DATASOURCE_TYPES.has(typeName)) {
+            dataSourceClassProps.add(key.name)
         }
     })
 
-    return { locals, classProps }
+    return { locals, classProps, dataSourceLocals, dataSourceClassProps }
 }
 
 /**
  * Returns true when `receiver` is a MemberExpression-eligible node whose
  * root identifier is a Repository-bound local or `this.X` where `X` is a
  * Repository-typed class property. Also accepts fresh inline
- * `.getRepository(...)` call-expression receivers.
+ * `.getRepository(...)` call-expression receivers and DataSource-typed
+ * bindings dereferenced via `.manager` (e.g. `ds.manager.findByIds(...)`).
  *
  * When the file contains no Repository-typed bindings at all (no typed
  * variables, no `.getRepository()` assignments, no Repository class
@@ -841,10 +866,20 @@ export const collectRepositoryBindings = (
  */
 export const isRepositoryReceiver = (
     receiver: ASTNode,
-    bindings: { locals: ReadonlySet<string>; classProps: ReadonlySet<string> },
+    bindings: {
+        locals: ReadonlySet<string>
+        classProps: ReadonlySet<string>
+        dataSourceLocals?: ReadonlySet<string>
+        dataSourceClassProps?: ReadonlySet<string>
+    },
 ): boolean => {
+    const dsLocals = bindings.dataSourceLocals
+    const dsClassProps = bindings.dataSourceClassProps
     const noBindingsFound =
-        bindings.locals.size === 0 && bindings.classProps.size === 0
+        bindings.locals.size === 0 &&
+        bindings.classProps.size === 0 &&
+        (dsLocals?.size ?? 0) === 0 &&
+        (dsClassProps?.size ?? 0) === 0
 
     if (receiver.type === "Identifier") {
         if (bindings.locals.has(receiver.name)) return true
@@ -855,6 +890,38 @@ export const isRepositoryReceiver = (
         receiver.type === "OptionalMemberExpression"
     ) {
         const member = receiver as { object: ASTNode; property: ASTNode }
+
+        // `ds.manager` — DataSource local's `.manager` accessor returns an
+        // EntityManager, which carries the same find-family methods as
+        // Repository. Treat the full chain as a Repository receiver.
+        if (
+            member.property.type === "Identifier" &&
+            member.property.name === "manager"
+        ) {
+            if (
+                member.object.type === "Identifier" &&
+                dsLocals?.has(member.object.name)
+            ) {
+                return true
+            }
+            if (
+                (member.object.type === "MemberExpression" ||
+                    member.object.type === "OptionalMemberExpression") &&
+                (member.object as { object: ASTNode }).object.type ===
+                    "ThisExpression" &&
+                (member.object as { property: ASTNode }).property.type ===
+                    "Identifier" &&
+                dsClassProps?.has(
+                    (
+                        (member.object as { property: ASTNode })
+                            .property as Identifier
+                    ).name,
+                )
+            ) {
+                return true
+            }
+        }
+
         if (member.object.type === "ThisExpression") {
             if (member.property.type === "Identifier") {
                 if (bindings.classProps.has(member.property.name)) return true
