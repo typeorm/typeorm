@@ -137,10 +137,6 @@ export type * from "./subscriber/event/QueryEvent"
 export { ConnectionOptionsReader } from "./connection/ConnectionOptionsReader"
 export { DataSource } from "./data-source/DataSource"
 export type { DataSourceOptions } from "./data-source/DataSourceOptions"
-// Driver-specific DataSourceOptions — re-exported so users don't need
-// deep-path imports (`typeorm/driver/<driver>/...`). The deep paths still
-// work but are discouraged; they're brittle across major refactors and the
-// v1 codemod simplifies existing ones to `from "typeorm"`.
 export type { AuroraMysqlDataSourceOptions } from "./driver/aurora-mysql/AuroraMysqlDataSourceOptions"
 export type { AuroraPostgresDataSourceOptions } from "./driver/aurora-postgres/AuroraPostgresDataSourceOptions"
 export type { BetterSqlite3DataSourceOptions } from "./driver/better-sqlite3/BetterSqlite3DataSourceOptions"
