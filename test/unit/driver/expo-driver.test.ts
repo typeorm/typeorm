@@ -104,12 +104,17 @@ describe("driver > expo > loadDependencies", () => {
     })
 
     it("re-throws MODULE_NOT_FOUND errors unchanged when a different module is missing", () => {
-        // A transitive dependency of `expo-sqlite` (or an unrelated require
-        // inside the module body) can also raise MODULE_NOT_FOUND. Without a
-        // message check, the driver would misreport that as "install
-        // expo-sqlite" and hide the real root cause.
+        // A transitive dependency of `expo-sqlite` raises MODULE_NOT_FOUND
+        // with the real Node message shape — first line names the missing
+        // module, followed by a `Require stack:` that mentions every caller
+        // including `expo-sqlite/index.js`. Matching against the whole
+        // message would falsely claim the user needs to install expo-sqlite;
+        // only the first line identifies the actually-missing module.
         const err = new Error(
-            "Cannot find module 'react-native-get-random-values'",
+            "Cannot find module 'react-native-get-random-values'\n" +
+                "Require stack:\n" +
+                "- /node_modules/expo-sqlite/src/index.ts\n" +
+                "- /app/index.ts",
         ) as Error & { code?: string }
         err.code = "MODULE_NOT_FOUND"
         const driver = build(undefined, () => {

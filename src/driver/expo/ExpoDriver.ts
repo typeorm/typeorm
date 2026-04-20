@@ -7,14 +7,25 @@ import { ExpoQueryRunner } from "./ExpoQueryRunner"
 
 // Node raises `MODULE_NOT_FOUND` when the requested module can't be resolved,
 // but the same code also fires for transitive failures (a dependency of
-// `expo-sqlite` that's missing, a `require` inside the module body). Check
-// the message for the `expo-sqlite` path so we only convert the
-// package-absent case — everything else should bubble up unchanged.
+// `expo-sqlite` that's missing, a `require` inside the module body). Node's
+// error message has the shape:
+//
+//   Cannot find module '<name>'
+//   Require stack:
+//   - /node_modules/<caller>/index.js
+//   - ...
+//
+// The stack lists the calling modules and can include `expo-sqlite` when the
+// unresolved module is a transitive dependency — so matching the whole
+// message would misreport such failures as "install expo-sqlite". Only the
+// first line identifies the actually-missing module, so match against that.
 const isExpoSqliteNotFoundError = (err: unknown): boolean => {
     if (typeof err !== "object" || err === null) return false
     const e = err as { code?: string; message?: string }
     if (e.code !== "MODULE_NOT_FOUND") return false
-    return typeof e.message === "string" && e.message.includes("expo-sqlite")
+    if (typeof e.message !== "string") return false
+    const firstLine = e.message.split("\n", 1)[0]
+    return /^Cannot find module '(?:expo-sqlite)'/.test(firstLine)
 }
 
 export class ExpoDriver extends AbstractSqliteDriver {
