@@ -294,6 +294,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                     const s = spec as {
                         imported: { type: string; name?: string }
                         local?: { type: string; name?: string }
+                        importKind?: string
                     }
                     const imported =
                         s.imported.type === "Identifier"
@@ -303,7 +304,12 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                         s.local?.type === "Identifier"
                             ? (s.local.name ?? "")
                             : imported
-                    return `named:${imported}->${local}`
+                    // Per-specifier importKind distinguishes
+                    // `import { type X }` from `import { X }` — the two
+                    // bindings have different runtime semantics and must
+                    // not collapse into the same dedup key.
+                    const kind = s.importKind === "type" ? "type:" : ""
+                    return `named:${kind}${imported}->${local}`
                 }
                 if (specType === "ImportDefaultSpecifier") {
                     const s = spec as {
