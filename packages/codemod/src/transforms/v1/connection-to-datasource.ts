@@ -8,6 +8,7 @@ import type {
 } from "jscodeshift"
 import {
     expandLocalNamesForImports,
+    fileImportsFrom,
     forEachIdentifierParam,
     getStringValue,
     getTypeReferenceRootName,
@@ -47,6 +48,13 @@ export const description = "migrate from `Connection` to `DataSource`"
 export const connectionToDataSource = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    // File-level scope gate: without a typeorm import anywhere in the file,
+    // occurrences of `Connection` / `DataSource` must belong to an
+    // unrelated library (e.g. mongoose `new Connection().connect()`) and
+    // this transform must not touch them.
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
 
     const typeRenames: Record<string, string> = {
@@ -54,7 +62,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         ConnectionOptions: "DataSourceOptions",
         BaseConnectionOptions: "BaseDataSourceOptions",
         MysqlConnectionOptions: "MysqlDataSourceOptions",
-        MariaDbConnectionOptions: "MysqlDataSourceOptions",
         PostgresConnectionOptions: "PostgresDataSourceOptions",
         CockroachConnectionOptions: "CockroachDataSourceOptions",
         SqlServerConnectionOptions: "SqlServerDataSourceOptions",
@@ -440,15 +447,15 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     // Expand to the set of LOCAL bindings — covers aliased ESM imports
     // (`import { Connection as LegacyConn }`) and aliased CJS destructures
     // (`const { Connection: LegacyConn } = require("typeorm")`) so code
-    // using the alias still gets `.connect()` → `.initialize()`.
+    // using the alias still gets `.connect()` → `.initialize()`. When no
+    // alias is in play the set simply contains `Connection` / `DataSource`
+    // from the plain imports.
     const connectionTypeNames = expandLocalNamesForImports(
         root,
         j,
         "typeorm",
         new Set(["Connection", "DataSource"]),
     )
-    connectionTypeNames.add("Connection")
-    connectionTypeNames.add("DataSource")
     const connectionVarNames = new Set<string>()
 
     root.find(j.VariableDeclarator).forEach((path) => {
