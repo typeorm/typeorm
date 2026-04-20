@@ -1,4 +1,6 @@
-import type { DataSource, In } from "typeorm"
+import type { DataSource } from "typeorm"
+
+import { In } from "typeorm"
 
 declare const ds: DataSource
 declare class User {}

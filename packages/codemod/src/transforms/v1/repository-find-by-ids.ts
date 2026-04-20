@@ -1,10 +1,70 @@
 import path from "node:path"
-import type { API, FileInfo } from "jscodeshift"
+import type {
+    API,
+    Collection,
+    FileInfo,
+    ImportDeclaration,
+    JSCodeshift,
+} from "jscodeshift"
 import {
     collectRepositoryBindings,
     fileImportsFrom,
     isRepositoryReceiver,
 } from "../ast-helpers"
+
+// `In` is used as a VALUE (`In([...])`) — it must not be added to a
+// `import type { ... } from "typeorm"` declaration, and the per-specifier
+// form `import { type In }` is equally unusable. Find the first existing
+// value-level `In` binding or a value-level typeorm import to augment;
+// fall back to emitting a fresh `import { In } from "typeorm"` line.
+const ensureInValueImport = (root: Collection, j: JSCodeshift): void => {
+    const typeormImports = root.find(j.ImportDeclaration, {
+        source: { value: "typeorm" },
+    })
+
+    let hasInValueImport = false
+    typeormImports.forEach((p) => {
+        const declTypeOnly =
+            (p.node as { importKind?: string }).importKind === "type"
+        p.node.specifiers?.forEach((spec) => {
+            if (
+                spec.type === "ImportSpecifier" &&
+                spec.imported.type === "Identifier" &&
+                spec.imported.name === "In"
+            ) {
+                const specTypeOnly =
+                    (spec as { importKind?: string }).importKind === "type"
+                if (!declTypeOnly && !specTypeOnly) hasInValueImport = true
+            }
+        })
+    })
+    if (hasInValueImport) return
+
+    const valueImport = typeormImports
+        .filter(
+            (p) => (p.node as { importKind?: string }).importKind !== "type",
+        )
+        .at(0)
+    if (valueImport.length > 0) {
+        valueImport.forEach((p) => {
+            p.node.specifiers?.push(j.importSpecifier(j.identifier("In")))
+        })
+        return
+    }
+
+    const newImport: ImportDeclaration = j.importDeclaration(
+        [j.importSpecifier(j.identifier("In"))],
+        j.literal("typeorm"),
+    )
+    const allImports = root.find(j.ImportDeclaration)
+    if (allImports.length > 0) {
+        allImports.at(-1).insertAfter(newImport)
+    } else {
+        root.find(j.Program).forEach((p) => {
+            p.node.body.unshift(newImport)
+        })
+    }
+}
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -56,38 +116,7 @@ export const repositoryFindByIds = (file: FileInfo, api: API) => {
     })
 
     if (needsInImport) {
-        const typeormImports = root.find(j.ImportDeclaration, {
-            source: { value: "typeorm" },
-        })
-
-        let hasInImport = false
-        typeormImports.forEach((path) => {
-            path.node.specifiers?.forEach((spec) => {
-                if (
-                    spec.type === "ImportSpecifier" &&
-                    spec.imported.type === "Identifier" &&
-                    spec.imported.name === "In"
-                ) {
-                    hasInImport = true
-                }
-            })
-        })
-
-        if (!hasInImport) {
-            if (typeormImports.length > 0) {
-                typeormImports.at(0).forEach((path) => {
-                    path.node.specifiers?.push(
-                        j.importSpecifier(j.identifier("In")),
-                    )
-                })
-            } else {
-                const newImport = j.importDeclaration(
-                    [j.importSpecifier(j.identifier("In"))],
-                    j.literal("typeorm"),
-                )
-                root.find(j.ImportDeclaration).at(-1).insertAfter(newImport)
-            }
-        }
+        ensureInValueImport(root, j)
     }
 
     return hasChanges ? root.toSource() : undefined
