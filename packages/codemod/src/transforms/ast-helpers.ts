@@ -701,10 +701,23 @@ export const getTypeReferenceRootName = (
     }
     if (node.type === "TSUnionType" || node.type === "TSIntersectionType") {
         const n = node as { types: ASTNode[] }
+        // Prefer a TypeORM-family member so unions like `FooBar | Repository<T>`
+        // or `null | Repository<T>` classify correctly. Fall back to the
+        // first name encountered to preserve behavior for callers that don't
+        // care about TypeORM-type gating.
+        let firstName: string | null = null
         for (const member of n.types) {
             const name = getTypeReferenceRootName(member)
-            if (name) return name
+            if (!name) continue
+            if (
+                TYPEORM_REPOSITORY_TYPES.has(name) ||
+                TYPEORM_DATASOURCE_TYPES.has(name)
+            ) {
+                return name
+            }
+            firstName ??= name
         }
+        return firstName
     }
     return null
 }
