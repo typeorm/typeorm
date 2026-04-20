@@ -10,6 +10,7 @@ export const config: DependencyConfig = {
         "@google-cloud/spanner": { minVersion: "^8.0.0", version: "^8.6.0" },
         "@nestjs/typeorm": { minVersion: "^11.0.1", version: "^11.0.1" },
         "better-sqlite3": { minVersion: "^12.0.0", version: "^12.9.0" },
+        expo: { minVersion: "^52.0.0", version: "^55.0.0" },
         ioredis: { minVersion: "^5.0.4", version: "^5.10.1" },
         mongodb: { minVersion: "^7.0.0", version: "^7.1.1" },
         mssql: { minVersion: "^12.0.0", version: "^12.3.0" },

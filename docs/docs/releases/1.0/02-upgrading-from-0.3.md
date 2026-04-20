@@ -265,20 +265,20 @@ Also note the default behavior changes in pool configuration:
 
 ### Expo
 
-Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52. Upgrade to **Expo SDK v52 or later** and use the modern async SQLite API:
+The minimum supported Expo SDK version is 52, which comes with a modern async SQLite API. TypeORM now loads `expo-sqlite` automatically, so the `driver` option is no longer required:
 
 ```typescript
 // Before
 new DataSource({
     type: "expo",
+    driver: require("expo-sqlite"),
     database: "db.sqlite",
 })
 
-// After — use Expo SDK v52+ with the modern async API
+// After
 new DataSource({
     type: "expo",
     database: "db.sqlite",
-    driver: require("expo-sqlite"),
 })
 ```
 

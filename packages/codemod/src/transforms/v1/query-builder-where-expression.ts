@@ -1,5 +1,6 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
+import { renameReExportSpecifiers } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -23,6 +24,15 @@ export const queryBuilderWhereExpression = (file: FileInfo, api: API) => {
         }
         hasChanges = true
     })
+
+    // Rename in re-exports (barrel-file pattern)
+    if (
+        renameReExportSpecifiers(root, j, "typeorm", {
+            WhereExpression: "WhereExpressionBuilder",
+        })
+    ) {
+        hasChanges = true
+    }
 
     // Rename in type references
     root.find(j.TSTypeReference, {

@@ -2,7 +2,9 @@ import * as columnReadonly from "./column-readonly"
 import * as columnUnsignedNumeric from "./column-unsigned-numeric"
 import * as columnWidthZerofill from "./column-width-zerofill"
 import * as connectionManager from "./connection-manager"
+import * as connectionOptionsReader from "./connection-options-reader"
 import * as connectionToDataSource from "./connection-to-datasource"
+import * as datasourceExpo from "./datasource-expo"
 import * as datasourceMongodb from "./datasource-mongodb"
 import * as datasourceMssql from "./datasource-mssql"
 import * as datasourceMysqlConnector from "./datasource-mysql-connector"
@@ -11,6 +13,7 @@ import * as datasourceSap from "./datasource-sap"
 import * as datasourceSqliteOptions from "./datasource-sqlite-options"
 import * as datasourceSqliteType from "./datasource-sqlite-type"
 import * as fileLogger from "./file-logger"
+import * as findOptionsJoin from "./find-options-join"
 import * as findOptionsLockModes from "./find-options-lock-modes"
 import * as findOptionsStringRelations from "./find-options-string-relations"
 import * as findOptionsStringSelect from "./find-options-string-select"
@@ -54,6 +57,7 @@ export const transforms = [
     columnReadonly,
     columnWidthZerofill,
     datasourceSqliteType,
+    findOptionsJoin,
     findOptionsLockModes,
     useContainer,
     datasourceMysqlConnector,
@@ -74,6 +78,8 @@ export const transforms = [
     findOptionsStringSelect,
     findOptionsStringRelations,
     connectionManager,
+    connectionOptionsReader,
+    datasourceExpo,
     fileLogger,
 ]
 

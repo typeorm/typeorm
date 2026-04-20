@@ -1,6 +1,10 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { fileImportsFrom, removeImportSpecifiers } from "../ast-helpers"
+import {
+    fileImportsFrom,
+    removeImportSpecifiers,
+    removeReExportSpecifiers,
+} from "../ast-helpers"
 import { addTodoComment } from "../todo"
 import { stats } from "../stats"
 
@@ -23,7 +27,6 @@ export const useContainer = (file: FileInfo, api: API) => {
 
     const removedFunctions = new Set(["useContainer", "getFromContainer"])
 
-    // Replace calls with a TODO comment
     for (const funcName of removedFunctions) {
         root.find(j.ExpressionStatement, {
             expression: {
@@ -31,7 +34,6 @@ export const useContainer = (file: FileInfo, api: API) => {
                 callee: { type: "Identifier", name: funcName },
             },
         }).forEach((path) => {
-            // Replace with a comment
             const replacement = j.emptyStatement()
             addTodoComment(
                 replacement,
@@ -44,7 +46,6 @@ export const useContainer = (file: FileInfo, api: API) => {
         })
     }
 
-    // Remove imports from typeorm
     const removedImports = new Set([
         "useContainer",
         "getFromContainer",
@@ -54,6 +55,11 @@ export const useContainer = (file: FileInfo, api: API) => {
     ])
 
     if (removeImportSpecifiers(root, j, "typeorm", removedImports)) {
+        hasChanges = true
+    }
+
+    // Remove re-exports of the same symbols (barrel-file pattern)
+    if (removeReExportSpecifiers(root, j, "typeorm", removedImports)) {
         hasChanges = true
     }
 

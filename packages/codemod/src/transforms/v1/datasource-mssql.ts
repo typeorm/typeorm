@@ -37,7 +37,6 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
         )
         if (!isMssql) return
 
-        // Flag removed `domain` option with TODO
         for (const prop of props) {
             if (
                 prop.type === "ObjectProperty" &&
@@ -63,8 +62,7 @@ export const datasourceMssql = (file: FileInfo, api: API) => {
                 p.value.type === "ObjectExpression",
         )
         if (
-            !optionsProp ||
-            optionsProp.type !== "ObjectProperty" ||
+            optionsProp?.type !== "ObjectProperty" ||
             optionsProp.value.type !== "ObjectExpression"
         )
             return

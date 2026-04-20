@@ -47,3 +47,9 @@ export default dataSource
     .createQueryBuilder(Post, "post")
     .loadRelationCountAndMap("post.categoryCount", "post.categories")
     .getMany()
+
+// Computed member access — should also be flagged
+const computedCall = await dataSource
+    .createQueryBuilder(Post, "post")
+    ["loadRelationCountAndMap"]("post.categoryCount", "post.categories")
+    .getMany()

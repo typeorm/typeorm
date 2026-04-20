@@ -2,6 +2,7 @@ import path from "node:path"
 import type { API, FileInfo, UnaryExpression } from "jscodeshift"
 import {
     TYPEORM_COLUMN_DECORATORS,
+    expandLocalNamesForImports,
     forEachDecoratorObjectArg,
     getStringValue,
 } from "../ast-helpers"
@@ -14,6 +15,12 @@ export const columnReadonly = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
+    const decoratorLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        TYPEORM_COLUMN_DECORATORS,
+    )
     forEachDecoratorObjectArg(
         root,
         j,
@@ -55,7 +62,7 @@ export const columnReadonly = (file: FileInfo, api: API) => {
                 hasChanges = true
             }
         },
-        TYPEORM_COLUMN_DECORATORS,
+        decoratorLocalNames,
     )
 
     return hasChanges ? root.toSource() : undefined

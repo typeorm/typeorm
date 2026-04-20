@@ -78,6 +78,8 @@ body:
           required: false
         - label: better-sqlite3
           required: false
+        - label: capacitor
+          required: false
         - label: cockroachdb
           required: false
         - label: cordova
@@ -101,8 +103,6 @@ body:
         - label: spanner
           required: false
         - label: sqlite
-          required: false
-        - label: sqlite-abstract
           required: false
         - label: sqljs
           required: false
