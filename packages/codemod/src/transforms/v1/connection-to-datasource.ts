@@ -53,7 +53,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         ConnectionOptions: "DataSourceOptions",
         BaseConnectionOptions: "BaseDataSourceOptions",
         MysqlConnectionOptions: "MysqlDataSourceOptions",
-        MariaDbConnectionOptions: "MariaDbDataSourceOptions",
+        MariaDbConnectionOptions: "MysqlDataSourceOptions",
         PostgresConnectionOptions: "PostgresDataSourceOptions",
         CockroachConnectionOptions: "CockroachDataSourceOptions",
         SqlServerConnectionOptions: "SqlServerDataSourceOptions",
