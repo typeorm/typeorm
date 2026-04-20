@@ -20,3 +20,11 @@ const mixed = await repository.find({
 const explicit = await repository.find({
     select: { id: true, name: true },
 })
+
+// TS cast around the options object — the scope check walks through
+// `as FindOptions` / `satisfies FindOptions` before looking for the
+// enclosing find call.
+const casted = await repository.find({ select: ["id", "name"] } as FindOptions)
+const satisfied = await repository.find({
+    select: ["id"],
+} satisfies FindOptions)

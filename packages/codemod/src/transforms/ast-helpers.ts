@@ -406,9 +406,32 @@ export const isFindMethodCallArgument = (
     if (!objExprPath || objExprPath.node.type !== "ObjectExpression") {
         return false
     }
-    const callPath = objExprPath.parent
-    if (!callPath) return false
-    const callNode = callPath.node
+    // Walk up through TS expression wrappers (`{ select: [...] } as T`,
+    // `satisfies Opts`, parens) before expecting a CallExpression. Without
+    // this, `repo.find({ select: [...] } as FindOptions)` is missed.
+    let ancestor = objExprPath.parent as {
+        node: ASTNode
+        parent: unknown
+    } | null
+    while (ancestor) {
+        const t = ancestor.node.type
+        if (
+            t === "TSAsExpression" ||
+            t === "TSSatisfiesExpression" ||
+            t === "TSTypeAssertion" ||
+            t === "TSNonNullExpression" ||
+            t === "ParenthesizedExpression"
+        ) {
+            ancestor = ancestor.parent as {
+                node: ASTNode
+                parent: unknown
+            } | null
+            continue
+        }
+        break
+    }
+    if (!ancestor) return false
+    const callNode = ancestor.node
     if (
         callNode.type !== "CallExpression" &&
         callNode.type !== "OptionalCallExpression"
