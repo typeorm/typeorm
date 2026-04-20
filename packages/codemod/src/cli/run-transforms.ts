@@ -233,6 +233,15 @@ const runOneTransform = async (
         spinner.stop(
             `${colors.red("✖")} Transform failed: ${err instanceof Error ? err.message : String(err)}`,
         )
+        // Restore stdout first so worker warnings/stack traces that were
+        // buffered during the run are printed against the real terminal
+        // instead of being re-captured by the interceptor.
+        process.stdout.write = originalWrite
+        printUnclassifiedOutput(
+            interceptor.unclassifiedOutput,
+            interceptor.getSuppressedOutputCount(),
+            originalWrite,
+        )
         throw err
     } finally {
         process.stdout.write = originalWrite
