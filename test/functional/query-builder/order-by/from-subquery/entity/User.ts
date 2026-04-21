@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../../src"
 
 @Entity("user")
 export class User {
-    @PrimaryGeneratedColumn({ type: "int" })
+    @PrimaryGeneratedColumn()
     id: number
 
     @Column()
