@@ -20,7 +20,7 @@ describe("query-builder > order-by > nulls last", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("select + order by must work without issues", async () => {
+    it("should honor NULLS LAST when combined with select, take and skip", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
                 const example1 = new ExampleEntity()

@@ -21,7 +21,7 @@ describe("query-builder > order-by > basic", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should be always in right order(default order)", () =>
+    it("should apply the default descending order from the entity decorator", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const post1 = new Post()
@@ -39,7 +39,7 @@ describe("query-builder > order-by > basic", () => {
             }),
         ))
 
-    it("should be always in right order(custom order)", () =>
+    it("should override the entity default order with an explicit addOrderBy", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const post1 = new Post()
@@ -58,7 +58,7 @@ describe("query-builder > order-by > basic", () => {
             }),
         ))
 
-    it("should be always in right order(custom order)", () =>
+    it("should accept NULLS FIRST / NULLS LAST hints on postgres", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 if (!(dataSource.driver.options.type === "postgres"))
@@ -88,7 +88,7 @@ describe("query-builder > order-by > basic", () => {
             }),
         ))
 
-    it("should be always in right order(custom order)", () =>
+    it("should accept IS NULL / IS NOT NULL hints on mysql", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 if (!DriverUtils.isMySQLFamily(dataSource.driver))

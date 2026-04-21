@@ -19,7 +19,7 @@ describe("query-builder > order-by > from subquery", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should return the user with the given name", async () =>
+    it("should resolve an orderBy alias that refers to a subquery column", async () =>
         await Promise.all(
             dataSources.map(async (connection) => {
                 const user = new User()

@@ -20,7 +20,7 @@ describe("query-builder > take > with orderBy", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should persist successfully and return persisted entity", () =>
+    it("should preserve order when limit is combined with orderBy across joined rows", () =>
         Promise.all(
             dataSources.map(async function (connection) {
                 // generate bulk array of posts with categories

@@ -20,7 +20,7 @@ describe("query-builder > take > mysql skip sql", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("drivers which does not support offset without limit should throw an exception, other drivers must work fine", () =>
+    it("should throw on drivers that do not support offset without limit, and succeed on the rest", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const animals = ["cat", "dog", "bear", "snake"]

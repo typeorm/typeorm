@@ -22,7 +22,7 @@ describe("query-builder > take > multiple primary keys", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should persist successfully and return persisted entity", () =>
+    it("should paginate correctly with composite primary keys", () =>
         Promise.all(
             dataSources.map(async function (connection) {
                 // generate bulk array of users with roles
