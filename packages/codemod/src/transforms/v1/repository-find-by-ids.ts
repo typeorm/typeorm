@@ -47,7 +47,6 @@ export const repositoryFindByIds = (file: FileInfo, api: API) => {
         needsInImport = true
     })
 
-    // Add In import if needed
     if (needsInImport) {
         const typeormImports = root.find(j.ImportDeclaration, {
             source: { value: "typeorm" },
@@ -68,14 +67,12 @@ export const repositoryFindByIds = (file: FileInfo, api: API) => {
 
         if (!hasInImport) {
             if (typeormImports.length > 0) {
-                // Add to existing typeorm import
                 typeormImports.at(0).forEach((path) => {
                     path.node.specifiers?.push(
                         j.importSpecifier(j.identifier("In")),
                     )
                 })
             } else {
-                // Create new import
                 const newImport = j.importDeclaration(
                     [j.importSpecifier(j.identifier("In"))],
                     j.literal("typeorm"),
