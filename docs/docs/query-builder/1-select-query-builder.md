@@ -225,6 +225,39 @@ const photosSums = await dataSource
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
 ```
 
+You can also use an object map to select multiple columns with aliases at once:
+
+```typescript
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .select({
+        "user.id": "id",
+        "SUM(user.photosCount)": "sum",
+    })
+    .groupBy("user.id")
+    .getRawMany()
+```
+
+:::note
+Custom aliases change the column names in the result set. Use `getRawMany()` / `getRawOne()` when using aliases. Using `getMany()` / `getOne()` with custom aliases will result in entities with undefined fields, because entity hydration relies on TypeORM's internal column naming.
+:::
+
+This also works with `addSelect`:
+
+```typescript
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .select("user.id")
+    .addSelect({
+        "SUM(user.photosCount)": "totalPhotos",
+        "AVG(user.photosCount)": "avgPhotos",
+    })
+    .groupBy("user.id")
+    .getRawMany()
+```
+
 ## Getting a count
 
 You can get the count on the number of rows a query will return by using `getCount()`. This will return the count as a number rather than an Entity result.

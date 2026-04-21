@@ -149,7 +149,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
+     * Accepts an object map of selection to alias.
+     * Example: .select({ "user.name": "name", "user.email": "email" })
      *
+     * Note: Custom aliases change the column names in the result set.
+     * Use getRawMany() / getRawOne() when using aliases.
+     * getMany() / getOne() with custom aliases will produce entities with
+     * undefined fields, because entity hydration relies on TypeORM's
+     * internal column naming.
+     */
+    select(selection: Record<string, string>): this
+
+    /**
+     * Creates SELECT query and selects given data.
+     * Replaces all previous selections if they exist.
      * @param selection
      * @param selectionAliasName
      */
@@ -157,29 +170,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         selection?:
             | string
             | string[]
+            | Record<string, string>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         selectionAliasName?: string,
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
-        if (Array.isArray(selection)) {
-            for (const s of selection) {
-                this.assertNoSemicolon(s, "select")
-            }
-            this.expressionMap.selects = selection.map((selection) => ({
-                selection: selection,
-            }))
-        } else if (typeof selection === "function") {
+        if (typeof selection === "function") {
             const subQueryBuilder = selection(this.subQuery())
             this.setParameters(subQueryBuilder.getParameters())
             this.expressionMap.selects.push({
                 selection: subQueryBuilder.getQuery(),
                 aliasName: selectionAliasName,
             })
-        } else if (selection) {
-            this.assertNoSemicolon(selection, "select")
-            this.expressionMap.selects = [
-                { selection: selection, aliasName: selectionAliasName },
-            ]
+        } else {
+            const parsed = this.parseSelectInput(selection, selectionAliasName)
+            if (parsed !== undefined) {
+                this.expressionMap.selects = parsed
+            }
         }
 
         return this
@@ -205,7 +212,19 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new selection to the SELECT query.
+     * Accepts an object map of selection to alias.
+     * Example: .addSelect({ "user.name": "name", "user.email": "email" })
      *
+     * Note: Custom aliases change the column names in the result set.
+     * Use getRawMany() / getRawOne() when using aliases.
+     * getMany() / getOne() with custom aliases will produce entities with
+     * undefined fields, because entity hydration relies on TypeORM's
+     * internal column naming.
+     */
+    addSelect(selection: Record<string, string>): this
+
+    /**
+     * Adds new selection to the SELECT query.
      * @param selection
      * @param selectionAliasName
      */
@@ -213,31 +232,25 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         selection:
             | string
             | string[]
+            | Record<string, string>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         selectionAliasName?: string,
     ): this {
         if (!selection) return this
 
-        if (Array.isArray(selection)) {
-            for (const s of selection) {
-                this.assertNoSemicolon(s, "addSelect")
-            }
-            this.expressionMap.selects = this.expressionMap.selects.concat(
-                selection.map((selection) => ({ selection: selection })),
-            )
-        } else if (typeof selection === "function") {
+        if (typeof selection === "function") {
             const subQueryBuilder = selection(this.subQuery())
             this.setParameters(subQueryBuilder.getParameters())
             this.expressionMap.selects.push({
                 selection: subQueryBuilder.getQuery(),
                 aliasName: selectionAliasName,
             })
-        } else if (selection) {
-            this.assertNoSemicolon(selection, "addSelect")
-            this.expressionMap.selects.push({
-                selection: selection,
-                aliasName: selectionAliasName,
-            })
+        } else {
+            const parsed = this.parseSelectInput(selection, selectionAliasName)
+            if (parsed !== undefined) {
+                this.expressionMap.selects =
+                    this.expressionMap.selects.concat(parsed)
+            }
         }
 
         return this
@@ -2221,6 +2234,34 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 subQuery: isSubQuery === true ? subQuery : undefined,
             })
         }
+    }
+
+    /**
+     * Parses the selection input into an array of SelectQuery objects.
+     * Returns undefined when the input is falsy (no-arg call).
+     * @param selection
+     * @param selectionAliasName
+     */
+    private parseSelectInput(
+        selection: string | string[] | Record<string, string> | undefined,
+        selectionAliasName?: string,
+    ): SelectQuery[] | undefined {
+        if (Array.isArray(selection)) {
+            return selection.map((s) => ({ selection: s }))
+        } else if (typeof selection === "object" && selection !== null) {
+            return Object.entries(selection).map(([sel, alias]) => ({
+                selection: sel,
+                aliasName: alias,
+            }))
+        } else if (selection) {
+            return [
+                {
+                    selection: selection,
+                    aliasName: selectionAliasName,
+                },
+            ]
+        }
+        return undefined
     }
 
     /**
