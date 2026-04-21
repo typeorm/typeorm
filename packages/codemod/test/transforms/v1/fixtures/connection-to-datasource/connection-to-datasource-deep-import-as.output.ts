@@ -1,10 +1,14 @@
-import type { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
+import type { DataSourceOptions } from "typeorm"
 
 declare const dataSource: any
 
-// `as SapConnectionOptions` — the type reference downstream of the
-// renamed import must be rewritten too, not just the import itself.
-// The deep path is preserved (driver-specific options types aren't
-// top-level exports from `"typeorm"`); only the identifier is renamed
-// along with its containing filename segment.
-const { schema } = dataSource.options as SapDataSourceOptions
+// `as SapConnectionOptions` — the deep-path import is dropped and the
+// type reference is rewritten to `Extract<DataSourceOptions, { type: "sap" }>`
+// so users only need the top-level `DataSourceOptions` union (the union
+// narrows by `type` to the SAP-specific fields).
+const { schema } = dataSource.options as Extract<
+    DataSourceOptions,
+    {
+        type: "sap"
+    }
+>

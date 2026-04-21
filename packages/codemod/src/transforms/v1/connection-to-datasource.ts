@@ -42,6 +42,102 @@ const unwrapIdentifierName = (node: ASTNode): string | null => {
     }
 }
 
+// Builds `Extract<DataSourceOptions, { type: "<literal>" }>` as a TSTypeReference
+// node. For drivers that share a type literal with a sibling (e.g. mysql /
+// mariadb both live on MysqlDataSourceOptions) the literal is emitted as a
+// union so `Extract` matches the declared union-typed `type` field.
+const buildExtractDataSourceOptions = (
+    j: API["jscodeshift"],
+    literals: readonly string[],
+): ASTNode => {
+    const litTypes = literals.map((lit) =>
+        (
+            j as unknown as { tsLiteralType: (v: ASTNode) => ASTNode }
+        ).tsLiteralType(j.stringLiteral(lit) as unknown as ASTNode),
+    )
+    const tsJ = j as unknown as {
+        tsLiteralType: (v: ASTNode) => ASTNode
+        tsUnionType: (types: ASTNode[]) => ASTNode
+        tsTypeReference: (name: ASTNode, params?: ASTNode | null) => ASTNode
+        tsTypeParameterInstantiation: (params: ASTNode[]) => ASTNode
+        tsTypeLiteral: (members: ASTNode[]) => ASTNode
+        tsPropertySignature: (key: ASTNode, typeAnnotation: ASTNode) => ASTNode
+        tsTypeAnnotation: (type: ASTNode) => ASTNode
+    }
+    const inner =
+        literals.length === 1 ? litTypes[0] : tsJ.tsUnionType(litTypes)
+    return tsJ.tsTypeReference(
+        j.identifier("Extract") as unknown as ASTNode,
+        tsJ.tsTypeParameterInstantiation([
+            tsJ.tsTypeReference(
+                j.identifier("DataSourceOptions") as unknown as ASTNode,
+            ),
+            tsJ.tsTypeLiteral([
+                tsJ.tsPropertySignature(
+                    j.identifier("type") as unknown as ASTNode,
+                    tsJ.tsTypeAnnotation(inner),
+                ),
+            ]),
+        ]),
+    )
+}
+
+// Ensures `import type { DataSourceOptions } from "typeorm"` is present.
+// Augments an existing `import type` from `"typeorm"` when one exists, or
+// emits a new line after the last import otherwise. Idempotent — a second
+// run finds `DataSourceOptions` already imported and returns.
+const ensureDataSourceOptionsTypeImport = (
+    root: ReturnType<API["jscodeshift"]>,
+    j: API["jscodeshift"],
+): void => {
+    const typeormImports = root.find(j.ImportDeclaration, {
+        source: { value: "typeorm" },
+    })
+    let hasIt = false
+    typeormImports.forEach((p) => {
+        p.node.specifiers?.forEach((spec) => {
+            if (
+                spec.type === "ImportSpecifier" &&
+                spec.imported.type === "Identifier" &&
+                spec.imported.name === "DataSourceOptions"
+            ) {
+                hasIt = true
+            }
+        })
+    })
+    if (hasIt) return
+
+    // Prefer augmenting an existing `import type { ... } from "typeorm"`;
+    // else fall back to a new type-only import line.
+    const typeOnlyImport = typeormImports
+        .filter(
+            (p) => (p.node as { importKind?: string }).importKind === "type",
+        )
+        .at(0)
+    if (typeOnlyImport.length > 0) {
+        typeOnlyImport.forEach((p) => {
+            p.node.specifiers?.push(
+                j.importSpecifier(j.identifier("DataSourceOptions")),
+            )
+        })
+        return
+    }
+
+    const newImport = j.importDeclaration(
+        [j.importSpecifier(j.identifier("DataSourceOptions"))],
+        j.literal("typeorm"),
+    )
+    ;(newImport as { importKind?: string }).importKind = "type"
+    const allImports = root.find(j.ImportDeclaration)
+    if (allImports.length > 0) {
+        allImports.at(-1).insertAfter(newImport)
+    } else {
+        root.find(j.Program).forEach((p) => {
+            p.node.body.unshift(newImport)
+        })
+    }
+}
+
 // Resolves the inner Identifier of a TSParameterProperty's `.parameter`,
 // handling both the plain `Identifier` and default-valued `AssignmentPattern`
 // forms. Returns null when neither shape applies.
@@ -137,26 +233,63 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
 
     let hasChanges = false
 
+    // Generic type renames. Driver-specific *ConnectionOptions types are
+    // handled separately via the Extract rewrite below — they're not
+    // top-level exports from `"typeorm"`, so the codemod can't just rename
+    // the identifier and leave a broken import behind.
     const typeRenames: Record<string, string> = {
         Connection: "DataSource",
         ConnectionOptions: "DataSourceOptions",
         BaseConnectionOptions: "BaseDataSourceOptions",
-        MysqlConnectionOptions: "MysqlDataSourceOptions",
-        PostgresConnectionOptions: "PostgresDataSourceOptions",
-        CockroachConnectionOptions: "CockroachDataSourceOptions",
-        SqlServerConnectionOptions: "SqlServerDataSourceOptions",
-        OracleConnectionOptions: "OracleDataSourceOptions",
-        SqliteConnectionOptions: "BetterSqlite3DataSourceOptions",
-        BetterSqlite3ConnectionOptions: "BetterSqlite3DataSourceOptions",
-        SapConnectionOptions: "SapDataSourceOptions",
-        MongoConnectionOptions: "MongoDataSourceOptions",
-        CordovaConnectionOptions: "CordovaDataSourceOptions",
-        NativescriptConnectionOptions: "NativescriptDataSourceOptions",
-        ReactNativeConnectionOptions: "ReactNativeDataSourceOptions",
-        ExpoConnectionOptions: "ExpoDataSourceOptions",
-        AuroraMysqlConnectionOptions: "AuroraMysqlDataSourceOptions",
-        AuroraPostgresConnectionOptions: "AuroraPostgresDataSourceOptions",
-        SpannerConnectionOptions: "SpannerDataSourceOptions",
+    }
+
+    // Maps every driver-specific options type name (both the v0 form ending
+    // in `ConnectionOptions` and the v1 form ending in `DataSourceOptions`)
+    // to the `type` literal(s) the driver carries. Used to rewrite type
+    // references to `Extract<DataSourceOptions, { type: "..." }>` so users
+    // don't need deep-path imports like `typeorm/driver/sap/...` for a
+    // single field annotation.
+    const driverOptionTypeLiterals: Record<string, readonly string[]> = {
+        AuroraMysqlConnectionOptions: ["aurora-mysql"],
+        AuroraMysqlDataSourceOptions: ["aurora-mysql"],
+        AuroraPostgresConnectionOptions: ["aurora-postgres"],
+        AuroraPostgresDataSourceOptions: ["aurora-postgres"],
+        BetterSqlite3ConnectionOptions: ["better-sqlite3"],
+        BetterSqlite3DataSourceOptions: ["better-sqlite3"],
+        CapacitorConnectionOptions: ["capacitor"],
+        CapacitorDataSourceOptions: ["capacitor"],
+        CockroachConnectionOptions: ["cockroachdb"],
+        CockroachDataSourceOptions: ["cockroachdb"],
+        CordovaConnectionOptions: ["cordova"],
+        CordovaDataSourceOptions: ["cordova"],
+        ExpoConnectionOptions: ["expo"],
+        ExpoDataSourceOptions: ["expo"],
+        MongoConnectionOptions: ["mongodb"],
+        MongoDataSourceOptions: ["mongodb"],
+        // MySQL options cover both `type: "mysql"` and `type: "mariadb"`.
+        // Using a single literal would make `Extract` return `never`, so we
+        // emit a union `{ type: "mysql" | "mariadb" }` that matches.
+        MysqlConnectionOptions: ["mysql", "mariadb"],
+        MysqlDataSourceOptions: ["mysql", "mariadb"],
+        NativescriptConnectionOptions: ["nativescript"],
+        NativescriptDataSourceOptions: ["nativescript"],
+        OracleConnectionOptions: ["oracle"],
+        OracleDataSourceOptions: ["oracle"],
+        PostgresConnectionOptions: ["postgres"],
+        PostgresDataSourceOptions: ["postgres"],
+        ReactNativeConnectionOptions: ["react-native"],
+        ReactNativeDataSourceOptions: ["react-native"],
+        SapConnectionOptions: ["sap"],
+        SapDataSourceOptions: ["sap"],
+        // The v0 `sqlite` driver was removed; its options type maps to
+        // `better-sqlite3`'s `type` literal in v1.
+        SqliteConnectionOptions: ["better-sqlite3"],
+        SpannerConnectionOptions: ["spanner"],
+        SpannerDataSourceOptions: ["spanner"],
+        SqljsConnectionOptions: ["sqljs"],
+        SqljsDataSourceOptions: ["sqljs"],
+        SqlServerConnectionOptions: ["mssql"],
+        SqlServerDataSourceOptions: ["mssql"],
     }
 
     const methodRenames: Record<string, string> = {
@@ -204,26 +337,16 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         "IndexMetadata",
     ])
 
-    // Full-path overrides for deep imports where the v1 module also moved
-    // to a different directory. The generic last-segment swap below cannot
-    // handle these because swapping only the filename leaves the old
-    // directory intact (e.g. `typeorm/driver/sqlite/` was removed in v1).
-    const deepPathRewrites: Record<string, string> = {
-        "typeorm/driver/sqlite/SqliteConnectionOptions":
-            "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions",
-    }
-
     const localRenames = new Map<string, string>()
     const typeormPathPrefix = "typeorm/"
 
     // Returns the rewritten module path for a `typeorm[/...]` import, or the
-    // original when no rewrite applies. Consults `deepPathRewrites` first for
-    // cross-directory moves, then falls back to swapping the last path
-    // segment when it's an exact rename key.
+    // original when no rewrite applies. Swaps the last path segment when
+    // that segment is an exact rename key (e.g. `.../Connection` →
+    // `.../DataSource`). Driver-specific options-type imports are handled
+    // by the Extract rewrite and never reach this helper.
     const rewriteTypeormPath = (source: string): string => {
         if (!source.startsWith(typeormPathPrefix)) return source
-        const fullPathRewrite = deepPathRewrites[source]
-        if (fullPathRewrite) return fullPathRewrite
         const lastSlash = source.lastIndexOf("/")
         // No slash or trailing slash → no segment to rewrite
         if (lastSlash === -1 || lastSlash === source.length - 1) return source
@@ -303,6 +426,65 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             hasChanges = true
         }
     })
+
+    // Driver-specific options types aren't top-level exports from "typeorm",
+    // and deep-path imports like `"typeorm/driver/sap/SapDataSourceOptions"`
+    // are brittle across refactors. Rewrite every reference to
+    // `Extract<DataSourceOptions, { type: "<driver>" }>` so users only need
+    // the union exported from the index. Handles both v0 (`SapConnectionOptions`)
+    // and v1 (`SapDataSourceOptions`) names, and aliased imports.
+    const driverOptionLocalBindings = new Map<string, readonly string[]>()
+    root.find(j.ImportDeclaration).forEach((importPath) => {
+        const importSource = importPath.node.source.value
+        if (
+            typeof importSource !== "string" ||
+            (importSource !== "typeorm" &&
+                !importSource.startsWith(typeormPathPrefix))
+        ) {
+            return
+        }
+        const specifiers = importPath.node.specifiers ?? []
+        const kept = specifiers.filter((spec) => {
+            if (
+                spec.type !== "ImportSpecifier" ||
+                spec.imported.type !== "Identifier"
+            ) {
+                return true
+            }
+            const literals = driverOptionTypeLiterals[spec.imported.name]
+            if (!literals) return true
+            const localName =
+                spec.local?.type === "Identifier"
+                    ? spec.local.name
+                    : spec.imported.name
+            driverOptionLocalBindings.set(localName, literals)
+            return false
+        })
+        if (kept.length !== specifiers.length) {
+            importPath.node.specifiers = kept
+            hasChanges = true
+            if (kept.length === 0) j(importPath).remove()
+        }
+    })
+
+    if (driverOptionLocalBindings.size > 0) {
+        // Walk every type reference in the file and replace tracked local
+        // bindings with an inline Extract<DataSourceOptions, { type: ... }>
+        // expression. TS narrowing via the `type` discriminator still picks
+        // the correct driver-specific fields.
+        root.find(j.TSTypeReference).forEach((refPath) => {
+            const typeName = refPath.node.typeName
+            if (typeName.type !== "Identifier") return
+            const literals = driverOptionLocalBindings.get(typeName.name)
+            if (!literals) return
+            j(refPath).replaceWith(buildExtractDataSourceOptions(j, literals))
+            hasChanges = true
+        })
+
+        // Emit / augment `import type { DataSourceOptions } from "typeorm"`
+        // so the Extract expressions resolve.
+        ensureDataSourceOptionsTypeImport(root, j)
+    }
 
     // Re-export source paths (`export { X } from "typeorm/driver/..."`)
     // follow the same deep-path rewrite rules as import sources so barrel
