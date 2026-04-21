@@ -13,7 +13,10 @@ describe("query-builder > order-by > nulls last", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [ExampleEntity],
-            enabledDrivers: ["postgres"],
+            // `NULLS LAST` is SQL:2003 syntax. MySQL/MariaDB and MSSQL use
+            // their own conventions (`IS NULL` sort keys / `CASE WHEN`) and
+            // don't accept the keyword directly, so skip those drivers.
+            disabledDrivers: ["mysql", "mariadb", "mssql"],
         })
     })
 
