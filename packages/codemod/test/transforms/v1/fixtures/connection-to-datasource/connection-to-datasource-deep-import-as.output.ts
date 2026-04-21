@@ -8,7 +8,5 @@ declare const dataSource: any
 // narrows by `type` to the SAP-specific fields).
 const { schema } = dataSource.options as Extract<
     DataSourceOptions,
-    {
-        type: "sap"
-    }
+    { type: "sap" }
 >

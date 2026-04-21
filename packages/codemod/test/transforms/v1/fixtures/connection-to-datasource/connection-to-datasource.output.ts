@@ -15,31 +15,19 @@ const options: DataSourceOptions = {
     database: "test",
 }
 
-const sapOptions: Extract<
-    DataSourceOptions,
-    {
-        type: "sap"
-    }
-> = {
+const sapOptions: Extract<DataSourceOptions, { type: "sap" }> = {
     type: "sap",
     database: "hana",
 }
 
-const sqliteOptions: Extract<
-    DataSourceOptions,
-    {
-        type: "better-sqlite3"
-    }
-> = {
+const sqliteOptions: Extract<DataSourceOptions, { type: "better-sqlite3" }> = {
     type: "sqlite",
     database: ":memory:",
 }
 
 const betterSqliteOptions: Extract<
     DataSourceOptions,
-    {
-        type: "better-sqlite3"
-    }
+    { type: "better-sqlite3" }
 > = {
     type: "better-sqlite3",
     database: ":memory:",
@@ -142,12 +130,7 @@ export { DataSource, DataSourceOptions } from "typeorm"
 export { DataSource as DbConnection } from "typeorm"
 
 function inspectOpts(
-    opts: Extract<
-        DataSourceOptions,
-        {
-            type: "mysql" | "mariadb"
-        }
-    >,
+    opts: Extract<DataSourceOptions, { type: "mysql" | "mariadb" }>,
 ) {
     // Options-typed parameters are plain value-objects — their `.connect` /
     // `.close` methods are unrelated to DataSource's and must NOT be renamed

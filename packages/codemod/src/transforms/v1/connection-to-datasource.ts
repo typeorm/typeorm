@@ -42,44 +42,23 @@ const unwrapIdentifierName = (node: ASTNode): string | null => {
     }
 }
 
-// Builds `Extract<DataSourceOptions, { type: "<literal>" }>` as a TSTypeReference
-// node. For drivers that share a type literal with a sibling (e.g. mysql /
-// mariadb both live on MysqlDataSourceOptions) the literal is emitted as a
-// union so `Extract` matches the declared union-typed `type` field.
+// Builds `Extract<DataSourceOptions, { type: "<literal>" }>` as a
+// TSTypeReference node. Parses a synthetic type alias and pulls out its
+// right-hand side so the returned node carries source-location info —
+// recast otherwise splits builder-made nodes across lines because they
+// have no `loc`, and Prettier preserves those line breaks verbatim.
+// Drivers that share a literal with a sibling (mysql / mariadb both on
+// MysqlDataSourceOptions) emit a union so `Extract` matches the
+// declared union-typed `type` field.
 const buildExtractDataSourceOptions = (
     j: API["jscodeshift"],
     literals: readonly string[],
 ): ASTNode => {
-    const litTypes = literals.map((lit) =>
-        (
-            j as unknown as { tsLiteralType: (v: ASTNode) => ASTNode }
-        ).tsLiteralType(j.stringLiteral(lit) as unknown as ASTNode),
-    )
-    const tsJ = j as unknown as {
-        tsLiteralType: (v: ASTNode) => ASTNode
-        tsUnionType: (types: ASTNode[]) => ASTNode
-        tsTypeReference: (name: ASTNode, params?: ASTNode | null) => ASTNode
-        tsTypeParameterInstantiation: (params: ASTNode[]) => ASTNode
-        tsTypeLiteral: (members: ASTNode[]) => ASTNode
-        tsPropertySignature: (key: ASTNode, typeAnnotation: ASTNode) => ASTNode
-        tsTypeAnnotation: (type: ASTNode) => ASTNode
-    }
-    const inner =
-        literals.length === 1 ? litTypes[0] : tsJ.tsUnionType(litTypes)
-    return tsJ.tsTypeReference(
-        j.identifier("Extract") as unknown as ASTNode,
-        tsJ.tsTypeParameterInstantiation([
-            tsJ.tsTypeReference(
-                j.identifier("DataSourceOptions") as unknown as ASTNode,
-            ),
-            tsJ.tsTypeLiteral([
-                tsJ.tsPropertySignature(
-                    j.identifier("type") as unknown as ASTNode,
-                    tsJ.tsTypeAnnotation(inner),
-                ),
-            ]),
-        ]),
-    )
+    const unionLiteral = literals.map((lit) => `"${lit}"`).join(" | ")
+    const source = `type __TypeormCodemodExtract = Extract<DataSourceOptions, { type: ${unionLiteral} }>`
+    const aliasPath = j(source).find(j.TSTypeAliasDeclaration).paths()[0]
+    return (aliasPath.node as unknown as { typeAnnotation: ASTNode })
+        .typeAnnotation
 }
 
 // Ensures `import type { DataSourceOptions } from "typeorm"` is present.
