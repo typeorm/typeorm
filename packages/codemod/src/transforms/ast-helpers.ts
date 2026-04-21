@@ -694,15 +694,25 @@ export const renameMemberMethod = (
  * name — e.g. `Repository<User>` → `"Repository"`, `Repository<User> | null`
  * → `"Repository"`, `typeof Repository` → `"Repository"`. Returns null when
  * the annotation doesn't root on a TSTypeReference with an Identifier name.
+ *
+ * When `typeormNamespaceNames` is passed, qualified references like
+ * `ns.Repository<User>` are only returned if `ns` is one of the provided
+ * namespace locals — otherwise the qualified reference is rejected so that
+ * unrelated namespaces (`Foo.Repository<T>` from some-other-lib) are not
+ * mistaken for TypeORM types. Without the parameter, any qualifier is
+ * accepted, which matches legacy callers that don't care about provenance.
  */
 // Walks the members of a union/intersection type and prefers the first
 // TypeORM-family name (so `FooBar | Repository<T>` or `null | Repository<T>`
 // classify correctly). Falls back to the first non-null root name to keep
 // pre-existing behavior for callers that don't care about TypeORM gating.
-const findUnionOrIntersectionRoot = (types: ASTNode[]): string | null => {
+const findUnionOrIntersectionRoot = (
+    types: ASTNode[],
+    typeormNamespaceNames?: ReadonlySet<string>,
+): string | null => {
     let firstName: string | null = null
     for (const member of types) {
-        const name = getTypeReferenceRootName(member)
+        const name = getTypeReferenceRootName(member, typeormNamespaceNames)
         if (!name) continue
         if (
             TYPEORM_REPOSITORY_TYPES.has(name) ||
@@ -717,19 +727,36 @@ const findUnionOrIntersectionRoot = (types: ASTNode[]): string | null => {
 
 // Returns the rightmost segment of a `TSQualifiedName` (`a.b.c` in type
 // position) — always an `Identifier` in valid TS, since the nesting lives
-// on `.left`. So a single access covers any depth — `typeorm.Repository`
-// and `ns.sub.Repository` both resolve to `"Repository"`, matching bare
-// `Repository<T>` for classification.
-const getQualifiedNameRightmost = (node: ASTNode): string | null => {
-    const n = node as { right: ASTNode }
-    if (n.right.type === "Identifier") {
-        return n.right.name
+// on `.left`. When `typeormNamespaceNames` is provided, the leftmost segment
+// is checked against the set of typeorm namespace locals and the rightmost
+// name is only returned if the qualifier matches — so `typeorm.Repository`
+// resolves to `"Repository"` while `other.Repository` returns null, avoiding
+// false-positive classification of identically-named types from other
+// modules. Without the parameter, any qualifier is accepted (legacy
+// behaviour for callers that only look at the rightmost segment).
+const getQualifiedNameRightmost = (
+    node: ASTNode,
+    typeormNamespaceNames?: ReadonlySet<string>,
+): string | null => {
+    const n = node as { left: ASTNode; right: ASTNode }
+    if (n.right.type !== "Identifier") return null
+
+    if (typeormNamespaceNames !== undefined) {
+        // Walk down `.left` to the leftmost identifier (qualifier root).
+        let leftmost: ASTNode = n.left
+        while (leftmost.type === "TSQualifiedName") {
+            leftmost = (leftmost as { left: ASTNode }).left
+        }
+        if (leftmost.type !== "Identifier") return null
+        if (!typeormNamespaceNames.has(leftmost.name)) return null
     }
-    return null
+
+    return n.right.name
 }
 
 export const getTypeReferenceRootName = (
     node: ASTNode | null,
+    typeormNamespaceNames?: ReadonlySet<string>,
 ): string | null => {
     if (!node) return null
     if (node.type === "TSTypeReference") {
@@ -741,7 +768,7 @@ export const getTypeReferenceRootName = (
         // (namespace-import access). Without this branch,
         // `import * as typeorm from "typeorm"` callers would be missed.
         if (n.typeName.type === "TSQualifiedName") {
-            return getQualifiedNameRightmost(n.typeName)
+            return getQualifiedNameRightmost(n.typeName, typeormNamespaceNames)
         }
     }
     // `const X: typeof Repository` — TSTypeQuery wraps the referenced
@@ -753,15 +780,18 @@ export const getTypeReferenceRootName = (
             return n.exprName.name
         }
         if (n.exprName.type === "TSQualifiedName") {
-            return getQualifiedNameRightmost(n.exprName)
+            return getQualifiedNameRightmost(n.exprName, typeormNamespaceNames)
         }
     }
     if (node.type === "TSTypeAnnotation") {
         const n = node as { typeAnnotation: ASTNode }
-        return getTypeReferenceRootName(n.typeAnnotation)
+        return getTypeReferenceRootName(n.typeAnnotation, typeormNamespaceNames)
     }
     if (node.type === "TSUnionType" || node.type === "TSIntersectionType") {
-        return findUnionOrIntersectionRoot((node as { types: ASTNode[] }).types)
+        return findUnionOrIntersectionRoot(
+            (node as { types: ASTNode[] }).types,
+            typeormNamespaceNames,
+        )
     }
     return null
 }
@@ -877,9 +907,10 @@ const recordTypedIdentifier = (
     id: ASTNode,
     annotation: ASTNode | null,
     bindings: RepositoryBindings,
+    typeormNamespaceNames: ReadonlySet<string>,
 ): void => {
     if (id.type !== "Identifier") return
-    const typeName = getTypeReferenceRootName(annotation)
+    const typeName = getTypeReferenceRootName(annotation, typeormNamespaceNames)
     if (!typeName) return
     const bucket = classifyRepositoryTypeName(typeName, bindings, false)
     bucket?.add(id.name)
@@ -928,11 +959,17 @@ const collectDeclaratorBindings = (
     root: Collection,
     j: JSCodeshift,
     bindings: RepositoryBindings,
+    typeormNamespaceNames: ReadonlySet<string>,
 ): void => {
     root.find(j.VariableDeclarator).forEach((p) => {
         const id = p.node.id
         if (id.type !== "Identifier") return
-        recordTypedIdentifier(id, id.typeAnnotation ?? null, bindings)
+        recordTypedIdentifier(
+            id,
+            id.typeAnnotation ?? null,
+            bindings,
+            typeormNamespaceNames,
+        )
         const init = p.node.init
         if (init && isRepositoryReturningCall(init)) {
             bindings.locals.add(id.name)
@@ -954,17 +991,26 @@ const collectFunctionParamBindings = (
     root: Collection,
     j: JSCodeshift,
     bindings: RepositoryBindings,
+    typeormNamespaceNames: ReadonlySet<string>,
 ): void => {
     const visit = (node: { params: ASTNode[] }) => {
         for (const param of node.params) {
             const unwrapped = unwrapParameterIdentifier(param)
             if (!unwrapped) continue
-            recordTypedIdentifier(unwrapped.id, unwrapped.annotation, bindings)
+            recordTypedIdentifier(
+                unwrapped.id,
+                unwrapped.annotation,
+                bindings,
+                typeormNamespaceNames,
+            )
             if (
                 unwrapped.isParameterProperty &&
                 unwrapped.id.type === "Identifier"
             ) {
-                const typeName = getTypeReferenceRootName(unwrapped.annotation)
+                const typeName = getTypeReferenceRootName(
+                    unwrapped.annotation,
+                    typeormNamespaceNames,
+                )
                 if (typeName) {
                     const classBucket = classifyRepositoryTypeName(
                         typeName,
@@ -989,13 +1035,17 @@ const collectClassPropertyBindings = (
     root: Collection,
     j: JSCodeshift,
     bindings: RepositoryBindings,
+    typeormNamespaceNames: ReadonlySet<string>,
 ): void => {
     root.find(j.ClassProperty).forEach((p) => {
         const key = p.node.key
         if (key.type !== "Identifier") return
         const annotation =
             (p.node as { typeAnnotation?: ASTNode }).typeAnnotation ?? null
-        const typeName = getTypeReferenceRootName(annotation)
+        const typeName = getTypeReferenceRootName(
+            annotation,
+            typeormNamespaceNames,
+        )
         if (!typeName) return
         const bucket = classifyRepositoryTypeName(typeName, bindings, true)
         bucket?.add(key.name)
@@ -1012,9 +1062,17 @@ export const collectRepositoryBindings = (
         dataSourceLocals: new Set(),
         dataSourceClassProps: new Set(),
     }
-    collectDeclaratorBindings(root, j, bindings)
-    collectFunctionParamBindings(root, j, bindings)
-    collectClassPropertyBindings(root, j, bindings)
+    // Qualified type references like `typeorm.Repository<T>` must only be
+    // classified as TypeORM receivers when the qualifier is an actual
+    // namespace-local of `import * as typeorm from "typeorm"` (or the
+    // `import ns = require("typeorm")` variants). Without this gate, a
+    // file containing both a typeorm import and `Foo.Repository<T>` from
+    // some-other-lib would treat `Foo.Repository`-typed bindings as
+    // Repository receivers and mis-rewrite their method calls.
+    const typeormNamespaceNames = getNamespaceLocalNames(root, j, "typeorm")
+    collectDeclaratorBindings(root, j, bindings, typeormNamespaceNames)
+    collectFunctionParamBindings(root, j, bindings, typeormNamespaceNames)
+    collectClassPropertyBindings(root, j, bindings, typeormNamespaceNames)
     return bindings
 }
 

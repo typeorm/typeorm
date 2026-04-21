@@ -10,6 +10,7 @@ import {
     expandLocalNamesForImports,
     fileImportsFrom,
     forEachIdentifierParam,
+    getNamespaceLocalNames,
     getStringValue,
     getTypeReferenceRootName,
     isIdentifier,
@@ -664,6 +665,11 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         "typeorm",
         new Set(["Connection", "DataSource"]),
     )
+    // Namespace-import locals for "typeorm" — used to gate qualified type
+    // references (`typeorm.Repository<T>`) inside `getTypeReferenceRootName`
+    // so array-element lookups don't mistake `Foo.Repository[]` from another
+    // library for a TypeORM receiver.
+    const typeormNamespaceNames = getNamespaceLocalNames(root, j, "typeorm")
     const connectionVarNames = new Set<string>()
 
     root.find(j.VariableDeclarator).forEach((path) => {
@@ -1051,6 +1057,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                 resolved =
                     getTypeReferenceRootName(
                         (inner as { elementType: ASTNode }).elementType,
+                        typeormNamespaceNames,
                     ) ?? null
                 return
             }
@@ -1065,7 +1072,11 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                     }
                 ).typeParameters?.params
                 if (params && params.length > 0) {
-                    resolved = getTypeReferenceRootName(params[0]) ?? null
+                    resolved =
+                        getTypeReferenceRootName(
+                            params[0],
+                            typeormNamespaceNames,
+                        ) ?? null
                 }
             }
         })
