@@ -235,19 +235,13 @@ const runOneTransform = async (
         )
         // Restore stdout first so worker warnings/stack traces that were
         // buffered during the run are printed against the real terminal
-        // instead of being re-captured by the interceptor. Guard the print
-        // in try/catch: a best-effort diagnostic must never mask the
-        // original transform error.
+        // instead of being re-captured by the interceptor.
         process.stdout.write = originalWrite
-        try {
-            printUnclassifiedOutput(
-                interceptor.unclassifiedOutput,
-                interceptor.getSuppressedOutputCount(),
-                originalWrite,
-            )
-        } catch {
-            // Swallow — the original `err` is what the user cares about.
-        }
+        printUnclassifiedOutput(
+            interceptor.unclassifiedOutput,
+            interceptor.getSuppressedOutputCount(),
+            originalWrite,
+        )
         throw err
     } finally {
         process.stdout.write = originalWrite
