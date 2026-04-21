@@ -29,7 +29,7 @@ const sqliteOptions: SqliteConnectionOptions = {
     database: ":memory:",
 }
 
-const betterSqliteOptions: BetterSqlite3ConnectionOptions = {
+const bsOptions: BetterSqlite3ConnectionOptions = {
     type: "better-sqlite3",
     database: ":memory:",
 }

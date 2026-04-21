@@ -25,10 +25,7 @@ const sqliteOptions: Extract<DataSourceOptions, { type: "better-sqlite3" }> = {
     database: ":memory:",
 }
 
-const betterSqliteOptions: Extract<
-    DataSourceOptions,
-    { type: "better-sqlite3" }
-> = {
+const bsOptions: Extract<DataSourceOptions, { type: "better-sqlite3" }> = {
     type: "better-sqlite3",
     database: ":memory:",
 }

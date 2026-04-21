@@ -88,19 +88,16 @@ const ensureDataSourceOptionsTypeImport = (
 
     // Prefer augmenting an existing `import type { ... } from "typeorm"`;
     // else fall back to a new type-only import line.
-    const typeOnlyImport = typeormImports
-        .filter(
-            (p) => (p.node as { importKind?: string }).importKind === "type",
+    let augmented = false
+    typeormImports.forEach((p) => {
+        if (augmented) return
+        if ((p.node as { importKind?: string }).importKind !== "type") return
+        p.node.specifiers?.push(
+            j.importSpecifier(j.identifier("DataSourceOptions")),
         )
-        .at(0)
-    if (typeOnlyImport.length > 0) {
-        typeOnlyImport.forEach((p) => {
-            p.node.specifiers?.push(
-                j.importSpecifier(j.identifier("DataSourceOptions")),
-            )
-        })
-        return
-    }
+        augmented = true
+    })
+    if (augmented) return
 
     const newImport = j.importDeclaration(
         [j.importSpecifier(j.identifier("DataSourceOptions"))],
