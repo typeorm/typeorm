@@ -3,14 +3,14 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../utils/test-utils"
-import type { DataSource } from "../../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
 import { Comment } from "./entity/Comment"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
-describe("query builder > order-by", () => {
+describe("query-builder > order-by > basic", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

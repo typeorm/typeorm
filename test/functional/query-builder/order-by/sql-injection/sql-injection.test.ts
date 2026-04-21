@@ -3,12 +3,12 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../utils/test-utils"
-import type { DataSource } from "../../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
 
-describe("query builder > order-by > sql injections", () => {
+describe("query-builder > order-by > sql injection", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
