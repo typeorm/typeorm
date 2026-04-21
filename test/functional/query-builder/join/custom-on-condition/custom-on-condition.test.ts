@@ -1,17 +1,17 @@
 import "reflect-metadata"
-import "../../utils/test-setup"
-import type { DataSource } from "../../../src/data-source/DataSource"
+import "../../../../utils/test-setup"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { expect } from "chai"
 
 import { Post } from "./entity/Post"
 import { PostReview } from "./entity/PostReview"
 
-describe("github issues > #2588 - createQueryBuilder always does left joins on relations", () => {
+describe("query-builder > join > custom ON condition", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

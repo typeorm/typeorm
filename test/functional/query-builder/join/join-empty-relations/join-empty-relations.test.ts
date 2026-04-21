@@ -3,12 +3,12 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 
-describe("other issues > joining empty relations", () => {
+describe("query-builder > join > empty relations", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

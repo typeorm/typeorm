@@ -3,13 +3,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Player } from "./entity/Player"
 import { Group } from "./entity/Group"
 
-describe("github issues > #401 special keywords should be escaped in join queries", () => {
+describe("query-builder > join > escape keyword aliases", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

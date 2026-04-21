@@ -3,13 +3,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { Abbreviation } from "./entity/Abbreviation"
 
-describe("github issues > #215 invalid replacements of join conditions", () => {
+describe("query-builder > join > on-clause property-name regex", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -20,7 +20,7 @@ describe("github issues > #215 invalid replacements of join conditions", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should not do invalid replacements of join conditions", () =>
+    it("should not rewrite column references whose prefix matches a relation name", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const author = new Author()
@@ -36,9 +36,11 @@ describe("github issues > #215 invalid replacements of join conditions", () => {
                 post.abbreviation = abbrev
                 await connection.manager.save(post)
 
-                // generated query should end with "ON p.abbreviation_id = ab.id"
-                // not with ON p.abbreviation.id = ab.id (notice the dot) which would
-                // produce an error.
+                // The generated query must end with `ON p.abbreviation_id = ab.id`,
+                // not `ON p.abbreviation.id = ab.id` (the second form is a SQL
+                // error). Historically an unescaped dot in the ON-clause regex
+                // caused the column-id suffix to be mis-rewritten when the
+                // relation property name was a prefix of the column name.
                 const loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "p")
                     .leftJoinAndMapOne(
