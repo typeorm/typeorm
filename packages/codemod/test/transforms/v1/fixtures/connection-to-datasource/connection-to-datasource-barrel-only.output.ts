@@ -3,4 +3,4 @@
 // re-export check in `fileImportsFrom`, this file would be skipped.
 export { DataSource, DataSourceOptions } from "typeorm"
 export { DataSource as LegacyConn } from "typeorm"
-export * from "typeorm/driver/sap/SapConnectionOptions"
+export * from "typeorm/driver/sap/SapDataSourceOptions"
