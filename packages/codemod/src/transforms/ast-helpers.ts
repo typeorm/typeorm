@@ -355,10 +355,109 @@ export const getObjectPropertyKeyName = (
 }
 
 /**
- * Peels TypeScript expression wrappers around a value so callers see the
- * underlying node. Handles `as X` / `x!` / `x satisfies X` / `<X>x`. Used
- * by transforms that inspect values which users may annotate with type
- * assertions — e.g. `type: "expo" as const`, `{ logPath: "x" } as Options`.
+ * TypeORM `Repository` / `EntityManager` methods that accept a FindOptions
+ * object (with `select`/`relations`/`where`/…). Used to scope the
+ * `select: [...]` / `relations: [...]` → object-form transforms to
+ * arguments passed into these methods. Deliberately excludes the
+ * `*By` variants (`findBy`, `findOneBy`, `findOneByOrFail`,
+ * `findAndCountBy`, `countBy`) — those accept a plain WHERE object, so
+ * rewriting a top-level `select` or `relations` key there would mangle
+ * matches against entity fields of those names.
+ *
+ * The method-name check (rather than a file-level typeorm import gate)
+ * lets the transforms fire in NestJS-style service files that only pull
+ * TypeORM types via a wrapper module.
+ */
+export const TYPEORM_FIND_OPTIONS_METHODS: ReadonlySet<string> = new Set([
+    "find",
+    "findAndCount",
+    "findOne",
+    "findOneOrFail",
+    "count",
+])
+
+/**
+ * Returns true when `node` is a call of shape `Object.fromEntries(...)`.
+ * Used by the find-option transforms to stay idempotent — a second pass
+ * must not wrap an already-wrapped dynamic value in another `fromEntries`.
+ */
+export const isObjectFromEntriesCall = (node: ASTNode): boolean => {
+    if (node.type !== "CallExpression") return false
+    const callee = (node as { callee: ASTNode }).callee
+    if (callee.type !== "MemberExpression") return false
+    const m = callee as { object: ASTNode; property: ASTNode }
+    return (
+        m.object.type === "Identifier" &&
+        m.object.name === "Object" &&
+        m.property.type === "Identifier" &&
+        m.property.name === "fromEntries"
+    )
+}
+
+/**
+ * Returns true when the given `ObjectProperty` lives inside an object that
+ * is an argument to one of the TYPEORM_FIND_OPTIONS_METHODS. Matches both
+ *   `repo.find({ select: [...] })` (object is the single argument) and
+ *   `manager.find(Entity, { select: [...] })` (object is the second arg).
+ */
+export const isFindMethodCallArgument = (
+    propPath: ASTPath<ASTNode>,
+): boolean => {
+    const objExprPath = propPath.parent
+    if (objExprPath?.node.type !== "ObjectExpression") {
+        return false
+    }
+    // Walk up through TS expression wrappers (`{ select: [...] } as T`,
+    // `satisfies Opts`, parens) before expecting a CallExpression. Without
+    // this, `repo.find({ select: [...] } as FindOptions)` is missed.
+    let ancestor = objExprPath.parent as {
+        node: ASTNode
+        parent: unknown
+    } | null
+    while (ancestor) {
+        const t = ancestor.node.type
+        if (
+            t === "TSAsExpression" ||
+            t === "TSSatisfiesExpression" ||
+            t === "TSTypeAssertion" ||
+            t === "TSNonNullExpression" ||
+            t === "ParenthesizedExpression"
+        ) {
+            ancestor = ancestor.parent as {
+                node: ASTNode
+                parent: unknown
+            } | null
+            continue
+        }
+        break
+    }
+    if (!ancestor) return false
+    const callNode = ancestor.node
+    if (
+        callNode.type !== "CallExpression" &&
+        callNode.type !== "OptionalCallExpression"
+    ) {
+        return false
+    }
+    const callee = (callNode as { callee: ASTNode }).callee
+    if (
+        callee.type !== "MemberExpression" &&
+        callee.type !== "OptionalMemberExpression"
+    ) {
+        return false
+    }
+    const prop = (callee as { property: ASTNode }).property
+    if (prop.type !== "Identifier") return false
+    return TYPEORM_FIND_OPTIONS_METHODS.has(prop.name)
+}
+
+/**
+ * Peels TypeScript expression wrappers and parenthesized expressions around
+ * a value so callers see the underlying node. Handles `as X` / `x!` /
+ * `x satisfies X` / `<X>x` / `(x)`. Used by transforms that inspect values
+ * which users may annotate with type assertions — e.g.
+ * `type: "expo" as const`, `type: ("mongodb")`,
+ * `{ logPath: "x" } as Options`.
  *
  * Generic over the node type so callers can keep their original narrowing
  * — in practice the returned node is the same type as the input (with TS
@@ -370,7 +469,8 @@ export const unwrapTsExpression = <T extends { type: string }>(node: T): T => {
         current.type === "TSAsExpression" ||
         current.type === "TSNonNullExpression" ||
         current.type === "TSSatisfiesExpression" ||
-        current.type === "TSTypeAssertion"
+        current.type === "TSTypeAssertion" ||
+        current.type === "ParenthesizedExpression"
     ) {
         const inner = (current as unknown as { expression?: T }).expression
         if (!inner) break
@@ -568,4 +668,428 @@ export const renameMemberMethod = (
     })
 
     return renamed
+}
+
+/**
+ * Walks a TypeScript type-annotation node and returns the root identifier
+ * name — e.g. `Repository<User>` → `"Repository"`, `Repository<User> | null`
+ * → `"Repository"`, `typeof Repository` → `"Repository"`. Returns null when
+ * the annotation doesn't root on a TSTypeReference with an Identifier name.
+ */
+// Walks the members of a union/intersection type and prefers the first
+// TypeORM-family name (so `FooBar | Repository<T>` or `null | Repository<T>`
+// classify correctly). Falls back to the first non-null root name to keep
+// pre-existing behavior for callers that don't care about TypeORM gating.
+const findUnionOrIntersectionRoot = (types: ASTNode[]): string | null => {
+    let firstName: string | null = null
+    for (const member of types) {
+        const name = getTypeReferenceRootName(member)
+        if (!name) continue
+        if (
+            TYPEORM_REPOSITORY_TYPES.has(name) ||
+            TYPEORM_DATASOURCE_TYPES.has(name)
+        ) {
+            return name
+        }
+        firstName ??= name
+    }
+    return firstName
+}
+
+export const getTypeReferenceRootName = (
+    node: ASTNode | null,
+): string | null => {
+    if (!node) return null
+    if (node.type === "TSTypeReference") {
+        const n = node as { typeName: ASTNode }
+        if (n.typeName.type === "Identifier") {
+            return n.typeName.name
+        }
+    }
+    // `const X: typeof Repository` — TSTypeQuery wraps the referenced
+    // identifier in `exprName`. Without this branch, type-of annotations on
+    // typeorm-family types wouldn't register as repository bindings.
+    if (node.type === "TSTypeQuery") {
+        const n = node as { exprName: ASTNode }
+        if (n.exprName.type === "Identifier") {
+            return n.exprName.name
+        }
+    }
+    if (node.type === "TSTypeAnnotation") {
+        const n = node as { typeAnnotation: ASTNode }
+        return getTypeReferenceRootName(n.typeAnnotation)
+    }
+    if (node.type === "TSUnionType" || node.type === "TSIntersectionType") {
+        return findUnionOrIntersectionRoot((node as { types: ASTNode[] }).types)
+    }
+    return null
+}
+
+/**
+ * TypeORM Repository-family type names used to detect bindings that hold a
+ * Repository/EntityManager instance, so transforms can scope method renames
+ * (`.findByIds`, `.findOneById`, `.exist`, `.stats`) to those receivers.
+ */
+export const TYPEORM_REPOSITORY_TYPES: ReadonlySet<string> = new Set([
+    "Repository",
+    "TreeRepository",
+    "MongoRepository",
+    "EntityRepository",
+    "AbstractRepository",
+    "EntityManager",
+    "MongoEntityManager",
+    "SqljsEntityManager",
+])
+
+/**
+ * Call shapes whose return value is a Repository/EntityManager:
+ *   `.getRepository(...)`, `.getMongoRepository(...)`, `.getTreeRepository(...)`,
+ *   `.getCustomRepository(...)`, `.manager` (property access, see caller).
+ */
+const REPOSITORY_RETURNING_METHODS: ReadonlySet<string> = new Set([
+    "getRepository",
+    "getMongoRepository",
+    "getTreeRepository",
+    "getCustomRepository",
+])
+
+// Returns true when `node` is a call expression whose callee ends in one of
+// the Repository-returning method names (e.g. `ds.getRepository(User)`).
+const isRepositoryReturningCall = (node: ASTNode): boolean => {
+    if (
+        node.type !== "CallExpression" &&
+        node.type !== "OptionalCallExpression"
+    )
+        return false
+    const call = node as { callee: ASTNode }
+    const callee = call.callee
+    if (
+        callee.type !== "MemberExpression" &&
+        callee.type !== "OptionalMemberExpression"
+    )
+        return false
+    const member = callee as { property: ASTNode; computed?: boolean }
+    if (member.property.type === "Identifier") {
+        return REPOSITORY_RETURNING_METHODS.has(member.property.name)
+    }
+    if (member.computed) {
+        const name = getStringValue(member.property)
+        return name !== null && REPOSITORY_RETURNING_METHODS.has(name)
+    }
+    return false
+}
+
+/**
+ * TypeORM DataSource-family type names, recognized on local bindings so
+ * `dataSource.manager.X()` can be classified as a Repository receiver via
+ * the `.manager` accessor chain.
+ */
+export const TYPEORM_DATASOURCE_TYPES: ReadonlySet<string> = new Set([
+    "DataSource",
+    "Connection",
+])
+
+/**
+ * Scans a file for local bindings that hold a TypeORM Repository/EntityManager
+ * instance. Used by method-rename transforms to avoid rewriting unrelated
+ * `.method()` calls (e.g. `fs.exist(path)`, `performance.stats()`).
+ *
+ * Detects:
+ *   - `const r = anything.getRepository(User)` (and `Mongo`/`Tree`/`Custom`)
+ *   - `const r: Repository<User> = ...` (or other Repository-family types)
+ *   - Function parameters with the above type annotations
+ *   - Class constructor params with those type annotations
+ *   - Class properties with those type annotations (for `this.X` access)
+ *   - DataSource-typed bindings (for `ds.manager.X()` receiver classification)
+ *
+ * Also returns the set of class-property names so callers can recognize
+ * `this.repo.method()` access.
+ */
+interface RepositoryBindings {
+    locals: Set<string>
+    classProps: Set<string>
+    dataSourceLocals: Set<string>
+    dataSourceClassProps: Set<string>
+}
+
+// Classifies a type name into one of the tracked receiver buckets, or
+// returns null when the type isn't a TypeORM receiver we care about.
+const classifyRepositoryTypeName = (
+    typeName: string,
+    bindings: RepositoryBindings,
+    forThisMember: boolean,
+): Set<string> | null => {
+    if (TYPEORM_REPOSITORY_TYPES.has(typeName)) {
+        return forThisMember ? bindings.classProps : bindings.locals
+    }
+    if (TYPEORM_DATASOURCE_TYPES.has(typeName)) {
+        return forThisMember
+            ? bindings.dataSourceClassProps
+            : bindings.dataSourceLocals
+    }
+    return null
+}
+
+// Records a typed identifier (variable / parameter) into the appropriate
+// binding bucket based on its TypeScript annotation.
+const recordTypedIdentifier = (
+    id: ASTNode,
+    annotation: ASTNode | null,
+    bindings: RepositoryBindings,
+): void => {
+    if (id.type !== "Identifier") return
+    const typeName = getTypeReferenceRootName(annotation)
+    if (!typeName) return
+    const bucket = classifyRepositoryTypeName(typeName, bindings, false)
+    bucket?.add(id.name)
+}
+
+// Resolves the underlying `Identifier` inside a function parameter — peeling
+// `AssignmentPattern` (default params) and `TSParameterProperty` (constructor
+// parameter properties). `isParameterProperty` is true only for
+// TSParameterProperty, so callers can additionally record it as a
+// `this.<name>` class member.
+const unwrapParameterIdentifier = (
+    param: ASTNode,
+): {
+    id: ASTNode
+    annotation: ASTNode | null
+    isParameterProperty: boolean
+} | null => {
+    if (param.type === "Identifier") {
+        return {
+            id: param,
+            annotation: param.typeAnnotation ?? null,
+            isParameterProperty: false,
+        }
+    }
+    if (
+        param.type !== "AssignmentPattern" &&
+        param.type !== "TSParameterProperty"
+    ) {
+        return null
+    }
+    const inner =
+        (param as { left?: ASTNode; parameter?: ASTNode }).left ??
+        (param as { parameter?: ASTNode }).parameter
+    if (inner?.type !== "Identifier") return null
+    return {
+        id: inner,
+        annotation:
+            (inner as { typeAnnotation?: ASTNode }).typeAnnotation ?? null,
+        isParameterProperty: param.type === "TSParameterProperty",
+    }
+}
+
+// Scans VariableDeclarators for typed identifiers and initializers that
+// return a Repository via `.getRepository()`-family calls.
+const collectDeclaratorBindings = (
+    root: Collection,
+    j: JSCodeshift,
+    bindings: RepositoryBindings,
+): void => {
+    root.find(j.VariableDeclarator).forEach((p) => {
+        const id = p.node.id
+        if (id.type !== "Identifier") return
+        recordTypedIdentifier(id, id.typeAnnotation ?? null, bindings)
+        const init = p.node.init
+        if (init && isRepositoryReturningCall(init)) {
+            bindings.locals.add(id.name)
+        }
+    })
+    root.find(j.AssignmentExpression).forEach((p) => {
+        const left = p.node.left
+        if (left.type !== "Identifier") return
+        if (!isRepositoryReturningCall(p.node.right)) return
+        bindings.locals.add(left.name)
+    })
+}
+
+// Scans function parameters on every function-like node. TSParameterProperty
+// bindings (`constructor(private repo: Repository<T>)`) are tracked in both
+// `locals` (for accesses inside the constructor body) AND `classProps` (for
+// `this.repo` accesses elsewhere in the class).
+const collectFunctionParamBindings = (
+    root: Collection,
+    j: JSCodeshift,
+    bindings: RepositoryBindings,
+): void => {
+    const visit = (node: { params: ASTNode[] }) => {
+        for (const param of node.params) {
+            const unwrapped = unwrapParameterIdentifier(param)
+            if (!unwrapped) continue
+            recordTypedIdentifier(unwrapped.id, unwrapped.annotation, bindings)
+            if (
+                unwrapped.isParameterProperty &&
+                unwrapped.id.type === "Identifier"
+            ) {
+                const typeName = getTypeReferenceRootName(unwrapped.annotation)
+                if (typeName) {
+                    const classBucket = classifyRepositoryTypeName(
+                        typeName,
+                        bindings,
+                        true,
+                    )
+                    classBucket?.add(unwrapped.id.name)
+                }
+            }
+        }
+    }
+    root.find(j.FunctionDeclaration).forEach((p) => visit(p.node))
+    root.find(j.FunctionExpression).forEach((p) => visit(p.node))
+    root.find(j.ArrowFunctionExpression).forEach((p) => visit(p.node))
+    root.find(j.ClassMethod).forEach((p) => visit(p.node))
+    root.find(j.TSDeclareMethod).forEach((p) => visit(p.node))
+}
+
+// Scans class properties — `this.<name>` receivers are tracked separately
+// from local identifiers because the access shape is different.
+const collectClassPropertyBindings = (
+    root: Collection,
+    j: JSCodeshift,
+    bindings: RepositoryBindings,
+): void => {
+    root.find(j.ClassProperty).forEach((p) => {
+        const key = p.node.key
+        if (key.type !== "Identifier") return
+        const annotation =
+            (p.node as { typeAnnotation?: ASTNode }).typeAnnotation ?? null
+        const typeName = getTypeReferenceRootName(annotation)
+        if (!typeName) return
+        const bucket = classifyRepositoryTypeName(typeName, bindings, true)
+        bucket?.add(key.name)
+    })
+}
+
+export const collectRepositoryBindings = (
+    root: Collection,
+    j: JSCodeshift,
+): RepositoryBindings => {
+    const bindings: RepositoryBindings = {
+        locals: new Set(),
+        classProps: new Set(),
+        dataSourceLocals: new Set(),
+        dataSourceClassProps: new Set(),
+    }
+    collectDeclaratorBindings(root, j, bindings)
+    collectFunctionParamBindings(root, j, bindings)
+    collectClassPropertyBindings(root, j, bindings)
+    return bindings
+}
+
+/**
+ * Returns true when `receiver` is a MemberExpression-eligible node whose
+ * root identifier is a Repository-bound local or `this.X` where `X` is a
+ * Repository-typed class property. Also accepts fresh inline
+ * `.getRepository(...)` call-expression receivers and DataSource-typed
+ * bindings dereferenced via `.manager` (e.g. `ds.manager.findByIds(...)`).
+ *
+ * When the file contains no Repository-typed bindings at all (no typed
+ * variables, no `.getRepository()` assignments, no Repository class
+ * properties), falls back to permissive matching — the codemod has no
+ * type signal and must trust the historical `fileImportsFrom("typeorm")`
+ * file-level guard. Callers should add negative fixtures to pin the
+ * common false-positive vectors.
+ */
+// Matches `this.<prop>` where `<prop>` is a tracked DataSource class prop.
+const isThisDataSourceProp = (
+    node: ASTNode,
+    dsClassProps: ReadonlySet<string> | undefined,
+): boolean =>
+    (node.type === "MemberExpression" ||
+        node.type === "OptionalMemberExpression") &&
+    (node as { object: ASTNode }).object.type === "ThisExpression" &&
+    (node as { property: ASTNode }).property.type === "Identifier" &&
+    (dsClassProps?.has(
+        ((node as { property: ASTNode }).property as Identifier).name,
+    ) ??
+        false)
+
+// `<ds>.manager` — DataSource local/class-prop's `.manager` accessor
+// returns an EntityManager, whose find-family methods match Repository's.
+const isDataSourceManagerChain = (
+    member: { object: ASTNode; property: ASTNode },
+    dsLocals: ReadonlySet<string> | undefined,
+    dsClassProps: ReadonlySet<string> | undefined,
+): boolean => {
+    if (
+        member.property.type !== "Identifier" ||
+        member.property.name !== "manager"
+    ) {
+        return false
+    }
+    if (
+        member.object.type === "Identifier" &&
+        (dsLocals?.has(member.object.name) ?? false)
+    ) {
+        return true
+    }
+    return isThisDataSourceProp(member.object, dsClassProps)
+}
+
+// Classifies MemberExpression / OptionalMemberExpression receivers.
+const classifyMemberReceiver = (
+    receiver: ASTNode,
+    bindings: {
+        classProps: ReadonlySet<string>
+        dataSourceLocals?: ReadonlySet<string>
+        dataSourceClassProps?: ReadonlySet<string>
+    },
+    noBindingsFound: boolean,
+): boolean => {
+    const member = receiver as { object: ASTNode; property: ASTNode }
+    if (
+        isDataSourceManagerChain(
+            member,
+            bindings.dataSourceLocals,
+            bindings.dataSourceClassProps,
+        )
+    ) {
+        return true
+    }
+    if (
+        member.object.type === "ThisExpression" &&
+        member.property.type === "Identifier"
+    ) {
+        if (bindings.classProps.has(member.property.name)) return true
+        return noBindingsFound
+    }
+    // Chained access like `service.userRepo.findByIds(...)` — accept only
+    // when we have no binding info to disambiguate.
+    return noBindingsFound
+}
+
+export const isRepositoryReceiver = (
+    receiver: ASTNode,
+    bindings: {
+        locals: ReadonlySet<string>
+        classProps: ReadonlySet<string>
+        dataSourceLocals?: ReadonlySet<string>
+        dataSourceClassProps?: ReadonlySet<string>
+    },
+): boolean => {
+    const noBindingsFound =
+        bindings.locals.size === 0 &&
+        bindings.classProps.size === 0 &&
+        (bindings.dataSourceLocals?.size ?? 0) === 0 &&
+        (bindings.dataSourceClassProps?.size ?? 0) === 0
+
+    if (receiver.type === "Identifier") {
+        if (bindings.locals.has(receiver.name)) return true
+        return noBindingsFound
+    }
+    if (
+        receiver.type === "MemberExpression" ||
+        receiver.type === "OptionalMemberExpression"
+    ) {
+        return classifyMemberReceiver(receiver, bindings, noBindingsFound)
+    }
+    if (
+        receiver.type === "CallExpression" ||
+        receiver.type === "OptionalCallExpression"
+    ) {
+        if (isRepositoryReturningCall(receiver)) return true
+        return noBindingsFound
+    }
+    return noBindingsFound
 }

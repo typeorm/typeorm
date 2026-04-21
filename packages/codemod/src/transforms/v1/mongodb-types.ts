@@ -95,14 +95,12 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
 
         hasChanges = true
 
-        // Update or remove the typeorm import
         if (remaining?.length === 0) {
             j(importPath).remove()
         } else if (remaining) {
             importPath.node.specifiers = remaining
         }
 
-        // Check if there's already a mongodb import
         const existingMongoImport = root.find(j.ImportDeclaration, {
             source: { value: "mongodb" },
         })

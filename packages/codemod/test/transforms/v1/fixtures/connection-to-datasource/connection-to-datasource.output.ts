@@ -6,11 +6,6 @@ import {
     ColumnMetadata,
     IndexMetadata,
 } from "typeorm"
-import type { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
-import type { BetterSqlite3DataSourceOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
-
-// Cross-directory rename: the `sqlite/` directory was removed in v1
-import type { BetterSqlite3DataSourceOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
 
 // Deep path whose final segment is NOT an exact rename key must be left alone
 import { something } from "typeorm/driver/sap/ThingsConnectionHelper"
@@ -20,9 +15,19 @@ const options: DataSourceOptions = {
     database: "test",
 }
 
-const sapOptions: SapDataSourceOptions = {
+const sapOptions: Extract<DataSourceOptions, { type: "sap" }> = {
     type: "sap",
     database: "hana",
+}
+
+const sqliteOptions: Extract<DataSourceOptions, { type: "better-sqlite3" }> = {
+    type: "sqlite",
+    database: ":memory:",
+}
+
+const bsOptions: Extract<DataSourceOptions, { type: "better-sqlite3" }> = {
+    type: "better-sqlite3",
+    database: ":memory:",
 }
 
 const connection = new DataSource(options)
@@ -81,11 +86,8 @@ async function bounce(ds: DataSource) {
     return runner.dataSource
 }
 
-// CommonJS require(): destructured identifier + deep-path both rewrite
+// CommonJS require(): destructured identifier rewrite
 const { DataSource: LegacyConn } = require("typeorm")
-const {
-    SapDataSourceOptions: LegacySapOpts,
-} = require("typeorm/driver/sap/SapDataSourceOptions")
 
 const cjs = new DataSource(options)
 
@@ -124,14 +126,12 @@ export { DataSource, DataSourceOptions } from "typeorm"
 // rename the local specifier so the (now renamed) symbol is pulled from typeorm
 export { DataSource as DbConnection } from "typeorm"
 
-// Sub-path re-exports should also be renamed (matches the deep-path import rule)
-export { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
-
-// Options-typed parameters must NOT be classified as DataSource instances.
-// `opts` is a plain value-object whose `.connect` / `.close` methods are
-// unrelated to DataSource's; they must NOT be renamed to initialize/destroy.
-import type { MysqlDataSourceOptions } from "typeorm"
-function inspectOpts(opts: MysqlDataSourceOptions) {
+function inspectOpts(
+    opts: Extract<DataSourceOptions, { type: "mysql" | "mariadb" }>,
+) {
+    // Options-typed parameters are plain value-objects — their `.connect` /
+    // `.close` methods are unrelated to DataSource's and must NOT be renamed
+    // to initialize / destroy.
     opts.connect()
     opts.close()
     return opts

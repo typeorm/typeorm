@@ -14,7 +14,7 @@ import {
     removeImportSpecifiers,
     removeReExportSpecifiers,
 } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -52,6 +52,12 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         "typeorm",
         "getCustomRepository",
     )
+
+    // Track which symbols were successfully flagged; we only strip imports
+    // for symbols whose usages got a comment — dropping an import while a
+    // type reference or conditional use survives would leave the user with
+    // a dangling reference and no signal.
+    const flaggedSymbols = new Set<string>()
 
     // Namespace bindings for `import * as typeorm from "typeorm"` and the
     // matching CommonJS form — used below to match `typeorm.AbstractRepository`
@@ -96,13 +102,14 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
             return false
         })
         .forEach((classPath) => {
-            addTodoComment(
-                classPath.node,
-                "`@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`",
-                j,
-            )
+            const message =
+                "`@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`"
+            if (!hasTodoComment(classPath.node, message)) {
+                addTodoComment(classPath.node, message, j)
+            }
             hasChanges = true
             hasTodos = true
+            flaggedSymbols.add("EntityRepository")
         })
 
     // Find classes extending AbstractRepository — covers:
@@ -119,26 +126,93 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
 
         if (!matches) return
 
-        addTodoComment(
-            classPath.node,
-            "`AbstractRepository` was removed — use a custom service class with `dataSource.getRepository()`",
-            j,
-        )
+        const message =
+            "`AbstractRepository` was removed — use a custom service class with `dataSource.getRepository()`"
+        if (!hasTodoComment(classPath.node, message)) {
+            addTodoComment(classPath.node, message, j)
+        }
         hasChanges = true
         hasTodos = true
+        flaggedSymbols.add("AbstractRepository")
     })
+
+    // TS type-reference usages (e.g. `extends AbstractRepository<User>` in
+    // a generic signature, or `T extends EntityRepository`). Without this,
+    // a file that only uses the symbol as a type would have its import
+    // silently stripped and be left with a dangling reference.
+    const flagTypeReference = (
+        names: ReadonlySet<string>,
+        symbolName: string,
+        message: string,
+    ): void => {
+        root.find(j.TSTypeReference)
+            .filter((p) => {
+                const typeName = p.node.typeName
+                return (
+                    typeName.type === "Identifier" &&
+                    names.has((typeName as { name: string }).name)
+                )
+            })
+            .forEach((p) => {
+                let current = p.parent
+                while (current) {
+                    const node: Node = current.node
+                    if (
+                        node.type.endsWith("Statement") ||
+                        node.type === "VariableDeclaration" ||
+                        node.type === "ClassDeclaration" ||
+                        node.type === "ClassExpression" ||
+                        node.type === "ExportDefaultDeclaration" ||
+                        node.type === "ExportNamedDeclaration"
+                    ) {
+                        if (!hasTodoComment(node, message)) {
+                            addTodoComment(node, message, j)
+                        }
+                        hasChanges = true
+                        hasTodos = true
+                        flaggedSymbols.add(symbolName)
+                        return
+                    }
+                    current = current.parent
+                }
+            })
+    }
+    flagTypeReference(
+        entityRepositoryNames,
+        "EntityRepository",
+        "`@EntityRepository` was removed — use a custom service class with `dataSource.getRepository()`",
+    )
+    flagTypeReference(
+        abstractRepositoryNames,
+        "AbstractRepository",
+        "`AbstractRepository` was removed — use a custom service class with `dataSource.getRepository()`",
+    )
 
     const addGetCustomRepoTodo = (callPath: ASTPath) => {
         const message =
             "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"
-        const parentNode: Node = callPath.parent.node
-        if (parentNode.type === "ExpressionStatement") {
-            addTodoComment(parentNode, message, j)
-        } else {
-            addTodoComment(callPath.node, message, j)
+        // Walk up to the enclosing statement — comments attached to a bare
+        // `CallExpression` are commonly dropped by recast during printing.
+        let current: { node: Node; parent: unknown } | null = callPath as {
+            node: Node
+            parent: unknown
+        }
+        let host: Node | null = null
+        while (current) {
+            const t = current.node.type
+            if (t.endsWith("Statement") || t === "VariableDeclaration") {
+                host = current.node
+                break
+            }
+            current = current.parent as { node: Node; parent: unknown } | null
+        }
+        if (!host) return
+        if (!hasTodoComment(host, message)) {
+            addTodoComment(host, message, j)
         }
         hasChanges = true
         hasTodos = true
+        flaggedSymbols.add("getCustomRepository")
     }
 
     // Member-expression form: `something.getCustomRepository(...)` — not
@@ -164,16 +238,28 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
         })
         .forEach(addGetCustomRepoTodo)
 
-    // Remove imports and re-exports of removed symbols
-    const removed = new Set([
-        "EntityRepository",
-        "AbstractRepository",
-        "getCustomRepository",
-    ])
-    if (removeImportSpecifiers(root, j, "typeorm", removed)) {
-        hasChanges = true
+    // Only strip imports/re-exports of symbols whose usages we successfully
+    // flagged. A surviving reference (e.g. inside a conditional type or a
+    // generic signature we didn't walk) + missing import = silently broken
+    // file. Re-exports are always safe to strip since no runtime usage
+    // depends on them.
+    if (flaggedSymbols.size > 0) {
+        if (removeImportSpecifiers(root, j, "typeorm", flaggedSymbols)) {
+            hasChanges = true
+        }
     }
-    if (removeReExportSpecifiers(root, j, "typeorm", removed)) {
+    if (
+        removeReExportSpecifiers(
+            root,
+            j,
+            "typeorm",
+            new Set([
+                "EntityRepository",
+                "AbstractRepository",
+                "getCustomRepository",
+            ]),
+        )
+    ) {
         hasChanges = true
     }
 

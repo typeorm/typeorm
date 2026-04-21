@@ -1,7 +1,11 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
-import { fileImportsFrom } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import {
+    collectRepositoryBindings,
+    fileImportsFrom,
+    isRepositoryReceiver,
+} from "../ast-helpers"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -14,31 +18,40 @@ export const mongodbStats = (file: FileInfo, api: API) => {
 
     if (!fileImportsFrom(root, j, "typeorm")) return undefined
 
+    const bindings = collectRepositoryBindings(root, j)
+
     let hasChanges = false
     let hasTodos = false
 
     const message = "`stats()` was removed — use the MongoDB driver directly"
 
-    // Find .stats() calls
     root.find(j.CallExpression, {
         callee: {
             type: "MemberExpression",
             property: { type: "Identifier", name: "stats" },
         },
-    }).forEach((path) => {
-        const parentNode: Node = path.parent.node
+    }).forEach((callPath) => {
+        const callee = callPath.node.callee
+        if (callee.type !== "MemberExpression") return
+        if (!isRepositoryReceiver(callee.object, bindings)) return
+
+        // Prefer attaching the comment to the enclosing statement. Comments
+        // on bare CallExpressions are often dropped by recast during printing.
+        let host: Node = callPath.node
+        const parentNode: Node = callPath.parent.node
         if (parentNode.type === "ExpressionStatement") {
-            addTodoComment(parentNode, message, j)
+            host = parentNode
         } else if (parentNode.type === "AwaitExpression") {
-            const grandparentNode: Node = path.parent.parent.node
+            const grandparentNode: Node = callPath.parent.parent.node
             if (grandparentNode.type === "ExpressionStatement") {
-                addTodoComment(grandparentNode, message, j)
-            } else {
-                addTodoComment(path.node, message, j)
+                host = grandparentNode
             }
-        } else {
-            addTodoComment(path.node, message, j)
         }
+        if (hasTodoComment(host, message)) {
+            hasChanges = true
+            return
+        }
+        addTodoComment(host, message, j)
         hasChanges = true
         hasTodos = true
     })

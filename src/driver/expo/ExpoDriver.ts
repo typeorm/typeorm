@@ -25,7 +25,7 @@ const isExpoSqliteNotFoundError = (err: unknown): boolean => {
     if (e.code !== "MODULE_NOT_FOUND") return false
     if (typeof e.message !== "string") return false
     const firstLine = e.message.split("\n", 1)[0]
-    return /^Cannot find module '(?:expo-sqlite)'/.test(firstLine)
+    return firstLine.startsWith("Cannot find module 'expo-sqlite'")
 }
 
 export class ExpoDriver extends AbstractSqliteDriver {

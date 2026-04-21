@@ -33,6 +33,7 @@ npx @typeorm/codemod v1 --list
 | `--ignore <pattern>` | `-i`  | Additional glob pattern to exclude (repeatable; merged with defaults) |
 | `--list`             | `-l`  | List available transforms                                             |
 | `--transform <name>` | `-t`  | Run a specific transform only                                         |
+| `--version`          | `-v`  | Print the installed `@typeorm/codemod` version                        |
 | `--workers <num>`    | `-w`  | Number of worker processes (default: CPU cores - 1)                   |
 
 `**/*.d.ts` is always excluded — ambient type declarations describe the shapes consumers rely on, and rewriting identifiers inside them would silently corrupt published types. User-provided `--ignore` patterns are merged on top of this default.
