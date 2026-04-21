@@ -43,8 +43,8 @@ export const isIdentifier = (node: { type: string }): node is Identifier =>
 /**
  * Checks whether the file references the given module as an import or a
  * re-export source. Matches the exact module name (`"typeorm"`) and any
- * sub-path (`"typeorm/..."`), and recognises ESM `import`, ESM
- * `export … from "…"` / `export * from "…"`, TypeScript
+ * sub-path (`"typeorm/..."`), and recognizes ESM `import`, ESM
+ * `export { X } from "..."` / `export * from "..."`, TypeScript
  * `import = require(...)`, and CommonJS `require(...)` forms so barrel
  * files and `.js`/`.jsx` callers still pass the scope guard.
  */
@@ -67,7 +67,7 @@ export const fileImportsFrom = (
         return true
     }
 
-    // ESM: export { X } from "typeorm[/subpath]" / export * from "…"
+    // ESM: export { X } from "typeorm[/subpath]" / export * from "..."
     // Barrel files that only re-export TypeORM APIs have no import at all,
     // but their re-export source still counts as a reference to the module.
     if (
@@ -715,10 +715,11 @@ const findUnionOrIntersectionRoot = (types: ASTNode[]): string | null => {
     return firstName
 }
 
-// Walks a possibly-nested `TSQualifiedName` (`a.b.c` in type position) and
-// returns the rightmost identifier name — for `typeorm.Repository` we want
-// `"Repository"` so namespace-qualified annotations classify the same way
-// as bare `Repository<T>`.
+// Returns the rightmost segment of a `TSQualifiedName` (`a.b.c` in type
+// position) — always an `Identifier` in valid TS, since the nesting lives
+// on `.left`. So a single access covers any depth — `typeorm.Repository`
+// and `ns.sub.Repository` both resolve to `"Repository"`, matching bare
+// `Repository<T>` for classification.
 const getQualifiedNameRightmost = (node: ASTNode): string | null => {
     const n = node as { right: ASTNode }
     if (n.right.type === "Identifier") {
