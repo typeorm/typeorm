@@ -43,12 +43,17 @@ describe("query-builder > order-by > with added select", () => {
                         .take(5)
                         .getMany()
 
+                    // posts[i].count === -i, doublecount ASC maps back to
+                    // original insertion order 9..5. Compare by the ids
+                    // save() wrote onto the originals, not a hardcoded
+                    // sequence — Spanner's @PrimaryGeneratedColumn emits
+                    // UUIDs, not integers.
                     loadedPosts.length.should.be.equal(5)
-                    loadedPosts[0].id.should.be.equal(10)
-                    loadedPosts[1].id.should.be.equal(9)
-                    loadedPosts[2].id.should.be.equal(8)
-                    loadedPosts[3].id.should.be.equal(7)
-                    loadedPosts[4].id.should.be.equal(6)
+                    loadedPosts[0].id.should.be.equal(posts[9].id)
+                    loadedPosts[1].id.should.be.equal(posts[8].id)
+                    loadedPosts[2].id.should.be.equal(posts[7].id)
+                    loadedPosts[3].id.should.be.equal(posts[6].id)
+                    loadedPosts[4].id.should.be.equal(posts[5].id)
                 }),
             ))
     })
@@ -98,10 +103,12 @@ describe("query-builder > order-by > with added select", () => {
                         .setParameter("query", "timber")
                         .getMany()
 
+                    // posts[6] and posts[7] are the two "timber" rows and
+                    // rank highest under the `timber` tsquery.
                     loadedPosts.length.should.be.equal(5)
-                    loadedPosts[0].id.should.be.equal(7)
+                    loadedPosts[0].id.should.be.equal(posts[6].id)
                     loadedPosts[0].name.should.be.equal("timber")
-                    loadedPosts[1].id.should.be.equal(8)
+                    loadedPosts[1].id.should.be.equal(posts[7].id)
                     loadedPosts[1].name.should.be.equal("timber")
                 }),
             ))
