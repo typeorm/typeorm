@@ -676,6 +676,26 @@ export const renameMemberMethod = (
  * → `"Repository"`, `typeof Repository` → `"Repository"`. Returns null when
  * the annotation doesn't root on a TSTypeReference with an Identifier name.
  */
+// Walks the members of a union/intersection type and prefers the first
+// TypeORM-family name (so `FooBar | Repository<T>` or `null | Repository<T>`
+// classify correctly). Falls back to the first non-null root name to keep
+// pre-existing behavior for callers that don't care about TypeORM gating.
+const findUnionOrIntersectionRoot = (types: ASTNode[]): string | null => {
+    let firstName: string | null = null
+    for (const member of types) {
+        const name = getTypeReferenceRootName(member)
+        if (!name) continue
+        if (
+            TYPEORM_REPOSITORY_TYPES.has(name) ||
+            TYPEORM_DATASOURCE_TYPES.has(name)
+        ) {
+            return name
+        }
+        firstName ??= name
+    }
+    return firstName
+}
+
 export const getTypeReferenceRootName = (
     node: ASTNode | null,
 ): string | null => {
@@ -700,24 +720,7 @@ export const getTypeReferenceRootName = (
         return getTypeReferenceRootName(n.typeAnnotation)
     }
     if (node.type === "TSUnionType" || node.type === "TSIntersectionType") {
-        const n = node as { types: ASTNode[] }
-        // Prefer a TypeORM-family member so unions like `FooBar | Repository<T>`
-        // or `null | Repository<T>` classify correctly. Fall back to the
-        // first name encountered to preserve behavior for callers that don't
-        // care about TypeORM-type gating.
-        let firstName: string | null = null
-        for (const member of n.types) {
-            const name = getTypeReferenceRootName(member)
-            if (!name) continue
-            if (
-                TYPEORM_REPOSITORY_TYPES.has(name) ||
-                TYPEORM_DATASOURCE_TYPES.has(name)
-            ) {
-                return name
-            }
-            firstName ??= name
-        }
-        return firstName
+        return findUnionOrIntersectionRoot((node as { types: ASTNode[] }).types)
     }
     return null
 }
