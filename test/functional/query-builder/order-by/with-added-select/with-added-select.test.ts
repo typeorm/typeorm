@@ -25,15 +25,21 @@ describe("query-builder > order-by > with added select", () => {
                     const categories = [new Category(), new Category()]
                     await connection.manager.save(categories)
 
+                    // Save posts one at a time: Spanner generates PKs on
+                    // commit, so a batch `save([post1..post10])` produces
+                    // colliding many-to-many junction rows because every
+                    // post still carries the same unset id when the junction
+                    // rows are queued. Sequential saves force each post's
+                    // id to materialise before its junction rows land.
                     const posts: Post[] = []
                     for (let i = 0; i < 10; i++) {
                         const post = new Post()
                         post.name = `timber`
                         post.count = i * -1
                         post.categories = categories
+                        await connection.manager.save(post)
                         posts.push(post)
                     }
-                    await connection.manager.save(posts)
 
                     const loadedPosts = await connection.manager
                         .createQueryBuilder(Post, "post")
