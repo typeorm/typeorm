@@ -11,7 +11,6 @@ describe("query-builder > order-by > from subquery", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            enabledDrivers: ["postgres"],
             entities: [User],
             schemaCreate: true,
             dropSchema: true,
