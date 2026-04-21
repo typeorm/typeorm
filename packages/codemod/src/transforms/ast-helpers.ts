@@ -715,6 +715,18 @@ const findUnionOrIntersectionRoot = (types: ASTNode[]): string | null => {
     return firstName
 }
 
+// Walks a possibly-nested `TSQualifiedName` (`a.b.c` in type position) and
+// returns the rightmost identifier name — for `typeorm.Repository` we want
+// `"Repository"` so namespace-qualified annotations classify the same way
+// as bare `Repository<T>`.
+const getQualifiedNameRightmost = (node: ASTNode): string | null => {
+    const n = node as { right: ASTNode }
+    if (n.right.type === "Identifier") {
+        return n.right.name
+    }
+    return null
+}
+
 export const getTypeReferenceRootName = (
     node: ASTNode | null,
 ): string | null => {
@@ -724,6 +736,12 @@ export const getTypeReferenceRootName = (
         if (n.typeName.type === "Identifier") {
             return n.typeName.name
         }
+        // `typeorm.Repository<User>` — TSTypeReference wraps a TSQualifiedName
+        // (namespace-import access). Without this branch,
+        // `import * as typeorm from "typeorm"` callers would be missed.
+        if (n.typeName.type === "TSQualifiedName") {
+            return getQualifiedNameRightmost(n.typeName)
+        }
     }
     // `const X: typeof Repository` — TSTypeQuery wraps the referenced
     // identifier in `exprName`. Without this branch, type-of annotations on
@@ -732,6 +750,9 @@ export const getTypeReferenceRootName = (
         const n = node as { exprName: ASTNode }
         if (n.exprName.type === "Identifier") {
             return n.exprName.name
+        }
+        if (n.exprName.type === "TSQualifiedName") {
+            return getQualifiedNameRightmost(n.exprName)
         }
     }
     if (node.type === "TSTypeAnnotation") {
