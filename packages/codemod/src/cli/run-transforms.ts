@@ -246,14 +246,21 @@ const runOneTransform = async (
         } catch (printErr) {
             // A failing diagnostic must never mask the original transform
             // error. Leave a breadcrumb on stderr so the print failure is
-            // still visible, then fall through to rethrow `err`.
-            process.stderr.write(
-                `Warning: failed to print buffered worker output: ${
-                    printErr instanceof Error
-                        ? printErr.message
-                        : String(printErr)
-                }\n`,
-            )
+            // still visible, then fall through to rethrow `err`. The
+            // stderr write itself is also guarded — on EPIPE (e.g. the
+            // output is piped to `head` in CI) writing to stderr would
+            // throw and mask `err` just the same.
+            try {
+                process.stderr.write(
+                    `Warning: failed to print buffered worker output: ${
+                        printErr instanceof Error
+                            ? printErr.message
+                            : String(printErr)
+                    }\n`,
+                )
+            } catch {
+                // stderr is broken too — nothing more to do.
+            }
         }
         throw err
     } finally {
