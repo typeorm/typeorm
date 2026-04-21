@@ -41,11 +41,12 @@ export const isIdentifier = (node: { type: string }): node is Identifier =>
     node.type === "Identifier"
 
 /**
- * Checks whether the file contains an import from the given module. Matches
- * both the exact module name (`"typeorm"`) and any sub-path (`"typeorm/..."`),
- * and recognizes ESM `import`, TypeScript `import = require(...)`, and
- * CommonJS `require(...)` forms so that `.js`/`.jsx` callers still pass the
- * scope guard.
+ * Checks whether the file references the given module as an import or a
+ * re-export source. Matches the exact module name (`"typeorm"`) and any
+ * sub-path (`"typeorm/..."`), and recognises ESM `import`, ESM
+ * `export … from "…"` / `export * from "…"`, TypeScript
+ * `import = require(...)`, and CommonJS `require(...)` forms so barrel
+ * files and `.js`/`.jsx` callers still pass the scope guard.
  */
 export const fileImportsFrom = (
     root: Collection,
@@ -62,6 +63,24 @@ export const fileImportsFrom = (
         root
             .find(j.ImportDeclaration)
             .some((path) => matchesModule(path.node.source.value))
+    ) {
+        return true
+    }
+
+    // ESM: export { X } from "typeorm[/subpath]" / export * from "…"
+    // Barrel files that only re-export TypeORM APIs have no import at all,
+    // but their re-export source still counts as a reference to the module.
+    if (
+        root
+            .find(j.ExportNamedDeclaration)
+            .some((path) => matchesModule(path.node.source?.value))
+    ) {
+        return true
+    }
+    if (
+        root
+            .find(j.ExportAllDeclaration)
+            .some((path) => matchesModule(path.node.source?.value))
     ) {
         return true
     }
