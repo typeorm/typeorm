@@ -3,12 +3,12 @@ import {
     createTestingConnections,
     closeTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
-describe("github issues > #1259 Can't sort by fields added with addSelect", () => {
+describe("query-builder > order-by > with added select", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

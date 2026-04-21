@@ -3,13 +3,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
-describe("github issues > #813 order by must support functions", () => {
+describe("query-builder > order-by > with functions", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

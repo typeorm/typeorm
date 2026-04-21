@@ -1,13 +1,13 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { User } from "./entity/User"
 
-describe("github issues > #9420 Get error 'Cannot get metadata of given alias' when order column from subquery.", () => {
+describe("query-builder > order-by > from subquery", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

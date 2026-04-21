@@ -1,13 +1,13 @@
-import type { DataSource } from "../../../src"
+import type { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { ExampleEntity } from "./entity/ExampleEntity"
 import { expect } from "chai"
 
-describe("github issues > #9960", () => {
+describe("query-builder > order-by > nulls last", () => {
     let dataSources: DataSource[]
 
     before(async () => {

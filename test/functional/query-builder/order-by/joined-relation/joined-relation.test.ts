@@ -3,12 +3,12 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
 
-describe.skip("github issues > #1591 Define order of relation data when querying on the main entity", () => {
+describe.skip("query-builder > order-by > joined relation", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
