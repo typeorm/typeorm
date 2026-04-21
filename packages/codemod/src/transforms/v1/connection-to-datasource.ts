@@ -86,12 +86,17 @@ const ensureDataSourceOptionsTypeImport = (
     })
     if (hasIt) return
 
-    // Prefer augmenting an existing `import type { ... } from "typeorm"`;
-    // else fall back to a new type-only import line.
+    // Prefer augmenting an existing `import type { ... } from "typeorm"`
+    // — but only when that declaration is a pure named-specifier form.
+    // Pushing an `ImportSpecifier` into a namespace or default-only import
+    // (`import type * as ns` / `import type D`) produces invalid TS.
     let augmented = false
     typeormImports.forEach((p) => {
         if (augmented) return
         if ((p.node as { importKind?: string }).importKind !== "type") return
+        const specifiers = p.node.specifiers ?? []
+        const onlyNamed = specifiers.every((s) => s.type === "ImportSpecifier")
+        if (!onlyNamed) return
         p.node.specifiers?.push(
             j.importSpecifier(j.identifier("DataSourceOptions")),
         )
