@@ -41,13 +41,7 @@ const wrapDynamicStringArray = (
     )
     return j.callExpression(
         j.memberExpression(j.identifier("Object"), j.identifier("fromEntries")),
-        [
-            j.logicalExpression(
-                "??",
-                optionalMapCall as E,
-                j.arrayExpression([]),
-            ),
-        ],
+        [j.logicalExpression("??", optionalMapCall, j.arrayExpression([]))],
     )
 }
 
