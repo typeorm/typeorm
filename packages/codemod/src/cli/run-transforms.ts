@@ -237,11 +237,24 @@ const runOneTransform = async (
         // buffered during the run are printed against the real terminal
         // instead of being re-captured by the interceptor.
         process.stdout.write = originalWrite
-        printUnclassifiedOutput(
-            interceptor.unclassifiedOutput,
-            interceptor.getSuppressedOutputCount(),
-            originalWrite,
-        )
+        try {
+            printUnclassifiedOutput(
+                interceptor.unclassifiedOutput,
+                interceptor.getSuppressedOutputCount(),
+                originalWrite,
+            )
+        } catch (printErr) {
+            // A failing diagnostic must never mask the original transform
+            // error. Leave a breadcrumb on stderr so the print failure is
+            // still visible, then fall through to rethrow `err`.
+            process.stderr.write(
+                `Warning: failed to print buffered worker output: ${
+                    printErr instanceof Error
+                        ? printErr.message
+                        : String(printErr)
+                }\n`,
+            )
+        }
         throw err
     } finally {
         process.stdout.write = originalWrite
