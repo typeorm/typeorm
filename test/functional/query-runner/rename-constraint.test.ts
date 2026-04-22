@@ -20,7 +20,7 @@ describe("query runner > rename constraint", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            enabledDrivers: ["postgres", "cockroachdb"],
+            enabledDrivers: ["postgres", "cockroachdb", "mssql"],
             entities: [],
             schemaCreate: false,
             dropSchema: true,
@@ -199,7 +199,7 @@ describe("query runner > rename constraint", () => {
             }),
         ))
 
-    it("should rename a check constraint in place (Postgres only — CockroachDB check names are generated)", () =>
+    it("should rename a check constraint in place (Postgres and MSSQL — CockroachDB check names are generated)", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 if (dataSource.driver.options.type === "cockroachdb") return
@@ -209,7 +209,7 @@ describe("query runner > rename constraint", () => {
                         "rc_check",
                         new TableCheck({
                             name: "chk_old",
-                            expression: `"a" > 0`,
+                            expression: `${dataSource.driver.escape("a")} > 0`,
                         }),
                     )
 

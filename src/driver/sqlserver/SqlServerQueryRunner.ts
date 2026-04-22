@@ -2375,6 +2375,32 @@ export class SqlServerQueryRunner
     }
 
     /**
+     * Renames a primary key constraint without dropping or recreating it.
+     *
+     * @param tableOrName
+     * @param oldName
+     * @param newName
+     */
+    async renamePrimaryKey(
+        tableOrName: Table | string,
+        oldName: string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        const { up, down } = this.renameConstraintSql(table, oldName, newName)
+        await this.executeQueries(up, down)
+
+        table.primaryColumns.forEach((column) => {
+            if (column.primaryKeyConstraintName === oldName) {
+                column.primaryKeyConstraintName = newName
+            }
+        })
+    }
+
+    /**
      * Creates a new unique constraint.
      *
      * @param tableOrName
@@ -2467,6 +2493,39 @@ export class SqlServerQueryRunner
     }
 
     /**
+     * Renames a unique constraint without dropping or recreating it.
+     *
+     * @param tableOrName
+     * @param uniqueOrName
+     * @param newName
+     */
+    async renameUniqueConstraint(
+        tableOrName: Table | string,
+        uniqueOrName: TableUnique | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const uniqueConstraint = InstanceChecker.isTableUnique(uniqueOrName)
+            ? uniqueOrName
+            : table.uniques.find((u) => u.name === uniqueOrName)
+        if (!uniqueConstraint?.name) {
+            throw new TypeORMError(
+                `Supplied unique constraint was not found in table ${table.name}`,
+            )
+        }
+
+        const { up, down } = this.renameConstraintSql(
+            table,
+            uniqueConstraint.name,
+            newName,
+        )
+        await this.executeQueries(up, down)
+        uniqueConstraint.name = newName
+    }
+
+    /**
      * Creates a new check constraint.
      *
      * @param tableOrName
@@ -2556,6 +2615,39 @@ export class SqlServerQueryRunner
             this.dropCheckConstraint(tableOrName, checkConstraint, ifExists),
         )
         await Promise.all(promises)
+    }
+
+    /**
+     * Renames a check constraint without dropping or recreating it.
+     *
+     * @param tableOrName
+     * @param checkOrName
+     * @param newName
+     */
+    async renameCheckConstraint(
+        tableOrName: Table | string,
+        checkOrName: TableCheck | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
+            ? checkOrName
+            : table.checks.find((c) => c.name === checkOrName)
+        if (!checkConstraint?.name) {
+            throw new TypeORMError(
+                `Supplied check constraint was not found in table ${table.name}`,
+            )
+        }
+
+        const { up, down } = this.renameConstraintSql(
+            table,
+            checkConstraint.name,
+            newName,
+        )
+        await this.executeQueries(up, down)
+        checkConstraint.name = newName
     }
 
     /**
@@ -2737,6 +2829,39 @@ export class SqlServerQueryRunner
     }
 
     /**
+     * Renames a foreign key constraint without dropping or recreating it.
+     *
+     * @param tableOrName
+     * @param foreignKeyOrName
+     * @param newName
+     */
+    async renameForeignKey(
+        tableOrName: Table | string,
+        foreignKeyOrName: TableForeignKey | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
+            ? foreignKeyOrName
+            : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
+        if (!foreignKey?.name) {
+            throw new TypeORMError(
+                `Supplied foreign key was not found in table ${table.name}`,
+            )
+        }
+
+        const { up, down } = this.renameForeignKeySql(
+            table,
+            foreignKey.name,
+            newName,
+        )
+        await this.executeQueries(up, down)
+        foreignKey.name = newName
+    }
+
+    /**
      * Creates a new index.
      *
      * @param tableOrName
@@ -2825,6 +2950,35 @@ export class SqlServerQueryRunner
             this.dropIndex(tableOrName, index, ifExists),
         )
         await Promise.all(promises)
+    }
+
+    /**
+     * Renames an index without dropping or recreating it.
+     *
+     * @param tableOrName
+     * @param indexOrName
+     * @param newName
+     */
+    async renameIndex(
+        tableOrName: Table | string,
+        indexOrName: TableIndex | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const index = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName
+            : table.indices.find((i) => i.name === indexOrName)
+        if (!index?.name) {
+            throw new TypeORMError(
+                `Supplied index was not found in table ${table.name}`,
+            )
+        }
+
+        const { up, down } = this.renameIndexSql(table, index.name, newName)
+        await this.executeQueries(up, down)
+        index.name = newName
     }
 
     /**
@@ -4175,6 +4329,92 @@ export class SqlServerQueryRunner
                 table,
             )} DROP CONSTRAINT "${foreignKeyName}"`,
         )
+    }
+
+    /**
+     * Builds up/down queries that rename a table-scoped constraint (primary key,
+     * unique, check) via `sp_rename`. The identifier is schema-qualified:
+     * `<schema>.<table>.<constraint>`.
+     *
+     * @param table
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair.
+     */
+    protected renameConstraintSql(
+        table: Table,
+        oldName: string,
+        newName: string,
+    ): { up: Query; down: Query } {
+        const qualifiedTable = this.getTablePath(table)
+        return {
+            up: new Query(
+                `EXEC sp_rename "${qualifiedTable}.${oldName}", "${newName}"`,
+            ),
+            down: new Query(
+                `EXEC sp_rename "${qualifiedTable}.${newName}", "${oldName}"`,
+            ),
+        }
+    }
+
+    /**
+     * Builds up/down queries that rename a foreign key via `sp_rename`. FKs live
+     * in the schema namespace rather than the table namespace in SQL Server, so
+     * the identifier is `<db>.<schema>.<fk>`, not `<schema>.<table>.<fk>`.
+     *
+     * @param table
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair.
+     */
+    protected renameForeignKeySql(
+        table: Table,
+        oldName: string,
+        newName: string,
+    ): { up: Query; down: Query } {
+        const { database: dbName, schema: schemaName } =
+            this.driver.parseTableName(table)
+        return {
+            up: new Query(
+                `EXEC sp_rename "${this.buildForeignKeyName(
+                    oldName,
+                    schemaName,
+                    dbName,
+                )}", "${newName}"`,
+            ),
+            down: new Query(
+                `EXEC sp_rename "${this.buildForeignKeyName(
+                    newName,
+                    schemaName,
+                    dbName,
+                )}", "${oldName}"`,
+            ),
+        }
+    }
+
+    /**
+     * Builds up/down queries that rename an index via `sp_rename`. Indexes
+     * require the `"INDEX"` type specifier as the third argument.
+     *
+     * @param table
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair.
+     */
+    protected renameIndexSql(
+        table: Table,
+        oldName: string,
+        newName: string,
+    ): { up: Query; down: Query } {
+        const qualifiedTable = this.getTablePath(table)
+        return {
+            up: new Query(
+                `EXEC sp_rename "${qualifiedTable}.${oldName}", "${newName}", "INDEX"`,
+            ),
+            down: new Query(
+                `EXEC sp_rename "${qualifiedTable}.${newName}", "${oldName}", "INDEX"`,
+            ),
+        }
     }
 
     /**
