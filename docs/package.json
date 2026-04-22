@@ -50,6 +50,9 @@
     "node": ">=20.0"
   },
   "pnpm": {
+    "overrides": {
+      "webpackbar": "^7.0.0"
+    },
     "ignoredBuiltDependencies": [
       "core-js-pure",
       "core-js"
