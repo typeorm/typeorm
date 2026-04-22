@@ -903,19 +903,37 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         createQueryBuilder: "SelectQueryBuilder",
     }
 
+    // Returns true when `node` is a recognized DataSource receiver: either a
+    // bare local variable typed as DataSource, or `this.<member>` where the
+    // class member was tracked by the TSParameterProperty / ClassProperty
+    // walks above. Used to extend accessor-chain recognition to dependency-
+    // injected DataSources exposed as class fields.
+    const isDataSourceReceiver = (node: ASTNode): boolean => {
+        const direct = unwrapIdentifierName(node)
+        if (direct && connectionVarNames.has(direct)) return true
+        const unwrapped = unwrapTsExpression(node)
+        if (
+            (unwrapped.type === "MemberExpression" ||
+                unwrapped.type === "OptionalMemberExpression") &&
+            (unwrapped as { object: ASTNode }).object.type ===
+                "ThisExpression" &&
+            (unwrapped as { property: ASTNode }).property.type === "Identifier"
+        ) {
+            const propName = (unwrapped as { property: { name: string } })
+                .property.name
+            if (thisConnectionMembers.has(propName)) return true
+        }
+        return false
+    }
+
     // Returns the TypeORM type that a DataSource accessor chain resolves to
-    // (`ds.manager` → "EntityManager", `ds.getRepository(X)` → "Repository"),
-    // or null when the initializer isn't a recognized accessor-chain pattern.
+    // (`ds.manager` → "EntityManager", `ds.getRepository(X)` → "Repository",
+    // `this.ds.createQueryRunner()` → "QueryRunner"), or null when the
+    // expression isn't a recognized accessor-chain pattern.
     const resolveAccessorChainType = (init: ASTNode): string | null => {
         if (init.type === "MemberExpression") {
-            const baseName = unwrapIdentifierName(init.object)
-            if (
-                !baseName ||
-                !connectionVarNames.has(baseName) ||
-                init.property.type !== "Identifier"
-            ) {
-                return null
-            }
+            if (init.property.type !== "Identifier") return null
+            if (!isDataSourceReceiver(init.object)) return null
             return dataSourceMemberAccessors[init.property.name] ?? null
         }
         if (
@@ -923,8 +941,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             init.callee.type === "MemberExpression" &&
             init.callee.property.type === "Identifier"
         ) {
-            const baseName = unwrapIdentifierName(init.callee.object)
-            if (!baseName || !connectionVarNames.has(baseName)) return null
+            if (!isDataSourceReceiver(init.callee.object)) return null
             return dataSourceCallAccessors[init.callee.property.name] ?? null
         }
         return null
@@ -937,6 +954,26 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const typeName = resolveAccessorChainType(path.node.init)
         if (typeName && typesWithConnectionProp.has(typeName)) {
             connectionPropVarNames.add(path.node.id.name)
+        }
+    })
+
+    // Class fields with no explicit type annotation but an accessor-chain
+    // initializer — e.g. `private manager = this.dataSource.manager`. The
+    // earlier ClassProperty walk only tracks fields that declare an explicit
+    // TypeORM type; this pass extends tracking to initializer-inferred types
+    // so `this.manager.connection` / `this.queryRunner.connection` reach the
+    // member-rename pass below.
+    root.find(j.ClassProperty).forEach((path) => {
+        const keyNode = path.node.key
+        if (keyNode.type !== "Identifier") return
+        const existing = (path.node as { typeAnnotation?: ASTNode })
+            .typeAnnotation
+        if (existing?.type === "TSTypeAnnotation") return
+        const value = (path.node as { value?: ASTNode | null }).value
+        if (!value) return
+        const typeName = resolveAccessorChainType(value)
+        if (typeName && typesWithConnectionProp.has(typeName)) {
+            thisConnectionPropMembers.add(keyNode.name)
         }
     })
 
