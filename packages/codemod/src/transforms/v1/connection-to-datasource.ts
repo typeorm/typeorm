@@ -191,10 +191,8 @@ const rewriteMetadataConstructors = (
         if (arg?.type !== "ObjectExpression") return
 
         const changed = isEntityMetadata
-            ? renameConnectionKeyToDataSource(
-                  arg as unknown as { properties: ASTNode[] },
-              )
-            : dropConnectionKey(arg as unknown as { properties: ASTNode[] })
+            ? renameConnectionKeyToDataSource(arg)
+            : dropConnectionKey(arg)
         if (changed) hasChanges = true
     })
     return hasChanges
