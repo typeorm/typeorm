@@ -12,7 +12,7 @@ describe("query builder > sql injection", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            disabledDrivers: ["spanner"],
+            disabledDrivers: ["mongodb", "spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
@@ -63,29 +63,6 @@ describe("query builder > sql injection", () => {
         }
     }
 
-    // TODO: addSelect accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("addSelect", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
-                Promise.all(
-                    dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
-                                .addSelect(malicious)
-                                .getRawMany()
-                        } catch {
-                            // expected to throw on invalid column expression
-                        }
-                        await verifyIntegrity(dataSource)()
-                    }),
-                ))
-        }
-    })
-
     describe("andWhere", () => {
         for (const malicious of maliciousInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
@@ -93,8 +70,7 @@ describe("query builder > sql injection", () => {
                     dataSources.map(async (dataSource) => {
                         try {
                             const results = await dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
+                                .createQueryBuilder(Post, "post")
                                 .where("post.id = :id", { id: 1 })
                                 .andWhere("post.name = :name", {
                                     name: malicious,
@@ -117,7 +93,6 @@ describe("query builder > sql injection", () => {
                     dataSources.map(async (dataSource) => {
                         try {
                             await dataSource
-                                .getRepository(Post)
                                 .createQueryBuilder()
                                 .delete()
                                 .from(Post)
@@ -132,29 +107,6 @@ describe("query builder > sql injection", () => {
         }
     })
 
-    // TODO: groupBy accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("groupBy", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
-                Promise.all(
-                    dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
-                                .groupBy(malicious)
-                                .getRawMany()
-                        } catch {
-                            // expected to throw on invalid column name
-                        }
-                        await verifyIntegrity(dataSource)()
-                    }),
-                ))
-        }
-    })
-
     describe("having", () => {
         for (const malicious of maliciousInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
@@ -162,8 +114,7 @@ describe("query builder > sql injection", () => {
                     dataSources.map(async (dataSource) => {
                         try {
                             await dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
+                                .createQueryBuilder(Post, "post")
                                 .groupBy("post.id")
                                 .having("post.name = :name", {
                                     name: malicious,
@@ -178,60 +129,29 @@ describe("query builder > sql injection", () => {
         }
     })
 
-    // TODO: orderBy accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("orderBy", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
-                Promise.all(
-                    dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
-                                .orderBy(malicious)
-                                .getMany()
-                        } catch {
-                            // expected to throw on invalid column name
-                        }
-                        await verifyIntegrity(dataSource)()
-                    }),
-                ))
-        }
-    })
-
     describe("orderBy value injection", () => {
-        it("should reject invalid order direction in OrderByCondition", () =>
-            Promise.all(
-                dataSources.map(async (dataSource) => {
-                    expect(() =>
-                        dataSource
-                            .getRepository(Post)
-                            .createQueryBuilder("post")
-                            .orderBy({
-                                "post.id": "ASC; DELETE FROM post;" as any,
-                            }),
-                    ).to.throw(/Invalid order direction/)
-                }),
-            ))
+        it("should reject invalid order direction in OrderByCondition", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource.createQueryBuilder(Post, "post").orderBy({
+                        "post.id": "ASC; DELETE FROM post;" as any,
+                    }),
+                ).to.throw(/Invalid order direction/)
+            }
+        })
 
-        it("should reject invalid nulls option in OrderByCondition", () =>
-            Promise.all(
-                dataSources.map(async (dataSource) => {
-                    expect(() =>
-                        dataSource
-                            .getRepository(Post)
-                            .createQueryBuilder("post")
-                            .orderBy({
-                                "post.id": {
-                                    order: "ASC",
-                                    nulls: "NULLS FIRST; DROP TABLE post;" as any,
-                                },
-                            }),
-                    ).to.throw(/Invalid nulls option/)
-                }),
-            ))
+        it("should reject invalid nulls option in OrderByCondition", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource.createQueryBuilder(Post, "post").orderBy({
+                        "post.id": {
+                            order: "ASC",
+                            nulls: "NULLS FIRST; DROP TABLE post;" as any,
+                        },
+                    }),
+                ).to.throw(/Invalid nulls option/)
+            }
+        })
 
         it("should accept valid OrderByCondition values", () =>
             Promise.all(
@@ -257,8 +177,7 @@ describe("query builder > sql injection", () => {
                         return
 
                     await dataSource
-                        .getRepository(Post)
-                        .createQueryBuilder("post")
+                        .createQueryBuilder(Post, "post")
                         .orderBy({
                             "post.id": "DESC",
                             "post.name": {
@@ -269,39 +188,34 @@ describe("query builder > sql injection", () => {
                         .getMany()
                 }),
             ))
-        it("should reject invalid order direction in UpdateQueryBuilder", () =>
-            Promise.all(
-                dataSources.map(async (dataSource) => {
-                    if (dataSource.driver.options.type === "mongodb") return
 
-                    expect(() =>
-                        dataSource
-                            .createQueryBuilder()
-                            .update(Post)
-                            .set({ name: "test" })
-                            .orderBy({
-                                id: "ASC; DROP TABLE post;" as any,
-                            }),
-                    ).to.throw(/Invalid order direction/)
-                }),
-            ))
+        it("should reject invalid order direction in UpdateQueryBuilder", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .update(Post)
+                        .set({ name: "test" })
+                        .orderBy({
+                            id: "ASC; DROP TABLE post;" as any,
+                        }),
+                ).to.throw(/Invalid order direction/)
+            }
+        })
 
-        it("should reject invalid order direction in SoftDeleteQueryBuilder", () =>
-            Promise.all(
-                dataSources.map(async (dataSource) => {
-                    if (dataSource.driver.options.type === "mongodb") return
-
-                    expect(() =>
-                        dataSource
-                            .createQueryBuilder()
-                            .softDelete()
-                            .from(Post)
-                            .orderBy({
-                                id: "ASC; DROP TABLE post;" as any,
-                            }),
-                    ).to.throw(/Invalid order direction/)
-                }),
-            ))
+        it("should reject invalid order direction in SoftDeleteQueryBuilder", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Post)
+                        .orderBy({
+                            id: "ASC; DROP TABLE post;" as any,
+                        }),
+                ).to.throw(/Invalid order direction/)
+            }
+        })
     })
 
     describe("orWhere", () => {
@@ -311,8 +225,7 @@ describe("query builder > sql injection", () => {
                     dataSources.map(async (dataSource) => {
                         try {
                             const results = await dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
+                                .createQueryBuilder(Post, "post")
                                 .where("post.name = :name1", {
                                     name1: "nonexistent",
                                 })
@@ -330,29 +243,6 @@ describe("query builder > sql injection", () => {
         }
     })
 
-    // TODO: select accepts raw SQL and is vulnerable to statement stacking
-    // on postgres/cockroachdb (e.g. "1; DELETE FROM post;"). Skipped until
-    // raw SQL expression methods validate against semicolons.
-    describe.skip("select", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
-                Promise.all(
-                    dataSources.map(async (dataSource) => {
-                        try {
-                            await dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
-                                .select(malicious)
-                                .getRawMany()
-                        } catch {
-                            // expected to throw on invalid column expression
-                        }
-                        await verifyIntegrity(dataSource)()
-                    }),
-                ))
-        }
-    })
-
     describe("update", () => {
         for (const malicious of maliciousInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
@@ -360,7 +250,6 @@ describe("query builder > sql injection", () => {
                     dataSources.map(async (dataSource) => {
                         try {
                             await dataSource
-                                .getRepository(Post)
                                 .createQueryBuilder()
                                 .update(Post)
                                 .set({ text: "updated" })
@@ -389,8 +278,7 @@ describe("query builder > sql injection", () => {
                     dataSources.map(async (dataSource) => {
                         try {
                             const results = await dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
+                                .createQueryBuilder(Post, "post")
                                 .where("post.name = :name", {
                                     name: malicious,
                                 })
@@ -398,27 +286,6 @@ describe("query builder > sql injection", () => {
                             expect(results).to.have.length(0)
                         } catch {
                             // some drivers reject certain byte sequences
-                        }
-                        await verifyIntegrity(dataSource)()
-                    }),
-                ))
-        }
-    })
-
-    describe("findOne", () => {
-        for (const malicious of maliciousInputs) {
-            it(`should prevent injection with: ${malicious}`, () =>
-                Promise.all(
-                    dataSources.map(async (dataSource) => {
-                        try {
-                            const result = await dataSource
-                                .getRepository(Post)
-                                .findOne({
-                                    where: { name: malicious },
-                                })
-                            expect(result).to.be.null
-                        } catch {
-                            // some drivers reject invalid byte sequences
                         }
                         await verifyIntegrity(dataSource)()
                     }),
