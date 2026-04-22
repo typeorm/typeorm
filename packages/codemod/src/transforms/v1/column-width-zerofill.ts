@@ -40,12 +40,14 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
 
     // Also strip from `new ColumnMetadata({ args: { options: { width, zerofill, … } } })`.
     // `ColumnMetadataArgs.options` is typed `ColumnOptions`, which no longer
-    // has `width` or `zerofill` in v1.
+    // has `width` or `zerofill` in v1. `valueOnly` skips `import type` bindings
+    // — `new X(...)` needs a runtime binding, not a type alias.
     const columnMetadataLocalNames = expandLocalNamesForImports(
         root,
         j,
         "typeorm",
         new Set(["ColumnMetadata"]),
+        { valueOnly: true },
     )
     forEachColumnMetadataOptionsArg(
         root,

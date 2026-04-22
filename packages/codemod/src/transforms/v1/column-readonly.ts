@@ -23,7 +23,9 @@ export const columnReadonly = (file: FileInfo, api: API) => {
 
     const rewriteReadonlyInObject = (obj: ObjectExpression): void => {
         for (const prop of obj.properties) {
-            if (prop.type !== "ObjectProperty") continue
+            if (prop.type !== "ObjectProperty" && prop.type !== "Property") {
+                continue
+            }
 
             const keyName =
                 prop.key.type === "Identifier"
@@ -75,12 +77,14 @@ export const columnReadonly = (file: FileInfo, api: API) => {
 
     // Also rewrite `new ColumnMetadata({ args: { options: { readonly, … } } })`.
     // `ColumnMetadataArgs.options` is typed `ColumnOptions`, so the same
-    // `readonly` → `update` rename applies.
+    // `readonly` → `update` rename applies. `valueOnly` skips `import type`
+    // bindings — `new X(...)` needs a runtime binding, not a type alias.
     const columnMetadataLocalNames = expandLocalNamesForImports(
         root,
         j,
         "typeorm",
         new Set(["ColumnMetadata"]),
+        { valueOnly: true },
     )
     forEachColumnMetadataOptionsArg(
         root,

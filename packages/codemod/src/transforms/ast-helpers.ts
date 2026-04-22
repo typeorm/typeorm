@@ -123,13 +123,17 @@ export const getLocalNamesForImport = (
     j: JSCodeshift,
     moduleName: string,
     importedName: string,
+    opts: { valueOnly?: boolean } = {},
 ): Set<string> => {
     const localNames = new Set<string>()
+    const { valueOnly = false } = opts
 
     // ESM: `import { X [as Y] } from "moduleName"`
     root.find(j.ImportDeclaration, {
         source: { value: moduleName },
     }).forEach((importPath) => {
+        const declKind = (importPath.node as { importKind?: string }).importKind
+        if (valueOnly && declKind === "type") return
         for (const spec of importPath.node.specifiers ?? []) {
             if (
                 spec.type !== "ImportSpecifier" ||
@@ -138,6 +142,8 @@ export const getLocalNamesForImport = (
             ) {
                 continue
             }
+            const specKind = (spec as { importKind?: string }).importKind
+            if (valueOnly && specKind === "type") continue
             const local = spec.local ?? spec.imported
             if (local.type === "Identifier") {
                 localNames.add(local.name)
@@ -305,10 +311,17 @@ export const expandLocalNamesForImports = (
     j: JSCodeshift,
     moduleName: string,
     importedNames: ReadonlySet<string>,
+    opts: { valueOnly?: boolean } = {},
 ): Set<string> => {
     const expanded = new Set<string>()
     for (const name of importedNames) {
-        for (const local of getLocalNamesForImport(root, j, moduleName, name)) {
+        for (const local of getLocalNamesForImport(
+            root,
+            j,
+            moduleName,
+            name,
+            opts,
+        )) {
             expanded.add(local)
         }
     }
@@ -383,7 +396,7 @@ export const getObjectPropertyKeyName = (
  * multi-tenant / metadata-manipulation patterns.
  *
  * @param classLocalNames Local identifiers bound to `ColumnMetadata` (from
- *     `expandLocalNamesForImports(root, j, "typeorm", ["ColumnMetadata"])`).
+ *     `expandLocalNamesForImports(root, j, "typeorm", new Set(["ColumnMetadata"]))`).
  */
 export const forEachColumnMetadataOptionsArg = (
     root: Collection,
@@ -392,39 +405,44 @@ export const forEachColumnMetadataOptionsArg = (
     callback: (optionsObject: ObjectExpression, path: ASTPath) => void,
 ): void => {
     if (classLocalNames.size === 0) return
+
+    // Returns the property value as an ObjectExpression if the property with
+    // the given key exists and its value is an ObjectExpression (after peeling
+    // TS wrappers like `as` / `satisfies` / `!` / parens). Accepts both
+    // Identifier and string-literal keys.
+    const findObjectPropertyValue = (
+        obj: ObjectExpression,
+        keyName: string,
+    ): ObjectExpression | null => {
+        const prop = obj.properties.find(
+            (p) => getObjectPropertyKeyName(p) === keyName,
+        )
+        if (
+            !prop ||
+            (prop.type !== "Property" && prop.type !== "ObjectProperty")
+        ) {
+            return null
+        }
+        const value = unwrapTsExpression((prop as { value: ASTNode }).value)
+        return value.type === "ObjectExpression" ? value : null
+    }
+
     root.find(j.NewExpression).forEach((path) => {
         const callee = path.node.callee
         if (callee.type !== "Identifier") return
         if (!classLocalNames.has(callee.name)) return
 
-        const [arg] = path.node.arguments
-        if (!arg || arg.type !== "ObjectExpression") return
+        const [firstArg] = path.node.arguments
+        const arg = firstArg ? unwrapTsExpression(firstArg) : undefined
+        if (arg?.type !== "ObjectExpression") return
 
-        const argsProp = arg.properties.find((p) => {
-            if (p.type !== "Property" && p.type !== "ObjectProperty") {
-                return false
-            }
-            return (
-                (p as { key: ASTNode }).key.type === "Identifier" &&
-                (p as { key: Identifier }).key.name === "args"
-            )
-        }) as { value: ASTNode } | undefined
-        if (!argsProp || argsProp.value.type !== "ObjectExpression") return
+        const argsValue = findObjectPropertyValue(arg, "args")
+        if (!argsValue) return
 
-        const optionsProp = argsProp.value.properties.find((p) => {
-            if (p.type !== "Property" && p.type !== "ObjectProperty") {
-                return false
-            }
-            return (
-                (p as { key: ASTNode }).key.type === "Identifier" &&
-                (p as { key: Identifier }).key.name === "options"
-            )
-        }) as { value: ASTNode } | undefined
-        if (!optionsProp || optionsProp.value.type !== "ObjectExpression") {
-            return
-        }
+        const optionsValue = findObjectPropertyValue(argsValue, "options")
+        if (!optionsValue) return
 
-        callback(optionsProp.value, path)
+        callback(optionsValue, path)
     })
 }
 

@@ -1,0 +1,19 @@
+import { ColumnMetadata as CM } from "typeorm"
+
+declare const metadata: any
+
+// Edge cases: aliased import (`as CM`), string-literal keys for `args` /
+// `options`, and `options` wrapped in a TS `as` assertion — all three must
+// still be walked and rewritten.
+const a = new CM({
+    entityMetadata: metadata,
+    args: {
+        target: "A",
+        mode: "regular",
+        propertyName: "a",
+        options: {
+            type: "varchar",
+            readonly: true,
+        } as any,
+    },
+})

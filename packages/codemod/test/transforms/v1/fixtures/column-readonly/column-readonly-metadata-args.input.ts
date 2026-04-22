@@ -1,14 +1,12 @@
 import { ColumnMetadata } from "typeorm"
 
 declare const metadata: any
-declare const tenantConnectionService: { connection: any }
 
 // `new ColumnMetadata({ args: { options: {...} } })` — the nested `options`
 // object is typed `ColumnOptions`, so the same `readonly` → `update` rename
 // that fires on `@Column({...})` must also fire here. Rare in user code but
 // shows up in multi-tenant / runtime metadata construction.
 const col = new ColumnMetadata({
-    connection: tenantConnectionService.connection,
     entityMetadata: metadata,
     args: {
         target: "A",
