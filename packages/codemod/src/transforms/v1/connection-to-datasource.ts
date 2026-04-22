@@ -1091,30 +1091,36 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     // binding, versus a property key, member-access property, import specifier,
     // etc. Computed property keys (`{ [x]: ... }`) and ObjectExpression
     // shorthand (`{ x }`) DO count — the identifier is a value-use there.
+    interface IdentifierParent {
+        type: string
+        key?: ASTNode
+        property?: ASTNode
+        imported?: ASTNode
+        exported?: ASTNode
+        computed?: boolean
+    }
     const isReferenceIdentifier = (idPath: {
         node: ASTNode
         parent?: { node: ASTNode }
     }): boolean => {
-        const parent = idPath.parent?.node as
-            | (ASTNode & {
-                  key?: ASTNode
-                  property?: ASTNode
-                  imported?: ASTNode
-                  exported?: ASTNode
-                  computed?: boolean
-              })
-            | undefined
-        if (!parent) return true
-        if (
-            (parent.type === "Property" || parent.type === "ObjectProperty") &&
-            parent.key === idPath.node &&
-            !parent.computed
-        ) {
+        const parentNode = idPath.parent?.node
+        if (!parentNode) return true
+        const parent = parentNode as IdentifierParent
+        const isPropertyKey =
+            parent.type === "Property" ||
+            parent.type === "ObjectProperty" ||
+            parent.type === "TSPropertySignature" ||
+            parent.type === "ClassProperty" ||
+            parent.type === "ClassMethod" ||
+            parent.type === "MethodDefinition"
+        if (isPropertyKey && parent.key === idPath.node && !parent.computed) {
             return false
         }
+        const isMemberProperty =
+            parent.type === "MemberExpression" ||
+            parent.type === "OptionalMemberExpression"
         if (
-            (parent.type === "MemberExpression" ||
-                parent.type === "OptionalMemberExpression") &&
+            isMemberProperty &&
             parent.property === idPath.node &&
             !parent.computed
         ) {
@@ -1129,16 +1135,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         if (
             parent.type === "ExportSpecifier" &&
             parent.exported === idPath.node
-        ) {
-            return false
-        }
-        if (
-            (parent.type === "TSPropertySignature" ||
-                parent.type === "ClassProperty" ||
-                parent.type === "ClassMethod" ||
-                parent.type === "MethodDefinition") &&
-            parent.key === idPath.node &&
-            !parent.computed
         ) {
             return false
         }
@@ -1157,19 +1153,70 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     }
 
     // Cache all `connection` identifier paths once; each shorthand destructure
-    // rename then filters this list by scope subtree instead of re-walking the
-    // whole AST.
+    // rename filters this list by scope subtree instead of re-walking the AST.
     const allConnectionRefs: ScopedPath[] = []
     root.find(j.Identifier, { name: "connection" }).forEach((p) => {
         allConnectionRefs.push(p)
     })
 
+    const isInSubtree = (
+        idPath: { parent?: { node: ASTNode; parent?: unknown } },
+        root: ASTNode,
+    ): boolean => {
+        let cursor = idPath.parent
+        while (cursor) {
+            if (cursor.node === root) return true
+            cursor = cursor.parent as typeof cursor
+        }
+        return false
+    }
+
+    // True if any `dataSource` reference lives inside the given subtree — that
+    // reference would rebind to the about-to-be-renamed local, so the rename
+    // must fall back to the alias form.
+    const hasDataSourceUsageIn = (scopeBodyNode: ASTNode): boolean => {
+        let found = false
+        root.find(j.Identifier, { name: "dataSource" }).forEach((idPath) => {
+            if (found) return
+            if (!isInSubtree(idPath, scopeBodyNode)) return
+            if (!isReferenceIdentifier(idPath)) return
+            found = true
+        })
+        return found
+    }
+
+    // Collect every `connection` reference inside `scopeBodyNode` whose
+    // resolved binding is `scope`. Skips non-reference positions and paths
+    // whose node was renamed by a previous pass.
+    const collectConnectionRefsInScope = (
+        scope: ScopeLike,
+        scopeBodyNode: ASTNode,
+    ): ScopedPath[] => {
+        const expectedScopeNode = scope.path?.node
+        const refs: ScopedPath[] = []
+        for (const idPath of allConnectionRefs) {
+            if (idPath.node.name !== "connection") continue
+            if (!isInSubtree(idPath, scopeBodyNode)) continue
+            if (!isReferenceIdentifier(idPath)) continue
+            const refScope = idPath.scope
+            if (!refScope) continue
+            const lookup = refScope.lookup("connection")
+            if (!lookup) continue
+            if (
+                lookup !== scope &&
+                (!expectedScopeNode || lookup.path?.node !== expectedScopeNode)
+            ) {
+                continue
+            }
+            refs.push(idPath)
+        }
+        return refs
+    }
+
     // Attempts a scope-aware rename of a shorthand `{ connection }` binding to
-    // `{ dataSource }`, including every reference to the local within the
-    // enclosing scope. Returns false (caller falls back to the alias form) when
-    // the rename would disturb an existing `dataSource` usage — either the
-    // declaring scope itself binds `dataSource`, or the subtree references
-    // `dataSource` (which would be rebound to the new local).
+    // `{ dataSource }`, plus every reference to the local within the scope.
+    // Returns false (caller falls back to the alias form) when the rename
+    // would disturb an existing `dataSource` usage in the subtree.
     const tryRenameShorthandConnectionBinding = (
         prop: {
             key: { name: string }
@@ -1182,63 +1229,15 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const scope = declPath.scope
         if (!scope) return false
         if (scope.declares("dataSource")) return false
+        if (hasDataSourceUsageIn(scopeBodyNode)) return false
 
-        // Compare by AST node rather than scope-object identity — ast-types
-        // may return equivalent-but-not-identical wrappers depending on entry
-        // point (parameter list vs body).
-        const expectedScopeNode = scope.path?.node
-        const isInScopeSubtree = (idPath: ScopedPath): boolean => {
-            let cursor = idPath.parent
-            while (cursor) {
-                if (cursor.node === scopeBodyNode) return true
-                cursor = cursor.parent as typeof cursor
-            }
-            return false
-        }
-
-        // Any `dataSource` reference inside our subtree — whether to an outer
-        // binding (which would rebind to the new local) or a nested shadow
-        // (which would swallow outer refs) — makes the shorthand rename
-        // unsafe. Scanned fresh because previous renames may have introduced
-        // new `dataSource` identifiers in the tree.
-        let conflictsWithDataSource = false
-        root.find(j.Identifier, { name: "dataSource" }).forEach((idPath) => {
-            if (conflictsWithDataSource) return
-            const sp = idPath as unknown as ScopedPath
-            if (!isInScopeSubtree(sp)) return
-            if (!isReferenceIdentifier(idPath)) return
-            conflictsWithDataSource = true
-        })
-        if (conflictsWithDataSource) return false
-
-        const refsToRename: ScopedPath[] = []
-        for (const idPath of allConnectionRefs) {
-            // Paths whose node was renamed by a previous destructure pass.
-            if (idPath.node.name !== "connection") continue
-            if (!isInScopeSubtree(idPath)) continue
-            if (!isReferenceIdentifier(idPath)) continue
-            const refScope = idPath.scope
-            if (!refScope) continue
-            const lookup = refScope.lookup("connection")
-            if (!lookup) continue
-            if (
-                lookup !== scope &&
-                (!expectedScopeNode || lookup.path?.node !== expectedScopeNode)
-            ) {
-                continue
-            }
-            refsToRename.push(idPath)
-        }
+        const refsToRename = collectConnectionRefsInScope(scope, scopeBodyNode)
 
         prop.key.name = "dataSource"
-        const patternLocal = getPatternBindingName(prop.value)
-        if (patternLocal !== null) {
-            if (prop.value.type === "Identifier") {
-                ;(prop.value as { name: string }).name = "dataSource"
-            } else {
-                ;(prop.value as { left: { name: string } }).left.name =
-                    "dataSource"
-            }
+        if (prop.value.type === "Identifier") {
+            ;(prop.value as { name: string }).name = "dataSource"
+        } else if (getPatternBindingName(prop.value) !== null) {
+            ;(prop.value as { left: { name: string } }).left.name = "dataSource"
         }
         for (const ref of refsToRename) ref.node.name = "dataSource"
         return true
@@ -1301,7 +1300,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         ) {
             return
         }
-        const scoped = declPath as unknown as ScopedPath
+        const scoped = declPath as ScopedPath
         const scopeNode = scoped.scope?.path?.node ?? declPath.node
         renameConnectionInObjectPattern(declPath.node.id, scoped, scopeNode)
     })
