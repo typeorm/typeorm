@@ -379,9 +379,9 @@ export const getObjectPropertyKeyName = (
  * `select: [...]` / `relations: [...]` → object-form transforms to
  * arguments passed into these methods. Deliberately excludes the
  * `*By` variants (`findBy`, `findOneBy`, `findOneByOrFail`,
- * `findAndCountBy`, `countBy`) — those accept a plain WHERE object, so
- * rewriting a top-level `select` or `relations` key there would mangle
- * matches against entity fields of those names.
+ * `findAndCountBy`, `countBy`, `existsBy`) — those accept a plain WHERE
+ * object, so rewriting a top-level `select` or `relations` key there would
+ * mangle matches against entity fields of those names.
  *
  * The method-name check (rather than a file-level typeorm import gate)
  * lets the transforms fire in NestJS-style service files that only pull
@@ -393,6 +393,7 @@ export const TYPEORM_FIND_OPTIONS_METHODS: ReadonlySet<string> = new Set([
     "findOne",
     "findOneOrFail",
     "count",
+    "exists",
 ])
 
 /**

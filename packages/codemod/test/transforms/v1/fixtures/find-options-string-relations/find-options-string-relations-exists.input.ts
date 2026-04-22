@@ -1,0 +1,16 @@
+import "typeorm"
+
+declare class User {}
+
+// `Repository.exists` / `EntityManager.exists` accept FindManyOptions, whose
+// `relations` key takes the same string-array or nested-object form as
+// `find`/`findOne`. Must be rewritten to v1 nested-object syntax.
+const a = await repository.exists({ relations: ["profile", "orders.items"] })
+
+const b = await manager.exists(User, {
+    relations: ["roles"],
+})
+
+// `existsBy(where)` takes a plain WHERE object — must NOT rewrite a top-level
+// `relations` key there.
+const c = await repository.existsBy({ relations: ["profile"] })
