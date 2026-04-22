@@ -117,6 +117,11 @@ export const fileImportsFrom = (
  *   import { RelationCount as RC } from "typeorm"   → { "RC" }
  *   const { RelationCount } = require("typeorm")    → { "RelationCount" }
  *   const { RelationCount: RC } = require("typeorm")→ { "RC" }
+ *
+ * Matches both the exact module name and any sub-path — e.g. when moduleName
+ * is `"typeorm"`, imports from `"typeorm/metadata/ColumnMetadata"` are also
+ * recognised. TypeORM users reach internal types through deep imports, and
+ * the codemod must rewrite them regardless of import shape.
  */
 export const getLocalNamesForImport = (
     root: Collection,
@@ -125,11 +130,14 @@ export const getLocalNamesForImport = (
     importedName: string,
 ): Set<string> => {
     const localNames = new Set<string>()
+    const prefix = `${moduleName}/`
+    const matchesModule = (source: unknown): boolean =>
+        typeof source === "string" &&
+        (source === moduleName || source.startsWith(prefix))
 
-    // ESM: `import { X [as Y] } from "moduleName"`
-    root.find(j.ImportDeclaration, {
-        source: { value: moduleName },
-    }).forEach((importPath) => {
+    // ESM: `import { X [as Y] } from "moduleName[/subpath]"`
+    root.find(j.ImportDeclaration).forEach((importPath) => {
+        if (!matchesModule(importPath.node.source.value)) return
         for (const spec of importPath.node.specifiers ?? []) {
             if (
                 spec.type !== "ImportSpecifier" ||
@@ -145,12 +153,12 @@ export const getLocalNamesForImport = (
         }
     })
 
-    // CommonJS: `const { X [: Y] } = require("moduleName")`
+    // CommonJS: `const { X [: Y] } = require("moduleName[/subpath]")`
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "require" },
     }).forEach((callPath) => {
         const [arg] = callPath.node.arguments
-        if (!arg || getStringValue(arg) !== moduleName) return
+        if (!arg || !matchesModule(getStringValue(arg))) return
 
         const parent = callPath.parent.node
         if (parent.type !== "VariableDeclarator") return
@@ -204,11 +212,14 @@ export const getNamespaceLocalNames = (
     moduleName: string,
 ): Set<string> => {
     const localNames = new Set<string>()
+    const prefix = `${moduleName}/`
+    const matchesModule = (source: unknown): boolean =>
+        typeof source === "string" &&
+        (source === moduleName || source.startsWith(prefix))
 
-    // ESM: `import * as ns from "moduleName"`
-    root.find(j.ImportDeclaration, {
-        source: { value: moduleName },
-    }).forEach((importPath) => {
+    // ESM: `import * as ns from "moduleName[/subpath]"`
+    root.find(j.ImportDeclaration).forEach((importPath) => {
+        if (!matchesModule(importPath.node.source.value)) return
         for (const spec of importPath.node.specifiers ?? []) {
             if (
                 spec.type === "ImportNamespaceSpecifier" &&
@@ -219,22 +230,22 @@ export const getNamespaceLocalNames = (
         }
     })
 
-    // TypeScript: `import ns = require("moduleName")`
+    // TypeScript: `import ns = require("moduleName[/subpath]")`
     root.find(j.TSImportEqualsDeclaration).forEach((importPath) => {
         const ref = importPath.node.moduleReference
         if (ref.type !== "TSExternalModuleReference") return
-        if (getStringValue(ref.expression) !== moduleName) return
+        if (!matchesModule(getStringValue(ref.expression))) return
         if (importPath.node.id?.type === "Identifier") {
             localNames.add(importPath.node.id.name)
         }
     })
 
-    // CommonJS: `const ns = require("moduleName")`
+    // CommonJS: `const ns = require("moduleName[/subpath]")`
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "require" },
     }).forEach((callPath) => {
         const [arg] = callPath.node.arguments
-        if (!arg || getStringValue(arg) !== moduleName) return
+        if (!arg || !matchesModule(getStringValue(arg))) return
 
         const parent = callPath.parent.node
         if (
