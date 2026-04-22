@@ -63,10 +63,9 @@ export class EntityPersistExecutor {
             const entities: ObjectLiteral[] = Array.isArray(this.entity)
                 ? this.entity
                 : [this.entity]
+            const chunkSize = this.options?.chunk ?? 0
             const entitiesInChunks =
-                this.options?.chunk && this.options.chunk > 0
-                    ? OrmUtils.chunk(entities, this.options.chunk)
-                    : [entities]
+                chunkSize > 0 ? OrmUtils.chunk(entities, chunkSize) : [entities]
 
             // console.time("building subject executors...");
             const executors = await Promise.all(
