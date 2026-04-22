@@ -2373,6 +2373,44 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Renames a foreign key. MySQL has no native FK rename, so the emitted DDL
+     * drops and re-adds the constraint in a single `ALTER TABLE` — atomic, but
+     * not a true rename. Requires the full `TableForeignKey` definition (columns,
+     * referenced table, onDelete/onUpdate) to rebuild the constraint.
+     *
+     * @param tableOrName
+     * @param foreignKeyOrName
+     * @param newName
+     */
+    async renameForeignKey(
+        tableOrName: Table | string,
+        foreignKeyOrName: TableForeignKey | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
+            ? foreignKeyOrName
+            : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
+        if (!foreignKey?.name) {
+            throw new TypeORMError(
+                `Supplied foreign key was not found in table ${table.name}`,
+            )
+        }
+        const oldName = foreignKey.name
+
+        const { up, down } = this.renameForeignKeySql(
+            table,
+            foreignKey,
+            oldName,
+            newName,
+        )
+        await this.executeQueries(up, down)
+        foreignKey.name = newName
+    }
+
+    /**
      * Creates a new index.
      *
      * @param tableOrName
@@ -2461,6 +2499,36 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             this.dropIndex(tableOrName, index, ifExists),
         )
         await Promise.all(promises)
+    }
+
+    /**
+     * Renames an index in place via `ALTER TABLE … RENAME INDEX` (MySQL ≥ 5.7,
+     * MariaDB ≥ 10.5).
+     *
+     * @param tableOrName
+     * @param indexOrName
+     * @param newName
+     */
+    async renameIndex(
+        tableOrName: Table | string,
+        indexOrName: TableIndex | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const index = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName
+            : table.indices.find((i) => i.name === indexOrName)
+        if (!index?.name) {
+            throw new TypeORMError(
+                `Supplied index was not found in table ${table.name}`,
+            )
+        }
+
+        const { up, down } = this.renameIndexSql(table, index.name, newName)
+        await this.executeQueries(up, down)
+        index.name = newName
     }
 
     /**
@@ -3493,6 +3561,81 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 table,
             )} DROP FOREIGN KEY \`${foreignKeyName}\``,
         )
+    }
+
+    /**
+     * Builds up/down queries that rename an index in place via the native
+     * `ALTER TABLE … RENAME INDEX` syntax (MySQL ≥ 5.7, MariaDB ≥ 10.5). Unlike
+     * constraints, indexes support a true rename and no drop+add fallback is
+     * needed.
+     *
+     * @param table
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair.
+     */
+    protected renameIndexSql(
+        table: Table,
+        oldName: string,
+        newName: string,
+    ): { up: Query; down: Query } {
+        const escaped = this.escapePath(table)
+        return {
+            up: new Query(
+                `ALTER TABLE ${escaped} RENAME INDEX \`${oldName}\` TO \`${newName}\``,
+            ),
+            down: new Query(
+                `ALTER TABLE ${escaped} RENAME INDEX \`${newName}\` TO \`${oldName}\``,
+            ),
+        }
+    }
+
+    /**
+     * Builds up/down queries that rename a foreign key. MySQL has no native
+     * foreign-key rename syntax, so the emitted DDL drops and re-adds the
+     * constraint within a single `ALTER TABLE` statement. Atomic, but not a
+     * true rename.
+     *
+     * @param table
+     * @param foreignKey
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair.
+     */
+    protected renameForeignKeySql(
+        table: Table,
+        foreignKey: TableForeignKey,
+        oldName: string,
+        newName: string,
+    ): { up: Query; down: Query } {
+        const escaped = this.escapePath(table)
+        const columnNames = foreignKey.columnNames
+            .map((column) => `\`${column}\``)
+            .join(", ")
+        const referencedColumnNames = foreignKey.referencedColumnNames
+            .map((column) => `\`${column}\``)
+            .join(", ")
+        const referencedTable = this.escapePath(this.getTablePath(foreignKey))
+
+        const buildAdd = (name: string) => {
+            let sql = `ADD CONSTRAINT \`${name}\` FOREIGN KEY (${columnNames}) REFERENCES ${referencedTable}(${referencedColumnNames})`
+            if (foreignKey.onDelete) sql += ` ON DELETE ${foreignKey.onDelete}`
+            if (foreignKey.onUpdate) sql += ` ON UPDATE ${foreignKey.onUpdate}`
+            return sql
+        }
+
+        return {
+            up: new Query(
+                `ALTER TABLE ${escaped} DROP FOREIGN KEY \`${oldName}\`, ${buildAdd(
+                    newName,
+                )}`,
+            ),
+            down: new Query(
+                `ALTER TABLE ${escaped} DROP FOREIGN KEY \`${newName}\`, ${buildAdd(
+                    oldName,
+                )}`,
+            ),
+        }
     }
 
     /**

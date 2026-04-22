@@ -10,6 +10,7 @@ import {
     TableIndex,
     TableUnique,
 } from "../../../src"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -20,7 +21,14 @@ describe("query runner > rename constraint", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            enabledDrivers: ["postgres", "cockroachdb", "mssql", "oracle"],
+            enabledDrivers: [
+                "postgres",
+                "cockroachdb",
+                "mssql",
+                "oracle",
+                "mysql",
+                "mariadb",
+            ],
             entities: [],
             schemaCreate: false,
             dropSchema: true,
@@ -60,6 +68,8 @@ describe("query runner > rename constraint", () => {
     it("should rename a unique constraint in place", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                // MySQL doesn't model standalone unique constraints — uniques are indexes.
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) return
                 const queryRunner = await makeTable(dataSource, "rc_unique")
                 try {
                     await queryRunner.createUniqueConstraint(
@@ -203,6 +213,8 @@ describe("query runner > rename constraint", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 if (dataSource.driver.options.type === "cockroachdb") return
+                // MySQL's TypeORM driver doesn't surface check constraints.
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) return
                 const queryRunner = await makeTable(dataSource, "rc_check")
                 try {
                     await queryRunner.createCheckConstraint(
@@ -284,6 +296,9 @@ describe("query runner > rename constraint", () => {
     it("should rename a primary key constraint in place", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                // MySQL primary keys are always named "PRIMARY" at the DB level;
+                // there is no renameable identity.
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) return
                 const queryRunner = dataSource.createQueryRunner()
                 try {
                     await queryRunner.createTable(
