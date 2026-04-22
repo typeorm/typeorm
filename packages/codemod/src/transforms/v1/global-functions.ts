@@ -188,7 +188,7 @@ export const globalFunctions = (file: FileInfo, api: API) => {
         astPath: ASTPath<CallExpression>,
         manualMessage: string,
     ): boolean => {
-        let current: ASTPath<Node> | null = astPath as unknown as ASTPath<Node>
+        let current: ASTPath<Node> | null = astPath
         while (current) {
             const node: Node = current.node
             if (todoHostTypes.has(node.type)) {

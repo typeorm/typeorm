@@ -104,7 +104,7 @@ export class SubjectExecutor {
 
         // broadcast "before" events before we start insert / update / remove operations
         let broadcasterResult: BroadcasterResult | undefined = undefined
-        if (!this.options || this.options.listeners !== false) {
+        if (this.options?.listeners !== false) {
             // console.time(".broadcastBeforeEventsForAll");
             broadcasterResult = this.broadcastBeforeEventsForAll()
             if (broadcasterResult.promises.length > 0)
@@ -178,7 +178,7 @@ export class SubjectExecutor {
         // console.timeEnd(".updateSpecialColumnsInPersistedEntities");
 
         // finally broadcast "after" events after we finish insert / update / remove operations
-        if (!this.options || this.options.listeners !== false) {
+        if (this.options?.listeners !== false) {
             // console.time(".broadcastAfterEventsForAll");
             broadcasterResult = this.broadcastAfterEventsForAll()
             if (broadcasterResult.promises.length > 0)
@@ -437,11 +437,7 @@ export class SubjectExecutor {
                         .insert()
                         .into(subjects[0].metadata.target)
                         .values(bulkInsertMaps)
-                        .updateEntity(
-                            this.options && this.options.reload === false
-                                ? false
-                                : true,
-                        )
+                        .updateEntity(this.options?.reload !== false)
                         .callListeners(false)
                         .execute()
 
@@ -469,11 +465,7 @@ export class SubjectExecutor {
                             .insert()
                             .into(subject.metadata.target)
                             .values(subject.insertedValueSet)
-                            .updateEntity(
-                                this.options && this.options.reload === false
-                                    ? false
-                                    : true,
-                            )
+                            .updateEntity(this.options?.reload !== false)
                             .callListeners(false)
                             .execute()
                             .then((insertResult) => {
@@ -592,11 +584,7 @@ export class SubjectExecutor {
                     .createQueryBuilder()
                     .update(subject.metadata.target)
                     .set(updateMap)
-                    .updateEntity(
-                        this.options && this.options.reload === false
-                            ? false
-                            : true,
-                    )
+                    .updateEntity(this.options?.reload !== false)
                     .callListeners(false)
 
                 if (subject.entity) {
@@ -786,11 +774,7 @@ export class SubjectExecutor {
                         .createQueryBuilder()
                         .softDelete()
                         .from(subject.metadata.target)
-                        .updateEntity(
-                            this.options && this.options.reload === false
-                                ? false
-                                : true,
-                        )
+                        .updateEntity(this.options?.reload !== false)
                         .callListeners(false)
 
                     if (subject.entity) {
@@ -897,11 +881,7 @@ export class SubjectExecutor {
                         .createQueryBuilder()
                         .restore()
                         .from(subject.metadata.target)
-                        .updateEntity(
-                            this.options && this.options.reload === false
-                                ? false
-                                : true,
-                        )
+                        .updateEntity(this.options?.reload !== false)
                         .callListeners(false)
 
                     if (subject.entity) {
