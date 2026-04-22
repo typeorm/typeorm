@@ -19,6 +19,14 @@ import { DriverUtils } from "../driver/DriverUtils"
 import type { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
 import { TypeORMError } from "../error"
 import type { IndexMetadata } from "../metadata/IndexMetadata"
+import type { ReconcileResult } from "./util/constraintReconciler"
+import { reconcileConstraints } from "./util/constraintReconciler"
+import {
+    checkSignature,
+    exclusionSignature,
+    indexSignature,
+    uniqueSignature,
+} from "./util/constraintSignature"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -226,6 +234,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
         await this.dropOldViews()
+        await this.renameMismatchedConstraints()
         await this.dropOldForeignKeys()
         await this.dropOldIndices()
         await this.dropOldChecks()
@@ -257,6 +266,262 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             parsed.schema ?? this.currentSchema,
             parsed.database ?? this.currentDatabase,
         )
+    }
+
+    /**
+     * Pairs DB-side and metadata-side constraints by structural signature and
+     * emits RENAME DDL where a pair has identical structure but different
+     * names. Runs before the dropOld* pass so that subsequent passes see the
+     * renamed constraints and correctly no-op on them.
+     *
+     * Skipped entirely when `reconcileConstraintNames` is set to `false` on
+     * the DataSource options.
+     */
+    protected async renameMismatchedConstraints(): Promise<void> {
+        if (this.dataSource.options.reconcileConstraintNames === false) return
+
+        for (const metadata of this.entityToSyncMetadatas) {
+            const table = this.tables.find(
+                (t) => this.getTablePath(t) === this.getTablePath(metadata),
+            )
+            if (!table) continue
+
+            await this.reconcileIndexRenames(table, metadata)
+            await this.reconcileUniqueRenames(table, metadata)
+            await this.reconcileForeignKeyRenames(table, metadata)
+            await this.reconcileCheckRenames(table, metadata)
+            await this.reconcileExclusionRenames(table, metadata)
+        }
+    }
+
+    /**
+     * Reconciles index-constraint name drift for one table + metadata pair.
+     *
+     * @param table DB-side table (mutated in place when a rename is applied).
+     * @param metadata Entity metadata whose indices to reconcile against.
+     */
+    private async reconcileIndexRenames(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        const queryRunner = this.queryRunner
+        if (typeof queryRunner.renameIndex !== "function") return
+
+        const metaSide = metadata.indices.map((im) => TableIndex.create(im))
+        const result = reconcileConstraints({
+            dbSide: table.indices,
+            metaSide,
+            signature: { db: indexSignature, meta: indexSignature },
+            getName: {
+                db: (item) => item.name,
+                meta: (item) => item.name,
+            },
+        })
+
+        for (const { from, to } of result.renames) {
+            if (!from.name || !to.name) continue
+            await queryRunner.renameIndex(table, from, to.name)
+        }
+        this.logDuplicateMetadataSignatureWarnings(
+            "index",
+            metadata,
+            result,
+            (item) => item.columnNames,
+        )
+    }
+
+    /**
+     * Reconciles composite unique-constraint name drift for one table.
+     *
+     * @param table
+     * @param metadata
+     */
+    private async reconcileUniqueRenames(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        const queryRunner = this.queryRunner
+        if (typeof queryRunner.renameUniqueConstraint !== "function") return
+
+        const metaSide = metadata.uniques
+            .filter((um) => um.columns.length > 1)
+            .map((um) => TableUnique.create(um))
+        const dbSide = table.uniques.filter((u) => u.columnNames.length > 1)
+        const result = reconcileConstraints({
+            dbSide,
+            metaSide,
+            signature: { db: uniqueSignature, meta: uniqueSignature },
+            getName: {
+                db: (item) => item.name,
+                meta: (item) => item.name,
+            },
+        })
+
+        for (const { from, to } of result.renames) {
+            if (!from.name || !to.name) continue
+            await queryRunner.renameUniqueConstraint(table, from, to.name)
+        }
+        this.logDuplicateMetadataSignatureWarnings(
+            "unique",
+            metadata,
+            result,
+            (item) => item.columnNames,
+        )
+    }
+
+    /**
+     * Reconciles foreign-key name drift for one table. Signature uses the
+     * canonical full table path via {@link getTablePath} so that schema-
+     * qualified and bare names match.
+     *
+     * @param table
+     * @param metadata
+     */
+    private async reconcileForeignKeyRenames(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        const queryRunner = this.queryRunner
+        if (typeof queryRunner.renameForeignKey !== "function") return
+
+        const fkSig = (fk: TableForeignKey): string =>
+            JSON.stringify([
+                "fk",
+                fk.columnNames,
+                this.getTablePath(fk),
+                fk.referencedColumnNames,
+                fk.onDelete ?? "",
+                fk.onUpdate ?? "",
+            ])
+
+        const metaSide = metadata.foreignKeys.map((fkm) =>
+            TableForeignKey.create(fkm, this.dataSource.driver),
+        )
+        const result = reconcileConstraints({
+            dbSide: table.foreignKeys,
+            metaSide,
+            signature: { db: fkSig, meta: fkSig },
+            getName: {
+                db: (item) => item.name,
+                meta: (item) => item.name,
+            },
+        })
+
+        for (const { from, to } of result.renames) {
+            if (!from.name || !to.name) continue
+            await queryRunner.renameForeignKey(table, from, to.name)
+        }
+        this.logDuplicateMetadataSignatureWarnings(
+            "foreign key",
+            metadata,
+            result,
+            (item) => item.columnNames,
+        )
+    }
+
+    /**
+     * Reconciles check-constraint name drift for one table.
+     *
+     * @param table
+     * @param metadata
+     */
+    private async reconcileCheckRenames(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        const queryRunner = this.queryRunner
+        if (typeof queryRunner.renameCheckConstraint !== "function") return
+
+        const metaSide = metadata.checks.map((cm) => TableCheck.create(cm))
+        const result = reconcileConstraints({
+            dbSide: table.checks,
+            metaSide,
+            signature: { db: checkSignature, meta: checkSignature },
+            getName: {
+                db: (item) => item.name,
+                meta: (item) => item.name,
+            },
+        })
+
+        for (const { from, to } of result.renames) {
+            if (!from.name || !to.name) continue
+            await queryRunner.renameCheckConstraint(table, from, to.name)
+        }
+        this.logDuplicateMetadataSignatureWarnings(
+            "check",
+            metadata,
+            result,
+            (item) => [item.expression ?? ""],
+        )
+    }
+
+    /**
+     * Reconciles exclusion-constraint name drift for one table. Postgres-only
+     * in practice — other drivers don't expose `renameExclusionConstraint`.
+     *
+     * @param table
+     * @param metadata
+     */
+    private async reconcileExclusionRenames(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        const queryRunner = this.queryRunner
+        if (typeof queryRunner.renameExclusionConstraint !== "function") return
+
+        const metaSide = metadata.exclusions.map((em) =>
+            TableExclusion.create(em),
+        )
+        const result = reconcileConstraints({
+            dbSide: table.exclusions,
+            metaSide,
+            signature: { db: exclusionSignature, meta: exclusionSignature },
+            getName: {
+                db: (item) => item.name,
+                meta: (item) => item.name,
+            },
+        })
+
+        for (const { from, to } of result.renames) {
+            if (!from.name || !to.name) continue
+            await queryRunner.renameExclusionConstraint(table, from, to.name)
+        }
+        this.logDuplicateMetadataSignatureWarnings(
+            "exclusion",
+            metadata,
+            result,
+            (item) => [item.expression ?? ""],
+        )
+    }
+
+    /**
+     * Emits a warning for every metadata-side duplicate signature detected by
+     * the reconciler. These are almost always user errors (e.g. two identical
+     * `@Index` declarations on the same entity) and should be cleaned up.
+     *
+     * @param familyLabel
+     * @param metadata
+     * @param result
+     * @param extractIdentity
+     */
+    private logDuplicateMetadataSignatureWarnings<T>(
+        familyLabel: string,
+        metadata: EntityMetadata,
+        result: ReconcileResult<unknown, T>,
+        extractIdentity: (item: T) => string[],
+    ): void {
+        for (const group of result.duplicateMetadataSignatures) {
+            const names = group.items
+                .map((item) => {
+                    const anyItem = item as unknown as { name?: string }
+                    return anyItem.name ?? "<unnamed>"
+                })
+                .join(", ")
+            const identity = extractIdentity(group.items[0]).join(", ")
+            this.dataSource.logger.logSchemaBuild(
+                `Entity ${metadata.targetName} declares multiple ${familyLabel} constraints with identical structure (${identity}): ${names}. Consider removing the redundant declarations.`,
+            )
+        }
     }
 
     /**
