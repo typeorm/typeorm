@@ -286,12 +286,62 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             if (!table) continue
 
+            await this.reconcilePrimaryKeyRename(table, metadata)
             await this.reconcileIndexRenames(table, metadata)
             await this.reconcileUniqueRenames(table, metadata)
             await this.reconcileForeignKeyRenames(table, metadata)
             await this.reconcileCheckRenames(table, metadata)
             await this.reconcileExclusionRenames(table, metadata)
         }
+    }
+
+    /**
+     * Reconciles primary-key name drift for one table.
+     *
+     * Skipped when column sets differ in count or order — those are structural
+     * changes that warrant a full PK rebuild, not a rename. The DB-side PK name
+     * comes from {@link TableColumn.primaryKeyConstraintName} (populated by
+     * `loadTables` when it diverges from the naming-strategy-derived name),
+     * falling back to the naming-strategy-derived name on the DB-side table.
+     * The metadata-side PK name comes from the explicit
+     * `primaryKeyConstraintName` option or the naming-strategy-derived name for
+     * the entity.
+     *
+     * @param table DB-side table (mutated in place when a rename is applied).
+     * @param metadata Entity metadata whose primary key to reconcile against.
+     */
+    private async reconcilePrimaryKeyRename(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        const queryRunner = this.queryRunner
+        if (typeof queryRunner.renamePrimaryKey !== "function") return
+
+        const dbPrimaryColumns = table.primaryColumns
+        const metaPrimaryColumns = metadata.primaryColumns
+        if (
+            dbPrimaryColumns.length === 0 ||
+            metaPrimaryColumns.length === 0 ||
+            dbPrimaryColumns.length !== metaPrimaryColumns.length
+        ) {
+            return
+        }
+
+        const dbCols = dbPrimaryColumns.map((c) => c.name)
+        const metaCols = metaPrimaryColumns.map((c) => c.databaseName)
+        if (!dbCols.every((n, i) => n === metaCols[i])) return
+
+        const namingStrategy = this.dataSource.namingStrategy
+        const dbPkName =
+            dbPrimaryColumns[0].primaryKeyConstraintName ??
+            namingStrategy.primaryKeyName(table, dbCols)
+        const metaPkName =
+            metaPrimaryColumns[0].primaryKeyConstraintName ??
+            namingStrategy.primaryKeyName(metadata.tableName, metaCols)
+
+        if (dbPkName === metaPkName) return
+
+        await queryRunner.renamePrimaryKey(table, dbPkName, metaPkName)
     }
 
     /**
