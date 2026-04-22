@@ -15,6 +15,16 @@ import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
 import type { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
 
+let requiredDriversEnabled: boolean = true
+
+export function setRequired(b: boolean): void {
+    requiredDriversEnabled = b
+}
+
+export function isRequired(): boolean {
+    return requiredDriversEnabled
+}
+
 /**
  * Interface in which data is stored in ormconfig.json of the project.
  */
@@ -378,6 +388,11 @@ export async function createTestingConnections(
     options?: TestingOptions,
 ): Promise<DataSource[]> {
     const dataSourceOptions = setupTestingConnections(options)
+
+    if (!dataSourceOptions.length) {
+        setRequired(false)
+    }
+
     const dataSources: DataSource[] = []
     for (const options of dataSourceOptions) {
         const dataSource = createDataSource(options)
