@@ -1146,6 +1146,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     }
 
     interface ScopeLike {
+        declares(name: string): boolean
         lookup(name: string): (ScopeLike & { path?: { node?: ASTNode } }) | null
         path?: { node?: ASTNode }
     }
@@ -1165,9 +1166,10 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
 
     // Attempts a scope-aware rename of a shorthand `{ connection }` binding to
     // `{ dataSource }`, including every reference to the local within the
-    // enclosing scope. Returns false (caller falls back to the alias form) if
-    // the rename would collide with an existing `dataSource` binding — either
-    // in the declaring scope or in any nested scope that shadows it.
+    // enclosing scope. Returns false (caller falls back to the alias form) when
+    // the rename would disturb an existing `dataSource` usage — either the
+    // declaring scope itself binds `dataSource`, or the subtree references
+    // `dataSource` (which would be rebound to the new local).
     const tryRenameShorthandConnectionBinding = (
         prop: {
             key: { name: string }
@@ -1179,7 +1181,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     ): boolean => {
         const scope = declPath.scope
         if (!scope) return false
-        if (scope.lookup("dataSource")) return false
+        if (scope.declares("dataSource")) return false
 
         // Compare by AST node rather than scope-object identity — ast-types
         // may return equivalent-but-not-identical wrappers depending on entry
@@ -1193,6 +1195,21 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             }
             return false
         }
+
+        // Any `dataSource` reference inside our subtree — whether to an outer
+        // binding (which would rebind to the new local) or a nested shadow
+        // (which would swallow outer refs) — makes the shorthand rename
+        // unsafe. Scanned fresh because previous renames may have introduced
+        // new `dataSource` identifiers in the tree.
+        let conflictsWithDataSource = false
+        root.find(j.Identifier, { name: "dataSource" }).forEach((idPath) => {
+            if (conflictsWithDataSource) return
+            const sp = idPath as unknown as ScopedPath
+            if (!isInScopeSubtree(sp)) return
+            if (!isReferenceIdentifier(idPath)) return
+            conflictsWithDataSource = true
+        })
+        if (conflictsWithDataSource) return false
 
         const refsToRename: ScopedPath[] = []
         for (const idPath of allConnectionRefs) {
@@ -1210,9 +1227,6 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             ) {
                 continue
             }
-            // Nested scope already binds `dataSource`: renaming would retarget
-            // the reference to the inner binding. Abort and fall back.
-            if (refScope.lookup("dataSource")) return false
             refsToRename.push(idPath)
         }
 
