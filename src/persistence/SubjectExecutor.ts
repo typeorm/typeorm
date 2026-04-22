@@ -437,9 +437,7 @@ export class SubjectExecutor {
                         .insert()
                         .into(subjects[0].metadata.target)
                         .values(bulkInsertMaps)
-                        .updateEntity(
-                            this.options?.reload === false ? false : true,
-                        )
+                        .updateEntity(this.options?.reload !== false)
                         .callListeners(false)
                         .execute()
 
@@ -467,9 +465,7 @@ export class SubjectExecutor {
                             .insert()
                             .into(subject.metadata.target)
                             .values(subject.insertedValueSet)
-                            .updateEntity(
-                                this.options?.reload === false ? false : true,
-                            )
+                            .updateEntity(this.options?.reload !== false)
                             .callListeners(false)
                             .execute()
                             .then((insertResult) => {
@@ -588,7 +584,7 @@ export class SubjectExecutor {
                     .createQueryBuilder()
                     .update(subject.metadata.target)
                     .set(updateMap)
-                    .updateEntity(this.options?.reload === false ? false : true)
+                    .updateEntity(this.options?.reload !== false)
                     .callListeners(false)
 
                 if (subject.entity) {
@@ -778,9 +774,7 @@ export class SubjectExecutor {
                         .createQueryBuilder()
                         .softDelete()
                         .from(subject.metadata.target)
-                        .updateEntity(
-                            this.options?.reload === false ? false : true,
-                        )
+                        .updateEntity(this.options?.reload !== false)
                         .callListeners(false)
 
                     if (subject.entity) {
@@ -887,9 +881,7 @@ export class SubjectExecutor {
                         .createQueryBuilder()
                         .restore()
                         .from(subject.metadata.target)
-                        .updateEntity(
-                            this.options?.reload === false ? false : true,
-                        )
+                        .updateEntity(this.options?.reload !== false)
                         .callListeners(false)
 
                     if (subject.entity) {
