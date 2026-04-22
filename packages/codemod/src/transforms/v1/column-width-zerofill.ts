@@ -1,8 +1,9 @@
 import path from "node:path"
-import type { API, FileInfo } from "jscodeshift"
+import type { API, FileInfo, ObjectExpression } from "jscodeshift"
 import {
     TYPEORM_COLUMN_DECORATORS,
     expandLocalNamesForImports,
+    forEachColumnMetadataOptionsArg,
     forEachDecoratorObjectArg,
     removeObjectProperties,
 } from "../ast-helpers"
@@ -18,6 +19,12 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
+    const stripWidthAndZerofill = (obj: ObjectExpression): void => {
+        if (removeObjectProperties(obj, propsToRemove)) {
+            hasChanges = true
+        }
+    }
+
     const decoratorLocalNames = expandLocalNamesForImports(
         root,
         j,
@@ -27,12 +34,24 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
     forEachDecoratorObjectArg(
         root,
         j,
-        (obj) => {
-            if (removeObjectProperties(obj, propsToRemove)) {
-                hasChanges = true
-            }
-        },
+        stripWidthAndZerofill,
         decoratorLocalNames,
+    )
+
+    // Also strip from `new ColumnMetadata({ args: { options: { width, zerofill, … } } })`.
+    // `ColumnMetadataArgs.options` is typed `ColumnOptions`, which no longer
+    // has `width` or `zerofill` in v1.
+    const columnMetadataLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        new Set(["ColumnMetadata"]),
+    )
+    forEachColumnMetadataOptionsArg(
+        root,
+        j,
+        columnMetadataLocalNames,
+        stripWidthAndZerofill,
     )
 
     return hasChanges ? root.toSource() : undefined

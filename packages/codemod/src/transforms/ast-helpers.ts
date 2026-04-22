@@ -374,6 +374,61 @@ export const getObjectPropertyKeyName = (
 }
 
 /**
+ * Walks `new ColumnMetadata({ args: { options: {...} } })` constructor calls
+ * and invokes `callback` with the inner `options` ObjectExpression. Mirrors
+ * `forEachDecoratorObjectArg` but for the ColumnMetadata class constructor:
+ * its `args.options` object is typed `ColumnOptions`, so transforms that
+ * rewrite `ColumnOptions` fields (`readonly` → `update`, `width`/`zerofill`
+ * removal) must also cover this path. Rare in user code but shows up in
+ * multi-tenant / metadata-manipulation patterns.
+ *
+ * @param classLocalNames Local identifiers bound to `ColumnMetadata` (from
+ *     `expandLocalNamesForImports(root, j, "typeorm", ["ColumnMetadata"])`).
+ */
+export const forEachColumnMetadataOptionsArg = (
+    root: Collection,
+    j: JSCodeshift,
+    classLocalNames: ReadonlySet<string>,
+    callback: (optionsObject: ObjectExpression, path: ASTPath) => void,
+): void => {
+    if (classLocalNames.size === 0) return
+    root.find(j.NewExpression).forEach((path) => {
+        const callee = path.node.callee
+        if (callee.type !== "Identifier") return
+        if (!classLocalNames.has(callee.name)) return
+
+        const [arg] = path.node.arguments
+        if (!arg || arg.type !== "ObjectExpression") return
+
+        const argsProp = arg.properties.find((p) => {
+            if (p.type !== "Property" && p.type !== "ObjectProperty") {
+                return false
+            }
+            return (
+                (p as { key: ASTNode }).key.type === "Identifier" &&
+                (p as { key: Identifier }).key.name === "args"
+            )
+        }) as { value: ASTNode } | undefined
+        if (!argsProp || argsProp.value.type !== "ObjectExpression") return
+
+        const optionsProp = argsProp.value.properties.find((p) => {
+            if (p.type !== "Property" && p.type !== "ObjectProperty") {
+                return false
+            }
+            return (
+                (p as { key: ASTNode }).key.type === "Identifier" &&
+                (p as { key: Identifier }).key.name === "options"
+            )
+        }) as { value: ASTNode } | undefined
+        if (!optionsProp || optionsProp.value.type !== "ObjectExpression") {
+            return
+        }
+
+        callback(optionsProp.value, path)
+    })
+}
+
+/**
  * TypeORM `Repository` / `EntityManager` methods that accept a FindOptions
  * object (with `select`/`relations`/`where`/…). Used to scope the
  * `select: [...]` / `relations: [...]` → object-form transforms to
