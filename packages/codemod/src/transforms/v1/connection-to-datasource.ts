@@ -977,6 +977,66 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
+    // Properties that, when destructured from a tracked receiver (subscriber
+    // event, EntityManager, QueryRunner, Repository, …), carry a known TypeORM
+    // type. Used so `const { queryRunner } = event; queryRunner.connection` gets
+    // `queryRunner` classified as QueryRunner and its `.connection` access
+    // rewritten to `.dataSource`.
+    const destructuredPropertyTypes: Record<string, string> = {
+        manager: "EntityManager",
+        mongoManager: "EntityManager",
+        queryRunner: "QueryRunner",
+        metadata: "EntityMetadata",
+    }
+
+    // Walks every `{ … } = tracked` destructure and classifies each local
+    // binding by the property name's known type. Runs before the member-rename
+    // walks below so subsequent `local.connection` accesses on the new locals
+    // are rewritten.
+    root.find(j.VariableDeclarator).forEach((declPath) => {
+        const init = declPath.node.init
+        if (!init) return
+        if (
+            !receiverIsIn(
+                init,
+                connectionPropVarNames,
+                thisConnectionPropMembers,
+            )
+        ) {
+            return
+        }
+        const id = declPath.node.id
+        if (id.type !== "ObjectPattern") return
+        for (const prop of (id as unknown as { properties: ASTNode[] })
+            .properties) {
+            if (prop.type !== "Property" && prop.type !== "ObjectProperty") {
+                continue
+            }
+            const typed = prop as {
+                key: { type: string; name?: string }
+                value: ASTNode
+            }
+            if (typed.key.type !== "Identifier" || !typed.key.name) continue
+            const typeName = destructuredPropertyTypes[typed.key.name]
+            if (!typeName) continue
+            const local =
+                typed.value.type === "Identifier"
+                    ? (typed.value as { name: string }).name
+                    : typed.value.type === "AssignmentPattern" &&
+                        (typed.value as { left: ASTNode }).left.type ===
+                            "Identifier"
+                      ? (typed.value as { left: { name: string } }).left.name
+                      : null
+            if (!local) continue
+            if (typesWithConnectionProp.has(typeName)) {
+                connectionPropVarNames.add(local)
+            }
+            if (typesWithIndirectDataSource.has(typeName)) {
+                indirectDataSourceVarNames.add(local)
+            }
+        }
+    })
+
     renameDataSourceMethods()
 
     // Rename .isConnected → .isInitialized on Connection/DataSource instances
